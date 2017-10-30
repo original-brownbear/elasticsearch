@@ -123,17 +123,10 @@ class BuildPlugin implements Plugin<Project> {
             }
             println "  Random Testing Seed   : ${project.testSeed}"
 
-            // enforce Gradle version
-            final GradleVersion currentGradleVersion = GradleVersion.current();
-
-            final GradleVersion minGradle = GradleVersion.version('3.3')
-            if (currentGradleVersion < minGradle) {
+            // enforce gradle version
+            GradleVersion minGradle = GradleVersion.version('3.3')
+            if (GradleVersion.current() < minGradle) {
                 throw new GradleException("${minGradle} or above is required to build elasticsearch")
-            }
-
-            final GradleVersion maxGradle = GradleVersion.version('4.2')
-            if (currentGradleVersion >= maxGradle) {
-                throw new GradleException("${maxGradle} or above is not compatible with the elasticsearch build")
             }
 
             // enforce Java version
