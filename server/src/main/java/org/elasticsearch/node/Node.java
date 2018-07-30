@@ -831,15 +831,7 @@ public class Node implements Closeable {
         toClose.add(injector.getInstance(ScriptService.class));
 
         toClose.add(() -> stopWatch.stop().start("thread_pool"));
-        // TODO this should really use ThreadPool.terminate()
-        toClose.add(() -> injector.getInstance(ThreadPool.class).shutdown());
-        toClose.add(() -> {
-            try {
-                injector.getInstance(ThreadPool.class).awaitTermination(10, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                // ignore
-            }
-        });
+        toClose.add(() -> ThreadPool.terminate(injector.getInstance(ThreadPool.class), 10L, TimeUnit.SECONDS));
 
         toClose.add(() -> stopWatch.stop().start("thread_pool_force_shutdown"));
         toClose.add(() -> injector.getInstance(ThreadPool.class).shutdownNow());
