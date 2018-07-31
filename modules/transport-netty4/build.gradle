@@ -134,7 +134,6 @@ thirdPartyAudit.excludes = [
         'net.jpountz.xxhash.StreamingXXHash32',
         'net.jpountz.xxhash.XXHashFactory',
         'io.netty.internal.tcnative.CertificateRequestedCallback',
-        'io.netty.internal.tcnative.CertificateRequestedCallback$KeyMaterial',
         'io.netty.internal.tcnative.CertificateVerifier',
         'io.netty.internal.tcnative.SessionTicketKey',
         'io.netty.internal.tcnative.SniHostNameMatcher',
@@ -161,6 +160,6 @@ thirdPartyAudit.excludes = [
 
         'org.conscrypt.AllocatedBuffer',
         'org.conscrypt.BufferAllocator',
-        'org.conscrypt.Conscrypt$Engines',
+        'org.conscrypt.Conscrypt',
         'org.conscrypt.HandshakeListener'
 ]
