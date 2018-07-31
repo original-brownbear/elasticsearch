@@ -5,6 +5,7 @@
  */
 package org.elasticsearch.xpack.security.transport.ssl;
 
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -53,6 +54,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 
+@Repeat(iterations = 1000, useConstantSeed = true)
 public class SslIntegrationTests extends SecurityIntegTestCase {
 
     @Override
