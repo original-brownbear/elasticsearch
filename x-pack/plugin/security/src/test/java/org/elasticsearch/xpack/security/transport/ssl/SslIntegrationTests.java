@@ -54,7 +54,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 
-@Repeat(iterations = 1000)
+@Repeat(iterations = 10)
 public class SslIntegrationTests extends SecurityIntegTestCase {
 
     @Override
