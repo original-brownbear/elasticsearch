@@ -206,7 +206,9 @@ public class NioHttpServerTransportTests extends ESTestCase {
                         final FullHttpResponse continuationResponse = client.post(remoteAddress.address(), continuationRequest);
                         try {
                             assertThat(continuationResponse.status(), is(HttpResponseStatus.OK));
-                            assertThat(new String(ByteBufUtil.getBytes(continuationResponse.content()), StandardCharsets.UTF_8), is("done"));
+                            assertThat(
+                                new String(ByteBufUtil.getBytes(continuationResponse.content()), StandardCharsets.UTF_8), is("done")
+                            );
                         } finally {
                             continuationResponse.release();
                         }
