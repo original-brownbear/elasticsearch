@@ -115,7 +115,8 @@ public final class Pipeline {
 
     public static final class Factory {
 
-        public Pipeline create(String id, Map<String, Object> config, Map<String, Processor.Factory> processorFactories) throws Exception {
+        public static Pipeline create(String id, Map<String, Object> config,
+            Map<String, Processor.Factory> processorFactories) throws Exception {
             String description = ConfigurationUtils.readOptionalStringProperty(null, null, config, DESCRIPTION_KEY);
             Integer version = ConfigurationUtils.readIntProperty(null, null, config, VERSION_KEY, null);
             List<Map<String, Object>> processorConfigs = ConfigurationUtils.readList(null, null, config, PROCESSORS_KEY);

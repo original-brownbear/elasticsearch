@@ -145,7 +145,7 @@ public final class ConfigurationUtils {
         if (value == null) {
             return defaultValue;
         } else {
-            return readBoolean(processorType, processorTag, propertyName, value).booleanValue();
+            return readBoolean(processorType, processorTag, propertyName, value);
         }
     }
 

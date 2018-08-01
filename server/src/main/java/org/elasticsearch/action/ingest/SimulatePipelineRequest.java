@@ -164,7 +164,6 @@ public class SimulatePipelineRequest extends ActionRequest implements ToXContent
         }
     }
 
-    private static final Pipeline.Factory PIPELINE_FACTORY = new Pipeline.Factory();
     static final String SIMULATED_PIPELINE_ID = "_simulate_pipeline";
 
     static Parsed parseWithPipelineId(String pipelineId, Map<String, Object> config, boolean verbose, PipelineStore pipelineStore) {
@@ -181,7 +180,7 @@ public class SimulatePipelineRequest extends ActionRequest implements ToXContent
 
     static Parsed parse(Map<String, Object> config, boolean verbose, PipelineStore pipelineStore) throws Exception {
         Map<String, Object> pipelineConfig = ConfigurationUtils.readMap(null, null, config, Fields.PIPELINE);
-        Pipeline pipeline = PIPELINE_FACTORY.create(SIMULATED_PIPELINE_ID, pipelineConfig, pipelineStore.getProcessorFactories());
+        Pipeline pipeline = Pipeline.Factory.create(SIMULATED_PIPELINE_ID, pipelineConfig, pipelineStore.getProcessorFactories());
         List<IngestDocument> ingestDocumentList = parseDocs(config);
         return new Parsed(pipeline, ingestDocumentList, verbose);
     }
