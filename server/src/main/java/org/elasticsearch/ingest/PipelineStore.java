@@ -99,7 +99,7 @@ public class PipelineStore extends AbstractComponent implements ClusterStateAppl
         ExceptionsHelper.rethrowAndSuppress(exceptions);
     }
 
-    private Pipeline substitutePipeline(String id, ElasticsearchParseException e) {
+    private static Pipeline substitutePipeline(String id, ElasticsearchParseException e) {
         String tag = e.getHeaderKeys().contains("processor_tag") ? e.getHeader("processor_tag").get(0) : null;
         String type = e.getHeaderKeys().contains("processor_type") ? e.getHeader("processor_type").get(0) : "unknown";
         String errorMessage = "pipeline with id [" + id + "] could not be loaded, caused by [" + e.getDetailedMessage() + "]";
@@ -121,7 +121,8 @@ public class PipelineStore extends AbstractComponent implements ClusterStateAppl
     /**
      * Deletes the pipeline specified by id in the request.
      */
-    public void delete(ClusterService clusterService, DeletePipelineRequest request, ActionListener<WritePipelineResponse> listener) {
+    public static void delete(ClusterService clusterService, DeletePipelineRequest request,
+        ActionListener<WritePipelineResponse> listener) {
         clusterService.submitStateUpdateTask("delete-pipeline-" + request.getId(),
                 new AckedClusterStateUpdateTask<WritePipelineResponse>(request, listener) {
 
@@ -137,7 +138,7 @@ public class PipelineStore extends AbstractComponent implements ClusterStateAppl
         });
     }
 
-    ClusterState innerDelete(DeletePipelineRequest request, ClusterState currentState) {
+    static ClusterState innerDelete(DeletePipelineRequest request, ClusterState currentState) {
         IngestMetadata currentIngestMetadata = currentState.metaData().custom(IngestMetadata.TYPE);
         if (currentIngestMetadata == null) {
             return currentState;
@@ -206,7 +207,7 @@ public class PipelineStore extends AbstractComponent implements ClusterStateAppl
         ExceptionsHelper.rethrowAndSuppress(exceptions);
     }
 
-    ClusterState innerPut(PutPipelineRequest request, ClusterState currentState) {
+    static ClusterState innerPut(PutPipelineRequest request, ClusterState currentState) {
         IngestMetadata currentIngestMetadata = currentState.metaData().custom(IngestMetadata.TYPE);
         Map<String, PipelineConfiguration> pipelines;
         if (currentIngestMetadata != null) {
@@ -240,12 +241,12 @@ public class PipelineStore extends AbstractComponent implements ClusterStateAppl
      */
     // Returning PipelineConfiguration instead of Pipeline, because Pipeline and Processor interface don't
     // know how to serialize themselves.
-    public List<PipelineConfiguration> getPipelines(ClusterState clusterState, String... ids) {
+    public static List<PipelineConfiguration> getPipelines(ClusterState clusterState, String... ids) {
         IngestMetadata ingestMetadata = clusterState.getMetaData().custom(IngestMetadata.TYPE);
         return innerGetPipelines(ingestMetadata, ids);
     }
 
-    List<PipelineConfiguration> innerGetPipelines(IngestMetadata ingestMetadata, String... ids) {
+    static List<PipelineConfiguration> innerGetPipelines(IngestMetadata ingestMetadata, String... ids) {
         if (ingestMetadata == null) {
             return Collections.emptyList();
         }

@@ -126,7 +126,7 @@ public class PipelineStoreTests extends ESTestCase {
         // add a new pipeline:
         PutPipelineRequest putRequest = new PutPipelineRequest(id, new BytesArray("{\"processors\": []}"), XContentType.JSON);
         ClusterState previousClusterState = clusterState;
-        clusterState = store.innerPut(putRequest, clusterState);
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         pipeline = store.get(id);
         assertThat(pipeline, notNullValue());
@@ -138,7 +138,7 @@ public class PipelineStoreTests extends ESTestCase {
         putRequest =
             new PutPipelineRequest(id, new BytesArray("{\"processors\": [], \"description\": \"_description\"}"), XContentType.JSON);
         previousClusterState = clusterState;
-        clusterState = store.innerPut(putRequest, clusterState);
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         pipeline = store.get(id);
         assertThat(pipeline, notNullValue());
@@ -156,7 +156,7 @@ public class PipelineStoreTests extends ESTestCase {
         PutPipelineRequest putRequest =
             new PutPipelineRequest(id, new BytesArray("{\"description\": \"empty processors\"}"), XContentType.JSON);
         ClusterState previousClusterState = clusterState;
-        clusterState = store.innerPut(putRequest, clusterState);
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
         try {
             store.innerUpdatePipelines(previousClusterState, clusterState);
             fail("should fail");
@@ -188,13 +188,13 @@ public class PipelineStoreTests extends ESTestCase {
         // Delete pipeline:
         DeletePipelineRequest deleteRequest = new DeletePipelineRequest("_id");
         previousClusterState = clusterState;
-        clusterState = store.innerDelete(deleteRequest, clusterState);
+        clusterState = PipelineStore.innerDelete(deleteRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         assertThat(store.get("_id"), nullValue());
 
         // Delete existing pipeline:
         try {
-            store.innerDelete(deleteRequest, clusterState);
+            PipelineStore.innerDelete(deleteRequest, clusterState);
             fail("exception expected");
         } catch (ResourceNotFoundException e) {
             assertThat(e.getMessage(), equalTo("pipeline [_id] is missing"));
@@ -222,7 +222,7 @@ public class PipelineStoreTests extends ESTestCase {
         // Delete pipeline matching wildcard
         DeletePipelineRequest deleteRequest = new DeletePipelineRequest("p*");
         previousClusterState = clusterState;
-        clusterState = store.innerDelete(deleteRequest, clusterState);
+        clusterState = PipelineStore.innerDelete(deleteRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         assertThat(store.get("p1"), nullValue());
         assertThat(store.get("p2"), nullValue());
@@ -230,7 +230,7 @@ public class PipelineStoreTests extends ESTestCase {
 
         // Exception if we used name which does not exist
         try {
-            store.innerDelete(new DeletePipelineRequest("unknown"), clusterState);
+            PipelineStore.innerDelete(new DeletePipelineRequest("unknown"), clusterState);
             fail("exception expected");
         } catch (ResourceNotFoundException e) {
             assertThat(e.getMessage(), equalTo("pipeline [unknown] is missing"));
@@ -239,14 +239,14 @@ public class PipelineStoreTests extends ESTestCase {
         // match all wildcard works on last remaining pipeline
         DeletePipelineRequest matchAllDeleteRequest = new DeletePipelineRequest("*");
         previousClusterState = clusterState;
-        clusterState = store.innerDelete(matchAllDeleteRequest, clusterState);
+        clusterState = PipelineStore.innerDelete(matchAllDeleteRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         assertThat(store.get("p1"), nullValue());
         assertThat(store.get("p2"), nullValue());
         assertThat(store.get("q1"), nullValue());
 
         // match all wildcard does not throw exception if none match
-        store.innerDelete(matchAllDeleteRequest, clusterState);
+        PipelineStore.innerDelete(matchAllDeleteRequest, clusterState);
     }
 
     public void testDeleteWithExistingUnmatchedPipelines() {
@@ -265,7 +265,7 @@ public class PipelineStoreTests extends ESTestCase {
 
         DeletePipelineRequest deleteRequest = new DeletePipelineRequest("z*");
         try {
-            store.innerDelete(deleteRequest, clusterState);
+            PipelineStore.innerDelete(deleteRequest, clusterState);
             fail("exception expected");
         } catch (ResourceNotFoundException e) {
             assertThat(e.getMessage(), equalTo("pipeline [z*] is missing"));
@@ -281,32 +281,32 @@ public class PipelineStoreTests extends ESTestCase {
             "_id2", new BytesArray("{\"processors\": []}"), XContentType.JSON
         ));
 
-        assertThat(store.innerGetPipelines(null, "_id1").isEmpty(), is(true));
+        assertThat(PipelineStore.innerGetPipelines(null, "_id1").isEmpty(), is(true));
 
         IngestMetadata ingestMetadata = new IngestMetadata(configs);
-        List<PipelineConfiguration> pipelines = store.innerGetPipelines(ingestMetadata, "_id1");
+        List<PipelineConfiguration> pipelines = PipelineStore.innerGetPipelines(ingestMetadata, "_id1");
         assertThat(pipelines.size(), equalTo(1));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
 
-        pipelines = store.innerGetPipelines(ingestMetadata, "_id1", "_id2");
+        pipelines = PipelineStore.innerGetPipelines(ingestMetadata, "_id1", "_id2");
         assertThat(pipelines.size(), equalTo(2));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
         assertThat(pipelines.get(1).getId(), equalTo("_id2"));
 
-        pipelines = store.innerGetPipelines(ingestMetadata, "_id*");
+        pipelines = PipelineStore.innerGetPipelines(ingestMetadata, "_id*");
         pipelines.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
         assertThat(pipelines.size(), equalTo(2));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
         assertThat(pipelines.get(1).getId(), equalTo("_id2"));
 
         // get all variants: (no IDs or '*')
-        pipelines = store.innerGetPipelines(ingestMetadata);
+        pipelines = PipelineStore.innerGetPipelines(ingestMetadata);
         pipelines.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
         assertThat(pipelines.size(), equalTo(2));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
         assertThat(pipelines.get(1).getId(), equalTo("_id2"));
 
-        pipelines = store.innerGetPipelines(ingestMetadata, "*");
+        pipelines = PipelineStore.innerGetPipelines(ingestMetadata, "*");
         pipelines.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
         assertThat(pipelines.size(), equalTo(2));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
@@ -322,7 +322,7 @@ public class PipelineStoreTests extends ESTestCase {
         PutPipelineRequest putRequest = new PutPipelineRequest(id,
                 new BytesArray("{\"processors\": [{\"set\" : {\"field\": \"_field\", \"value\": \"_value\"}}]}"), XContentType.JSON);
         ClusterState previousClusterState = clusterState;
-        clusterState = store.innerPut(putRequest, clusterState);
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         pipeline = store.get(id);
         assertThat(pipeline, notNullValue());
@@ -333,7 +333,7 @@ public class PipelineStoreTests extends ESTestCase {
 
         DeletePipelineRequest deleteRequest = new DeletePipelineRequest(id);
         previousClusterState = clusterState;
-        clusterState = store.innerDelete(deleteRequest, clusterState);
+        clusterState = PipelineStore.innerDelete(deleteRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         pipeline = store.get(id);
         assertThat(pipeline, nullValue());
