@@ -214,12 +214,20 @@ public class IngestService implements ClusterStateApplier {
     }
 
     public IngestInfo info() {
-        Map<String, Processor.Factory> processorFactories = pipelineStore.getProcessorFactories();
+        Map<String, Processor.Factory> processorFactories = getProcessorFactories();
         List<ProcessorInfo> processorInfoList = new ArrayList<>(processorFactories.size());
         for (Map.Entry<String, Processor.Factory> entry : processorFactories.entrySet()) {
             processorInfoList.add(new ProcessorInfo(entry.getKey()));
         }
         return new IngestInfo(processorInfoList);
+    }
+
+    Map<String, Pipeline> pipelines() {
+        return pipelineStore.pipelines;
+    }
+
+    void validatePipeline(Map<DiscoveryNode, IngestInfo> ingestInfos, PutPipelineRequest request) throws Exception {
+        pipelineStore.validatePipeline(ingestInfos, request);
     }
 
     @Override
