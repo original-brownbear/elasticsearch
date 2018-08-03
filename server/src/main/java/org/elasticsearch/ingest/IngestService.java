@@ -145,7 +145,11 @@ public class IngestService implements ClusterStateApplier {
 
     @Override
     public void applyClusterState(final ClusterChangedEvent event) {
-        pipelineStore.innerUpdatePipelines(event.previousState(), event.state());
-        pipelineExecutionService.applyClusterState(event);
+        ClusterState state = event.state();
+        pipelineStore.innerUpdatePipelines(event.previousState(), state);
+        IngestMetadata ingestMetadata = state.getMetaData().custom(IngestMetadata.TYPE);
+        if (ingestMetadata != null) {
+            pipelineExecutionService.updatePipelineStats(ingestMetadata);
+        }
     }
 }

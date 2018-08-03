@@ -22,8 +22,6 @@ package org.elasticsearch.ingest;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.metrics.MeanMetric;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
@@ -39,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class PipelineExecutionService implements ClusterStateApplier {
+public class PipelineExecutionService {
 
     private final PipelineStore store;
     private final ThreadPool threadPool;
@@ -101,14 +99,6 @@ public class PipelineExecutionService implements ClusterStateApplier {
         }
 
         return new IngestStats(totalStats.createStats(), statsPerPipeline);
-    }
-
-    @Override
-    public void applyClusterState(ClusterChangedEvent event) {
-        IngestMetadata ingestMetadata = event.state().getMetaData().custom(IngestMetadata.TYPE);
-        if (ingestMetadata != null) {
-            updatePipelineStats(ingestMetadata);
-        }
     }
 
     void updatePipelineStats(IngestMetadata ingestMetadata) {
