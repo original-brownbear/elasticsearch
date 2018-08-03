@@ -281,32 +281,32 @@ public class PipelineStoreTests extends ESTestCase {
             "_id2", new BytesArray("{\"processors\": []}"), XContentType.JSON
         ));
 
-        assertThat(PipelineStore.innerGetPipelines(null, "_id1").isEmpty(), is(true));
+        assertThat(IngestService.innerGetPipelines(null, "_id1").isEmpty(), is(true));
 
         IngestMetadata ingestMetadata = new IngestMetadata(configs);
-        List<PipelineConfiguration> pipelines = PipelineStore.innerGetPipelines(ingestMetadata, "_id1");
+        List<PipelineConfiguration> pipelines = IngestService.innerGetPipelines(ingestMetadata, "_id1");
         assertThat(pipelines.size(), equalTo(1));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
 
-        pipelines = PipelineStore.innerGetPipelines(ingestMetadata, "_id1", "_id2");
+        pipelines = IngestService.innerGetPipelines(ingestMetadata, "_id1", "_id2");
         assertThat(pipelines.size(), equalTo(2));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
         assertThat(pipelines.get(1).getId(), equalTo("_id2"));
 
-        pipelines = PipelineStore.innerGetPipelines(ingestMetadata, "_id*");
+        pipelines = IngestService.innerGetPipelines(ingestMetadata, "_id*");
         pipelines.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
         assertThat(pipelines.size(), equalTo(2));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
         assertThat(pipelines.get(1).getId(), equalTo("_id2"));
 
         // get all variants: (no IDs or '*')
-        pipelines = PipelineStore.innerGetPipelines(ingestMetadata);
+        pipelines = IngestService.innerGetPipelines(ingestMetadata);
         pipelines.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
         assertThat(pipelines.size(), equalTo(2));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));
         assertThat(pipelines.get(1).getId(), equalTo("_id2"));
 
-        pipelines = PipelineStore.innerGetPipelines(ingestMetadata, "*");
+        pipelines = IngestService.innerGetPipelines(ingestMetadata, "*");
         pipelines.sort((o1, o2) -> o1.getId().compareTo(o2.getId()));
         assertThat(pipelines.size(), equalTo(2));
         assertThat(pipelines.get(0).getId(), equalTo("_id1"));

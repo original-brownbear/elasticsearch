@@ -126,6 +126,45 @@ public class IngestService implements ClusterStateApplier {
         return newState.build();
     }
     
+    /**
+     * @return pipeline configuration specified by id. If multiple ids or wildcards are specified multiple pipelines
+     * may be returned
+     */
+    // Returning PipelineConfiguration instead of Pipeline, because Pipeline and Processor interface don't
+    // know how to serialize themselves.
+    public static List<PipelineConfiguration> getPipelines(ClusterState clusterState, String... ids) {
+        IngestMetadata ingestMetadata = clusterState.getMetaData().custom(IngestMetadata.TYPE);
+        return innerGetPipelines(ingestMetadata, ids);
+    }
+    
+    static List<PipelineConfiguration> innerGetPipelines(IngestMetadata ingestMetadata, String... ids) {
+        if (ingestMetadata == null) {
+            return Collections.emptyList();
+        }
+
+        // if we didn't ask for _any_ ID, then we get them all (this is the same as if they ask for '*')
+        if (ids.length == 0) {
+            return new ArrayList<>(ingestMetadata.getPipelines().values());
+        }
+
+        List<PipelineConfiguration> result = new ArrayList<>(ids.length);
+        for (String id : ids) {
+            if (Regex.isSimpleMatchPattern(id)) {
+                for (Map.Entry<String, PipelineConfiguration> entry : ingestMetadata.getPipelines().entrySet()) {
+                    if (Regex.simpleMatch(id, entry.getKey())) {
+                        result.add(entry.getValue());
+                    }
+                }
+            } else {
+                PipelineConfiguration pipeline = ingestMetadata.getPipelines().get(id);
+                if (pipeline != null) {
+                    result.add(pipeline);
+                }
+            }
+        }
+        return result;
+    }
+    
     public PipelineStore getPipelineStore() {
         return pipelineStore;
     }
