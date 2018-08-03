@@ -27,17 +27,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-
+import java.util.function.Consumer;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.DocWriteRequest;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.ingest.DeletePipelineRequest;
+import org.elasticsearch.action.ingest.PutPipelineRequest;
 import org.elasticsearch.action.ingest.WritePipelineResponse;
 import org.elasticsearch.cluster.AckedClusterStateUpdateTask;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.metadata.MetaData;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
@@ -163,6 +168,23 @@ public class IngestService implements ClusterStateApplier {
             }
         }
         return result;
+    }
+
+    public void executeBulkRequest(Iterable<DocWriteRequest<?>> actionRequests, BiConsumer<IndexRequest, Exception> itemFailureHandler,
+        Consumer<Exception> completionHandler) {
+        pipelineExecutionService.executeBulkRequest(actionRequests, itemFailureHandler, completionHandler);
+    }
+
+    public IngestStats stats() {
+        return pipelineExecutionService.stats();
+    }
+    
+    /**
+     * Stores the specified pipeline definition in the request.
+     */
+    public void putPipeline(ClusterService clusterService, Map<DiscoveryNode, IngestInfo> ingestInfos, PutPipelineRequest request,
+        ActionListener<WritePipelineResponse> listener) throws Exception {
+        pipelineStore.put(clusterService, ingestInfos, request, listener);
     }
     
     public PipelineStore getPipelineStore() {
