@@ -26,9 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ScheduledFuture;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
@@ -66,10 +64,24 @@ public class IngestService implements ClusterStateApplier {
     public IngestService(Settings settings, ThreadPool threadPool,
                          Environment env, ScriptService scriptService, AnalysisRegistry analysisRegistry,
                          List<IngestPlugin> ingestPlugins) {
-        BiFunction<Long, Runnable, ScheduledFuture<?>> scheduler =
-            (delay, command) -> threadPool.schedule(TimeValue.timeValueMillis(delay), ThreadPool.Names.GENERIC, command);
-        Processor.Parameters parameters = new Processor.Parameters(env, scriptService, analysisRegistry,
-            threadPool.getThreadContext(), threadPool::relativeTimeInMillis, scheduler);
+        this.pipelineStore = new PipelineStore(
+            settings,
+            processorFactories(
+                ingestPlugins,
+                new Processor.Parameters(
+                    env, scriptService, analysisRegistry,
+                    threadPool.getThreadContext(), threadPool::relativeTimeInMillis,
+                    (delay, command) -> threadPool.schedule(
+                        TimeValue.timeValueMillis(delay), ThreadPool.Names.GENERIC, command
+                    )
+                )
+            )
+        );
+        this.pipelineExecutionService = new PipelineExecutionService(pipelineStore, threadPool);
+    }
+
+    private static Map<String, Processor.Factory> processorFactories(List<IngestPlugin> ingestPlugins,
+        Processor.Parameters parameters) {
         Map<String, Processor.Factory> processorFactories = new HashMap<>();
         for (IngestPlugin ingestPlugin : ingestPlugins) {
             Map<String, Processor.Factory> newProcessors = ingestPlugin.getProcessors(parameters);
@@ -79,10 +91,9 @@ public class IngestService implements ClusterStateApplier {
                 }
             }
         }
-        this.pipelineStore = new PipelineStore(settings, Collections.unmodifiableMap(processorFactories));
-        this.pipelineExecutionService = new PipelineExecutionService(pipelineStore, threadPool);
+        return Collections.unmodifiableMap(processorFactories);
     }
-    
+
     /**
      * Deletes the pipeline specified by id in the request.
      */
@@ -102,7 +113,7 @@ public class IngestService implements ClusterStateApplier {
             }
         });
     }
-    
+
     static ClusterState innerDelete(DeletePipelineRequest request, ClusterState currentState) {
         IngestMetadata currentIngestMetadata = currentState.metaData().custom(IngestMetadata.TYPE);
         if (currentIngestMetadata == null) {
@@ -130,7 +141,7 @@ public class IngestService implements ClusterStateApplier {
                 .build());
         return newState.build();
     }
-    
+
     /**
      * @return pipeline configuration specified by id. If multiple ids or wildcards are specified multiple pipelines
      * may be returned
@@ -141,7 +152,7 @@ public class IngestService implements ClusterStateApplier {
         IngestMetadata ingestMetadata = clusterState.getMetaData().custom(IngestMetadata.TYPE);
         return innerGetPipelines(ingestMetadata, ids);
     }
-    
+
     static List<PipelineConfiguration> innerGetPipelines(IngestMetadata ingestMetadata, String... ids) {
         if (ingestMetadata == null) {
             return Collections.emptyList();
@@ -178,7 +189,7 @@ public class IngestService implements ClusterStateApplier {
     public IngestStats stats() {
         return pipelineExecutionService.stats();
     }
-    
+
     /**
      * Stores the specified pipeline definition in the request.
      */
@@ -193,7 +204,7 @@ public class IngestService implements ClusterStateApplier {
     public Pipeline getPipeline(String id) {
         return pipelineStore.get(id);
     }
-    
+
     public Map<String, Processor.Factory> getProcessorFactories() {
         return pipelineStore.getProcessorFactories();
     }
