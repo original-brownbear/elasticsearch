@@ -49,8 +49,7 @@ import java.util.Objects;
 import java.util.Set;
 
 public class PipelineStore extends AbstractComponent implements ClusterStateApplier {
-
-    private final Pipeline.Factory factory = new Pipeline.Factory();
+    
     private final Map<String, Processor.Factory> processorFactories;
 
     // Ideally this should be in IngestMetadata class, but we don't have the processor factories around there.
@@ -84,7 +83,7 @@ public class PipelineStore extends AbstractComponent implements ClusterStateAppl
         List<ElasticsearchParseException> exceptions = new ArrayList<>();
         for (PipelineConfiguration pipeline : ingestMetadata.getPipelines().values()) {
             try {
-                pipelines.put(pipeline.getId(), factory.create(pipeline.getId(), pipeline.getConfigAsMap(), processorFactories));
+                pipelines.put(pipeline.getId(), Pipeline.create(pipeline.getId(), pipeline.getConfigAsMap(), processorFactories));
             } catch (ElasticsearchParseException e) {
                 pipelines.put(pipeline.getId(), substitutePipeline(pipeline.getId(), e));
                 exceptions.add(e);
@@ -194,7 +193,7 @@ public class PipelineStore extends AbstractComponent implements ClusterStateAppl
         }
 
         Map<String, Object> pipelineConfig = XContentHelper.convertToMap(request.getSource(), false, request.getXContentType()).v2();
-        Pipeline pipeline = factory.create(request.getId(), pipelineConfig, processorFactories);
+        Pipeline pipeline = Pipeline.create(request.getId(), pipelineConfig, processorFactories);
         List<Exception> exceptions = new ArrayList<>();
         for (Processor processor : pipeline.flattenAllProcessors()) {
             for (Map.Entry<DiscoveryNode, IngestInfo> entry : ingestInfos.entrySet()) {
