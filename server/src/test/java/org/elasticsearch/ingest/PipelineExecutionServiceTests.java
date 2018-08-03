@@ -19,7 +19,6 @@
 
 package org.elasticsearch.ingest;
 
-import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -33,10 +32,8 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.hamcrest.CustomTypeSafeMatcher;
 import org.junit.Before;
 import org.mockito.ArgumentMatcher;
-import org.mockito.invocation.InvocationOnMock;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,13 +46,11 @@ import java.util.function.Consumer;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -76,137 +71,6 @@ public class PipelineExecutionServiceTests extends ESTestCase {
         final ExecutorService executorService = EsExecutors.newDirectExecutorService();
         when(threadPool.executor(anyString())).thenReturn(executorService);
         executionService = new PipelineExecutionService(store, threadPool);
-    }
-
-    public void testExecuteIndexPipelineExistsButFailedParsing() {
-        when(store.get("_id")).thenReturn(new Pipeline("_id", "stub", null,
-                new CompoundProcessor(new AbstractProcessor("mock") {
-            @Override
-            public void execute(IngestDocument ingestDocument) {
-                throw new IllegalStateException("error");
-            }
-
-            @Override
-            public String getType() {
-                return null;
-            }
-        })));
-
-        final SetOnce<Boolean> failure = new SetOnce<>();
-        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("_id");
-        final BiConsumer<IndexRequest, Exception> failureHandler = (request, e) -> {
-            assertThat(e.getCause(), instanceOf(IllegalArgumentException.class));
-            assertThat(e.getCause().getCause(), instanceOf(IllegalStateException.class));
-            assertThat(e.getCause().getCause().getMessage(), equalTo("error"));
-            failure.set(true);
-        };
-
-        @SuppressWarnings("unchecked")
-        final Consumer<Exception> completionHandler = mock(Consumer.class);
-
-        executionService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
-
-        assertTrue(failure.get());
-        verify(completionHandler, times(1)).accept(null);
-    }
-
-    public void testExecuteBulkPipelineDoesNotExist() {
-        CompoundProcessor processor = mock(CompoundProcessor.class);
-        when(store.get("_id")).thenReturn(new Pipeline("_id", "_description", version, processor));
-        BulkRequest bulkRequest = new BulkRequest();
-
-        IndexRequest indexRequest1 = new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("_id");
-        bulkRequest.add(indexRequest1);
-        IndexRequest indexRequest2 =
-                new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("does_not_exist");
-        bulkRequest.add(indexRequest2);
-        @SuppressWarnings("unchecked")
-        BiConsumer<IndexRequest, Exception> failureHandler = mock(BiConsumer.class);
-        @SuppressWarnings("unchecked")
-        Consumer<Exception> completionHandler = mock(Consumer.class);
-        executionService.executeBulkRequest(bulkRequest.requests(), failureHandler, completionHandler);
-        verify(failureHandler, times(1)).accept(
-            argThat(new CustomTypeSafeMatcher<IndexRequest>("failure handler was not called with the expected arguments") {
-                @Override
-                protected boolean matchesSafely(IndexRequest item) {
-                    return item == indexRequest2;
-                }
-
-            }),
-            argThat(new CustomTypeSafeMatcher<IllegalArgumentException>("failure handler was not called with the expected arguments") {
-                @Override
-                protected boolean matchesSafely(IllegalArgumentException iae) {
-                    return "pipeline with id [does_not_exist] does not exist".equals(iae.getMessage());
-                }
-            })
-        );
-        verify(completionHandler, times(1)).accept(null);
-    }
-
-    public void testExecuteSuccess() {
-        final CompoundProcessor processor = mock(CompoundProcessor.class);
-        when(store.get("_id")).thenReturn(new Pipeline("_id", "_description", version, processor));
-        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("_id");
-        @SuppressWarnings("unchecked")
-        final BiConsumer<IndexRequest, Exception> failureHandler = mock(BiConsumer.class);
-        @SuppressWarnings("unchecked")
-        final Consumer<Exception> completionHandler = mock(Consumer.class);
-        executionService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
-        verify(failureHandler, never()).accept(any(), any());
-        verify(completionHandler, times(1)).accept(null);
-    }
-
-    public void testExecuteEmptyPipeline() throws Exception {
-        final CompoundProcessor processor = mock(CompoundProcessor.class);
-        when(store.get("_id")).thenReturn(new Pipeline("_id", "_description", version, processor));
-        when(processor.getProcessors()).thenReturn(Collections.emptyList());
-
-        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("_id");
-        @SuppressWarnings("unchecked")
-        final BiConsumer<IndexRequest, Exception> failureHandler = mock(BiConsumer.class);
-        @SuppressWarnings("unchecked")
-        final Consumer<Exception> completionHandler = mock(Consumer.class);
-        executionService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
-        verify(processor, never()).execute(any());
-        verify(failureHandler, never()).accept(any(), any());
-        verify(completionHandler, times(1)).accept(null);
-    }
-
-    public void testExecutePropagateAllMetaDataUpdates() throws Exception {
-        final CompoundProcessor processor = mock(CompoundProcessor.class);
-        when(processor.getProcessors()).thenReturn(Collections.singletonList(mock(Processor.class)));
-        final long newVersion = randomLong();
-        final String versionType = randomFrom("internal", "external", "external_gt", "external_gte");
-        doAnswer((InvocationOnMock invocationOnMock) -> {
-            IngestDocument ingestDocument = (IngestDocument) invocationOnMock.getArguments()[0];
-            for (IngestDocument.MetaData metaData : IngestDocument.MetaData.values()) {
-                if (metaData == IngestDocument.MetaData.VERSION) {
-                    ingestDocument.setFieldValue(metaData.getFieldName(), newVersion);
-                } else if (metaData == IngestDocument.MetaData.VERSION_TYPE) {
-                    ingestDocument.setFieldValue(metaData.getFieldName(), versionType);
-                } else {
-                    ingestDocument.setFieldValue(metaData.getFieldName(), "update" + metaData.getFieldName());
-                }
-            }
-            return null;
-        }).when(processor).execute(any());
-        when(store.get("_id")).thenReturn(new Pipeline("_id", "_description", version, processor));
-
-        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("_id");
-        @SuppressWarnings("unchecked")
-        final BiConsumer<IndexRequest, Exception> failureHandler = mock(BiConsumer.class);
-        @SuppressWarnings("unchecked")
-        final Consumer<Exception> completionHandler = mock(Consumer.class);
-        executionService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
-        verify(processor).execute(any());
-        verify(failureHandler, never()).accept(any(), any());
-        verify(completionHandler, times(1)).accept(null);
-        assertThat(indexRequest.index(), equalTo("update_index"));
-        assertThat(indexRequest.type(), equalTo("update_type"));
-        assertThat(indexRequest.id(), equalTo("update_id"));
-        assertThat(indexRequest.routing(), equalTo("update_routing"));
-        assertThat(indexRequest.version(), equalTo(newVersion));
-        assertThat(indexRequest.versionType(), equalTo(VersionType.fromString(versionType)));
     }
 
     public void testExecuteFailure() throws Exception {

@@ -32,6 +32,7 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.ingest.DeletePipelineRequest;
 import org.elasticsearch.action.ingest.PutPipelineRequest;
@@ -44,9 +45,12 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.VersionType;
 import org.elasticsearch.plugins.IngestPlugin;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.hamcrest.CustomTypeSafeMatcher;
+import org.mockito.invocation.InvocationOnMock;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -56,14 +60,19 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class IngestServiceTests extends ESTestCase {
-    private final IngestPlugin DUMMY_PLUGIN = new IngestPlugin() {
+
+    private static final IngestPlugin DUMMY_PLUGIN = new IngestPlugin() {
         @Override
         public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
             return Collections.singletonMap("foo", (factories, tag, config) -> null);
@@ -93,7 +102,7 @@ public class IngestServiceTests extends ESTestCase {
         when(threadPool.executor(anyString())).thenReturn(executorService);
         IngestService ingestService = new IngestService(mock(ClusterService.class), threadPool, null, null,
             null, Collections.singletonList(DUMMY_PLUGIN));
-        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("_id");
+        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(emptyMap()).setPipeline("_id");
 
         final SetOnce<Boolean> failure = new SetOnce<>();
         final BiConsumer<IndexRequest, Exception> failureHandler = (request, e) -> {
@@ -400,7 +409,210 @@ public class IngestServiceTests extends ESTestCase {
         ingestService.validatePipeline(ingestInfos, putRequest);
     }
 
+    public void testExecuteIndexPipelineExistsButFailedParsing() {
+        IngestService ingestService = createWithProcessors(Collections.singletonMap(
+            "mock", (factories, tag, config) -> new AbstractProcessor("mock") {
+                @Override
+                public void execute(IngestDocument ingestDocument) {
+                    throw new IllegalStateException("error");
+                }
+
+                @Override
+                public String getType() {
+                    return null;
+                }
+            }
+        ));
+        ClusterState clusterState = ClusterState.builder(new ClusterName("_name")).build(); // Start empty
+        String id = "_id";
+        PutPipelineRequest putRequest = new PutPipelineRequest(id,
+            new BytesArray("{\"processors\": [{\"mock\" : {}}]}"), XContentType.JSON);
+        ClusterState previousClusterState = clusterState;
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
+        ingestService.applyClusterState(new ClusterChangedEvent("", clusterState, previousClusterState));
+        final SetOnce<Boolean> failure = new SetOnce<>();
+        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(emptyMap()).setPipeline(id);
+        final BiConsumer<IndexRequest, Exception> failureHandler = (request, e) -> {
+            assertThat(e.getCause(), instanceOf(IllegalArgumentException.class));
+            assertThat(e.getCause().getCause(), instanceOf(IllegalStateException.class));
+            assertThat(e.getCause().getCause().getMessage(), equalTo("error"));
+            failure.set(true);
+        };
+
+        @SuppressWarnings("unchecked")
+        final Consumer<Exception> completionHandler = mock(Consumer.class);
+
+        ingestService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
+
+        assertTrue(failure.get());
+        verify(completionHandler, times(1)).accept(null);
+    }
+
+    public void testExecuteBulkPipelineDoesNotExist() {
+        IngestService ingestService = createWithProcessors(Collections.singletonMap(
+            "mock", (factories, tag, config) -> mock(CompoundProcessor.class)));
+
+        PutPipelineRequest putRequest = new PutPipelineRequest("_id",
+            new BytesArray("{\"processors\": [{\"mock\" : {}}]}"), XContentType.JSON);
+        ClusterState clusterState = ClusterState.builder(new ClusterName("_name")).build(); // Start empty
+        ClusterState previousClusterState = clusterState;
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
+        ingestService.applyClusterState(new ClusterChangedEvent("", clusterState, previousClusterState));
+
+        BulkRequest bulkRequest = new BulkRequest();
+
+        IndexRequest indexRequest1 = new IndexRequest("_index", "_type", "_id").source(emptyMap()).setPipeline("_id");
+        bulkRequest.add(indexRequest1);
+        IndexRequest indexRequest2 =
+            new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("does_not_exist");
+        bulkRequest.add(indexRequest2);
+        @SuppressWarnings("unchecked")
+        BiConsumer<IndexRequest, Exception> failureHandler = mock(BiConsumer.class);
+        @SuppressWarnings("unchecked")
+        Consumer<Exception> completionHandler = mock(Consumer.class);
+        ingestService.executeBulkRequest(bulkRequest.requests(), failureHandler, completionHandler);
+        verify(failureHandler, times(1)).accept(
+            argThat(new CustomTypeSafeMatcher<IndexRequest>("failure handler was not called with the expected arguments") {
+                @Override
+                protected boolean matchesSafely(IndexRequest item) {
+                    return item == indexRequest2;
+                }
+
+            }),
+            argThat(new CustomTypeSafeMatcher<IllegalArgumentException>("failure handler was not called with the expected arguments") {
+                @Override
+                protected boolean matchesSafely(IllegalArgumentException iae) {
+                    return "pipeline with id [does_not_exist] does not exist".equals(iae.getMessage());
+                }
+            })
+        );
+        verify(completionHandler, times(1)).accept(null);
+    }
+
+    public void testExecuteSuccess() {
+        IngestService ingestService = createWithProcessors(Collections.singletonMap(
+            "mock", (factories, tag, config) -> mock(CompoundProcessor.class)));
+        PutPipelineRequest putRequest = new PutPipelineRequest("_id",
+            new BytesArray("{\"processors\": [{\"mock\" : {}}]}"), XContentType.JSON);
+        ClusterState clusterState = ClusterState.builder(new ClusterName("_name")).build(); // Start empty
+        ClusterState previousClusterState = clusterState;
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
+        ingestService.applyClusterState(new ClusterChangedEvent("", clusterState, previousClusterState));
+        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(emptyMap()).setPipeline("_id");
+        @SuppressWarnings("unchecked")
+        final BiConsumer<IndexRequest, Exception> failureHandler = mock(BiConsumer.class);
+        @SuppressWarnings("unchecked")
+        final Consumer<Exception> completionHandler = mock(Consumer.class);
+        ingestService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
+        verify(failureHandler, never()).accept(any(), any());
+        verify(completionHandler, times(1)).accept(null);
+    }
+
+    public void testExecuteEmptyPipeline() throws Exception {
+        IngestService ingestService = createWithProcessors(emptyMap());
+        PutPipelineRequest putRequest =
+            new PutPipelineRequest("_id", new BytesArray("{\"processors\": [], \"description\": \"_description\"}"), XContentType.JSON);
+        ClusterState clusterState = ClusterState.builder(new ClusterName("_name")).build(); // Start empty
+        ClusterState previousClusterState = clusterState;
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
+        ingestService.applyClusterState(new ClusterChangedEvent("", clusterState, previousClusterState));
+        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(emptyMap()).setPipeline("_id");
+        @SuppressWarnings("unchecked")
+        final BiConsumer<IndexRequest, Exception> failureHandler = mock(BiConsumer.class);
+        @SuppressWarnings("unchecked")
+        final Consumer<Exception> completionHandler = mock(Consumer.class);
+        ingestService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
+        verify(failureHandler, never()).accept(any(), any());
+        verify(completionHandler, times(1)).accept(null);
+    }
+
+    public void testExecutePropagateAllMetaDataUpdates() throws Exception {
+        final CompoundProcessor processor = mock(CompoundProcessor.class);
+        IngestService ingestService = createWithProcessors(Collections.singletonMap(
+            "mock", (factories, tag, config) -> processor));
+        PutPipelineRequest putRequest = new PutPipelineRequest("_id",
+            new BytesArray("{\"processors\": [{\"mock\" : {}}]}"), XContentType.JSON);
+        ClusterState clusterState = ClusterState.builder(new ClusterName("_name")).build(); // Start empty
+        ClusterState previousClusterState = clusterState;
+        clusterState = PipelineStore.innerPut(putRequest, clusterState);
+        ingestService.applyClusterState(new ClusterChangedEvent("", clusterState, previousClusterState));
+        final long newVersion = randomLong();
+        final String versionType = randomFrom("internal", "external", "external_gt", "external_gte");
+        doAnswer((InvocationOnMock invocationOnMock) -> {
+            IngestDocument ingestDocument = (IngestDocument) invocationOnMock.getArguments()[0];
+            for (IngestDocument.MetaData metaData : IngestDocument.MetaData.values()) {
+                if (metaData == IngestDocument.MetaData.VERSION) {
+                    ingestDocument.setFieldValue(metaData.getFieldName(), newVersion);
+                } else if (metaData == IngestDocument.MetaData.VERSION_TYPE) {
+                    ingestDocument.setFieldValue(metaData.getFieldName(), versionType);
+                } else {
+                    ingestDocument.setFieldValue(metaData.getFieldName(), "update" + metaData.getFieldName());
+                }
+            }
+            return null;
+        }).when(processor).execute(any());
+        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(emptyMap()).setPipeline("_id");
+        @SuppressWarnings("unchecked")
+        final BiConsumer<IndexRequest, Exception> failureHandler = mock(BiConsumer.class);
+        @SuppressWarnings("unchecked")
+        final Consumer<Exception> completionHandler = mock(Consumer.class);
+        ingestService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
+        verify(processor).execute(any());
+        verify(failureHandler, never()).accept(any(), any());
+        verify(completionHandler, times(1)).accept(null);
+        assertThat(indexRequest.index(), equalTo("update_index"));
+        assertThat(indexRequest.type(), equalTo("update_type"));
+        assertThat(indexRequest.id(), equalTo("update_id"));
+        assertThat(indexRequest.routing(), equalTo("update_routing"));
+        assertThat(indexRequest.version(), equalTo(newVersion));
+        assertThat(indexRequest.versionType(), equalTo(VersionType.fromString(versionType)));
+    }
+
     private static IngestService createWithProcessors() {
+        Map<String, Processor.Factory> processors = new HashMap<>();
+        processors.put("set", (factories, tag, config) -> {
+            String field = (String) config.remove("field");
+            String value = (String) config.remove("value");
+            return new Processor() {
+                @Override
+                public void execute(IngestDocument ingestDocument) {
+                    ingestDocument.setFieldValue(field, value);
+                }
+
+                @Override
+                public String getType() {
+                    return "set";
+                }
+
+                @Override
+                public String getTag() {
+                    return tag;
+                }
+            };
+        });
+        processors.put("remove", (factories, tag, config) -> {
+            String field = (String) config.remove("field");
+            return new Processor() {
+                @Override
+                public void execute(IngestDocument ingestDocument) {
+                    ingestDocument.removeField(field);
+                }
+
+                @Override
+                public String getType() {
+                    return "remove";
+                }
+
+                @Override
+                public String getTag() {
+                    return tag;
+                }
+            };
+        });
+        return createWithProcessors(processors);
+    }
+
+    private static IngestService createWithProcessors(Map<String, Processor.Factory> processors) {
         ThreadPool threadPool = mock(ThreadPool.class);
         final ExecutorService executorService = EsExecutors.newDirectExecutorService();
         when(threadPool.executor(anyString())).thenReturn(executorService);
@@ -408,46 +620,6 @@ public class IngestServiceTests extends ESTestCase {
             null, Collections.singletonList(new IngestPlugin() {
             @Override
             public Map<String, Processor.Factory> getProcessors(final Processor.Parameters parameters) {
-                Map<String, Processor.Factory> processors = new HashMap<>();
-                processors.put("set", (factories, tag, config) -> {
-                    String field = (String) config.remove("field");
-                    String value = (String) config.remove("value");
-                    return new Processor() {
-                        @Override
-                        public void execute(IngestDocument ingestDocument) {
-                            ingestDocument.setFieldValue(field, value);
-                        }
-
-                        @Override
-                        public String getType() {
-                            return "set";
-                        }
-
-                        @Override
-                        public String getTag() {
-                            return tag;
-                        }
-                    };
-                });
-                processors.put("remove", (factories, tag, config) -> {
-                    String field = (String) config.remove("field");
-                    return new Processor() {
-                        @Override
-                        public void execute(IngestDocument ingestDocument) {
-                            ingestDocument.removeField(field);
-                        }
-
-                        @Override
-                        public String getType() {
-                            return "remove";
-                        }
-
-                        @Override
-                        public String getTag() {
-                            return tag;
-                        }
-                    };
-                });
                 return processors;
             }
         }));
