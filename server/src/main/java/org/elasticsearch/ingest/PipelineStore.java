@@ -29,8 +29,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.component.AbstractComponent;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.gateway.GatewayService;
 
@@ -41,8 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class PipelineStore extends AbstractComponent {
-    
+public class PipelineStore {
+
     private final Map<String, Processor.Factory> processorFactories;
 
     // Ideally this should be in IngestMetadata class, but we don't have the processor factories around there.
@@ -51,8 +49,7 @@ public class PipelineStore extends AbstractComponent {
     // are loaded, so in the cluster state we just save the pipeline config and here we keep the actual pipelines around.
     volatile Map<String, Pipeline> pipelines = new HashMap<>();
 
-    public PipelineStore(Settings settings, Map<String, Processor.Factory> processorFactories) {
-        super(settings);
+    public PipelineStore(Map<String, Processor.Factory> processorFactories) {
         this.processorFactories = processorFactories;
     }
 
@@ -104,7 +101,7 @@ public class PipelineStore extends AbstractComponent {
         String description = "this is a place holder pipeline, because pipeline with id [" +  id + "] could not be loaded";
         return new Pipeline(id, description, null, new CompoundProcessor(failureProcessor));
     }
-    
+
     /**
      * Stores the specified pipeline definition in the request.
      */

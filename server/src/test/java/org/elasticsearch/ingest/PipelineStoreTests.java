@@ -29,7 +29,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
@@ -93,7 +92,7 @@ public class PipelineStoreTests extends ESTestCase {
                 }
             };
         });
-        store = new PipelineStore(Settings.EMPTY, processorFactories);
+        store = new PipelineStore(processorFactories);
     }
 
     public void testUpdatePipelines() {

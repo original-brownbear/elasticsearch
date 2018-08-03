@@ -177,7 +177,7 @@ public class PipelineExecutionService {
         return pipeline;
     }
 
-    static class StatsHolder {
+    private static class StatsHolder {
 
         private final MeanMetric ingestMetric = new MeanMetric();
         private final CounterMetric ingestCurrent = new CounterMetric();

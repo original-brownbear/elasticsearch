@@ -51,7 +51,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
@@ -77,26 +76,6 @@ public class PipelineExecutionServiceTests extends ESTestCase {
         final ExecutorService executorService = EsExecutors.newDirectExecutorService();
         when(threadPool.executor(anyString())).thenReturn(executorService);
         executionService = new PipelineExecutionService(store, threadPool);
-    }
-
-    public void testExecuteIndexPipelineDoesNotExist() {
-        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("_id");
-
-        final SetOnce<Boolean> failure = new SetOnce<>();
-        final BiConsumer<IndexRequest, Exception> failureHandler = (request, e) -> {
-            failure.set(true);
-            assertThat(request, sameInstance(indexRequest));
-            assertThat(e, instanceOf(IllegalArgumentException.class));
-            assertThat(e.getMessage(), equalTo("pipeline with id [_id] does not exist"));
-        };
-
-        @SuppressWarnings("unchecked")
-        final Consumer<Exception> completionHandler = mock(Consumer.class);
-
-        executionService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
-
-        assertTrue(failure.get());
-        verify(completionHandler, times(1)).accept(null);
     }
 
     public void testExecuteIndexPipelineExistsButFailedParsing() {

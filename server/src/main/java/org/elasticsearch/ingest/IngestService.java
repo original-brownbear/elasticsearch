@@ -43,7 +43,6 @@ import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.regex.Regex;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
@@ -58,14 +57,15 @@ public class IngestService implements ClusterStateApplier {
 
     public static final String NOOP_PIPELINE_NAME = "_none";
 
+    private final ClusterService clusterService;
     private final PipelineStore pipelineStore;
     private final PipelineExecutionService pipelineExecutionService;
 
-    public IngestService(Settings settings, ThreadPool threadPool,
+    public IngestService(ClusterService clusterService, ThreadPool threadPool,
                          Environment env, ScriptService scriptService, AnalysisRegistry analysisRegistry,
                          List<IngestPlugin> ingestPlugins) {
+        this.clusterService = clusterService;
         this.pipelineStore = new PipelineStore(
-            settings,
             processorFactories(
                 ingestPlugins,
                 new Processor.Parameters(
@@ -94,10 +94,14 @@ public class IngestService implements ClusterStateApplier {
         return Collections.unmodifiableMap(processorFactories);
     }
 
+    public ClusterService getClusterService() {
+        return clusterService;
+    }
+
     /**
      * Deletes the pipeline specified by id in the request.
      */
-    public static void delete(ClusterService clusterService, DeletePipelineRequest request,
+    public void delete(DeletePipelineRequest request,
         ActionListener<WritePipelineResponse> listener) {
         clusterService.submitStateUpdateTask("delete-pipeline-" + request.getId(),
                 new AckedClusterStateUpdateTask<WritePipelineResponse>(request, listener) {
@@ -193,7 +197,7 @@ public class IngestService implements ClusterStateApplier {
     /**
      * Stores the specified pipeline definition in the request.
      */
-    public void putPipeline(ClusterService clusterService, Map<DiscoveryNode, IngestInfo> ingestInfos, PutPipelineRequest request,
+    public void putPipeline(Map<DiscoveryNode, IngestInfo> ingestInfos, PutPipelineRequest request,
         ActionListener<WritePipelineResponse> listener) throws Exception {
         pipelineStore.put(clusterService, ingestInfos, request, listener);
     }

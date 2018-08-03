@@ -23,11 +23,25 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
-import org.elasticsearch.common.settings.Settings;
+import java.util.concurrent.ExecutorService;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import org.apache.lucene.util.SetOnce;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.plugins.IngestPlugin;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.mockito.Mockito;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class IngestServiceTests extends ESTestCase {
     private final IngestPlugin DUMMY_PLUGIN = new IngestPlugin() {
@@ -38,8 +52,8 @@ public class IngestServiceTests extends ESTestCase {
     };
 
     public void testIngestPlugin() {
-        ThreadPool tp = Mockito.mock(ThreadPool.class);
-        IngestService ingestService = new IngestService(Settings.EMPTY, tp, null, null,
+        ThreadPool tp = mock(ThreadPool.class);
+        IngestService ingestService = new IngestService(mock(ClusterService.class), tp, null, null,
             null, Collections.singletonList(DUMMY_PLUGIN));
         Map<String, Processor.Factory> factories = ingestService.getProcessorFactories();
         assertTrue(factories.containsKey("foo"));
@@ -47,10 +61,35 @@ public class IngestServiceTests extends ESTestCase {
     }
 
     public void testIngestPluginDuplicate() {
-        ThreadPool tp = Mockito.mock(ThreadPool.class);
+        ThreadPool tp = mock(ThreadPool.class);
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () ->
-            new IngestService(Settings.EMPTY, tp, null, null,
+            new IngestService(mock(ClusterService.class), tp, null, null,
             null, Arrays.asList(DUMMY_PLUGIN, DUMMY_PLUGIN)));
         assertTrue(e.getMessage(), e.getMessage().contains("already registered"));
+    }
+
+    public void testExecuteIndexPipelineDoesNotExist() {
+        ThreadPool threadPool = mock(ThreadPool.class);
+        final ExecutorService executorService = EsExecutors.newDirectExecutorService();
+        when(threadPool.executor(anyString())).thenReturn(executorService);
+        IngestService ingestService = new IngestService(mock(ClusterService.class), threadPool, null, null,
+            null, Collections.singletonList(DUMMY_PLUGIN));
+        final IndexRequest indexRequest = new IndexRequest("_index", "_type", "_id").source(Collections.emptyMap()).setPipeline("_id");
+
+        final SetOnce<Boolean> failure = new SetOnce<>();
+        final BiConsumer<IndexRequest, Exception> failureHandler = (request, e) -> {
+            failure.set(true);
+            assertThat(request, sameInstance(indexRequest));
+            assertThat(e, instanceOf(IllegalArgumentException.class));
+            assertThat(e.getMessage(), equalTo("pipeline with id [_id] does not exist"));
+        };
+
+        @SuppressWarnings("unchecked")
+        final Consumer<Exception> completionHandler = mock(Consumer.class);
+
+        ingestService.executeBulkRequest(Collections.singletonList(indexRequest), failureHandler, completionHandler);
+
+        assertTrue(failure.get());
+        verify(completionHandler, times(1)).accept(null);
     }
 }

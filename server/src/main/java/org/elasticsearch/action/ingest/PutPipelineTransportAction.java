@@ -31,7 +31,6 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.ingest.IngestService;
@@ -45,16 +44,16 @@ import java.util.Map;
 public class PutPipelineTransportAction extends TransportMasterNodeAction<PutPipelineRequest, WritePipelineResponse> {
 
     private final IngestService ingestService;
-    private final ClusterService clusterService;
     private final NodeClient client;
 
     @Inject
-    public PutPipelineTransportAction(Settings settings, ThreadPool threadPool, ClusterService clusterService,
-                                      TransportService transportService, ActionFilters actionFilters,
-                                      IndexNameExpressionResolver indexNameExpressionResolver, IngestService ingestService,
-                                      NodeClient client) {
-        super(settings, PutPipelineAction.NAME, transportService, clusterService, threadPool, actionFilters, indexNameExpressionResolver, PutPipelineRequest::new);
-        this.clusterService = clusterService;
+    public PutPipelineTransportAction(Settings settings, ThreadPool threadPool, TransportService transportService,
+        ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver,
+        IngestService ingestService, NodeClient client) {
+        super(
+            settings, PutPipelineAction.NAME, transportService, ingestService.getClusterService(),
+            threadPool, actionFilters, indexNameExpressionResolver, PutPipelineRequest::new
+        );
         this.client = client;
         this.ingestService = ingestService;
     }
@@ -82,7 +81,7 @@ public class PutPipelineTransportAction extends TransportMasterNodeAction<PutPip
                     for (NodeInfo nodeInfo : nodeInfos.getNodes()) {
                         ingestInfos.put(nodeInfo.getNode(), nodeInfo.getIngest());
                     }
-                    ingestService.putPipeline(clusterService, ingestInfos, request, listener);
+                    ingestService.putPipeline(ingestInfos, request, listener);
                 } catch (Exception e) {
                     onFailure(e);
                 }

@@ -26,7 +26,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.ingest.IngestService;
@@ -34,15 +33,16 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
 public class DeletePipelineTransportAction extends TransportMasterNodeAction<DeletePipelineRequest, WritePipelineResponse> {
-    
-    private final ClusterService clusterService;
+
+    private final IngestService ingestService;
 
     @Inject
-    public DeletePipelineTransportAction(Settings settings, ThreadPool threadPool, ClusterService clusterService,
+    public DeletePipelineTransportAction(Settings settings, ThreadPool threadPool, IngestService ingestService,
                                          TransportService transportService, ActionFilters actionFilters,
                                          IndexNameExpressionResolver indexNameExpressionResolver) {
-        super(settings, DeletePipelineAction.NAME, transportService, clusterService, threadPool, actionFilters, indexNameExpressionResolver, DeletePipelineRequest::new);
-        this.clusterService = clusterService;
+        super(settings, DeletePipelineAction.NAME, transportService, ingestService.getClusterService(),
+            threadPool, actionFilters, indexNameExpressionResolver, DeletePipelineRequest::new);
+        this.ingestService = ingestService;
     }
 
     @Override
@@ -56,8 +56,9 @@ public class DeletePipelineTransportAction extends TransportMasterNodeAction<Del
     }
 
     @Override
-    protected void masterOperation(DeletePipelineRequest request, ClusterState state, ActionListener<WritePipelineResponse> listener) throws Exception {
-        IngestService.delete(clusterService, request, listener);
+    protected void masterOperation(DeletePipelineRequest request, ClusterState state,
+        ActionListener<WritePipelineResponse> listener) throws Exception {
+        ingestService.delete(request, listener);
     }
 
     @Override
