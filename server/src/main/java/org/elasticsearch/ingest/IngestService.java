@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.BiFunction;
 
+import org.elasticsearch.cluster.ClusterChangedEvent;
+import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.env.Environment;
@@ -38,7 +40,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 /**
  * Holder class for several ingest related services.
  */
-public class IngestService {
+public class IngestService implements ClusterStateApplier {
 
     public static final String NOOP_PIPELINE_NAME = "_none";
 
@@ -80,5 +82,11 @@ public class IngestService {
             processorInfoList.add(new ProcessorInfo(entry.getKey()));
         }
         return new IngestInfo(processorInfoList);
+    }
+
+    @Override
+    public void applyClusterState(final ClusterChangedEvent event) {
+        pipelineStore.applyClusterState(event);
+        pipelineExecutionService.applyClusterState(event);
     }
 }
