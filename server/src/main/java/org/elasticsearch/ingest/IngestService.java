@@ -186,13 +186,16 @@ public class IngestService implements ClusterStateApplier {
         ActionListener<WritePipelineResponse> listener) throws Exception {
         pipelineStore.put(clusterService, ingestInfos, request, listener);
     }
-    
-    public PipelineStore getPipelineStore() {
-        return pipelineStore;
-    }
 
-    public PipelineExecutionService getPipelineExecutionService() {
-        return pipelineExecutionService;
+    /**
+     * Returns the pipeline by the specified id
+     */
+    public Pipeline getPipeline(String id) {
+        return pipelineStore.get(id);
+    }
+    
+    public Map<String, Processor.Factory> getProcessorFactories() {
+        return pipelineStore.getProcessorFactories();
     }
 
     public IngestInfo info() {
