@@ -188,13 +188,13 @@ public class PipelineStoreTests extends ESTestCase {
         // Delete pipeline:
         DeletePipelineRequest deleteRequest = new DeletePipelineRequest("_id");
         previousClusterState = clusterState;
-        clusterState = PipelineStore.innerDelete(deleteRequest, clusterState);
+        clusterState = IngestService.innerDelete(deleteRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         assertThat(store.get("_id"), nullValue());
 
         // Delete existing pipeline:
         try {
-            PipelineStore.innerDelete(deleteRequest, clusterState);
+            IngestService.innerDelete(deleteRequest, clusterState);
             fail("exception expected");
         } catch (ResourceNotFoundException e) {
             assertThat(e.getMessage(), equalTo("pipeline [_id] is missing"));
@@ -222,7 +222,7 @@ public class PipelineStoreTests extends ESTestCase {
         // Delete pipeline matching wildcard
         DeletePipelineRequest deleteRequest = new DeletePipelineRequest("p*");
         previousClusterState = clusterState;
-        clusterState = PipelineStore.innerDelete(deleteRequest, clusterState);
+        clusterState = IngestService.innerDelete(deleteRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         assertThat(store.get("p1"), nullValue());
         assertThat(store.get("p2"), nullValue());
@@ -230,7 +230,7 @@ public class PipelineStoreTests extends ESTestCase {
 
         // Exception if we used name which does not exist
         try {
-            PipelineStore.innerDelete(new DeletePipelineRequest("unknown"), clusterState);
+            IngestService.innerDelete(new DeletePipelineRequest("unknown"), clusterState);
             fail("exception expected");
         } catch (ResourceNotFoundException e) {
             assertThat(e.getMessage(), equalTo("pipeline [unknown] is missing"));
@@ -239,14 +239,14 @@ public class PipelineStoreTests extends ESTestCase {
         // match all wildcard works on last remaining pipeline
         DeletePipelineRequest matchAllDeleteRequest = new DeletePipelineRequest("*");
         previousClusterState = clusterState;
-        clusterState = PipelineStore.innerDelete(matchAllDeleteRequest, clusterState);
+        clusterState = IngestService.innerDelete(matchAllDeleteRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         assertThat(store.get("p1"), nullValue());
         assertThat(store.get("p2"), nullValue());
         assertThat(store.get("q1"), nullValue());
 
         // match all wildcard does not throw exception if none match
-        PipelineStore.innerDelete(matchAllDeleteRequest, clusterState);
+        IngestService.innerDelete(matchAllDeleteRequest, clusterState);
     }
 
     public void testDeleteWithExistingUnmatchedPipelines() {
@@ -265,7 +265,7 @@ public class PipelineStoreTests extends ESTestCase {
 
         DeletePipelineRequest deleteRequest = new DeletePipelineRequest("z*");
         try {
-            PipelineStore.innerDelete(deleteRequest, clusterState);
+            IngestService.innerDelete(deleteRequest, clusterState);
             fail("exception expected");
         } catch (ResourceNotFoundException e) {
             assertThat(e.getMessage(), equalTo("pipeline [z*] is missing"));
@@ -333,7 +333,7 @@ public class PipelineStoreTests extends ESTestCase {
 
         DeletePipelineRequest deleteRequest = new DeletePipelineRequest(id);
         previousClusterState = clusterState;
-        clusterState = PipelineStore.innerDelete(deleteRequest, clusterState);
+        clusterState = IngestService.innerDelete(deleteRequest, clusterState);
         store.innerUpdatePipelines(previousClusterState, clusterState);
         pipeline = store.get(id);
         assertThat(pipeline, nullValue());

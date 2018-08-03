@@ -29,7 +29,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.ingest.PipelineStore;
+import org.elasticsearch.ingest.IngestService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
@@ -57,7 +57,7 @@ public class DeletePipelineTransportAction extends TransportMasterNodeAction<Del
 
     @Override
     protected void masterOperation(DeletePipelineRequest request, ClusterState state, ActionListener<WritePipelineResponse> listener) throws Exception {
-        PipelineStore.delete(clusterService, request, listener);
+        IngestService.delete(clusterService, request, listener);
     }
 
     @Override

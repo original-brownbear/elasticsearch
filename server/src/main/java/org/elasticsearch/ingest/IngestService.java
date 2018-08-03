@@ -22,13 +22,24 @@ package org.elasticsearch.ingest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.BiFunction;
 
+import org.elasticsearch.ResourceNotFoundException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ingest.DeletePipelineRequest;
+import org.elasticsearch.action.ingest.WritePipelineResponse;
+import org.elasticsearch.cluster.AckedClusterStateUpdateTask;
 import org.elasticsearch.cluster.ClusterChangedEvent;
+import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateApplier;
+import org.elasticsearch.cluster.metadata.MetaData;
+import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.env.Environment;
@@ -66,7 +77,55 @@ public class IngestService implements ClusterStateApplier {
         this.pipelineStore = new PipelineStore(settings, Collections.unmodifiableMap(processorFactories));
         this.pipelineExecutionService = new PipelineExecutionService(pipelineStore, threadPool);
     }
+    
+    /**
+     * Deletes the pipeline specified by id in the request.
+     */
+    public static void delete(ClusterService clusterService, DeletePipelineRequest request,
+        ActionListener<WritePipelineResponse> listener) {
+        clusterService.submitStateUpdateTask("delete-pipeline-" + request.getId(),
+                new AckedClusterStateUpdateTask<WritePipelineResponse>(request, listener) {
 
+            @Override
+            protected WritePipelineResponse newResponse(boolean acknowledged) {
+                return new WritePipelineResponse(acknowledged);
+            }
+
+            @Override
+            public ClusterState execute(ClusterState currentState) throws Exception {
+                return innerDelete(request, currentState);
+            }
+        });
+    }
+    
+    static ClusterState innerDelete(DeletePipelineRequest request, ClusterState currentState) {
+        IngestMetadata currentIngestMetadata = currentState.metaData().custom(IngestMetadata.TYPE);
+        if (currentIngestMetadata == null) {
+            return currentState;
+        }
+        Map<String, PipelineConfiguration> pipelines = currentIngestMetadata.getPipelines();
+        Set<String> toRemove = new HashSet<>();
+        for (String pipelineKey : pipelines.keySet()) {
+            if (Regex.simpleMatch(request.getId(), pipelineKey)) {
+                toRemove.add(pipelineKey);
+            }
+        }
+        if (toRemove.isEmpty() && Regex.isMatchAllPattern(request.getId()) == false) {
+            throw new ResourceNotFoundException("pipeline [{}] is missing", request.getId());
+        } else if (toRemove.isEmpty()) {
+            return currentState;
+        }
+        final Map<String, PipelineConfiguration> pipelinesCopy = new HashMap<>(pipelines);
+        for (String key : toRemove) {
+            pipelinesCopy.remove(key);
+        }
+        ClusterState.Builder newState = ClusterState.builder(currentState);
+        newState.metaData(MetaData.builder(currentState.getMetaData())
+                .putCustom(IngestMetadata.TYPE, new IngestMetadata(pipelinesCopy))
+                .build());
+        return newState.build();
+    }
+    
     public PipelineStore getPipelineStore() {
         return pipelineStore;
     }
@@ -86,7 +145,7 @@ public class IngestService implements ClusterStateApplier {
 
     @Override
     public void applyClusterState(final ClusterChangedEvent event) {
-        pipelineStore.applyClusterState(event);
+        pipelineStore.innerUpdatePipelines(event.previousState(), event.state());
         pipelineExecutionService.applyClusterState(event);
     }
 }

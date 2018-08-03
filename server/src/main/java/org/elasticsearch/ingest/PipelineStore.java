@@ -21,13 +21,10 @@ package org.elasticsearch.ingest;
 
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ingest.DeletePipelineRequest;
 import org.elasticsearch.action.ingest.PutPipelineRequest;
 import org.elasticsearch.action.ingest.WritePipelineResponse;
 import org.elasticsearch.cluster.AckedClusterStateUpdateTask;
-import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -41,11 +38,9 @@ import org.elasticsearch.gateway.GatewayService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class PipelineStore extends AbstractComponent {
     
@@ -60,10 +55,6 @@ public class PipelineStore extends AbstractComponent {
     public PipelineStore(Settings settings, Map<String, Processor.Factory> processorFactories) {
         super(settings);
         this.processorFactories = processorFactories;
-    }
-
-    public void applyClusterState(ClusterChangedEvent event) {
-        innerUpdatePipelines(event.previousState(), event.state());
     }
 
     void innerUpdatePipelines(ClusterState previousState, ClusterState state) {
@@ -114,55 +105,7 @@ public class PipelineStore extends AbstractComponent {
         String description = "this is a place holder pipeline, because pipeline with id [" +  id + "] could not be loaded";
         return new Pipeline(id, description, null, new CompoundProcessor(failureProcessor));
     }
-
-    /**
-     * Deletes the pipeline specified by id in the request.
-     */
-    public static void delete(ClusterService clusterService, DeletePipelineRequest request,
-        ActionListener<WritePipelineResponse> listener) {
-        clusterService.submitStateUpdateTask("delete-pipeline-" + request.getId(),
-                new AckedClusterStateUpdateTask<WritePipelineResponse>(request, listener) {
-
-            @Override
-            protected WritePipelineResponse newResponse(boolean acknowledged) {
-                return new WritePipelineResponse(acknowledged);
-            }
-
-            @Override
-            public ClusterState execute(ClusterState currentState) throws Exception {
-                return innerDelete(request, currentState);
-            }
-        });
-    }
-
-    static ClusterState innerDelete(DeletePipelineRequest request, ClusterState currentState) {
-        IngestMetadata currentIngestMetadata = currentState.metaData().custom(IngestMetadata.TYPE);
-        if (currentIngestMetadata == null) {
-            return currentState;
-        }
-        Map<String, PipelineConfiguration> pipelines = currentIngestMetadata.getPipelines();
-        Set<String> toRemove = new HashSet<>();
-        for (String pipelineKey : pipelines.keySet()) {
-            if (Regex.simpleMatch(request.getId(), pipelineKey)) {
-                toRemove.add(pipelineKey);
-            }
-        }
-        if (toRemove.isEmpty() && Regex.isMatchAllPattern(request.getId()) == false) {
-            throw new ResourceNotFoundException("pipeline [{}] is missing", request.getId());
-        } else if (toRemove.isEmpty()) {
-            return currentState;
-        }
-        final Map<String, PipelineConfiguration> pipelinesCopy = new HashMap<>(pipelines);
-        for (String key : toRemove) {
-            pipelinesCopy.remove(key);
-        }
-        ClusterState.Builder newState = ClusterState.builder(currentState);
-        newState.metaData(MetaData.builder(currentState.getMetaData())
-                .putCustom(IngestMetadata.TYPE, new IngestMetadata(pipelinesCopy))
-                .build());
-        return newState.build();
-    }
-
+    
     /**
      * Stores the specified pipeline definition in the request.
      */
