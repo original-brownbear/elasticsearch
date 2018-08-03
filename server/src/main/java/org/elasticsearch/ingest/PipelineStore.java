@@ -29,7 +29,6 @@ import org.elasticsearch.action.ingest.WritePipelineResponse;
 import org.elasticsearch.cluster.AckedClusterStateUpdateTask;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -48,7 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class PipelineStore extends AbstractComponent implements ClusterStateApplier {
+public class PipelineStore extends AbstractComponent {
     
     private final Map<String, Processor.Factory> processorFactories;
 
@@ -63,7 +62,6 @@ public class PipelineStore extends AbstractComponent implements ClusterStateAppl
         this.processorFactories = processorFactories;
     }
 
-    @Override
     public void applyClusterState(ClusterChangedEvent event) {
         innerUpdatePipelines(event.previousState(), event.state());
     }
