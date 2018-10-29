@@ -651,8 +651,8 @@ public abstract class AbstractClient extends AbstractComponent implements Client
     }
 
     @Override
-    public FieldCapabilitiesRequestBuilder prepareFieldCaps() {
-        return new FieldCapabilitiesRequestBuilder(this, FieldCapabilitiesAction.INSTANCE);
+    public FieldCapabilitiesRequestBuilder prepareFieldCaps(String... indices) {
+        return new FieldCapabilitiesRequestBuilder(this, FieldCapabilitiesAction.INSTANCE, indices);
     }
 
     static class Admin implements AdminClient {
@@ -752,7 +752,8 @@ public abstract class AbstractClient extends AbstractComponent implements Client
         }
 
         @Override
-        public void updateSettings(final ClusterUpdateSettingsRequest request, final ActionListener<ClusterUpdateSettingsResponse> listener) {
+        public void updateSettings(final ClusterUpdateSettingsRequest request,
+                                   final ActionListener<ClusterUpdateSettingsResponse> listener) {
             execute(ClusterUpdateSettingsAction.INSTANCE, request, listener);
         }
 
@@ -1256,6 +1257,7 @@ public abstract class AbstractClient extends AbstractComponent implements Client
             return new IndicesExistsRequestBuilder(this, IndicesExistsAction.INSTANCE, indices);
         }
 
+        @Deprecated
         @Override
         public ActionFuture<TypesExistsResponse> typesExists(TypesExistsRequest request) {
             return execute(TypesExistsAction.INSTANCE, request);

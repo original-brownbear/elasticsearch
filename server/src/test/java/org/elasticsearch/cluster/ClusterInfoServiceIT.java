@@ -53,7 +53,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Collections.emptySet;
@@ -113,6 +112,7 @@ public class ClusterInfoServiceIT extends ESIntegTestCase {
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
         return Settings.builder()
+            .put(super.nodeSettings(nodeOrdinal))
             // manual collection or upon cluster forming.
             .put(NodeEnvironment.MAX_LOCAL_STORAGE_NODES_SETTING.getKey(), 2)
             .put(InternalClusterInfoService.INTERNAL_CLUSTER_INFO_TIMEOUT_SETTING.getKey(), "1s")
@@ -121,8 +121,7 @@ public class ClusterInfoServiceIT extends ESIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Arrays.asList(TestPlugin.class,
-            MockTransportService.TestPlugin.class);
+        return Arrays.asList(TestPlugin.class, MockTransportService.TestPlugin.class);
     }
 
     public void testClusterInfoServiceCollectsInformation() throws Exception {
@@ -133,7 +132,8 @@ public class ClusterInfoServiceIT extends ESIntegTestCase {
         ensureGreen("test");
         InternalTestCluster internalTestCluster = internalCluster();
         // Get the cluster info service on the master node
-        final InternalClusterInfoService infoService = (InternalClusterInfoService) internalTestCluster.getInstance(ClusterInfoService.class, internalTestCluster.getMasterName());
+        final InternalClusterInfoService infoService = (InternalClusterInfoService) internalTestCluster
+            .getInstance(ClusterInfoService.class, internalTestCluster.getMasterName());
         infoService.setUpdateFrequency(TimeValue.timeValueMillis(200));
         infoService.onMaster();
         ClusterInfo info = infoService.refresh();
@@ -172,14 +172,15 @@ public class ClusterInfoServiceIT extends ESIntegTestCase {
         }
     }
 
-    public void testClusterInfoServiceInformationClearOnError() throws InterruptedException, ExecutionException {
+    public void testClusterInfoServiceInformationClearOnError() {
         internalCluster().startNodes(2,
             // manually control publishing
             Settings.builder().put(InternalClusterInfoService.INTERNAL_CLUSTER_INFO_UPDATE_INTERVAL_SETTING.getKey(), "60m").build());
         prepareCreate("test").setSettings(Settings.builder().put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 1)).get();
         ensureGreen("test");
         InternalTestCluster internalTestCluster = internalCluster();
-        InternalClusterInfoService infoService = (InternalClusterInfoService) internalTestCluster.getInstance(ClusterInfoService.class, internalTestCluster.getMasterName());
+        InternalClusterInfoService infoService = (InternalClusterInfoService) internalTestCluster
+            .getInstance(ClusterInfoService.class, internalTestCluster.getMasterName());
         // get one healthy sample
         ClusterInfo info = infoService.refresh();
         assertNotNull("failed to collect info", info);
@@ -187,10 +188,12 @@ public class ClusterInfoServiceIT extends ESIntegTestCase {
         assertThat("some shard sizes are populated", info.shardSizes.size(), greaterThan(0));
 
 
-        MockTransportService mockTransportService = (MockTransportService) internalCluster().getInstance(TransportService.class, internalTestCluster.getMasterName());
+        MockTransportService mockTransportService = (MockTransportService) internalCluster()
+            .getInstance(TransportService.class, internalTestCluster.getMasterName());
 
         final AtomicBoolean timeout = new AtomicBoolean(false);
-        final Set<String> blockedActions = newHashSet(NodesStatsAction.NAME, NodesStatsAction.NAME + "[n]", IndicesStatsAction.NAME, IndicesStatsAction.NAME + "[n]");
+        final Set<String> blockedActions = newHashSet(NodesStatsAction.NAME, NodesStatsAction.NAME + "[n]",
+            IndicesStatsAction.NAME, IndicesStatsAction.NAME + "[n]");
         // drop all outgoing stats requests to force a timeout.
         for (DiscoveryNode node : internalTestCluster.clusterService().state().getNodes()) {
             mockTransportService.addSendBehavior(internalTestCluster.getInstance(TransportService.class, node.getName()),
