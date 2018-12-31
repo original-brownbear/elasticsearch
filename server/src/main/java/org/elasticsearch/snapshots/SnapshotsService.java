@@ -82,6 +82,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableMap;
@@ -118,6 +120,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     private final RepositoriesService repositoriesService;
 
     private final ThreadPool threadPool;
+
+    private final AtomicReference<Tuple<SnapshotRequest, CreateSnapshotListener>> pendingRetry =
+        new AtomicReference<>();
 
     private final CopyOnWriteArrayList<SnapshotCompletionListener> snapshotCompletionListeners = new CopyOnWriteArrayList<>();
 
@@ -252,6 +257,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 validate(request, currentState);
                 SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
                 if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
+                    if (deletionsInProgress.getEntries().size() == 1 && deletionsInProgress.getEntries().get(0).getSnapshot().getSnapshotId().getName().equals(snapshotName)
+                    && pendingRetry.compareAndSet(null, new Tuple<>(request, listener))) {
+                        return currentState;
+                    }
                     throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName,
                         "cannot snapshot while a snapshot deletion is in-progress");
                 }
@@ -1027,7 +1036,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param snapshotInfo   snapshot info if snapshot was successful
      * @param e              exception if snapshot failed
      */
-    private void removeSnapshotFromClusterState(final Snapshot snapshot, final SnapshotInfo snapshotInfo, final Exception e) {
+    private void removeSnapshotFromClusterState(final Snapshot snapshot, @Nullable SnapshotInfo snapshotInfo, @Nullable Exception e) {
         removeSnapshotFromClusterState(snapshot, snapshotInfo, e, null);
     }
 
@@ -1037,7 +1046,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param failure          exception if snapshot failed
      * @param listener   listener to notify when snapshot information is removed from the cluster state
      */
-    private void removeSnapshotFromClusterState(final Snapshot snapshot, final SnapshotInfo snapshotInfo, final Exception failure,
+    private void removeSnapshotFromClusterState(final Snapshot snapshot, @Nullable SnapshotInfo snapshotInfo, @Nullable Exception failure,
                                                 @Nullable CleanupAfterErrorListener listener) {
         clusterService.submitStateUpdateTask("remove snapshot metadata", new ClusterStateUpdateTask() {
 
@@ -1335,6 +1344,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                               long repositoryStateId) {
         threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
             try {
+                TimeUnit.SECONDS.sleep(5L);
                 Repository repository = repositoriesService.repository(snapshot.getRepository());
                 repository.deleteSnapshot(snapshot.getSnapshotId(), repositoryStateId);
                 logger.info("snapshot [{}] deleted", snapshot);
@@ -1385,6 +1395,20 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         listener.onFailure(failure);
                     } else {
                         listener.onResponse();
+                        final Tuple<SnapshotRequest, CreateSnapshotListener> retry = pendingRetry.getAndSet(null);
+                        if (retry != null) {
+                            threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
+                                @Override
+                                public void onFailure(final Exception e) {
+                                    retry.v2().onFailure(e);
+                                }
+
+                                @Override
+                                protected void doRun() {
+                                    createSnapshot(retry.v1(), retry.v2());
+                                }
+                            });
+                        }
                     }
                 }
             }
