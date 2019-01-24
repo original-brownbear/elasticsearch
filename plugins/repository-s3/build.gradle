@@ -4,7 +4,6 @@ import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.gradle.test.ClusterConfiguration
 import org.elasticsearch.gradle.test.RestIntegTestTask
 import com.carrotsearch.gradle.junit4.RandomizedTestingTask
-import org.elasticsearch.gradle.testfixtures.TestFixtureExtension
 
 /*
  * Licensed to Elasticsearch under one or more contributor
@@ -172,6 +171,7 @@ if (useFixture && minioDistribution) {
   project.afterEvaluate {
     ClusterConfiguration cluster = project.extensions.getByName('integTestMinioCluster') as ClusterConfiguration
     cluster.dependsOn(project.bundlePlugin)
+    cluster.dependsOn(project.rootProject.project(":test:fixtures:minio-fixture").tasks.getByName("buildFixture"))
     cluster.keystoreSetting 's3.client.integration_test_permanent.access_key', s3PermanentAccessKey
     cluster.keystoreSetting 's3.client.integration_test_permanent.secret_key', s3PermanentSecretKey
 
@@ -200,7 +200,6 @@ if (useFixture && minioDistribution) {
           'repository_s3/50_repository_ecs_credentials/*'
         ].join(",")
 
-  integTestMinioRunner.dependsOn(project.rootProject.tasks.getByName(":test:fixtures:minio-fixture:postProcessFixture"))
   project.check.dependsOn(integTestMinio)
 }
 
