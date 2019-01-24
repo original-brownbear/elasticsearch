@@ -29,6 +29,8 @@ esplugin {
   classname 'org.elasticsearch.repositories.s3.S3RepositoryPlugin'
 }
 
+apply plugin: 'elasticsearch.test.fixtures'
+
 versions << [
   'aws': '1.11.406'
 ]
@@ -158,10 +160,8 @@ buildscript {
   }
 }
 
-
 if (useFixture && minioDistribution) {
 
-  apply plugin: 'elasticsearch.test.fixtures'
   testFixtures.useFixture ":test:fixtures:minio-fixture"
 
   RestIntegTestTask integTestMinio = project.tasks.create('integTestMinio', RestIntegTestTask.class) {
@@ -176,7 +176,7 @@ if (useFixture && minioDistribution) {
     cluster.keystoreSetting 's3.client.integration_test_permanent.secret_key', s3PermanentSecretKey
 
     Closure<String> minioAddressAndPort = {
-      int minioPort = Integer.parseInt(integTestMinioRunner.systemProperties["test.fixtures.minio-fixture.tcp.9000"])
+      int minioPort = Integer.parseInt(ext."test.fixtures.minio-fixture.tcp.9000")
       assert minioPort > 0
       return 'http://' + minioAddress + ':' + minioPort
     }
@@ -200,6 +200,7 @@ if (useFixture && minioDistribution) {
           'repository_s3/50_repository_ecs_credentials/*'
         ].join(",")
 
+  integTestMinio.dependsOn(postProcessFixtures)
   project.check.dependsOn(integTestMinio)
 }
 
