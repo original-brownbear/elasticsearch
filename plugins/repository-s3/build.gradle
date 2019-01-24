@@ -161,7 +161,6 @@ buildscript {
 if (useFixture && minioDistribution) {
 
   apply plugin: 'elasticsearch.test.fixtures'
-  testFixtures.useFixture ":test:fixtures:minio-fixture"
 
   RestIntegTestTask integTestMinio = project.tasks.create('integTestMinio', RestIntegTestTask.class) {
     description = "Runs REST tests using the Minio repository."
@@ -171,7 +170,7 @@ if (useFixture && minioDistribution) {
   project.afterEvaluate {
     ClusterConfiguration cluster = project.extensions.getByName('integTestMinioCluster') as ClusterConfiguration
     cluster.dependsOn(project.bundlePlugin)
-    cluster.dependsOn(project.rootProject.project(":test:fixtures:minio-fixture").tasks.getByName("buildFixture"))
+    cluster.dependsOn(postProcessFixture)
     cluster.keystoreSetting 's3.client.integration_test_permanent.access_key', s3PermanentAccessKey
     cluster.keystoreSetting 's3.client.integration_test_permanent.secret_key', s3PermanentSecretKey
 
