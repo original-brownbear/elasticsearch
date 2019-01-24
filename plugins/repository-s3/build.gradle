@@ -4,6 +4,7 @@ import org.elasticsearch.gradle.test.AntFixture
 import org.elasticsearch.gradle.test.ClusterConfiguration
 import org.elasticsearch.gradle.test.RestIntegTestTask
 import com.carrotsearch.gradle.junit4.RandomizedTestingTask
+import org.elasticsearch.gradle.testfixtures.TestFixtureExtension
 
 /*
  * Licensed to Elasticsearch under one or more contributor
@@ -199,7 +200,7 @@ if (useFixture && minioDistribution) {
           'repository_s3/50_repository_ecs_credentials/*'
         ].join(",")
 
-  integTestMinio.dependsOn(postProcessFixtures)
+  integTestMinioRunner.dependsOn(project.rootProject.tasks.getByName(":test:fixtures:minio-fixture:postProcessFixture"))
   project.check.dependsOn(integTestMinio)
 }
 
