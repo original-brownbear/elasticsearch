@@ -36,6 +36,7 @@ List projects = [
   'server:cli',
   'test:framework',
   'test:fixtures:hdfs-fixture',
+  'test:fixtures:minio-fixture',
   'test:fixtures:krb5kdc-fixture',
   'test:fixtures:old-elasticsearch',
   'test:logger-usage'
