@@ -105,7 +105,7 @@ import static org.hamcrest.Matchers.startsWith;
  * <p>
  * We need at least 2 nodes so we have a master node a non-master node
  */
-@ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.SUITE, minNumDataNodes = 2, transportClientRatio = 0.0)
+@ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.SUITE, numDataNodes = 3, transportClientRatio = 0.0)
 public class TasksIT extends ESIntegTestCase {
 
     private Map<Tuple<String, String>, RecordingTaskManagerListener> listeners = new HashMap<>();
@@ -291,8 +291,7 @@ public class TasksIT extends ESIntegTestCase {
         }
     }
 
-    @AwaitsFix(bugUrl = "https://github.com/elastic/elasticsearch/issues/37893")
-    public void testTransportBulkTasks() {
+    public void testTransportBulkTasks() throws Exception {
         registerTaskManageListeners(BulkAction.NAME);  // main task
         registerTaskManageListeners(BulkAction.NAME + "[s]");  // shard task
         registerTaskManageListeners(BulkAction.NAME + "[s][p]");  // shard task on primary
@@ -345,7 +344,6 @@ public class TasksIT extends ESIntegTestCase {
         assertEquals(getNumShards("test").numReplicas, numberOfEvents(BulkAction.NAME + "[s][r]", Tuple::v1));
         assertParentTask(findEvents(BulkAction.NAME + "[s][r]", Tuple::v1), shardTask);
     }
-
 
     public void testSearchTaskDescriptions() {
         registerTaskManageListeners(SearchAction.NAME);  // main task
