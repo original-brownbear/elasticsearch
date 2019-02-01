@@ -1325,8 +1325,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     final InputStreamIndexInput inputStreamIndexInput = new InputStreamIndexInput(indexInput, partBytes);
                     InputStream inputStream = inputStreamIndexInput;
                     if (snapshotRateLimiter != null) {
-                        inputStream = new RateLimitingInputStream(inputStreamIndexInput, snapshotRateLimiter,
-                                                                  snapshotRateLimitingTimeInNanos::inc);
+                        inputStream =
+                            new RateLimitingInputStream(inputStreamIndexInput, snapshotRateLimiter, snapshotRateLimitingTimeInNanos);
                     }
                     inputStream = new AbortableInputStream(inputStream, fileInfo.physicalName());
                     blobContainer.writeBlob(fileInfo.partName(i), inputStream, partBytes, true);
@@ -1477,8 +1477,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             if (restoreRateLimiter == null) {
                 return new PartSliceStream(blobContainer, fileInfo);
             } else {
-                RateLimitingInputStream.Listener listener = restoreRateLimitingTimeInNanos::inc;
-                return new RateLimitingInputStream(new PartSliceStream(blobContainer, fileInfo), restoreRateLimiter, listener);
+                return new RateLimitingInputStream(new PartSliceStream(blobContainer, fileInfo), restoreRateLimiter,
+                    restoreRateLimitingTimeInNanos);
             }
         }
     }
@@ -1490,18 +1490,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
         private final RateLimiter rateLimiter;
 
-        private final Listener listener;
+        private final CounterMetric counter;
 
         private long bytesSinceLastRateLimit;
 
-        public interface Listener {
-            void onPause(long nanos);
-        }
-
-        RateLimitingInputStream(InputStream delegate, RateLimiter rateLimiter, Listener listener) {
+        RateLimitingInputStream(InputStream delegate, RateLimiter rateLimiter, CounterMetric counter) {
             super(delegate);
             this.rateLimiter = rateLimiter;
-            this.listener = listener;
+            this.counter = counter;
         }
 
         private void maybePause(int bytes) throws IOException {
@@ -1510,7 +1506,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 long pause = rateLimiter.pause(bytesSinceLastRateLimit);
                 bytesSinceLastRateLimit = 0;
                 if (pause > 0) {
-                    listener.onPause(pause);
+                    counter.inc(pause);
                 }
             }
         }
