@@ -33,6 +33,7 @@ import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
@@ -77,7 +78,6 @@ import org.elasticsearch.index.snapshots.IndexShardSnapshotFailedException;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshots;
-import org.elasticsearch.index.snapshots.blobstore.RateLimitingInputStream;
 import org.elasticsearch.index.snapshots.blobstore.SlicedInputStream;
 import org.elasticsearch.index.snapshots.blobstore.SnapshotFiles;
 import org.elasticsearch.index.store.Store;
@@ -1260,11 +1260,17 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     indexTotalNumberOfFiles, indexIncrementalSize, indexTotalFileCount);
 
                 for (BlobStoreIndexShardSnapshot.FileInfo snapshotFileInfo : filesToSnapshot) {
-                    try {
-                        snapshotFile(snapshotFileInfo);
-                    } catch (IOException e) {
-                        throw new IndexShardSnapshotFailedException(shardId, "Failed to perform snapshot (index files)", e);
-                    }
+                    snapshotFile(snapshotFileInfo, new ActionListener<Void>() {
+                        @Override
+                        public void onResponse(final Void aVoid) {
+
+                        }
+
+                        @Override
+                        public void onFailure(final Exception e) {
+                            throw new IndexShardSnapshotFailedException(shardId, "Failed to perform snapshot (index files)", e);
+                        }
+                    });
                 }
             } finally {
                 store.decRef();
@@ -1308,8 +1314,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
          * Snapshot individual file
          *
          * @param fileInfo file to be snapshotted
+         * @param listener completion listener
          */
-        private void snapshotFile(final BlobStoreIndexShardSnapshot.FileInfo fileInfo) throws IOException {
+        private void snapshotFile(BlobStoreIndexShardSnapshot.FileInfo fileInfo, ActionListener<Void> listener) {
             final String file = fileInfo.physicalName();
             try (IndexInput indexInput = store.openVerifyingInput(file, IOContext.READONCE, fileInfo.metadata())) {
                 for (int i = 0; i < fileInfo.numberOfParts(); i++) {
@@ -1326,10 +1333,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
                 Store.verify(indexInput);
                 snapshotStatus.addProcessedFile(fileInfo.length());
+                listener.onResponse(null);
             } catch (Exception t) {
                 failStoreIfCorrupted(t);
                 snapshotStatus.addProcessedFile(0);
-                throw t;
+                listener.onFailure(t);
             }
         }
 
@@ -1472,6 +1480,55 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 RateLimitingInputStream.Listener listener = restoreRateLimitingTimeInNanos::inc;
                 return new RateLimitingInputStream(new PartSliceStream(blobContainer, fileInfo), restoreRateLimiter, listener);
             }
+        }
+    }
+
+    /**
+     * Rate limiting wrapper for InputStream
+     */
+    private static class RateLimitingInputStream extends FilterInputStream {
+
+        private final RateLimiter rateLimiter;
+
+        private final Listener listener;
+
+        private long bytesSinceLastRateLimit;
+
+        public interface Listener {
+            void onPause(long nanos);
+        }
+
+        RateLimitingInputStream(InputStream delegate, RateLimiter rateLimiter, Listener listener) {
+            super(delegate);
+            this.rateLimiter = rateLimiter;
+            this.listener = listener;
+        }
+
+        private void maybePause(int bytes) throws IOException {
+            bytesSinceLastRateLimit += bytes;
+            if (bytesSinceLastRateLimit >= rateLimiter.getMinPauseCheckBytes()) {
+                long pause = rateLimiter.pause(bytesSinceLastRateLimit);
+                bytesSinceLastRateLimit = 0;
+                if (pause > 0) {
+                    listener.onPause(pause);
+                }
+            }
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = super.read();
+            maybePause(1);
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int n = super.read(b, off, len);
+            if (n > 0) {
+                maybePause(n);
+            }
+            return n;
         }
     }
 }
