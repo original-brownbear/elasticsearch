@@ -1191,13 +1191,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     "Duplicate snapshot name [" + snapshotId.getName() + "] detected, aborting");
             }
 
-            final List<BlobStoreIndexShardSnapshot.FileInfo> indexCommitPointFiles = new ArrayList<>();
-
             store.incRef();
-            int indexIncrementalFileCount = 0;
-            int indexTotalNumberOfFiles = 0;
-            long indexIncrementalSize = 0;
-            long indexTotalFileCount = 0;
+            final List<BlobStoreIndexShardSnapshot.FileInfo> indexCommitPointFiles = new ArrayList<>();
             try {
                 ArrayList<BlobStoreIndexShardSnapshot.FileInfo> filesToSnapshot = new ArrayList<>();
                 final Store.MetadataSnapshot metadata;
@@ -1210,6 +1205,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 } catch (IOException e) {
                     throw new IndexShardSnapshotFailedException(shardId, "Failed to get store file metadata", e);
                 }
+                int indexTotalNumberOfFiles = 0;
+                long indexIncrementalSize = 0;
+                int indexIncrementalFileCount = 0;
+                long indexTotalFileCount = 0;
                 for (String fileName : fileNames) {
                     if (snapshotStatus.isAborted()) {
                         logger.debug("[{}] [{}] Aborted on the file [{}], exiting", shardId, snapshotId, fileName);
@@ -1356,7 +1355,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             BlobMetaData blobMetaData = blobs.get(fileInfo.name());
             if (blobMetaData != null) {
                 return blobMetaData.length() == fileInfo.length();
-            } else if (blobs.containsKey(fileInfo.partName(0))) {
+            }
+            if (blobs.containsKey(fileInfo.partName(0))) {
                 // multi part file sum up the size and check
                 int part = 0;
                 long totalSize = 0;
