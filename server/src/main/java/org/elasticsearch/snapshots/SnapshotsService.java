@@ -393,6 +393,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             boolean snapshotCreated;
 
+            boolean hadAbortedInitializations;
+
             @Override
             protected void doRun() {
                 assert initializingSnapshots.contains(snapshot.snapshot());
@@ -432,6 +434,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
                             if (entry.state() == State.ABORTED) {
                                 entries.add(entry);
+                                if (entry.shards().isEmpty()) {
+                                    hadAbortedInitializations = true;
+                                }
                             } else {
                                 // Replace the snapshot that was just initialized
                                 ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards =
@@ -490,6 +495,13 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         // completion listener in this method. For the snapshot completion to work properly, the snapshot
                         // should still exist when listener is registered.
                         userCreateSnapshotListener.onResponse(snapshot.snapshot());
+
+                        if (hadAbortedInitializations) {
+                            final SnapshotsInProgress snapshotsInProgress = newState.custom(SnapshotsInProgress.TYPE);
+                            if (snapshotsInProgress != null) {
+                                endFinishedSnapshots(snapshotsInProgress);
+                            }
+                        }
                     }
                 });
             }
@@ -502,6 +514,18 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     new CleanupAfterErrorListener(snapshot, snapshotCreated, userCreateSnapshotListener, e));
             }
         });
+    }
+
+    private void endFinishedSnapshots(SnapshotsInProgress snapshotsInProgress) {
+        // Cleanup all snapshots that have no more work left:
+        // 1. Completed snapshots
+        // 2. Snapshots in state INIT that the previous master failed to start
+        // 3. Snapshots in any other state that have all their shard tasks completed
+        snapshotsInProgress.entries().stream().filter(
+            entry -> entry.state().completed()
+                || initializingSnapshots.contains(entry.snapshot()) == false
+                      && (entry.state() == State.INIT || completed(entry.shards().values()))
+        ).forEach(this::endSnapshot);
     }
 
     private class CleanupAfterErrorListener implements ActionListener<SnapshotInfo> {
@@ -694,15 +718,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     if (event.routingTableChanged() && waitingShardsStartedOrUnassigned(snapshotsInProgress, event)) {
                         processStartedShards();
                     }
-                    // Cleanup all snapshots that have no more work left:
-                    // 1. Completed snapshots
-                    // 2. Snapshots in state INIT that the previous master failed to start
-                    // 3. Snapshots in any other state that have all their shard tasks completed
-                    snapshotsInProgress.entries().stream().filter(
-                        entry -> entry.state().completed()
-                            || initializingSnapshots.contains(entry.snapshot()) == false
-                                && (entry.state() == State.INIT || completed(entry.shards().values()))
-                    ).forEach(this::endSnapshot);
+                    endFinishedSnapshots(snapshotsInProgress);
                 }
                 if (newMaster) {
                     finalizeSnapshotDeletionFromPreviousMaster(event);
