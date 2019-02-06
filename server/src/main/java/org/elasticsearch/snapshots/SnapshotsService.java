@@ -499,7 +499,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         if (hadAbortedInitializations) {
                             final SnapshotsInProgress snapshotsInProgress = newState.custom(SnapshotsInProgress.TYPE);
                             if (snapshotsInProgress != null) {
-                                endFinishedSnapshots(snapshotsInProgress);
+                                final SnapshotsInProgress.Entry entry = snapshotsInProgress.snapshot(snapshot.snapshot());
+                                if (entry != null) {
+                                    endSnapshot(entry);
+                                }
                             }
                         }
                     }
@@ -514,18 +517,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     new CleanupAfterErrorListener(snapshot, snapshotCreated, userCreateSnapshotListener, e));
             }
         });
-    }
-
-    private void endFinishedSnapshots(SnapshotsInProgress snapshotsInProgress) {
-        // Cleanup all snapshots that have no more work left:
-        // 1. Completed snapshots
-        // 2. Snapshots in state INIT that the previous master failed to start
-        // 3. Snapshots in any other state that have all their shard tasks completed
-        snapshotsInProgress.entries().stream().filter(
-            entry -> entry.state().completed()
-                || initializingSnapshots.contains(entry.snapshot()) == false
-                      && (entry.state() == State.INIT || completed(entry.shards().values()))
-        ).forEach(this::endSnapshot);
     }
 
     private class CleanupAfterErrorListener implements ActionListener<SnapshotInfo> {
@@ -718,7 +709,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     if (event.routingTableChanged() && waitingShardsStartedOrUnassigned(snapshotsInProgress, event)) {
                         processStartedShards();
                     }
-                    endFinishedSnapshots(snapshotsInProgress);
+                    // Cleanup all snapshots that have no more work left:
+                    // 1. Completed snapshots
+                    // 2. Snapshots in state INIT that the previous master failed to start
+                    // 3. Snapshots in any other state that have all their shard tasks completed
+                    snapshotsInProgress.entries().stream().filter(
+                        entry -> entry.state().completed()
+                            || initializingSnapshots.contains(entry.snapshot()) == false
+                               && (entry.state() == State.INIT || completed(entry.shards().values()))
+                    ).forEach(this::endSnapshot);
                 }
                 if (newMaster) {
                     finalizeSnapshotDeletionFromPreviousMaster(event);
