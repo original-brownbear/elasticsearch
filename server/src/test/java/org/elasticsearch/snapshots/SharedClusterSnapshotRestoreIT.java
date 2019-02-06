@@ -3681,6 +3681,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
             // Delete the snapshot while it is being initialized
             ActionFuture<AcknowledgedResponse> delete = client.admin().cluster().prepareDeleteSnapshot("repository", "snap").execute();
 
+            TimeUnit.SECONDS.sleep(2L);
             // The deletion must set the snapshot in the ABORTED state
             assertBusy(() -> {
                 SnapshotsStatusResponse status =

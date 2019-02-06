@@ -331,7 +331,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             public TimeValue timeout() {
                 return request.masterNodeTimeout();
             }
-
         });
     }
 
@@ -701,8 +700,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     // 3. Snapshots in any other state that have all their shard tasks completed
                     snapshotsInProgress.entries().stream().filter(
                         entry -> entry.state().completed()
-                            || entry.state() == State.INIT && initializingSnapshots.contains(entry.snapshot()) == false
-                            || entry.state() != State.INIT && completed(entry.shards().values())
+                            || initializingSnapshots.contains(entry.snapshot()) == false
+                                && (entry.state() == State.INIT || completed(entry.shards().values()))
                     ).forEach(this::endSnapshot);
                 }
                 if (newMaster) {
