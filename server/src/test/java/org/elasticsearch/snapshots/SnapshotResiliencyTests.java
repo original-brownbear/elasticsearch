@@ -21,6 +21,7 @@ package org.elasticsearch.snapshots;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.store.Directory;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.Action;
 import org.elasticsearch.action.ActionListener;
@@ -131,6 +132,7 @@ import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportRequestHandler;
 import org.elasticsearch.transport.TransportService;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 
 import java.io.IOException;
@@ -437,6 +439,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         String snapshotName1 = "snapshot1";
         String snapshotName2 = "snapshot2";
         final String index = "test";
+        final String newIndex = "new-index";
 
         final int shards = randomIntBetween(1, 10);
 
@@ -454,24 +457,38 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         assertNoFailureListener(
                             () -> masterNode.client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName1)
                                 .setWaitForCompletion(true)
-                                .execute(assertNoFailureListener(() -> {
-                                    final Path path = tempDir.resolve(repoName).resolve(repoPath);
-                                    try {
-                                        Files.move(path.resolve("indices"), path.resolve("indices-old"));
-                                    } catch (IOException e) {
-                                        throw new AssertionError(e);
-                                    }
-                                    masterNode.client.admin().cluster().deleteSnapshot(
-                                        new DeleteSnapshotRequest(repoName, snapshotName1),
-                                        assertNoFailureListener(
-                                            () -> masterNode.client.admin().indices().delete(
-                                                new DeleteIndexRequest(index),
+                                .execute(
+                                    assertNoFailureListener(() -> {
+                                            final Path path = tempDir.resolve(repoName).resolve(repoPath);
+                                            try {
+                                                Files.move(path.resolve("indices"), path.resolve("indices-old"));
+                                            } catch (IOException e) {
+                                                throw new AssertionError(e);
+                                            }
+                                            masterNode.client.admin().cluster().deleteSnapshot(
+                                                new DeleteSnapshotRequest(repoName, snapshotName1),
                                                 assertNoFailureListener(
-                                                    () -> masterNode.client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName2)
-                                                        .setWaitForCompletion(true)
-                                                        .execute(assertNoFailureListener(() -> createdSnapshot.set(true))))
-                                            )));
-                                }))))));
+                                                    () -> masterNode.client.admin().indices().delete(
+                                                        new DeleteIndexRequest(index),
+                                                        assertNoFailureListener(
+                                                            () -> {
+                                                                try {
+                                                                    Files.move(path.resolve("indices-old"), path.resolve("indices"));
+                                                                } catch (IOException e) {
+                                                                    throw new AssertionError(e);
+                                                                }
+                                                                masterNode.client.admin().indices().create(
+                                                                    new CreateIndexRequest(newIndex).waitForActiveShards(ActiveShardCount.ALL)
+                                                                        .settings(defaultIndexSettings(shards)),
+                                                                    assertNoFailureListener(
+                                                                        () -> masterNode.client.admin().cluster()
+                                                                            .prepareCreateSnapshot(repoName, snapshotName2)
+                                                                            .setWaitForCompletion(true)
+                                                                            .execute(assertNoFailureListener(() -> createdSnapshot.set(true))))
+                                                                );
+                                                            }))));
+                                        }
+                                    ))))));
 
         runUntil(createdSnapshot::get, TimeUnit.MINUTES.toMillis(1L));
 
@@ -484,7 +501,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
         assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
-        assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
+        assertThat(snapshotInfo.indices(), containsInAnyOrder(newIndex));
         assertEquals(shards, snapshotInfo.successfulShards());
         assertEquals(0, snapshotInfo.failedShards());
     }
