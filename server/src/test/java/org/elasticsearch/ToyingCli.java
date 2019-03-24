@@ -2,6 +2,8 @@ package org.elasticsearch;
 
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexableField;
@@ -22,10 +24,13 @@ public class ToyingCli {
         final Path indexPath = Paths.get("/tmp", UUIDs.randomBase64UUID());
         try (Directory directory = new MMapDirectory(indexPath);
              IndexWriter indexWriter = new IndexWriter(directory, indexWriterConfig)) {
-            final Collection<IndexableField> fields = Arrays.asList(
-                new StringField("foo", "bar", Field.Store.YES)
-            );
-            indexWriter.addDocument(fields);
+            while(true) {
+                final Collection<IndexableField> fields = Arrays.asList(
+                    new StringField("foo", UUIDs.randomBase64UUID(), Field.Store.YES),
+                    new StringField("blub", UUIDs.randomBase64UUID(), Field.Store.YES)
+                );
+                indexWriter.addDocument(fields);
+            }
         }
     }
 }

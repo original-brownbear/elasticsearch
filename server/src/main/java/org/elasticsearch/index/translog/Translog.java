@@ -76,7 +76,7 @@ import java.util.stream.Stream;
  * records the current translog generation {@link Translog#getGeneration()} in it's commit metadata using {@link #TRANSLOG_GENERATION_KEY}
  * to reference the generation that contains all operations that have not yet successfully been committed to the engines lucene index.
  * Additionally, since Elasticsearch 2.0 the engine also records a {@link #TRANSLOG_UUID_KEY} with each commit to ensure a strong
- * association between the lucene index an the transaction log file. This UUID is used to prevent accidental recovery from a transaction
+ * association between the lucene index and the transaction log file. This UUID is used to prevent accidental recovery from a transaction
  * log that belongs to a
  * different engine.
  * <p>

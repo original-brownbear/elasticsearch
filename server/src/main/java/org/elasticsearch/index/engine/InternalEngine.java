@@ -562,7 +562,7 @@ public class InternalEngine extends Engine {
     /**
      * Reads the current stored history ID from the IW commit data.
      */
-    private String loadHistoryUUID(final IndexWriter writer) throws IOException {
+    private String loadHistoryUUID(final IndexWriter writer) {
         final String uuid = commitDataAsMap(writer).get(HISTORY_UUID_KEY);
         if (uuid == null) {
             throw new IllegalStateException("commit doesn't contain history uuid");
@@ -977,7 +977,7 @@ public class InternalEngine extends Engine {
         }
     }
 
-    protected final IndexingStrategy planIndexingAsPrimary(Index index) throws IOException {
+    private IndexingStrategy planIndexingAsPrimary(Index index) throws IOException {
         assert index.origin() == Operation.Origin.PRIMARY : "planing as primary but origin isn't. got " + index.origin();
         assert getMaxSeqNoOfUpdatesOrDeletes() != SequenceNumbers.UNASSIGNED_SEQ_NO : "max_seq_no_of_updates is not initialized";
         final IndexingStrategy plan;
@@ -1318,7 +1318,7 @@ public class InternalEngine extends Engine {
         return true;
     }
 
-    protected final DeletionStrategy planDeletionAsPrimary(Delete delete) throws IOException {
+    private DeletionStrategy planDeletionAsPrimary(Delete delete) throws IOException {
         assert delete.origin() == Operation.Origin.PRIMARY : "planing as primary but got " + delete.origin();
         assert getMaxSeqNoOfUpdatesOrDeletes() != SequenceNumbers.UNASSIGNED_SEQ_NO : "max_seq_no_of_updates is not initialized";
         // resolve operation from external to internal
