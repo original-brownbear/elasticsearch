@@ -220,6 +220,7 @@ public abstract class ChannelFactory<ServerSocket extends NioServerSocketChannel
 
         public static SocketChannel accept(ServerSocketChannel serverSocketChannel) throws IOException {
             try {
+                assert serverSocketChannel.isBlocking() == false;
                 return AccessController.doPrivileged((PrivilegedExceptionAction<SocketChannel>) serverSocketChannel::accept);
             } catch (PrivilegedActionException e) {
                 throw (IOException) e.getCause();
