@@ -1,3 +1,12 @@
 @startuml
 
+master -> clusterstate: Create DeleteSnapshotEntry that includes next\
+ tree hash
+master -> repository: Write new tree that includes the resulting changes\
+ from the delete
+master -> repository: Execute deletes required to align written tree and blobs
+master -> repository: write new commit once tree and blobs are aligned
+master -> clusterstate: Remove DeleteSnapshotEntry and store new latest \
+commit hash for repository
+
 @enduml
