@@ -1,0 +1,23 @@
+@startuml
+HEAD -- CommitC
+CommitA -- "snapshot 1"
+CommitB -- "snapshot 1"
+CommitB -- "snapshot 2"
+CommitC -- "snapshot 2"
+CommitA -> CommitB : Take new Snapshot
+CommitB -> CommitC : Delete snapshot 1
+
+"snapshot 1" -- "indexA at time 1 tree"
+"indexA at time 1 tree" -- "segment blob A0"
+"indexA at time 1 tree" -- "segment blob A1"
+"indexA at time 1 tree" -- "index metadata blob Am1"
+
+"snapshot 2" -- "indexA at time 2 tree"
+"snapshot 2" -- "indexB at time 2 tree"
+"indexA at time 2 tree" -- "segment blob A1"
+"indexA at time 2 tree" -- "segment blob A2"
+"indexA at time 2 tree" -- "index metadata blob Am2"
+"indexB at time 2 tree" -- "segment blob B1"
+"indexB at time 2 tree" -- "segment blob B2"
+"indexB at time 2 tree" -- "index metadata blob Bm3"
+@enduml
