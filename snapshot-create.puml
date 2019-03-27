@@ -1,12 +1,16 @@
 @startuml
 
-master -> clusterstate: Create DeleteSnapshotEntry that includes next\
- tree hash
-master -> repository: Write new tree that includes the resulting changes\
- from the delete
+master -> clusterstate: Create create or delete snapshot entry.
+alt create snapshot
+master -> peers: Gather all information about the files involved in the next operation.
+end
+master -> clusterstate: Write new tree hash that includes the resulting changes from the next operation
+alt create snapshot
+master -> peers: Make peers write files in the new tree
+master <- peers: Report completion
+end
+master -> repository: Write new tree to repository
 master -> repository: Execute deletes required to align written tree and blobs
 master -> repository: write new commit once tree and blobs are aligned
-master -> clusterstate: Remove DeleteSnapshotEntry and store new latest \
-commit hash for repository
-
+master -> clusterstate: Remove create or delete snapshot entry.
 @enduml
