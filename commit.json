@@ -1,5 +1,6 @@
 {
   "root": "06d0fc316042895488a7c28fda7bb9633c1aa7bd",
+  "parent": "332e1aa7c6001b91b5f2d3fe9dcb972c7e5d1b1e",
   "operation": {
     "create": "[snapshot-7]"
   },
@@ -17,7 +18,7 @@
       },
       /* index uuid */
       "af2e4eed-k258-91fe-b0b7-29362da4d0cb": {
-        "tree": "6199ca742f742b4a031ad4b2aef4591dec0e27ef"
+        "tree": "86cb57ebf6640107d498f2f8a4c300658db0f71f"
       }
     }
   }

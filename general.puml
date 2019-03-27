@@ -1,0 +1,9 @@
+@startuml
+
+master -> repository: Write new trees
+master -> clusterstate: Publish state referencing new trees as pending
+master -> repository: Do writes and deletes
+master -> clusterstate: Publish state referencing new trees as completed
+master -> repository: Write new commit
+master -> clusterstate: Publish state referencing new commit
+@enduml
