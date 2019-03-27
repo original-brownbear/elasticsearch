@@ -2,15 +2,17 @@
 
 master -> clusterstate: Create create or delete snapshot entry.
 alt create snapshot
-master -> peers: Gather all information about the files involved in the next operation.
-end
-master -> clusterstate: Write new tree hash that includes the resulting changes from the next operation
-alt create snapshot
-master -> peers: Make peers write files in the new tree
-master <- peers: Report completion
+    master -> peers: Gather all information about the files involved in the next operation\n\
+    (acquire index commit for shards on data nodes in this step)
 end
 master -> repository: Write new tree to repository
-master -> repository: Execute deletes required to align written tree and blobs
+master -> clusterstate: Add new tree hash that includes the resulting changes from the next operation
+alt create snapshot
+    master -> peers: Make peers write files in the new tree
+    master <- peers: Report completion
+else delete snapshot
+    master -> repository: Execute deletes required to align written tree and blobs
+end
 master -> repository: write new commit once tree and blobs are aligned
 master -> clusterstate: Remove create or delete snapshot entry.
 @enduml
