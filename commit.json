@@ -1,0 +1,20 @@
+{
+  "root": "06d0fc316042895488a7c28fda7bb9633c1aa7bd",
+  "operation": {
+    "create": "[snapshot-7]"
+  },
+  "snapshots": {
+    "snapshot-1": {
+      /* index uuid */
+      "cf2ecced-e748-41ff-b6a7-16962da4d0cb": {
+        "tree": "58e885ca8a6966ae1cf402a53333ca69caf9fdc7"
+      }
+    },
+    "snapshot-5": {
+      /* index uuid */
+      "cf2ecced-e748-41ff-b6a7-16962da4d0cb": {
+        "tree": "6199ca742f742b4a031ad4b2aef4591dec0e27ef"
+      }
+    }
+  }
+}
