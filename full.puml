@@ -1,0 +1,52 @@
+@startuml
+
+master -> "cluster state": Create Snapshot Entry
+activate master
+activate "cluster state"
+master -> peers: Gather current snapshot segments
+activate peers
+note right: Peers create/open Lucene snapshot here
+master -> "cluster state": Mark new tree hashes as pending upload
+master -> "cluster state": Mark commit as pending upload
+master -> repository: Write new trees to repository
+master -> repository: Upload new commit
+activate repository
+master -> "cluster state": Mark new tree hashes as uploaded
+master -> peers: Make peers upload segments
+alt All Peers Upload successfully
+    master <- peers: Report completion of segment uploads
+    master -> "cluster state": Mark trees as completed
+else Some Peers Report Failure
+    master <- peers: Report failure
+    master -> "cluster state": Mark tree as failed and add new tree\nfor actually uploaded segments in pending upload state
+    master -> repository: Upload updated trees
+    master -> "cluster state": Mark updated trees as uploaded
+    master -> repository: Delete dangling blobs from failed shards/snapshots
+    master -> repository: Delete failed trees
+    master -> "cluster state": Remove failed trees
+else Primary Failover
+     master -> "cluster state": Mark trees as failed and add new tree\nfor actually uploaded segments in pending upload state
+     master -> repository: Store tombstone for failed trees from primary-failover
+     == "Handling Tombstones for Reconnecting Nodes" ==
+        master -> "Reconnected Node" **: Abort segment uploads
+        activate "Reconnected Node"
+        master <- "Reconnected Node" --: Report upload state
+        master -> "cluster state": Update SnapshotInProgress Entry with aborted shard states
+        master -> repository: delete dangling blobs from failed-over primary
+        master -> repository: Delete failed trees
+        master -> "cluster state": Remove failed tree references
+     == "Handling Tombstones for Nodes that do not Reconnect after Timeout" ==
+        master -> "cluster state": Update SnapshotInProgress Entry with aborted shard states
+        master -> repository: delete dangling blobs from failed-over primary
+        master -> repository: Delete failed trees
+        master -> "cluster state": Remove failed tree references
+     == "Done Handling Tombstones" ==
+     master -> repository: Upload updated trees
+     master -> "cluster state": Mark updated trees as uploaded
+end
+deactivate peers
+master -> "cluster state": Mark create snapshot entry as finished
+master -> repository: Update HEAD
+master -> "cluster state": Remove create snapshot entry
+
+@enduml
