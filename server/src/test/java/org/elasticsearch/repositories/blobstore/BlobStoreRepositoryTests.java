@@ -73,7 +73,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
                                                                ClusterService clusterService) {
             return Collections.singletonMap(REPO_TYPE,
-                (metadata) -> new FsRepository(metadata, env, namedXContentRegistry, clusterService) {
+                metadata -> new FsRepository(metadata, env, namedXContentRegistry, clusterService) {
                     @Override
                     protected void assertSnapshotOrGenericThread() {
                         // eliminate thread name check as we access blobStore on test/main threads
