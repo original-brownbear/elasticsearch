@@ -19,6 +19,7 @@
 
 package org.elasticsearch.repositories.azure;
 
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsException;
@@ -47,9 +48,10 @@ public class AzureRepositoryPlugin extends Plugin implements RepositoryPlugin, R
     }
 
     @Override
-    public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry) {
+    public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
+                                                           ClusterService clusterService) {
         return Collections.singletonMap(AzureRepository.TYPE,
-                (metadata) -> new AzureRepository(metadata, env, namedXContentRegistry, azureStoreService));
+                metadata -> new AzureRepository(metadata, env, namedXContentRegistry, azureStoreService, clusterService));
     }
 
     @Override

@@ -25,6 +25,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -36,6 +37,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import static org.hamcrest.Matchers.is;
+import static org.mockito.Mockito.mock;
 
 @SuppressForbidden(reason = "test fixture requires System.setProperty")
 public class RepositoryCredentialsTests extends ESTestCase {
@@ -77,8 +79,9 @@ public class RepositoryCredentialsTests extends ESTestCase {
         }
 
         @Override
-        protected S3Repository createRepository(RepositoryMetaData metadata, Settings settings, NamedXContentRegistry registry) {
-            return new S3Repository(metadata, settings, registry, service){
+        protected S3Repository createRepository(RepositoryMetaData metadata, Settings settings, NamedXContentRegistry registry,
+                                                ClusterService clusterService) {
+            return new S3Repository(metadata, settings, registry, service, clusterService){
                 @Override
                 protected void assertSnapshotOrGenericThread() {
                     // eliminate thread name check as we create repo manually on test/main threads
@@ -145,7 +148,8 @@ public class RepositoryCredentialsTests extends ESTestCase {
     }
 
     private S3Repository createAndStartRepository(RepositoryMetaData metadata, S3RepositoryPlugin s3Plugin) {
-        final S3Repository repository = s3Plugin.createRepository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY);
+        final S3Repository repository =
+            s3Plugin.createRepository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, mock(ClusterService.class));
         repository.start();
         return repository;
     }

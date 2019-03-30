@@ -22,6 +22,7 @@ package org.elasticsearch.repositories.s3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
@@ -165,8 +166,8 @@ class S3Repository extends BlobStoreRepository {
     S3Repository(final RepositoryMetaData metadata,
                  final Settings settings,
                  final NamedXContentRegistry namedXContentRegistry,
-                 final S3Service service) {
-        super(metadata, settings, namedXContentRegistry);
+                 final S3Service service, ClusterService clusterService) {
+        super(metadata, settings, namedXContentRegistry, clusterService);
         this.service = service;
 
         this.repositoryMetaData = metadata;

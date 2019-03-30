@@ -37,6 +37,7 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Numbers;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
@@ -231,13 +232,16 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final SetOnce<BlobStore> blobStore = new SetOnce<>();
 
+    private final ClusterService clusterService;
+
     /**
      * Constructs new BlobStoreRepository
      *  @param metadata       The metadata for this repository including name and settings
      * @param settings Settings for the node this repository object is created on
      */
     protected BlobStoreRepository(RepositoryMetaData metadata, Settings settings,
-                                  NamedXContentRegistry namedXContentRegistry) {
+                                  NamedXContentRegistry namedXContentRegistry, ClusterService clusterService) {
+        this.clusterService = clusterService;
         this.settings = settings;
         this.metadata = metadata;
         this.namedXContentRegistry = namedXContentRegistry;

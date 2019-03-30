@@ -326,9 +326,11 @@ public class Ccr extends Plugin implements ActionPlugin, PersistentTaskPlugin, E
     }
 
     @Override
-    public Map<String, Repository.Factory> getInternalRepositories(Environment env, NamedXContentRegistry namedXContentRegistry) {
+    public Map<String, Repository.Factory> getInternalRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
+                                                                   ClusterService clusterService) {
         Repository.Factory repositoryFactory =
-            (metadata) -> new CcrRepository(metadata, client, ccrLicenseChecker, settings, ccrSettings.get(), threadPool.get());
+            metadata -> new CcrRepository(metadata, client, ccrLicenseChecker, settings, ccrSettings.get(),
+                                          clusterService.getClusterApplierService().threadPool());
         return Collections.singletonMap(CcrRepository.TYPE, repositoryFactory);
     }
 

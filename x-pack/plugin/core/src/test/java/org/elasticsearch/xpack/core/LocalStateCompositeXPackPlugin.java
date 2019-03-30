@@ -395,17 +395,22 @@ public class LocalStateCompositeXPackPlugin extends XPackPlugin implements Scrip
     }
 
     @Override
-    public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry) {
-        HashMap<String, Repository.Factory> repositories = new HashMap<>(super.getRepositories(env, namedXContentRegistry));
-        filterPlugins(RepositoryPlugin.class).forEach(r -> repositories.putAll(r.getRepositories(env, namedXContentRegistry)));
+    public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
+                                                           ClusterService clusterService) {
+        HashMap<String, Repository.Factory> repositories =
+            new HashMap<>(super.getRepositories(env, namedXContentRegistry, clusterService));
+        filterPlugins(RepositoryPlugin.class)
+            .forEach(r -> repositories.putAll(r.getRepositories(env, namedXContentRegistry, clusterService)));
         return repositories;
     }
 
     @Override
-    public Map<String, Repository.Factory> getInternalRepositories(Environment env, NamedXContentRegistry namedXContentRegistry) {
-        HashMap<String, Repository.Factory> internalRepositories = new HashMap<>(super.getInternalRepositories(env, namedXContentRegistry));
+    public Map<String, Repository.Factory> getInternalRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
+                                                                   ClusterService clusterService) {
+        HashMap<String, Repository.Factory> internalRepositories =
+            new HashMap<>(super.getInternalRepositories(env, namedXContentRegistry, clusterService));
         filterPlugins(RepositoryPlugin.class).forEach(r ->
-            internalRepositories.putAll(r.getInternalRepositories(env, namedXContentRegistry)));
+            internalRepositories.putAll(r.getInternalRepositories(env, namedXContentRegistry, clusterService)));
         return internalRepositories;
     }
 

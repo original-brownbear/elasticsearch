@@ -22,6 +22,7 @@ package org.elasticsearch.repositories.s3;
 import com.amazonaws.util.json.Jackson;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -77,13 +78,15 @@ public class S3RepositoryPlugin extends Plugin implements RepositoryPlugin, Relo
     // proxy method for testing
     protected S3Repository createRepository(final RepositoryMetaData metadata,
                                             final Settings settings,
-                                            final NamedXContentRegistry registry) {
-        return new S3Repository(metadata, settings, registry, service);
+                                            final NamedXContentRegistry registry, ClusterService clusterService) {
+        return new S3Repository(metadata, settings, registry, service, clusterService);
     }
 
     @Override
-    public Map<String, Repository.Factory> getRepositories(final Environment env, final NamedXContentRegistry registry) {
-        return Collections.singletonMap(S3Repository.TYPE, (metadata) -> createRepository(metadata, env.settings(), registry));
+    public Map<String, Repository.Factory> getRepositories(final Environment env, final NamedXContentRegistry registry,
+                                                           ClusterService clusterService) {
+        return Collections.singletonMap(
+            S3Repository.TYPE, metadata -> createRepository(metadata, env.settings(), registry, clusterService));
     }
 
     @Override

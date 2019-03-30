@@ -26,6 +26,7 @@ import org.elasticsearch.action.admin.cluster.snapshots.status.SnapshotsStatusRe
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
@@ -187,8 +188,8 @@ public class MetadataLoadingDuringSnapshotRestoreIT extends AbstractSnapshotInte
 
         public CountingMockRepository(final RepositoryMetaData metadata,
                                       final Environment environment,
-                                      final NamedXContentRegistry namedXContentRegistry) throws IOException {
-            super(metadata, environment, namedXContentRegistry);
+                                      final NamedXContentRegistry namedXContentRegistry, ClusterService clusterService) {
+            super(metadata, environment, namedXContentRegistry, clusterService);
         }
 
         @Override
@@ -207,8 +208,10 @@ public class MetadataLoadingDuringSnapshotRestoreIT extends AbstractSnapshotInte
     /** A plugin that uses CountingMockRepository as implementation of the Repository **/
     public static class CountingMockRepositoryPlugin extends MockRepository.Plugin {
         @Override
-        public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry) {
-            return Collections.singletonMap("coutingmock", (metadata) -> new CountingMockRepository(metadata, env, namedXContentRegistry));
+        public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
+                                                               ClusterService clusterService) {
+            return Collections.singletonMap(
+                "coutingmock", metadata -> new CountingMockRepository(metadata, env, namedXContentRegistry, clusterService));
         }
     }
 }

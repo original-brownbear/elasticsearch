@@ -31,6 +31,7 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.TestShardRouting;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.lucene.uid.Versions;
@@ -68,6 +69,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+
+import static org.mockito.Mockito.mock;
 
 public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
 
@@ -328,7 +331,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
     private Repository createRepository() throws IOException {
         Settings settings = Settings.builder().put("location", randomAlphaOfLength(10)).build();
         RepositoryMetaData repositoryMetaData = new RepositoryMetaData(randomAlphaOfLength(10), FsRepository.TYPE, settings);
-        return new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry());
+        return new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), mock(ClusterService.class));
     }
 
     private static void runAsSnapshot(ThreadPool pool, Runnable runnable) {

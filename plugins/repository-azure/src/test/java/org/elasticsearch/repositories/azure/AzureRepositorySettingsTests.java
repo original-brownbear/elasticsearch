@@ -21,6 +21,7 @@ package org.elasticsearch.repositories.azure;
 
 import com.microsoft.azure.storage.LocationMode;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -42,7 +43,8 @@ public class AzureRepositorySettingsTests extends ESTestCase {
             .put(settings)
             .build();
         final AzureRepository azureRepository = new AzureRepository(new RepositoryMetaData("foo", "azure", internalSettings),
-            TestEnvironment.newEnvironment(internalSettings), NamedXContentRegistry.EMPTY, mock(AzureStorageService.class));
+            TestEnvironment.newEnvironment(
+                internalSettings), NamedXContentRegistry.EMPTY, mock(AzureStorageService.class), mock(ClusterService.class));
         assertThat(azureRepository.getBlobStore(), is(nullValue()));
         return azureRepository;
     }

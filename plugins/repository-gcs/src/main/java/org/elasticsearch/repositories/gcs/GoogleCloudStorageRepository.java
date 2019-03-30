@@ -22,6 +22,7 @@ package org.elasticsearch.repositories.gcs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.settings.Setting;
@@ -63,8 +64,8 @@ class GoogleCloudStorageRepository extends BlobStoreRepository {
 
     GoogleCloudStorageRepository(RepositoryMetaData metadata, Environment environment,
                                         NamedXContentRegistry namedXContentRegistry,
-                                        GoogleCloudStorageService storageService) {
-        super(metadata, environment.settings(), namedXContentRegistry);
+                                        GoogleCloudStorageService storageService, ClusterService clusterService) {
+        super(metadata, environment.settings(), namedXContentRegistry, clusterService);
         this.storageService = storageService;
 
         String basePath = BASE_PATH.get(metadata.settings());
