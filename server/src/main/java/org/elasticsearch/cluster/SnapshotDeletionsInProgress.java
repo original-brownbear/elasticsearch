@@ -30,6 +30,7 @@ import org.elasticsearch.snapshots.Snapshot;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -62,6 +63,12 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
 
     public List<String> outstandingDeletes() {
         return outstandingDeletes;
+    }
+
+    public SnapshotDeletionsInProgress withDeletes(String... tombstoneHashes) {
+        final List<String> updatedDeletes = new ArrayList<>(outstandingDeletes);
+        updatedDeletes.addAll(Arrays.asList(tombstoneHashes));
+        return new SnapshotDeletionsInProgress(entries, updatedDeletes);
     }
 
     public SnapshotDeletionsInProgress withRemovedDelete(String tombstoneHash) {
