@@ -33,6 +33,11 @@ import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
+import org.elasticsearch.cluster.ClusterChangedEvent;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.ClusterStateApplier;
+import org.elasticsearch.cluster.ClusterStateUpdateTask;
+import org.elasticsearch.cluster.SnapshotDeletionsInProgress;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
@@ -51,9 +56,12 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.compress.NotXContentException;
+import org.elasticsearch.common.hash.MessageDigests;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.lucene.store.InputStreamIndexInput;
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -61,6 +69,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -105,8 +114,13 @@ import java.io.InputStream;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
+import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -158,7 +172,7 @@ import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSna
  * }
  * </pre>
  */
-public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository {
+public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository, ClusterStateApplier {
     private static final Logger logger = LogManager.getLogger(BlobStoreRepository.class);
 
     protected final RepositoryMetaData metadata;
@@ -232,6 +246,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final SetOnce<BlobStore> blobStore = new SetOnce<>();
 
+    private volatile Set<String> inProgressDeletes = Collections.emptySet();
+
+    private final Map<String, Tombstone> tombstones = ConcurrentCollections.newConcurrentMap();
+
     private final ClusterService clusterService;
 
     /**
@@ -258,6 +276,128 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
+    public void applyClusterState(ClusterChangedEvent event) {
+        if (event.localNodeMaster()) {
+            if (event.previousState().nodes().isLocalNodeElectedMaster() == false) {
+                // Regenerate tombstone cache
+                // Run deletes
+            }
+            final SnapshotDeletionsInProgress snapshotDeletions = event.state().custom(SnapshotDeletionsInProgress.TYPE);
+            if (snapshotDeletions != null) {
+                final Set<String> newDeletes;
+                synchronized (this) {
+                    newDeletes = snapshotDeletions.outstandingDeletes()
+                        .stream().filter(s -> inProgressDeletes.contains(s) == false).collect(Collectors.toSet());
+                    if (newDeletes.isEmpty()) {
+                        return;
+                    }
+                    final Set<String> updatedInProgressDeletes = new HashSet<>(newDeletes);
+                    updatedInProgressDeletes.addAll(inProgressDeletes);
+                    inProgressDeletes = Collections.unmodifiableSet(updatedInProgressDeletes);
+                }
+                deleteByTombstones(newDeletes);
+            }
+        }
+    }
+
+    private void deleteByTombstones(Set<String> tombstoneHashes) {
+        for (String tombstoneHash : tombstoneHashes) {
+            final Tombstone tombstone = tombstones.get(tombstoneHash);
+            if (tombstone == null) {
+                try {
+                    blobStore().blobContainer(basePath().add("tombstones")).readBlob(tombstoneHash);
+                } catch (NoSuchFileException e) {
+                    try {
+                        finishTombstoneHash(tombstoneHash, false);
+                    } catch (IOException ieo) {
+                        throw new AssertionError("Impossible exception since we are not deleting a blob here.");
+                    }
+                } catch (IOException e) {
+                    logger.warn("Failed to load tombstone [{}], will retry.", tombstoneHash);
+                }
+            } else {
+
+            }
+            final BlobContainer blobContainer = blobContainer();
+            for (String blob : tombstone.blobs) {
+                try {
+                    blobContainer.deleteBlobIgnoringIfNotExists(blob);
+                } catch (IOException e) {
+                    logger.warn("Failed to delete blob [{}], will retry.", blob);
+                }
+            }
+        }
+    }
+
+    private void finishTombstoneHash(String tombstoneHash, boolean deleteBlob) throws IOException {
+        if (deleteBlob) {
+            blobStore().blobContainer(basePath().add("tombstones")).deleteBlobIgnoringIfNotExists(tombstoneHash);
+            tombstones.remove(tombstoneHash);
+            synchronized (this) {
+                final Set<String> updatedDeletes = new HashSet<>(inProgressDeletes);
+                updatedDeletes.remove(tombstoneHash);
+                inProgressDeletes = Collections.unmodifiableSet(updatedDeletes);
+            }
+            clusterService.submitStateUpdateTask("delete tombstone [" + tombstoneHash + ']', new ClusterStateUpdateTask() {
+                @Override
+                public ClusterState execute(ClusterState currentState) {
+                    final SnapshotDeletionsInProgress snapshotDeletions = currentState.custom(SnapshotDeletionsInProgress.TYPE);
+                    return ClusterState.builder(currentState)
+                        .putCustom(SnapshotDeletionsInProgress.TYPE, snapshotDeletions.withRemovedDelete(tombstoneHash)).build();
+                }
+
+                @Override
+                public void onFailure(String source, Exception e) {
+                    logger.warn(
+                        () -> new ParameterizedMessage("Failed to remove tombstone from clusterstate {}.", tombstoneHash), e);
+                }
+            });
+        }
+    }
+
+    private static final class Tombstone implements Writeable {
+
+        private final long repositoryStateId;
+
+        private final SnapshotId snapshotId;
+
+        private final String[] blobs;
+
+        Tombstone(long repositoryStateId, SnapshotId snapshotId, List<String> blobs) {
+            this.repositoryStateId = repositoryStateId;
+            this.snapshotId = snapshotId;
+            this.blobs = blobs.toArray(Strings.EMPTY_ARRAY);
+            // Sorting to get a deterministic hash for this tombstone
+            Arrays.sort(this.blobs);
+        }
+
+        Tombstone(StreamInput in) throws IOException {
+            repositoryStateId = in.readLong();
+            snapshotId = new SnapshotId(in);
+            blobs = in.readStringArray();
+        }
+
+        public String hash() {
+            MessageDigest sha = MessageDigests.sha256();
+            try (BytesStreamOutput out = new BytesStreamOutput()) {
+                out.writeLong(repositoryStateId);
+                snapshotId.writeTo(out);
+                sha.update(out.bytes().toBytesRef().bytes);
+            } catch (IOException e) {
+                throw new AssertionError("This should be impossible", e);
+            }
+            return Base64.getEncoder().encodeToString(sha.digest());
+        }
+
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {
+            out.writeLong(repositoryStateId);
+            snapshotId.writeTo(out);
+            out.writeStringArray(blobs);
+        }
+    }
+
+    @Override
     protected void doStart() {
         ByteSizeValue chunkSize = chunkSize();
         if (chunkSize != null && chunkSize.getBytes() <= 0) {
@@ -269,6 +409,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             IndexMetaData::fromXContent, namedXContentRegistry, compress);
         snapshotFormat = new ChecksumBlobStoreFormat<>(SNAPSHOT_CODEC, SNAPSHOT_NAME_FORMAT,
             SnapshotInfo::fromXContentInternal, namedXContentRegistry, compress);
+        clusterService.addStateApplier(this);
     }
 
     @Override
@@ -288,6 +429,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 logger.warn("cannot close blob store", t);
             }
         }
+        clusterService.removeApplier(this);
     }
 
     // package private, only use for testing

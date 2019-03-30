@@ -44,16 +44,30 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     // the list of snapshot deletion request entries
     private final List<Entry> entries;
 
-    public SnapshotDeletionsInProgress() {
-        this(Collections.emptyList());
-    }
+    private final List<String> outstandingDeletes;
 
-    private SnapshotDeletionsInProgress(List<Entry> entries) {
+    private SnapshotDeletionsInProgress(List<Entry> entries, List<String> deletedBlobsHashes) {
         this.entries = Collections.unmodifiableList(entries);
+        outstandingDeletes = Collections.unmodifiableList(deletedBlobsHashes);
     }
 
     public SnapshotDeletionsInProgress(StreamInput in) throws IOException {
         this.entries = Collections.unmodifiableList(in.readList(Entry::new));
+        if (in.getVersion().onOrAfter(Version.V_8_0_0)) {
+            outstandingDeletes = in.readStringList();
+        } else {
+            outstandingDeletes = Collections.emptyList();
+        }
+    }
+
+    public List<String> outstandingDeletes() {
+        return outstandingDeletes;
+    }
+
+    public SnapshotDeletionsInProgress withRemovedDelete(String tombstoneHash) {
+        final List<String> updatedDeletes = new ArrayList<>(outstandingDeletes);
+        updatedDeletes.remove(tombstoneHash);
+        return new SnapshotDeletionsInProgress(entries, updatedDeletes);
     }
 
     /**
@@ -61,7 +75,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
      * {@link Entry} added.
      */
     public static SnapshotDeletionsInProgress newInstance(Entry entry) {
-        return new SnapshotDeletionsInProgress(Collections.singletonList(entry));
+        return new SnapshotDeletionsInProgress(Collections.singletonList(entry), Collections.emptyList());
     }
 
     /**
@@ -71,7 +85,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     public SnapshotDeletionsInProgress withAddedEntry(Entry entry) {
         List<Entry> entries = new ArrayList<>(getEntries());
         entries.add(entry);
-        return new SnapshotDeletionsInProgress(entries);
+        return new SnapshotDeletionsInProgress(entries, outstandingDeletes);
     }
 
     /**
@@ -81,7 +95,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     public SnapshotDeletionsInProgress withRemovedEntry(Entry entry) {
         List<Entry> entries = new ArrayList<>(getEntries());
         entries.remove(entry);
-        return new SnapshotDeletionsInProgress(entries);
+        return new SnapshotDeletionsInProgress(entries, outstandingDeletes);
     }
 
     /**
@@ -125,6 +139,9 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         out.writeList(entries);
+        if (out.getVersion().onOrAfter(Version.V_8_0_0)) {
+            out.writeStringCollection(outstandingDeletes);
+        }
     }
 
     public static NamedDiff<Custom> readDiffFrom(StreamInput in) throws IOException {
