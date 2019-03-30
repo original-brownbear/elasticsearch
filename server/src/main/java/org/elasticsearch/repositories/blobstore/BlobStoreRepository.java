@@ -127,6 +127,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot.FileInfo.canonicalName;
@@ -253,6 +254,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final Map<String, Tombstone> tombstones = ConcurrentCollections.newConcurrentMap();
 
+    private final Map<String, List<ActionListener<Void>>> snapshotDeletionListeners = ConcurrentCollections.newConcurrentMap();
+
     private final ClusterService clusterService;
 
     private final ThreadPool threadPool;
@@ -293,7 +296,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     knownTombstones = Collections.emptySet();
                 }
                 try {
-
                     final Set<String> tombstonesInBlobstore =
                         blobStore().blobContainer(basePath().add("tombstones")).listBlobs().keySet();
                     tombstonesInBlobstore.removeAll(knownTombstones);
@@ -305,29 +307,36 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final SnapshotDeletionsInProgress snapshotDeletions = event.state().custom(SnapshotDeletionsInProgress.TYPE);
             if (snapshotDeletions != null) {
                 final Set<String> newDeletes;
+                final Set<String> finishedDeletes;
                 synchronized (this) {
-                    newDeletes = snapshotDeletions.outstandingDeletes()
-                        .stream().filter(s -> inProgressDeletes.contains(s) == false).collect(Collectors.toSet());
-                    if (newDeletes.isEmpty()) {
-                        return;
+                    final List<String> outstanding = snapshotDeletions.outstandingDeletes();
+                    newDeletes = outstanding.stream().filter(s -> inProgressDeletes.contains(s) == false).collect(Collectors.toSet());
+                    finishedDeletes = inProgressDeletes.stream().filter(s -> outstanding.contains(s) == false).collect(Collectors.toSet());
+                    if (newDeletes.isEmpty() == false) {
+                        final Set<String> updatedInProgressDeletes = new HashSet<>(newDeletes);
+                        updatedInProgressDeletes.addAll(inProgressDeletes);
+                        updatedInProgressDeletes.removeAll(finishedDeletes);
+                        inProgressDeletes = Collections.unmodifiableSet(updatedInProgressDeletes);
                     }
-                    final Set<String> updatedInProgressDeletes = new HashSet<>(newDeletes);
-                    updatedInProgressDeletes.addAll(inProgressDeletes);
-                    inProgressDeletes = Collections.unmodifiableSet(updatedInProgressDeletes);
                 }
-                threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(
-                    new AbstractRunnable() {
-                        @Override
-                        public void onFailure(Exception e) {
-                            logger.warn("Failures during delete tombstone handling", e);
-                        }
+                for (String finishedDelete : finishedDeletes) {
+                    finishDeletion(finishedDelete);
+                }
+                if (newDeletes.isEmpty() == false) {
+                    threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(
+                        new AbstractRunnable() {
+                            @Override
+                            public void onFailure(Exception e) {
+                                logger.warn("Failures during delete tombstone handling", e);
+                            }
 
-                        @Override
-                        protected void doRun() throws IOException {
-                            deleteByTombstones(newDeletes);
+                            @Override
+                            protected void doRun() throws IOException {
+                                deleteByTombstones(newDeletes);
+                            }
                         }
-                    }
-                );
+                    );
+                }
             }
         }
     }
@@ -607,18 +616,35 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         if (isReadOnly()) {
             throw new RepositoryException(metadata.name(), "cannot delete snapshot from a readonly repository");
         }
-        ActionListener.completeWith(listener, () -> {
+        try {
             final RepositoryData repositoryData = getRepositoryData();
             if (clusterService.state().nodes().getMinNodeVersion().before(Version.V_8_0_0)) {
                 bwcDelete(snapshotId, repositoryStateId, repositoryData);
+                listener.onResponse(null);
             } else {
-                doDelete(snapshotId, repositoryStateId, repositoryData);
+                doDelete(snapshotId, repositoryStateId, repositoryData, listener);
             }
-            return null;
-        });
+        } catch (Exception e) {
+            listener.onFailure(e);
+        }
     }
 
-    private void doDelete(SnapshotId snapshotId, long repositoryStateId, RepositoryData repositoryData) {
+    private void finishDeletion(String tombstoneHash) {
+        final List<ActionListener<Void>> completionListeners = snapshotDeletionListeners.remove(tombstoneHash);
+        if (completionListeners != null) {
+            try {
+                ActionListener.onResponse(completionListeners, null);
+            } catch (Exception e) {
+                logger.warn("Failed to notify listeners", e);
+            }
+        }
+    }
+
+    private void addListener(String tombstoneHash, ActionListener<Void> listener) {
+        snapshotDeletionListeners.computeIfAbsent(tombstoneHash, k -> new CopyOnWriteArrayList<>()).add(listener);
+    }
+
+    private void doDelete(SnapshotId snapshotId, long repositoryStateId, RepositoryData repositoryData, ActionListener<Void> listener) {
         final RepositoryData updatedRepositoryData;
         try {
             updatedRepositoryData = writeUpdatedRepositoryData(snapshotId, repositoryStateId, repositoryData);
@@ -633,6 +659,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             @Override
             public ClusterState execute(ClusterState currentState) {
                 final SnapshotDeletionsInProgress snapshotDeletions = currentState.custom(SnapshotDeletionsInProgress.TYPE);
+                addListener(tombstoneHash, listener);
                 return ClusterState.builder(currentState).putCustom(
                     SnapshotDeletionsInProgress.TYPE, snapshotDeletions.withDeletes(tombstoneHash)).build();
             }
