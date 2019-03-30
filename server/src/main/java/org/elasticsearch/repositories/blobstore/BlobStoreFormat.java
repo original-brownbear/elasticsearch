@@ -104,7 +104,7 @@ public abstract class BlobStoreFormat<T extends ToXContent> {
         return blobContainer.blobExists(blobName(name));
     }
 
-    protected String blobName(String name) {
+    public String blobName(String name) {
         return String.format(Locale.ROOT, blobNameFormat, name);
     }
 
