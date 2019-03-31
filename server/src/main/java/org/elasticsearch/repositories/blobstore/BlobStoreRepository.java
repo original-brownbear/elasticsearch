@@ -712,7 +712,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             }
                         }
                         // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
-                        context.finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot deletion [" + snapshotId + "]", blobsToDelete);
+                        context.finalize(
+                            newSnapshotsList, fileListGeneration + 1, blobs, "snapshot deletion [" + snapshotId + "]", blobsToDelete);
                     }
                 }
             }
