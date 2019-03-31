@@ -681,6 +681,27 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 if (indexMetaData != null) {
                     for (int shardId = 0; shardId < indexMetaData.getNumberOfShards(); shardId++) {
                         try {
+                            final ShardId sid = new ShardId(indexMetaData.getIndex(), shardId);
+                            Context context = new Context(snapshotId, indexId, sid, sid);
+                            final Map<String, BlobMetaData> blobs;
+                            try {
+                                blobs = context.blobContainer.listBlobs();
+                            } catch (IOException e) {
+                                throw new IndexShardSnapshotException(sid, "Failed to list content of gateway", e);
+                            }
+
+                            Tuple<BlobStoreIndexShardSnapshots, Integer> tuple = context.buildBlobStoreIndexShardSnapshots(blobs);
+                            BlobStoreIndexShardSnapshots snapshots = tuple.v1();
+                            int fileListGeneration = tuple.v2();
+                            // Build a list of snapshots that should be preserved
+                            List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
+                            for (SnapshotFiles point : snapshots) {
+                                if (!point.snapshot().equals(snapshotId.getName())) {
+                                    newSnapshotsList.add(point);
+                                }
+                            }
+                            // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
+                            context.finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot deletion [" + snapshotId + "]");
                             blobsToDelete.add(
                                 basePath().add("indices").add(indexId.getId()).add(Integer.toString(shardId))
                                     .add(indexShardSnapshotFormat.blobName(snapshotId.getUUID())).buildAsString());
