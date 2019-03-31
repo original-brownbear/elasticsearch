@@ -44,6 +44,7 @@ import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Numbers;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
@@ -689,6 +690,29 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             logger.warn(() -> new ParameterizedMessage("[{}] failed to delete shard data for shard [{}][{}]",
                                 snapshotId, index, finalShardId), ex);
                         }
+                        final ShardId sid = new ShardId(indexMetaData.getIndex(), shardId);
+                        final Context context = new Context(snapshotId, indexId, sid);
+                        final Map<String, BlobMetaData> blobs;
+                        try {
+                            blobs = context.blobContainer.listBlobs();
+                        } catch (IOException e) {
+                            throw new IndexShardSnapshotException(sid, "Failed to list content of gateway", e);
+                        }
+
+                        Tuple<BlobStoreIndexShardSnapshots, Integer> tuple = context.buildBlobStoreIndexShardSnapshots(blobs);
+                        BlobStoreIndexShardSnapshots snapshots = tuple.v1();
+                        int fileListGeneration = tuple.v2();
+                        blobsToDelete.add(
+                            context.blobContainer.path().add(indexShardSnapshotFormat.blobName(snapshotId.getUUID())).buildAsString());
+                        // Build a list of snapshots that should be preserved
+                        List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
+                        for (SnapshotFiles point : snapshots) {
+                            if (!point.snapshot().equals(snapshotId.getName())) {
+                                newSnapshotsList.add(point);
+                            }
+                        }
+                        // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
+                        context.finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot deletion [" + snapshotId + "]", blobsToDelete);
                     }
                 }
             }
@@ -1310,7 +1334,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
             }
             // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
-            finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot deletion [" + snapshotId + "]");
+            finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot deletion [" + snapshotId + "]", null);
         }
 
         /**
@@ -1338,7 +1362,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         protected void finalize(final List<SnapshotFiles> snapshots,
                                 final int fileListGeneration,
                                 final Map<String, BlobMetaData> blobs,
-                                final String reason) {
+                                final String reason,
+                                @Nullable final Collection<String> toDelete) {
             final String indexGeneration = Integer.toString(fileListGeneration);
             final String currentIndexGen = indexShardSnapshotsFormat.blobName(indexGeneration);
 
@@ -1348,13 +1373,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 // attempt to write an index file with this generation failed mid-way after creating the temporary file.
                 for (final String blobName : blobs.keySet()) {
                     if (FsBlobContainer.isTempBlobName(blobName)) {
-                        try {
-                            blobContainer.deleteBlobIgnoringIfNotExists(blobName);
-                        } catch (IOException e) {
-                            logger.warn(() -> new ParameterizedMessage("[{}][{}] failed to delete index blob [{}] during finalization",
-                                snapshotId, shardId, blobName), e);
-                            throw e;
-                        }
+                        deleteBlob(toDelete, blobName);
                     }
                 }
 
@@ -1366,30 +1385,42 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 // Delete old index files
                 for (final String blobName : blobs.keySet()) {
                     if (blobName.startsWith(SNAPSHOT_INDEX_PREFIX)) {
-                        try {
-                            blobContainer.deleteBlobIgnoringIfNotExists(blobName);
-                        } catch (IOException e) {
-                            logger.warn(() -> new ParameterizedMessage("[{}][{}] failed to delete index blob [{}] during finalization",
-                                snapshotId, shardId, blobName), e);
-                            throw e;
-                        }
+                        deleteBlob(toDelete, blobName);
                     }
                 }
 
                 // Delete all blobs that don't exist in a snapshot
                 for (final String blobName : blobs.keySet()) {
                     if (blobName.startsWith(DATA_BLOB_PREFIX) && (updatedSnapshots.findNameFile(canonicalName(blobName)) == null)) {
-                        try {
-                            blobContainer.deleteBlobIgnoringIfNotExists(blobName);
-                        } catch (IOException e) {
-                            logger.warn(() -> new ParameterizedMessage("[{}][{}] failed to delete data blob [{}] during finalization",
-                                snapshotId, shardId, blobName), e);
+                        if (toDelete == null) {
+                            try {
+                                blobContainer.deleteBlobIgnoringIfNotExists(blobName);
+                            } catch (IOException e) {
+                                logger.warn(() -> new ParameterizedMessage("[{}][{}] failed to delete data blob [{}] during finalization",
+                                    snapshotId, shardId, blobName), e);
+                            }
+                        } else {
+                            toDelete.add(blobContainer.path().add(blobName).buildAsString());
                         }
                     }
                 }
             } catch (IOException e) {
                 String message = "Failed to finalize " + reason + " with shard index [" + currentIndexGen + "]";
                 throw new IndexShardSnapshotFailedException(shardId, message, e);
+            }
+        }
+
+        private void deleteBlob(@Nullable Collection<String> toDelete, String blobName) throws IOException {
+            if (toDelete == null) {
+                try {
+                    blobContainer.deleteBlobIgnoringIfNotExists(blobName);
+                } catch (IOException e) {
+                    logger.warn(() -> new ParameterizedMessage("[{}][{}] failed to delete blob [{}] during finalization",
+                        snapshotId, shardId, blobName), e);
+                    throw e;
+                }
+            } else {
+                toDelete.add(blobContainer.path().add(blobName).buildAsString());
             }
         }
 
@@ -1640,7 +1671,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 newSnapshotsList.add(point);
             }
             // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
-            finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot creation [" + snapshotId + "]");
+            finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot creation [" + snapshotId + "]", null);
             snapshotStatus.moveToDone(System.currentTimeMillis());
         }
 
