@@ -407,6 +407,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         () -> new ParameterizedMessage("Failed to remove tombstone from clusterstate {}.", tombstoneHash), e);
                 }
             });
+            finishDeletion(tombstoneHash);
         }
     }
 
