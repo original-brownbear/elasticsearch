@@ -295,14 +295,21 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 } else {
                     knownTombstones = Collections.emptySet();
                 }
-                try {
-                    final Set<String> tombstonesInBlobstore =
-                        blobStore().blobContainer(basePath().add("tombstones")).listBlobs().keySet();
-                    tombstonesInBlobstore.removeAll(knownTombstones);
-                    logger.warn("Found tombstones [{}] that were not tracked in the cluster state.", tombstonesInBlobstore);
-                } catch (Exception e) {
-                    logger.warn("Failed to load tombstones from blob store.", e);
-                }
+                threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
+                    @Override
+                    protected void doRun() throws Exception {
+                        final Set<String> tombstonesInBlobstore =
+                            blobStore().blobContainer(basePath().add("tombstones")).listBlobs().keySet();
+                        tombstonesInBlobstore.removeAll(knownTombstones);
+                        // TODO: actually recover these to the cluster state
+                        logger.warn("Found tombstones [{}] that were not tracked in the cluster state.", tombstonesInBlobstore);
+                    }
+
+                    @Override
+                    public void onFailure(final Exception e) {
+                        logger.warn("Failed to load tombstones from blob store.", e);
+                    }
+                });
             }
             final SnapshotDeletionsInProgress snapshotDeletions = event.state().custom(SnapshotDeletionsInProgress.TYPE);
             if (snapshotDeletions != null) {
@@ -653,7 +660,40 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             // TODO: If we fail here, we should handle that via the cluster state
             throw new RuntimeException(e);
         }
-        final Tombstone tombstone = new Tombstone(updatedRepositoryData.getGenId(), snapshotId, Collections.emptyList());
+        final List<String> blobsToDelete = new ArrayList<>();
+        blobsToDelete.add(snapshotFormat.blobName(snapshotId.getUUID()));
+        blobsToDelete.add(globalMetaDataFormat.blobName(snapshotId.getUUID()));
+        final SnapshotInfo snapshotInfo = loadSnapshotInfo(snapshotId);
+        if (snapshotInfo != null) {
+            final List<String> indices = snapshotInfo.indices();
+            for (String index : indices) {
+                final IndexId indexId = repositoryData.resolveIndexId(index);
+                blobsToDelete.add(
+                    basePath().add("indices").add(indexId.getId()).add(indexMetaDataFormat.blobName(snapshotId.getUUID())).buildAsString()
+                );
+                IndexMetaData indexMetaData = null;
+                try {
+                    indexMetaData = getSnapshotIndexMetaData(snapshotId, indexId);
+                } catch (ElasticsearchParseException | IOException ex) {
+                    logger.warn(() ->
+                        new ParameterizedMessage("[{}] [{}] failed to read metadata for index", snapshotId, index), ex);
+                }
+                if (indexMetaData != null) {
+                    for (int shardId = 0; shardId < indexMetaData.getNumberOfShards(); shardId++) {
+                        try {
+                            blobsToDelete.add(
+                                basePath().add("indices").add(indexId.getId()).add(Integer.toString(shardId))
+                                    .add(indexShardSnapshotFormat.blobName(snapshotId.getUUID())).buildAsString());
+                        } catch (SnapshotException ex) {
+                            final int finalShardId = shardId;
+                            logger.warn(() -> new ParameterizedMessage("[{}] failed to delete shard data for shard [{}][{}]",
+                                snapshotId, index, finalShardId), ex);
+                        }
+                    }
+                }
+            }
+        }
+        final Tombstone tombstone = new Tombstone(updatedRepositoryData.getGenId(), snapshotId, blobsToDelete);
         final String tombstoneHash = tombstone.hash();
         tombstones.put(tombstoneHash, tombstone);
         clusterService.submitStateUpdateTask("Delete [" + snapshotId + "] from repository", new ClusterStateUpdateTask() {
