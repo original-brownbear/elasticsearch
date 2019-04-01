@@ -623,7 +623,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     @Override
     public void deleteSnapshot(SnapshotId snapshotId, long repositoryStateId, ActionListener<Void> listener) {
         if (isReadOnly()) {
-            throw new RepositoryException(metadata.name(), "cannot delete snapshot from a readonly repository");
+            listener.onFailure(new RepositoryException(metadata.name(), "cannot delete snapshot from a readonly repository"));
+            return;
         }
         try {
             final RepositoryData repositoryData = getRepositoryData();
