@@ -120,7 +120,6 @@ import java.nio.file.NoSuchFileException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -442,10 +441,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
         private final String[] blobs;
 
-        Tombstone(long repositoryStateId, SnapshotId snapshotId, List<String> blobs) {
+        Tombstone(long repositoryStateId, SnapshotId snapshotId, Collection<String> blobs) {
             this.repositoryStateId = repositoryStateId;
             this.snapshotId = snapshotId;
-            this.blobs = blobs.toArray(Strings.EMPTY_ARRAY);
+            this.blobs = new HashSet<>(blobs).toArray(Strings.EMPTY_ARRAY);
             // Sorting to get a deterministic hash for this tombstone
             Arrays.sort(this.blobs, Comparator.reverseOrder());
         }
@@ -465,7 +464,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             } catch (IOException e) {
                 throw new AssertionError("This should be impossible", e);
             }
-            return Base64.getEncoder().encodeToString(sha.digest());
+            return MessageDigests.toHexString(sha.digest());
         }
 
         @Override
