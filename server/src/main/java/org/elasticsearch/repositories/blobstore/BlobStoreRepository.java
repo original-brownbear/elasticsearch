@@ -123,6 +123,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -337,9 +338,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             @Override
                             protected void doRun() throws IOException {
                                 deleteByTombstones(newDeletes);
-                                // TODO: This is horrible, we should only complete the retried one here and retry again by
-                                //       recursive listing
-                                newDeletes.forEach(BlobStoreRepository.this::finishDeletionListeners);
                             }
 
                             @Override
@@ -449,7 +447,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             this.snapshotId = snapshotId;
             this.blobs = blobs.toArray(Strings.EMPTY_ARRAY);
             // Sorting to get a deterministic hash for this tombstone
-            Arrays.sort(this.blobs);
+            Arrays.sort(this.blobs, Comparator.reverseOrder());
         }
 
         Tombstone(StreamInput in) throws IOException {
