@@ -329,7 +329,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     }
                 }
                 for (String finishedDelete : finishedDeletes) {
-                    finishDeletion(finishedDelete);
+                    finishDeletionListeners(finishedDelete);
                 }
                 if (newDeletes.isEmpty() == false) {
                     threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(
@@ -337,11 +337,13 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             @Override
                             protected void doRun() throws IOException {
                                 deleteByTombstones(newDeletes);
+                                // TODO: This is horrible, we should only complete the retried one here and retry again by
+                                //       recursive listing
+                                newDeletes.forEach(BlobStoreRepository.this::finishDeletionListeners);
                             }
 
                             @Override
                             public void onFailure(Exception e) {
-                                // TODO: This should actively retry somehow
                                 logger.warn("Failures during delete tombstone handling", e);
                             }
                         }
@@ -393,10 +395,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     @Override
                     protected void doRun() throws Exception {
                         deleteByTombstones(Collections.singleton(tombstoneHash));
+
                     }
 
                     @Override
-                    public void onFailure(final Exception e) {
+                    public void onFailure(Exception e) {
                         logger.warn("Failed to delete files marked by tombstone on retry.", e);
                     }
                 });
@@ -429,7 +432,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         () -> new ParameterizedMessage("Failed to remove tombstone from clusterstate {}.", tombstoneHash), e);
                 }
             });
-            finishDeletion(tombstoneHash);
+            finishDeletionListeners(tombstoneHash);
         }
     }
 
@@ -647,7 +650,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
-    private void finishDeletion(String tombstoneHash) {
+    private void finishDeletionListeners(String tombstoneHash) {
         final List<ActionListener<Void>> completionListeners = snapshotDeletionListeners.remove(tombstoneHash);
         if (completionListeners != null) {
             try {
