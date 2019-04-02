@@ -388,6 +388,18 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
             if (deleteException != null) {
                 logger.warn("There were failures during the delete process, will retry.", deleteException);
+                // TODO: limit retries
+                threadPool.executor(ThreadPool.Names.SNAPSHOT).submit(new AbstractRunnable() {
+                    @Override
+                    protected void doRun() throws Exception {
+                        deleteByTombstones(Collections.singleton(tombstoneHash));
+                    }
+
+                    @Override
+                    public void onFailure(final Exception e) {
+                        logger.warn("Failed to delete files marked by tombstone on retry.", e);
+                    }
+                });
             } else {
                 finishTombstoneHash(tombstoneHash, true);
             }
@@ -715,6 +727,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
             }
         }
+        // cleanup indices that are no longer part of the repository
+        final Collection<IndexId> indicesToCleanUp = Sets.newHashSet(repositoryData.getIndices().values());
+        indicesToCleanUp.removeAll(updatedRepositoryData.getIndices().values());
+        final BlobContainer indicesBlobContainer = blobStore().blobContainer(basePath().add("indices"));
+        blobsToDelete.addAll(indicesToCleanUp.stream().map(
+            indexId -> indicesBlobContainer.path().add(indexId.getId()).buildAsString()).collect(Collectors.toList()));
         final Tombstone tombstone = new Tombstone(updatedRepositoryData.getGenId(), snapshotId, blobsToDelete);
         final String tombstoneHash = tombstone.hash();
         tombstones.put(tombstoneHash, tombstone);
