@@ -115,7 +115,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
 import java.security.MessageDigest;
@@ -797,22 +796,16 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final Collection<IndexId> indicesToCleanUp = Sets.newHashSet(repositoryData.getIndices().values());
             indicesToCleanUp.removeAll(updatedRepositoryData.getIndices().values());
             final BlobContainer indicesBlobContainer = blobStore().blobContainer(basePath().add("indices"));
-            for (final IndexId indexId : indicesToCleanUp) {
                 try {
-                    indicesBlobContainer.deleteBlobIgnoringIfNotExists(indexId.getId());
-                } catch (DirectoryNotEmptyException dnee) {
-                    // if the directory isn't empty for some reason, it will fail to clean up;
-                    // we'll ignore that and accept that cleanup didn't fully succeed.
-                    // since we are using UUIDs for path names, this won't be an issue for
-                    // snapshotting indices of the same name
-                    logger.warn(() -> new ParameterizedMessage("[{}] index [{}] no longer part of any snapshots in the repository, " +
-                        "but failed to clean up its index folder due to the directory not being empty.", metadata.name(), indexId), dnee);
+                    indicesBlobContainer.deleteBlobsIgnoringIfNotExists(
+                        indicesToCleanUp.stream().map(IndexId::getId).collect(Collectors.toList()));
                 } catch (IOException ioe) {
                     // a different IOException occurred while trying to delete - will just log the issue for now
-                    logger.warn(() -> new ParameterizedMessage("[{}] index [{}] no longer part of any snapshots in the repository, " +
-                        "but failed to clean up its index folder.", metadata.name(), indexId), ioe);
+                    logger.warn(() ->
+                        new ParameterizedMessage(
+                            "[{}] indices {} are no longer part of any snapshots in the repository, " +
+                        "but failed to clean up their index folders.", metadata.name(), indicesToCleanUp), ioe);
                 }
-            }
         } catch (IOException | ResourceNotFoundException ex) {
             throw new RepositoryException(metadata.name(), "failed to delete snapshot [" + snapshotId + "]", ex);
         }
