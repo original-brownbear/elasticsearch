@@ -336,13 +336,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(
                         new AbstractRunnable() {
                             @Override
-                            public void onFailure(Exception e) {
-                                logger.warn("Failures during delete tombstone handling", e);
+                            protected void doRun() throws IOException {
+                                deleteByTombstones(newDeletes);
                             }
 
                             @Override
-                            protected void doRun() throws IOException {
-                                deleteByTombstones(newDeletes);
+                            public void onFailure(Exception e) {
+                                // TODO: This should actively retry somehow
+                                logger.warn("Failures during delete tombstone handling", e);
                             }
                         }
                     );
