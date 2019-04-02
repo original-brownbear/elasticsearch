@@ -389,7 +389,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             if (deleteException != null) {
                 logger.warn("There were failures during the delete process, will retry.", deleteException);
                 // TODO: limit retries
-                threadPool.executor(ThreadPool.Names.SNAPSHOT).submit(new AbstractRunnable() {
+                threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
                     @Override
                     protected void doRun() throws Exception {
                         deleteByTombstones(Collections.singleton(tombstoneHash));
