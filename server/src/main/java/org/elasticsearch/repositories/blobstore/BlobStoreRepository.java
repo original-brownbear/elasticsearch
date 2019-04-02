@@ -446,7 +446,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             this.snapshotId = snapshotId;
             this.blobs = new HashSet<>(blobs).toArray(Strings.EMPTY_ARRAY);
             // Sorting to get a deterministic hash for this tombstone
-            Arrays.sort(this.blobs, Comparator.reverseOrder());
+            Arrays.sort(this.blobs);
         }
 
         Tombstone(StreamInput in) throws IOException {
