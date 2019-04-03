@@ -264,7 +264,8 @@ public class MockRepository extends FsRepository {
                 final String[] parts = blobName.split("/");
                 final String blobNameSuffix = parts[parts.length - 1];
                 if (blobNameSuffix.startsWith("__")) {
-                    if (shouldFail(blobNameSuffix, randomDataFileIOExceptionRate) && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
+                    if (shouldFail(blobNameSuffix, randomDataFileIOExceptionRate)
+                        && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
                         logger.info("throwing random IOException for file [{}] at path [{}]", blobName, path());
                         if (useLuceneCorruptionException) {
                             throw new CorruptIndexException("Random corruption", "random file");
@@ -275,7 +276,8 @@ public class MockRepository extends FsRepository {
                         blockExecutionAndMaybeWait(blobNameSuffix);
                     }
                 } else {
-                    if (shouldFail(blobNameSuffix, randomControlIOExceptionRate) && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
+                    if (shouldFail(blobNameSuffix, randomControlIOExceptionRate)
+                        && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
                         logger.info("throwing random IOException for file [{}] at path [{}]", blobName, path());
                         throw new IOException("Random IOException");
                     } else if (blockOnControlFiles) {
