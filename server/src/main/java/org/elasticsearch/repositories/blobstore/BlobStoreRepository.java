@@ -372,17 +372,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
             }
             IOException deleteException = null;
-            for (String blob : tombstone.blobs) {
-                try {
-                    blobContainer().deleteBlobIgnoringIfNotExists(blob);
-                } catch (IOException e) {
-                    if (deleteException == null) {
-                        deleteException = e;
-                    } else {
-                        deleteException.addSuppressed(e);
-                    }
-                    logger.warn(() -> new ParameterizedMessage("Failed to delete blob [{}], will retry.", blob), e);
-                }
+            try {
+                blobContainer().deleteBlobsIgnoringIfNotExists(Arrays.asList(tombstone.blobs));
+            } catch (IOException e) {
+                logger.warn(() -> new ParameterizedMessage("Failed to delete blobs from tombstone, will retry."), e);
+                deleteException = e;
             }
             if (deleteException != null) {
                 logger.warn("There were failures during the delete process, will retry.", deleteException);
@@ -391,12 +385,16 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     @Override
                     protected void doRun() throws Exception {
                         deleteByTombstones(Collections.singleton(tombstoneHash));
-
                     }
 
                     @Override
                     public void onFailure(Exception e) {
                         logger.warn("Failed to delete files marked by tombstone on retry.", e);
+                    }
+
+                    @Override
+                    public void onAfter() {
+                        finishDeletionListeners(tombstoneHash);
                     }
                 });
             } else {
