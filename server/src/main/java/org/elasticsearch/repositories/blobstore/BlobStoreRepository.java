@@ -303,7 +303,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             blobStore().blobContainer(basePath().add("tombstones")).listBlobs().keySet();
                         tombstonesInBlobstore.removeAll(knownTombstones);
                         // TODO: actually recover these to the cluster state
-                        logger.warn("Found tombstones [{}] that were not tracked in the cluster state.", tombstonesInBlobstore);
+                        logger.warn("Found tombstones {} that were not tracked in the cluster state.", tombstonesInBlobstore);
                     }
 
                     @Override
