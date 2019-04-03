@@ -692,13 +692,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 blobsToDelete.add(
                     basePath().add("indices").add(indexId.getId()).add(indexMetaDataFormat.blobName(snapshotId.getUUID())).buildAsString()
                 );
-                IndexMetaData indexMetaData = null;
-                try {
-                    indexMetaData = getSnapshotIndexMetaData(snapshotId, indexId);
-                } catch (ElasticsearchParseException | IOException ex) {
-                    logger.warn(() ->
-                        new ParameterizedMessage("[{}] [{}] failed to read metadata for index", snapshotId, index), ex);
-                }
+                IndexMetaData indexMetaData = loadIndexMetaData(snapshotId, index, indexId);
                 if (indexMetaData != null) {
                     for (int shardId = 0; shardId < indexMetaData.getNumberOfShards(); shardId++) {
                         try {
@@ -733,10 +727,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
         }
         // cleanup indices that are no longer part of the repository
-        final Collection<IndexId> indicesToCleanUp = Sets.newHashSet(repositoryData.getIndices().values());
-        indicesToCleanUp.removeAll(updatedRepositoryData.getIndices().values());
+
         final BlobContainer indicesBlobContainer = blobStore().blobContainer(basePath().add("indices"));
-        blobsToDelete.addAll(indicesToCleanUp.stream().map(
+        blobsToDelete.addAll(unreferencedIndices(repositoryData, updatedRepositoryData).stream().map(
             indexId -> indicesBlobContainer.path().add(indexId.getId()).buildAsString()).collect(Collectors.toList()));
         final Tombstone tombstone = new Tombstone(updatedRepositoryData.getGenId(), snapshotId, blobsToDelete);
         final String tombstoneHash = tombstone.hash();
@@ -767,6 +760,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 });
             }
         });
+    }
+
+    private static Collection<IndexId> unreferencedIndices(RepositoryData before, RepositoryData after) {
+        final Collection<IndexId> indicesToCleanUp = Sets.newHashSet(before.getIndices().values());
+        indicesToCleanUp.removeAll(after.getIndices().values());
+        return indicesToCleanUp;
     }
 
     private static List<SnapshotFiles> preservedSnapshots(SnapshotId snapshotId, BlobStoreIndexShardSnapshots snapshots) {
@@ -801,13 +800,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 for (String index : indices) {
                     final IndexId indexId = repositoryData.resolveIndexId(index);
 
-                    IndexMetaData indexMetaData = null;
-                    try {
-                        indexMetaData = getSnapshotIndexMetaData(snapshotId, indexId);
-                    } catch (ElasticsearchParseException | IOException ex) {
-                        logger.warn(() ->
-                            new ParameterizedMessage("[{}] [{}] failed to read metadata for index", snapshotId, index), ex);
-                    }
+                    IndexMetaData indexMetaData = loadIndexMetaData(snapshotId, index, indexId);
 
                     deleteIndexMetaDataBlobIgnoringErrors(snapshot, indexId);
 
@@ -826,8 +819,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
 
             // cleanup indices that are no longer part of the repository
-            final Collection<IndexId> indicesToCleanUp = Sets.newHashSet(repositoryData.getIndices().values());
-            indicesToCleanUp.removeAll(updatedRepositoryData.getIndices().values());
+            final Collection<IndexId> indicesToCleanUp = unreferencedIndices(repositoryData, updatedRepositoryData);
             final BlobContainer indicesBlobContainer = blobStore().blobContainer(basePath().add("indices"));
                 try {
                     indicesBlobContainer.deleteBlobsIgnoringIfNotExists(
@@ -842,6 +834,17 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         } catch (IOException | ResourceNotFoundException ex) {
             throw new RepositoryException(metadata.name(), "failed to delete snapshot [" + snapshotId + "]", ex);
         }
+    }
+
+    private IndexMetaData loadIndexMetaData(SnapshotId snapshotId, String index, IndexId indexId) {
+        IndexMetaData indexMetaData = null;
+        try {
+            indexMetaData = getSnapshotIndexMetaData(snapshotId, indexId);
+        } catch (ElasticsearchParseException | IOException ex) {
+            logger.warn(() ->
+                new ParameterizedMessage("[{}] [{}] failed to read metadata for index", snapshotId, index), ex);
+        }
+        return indexMetaData;
     }
 
     private RepositoryData writeUpdatedRepositoryData(SnapshotId snapshotId, long repositoryStateId, RepositoryData repositoryData)
@@ -901,9 +904,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public SnapshotInfo finalizeSnapshot(final SnapshotId snapshotId,
                                          final List<IndexId> indices,
