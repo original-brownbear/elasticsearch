@@ -19,8 +19,6 @@
 
 package org.elasticsearch.common.blobstore;
 
-import org.elasticsearch.common.io.stream.StreamInput;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -37,11 +35,6 @@ public class BlobPath implements Iterable<String> {
 
     public BlobPath() {
         this.paths = Collections.emptyList();
-    }
-
-    public  BlobPath(StreamInput in) {
-        // TODO: implement
-        throw new UnsupportedOperationException("implement me");
     }
 
     public static BlobPath cleanPath() {
