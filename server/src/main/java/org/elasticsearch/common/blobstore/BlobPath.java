@@ -20,10 +20,7 @@
 package org.elasticsearch.common.blobstore;
 
 import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.io.stream.Writeable;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -32,7 +29,7 @@ import java.util.List;
 /**
  * The list of paths where a blob can reside.  The contents of the paths are dependent upon the implementation of {@link BlobContainer}.
  */
-public class BlobPath implements Iterable<String>, Writeable, Comparable<BlobPath> {
+public class BlobPath implements Iterable<String> {
 
     private static final String SEPARATOR = "/";
 
@@ -85,17 +82,5 @@ public class BlobPath implements Iterable<String>, Writeable, Comparable<BlobPat
             sb.append('[').append(path).append(']');
         }
         return sb.toString();
-    }
-
-    @Override
-    public int compareTo(BlobPath o) {
-        // TODO: implement
-        throw new UnsupportedOperationException("implement me");
-    }
-
-    @Override
-    public void writeTo(final StreamOutput out) throws IOException {
-        // TODO: implement
-        throw new UnsupportedOperationException("implement me");
     }
 }

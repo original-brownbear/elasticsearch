@@ -472,20 +472,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
-    /**
-     * TODO: use on stale index prefixes
-     * Force delete all blobs that begin with a certain prefix
-     * @param prefix Prefix for which to delete all blobs
-     */
-    private void forceDeleteByPrefix(String prefix, ActionListener<Void> listener) throws IOException {
-        final BlobContainer rootContainer = blobContainer();
-        Map<String, BlobMetaData> blobs = rootContainer.listBlobsByPrefix(prefix);
-        ActionListener.completeWith(listener, () -> {
-            rootContainer.deleteBlobsIgnoringIfNotExists(new ArrayList<>(blobs.keySet()));
-            return null;
-        });
-    }
-
     @Override
     protected void doStart() {
         ByteSizeValue chunkSize = chunkSize();
