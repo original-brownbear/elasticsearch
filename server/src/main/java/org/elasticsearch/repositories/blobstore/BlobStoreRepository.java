@@ -725,15 +725,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         blobsToDelete.add(
                             context.blobContainer.path().add(indexShardSnapshotFormat.blobName(snapshotId.getUUID())).buildAsString());
                         // Build a list of snapshots that should be preserved
-                        List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
-                        for (SnapshotFiles point : snapshots) {
-                            if (!point.snapshot().equals(snapshotId.getName())) {
-                                newSnapshotsList.add(point);
-                            }
-                        }
                         // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
-                        context.finalize(
-                            newSnapshotsList, fileListGeneration + 1, blobs, "snapshot deletion [" + snapshotId + "]", blobsToDelete);
+                        context.finalize(preservedSnapshots(snapshotId, snapshots), fileListGeneration + 1, blobs,
+                            "snapshot deletion [" + snapshotId + "]", blobsToDelete);
                     }
                 }
             }
@@ -773,6 +767,16 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 });
             }
         });
+    }
+
+    private static List<SnapshotFiles> preservedSnapshots(SnapshotId snapshotId, BlobStoreIndexShardSnapshots snapshots) {
+        List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
+        for (SnapshotFiles point : snapshots) {
+            if (!point.snapshot().equals(snapshotId.getName())) {
+                newSnapshotsList.add(point);
+            }
+        }
+        return newSnapshotsList;
     }
 
     /**
@@ -1347,15 +1351,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 logger.warn(new ParameterizedMessage("[{}] [{}] failed to delete shard snapshot file", shardId, snapshotId), e);
             }
 
-            // Build a list of snapshots that should be preserved
-            List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
-            for (SnapshotFiles point : snapshots) {
-                if (!point.snapshot().equals(snapshotId.getName())) {
-                    newSnapshotsList.add(point);
-                }
-            }
             // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
-            finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot deletion [" + snapshotId + "]", null);
+            finalize(preservedSnapshots(snapshotId, snapshots), fileListGeneration + 1, blobs,
+                "snapshot deletion [" + snapshotId + "]", null);
         }
 
         /**
