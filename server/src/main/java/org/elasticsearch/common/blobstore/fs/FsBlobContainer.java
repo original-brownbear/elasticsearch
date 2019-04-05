@@ -94,12 +94,16 @@ public class FsBlobContainer extends AbstractBlobContainer {
     public void deleteBlob(String blobName) throws IOException {
         Path blobPath = path.resolve(blobName);
         if (Files.isDirectory(blobPath)) {
-            // delete directory recursively as long as it is empty (only contains empty directories),
-            // which is the reason we aren't deleting any files, only the directories on the post-visit
             Files.walkFileTree(blobPath, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
                     Files.delete(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.delete(file);
                     return FileVisitResult.CONTINUE;
                 }
             });

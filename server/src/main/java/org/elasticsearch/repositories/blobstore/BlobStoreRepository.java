@@ -308,7 +308,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     }
 
                     @Override
-                    public void onFailure(final Exception e) {
+                    public void onFailure(Exception e) {
+                        // TODO: we should retry this
                         logger.warn("Failed to load tombstones from blob store.", e);
                     }
                 });
@@ -317,8 +318,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             if (snapshotDeletions != null) {
                 final Set<String> newDeletes;
                 final Set<String> finishedDeletes;
+                final List<String> outstanding = snapshotDeletions.outstandingDeletes();
                 synchronized (this) {
-                    final List<String> outstanding = snapshotDeletions.outstandingDeletes();
                     newDeletes = outstanding.stream().filter(s -> inProgressDeletes.contains(s) == false).collect(Collectors.toSet());
                     finishedDeletes = inProgressDeletes.stream().filter(s -> outstanding.contains(s) == false).collect(Collectors.toSet());
                     if (newDeletes.isEmpty() == false) {
@@ -336,7 +337,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         new AbstractRunnable() {
                             @Override
                             protected void doRun() throws IOException {
-                                deleteByTombstones(newDeletes);
+                                for (String tombstoneHash : newDeletes) {
+                                    handleTombstone(tombstoneHash);
+                                }
                             }
 
                             @Override
@@ -350,57 +353,55 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
-    private void deleteByTombstones(Set<String> tombstoneHashes) throws IOException {
-        for (String tombstoneHash : tombstoneHashes) {
-            Tombstone tombstone = tombstones.get(tombstoneHash);
-            if (tombstone == null) {
-                try (InputStreamStreamInput in =
-                         new InputStreamStreamInput(blobStore().blobContainer(basePath().add("tombstones")).readBlob(tombstoneHash))) {
-                    tombstone = new Tombstone(in);
-                } catch (NoSuchFileException e) {
-                    try {
-                        finishTombstoneHash(tombstoneHash, false);
-                        continue;
-                    } catch (IOException ioe) {
-                        logger.warn(
-                            new ParameterizedMessage(
-                                "Failed to remove stale tombstone from repository [{}], will retry.", tombstoneHash), ioe);
-                        continue;
-                    }
-                } catch (IOException e) {
-                    logger.warn("Failed to load tombstone [{}], will retry.", tombstoneHash);
-                    continue;
+    private void handleTombstone(String tombstoneHash) throws IOException {
+        Tombstone tombstone = tombstones.get(tombstoneHash);
+        if (tombstone == null) {
+            try (InputStreamStreamInput in =
+                     new InputStreamStreamInput(blobStore().blobContainer(basePath().add("tombstones")).readBlob(tombstoneHash))) {
+                tombstone = new Tombstone(in);
+            } catch (NoSuchFileException e) {
+                try {
+                    finishTombstoneHash(tombstoneHash, false);
+                    return;
+                } catch (IOException ioe) {
+                    logger.warn(
+                        new ParameterizedMessage(
+                            "Failed to remove stale tombstone from repository [{}], will retry.", tombstoneHash), ioe);
+                    return;
                 }
-            }
-            IOException deleteException = null;
-            try {
-                blobContainer().deleteBlobsIgnoringIfNotExists(Arrays.asList(tombstone.blobs));
             } catch (IOException e) {
-                logger.warn(() -> new ParameterizedMessage("Failed to delete blobs from tombstone, will retry."), e);
-                deleteException = e;
+                logger.warn("Failed to load tombstone [{}], will retry.", tombstoneHash);
+                return;
             }
-            if (deleteException != null) {
-                logger.warn("There were failures during the delete process, will retry.", deleteException);
-                // TODO: limit retries
-                threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
-                    @Override
-                    protected void doRun() throws Exception {
-                        deleteByTombstones(Collections.singleton(tombstoneHash));
-                    }
+        }
+        IOException deleteException = null;
+        try {
+            blobContainer().deleteBlobsIgnoringIfNotExists(Arrays.asList(tombstone.blobs));
+        } catch (IOException e) {
+            logger.warn(() -> new ParameterizedMessage("Failed to delete blobs from tombstone, will retry."), e);
+            deleteException = e;
+        }
+        if (deleteException != null) {
+            logger.warn("There were failures during the delete process, will retry.", deleteException);
+            // TODO: limit retries
+            threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
+                @Override
+                protected void doRun() throws IOException {
+                    handleTombstone(tombstoneHash);
+                }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        logger.warn("Failed to delete files marked by tombstone on retry.", e);
-                    }
+                @Override
+                public void onFailure(Exception e) {
+                    logger.warn("Failed to delete files marked by tombstone on retry.", e);
+                }
 
-                    @Override
-                    public void onAfter() {
-                        finishDeletionListeners(tombstoneHash);
-                    }
-                });
-            } else {
-                finishTombstoneHash(tombstoneHash, true);
-            }
+                @Override
+                public void onAfter() {
+                    finishDeletionListeners(tombstoneHash);
+                }
+            });
+        } else {
+            finishTombstoneHash(tombstoneHash, true);
         }
     }
 
@@ -425,9 +426,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 public void onFailure(String source, Exception e) {
                     logger.warn(
                         () -> new ParameterizedMessage("Failed to remove tombstone from clusterstate {}.", tombstoneHash), e);
+                    finishDeletionListeners(tombstoneHash, e);
+                }
+
+                @Override
+                public void clusterStateProcessed(String source, ClusterState oldState, final ClusterState newState) {
+                    finishDeletionListeners(tombstoneHash);
                 }
             });
-            finishDeletionListeners(tombstoneHash);
         }
     }
 
@@ -650,6 +656,17 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             try {
                 ActionListener.onResponse(completionListeners, null);
             } catch (Exception e) {
+                logger.warn("Failed to notify listeners", e);
+            }
+        }
+    }
+
+    private void finishDeletionListeners(String tombstoneHash, Exception e) {
+        final List<ActionListener<Void>> completionListeners = snapshotDeletionListeners.remove(tombstoneHash);
+        if (completionListeners != null) {
+            try {
+                ActionListener.onFailure(completionListeners, e);
+            } catch (Exception ex) {
                 logger.warn("Failed to notify listeners", e);
             }
         }
