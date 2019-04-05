@@ -260,8 +260,12 @@ public class MockRepository extends FsRepository {
             }
 
             private void maybeIOExceptionOrBlock(String blobName) throws IOException {
-                if (blobName.startsWith("__")) {
-                    if (shouldFail(blobName, randomDataFileIOExceptionRate) && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
+                // TODO: look into consequences of change to blobName handling
+                final String[] parts = blobName.split("/");
+                final String blobNameSuffix = parts[parts.length - 1];
+                if (blobNameSuffix.startsWith("__")) {
+                    if (shouldFail(blobNameSuffix, randomDataFileIOExceptionRate)
+                        && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
                         logger.info("throwing random IOException for file [{}] at path [{}]", blobName, path());
                         if (useLuceneCorruptionException) {
                             throw new CorruptIndexException("Random corruption", "random file");
@@ -269,16 +273,17 @@ public class MockRepository extends FsRepository {
                             throw new IOException("Random IOException");
                         }
                     } else if (blockOnDataFiles) {
-                        blockExecutionAndMaybeWait(blobName);
+                        blockExecutionAndMaybeWait(blobNameSuffix);
                     }
                 } else {
-                    if (shouldFail(blobName, randomControlIOExceptionRate) && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
+                    if (shouldFail(blobNameSuffix, randomControlIOExceptionRate)
+                        && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
                         logger.info("throwing random IOException for file [{}] at path [{}]", blobName, path());
                         throw new IOException("Random IOException");
                     } else if (blockOnControlFiles) {
-                        blockExecutionAndMaybeWait(blobName);
-                    } else if (blobName.startsWith("snap-") && blockAndFailOnWriteSnapFile) {
-                        blockExecutionAndFail(blobName);
+                        blockExecutionAndMaybeWait(blobNameSuffix);
+                    } else if (blobNameSuffix.startsWith("snap-") && blockAndFailOnWriteSnapFile) {
+                        blockExecutionAndFail(blobNameSuffix);
                     }
                 }
             }
