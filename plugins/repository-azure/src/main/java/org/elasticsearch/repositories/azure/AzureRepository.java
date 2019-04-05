@@ -85,7 +85,7 @@ public class AzureRepository extends BlobStoreRepository {
     private final boolean readonly;
 
     public AzureRepository(RepositoryMetaData metadata, Environment environment, NamedXContentRegistry namedXContentRegistry,
-            AzureStorageService storageService, ClusterService clusterService) {
+                           AzureStorageService storageService, ClusterService clusterService) {
         super(metadata, environment.settings(), namedXContentRegistry, clusterService);
         this.chunkSize = Repository.CHUNK_SIZE_SETTING.get(metadata.settings());
         this.storageService = storageService;

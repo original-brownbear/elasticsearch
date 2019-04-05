@@ -100,7 +100,7 @@ public abstract class BlobStoreFormat<T extends ToXContent> {
     /**
      * Checks obj in the blob container
      */
-    public boolean exists(BlobContainer blobContainer, String name) throws IOException {
+    public boolean exists(BlobContainer blobContainer, String name) {
         return blobContainer.blobExists(blobName(name));
     }
 

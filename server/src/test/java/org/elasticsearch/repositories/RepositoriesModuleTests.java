@@ -45,6 +45,7 @@ public class RepositoriesModuleTests extends ESTestCase {
     private RepositoryPlugin plugin2;
     private Repository.Factory factory;
     private ClusterService clusterService;
+    private ThreadPool threadPool;
 
     @Override
     public void setUp() throws Exception {
@@ -54,7 +55,7 @@ public class RepositoriesModuleTests extends ESTestCase {
         plugin1 = mock(RepositoryPlugin.class);
         plugin2 = mock(RepositoryPlugin.class);
         factory = mock(Repository.Factory.class);
-        final ThreadPool threadPool = mock(ThreadPool.class);
+        threadPool = mock(ThreadPool.class);
         final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
         clusterService = mock(ClusterService.class);
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
@@ -69,8 +70,8 @@ public class RepositoriesModuleTests extends ESTestCase {
         when(plugin2.getRepositories(environment, contentRegistry, clusterService)).thenReturn(Collections.singletonMap("type2", factory));
 
         // Would throw
-        new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), mock(ClusterService.class),
-            mock(ThreadPool.class), contentRegistry);
+        new RepositoriesModule(
+            environment, repoPlugins, mock(TransportService.class), clusterService, threadPool, contentRegistry);
     }
 
     public void testCannotRegisterTwoRepositoriesWithSameTypes() {
@@ -78,8 +79,8 @@ public class RepositoriesModuleTests extends ESTestCase {
         when(plugin2.getRepositories(environment, contentRegistry, clusterService)).thenReturn(Collections.singletonMap("type1", factory));
 
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
-            () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), clusterService,
-                mock(ThreadPool.class), contentRegistry));
+            () -> new RepositoriesModule(
+                environment, repoPlugins, mock(TransportService.class), clusterService, threadPool, contentRegistry));
 
         assertEquals("Repository type [type1] is already registered", ex.getMessage());
     }
@@ -92,7 +93,7 @@ public class RepositoriesModuleTests extends ESTestCase {
 
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
             () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), clusterService,
-                mock(ThreadPool.class), contentRegistry));
+                threadPool, contentRegistry));
 
         assertEquals("Internal repository type [type1] is already registered", ex.getMessage());
     }
@@ -105,7 +106,7 @@ public class RepositoriesModuleTests extends ESTestCase {
 
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
             () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), clusterService,
-                mock(ThreadPool.class), contentRegistry));
+                threadPool, contentRegistry));
 
         assertEquals("Internal repository type [type1] is already registered as a non-internal repository", ex.getMessage());
     }

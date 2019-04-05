@@ -25,12 +25,14 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.test.ESTestCase;
+import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.IOException;
 import java.security.AccessController;
@@ -38,9 +40,12 @@ import java.security.PrivilegedAction;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressForbidden(reason = "test fixture requires System.setProperty")
 public class RepositoryCredentialsTests extends ESTestCase {
+
+    private ClusterService clusterService;
 
     static {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -63,9 +68,9 @@ public class RepositoryCredentialsTests extends ESTestCase {
         }
 
         static final class ProxyS3Service extends S3Service {
-            
+
             private static final Logger logger = LogManager.getLogger(ProxyS3Service.class);
-            
+
             @Override
             AmazonS3 buildClient(final S3ClientSettings clientSettings) {
                 final AmazonS3 client = super.buildClient(clientSettings);
@@ -88,6 +93,16 @@ public class RepositoryCredentialsTests extends ESTestCase {
                 }
             };
         }
+    }
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        ThreadPool threadPool = mock(ThreadPool.class);
+        final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
+        clusterService = mock(ClusterService.class);
+        when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
+        when(clusterApplierService.threadPool()).thenReturn(threadPool);
     }
 
     public void testRepositoryCredentialsOverrideSecureCredentials() throws IOException {
@@ -149,7 +164,7 @@ public class RepositoryCredentialsTests extends ESTestCase {
 
     private S3Repository createAndStartRepository(RepositoryMetaData metadata, S3RepositoryPlugin s3Plugin) {
         final S3Repository repository =
-            s3Plugin.createRepository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, mock(ClusterService.class));
+            s3Plugin.createRepository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, clusterService);
         repository.start();
         return repository;
     }
