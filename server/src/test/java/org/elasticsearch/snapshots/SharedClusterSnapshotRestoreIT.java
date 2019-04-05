@@ -1370,7 +1370,8 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
                                              .addSnapshots("test-snap-1"), SnapshotMissingException.class);
 
         for (String index : indices) {
-            assertTrue(Files.notExists(indicesPath.resolve(indexIds.get(index).getId())));
+            final Path path = indicesPath.resolve(indexIds.get(index).getId());
+            assertTrue("Expected [" + path + "] to not exist", Files.notExists(path));
         }
     }
 
