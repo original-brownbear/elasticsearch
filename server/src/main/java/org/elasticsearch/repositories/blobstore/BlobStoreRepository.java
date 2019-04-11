@@ -687,16 +687,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     final List<String> indices = snapshotInfo.indices();
                     for (String index : indices) {
                         final IndexId indexId = repositoryData.resolveIndexId(index);
-                        blobsToDelete.add(
-                            basePath().add("indices").add(indexId.getId()).add(indexMetaDataFormat.blobName(snapshotId.getUUID()))
-                                .buildAsString());
+                        final BlobPath indexPath = basePath().add("indices").add(indexId.getId());
+                        blobsToDelete.add(indexPath.add(indexMetaDataFormat.blobName(snapshotId.getUUID())).buildAsString());
                         IndexMetaData indexMetaData = loadIndexMetaData(snapshotId, index, indexId);
                         if (indexMetaData != null) {
                             for (int shardId = 0; shardId < indexMetaData.getNumberOfShards(); shardId++) {
                                 try {
-                                    blobsToDelete.add(
-                                        basePath().add("indices").add(indexId.getId()).add(Integer.toString(shardId))
-                                            .add(indexShardSnapshotFormat.blobName(snapshotId.getUUID())).buildAsString());
+                                    blobsToDelete.add(indexPath.add(Integer.toString(shardId))
+                                        .add(indexShardSnapshotFormat.blobName(snapshotId.getUUID())).buildAsString());
                                 } catch (SnapshotException ex) {
                                     final int finalShardId = shardId;
                                     logger.warn(() -> new ParameterizedMessage("[{}] failed to delete shard data for shard [{}][{}]",
