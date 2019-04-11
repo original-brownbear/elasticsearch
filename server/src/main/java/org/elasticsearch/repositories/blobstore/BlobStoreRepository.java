@@ -918,7 +918,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                          final boolean includeGlobalState) {
         SnapshotInfo blobStoreSnapshot = new SnapshotInfo(snapshotId,
             indices.stream().map(IndexId::getName).collect(Collectors.toList()),
-            startTime, failure, System.currentTimeMillis(), totalShards, shardFailures,
+            startTime, failure, threadPool.relativeTimeInMillis(), totalShards, shardFailures,
             includeGlobalState);
         try {
             snapshotFormat.write(blobStoreSnapshot, blobContainer(), snapshotId.getUUID());
@@ -1223,11 +1223,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     @Override
     public void snapshotShard(IndexShard shard, Store store, SnapshotId snapshotId, IndexId indexId, IndexCommit snapshotIndexCommit,
                               IndexShardSnapshotStatus snapshotStatus) {
-        SnapshotContext snapshotContext = new SnapshotContext(store, snapshotId, indexId, snapshotStatus, System.currentTimeMillis());
+        SnapshotContext snapshotContext =
+            new SnapshotContext(store, snapshotId, indexId, snapshotStatus, threadPool.relativeTimeInMillis());
         try {
             snapshotContext.snapshot(snapshotIndexCommit);
         } catch (Exception e) {
-            snapshotStatus.moveToFailed(System.currentTimeMillis(), ExceptionsHelper.detailedMessage(e));
+            snapshotStatus.moveToFailed(threadPool.relativeTimeInMillis(), ExceptionsHelper.detailedMessage(e));
             if (e instanceof IndexShardSnapshotFailedException) {
                 throw (IndexShardSnapshotFailedException) e;
             } else {
@@ -1636,7 +1637,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                                                         lastSnapshotStatus.getStartTime(),
                                                                         // snapshotStatus.startTime() is assigned on the same machine,
                                                                         // so it's safe to use with VLong
-                                                                        System.currentTimeMillis() - lastSnapshotStatus.getStartTime(),
+                                                                        threadPool.relativeTimeInMillis()
+                                                                            - lastSnapshotStatus.getStartTime(),
                                                                         lastSnapshotStatus.getIncrementalFileCount(),
                                                                         lastSnapshotStatus.getIncrementalSize()
             );
@@ -1658,7 +1660,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
             // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
             finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot creation [" + snapshotId + "]", null);
-            snapshotStatus.moveToDone(System.currentTimeMillis());
+            snapshotStatus.moveToDone(threadPool.relativeTimeInMillis());
         }
 
         /**
