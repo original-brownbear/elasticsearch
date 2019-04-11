@@ -29,6 +29,7 @@ import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateApplier;
@@ -169,7 +170,13 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         if (!entries.isEmpty()) {
             return inProgressSnapshot(entries.iterator().next());
         }
-        return repositoriesService.repository(repositoryName).getSnapshotInfo(snapshotId);
+        final PlainActionFuture<SnapshotInfo> res = PlainActionFuture.newFuture();
+        repositoriesService.repository(repositoryName).getSnapshotInfo(snapshotId, res);
+        try {
+            return res.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -204,7 +211,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     // a SnapshotInfo indicating its incompatible
                     snapshotSet.add(SnapshotInfo.incompatible(snapshotId));
                 } else {
-                    snapshotSet.add(repository.getSnapshotInfo(snapshotId));
+                    final PlainActionFuture<SnapshotInfo> res = PlainActionFuture.newFuture();
+                    repository.getSnapshotInfo(snapshotId, res);
+                    snapshotSet.add(res.get());
                 }
             } catch (Exception ex) {
                 if (ignoreUnavailable) {

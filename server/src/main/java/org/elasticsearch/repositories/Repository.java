@@ -81,9 +81,8 @@ public interface Repository extends LifecycleComponent {
      * Reads snapshot description from repository.
      *
      * @param snapshotId  snapshot id
-     * @return information about snapshot
      */
-    SnapshotInfo getSnapshotInfo(SnapshotId snapshotId);
+    void getSnapshotInfo(SnapshotId snapshotId, ActionListener<SnapshotInfo> listener);
 
     /**
      * Returns global metadata associated with the snapshot.

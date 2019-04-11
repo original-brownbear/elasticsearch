@@ -67,6 +67,7 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.action.support.DestructiveOperations;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateHelper;
@@ -173,6 +174,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -211,7 +213,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         testClusterNodes.nodes.values().forEach(TestClusterNode::stop);
     }
 
-    public void testSuccessfulSnapshotAndRestore() {
+    public void testSuccessfulSnapshotAndRestore() throws ExecutionException, InterruptedException {
         setupTestCluster(randomFrom(1, 3, 5), randomIntBetween(2, 10));
 
         String repoName = "repo";
@@ -294,7 +296,10 @@ public class SnapshotResiliencyTests extends ESTestCase {
         Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
-        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+        final PlainActionFuture<SnapshotInfo> res = PlainActionFuture.newFuture();
+        repository.getSnapshotInfo(snapshotIds.iterator().next(), res);
+        deterministicTaskQueue.runAllRunnableTasks();
+        final SnapshotInfo snapshotInfo = res.get();
         assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
         assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
         assertEquals(shards, snapshotInfo.successfulShards());
@@ -370,7 +375,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         assertThat(snapshotIds, hasSize(1));
     }
 
-    public void testConcurrentSnapshotCreateAndDelete() {
+    public void testConcurrentSnapshotCreateAndDelete() throws ExecutionException, InterruptedException {
         setupTestCluster(randomFrom(1, 3, 5), randomIntBetween(2, 10));
 
         String repoName = "repo";
@@ -408,7 +413,10 @@ public class SnapshotResiliencyTests extends ESTestCase {
         Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
-        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+        final PlainActionFuture<SnapshotInfo> res = PlainActionFuture.newFuture();
+        repository.getSnapshotInfo(snapshotIds.iterator().next(), res);
+        deterministicTaskQueue.runAllRunnableTasks();
+        final SnapshotInfo snapshotInfo = res.get();
         assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
         assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
         assertEquals(shards, snapshotInfo.successfulShards());

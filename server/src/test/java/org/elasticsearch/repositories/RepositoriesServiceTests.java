@@ -118,8 +118,8 @@ public class RepositoriesServiceTests extends ESTestCase {
         }
 
         @Override
-        public SnapshotInfo getSnapshotInfo(SnapshotId snapshotId) {
-            return null;
+        public void getSnapshotInfo(SnapshotId snapshotId, ActionListener<SnapshotInfo> listener) {
+            listener.onResponse(null);
         }
 
         @Override

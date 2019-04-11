@@ -53,8 +53,8 @@ public class FilterRepository implements Repository {
     }
 
     @Override
-    public SnapshotInfo getSnapshotInfo(SnapshotId snapshotId) {
-        return in.getSnapshotInfo(snapshotId);
+    public void getSnapshotInfo(SnapshotId snapshotId, ActionListener<SnapshotInfo> listener) {
+        in.getSnapshotInfo(snapshotId, listener);
     }
 
     @Override
