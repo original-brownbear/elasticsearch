@@ -683,81 +683,96 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 final List<String> blobsToDelete = new ArrayList<>();
                 blobsToDelete.add(snapshotFormat.blobName(snapshotId.getUUID()));
                 blobsToDelete.add(globalMetaDataFormat.blobName(snapshotId.getUUID()));
-                getSnapshotInfo(snapshotId, ActionListener.delegateFailure(listener, (delegatedListener, snapshotInfo) -> {
-                    if (snapshotInfo != null) {
-                        final List<String> indices = snapshotInfo.indices();
-                        for (String index : indices) {
-                            final IndexId indexId = repositoryData.resolveIndexId(index);
-                            final BlobPath indexPath = basePath().add("indices").add(indexId.getId());
-                            blobsToDelete.add(indexPath.add(indexMetaDataFormat.blobName(snapshotId.getUUID())).buildAsString());
-                            IndexMetaData indexMetaData = loadIndexMetaData(snapshotId, index, indexId);
-                            if (indexMetaData != null) {
-                                for (int shardId = 0; shardId < indexMetaData.getNumberOfShards(); shardId++) {
-                                    try {
-                                        blobsToDelete.add(indexPath.add(Integer.toString(shardId))
-                                            .add(indexShardSnapshotFormat.blobName(snapshotId.getUUID())).buildAsString());
-                                    } catch (SnapshotException ex) {
-                                        final int finalShardId = shardId;
-                                        logger.warn(() -> new ParameterizedMessage("[{}] failed to delete shard data for shard [{}][{}]",
-                                            snapshotId, index, finalShardId), ex);
+                getSnapshotInfo(snapshotId, new ActionListener<>() {
+                    @Override
+                    public void onResponse(SnapshotInfo snapshotInfo) {
+                        if (snapshotInfo != null) {
+                            final List<String> indices = snapshotInfo.indices();
+                            for (String index : indices) {
+                                final IndexId indexId = repositoryData.resolveIndexId(index);
+                                final BlobPath indexPath = basePath().add("indices").add(indexId.getId());
+                                blobsToDelete.add(indexPath.add(indexMetaDataFormat.blobName(snapshotId.getUUID())).buildAsString());
+                                IndexMetaData indexMetaData = loadIndexMetaData(snapshotId, index, indexId);
+                                if (indexMetaData != null) {
+                                    for (int shardId = 0; shardId < indexMetaData.getNumberOfShards(); shardId++) {
+                                        try {
+                                            blobsToDelete.add(indexPath.add(Integer.toString(shardId))
+                                                .add(indexShardSnapshotFormat.blobName(snapshotId.getUUID())).buildAsString());
+                                        } catch (SnapshotException ex) {
+                                            final int finalShardId = shardId;
+                                            logger.warn(() -> new ParameterizedMessage(
+                                                "[{}] failed to delete shard data for shard [{}][{}]",
+                                                snapshotId, index, finalShardId), ex);
+                                        }
+                                        final ShardId sid = new ShardId(indexMetaData.getIndex(), shardId);
+                                        final Context context = new Context(snapshotId, indexId, sid);
+                                        final Map<String, BlobMetaData> blobs;
+                                        try {
+                                            blobs = context.blobContainer.listBlobs();
+                                        } catch (IOException e) {
+                                            throw new IndexShardSnapshotException(sid, "Failed to list content of gateway", e);
+                                        }
+                                        Tuple<BlobStoreIndexShardSnapshots, Integer> tuple =
+                                            context.buildBlobStoreIndexShardSnapshots(blobs);
+                                        BlobStoreIndexShardSnapshots snapshots = tuple.v1();
+                                        int fileListGeneration = tuple.v2();
+                                        blobsToDelete.add(
+                                            context.blobContainer.path().add(indexShardSnapshotFormat.blobName(snapshotId.getUUID()))
+                                                .buildAsString());
+                                        // Build a list of snapshots that should be preserved
+                                        // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
+                                        context.finalize(preservedSnapshots(snapshotId, snapshots), fileListGeneration + 1, blobs,
+                                            "snapshot deletion [" + snapshotId + "]", blobsToDelete);
                                     }
-                                    final ShardId sid = new ShardId(indexMetaData.getIndex(), shardId);
-                                    final Context context = new Context(snapshotId, indexId, sid);
-                                    final Map<String, BlobMetaData> blobs;
-                                    try {
-                                        blobs = context.blobContainer.listBlobs();
-                                    } catch (IOException e) {
-                                        throw new IndexShardSnapshotException(sid, "Failed to list content of gateway", e);
-                                    }
-
-                                    Tuple<BlobStoreIndexShardSnapshots, Integer> tuple = context.buildBlobStoreIndexShardSnapshots(blobs);
-                                    BlobStoreIndexShardSnapshots snapshots = tuple.v1();
-                                    int fileListGeneration = tuple.v2();
-                                    blobsToDelete.add(
-                                        context.blobContainer.path().add(indexShardSnapshotFormat.blobName(snapshotId.getUUID()))
-                                            .buildAsString());
-                                    // Build a list of snapshots that should be preserved
-                                    // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
-                                    context.finalize(preservedSnapshots(snapshotId, snapshots), fileListGeneration + 1, blobs,
-                                        "snapshot deletion [" + snapshotId + "]", blobsToDelete);
                                 }
                             }
                         }
+                        // cleanup indices that are no longer part of the repository
+                        final BlobContainer indicesBlobContainer = blobStore().blobContainer(basePath().add("indices"));
+                        blobsToDelete.addAll(unreferencedIndices(repositoryData, updatedRepositoryData).stream().map(
+                            indexId -> indicesBlobContainer.path().add(indexId.getId()).buildAsString()).collect(Collectors.toList()));
+                        final Tombstone tombstone = new Tombstone(updatedRepositoryData.getGenId(), snapshotId, blobsToDelete);
+                        final String tombstoneHash = tombstone.hash();
+                        tombstones.put(tombstoneHash, tombstone);
+                        clusterService.submitStateUpdateTask("Delete [" + snapshotId + "] from repository", new ClusterStateUpdateTask() {
+                            @Override
+                            public ClusterState execute(ClusterState currentState) {
+                                final SnapshotDeletionsInProgress snapshotDeletions = currentState.custom(SnapshotDeletionsInProgress.TYPE);
+                                addListener(tombstoneHash, listener);
+                                return ClusterState.builder(currentState).putCustom(
+                                    SnapshotDeletionsInProgress.TYPE, snapshotDeletions.withDeletes(tombstoneHash)).build();
+                            }
+
+                            @Override
+                            public void onFailure(final String source, final Exception e) {
+                                logger.warn("Failed to submit delete tombstone to cluster state.");
+                                threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
+                                    @Override
+                                    protected void doRun() throws Exception {
+                                        finishTombstoneHash(tombstoneHash, true);
+                                        tombstones.remove(tombstoneHash);
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        logger.warn("Failure when trying to rollback broken delete in repository.", e);
+                                    }
+                                });
+                            }
+                        });
                     }
-                    // cleanup indices that are no longer part of the repository
-                    final BlobContainer indicesBlobContainer = blobStore().blobContainer(basePath().add("indices"));
-                    blobsToDelete.addAll(unreferencedIndices(repositoryData, updatedRepositoryData).stream().map(
-                        indexId -> indicesBlobContainer.path().add(indexId.getId()).buildAsString()).collect(Collectors.toList()));
-                    final Tombstone tombstone = new Tombstone(updatedRepositoryData.getGenId(), snapshotId, blobsToDelete);
-                    final String tombstoneHash = tombstone.hash();
-                    tombstones.put(tombstoneHash, tombstone);
-                    clusterService.submitStateUpdateTask("Delete [" + snapshotId + "] from repository", new ClusterStateUpdateTask() {
-                        @Override
-                        public ClusterState execute(ClusterState currentState) {
-                            final SnapshotDeletionsInProgress snapshotDeletions = currentState.custom(SnapshotDeletionsInProgress.TYPE);
-                            addListener(tombstoneHash, delegatedListener);
-                            return ClusterState.builder(currentState).putCustom(
-                                SnapshotDeletionsInProgress.TYPE, snapshotDeletions.withDeletes(tombstoneHash)).build();
-                        }
 
-                        @Override
-                        public void onFailure(final String source, final Exception e) {
-                            logger.warn("Failed to submit delete tombstone to cluster state.");
-                            threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
-                                @Override
-                                protected void doRun() throws Exception {
-                                    finishTombstoneHash(tombstoneHash, true);
-                                    tombstones.remove(tombstoneHash);
-                                }
-
-                                @Override
-                                public void onFailure(Exception e) {
-                                    logger.warn("Failure when trying to rollback broken delete in repository.", e);
-                                }
-                            });
+                    @Override
+                    public void onFailure(Exception e) {
+                        if (e instanceof IllegalStateException | e instanceof SnapshotException
+                            | e instanceof ElasticsearchParseException) {
+                            logger.warn(() -> new ParameterizedMessage("cannot read snapshot file [{}]", snapshotId), e);
+                            onResponse(null);
+                        } else {
+                            listener.onFailure(e);
                         }
-                    });
-                }));
+                    }
+                });
             }, listener::onFailure // TODO: If we fail here, we should handle that via the cluster state
         ));
     }
