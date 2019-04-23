@@ -160,16 +160,18 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
     }
 
     @Override
-    public SnapshotInfo getSnapshotInfo(SnapshotId snapshotId) {
-        assert SNAPSHOT_ID.equals(snapshotId) : "RemoteClusterRepository only supports " + SNAPSHOT_ID + " as the SnapshotId";
-        Client remoteClient = getRemoteClusterClient();
-        ClusterStateResponse response = remoteClient.admin().cluster().prepareState().clear().setMetaData(true).setNodes(true)
-            .get(ccrSettings.getRecoveryActionTimeout());
-        ImmutableOpenMap<String, IndexMetaData> indicesMap = response.getState().metaData().indices();
-        ArrayList<String> indices = new ArrayList<>(indicesMap.size());
-        indicesMap.keysIt().forEachRemaining(indices::add);
+    public void getSnapshotInfo(SnapshotId snapshotId, ActionListener<SnapshotInfo> listener) {
+        ActionListener.completeWith(listener, () -> {
+            assert SNAPSHOT_ID.equals(snapshotId) : "RemoteClusterRepository only supports " + SNAPSHOT_ID + " as the SnapshotId";
+            Client remoteClient = getRemoteClusterClient();
+            ClusterStateResponse response = remoteClient.admin().cluster().prepareState().clear().setMetaData(true).setNodes(true)
+                .get(ccrSettings.getRecoveryActionTimeout());
+            ImmutableOpenMap<String, IndexMetaData> indicesMap = response.getState().metaData().indices();
+            ArrayList<String> indices = new ArrayList<>(indicesMap.size());
+            indicesMap.keysIt().forEachRemaining(indices::add);
 
-        return new SnapshotInfo(snapshotId, indices, SnapshotState.SUCCESS, response.getState().getNodes().getMaxNodeVersion());
+            return new SnapshotInfo(snapshotId, indices, SnapshotState.SUCCESS, response.getState().getNodes().getMaxNodeVersion());
+        });
     }
 
     @Override

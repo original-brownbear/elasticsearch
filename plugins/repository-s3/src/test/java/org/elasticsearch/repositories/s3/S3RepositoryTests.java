@@ -123,9 +123,9 @@ public class S3RepositoryTests extends ESTestCase {
     }
 
     private S3Repository createS3Repo(RepositoryMetaData metadata) {
-        ThreadPool threadPool = mock(ThreadPool.class);
+        final ThreadPool threadPool = mock(ThreadPool.class);
         final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
-        ClusterService clusterService = mock(ClusterService.class);
+        final ClusterService clusterService = mock(ClusterService.class);
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
         return new S3Repository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, new DummyS3Service(), clusterService) {

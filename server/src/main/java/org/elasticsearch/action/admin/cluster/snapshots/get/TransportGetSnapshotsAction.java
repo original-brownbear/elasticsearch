@@ -132,7 +132,7 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
             if (request.verbose()) {
                 final Set<SnapshotId> incompatibleSnapshots = repositoryData != null ?
                     new HashSet<>(repositoryData.getIncompatibleSnapshotIds()) : Collections.emptySet();
-                snapshotInfos = snapshotsService.snapshots(repository, new ArrayList<>(toResolve),
+                snapshotInfos = snapshotsService.snapshots(repository, List.copyOf(toResolve),
                     incompatibleSnapshots, request.ignoreUnavailable());
             } else {
                 if (repositoryData != null) {
