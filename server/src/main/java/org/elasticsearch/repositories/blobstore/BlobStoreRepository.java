@@ -36,6 +36,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.GroupedActionListener;
 import org.elasticsearch.cluster.ClusterChangedEvent;
+import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
@@ -278,16 +279,26 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    protected void doStop() {}
+    protected void doStop() {
+
+    }
 
     @Override
     public void applyClusterState(ClusterChangedEvent event) {
-        // TODO: Implement stuff
+        // Only using the cluster state to control the repository since 8.0
+        final ClusterState state = event.state();
+        if (state.nodes().getMinNodeVersion().onOrAfter(Version.V_8_0_0)) {
+            final BlobStoreRepositoriesState blobStoreState = state.custom(BlobStoreRepositoriesState.TYPE);
+            if (event.localNodeMaster()) {
+
+            }
+        }
     }
 
 
     @Override
     protected void doClose() {
+        clusterService.removeApplier(this);
         BlobStore store;
         // to close blobStore if blobStore initialization is started during close
         synchronized (lock) {
