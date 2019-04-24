@@ -31,6 +31,8 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.TestShardRouting;
+import org.elasticsearch.cluster.service.ClusterApplierService;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.lucene.uid.Versions;
@@ -68,6 +70,9 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
 
@@ -325,10 +330,15 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
     }
 
     /** Create a {@link Repository} with a random name **/
-    private Repository createRepository() throws IOException {
+    private Repository createRepository() {
         Settings settings = Settings.builder().put("location", randomAlphaOfLength(10)).build();
         RepositoryMetaData repositoryMetaData = new RepositoryMetaData(randomAlphaOfLength(10), FsRepository.TYPE, settings);
-        return new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), threadPool);
+        ThreadPool threadPool = mock(ThreadPool.class);
+        final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
+        ClusterService clusterService = mock(ClusterService.class);
+        when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
+        when(clusterApplierService.threadPool()).thenReturn(threadPool);
+        return new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService);
     }
 
     private static void runAsSnapshot(ThreadPool pool, Runnable runnable) {

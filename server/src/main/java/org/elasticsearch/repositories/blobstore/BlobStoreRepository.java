@@ -35,10 +35,13 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.GroupedActionListener;
+import org.elasticsearch.cluster.ClusterChangedEvent;
+import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Numbers;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
@@ -161,7 +164,7 @@ import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSna
  * }
  * </pre>
  */
-public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository {
+public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository, ClusterStateApplier {
     private static final Logger logger = LogManager.getLogger(BlobStoreRepository.class);
 
     protected final RepositoryMetaData metadata;
@@ -235,17 +238,20 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final SetOnce<BlobStore> blobStore = new SetOnce<>();
 
+    private final ClusterService clusterService;
+
     /**
      * Constructs new BlobStoreRepository
      * @param metadata   The metadata for this repository including name and settings
      * @param settings   Settings for the node this repository object is created on
-     * @param threadPool Threadpool to run long running repository manipulations on asynchronously
+     * @param clusterService Cluster Service
      */
-    protected BlobStoreRepository(RepositoryMetaData metadata, Settings settings, NamedXContentRegistry namedXContentRegistry,
-                                  ThreadPool threadPool) {
+    protected BlobStoreRepository(RepositoryMetaData metadata, Settings settings,
+                                  NamedXContentRegistry namedXContentRegistry, ClusterService clusterService) {
+        this.clusterService = clusterService;
+        threadPool = clusterService.getClusterApplierService().threadPool();
         this.settings = settings;
         this.metadata = metadata;
-        this.threadPool = threadPool;
         this.compress = COMPRESS_SETTING.get(metadata.settings());
         snapshotRateLimiter = getRateLimiter(metadata.settings(), "max_snapshot_bytes_per_sec", new ByteSizeValue(40, ByteSizeUnit.MB));
         restoreRateLimiter = getRateLimiter(metadata.settings(), "max_restore_bytes_per_sec", new ByteSizeValue(40, ByteSizeUnit.MB));
@@ -273,6 +279,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     protected void doStop() {}
+
+    @Override
+    public void applyClusterState(ClusterChangedEvent event) {
+        // TODO: Implement stuff
+    }
+
 
     @Override
     protected void doClose() {

@@ -25,6 +25,8 @@ import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingHelper;
+import org.elasticsearch.cluster.service.ClusterApplierService;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.internal.io.IOUtils;
@@ -52,6 +54,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * This class tests the behavior of {@link BlobStoreRepository} when it
@@ -180,12 +184,17 @@ public class BlobStoreRepositoryRestoreTests extends IndexShardTestCase {
     private Repository createRepository() {
         Settings settings = Settings.builder().put("location", randomAlphaOfLength(10)).build();
         RepositoryMetaData repositoryMetaData = new RepositoryMetaData(randomAlphaOfLength(10), FsRepository.TYPE, settings);
-        final FsRepository repository = new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), threadPool) {
-            @Override
-            protected void assertSnapshotOrGenericThread() {
-                // eliminate thread name check as we create repo manually
-            }
-        };
+        final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
+        final ClusterService clusterService = mock(ClusterService.class);
+        when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
+        when(clusterApplierService.threadPool()).thenReturn(threadPool);
+        final FsRepository repository =
+            new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService) {
+                @Override
+                protected void assertSnapshotOrGenericThread() {
+                    // eliminate thread name check as we create repo manually
+                }
+            };
         repository.start();
         return repository;
     }

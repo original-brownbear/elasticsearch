@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.StorageClass;
 import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -37,7 +38,6 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.action.admin.cluster.RestGetRepositoriesAction;
 import org.elasticsearch.test.rest.FakeRestRequest;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -116,14 +116,14 @@ public class S3BlobStoreRepositoryTests extends ESBlobStoreRepositoryIntegTestCa
 
         @Override
         public Map<String, Repository.Factory> getRepositories(final Environment env, final NamedXContentRegistry registry,
-                                                               final ThreadPool threadPool) {
+                                                               ClusterService clusterService) {
             return Collections.singletonMap(S3Repository.TYPE,
                     metadata -> new S3Repository(metadata, env.settings(), registry, new S3Service() {
                         @Override
                         AmazonS3 buildClient(S3ClientSettings clientSettings) {
                             return new MockAmazonS3(blobs, bucket, serverSideEncryption, cannedACL, storageClass);
                         }
-                    }, threadPool));
+                    }, clusterService));
         }
     }
 
