@@ -354,12 +354,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         if (Strings.hasLength(snapshotName) == false) {
             throw new InvalidSnapshotNameException(repositoryName, snapshotName, "cannot be empty");
         }
-        if (snapshotName.contains(" ")) {
-            throw new InvalidSnapshotNameException(repositoryName, snapshotName, "must not contain whitespace");
-        }
-        if (snapshotName.contains(",")) {
-            throw new InvalidSnapshotNameException(repositoryName, snapshotName, "must not contain ','");
-        }
         if (snapshotName.contains("#")) {
             throw new InvalidSnapshotNameException(repositoryName, snapshotName, "must not contain '#'");
         }
