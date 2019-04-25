@@ -115,7 +115,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -289,9 +288,44 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     public void applyClusterState(ClusterChangedEvent event) {
         // Only using the cluster state to control the repository since 8.0
         final ClusterState state = event.state();
-        if (state.nodes().getMinNodeVersion().onOrAfter(Version.V_8_0_0)) {
 
+    }
+
+    private static final class RepositoryStates {
+
+        private final Map<String, RepositoryState> repos;
+
+        RepositoryStates(Map<String, RepositoryState> repos) {
+            this.repos = repos;
         }
+
+    }
+
+    private static final class RepositoryState {
+
+        private final RepositoryStep step;
+
+        private final List<String> pendingUploads;
+
+        private final List<String> pendingDeletes;
+
+        RepositoryState(RepositoryStep step, List<String> pendingUploads, List<String> pendingDeletes) {
+            this.step = step;
+            this.pendingUploads = pendingUploads;
+            this.pendingDeletes = pendingDeletes;
+        }
+    }
+
+    private enum RepositoryStep {
+        GLOBAL_METADATA_WRITE,
+        INDEX_METADATA_WRITE,
+        SEGMENTS_WRITE,
+        SNAPSHOT_INFO_WRITE,
+        INDEX_GEN_WRITE,
+        INDEX_METADATA_DELETE,
+        GLOBAL_METADATA_DELETE,
+        SEGMENTS_DELETE,
+        SNAPSHOT_INFO_DELETE
     }
 
     @Override
