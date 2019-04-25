@@ -69,6 +69,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -114,6 +115,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -241,6 +243,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final ClusterService clusterService;
 
+    private volatile BlobStoreRepositoriesState.Entry repoState;
+
     /**
      * Constructs new BlobStoreRepository
      * @param metadata   The metadata for this repository including name and settings
@@ -288,13 +292,38 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         // Only using the cluster state to control the repository since 8.0
         final ClusterState state = event.state();
         if (state.nodes().getMinNodeVersion().onOrAfter(Version.V_8_0_0)) {
-            final BlobStoreRepositoriesState blobStoreState = state.custom(BlobStoreRepositoriesState.TYPE);
-            if (event.localNodeMaster()) {
+            final BlobStoreRepositoriesState blobStoresState = state.custom(BlobStoreRepositoriesState.TYPE);
+            if (blobStoresState == null || blobStoresState.repo(metadata.name()) == null) {
+                initializeRepoState();
+                return;
+            }
+            if (Objects.equals(blobStoresState.repo(metadata.name()), repoState) == false) {
+                if (event.localNodeMaster()) {
 
+                }
             }
         }
     }
 
+    private void initializeRepoState() {
+        // TODO: Implement
+    }
+
+
+
+    private static final class BlobsDiff implements ToXContent {
+
+        private final Map<String, Boolean> states;
+
+        BlobsDiff(Map<String, Boolean> states) {
+            this.states = states;
+        }
+
+        @Override
+        public XContentBuilder toXContent(final XContentBuilder builder, final Params params) throws IOException {
+            return null;
+        }
+    }
 
     @Override
     protected void doClose() {

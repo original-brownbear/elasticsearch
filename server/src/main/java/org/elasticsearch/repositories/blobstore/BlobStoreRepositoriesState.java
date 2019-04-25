@@ -66,17 +66,63 @@ public final class BlobStoreRepositoriesState extends AbstractNamedDiffable<Clus
 
         private final long nextVersion;
 
-        private final boolean metaUploaded;
+        private final State state;
 
-        public Entry(long nextVersion, boolean metaUploaded) {
+        public Entry(long nextVersion, State state) {
             this.nextVersion = nextVersion;
-            this.metaUploaded = metaUploaded;
+            this.state = state;
+        }
+
+        public long nextVersion() {
+            return nextVersion;
+        }
+
+        public State state() {
+            return state;
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeLong(nextVersion);
-            out.writeBoolean(metaUploaded);
+            out.writeEnum(state);
+        }
+    }
+
+    public enum State {
+        /**
+         * Metadata for next version is being uploaded.
+         */
+        INIT((byte) 0),
+        /**
+         * Metadata for next version has been uploaded but data blobs might be uploading or being deleted currently.
+         */
+        IN_PROGRESS((byte) 1),
+        /**
+         * All updates for the next version of metadata have been performed on the repository.
+         */
+        DONE((byte) 2);
+
+        private final byte value;
+
+        State(byte value) {
+            this.value = value;
+        }
+
+        public byte value() {
+            return this.value;
+        }
+
+        public static State fromValue(byte value) {
+            switch (value) {
+                case 0:
+                    return INIT;
+                case 1:
+                    return IN_PROGRESS;
+                case 2:
+                    return DONE;
+                default:
+                    throw new IllegalArgumentException("No repository state value for [" + value + "]");
+            }
         }
     }
 }
