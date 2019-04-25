@@ -243,8 +243,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final ClusterService clusterService;
 
-    private volatile BlobStoreRepositoriesState.Entry repoState;
-
     /**
      * Constructs new BlobStoreRepository
      * @param metadata   The metadata for this repository including name and settings
@@ -292,36 +290,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         // Only using the cluster state to control the repository since 8.0
         final ClusterState state = event.state();
         if (state.nodes().getMinNodeVersion().onOrAfter(Version.V_8_0_0)) {
-            final BlobStoreRepositoriesState blobStoresState = state.custom(BlobStoreRepositoriesState.TYPE);
-            if (blobStoresState == null || blobStoresState.repo(metadata.name()) == null) {
-                initializeRepoState();
-                return;
-            }
-            if (Objects.equals(blobStoresState.repo(metadata.name()), repoState) == false) {
-                if (event.localNodeMaster()) {
 
-                }
-            }
-        }
-    }
-
-    private void initializeRepoState() {
-        // TODO: Implement
-    }
-
-
-
-    private static final class BlobsDiff implements ToXContent {
-
-        private final Map<String, Boolean> states;
-
-        BlobsDiff(Map<String, Boolean> states) {
-            this.states = states;
-        }
-
-        @Override
-        public XContentBuilder toXContent(final XContentBuilder builder, final Params params) throws IOException {
-            return null;
         }
     }
 
