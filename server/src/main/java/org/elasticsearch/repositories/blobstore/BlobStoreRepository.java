@@ -166,7 +166,7 @@ import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSna
  * }
  * </pre>
  */
-public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository, ClusterStateApplier {
+public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository {
     private static final Logger logger = LogManager.getLogger(BlobStoreRepository.class);
 
     protected final RepositoryMetaData metadata;
@@ -240,7 +240,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final SetOnce<BlobStore> blobStore = new SetOnce<>();
 
-    private final ClusterService clusterService;
+    private final BlobStoreRepositoryMetadata blobMetaDataService = null;
 
     /**
      * Constructs new BlobStoreRepository
@@ -250,7 +250,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      */
     protected BlobStoreRepository(RepositoryMetaData metadata, Settings settings,
                                   NamedXContentRegistry namedXContentRegistry, ClusterService clusterService) {
-        this.clusterService = clusterService;
         threadPool = clusterService.getClusterApplierService().threadPool();
         this.settings = settings;
         this.metadata = metadata;
@@ -285,52 +284,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public void applyClusterState(ClusterChangedEvent event) {
-        // Only using the cluster state to control the repository since 8.0
-        final ClusterState state = event.state();
-
-    }
-
-    private static final class RepositoryStates {
-
-        private final Map<String, RepositoryState> repos;
-
-        RepositoryStates(Map<String, RepositoryState> repos) {
-            this.repos = repos;
-        }
-
-    }
-
-    private static final class RepositoryState {
-
-        private final RepositoryStep step;
-
-        private final List<String> pendingUploads;
-
-        private final List<String> pendingDeletes;
-
-        RepositoryState(RepositoryStep step, List<String> pendingUploads, List<String> pendingDeletes) {
-            this.step = step;
-            this.pendingUploads = pendingUploads;
-            this.pendingDeletes = pendingDeletes;
-        }
-    }
-
-    private enum RepositoryStep {
-        GLOBAL_METADATA_WRITE,
-        INDEX_METADATA_WRITE,
-        SEGMENTS_WRITE,
-        SNAPSHOT_INFO_WRITE,
-        INDEX_GEN_WRITE,
-        INDEX_METADATA_DELETE,
-        GLOBAL_METADATA_DELETE,
-        SEGMENTS_DELETE,
-        SNAPSHOT_INFO_DELETE
-    }
-
-    @Override
     protected void doClose() {
-        clusterService.removeApplier(this);
         BlobStore store;
         // to close blobStore if blobStore initialization is started during close
         synchronized (lock) {
