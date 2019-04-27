@@ -20,6 +20,8 @@
 package org.elasticsearch.repositories.url;
 
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterApplierService;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
@@ -36,12 +38,18 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class URLRepositoryTests extends ESTestCase {
 
     private URLRepository createRepository(Settings baseSettings, RepositoryMetaData repositoryMetaData) {
+        ThreadPool threadPool = mock(ThreadPool.class);
+        final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
+        ClusterService clusterService = mock(ClusterService.class);
+        when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
+        when(clusterApplierService.threadPool()).thenReturn(threadPool);
         return new URLRepository(repositoryMetaData, TestEnvironment.newEnvironment(baseSettings),
-            new NamedXContentRegistry(Collections.emptyList()), mock(ThreadPool.class)) {
+            new NamedXContentRegistry(Collections.emptyList()), clusterService) {
             @Override
             protected void assertSnapshotOrGenericThread() {
                 // eliminate thread name check as we create repo manually on test/main threads
