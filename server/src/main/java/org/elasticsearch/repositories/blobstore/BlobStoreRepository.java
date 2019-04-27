@@ -249,7 +249,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                   NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
                                   TransportService transportService) {
         threadPool = clusterService.getClusterApplierService().threadPool();
-        blobMetaDataService = new BlobStoreBackedMetadata(this::blobContainer, clusterService, transportService);
+        blobMetaDataService = new BlobStoreBackedMetadata(metadata.name(), this::blobContainer, clusterService, transportService);
         this.settings = settings;
         this.metadata = metadata;
         this.compress = COMPRESS_SETTING.get(metadata.settings());

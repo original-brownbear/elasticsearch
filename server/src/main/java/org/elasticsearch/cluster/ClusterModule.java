@@ -72,6 +72,7 @@ import org.elasticsearch.ingest.IngestMetadata;
 import org.elasticsearch.persistent.PersistentTasksCustomMetaData;
 import org.elasticsearch.persistent.PersistentTasksNodeService;
 import org.elasticsearch.plugins.ClusterPlugin;
+import org.elasticsearch.repositories.blobstore.BlobStoreBackedMetadata;
 import org.elasticsearch.script.ScriptMetaData;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskResultsService;
@@ -122,6 +123,8 @@ public class ClusterModule extends AbstractModule {
         registerClusterCustom(entries, RestoreInProgress.TYPE, RestoreInProgress::new, RestoreInProgress::readDiffFrom);
         registerClusterCustom(entries, SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress::new,
             SnapshotDeletionsInProgress::readDiffFrom);
+        registerClusterCustom(entries, BlobStoreBackedMetadata.RepositoriesState.TYPE, BlobStoreBackedMetadata.RepositoriesState::new,
+            BlobStoreBackedMetadata.RepositoriesState::readDiffFrom);
         // Metadata
         registerMetaDataCustom(entries, RepositoriesMetaData.TYPE, RepositoriesMetaData::new, RepositoriesMetaData::readDiffFrom);
         registerMetaDataCustom(entries, IngestMetadata.TYPE, IngestMetadata::new, IngestMetadata::readDiffFrom);

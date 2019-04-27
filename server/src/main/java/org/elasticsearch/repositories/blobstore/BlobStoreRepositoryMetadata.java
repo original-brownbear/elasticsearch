@@ -55,7 +55,7 @@ public interface BlobStoreRepositoryMetadata {
      * List all blobs with the given prefix
      * @param prefix Prefix
      */
-    void list(String prefix, ActionListener<Iterable<BlobMetaData>> listener);
+    void list(String prefix, ActionListener<Iterable<? extends BlobMetaData>> listener);
 
     enum BlobState {
         DELETED,
