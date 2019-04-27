@@ -64,9 +64,9 @@ class GoogleCloudStorageRepository extends BlobStoreRepository {
     private final String clientName;
 
     GoogleCloudStorageRepository(RepositoryMetaData metadata, Environment environment,
-                                        NamedXContentRegistry namedXContentRegistry,
-                                        GoogleCloudStorageService storageService, ClusterService clusterService,
-                                        TransportService transportService) {
+                                 NamedXContentRegistry namedXContentRegistry,
+                                 GoogleCloudStorageService storageService, ClusterService clusterService,
+                                 TransportService transportService) {
         super(metadata, environment.settings(), namedXContentRegistry, clusterService, transportService);
         this.storageService = storageService;
 
