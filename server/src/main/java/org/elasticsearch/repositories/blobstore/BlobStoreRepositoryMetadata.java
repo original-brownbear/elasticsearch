@@ -26,7 +26,13 @@ import org.elasticsearch.common.blobstore.BlobMetaData;
  */
 public interface BlobStoreRepositoryMetadata {
 
-
+    /**
+     * Requests a blob id for writing to. Implementations must ensure that the blobs returned by this method are registered as pending
+     * uploads the same way they would be if requested by a call to {@link #addUploads(Iterable, ActionListener)}.
+     * @param prefix Prefix of the blob
+     * @param parts How many parts does this blob have
+     * @param listener Listener that is passed the blobs name on completion
+     */
     void requestBlobId(String prefix, int parts, ActionListener<String> listener);
 
     /**
@@ -44,8 +50,10 @@ public interface BlobStoreRepositoryMetadata {
     /**
      * Mark the given blobs as pending upload.
      * @param blobs Blobs to be uploaded
+     * @throws BlobBusyException if some of the requested blobs are already being modified
      */
-    void addUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener);
+    void addUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) throws BlobBusyException;
+
 
     void completeUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener);
 

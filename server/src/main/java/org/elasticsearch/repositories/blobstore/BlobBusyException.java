@@ -18,7 +18,7 @@
  */
 package org.elasticsearch.repositories.blobstore;
 
-public class BlobBusyException extends Exception {
+public final class BlobBusyException extends Exception {
 
     public BlobBusyException(String blob, BlobStoreRepositoryMetadata.BlobState state) {
         super("Blob [" + blob + "] is already busy in state [" + state.name() + "].");
