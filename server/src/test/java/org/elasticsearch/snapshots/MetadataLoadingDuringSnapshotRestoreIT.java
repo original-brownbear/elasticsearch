@@ -36,6 +36,7 @@ import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.snapshots.mockstore.MockRepository;
+import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -185,8 +186,9 @@ public class MetadataLoadingDuringSnapshotRestoreIT extends AbstractSnapshotInte
 
         public CountingMockRepository(final RepositoryMetaData metadata,
                                       final Environment environment,
-                                      final NamedXContentRegistry namedXContentRegistry, ClusterService clusterService) {
-            super(metadata, environment, namedXContentRegistry, clusterService);
+                                      final NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
+                                      TransportService transportService) {
+            super(metadata, environment, namedXContentRegistry, clusterService, transportService);
         }
 
         @Override
@@ -206,9 +208,10 @@ public class MetadataLoadingDuringSnapshotRestoreIT extends AbstractSnapshotInte
     public static class CountingMockRepositoryPlugin extends MockRepository.Plugin {
         @Override
         public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                               ClusterService clusterService) {
+                                                               ClusterService clusterService, TransportService transportService) {
             return Collections.singletonMap(
-                "coutingmock", metadata -> new CountingMockRepository(metadata, env, namedXContentRegistry, clusterService));
+                "coutingmock", metadata ->
+                    new CountingMockRepository(metadata, env, namedXContentRegistry, clusterService, transportService));
         }
     }
 }

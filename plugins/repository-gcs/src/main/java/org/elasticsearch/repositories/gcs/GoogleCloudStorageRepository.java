@@ -32,6 +32,7 @@ import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
+import org.elasticsearch.transport.TransportService;
 
 import java.util.function.Function;
 
@@ -64,8 +65,9 @@ class GoogleCloudStorageRepository extends BlobStoreRepository {
 
     GoogleCloudStorageRepository(RepositoryMetaData metadata, Environment environment,
                                         NamedXContentRegistry namedXContentRegistry,
-                                        GoogleCloudStorageService storageService, ClusterService clusterService) {
-        super(metadata, environment.settings(), namedXContentRegistry, clusterService);
+                                        GoogleCloudStorageService storageService, ClusterService clusterService,
+                                        TransportService transportService) {
+        super(metadata, environment.settings(), namedXContentRegistry, clusterService, transportService);
         this.storageService = storageService;
 
         String basePath = BASE_PATH.get(metadata.settings());

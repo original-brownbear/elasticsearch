@@ -34,6 +34,7 @@ import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
+import org.elasticsearch.transport.TransportService;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -83,8 +84,8 @@ public class URLRepository extends BlobStoreRepository {
      * Constructs a read-only URL-based repository
      */
     public URLRepository(RepositoryMetaData metadata, Environment environment,
-                         NamedXContentRegistry namedXContentRegistry, ClusterService clusterService) {
-        super(metadata, environment.settings(), namedXContentRegistry, clusterService);
+                         NamedXContentRegistry namedXContentRegistry, ClusterService clusterService, TransportService transportService) {
+        super(metadata, environment.settings(), namedXContentRegistry, clusterService, transportService);
 
         if (URL_SETTING.exists(metadata.settings()) == false && REPOSITORIES_URL_SETTING.exists(environment.settings()) ==  false) {
             throw new RepositoryException(metadata.name(), "missing url");

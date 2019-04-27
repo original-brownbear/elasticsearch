@@ -37,6 +37,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.transport.TransportService;
 
 public final class HdfsPlugin extends Plugin implements RepositoryPlugin {
 
@@ -112,7 +113,8 @@ public final class HdfsPlugin extends Plugin implements RepositoryPlugin {
 
     @Override
     public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                           ClusterService clusterService) {
-        return Collections.singletonMap("hdfs", (metadata) -> new HdfsRepository(metadata, env, namedXContentRegistry, clusterService));
+                                                           ClusterService clusterService, TransportService transportService) {
+        return Collections.singletonMap("hdfs",
+            metadata -> new HdfsRepository(metadata, env, namedXContentRegistry, clusterService, transportService));
     }
 }

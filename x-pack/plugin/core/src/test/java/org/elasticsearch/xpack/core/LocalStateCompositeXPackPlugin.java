@@ -65,6 +65,7 @@ import org.elasticsearch.threadpool.ExecutorBuilder;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportInterceptor;
+import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.watcher.ResourceWatcherService;
 import org.elasticsearch.xpack.core.ssl.SSLService;
 
@@ -395,21 +396,21 @@ public class LocalStateCompositeXPackPlugin extends XPackPlugin implements Scrip
 
     @Override
     public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                           ClusterService clusterService) {
+                                                           ClusterService clusterService, TransportService transportService) {
         HashMap<String, Repository.Factory> repositories =
-            new HashMap<>(super.getRepositories(env, namedXContentRegistry, clusterService));
+            new HashMap<>(super.getRepositories(env, namedXContentRegistry, clusterService, transportService));
         filterPlugins(RepositoryPlugin.class)
-            .forEach(r -> repositories.putAll(r.getRepositories(env, namedXContentRegistry, clusterService)));
+            .forEach(r -> repositories.putAll(r.getRepositories(env, namedXContentRegistry, clusterService, transportService)));
         return repositories;
     }
 
     @Override
     public Map<String, Repository.Factory> getInternalRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                                   ClusterService clusterService) {
+                                                                   ClusterService clusterService, TransportService transportService) {
         HashMap<String, Repository.Factory> internalRepositories =
-            new HashMap<>(super.getInternalRepositories(env, namedXContentRegistry, clusterService));
+            new HashMap<>(super.getInternalRepositories(env, namedXContentRegistry, clusterService, transportService));
         filterPlugins(RepositoryPlugin.class).forEach(r ->
-            internalRepositories.putAll(r.getInternalRepositories(env, namedXContentRegistry, clusterService)));
+            internalRepositories.putAll(r.getInternalRepositories(env, namedXContentRegistry, clusterService, transportService)));
         return internalRepositories;
     }
 

@@ -29,6 +29,7 @@ import org.elasticsearch.env.TestEnvironment;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -49,7 +50,7 @@ public class URLRepositoryTests extends ESTestCase {
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
         return new URLRepository(repositoryMetaData, TestEnvironment.newEnvironment(baseSettings),
-            new NamedXContentRegistry(Collections.emptyList()), clusterService) {
+            new NamedXContentRegistry(Collections.emptyList()), clusterService, mock(TransportService.class)) {
             @Override
             protected void assertSnapshotOrGenericThread() {
                 // eliminate thread name check as we create repo manually on test/main threads

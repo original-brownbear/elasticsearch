@@ -40,6 +40,7 @@ import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESSingleNodeTestCase;
+import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -71,9 +72,9 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
 
         @Override
         public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                               ClusterService clusterService) {
+                                                               ClusterService clusterService, TransportService transportService) {
             return Collections.singletonMap(REPO_TYPE,
-                metadata -> new FsRepository(metadata, env, namedXContentRegistry, clusterService) {
+                metadata -> new FsRepository(metadata, env, namedXContentRegistry, clusterService, transportService) {
                     @Override
                     protected void assertSnapshotOrGenericThread() {
                         // eliminate thread name check as we access blobStore on test/main threads

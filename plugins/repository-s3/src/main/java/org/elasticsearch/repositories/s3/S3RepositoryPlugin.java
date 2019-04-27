@@ -31,6 +31,7 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.ReloadablePlugin;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.security.AccessController;
@@ -78,15 +79,16 @@ public class S3RepositoryPlugin extends Plugin implements RepositoryPlugin, Relo
     // proxy method for testing
     protected S3Repository createRepository(final RepositoryMetaData metadata,
                                             final Settings settings,
-                                            final NamedXContentRegistry registry, ClusterService clusterService) {
-        return new S3Repository(metadata, settings, registry, service, clusterService);
+                                            final NamedXContentRegistry registry, ClusterService clusterService,
+                                            TransportService transportService) {
+        return new S3Repository(metadata, settings, registry, service, clusterService, transportService);
     }
 
     @Override
     public Map<String, Repository.Factory> getRepositories(final Environment env, final NamedXContentRegistry registry,
-                                                           ClusterService clusterService) {
+                                                           ClusterService clusterService, TransportService transportService) {
         return Collections.singletonMap(
-            S3Repository.TYPE, metadata -> createRepository(metadata, env.settings(), registry, clusterService));
+            S3Repository.TYPE, metadata -> createRepository(metadata, env.settings(), registry, clusterService, transportService));
     }
 
     @Override

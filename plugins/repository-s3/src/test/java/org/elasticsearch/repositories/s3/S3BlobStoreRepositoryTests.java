@@ -38,6 +38,7 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.action.admin.cluster.RestGetRepositoriesAction;
 import org.elasticsearch.test.rest.FakeRestRequest;
+import org.elasticsearch.transport.TransportService;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -116,14 +117,14 @@ public class S3BlobStoreRepositoryTests extends ESBlobStoreRepositoryIntegTestCa
 
         @Override
         public Map<String, Repository.Factory> getRepositories(final Environment env, final NamedXContentRegistry registry,
-                                                               ClusterService clusterService) {
+                                                               ClusterService clusterService, TransportService transportService) {
             return Collections.singletonMap(S3Repository.TYPE,
                     metadata -> new S3Repository(metadata, env.settings(), registry, new S3Service() {
                         @Override
                         AmazonS3 buildClient(S3ClientSettings clientSettings) {
                             return new MockAmazonS3(blobs, bucket, serverSideEncryption, cannedACL, storageClass);
                         }
-                    }, clusterService));
+                    }, clusterService, transportService));
         }
     }
 

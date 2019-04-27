@@ -27,6 +27,7 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.url.URLRepository;
+import org.elasticsearch.transport.TransportService;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,8 +47,8 @@ public class URLRepositoryPlugin extends Plugin implements RepositoryPlugin {
 
     @Override
     public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                           ClusterService clusterService) {
+                                                           ClusterService clusterService, TransportService transportService) {
         return Collections.singletonMap(
-            URLRepository.TYPE, metadata -> new URLRepository(metadata, env, namedXContentRegistry, clusterService));
+            URLRepository.TYPE, metadata -> new URLRepository(metadata, env, namedXContentRegistry, clusterService, transportService));
     }
 }

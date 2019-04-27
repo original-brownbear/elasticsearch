@@ -35,9 +35,6 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.GroupedActionListener;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
@@ -69,7 +66,6 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -103,6 +99,7 @@ import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotMissingException;
 import org.elasticsearch.snapshots.SnapshotShardFailure;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportService;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -240,7 +237,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final SetOnce<BlobStore> blobStore = new SetOnce<>();
 
-    private final BlobStoreRepositoryMetadata blobMetaDataService = null;
+    private final BlobStoreBackedMetadata blobMetaDataService;
 
     /**
      * Constructs new BlobStoreRepository
@@ -249,8 +246,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      * @param clusterService Cluster Service
      */
     protected BlobStoreRepository(RepositoryMetaData metadata, Settings settings,
-                                  NamedXContentRegistry namedXContentRegistry, ClusterService clusterService) {
+                                  NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
+                                  TransportService transportService) {
         threadPool = clusterService.getClusterApplierService().threadPool();
+        blobMetaDataService = new BlobStoreBackedMetadata(this::blobContainer, clusterService, transportService);
         this.settings = settings;
         this.metadata = metadata;
         this.compress = COMPRESS_SETTING.get(metadata.settings());
@@ -276,11 +275,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         if (chunkSize != null && chunkSize.getBytes() <= 0) {
             throw new IllegalArgumentException("the chunk size cannot be negative: [" + chunkSize + "]");
         }
+        blobMetaDataService.doStart();
     }
 
     @Override
     protected void doStop() {
-
+        blobMetaDataService.doStop();
     }
 
     @Override

@@ -33,6 +33,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.security.AccessController;
@@ -85,8 +86,8 @@ public class RepositoryCredentialsTests extends ESTestCase {
 
         @Override
         protected S3Repository createRepository(RepositoryMetaData metadata, Settings settings, NamedXContentRegistry registry,
-                                                ClusterService clusterService) {
-            return new S3Repository(metadata, settings, registry, service, clusterService){
+                                                ClusterService clusterService, TransportService transportService) {
+            return new S3Repository(metadata, settings, registry, service, clusterService, transportService) {
                 @Override
                 protected void assertSnapshotOrGenericThread() {
                     // eliminate thread name check as we create repo manually on test/main threads
@@ -164,7 +165,7 @@ public class RepositoryCredentialsTests extends ESTestCase {
 
     private S3Repository createAndStartRepository(RepositoryMetaData metadata, S3RepositoryPlugin s3Plugin) {
         final S3Repository repository =
-            s3Plugin.createRepository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, clusterService);
+            s3Plugin.createRepository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, clusterService, mock(TransportService.class));
         repository.start();
         return repository;
     }

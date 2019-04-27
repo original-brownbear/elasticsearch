@@ -22,21 +22,19 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.CheckedBiConsumer;
-import org.elasticsearch.common.CheckedFunction;
+import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetaData;
+import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.transport.TransportService;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Supplier;
 
-public final class BlobStoreBackedMetadata implements BlobStoreRepositoryMetadata, ClusterStateApplier {
+final class BlobStoreBackedMetadata extends AbstractLifecycleComponent implements BlobStoreRepositoryMetadata, ClusterStateApplier {
 
-    private final CheckedBiConsumer<String, InputStream, IOException> writer;
 
-    private final CheckedFunction<String, InputStream, IOException> reader;
+    private final Supplier<BlobContainer> blobContainerSupplier;
 
     private final ClusterService clusterService;
 
@@ -44,17 +42,11 @@ public final class BlobStoreBackedMetadata implements BlobStoreRepositoryMetadat
 
     private volatile String currentStateUUID;
 
-    public BlobStoreBackedMetadata(CheckedBiConsumer<String, InputStream, IOException> writer,
-        CheckedFunction<String, InputStream, IOException> reader, ClusterService clusterService, TransportService transportService) {
-        this.writer = writer;
-        this.reader = reader;
+    BlobStoreBackedMetadata(Supplier<BlobContainer> blobContainerSupplier, ClusterService clusterService,
+                            TransportService transportService) {
+        this.blobContainerSupplier = blobContainerSupplier;
         this.clusterService = clusterService;
         this.transportService = transportService;
-    }
-
-    @Override
-    public void requestBlobId(String prefix, int parts, ActionListener<String> listener) {
-
     }
 
     @Override
@@ -105,6 +97,20 @@ public final class BlobStoreBackedMetadata implements BlobStoreRepositoryMetadat
 
     }
 
+    @Override
+    protected void doStart() {
+        clusterService.addLowPriorityApplier(this);
+    }
+
+    @Override
+    protected void doStop() {
+        clusterService.removeApplier(this);
+    }
+
+    @Override
+    protected void doClose() {
+    }
+
     private static final class BlobStoreBlobMetaData implements BlobMetaData {
 
         private final String name;
@@ -117,6 +123,10 @@ public final class BlobStoreBackedMetadata implements BlobStoreRepositoryMetadat
             this.name = name;
             this.length = length;
             this.state = state;
+        }
+
+        public BlobState state() {
+            return state;
         }
 
         @Override

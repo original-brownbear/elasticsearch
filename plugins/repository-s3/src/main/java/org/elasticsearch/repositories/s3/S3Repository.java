@@ -37,6 +37,7 @@ import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
+import org.elasticsearch.transport.TransportService;
 
 import java.util.function.Function;
 
@@ -164,8 +165,8 @@ class S3Repository extends BlobStoreRepository {
     S3Repository(final RepositoryMetaData metadata,
                  final Settings settings,
                  final NamedXContentRegistry namedXContentRegistry,
-                 final S3Service service, ClusterService clusterService) {
-        super(metadata, settings, namedXContentRegistry, clusterService);
+                 final S3Service service, ClusterService clusterService, TransportService transportService) {
+        super(metadata, settings, namedXContentRegistry, clusterService, transportService);
         this.service = service;
 
         // Parse and validate the user's S3 Storage Class setting

@@ -26,6 +26,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.transport.TransportService;
 
 /**
  * An extension point for {@link Plugin} implementations to add custom snapshot repositories.
@@ -41,7 +42,7 @@ public interface RepositoryPlugin {
      * the value is a factory to construct the {@link Repository} interface.
      */
     default Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                            ClusterService clusterService) {
+                                                            ClusterService clusterService, TransportService transportService) {
         return Collections.emptyMap();
     }
 
@@ -55,7 +56,7 @@ public interface RepositoryPlugin {
      * the value is a factory to construct the {@link Repository} interface.
      */
     default Map<String, Repository.Factory> getInternalRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                                    ClusterService clusterService) {
+                                                                    ClusterService clusterService, TransportService transportService) {
         return Collections.emptyMap();
     }
 }

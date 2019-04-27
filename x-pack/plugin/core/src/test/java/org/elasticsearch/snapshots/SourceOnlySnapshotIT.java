@@ -38,6 +38,7 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.slice.SliceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.transport.TransportService;
 import org.hamcrest.Matchers;
 
 import java.io.IOException;
@@ -74,7 +75,7 @@ public class SourceOnlySnapshotIT extends ESIntegTestCase {
     public static final class MyPlugin extends Plugin implements RepositoryPlugin, EnginePlugin {
         @Override
         public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                               ClusterService clusterService) {
+                                                               ClusterService clusterService, TransportService transportService) {
             return Collections.singletonMap("source", SourceOnlySnapshotRepository.newRepositoryFactory());
         }
         @Override

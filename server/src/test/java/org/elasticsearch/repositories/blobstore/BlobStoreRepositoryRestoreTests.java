@@ -46,6 +46,7 @@ import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.snapshots.SnapshotId;
+import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -189,7 +190,7 @@ public class BlobStoreRepositoryRestoreTests extends IndexShardTestCase {
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
         final FsRepository repository =
-            new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService) {
+            new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService, mock(TransportService.class)) {
                 @Override
                 protected void assertSnapshotOrGenericThread() {
                     // eliminate thread name check as we create repo manually

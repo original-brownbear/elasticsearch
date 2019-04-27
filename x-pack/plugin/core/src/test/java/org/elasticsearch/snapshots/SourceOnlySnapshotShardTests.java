@@ -63,6 +63,7 @@ import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportService;
 import org.hamcrest.Matchers;
 
 import java.io.IOException;
@@ -338,7 +339,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
         ClusterService clusterService = mock(ClusterService.class);
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
-        return new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService);
+        return new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService, mock(TransportService.class));
     }
 
     private static void runAsSnapshot(ThreadPool pool, Runnable runnable) {

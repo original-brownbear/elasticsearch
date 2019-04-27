@@ -31,6 +31,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportService;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -52,7 +53,8 @@ public class AzureRepositorySettingsTests extends ESTestCase {
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
         final AzureRepository azureRepository = new AzureRepository(new RepositoryMetaData("foo", "azure", internalSettings),
             TestEnvironment.newEnvironment(
-                internalSettings), NamedXContentRegistry.EMPTY, mock(AzureStorageService.class), clusterService);
+                internalSettings), NamedXContentRegistry.EMPTY, mock(AzureStorageService.class), clusterService,
+            mock(TransportService.class));
         assertThat(azureRepository.getBlobStore(), is(nullValue()));
         return azureRepository;
     }
