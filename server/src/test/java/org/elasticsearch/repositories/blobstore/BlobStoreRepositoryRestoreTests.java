@@ -189,8 +189,9 @@ public class BlobStoreRepositoryRestoreTests extends IndexShardTestCase {
         final ClusterService clusterService = mock(ClusterService.class);
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
+        final BlobStoreMetadataService metadataService = new BlobStoreMetadataService(clusterService, mock(TransportService.class));
         final FsRepository repository =
-            new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService, mock(TransportService.class)) {
+            new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), metadataService) {
                 @Override
                 protected void assertSnapshotOrGenericThread() {
                     // eliminate thread name check as we create repo manually

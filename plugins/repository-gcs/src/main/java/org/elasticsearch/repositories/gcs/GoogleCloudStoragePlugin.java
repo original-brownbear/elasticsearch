@@ -19,7 +19,6 @@
 
 package org.elasticsearch.repositories.gcs;
 
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -28,7 +27,7 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.ReloadablePlugin;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
-import org.elasticsearch.transport.TransportService;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,10 +52,9 @@ public class GoogleCloudStoragePlugin extends Plugin implements RepositoryPlugin
 
     @Override
     public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                           ClusterService clusterService, TransportService transportService) {
+                                                           BlobStoreMetadataService metadataService) {
         return Collections.singletonMap(GoogleCloudStorageRepository.TYPE,
-            (metadata) -> new GoogleCloudStorageRepository(metadata, env, namedXContentRegistry, this.storageService,
-                                                           clusterService, transportService));
+            (metadata) -> new GoogleCloudStorageRepository(metadata, env, namedXContentRegistry, this.storageService, metadataService));
     }
 
     @Override

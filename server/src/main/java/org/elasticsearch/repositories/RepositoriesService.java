@@ -243,17 +243,18 @@ public class RepositoriesService implements ClusterStateApplier {
                                 if (verificationToken != null) {
                                     try {
                                         verifyAction.verify(repositoryName, verificationToken, ActionListener.delegateFailure(listener,
-                                            (delegatedListener, verifyResponse) -> threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
-                                                try {
-                                                    repository.endVerification(verificationToken);
-                                                } catch (Exception e) {
-                                                    logger.warn(() -> new ParameterizedMessage(
-                                                        "[{}] failed to finish repository verification", repositoryName), e);
-                                                    delegatedListener.onFailure(e);
-                                                    return;
-                                                }
-                                                delegatedListener.onResponse(verifyResponse);
-                                            })));
+                                            (delegatedListener, verifyResponse) -> threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(
+                                                () -> {
+                                                    try {
+                                                        repository.endVerification(verificationToken);
+                                                    } catch (Exception e) {
+                                                        logger.warn(() -> new ParameterizedMessage(
+                                                            "[{}] failed to finish repository verification", repositoryName), e);
+                                                        delegatedListener.onFailure(e);
+                                                        return;
+                                                    }
+                                                    delegatedListener.onResponse(verifyResponse);
+                                                })));
                                     } catch (Exception e) {
                                         threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
                                             try {

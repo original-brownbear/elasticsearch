@@ -40,7 +40,6 @@ import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.snapshots.SnapshotMissingException;
 import org.elasticsearch.snapshots.SnapshotRestoreException;
 import org.elasticsearch.test.ESIntegTestCase;
-import org.elasticsearch.test.rest.yaml.section.Assertion;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.Arrays;

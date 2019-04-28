@@ -39,7 +39,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.translog.BufferedChecksumStreamOutput;
-import org.elasticsearch.repositories.blobstore.BlobStoreRepositoryMetadata;
+import org.elasticsearch.repositories.blobstore.BlobStoreRepositoryMetadataService;
 import org.elasticsearch.repositories.blobstore.ChecksumBlobStoreFormat;
 import org.elasticsearch.snapshots.mockstore.BlobContainerWrapper;
 
@@ -62,7 +62,7 @@ public class BlobStoreFormatIT extends AbstractSnapshotIntegTestCase {
 
     public static final String BLOB_CODEC = "blob";
 
-    private static final BlobStoreRepositoryMetadata NOOP_BLOB_META = new BlobStoreRepositoryMetadata() {
+    private static final BlobStoreRepositoryMetadataService NOOP_BLOB_META = new BlobStoreRepositoryMetadataService() {
         @Override
         public void addTombstones(final Iterable<String> blobs, final ActionListener<Void> listener) {
             listener.onResponse(null);

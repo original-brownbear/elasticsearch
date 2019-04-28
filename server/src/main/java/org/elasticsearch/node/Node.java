@@ -133,6 +133,7 @@ import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.plugins.ScriptPlugin;
 import org.elasticsearch.plugins.SearchPlugin;
 import org.elasticsearch.repositories.RepositoriesModule;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.script.ScriptModule;
 import org.elasticsearch.script.ScriptService;
@@ -478,9 +479,9 @@ public class Node implements Closeable {
                 SearchExecutionStatsCollector.makeWrapper(responseCollectorService));
             final HttpServerTransport httpServerTransport = newHttpTransport(networkModule);
 
-
+            final BlobStoreMetadataService blobStoreMetadataService = new BlobStoreMetadataService(clusterService, transportService);
             modules.add(new RepositoriesModule(this.environment, pluginsService.filterPlugins(RepositoryPlugin.class), transportService,
-                clusterService, threadPool, xContentRegistry));
+                clusterService, xContentRegistry, blobStoreMetadataService));
 
             final DiscoveryModule discoveryModule = new DiscoveryModule(settings, threadPool, transportService, namedWriteableRegistry,
                 networkService, clusterService.getMasterService(), clusterService.getClusterApplierService(),
@@ -555,6 +556,7 @@ public class Node implements Closeable {
                     b.bind(PersistentTasksService.class).toInstance(persistentTasksService);
                     b.bind(PersistentTasksClusterService.class).toInstance(persistentTasksClusterService);
                     b.bind(PersistentTasksExecutorRegistry.class).toInstance(registry);
+                    b.bind(BlobStoreMetadataService.class).toInstance(blobStoreMetadataService);
                 }
             );
             injector = modules.createInjector();
@@ -642,6 +644,7 @@ public class Node implements Closeable {
         injector.getInstance(IndicesClusterStateService.class).start();
         injector.getInstance(SnapshotsService.class).start();
         injector.getInstance(SnapshotShardsService.class).start();
+        injector.getInstance(BlobStoreMetadataService.class).start();
         injector.getInstance(RoutingService.class).start();
         injector.getInstance(SearchService.class).start();
         nodeService.getMonitorService().start();
@@ -845,6 +848,8 @@ public class Node implements Closeable {
 
         toClose.add(injector.getInstance(NodeEnvironment.class));
         toClose.add(injector.getInstance(PageCacheRecycler.class));
+
+        toClose.add(injector.getInstance(BlobStoreMetadataService.class));
 
         if (logger.isTraceEnabled()) {
             logger.trace("Close times for each service:\n{}", stopWatch.prettyPrint());

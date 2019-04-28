@@ -31,6 +31,7 @@ import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -86,8 +87,8 @@ public class RepositoryCredentialsTests extends ESTestCase {
 
         @Override
         protected S3Repository createRepository(RepositoryMetaData metadata, Settings settings, NamedXContentRegistry registry,
-                                                ClusterService clusterService, TransportService transportService) {
-            return new S3Repository(metadata, settings, registry, service, clusterService, transportService) {
+                                                BlobStoreMetadataService metadataService) {
+            return new S3Repository(metadata, settings, registry, service, metadataService) {
                 @Override
                 protected void assertSnapshotOrGenericThread() {
                     // eliminate thread name check as we create repo manually on test/main threads
@@ -165,7 +166,8 @@ public class RepositoryCredentialsTests extends ESTestCase {
 
     private S3Repository createAndStartRepository(RepositoryMetaData metadata, S3RepositoryPlugin s3Plugin) {
         final S3Repository repository =
-            s3Plugin.createRepository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, clusterService, mock(TransportService.class));
+            s3Plugin.createRepository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY,
+                new BlobStoreMetadataService(clusterService, mock(TransportService.class)));
         repository.start();
         return repository;
     }

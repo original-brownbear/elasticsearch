@@ -28,6 +28,7 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.repositories.RepositoryException;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -129,8 +130,8 @@ public class S3RepositoryTests extends ESTestCase {
         final ClusterService clusterService = mock(ClusterService.class);
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
-        return new S3Repository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, new DummyS3Service(), clusterService,
-                                mock(TransportService.class)) {
+        return new S3Repository(metadata, Settings.EMPTY, NamedXContentRegistry.EMPTY, new DummyS3Service(),
+            new BlobStoreMetadataService(clusterService, mock(TransportService.class))) {
             @Override
             protected void assertSnapshotOrGenericThread() {
                 // eliminate thread name check as we create repo manually on test/main threads

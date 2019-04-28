@@ -24,7 +24,7 @@ import org.elasticsearch.common.blobstore.BlobMetaData;
 /**
  * {@link BlobStoreRepository} metadata store.
  */
-public interface BlobStoreRepositoryMetadata {
+public interface BlobStoreRepositoryMetadataService {
 
     /**
      * Marks the given blobs as deleted.
@@ -41,9 +41,8 @@ public interface BlobStoreRepositoryMetadata {
     /**
      * Mark the given blobs as pending upload.
      * @param blobs Blobs to be uploaded
-     * @throws BlobBusyException if some of the requested blobs are already being modified
      */
-    void addUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) throws BlobBusyException;
+    void addUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener);
 
     void completeUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener);
 

@@ -149,7 +149,7 @@ public class ChecksumBlobStoreFormat<T extends ToXContent> extends BlobStoreForm
      * @param blobContainer blob container
      * @param name          blob name
      */
-    public void write(T obj, BlobContainer blobContainer, String name, BlobStoreRepositoryMetadata metaService,
+    public void write(T obj, BlobContainer blobContainer, String name, BlobStoreRepositoryMetadataService metaService,
                       ActionListener<Void> listener) throws IOException {
         final String blobName = blobName(name);
         Iterable<BlobMetaData> uploads = Collections.singletonList(new BlobMetaData() {

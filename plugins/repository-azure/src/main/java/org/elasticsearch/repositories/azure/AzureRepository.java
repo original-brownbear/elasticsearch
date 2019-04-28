@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
@@ -36,10 +35,10 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.repositories.IndexId;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.snapshots.SnapshotCreationException;
 import org.elasticsearch.snapshots.SnapshotId;
-import org.elasticsearch.transport.TransportService;
 
 import java.net.URISyntaxException;
 import java.util.List;
@@ -86,8 +85,8 @@ public class AzureRepository extends BlobStoreRepository {
     private final boolean readonly;
 
     public AzureRepository(RepositoryMetaData metadata, Environment environment, NamedXContentRegistry namedXContentRegistry,
-                           AzureStorageService storageService, ClusterService clusterService, TransportService transportService) {
-        super(metadata, environment.settings(), namedXContentRegistry, clusterService, transportService);
+                           AzureStorageService storageService, BlobStoreMetadataService metadataService) {
+        super(metadata, environment.settings(), namedXContentRegistry, metadataService);
         this.chunkSize = Repository.CHUNK_SIZE_SETTING.get(metadata.settings());
         this.storageService = storageService;
 

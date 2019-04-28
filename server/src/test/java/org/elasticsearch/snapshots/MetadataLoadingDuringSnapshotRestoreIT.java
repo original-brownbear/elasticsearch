@@ -26,7 +26,6 @@ import org.elasticsearch.action.admin.cluster.snapshots.status.SnapshotsStatusRe
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
@@ -34,9 +33,9 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.snapshots.mockstore.MockRepository;
-import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -186,9 +185,8 @@ public class MetadataLoadingDuringSnapshotRestoreIT extends AbstractSnapshotInte
 
         public CountingMockRepository(final RepositoryMetaData metadata,
                                       final Environment environment,
-                                      final NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
-                                      TransportService transportService) {
-            super(metadata, environment, namedXContentRegistry, clusterService, transportService);
+                                      final NamedXContentRegistry namedXContentRegistry, BlobStoreMetadataService metadataService) {
+            super(metadata, environment, namedXContentRegistry, metadataService);
         }
 
         @Override
@@ -208,10 +206,10 @@ public class MetadataLoadingDuringSnapshotRestoreIT extends AbstractSnapshotInte
     public static class CountingMockRepositoryPlugin extends MockRepository.Plugin {
         @Override
         public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                               ClusterService clusterService, TransportService transportService) {
+                                                               BlobStoreMetadataService metadataService) {
             return Collections.singletonMap(
                 "coutingmock", metadata ->
-                    new CountingMockRepository(metadata, env, namedXContentRegistry, clusterService, transportService));
+                    new CountingMockRepository(metadata, env, namedXContentRegistry, metadataService));
         }
     }
 }

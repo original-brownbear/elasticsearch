@@ -151,6 +151,7 @@ import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.RepositoryData;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.SearchService;
@@ -942,6 +943,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         private final Supplier<NetworkDisruption.DisruptedLinks> disruption;
 
+        private final BlobStoreMetadataService metadataService;
+
         private Coordinator coordinator;
 
         TestClusterNode(DiscoveryNode node, Supplier<NetworkDisruption.DisruptedLinks> disruption) throws IOException {
@@ -1016,11 +1019,12 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 a -> node, null, emptySet()
             );
             final IndexNameExpressionResolver indexNameExpressionResolver = new IndexNameExpressionResolver();
+            metadataService = new BlobStoreMetadataService(clusterService, transportService);
             repositoriesService = new RepositoriesService(
                 settings, clusterService, transportService,
                 Collections.singletonMap(FsRepository.TYPE, metaData -> {
                         final Repository repository =
-                            new FsRepository(metaData, environment, xContentRegistry(), clusterService, transportService) {
+                            new FsRepository(metaData, environment, xContentRegistry(), metadataService) {
                                 @Override
                                 protected void assertSnapshotOrGenericThread() {
                                     // eliminate thread name check as we create repo in the test thread
@@ -1263,6 +1267,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
             indicesService.start();
             indicesClusterStateService.start();
             coordinator.startInitialJoin();
+            metadataService.start();
         }
     }
 

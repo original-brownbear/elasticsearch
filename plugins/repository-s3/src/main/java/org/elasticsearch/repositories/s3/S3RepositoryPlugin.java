@@ -22,7 +22,6 @@ package org.elasticsearch.repositories.s3;
 import com.amazonaws.util.json.Jackson;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -31,7 +30,7 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.ReloadablePlugin;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
-import org.elasticsearch.transport.TransportService;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 
 import java.io.IOException;
 import java.security.AccessController;
@@ -79,16 +78,15 @@ public class S3RepositoryPlugin extends Plugin implements RepositoryPlugin, Relo
     // proxy method for testing
     protected S3Repository createRepository(final RepositoryMetaData metadata,
                                             final Settings settings,
-                                            final NamedXContentRegistry registry, ClusterService clusterService,
-                                            TransportService transportService) {
-        return new S3Repository(metadata, settings, registry, service, clusterService, transportService);
+                                            final NamedXContentRegistry registry, BlobStoreMetadataService metadataService) {
+        return new S3Repository(metadata, settings, registry, service, metadataService);
     }
 
     @Override
     public Map<String, Repository.Factory> getRepositories(final Environment env, final NamedXContentRegistry registry,
-                                                           ClusterService clusterService, TransportService transportService) {
+                                                           BlobStoreMetadataService metadataService) {
         return Collections.singletonMap(
-            S3Repository.TYPE, metadata -> createRepository(metadata, env.settings(), registry, clusterService, transportService));
+            S3Repository.TYPE, metadata -> createRepository(metadata, env.settings(), registry, metadataService));
     }
 
     @Override

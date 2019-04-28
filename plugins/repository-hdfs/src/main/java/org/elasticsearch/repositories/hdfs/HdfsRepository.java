@@ -31,7 +31,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.blobstore.BlobPath;
@@ -40,8 +39,8 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
-import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -69,8 +68,8 @@ public final class HdfsRepository extends BlobStoreRepository {
     private static final ByteSizeValue DEFAULT_BUFFER_SIZE = new ByteSizeValue(100, ByteSizeUnit.KB);
 
     public HdfsRepository(RepositoryMetaData metadata, Environment environment,
-                          NamedXContentRegistry namedXContentRegistry, ClusterService clusterService, TransportService transportService) {
-        super(metadata, environment.settings(), namedXContentRegistry, clusterService, transportService);
+                          NamedXContentRegistry namedXContentRegistry, BlobStoreMetadataService metadataService) {
+        super(metadata, environment.settings(), namedXContentRegistry, metadataService);
 
         this.environment = environment;
         this.chunkSize = metadata.settings().getAsBytesSize("chunk_size", null);

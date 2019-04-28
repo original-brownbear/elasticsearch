@@ -40,7 +40,6 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Numbers;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
@@ -55,6 +54,7 @@ import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.compress.NotXContentException;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.Lucene;
@@ -99,7 +99,6 @@ import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotMissingException;
 import org.elasticsearch.snapshots.SnapshotShardFailure;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.TransportService;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -110,8 +109,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -237,19 +238,19 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final SetOnce<BlobStore> blobStore = new SetOnce<>();
 
-    private final BlobStoreBackedMetadata blobMetaDataService;
+    private final BlobStoreMetadataService metaService;
+
+    private final SetOnce<BlobStoreRepositoryMetadataService> blobMetaDataService = new SetOnce<>();
 
     /**
      * Constructs new BlobStoreRepository
      * @param metadata   The metadata for this repository including name and settings
      * @param settings   Settings for the node this repository object is created on
-     * @param clusterService Cluster Service
      */
     protected BlobStoreRepository(RepositoryMetaData metadata, Settings settings,
-                                  NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
-                                  TransportService transportService) {
-        threadPool = clusterService.getClusterApplierService().threadPool();
-        blobMetaDataService = new BlobStoreBackedMetadata(metadata.name(), this::blobContainer, clusterService, transportService);
+                                  NamedXContentRegistry namedXContentRegistry, BlobStoreMetadataService blobMetaDataService) {
+        threadPool = blobMetaDataService.threadPool();
+        metaService = blobMetaDataService;
         this.settings = settings;
         this.metadata = metadata;
         this.compress = COMPRESS_SETTING.get(metadata.settings());
@@ -275,12 +276,76 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         if (chunkSize != null && chunkSize.getBytes() <= 0) {
             throw new IllegalArgumentException("the chunk size cannot be negative: [" + chunkSize + "]");
         }
-        blobMetaDataService.doStart();
+    }
+
+    private BlobStoreRepositoryMetadataService blobMetaDataService() {
+        BlobStoreRepositoryMetadataService blobMetaDataService = this.blobMetaDataService.get();
+        if (blobMetaDataService == null) {
+            synchronized (lock) {
+                blobMetaDataService = this.blobMetaDataService.get();
+                if (blobMetaDataService == null) {
+                    blobMetaDataService =
+                        metaService.getMetaStore(metadata.name(), new BlobStoreMetadataService.BlobRepositoryMetaPersistence() {
+                            @Override
+                            public void store(BlobStoreMetadataService.RepoStateId stateId, BlobStoreMetadataService.RepoMetaTrie data,
+                                ActionListener<BlobStoreMetadataService.RepoStateId> listener) {
+                                ActionListener.completeWith(listener, () -> {
+                                    final BytesStreamOutput tmp = new BytesStreamOutput();
+                                    data.writeTo(tmp);
+                                    blobContainer().writeBlob(stateId.blob(), tmp.bytes().streamInput(), tmp.bytes().length(), false);
+                                    return stateId;
+                                });
+                            }
+
+                            @Override
+                            public void load(BlobStoreMetadataService.RepoStateId stateId,
+                                ActionListener<BlobStoreMetadataService.RepoMetaTrie> listener) {
+                                assert stateId != null;
+                                threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new ActionRunnable<>(listener) {
+
+                                    @Override
+                                    protected void doRun() throws Exception {
+                                        try (InputStream inputStream = blobContainer().readBlob(stateId.blob())) {
+                                            listener.onResponse(
+                                                new BlobStoreMetadataService.RepoMetaTrie(new InputStreamStreamInput(inputStream)));
+                                        }
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void recover(ActionListener<BlobStoreMetadataService.RepoStateId> listener) {
+                                threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new ActionRunnable<>(listener) {
+                                    @Override
+                                    protected void doRun() throws IOException {
+                                        Map<String, BlobMetaData> blobs = blobContainer().listBlobsByPrefix("blobmeta-");
+                                        listener.onResponse(
+                                            blobs.keySet().stream().map(blob -> {
+                                                String[] parts = blob.split("-");
+                                                if (parts.length != 3) {
+                                                    return null;
+                                                }
+                                                try {
+                                                    return new BlobStoreMetadataService.RepoStateId(Long.parseLong(parts[2]), parts[1]);
+                                                } catch (NumberFormatException e) {
+                                                    return null;
+                                                }
+                                            }).filter(Objects::nonNull)
+                                                .max(Comparator.comparing(BlobStoreMetadataService.RepoStateId::time)).orElse(null)
+                                        );
+                                    }
+                                });
+                            }
+                        });
+                    this.blobMetaDataService.set(blobMetaDataService);
+                }
+            }
+        }
+        return blobMetaDataService;
     }
 
     @Override
     protected void doStop() {
-        blobMetaDataService.doStop();
     }
 
     @Override
@@ -408,14 +473,15 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
 
             // Write Global MetaData
-            globalMetaDataFormat.write(clusterMetaData, blobContainer(), snapshotId.getUUID(), blobMetaDataService,
+            globalMetaDataFormat.write(clusterMetaData, blobContainer(), snapshotId.getUUID(), blobMetaDataService(),
                 ActionListener.wrap(v -> {
                 // write the index metadata for each index in the snapshot
                         for (IndexId index : indices) {
                             final IndexMetaData indexMetaData = clusterMetaData.index(index.getName());
                             final BlobPath indexPath = basePath().add("indices").add(index.getId());
                             final BlobContainer indexMetaDataBlobContainer = blobStore().blobContainer(indexPath);
-                            indexMetaDataFormat.write(indexMetaData, indexMetaDataBlobContainer, snapshotId.getUUID(), blobMetaDataService,
+                            indexMetaDataFormat.write(indexMetaData, indexMetaDataBlobContainer, snapshotId.getUUID(),
+                                blobMetaDataService(),
                                 new ActionListener<>() {
                                     @Override
                                     public void onResponse(final Void aVoid) {
@@ -460,7 +526,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     unreferencedIndices.removeAll(updatedRepositoryData.getIndices().values());
                     try {
                         blobContainer().deleteBlobsIgnoringIfNotExists(
-                            Arrays.asList(snapshotFormat.blobName(snapshotId.getUUID()), globalMetaDataFormat.blobName(snapshotId.getUUID())));
+                            Arrays.asList(
+                                snapshotFormat.blobName(snapshotId.getUUID()), globalMetaDataFormat.blobName(snapshotId.getUUID())));
                     } catch (IOException e) {
                         logger.warn(() -> new ParameterizedMessage("[{}] Unable to delete global metadata files", snapshotId), e);
                     }
@@ -482,7 +549,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             return null;
                         })
                     );
-                }, ex -> listener.onFailure(new RepositoryException(metadata.name(), "failed to delete snapshot [" + snapshotId + "]", ex))));
+                }, ex -> listener.onFailure(
+                    new RepositoryException(metadata.name(), "failed to delete snapshot [" + snapshotId + "]", ex))));
         }
     }
 
@@ -547,7 +615,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             startTime, failure, System.currentTimeMillis(), totalShards, shardFailures,
             includeGlobalState);
         try {
-            snapshotFormat.write(blobStoreSnapshot, blobContainer(), snapshotId.getUUID(), blobMetaDataService,
+            snapshotFormat.write(blobStoreSnapshot, blobContainer(), snapshotId.getUUID(), blobMetaDataService(),
                 ActionListener.wrap(v -> {
                         getRepositoryData(
                             ActionListener.wrap(
@@ -841,7 +909,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     private void listBlobsToGetLatestIndexId(ActionListener<Long> listener) {
-        blobMetaDataService.list(INDEX_FILE_PREFIX, ActionListener.delegateFailure(listener, (l, blobs) -> {
+        blobMetaDataService().list(INDEX_FILE_PREFIX, ActionListener.delegateFailure(listener, (l, blobs) -> {
             long latest = RepositoryData.EMPTY_REPO_GEN;
             for (BlobMetaData blobMetaData : blobs) {
                 final String blobName = blobMetaData.name();
@@ -859,7 +927,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     private void writeAtomic(final String blobName, final BytesReference bytesRef, boolean failIfAlreadyExists) {
-        blobMetaDataService.addUploads(Collections.singletonList(new BlobMetaData() {
+        blobMetaDataService().addUploads(Collections.singletonList(new BlobMetaData() {
             @Override
             public String name() {
                 return blobName;
@@ -1291,7 +1359,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             //TODO: The time stored in snapshot doesn't include cleanup time.
             logger.trace("[{}] [{}] writing shard snapshot file", shardId, snapshotId);
             try {
-                indexShardSnapshotFormat.write(snapshot, blobContainer, snapshotId.getUUID(), blobMetaDataService,
+                indexShardSnapshotFormat.write(snapshot, blobContainer, snapshotId.getUUID(), blobMetaDataService(),
                     ActionListener.wrap(v -> {
                         // TODO: below logic goes to the callback
                     }, e -> {

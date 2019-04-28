@@ -16,7 +16,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
@@ -33,12 +32,12 @@ import org.elasticsearch.plugins.EnginePlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.slice.SliceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.test.ESIntegTestCase;
-import org.elasticsearch.transport.TransportService;
 import org.hamcrest.Matchers;
 
 import java.io.IOException;
@@ -75,7 +74,7 @@ public class SourceOnlySnapshotIT extends ESIntegTestCase {
     public static final class MyPlugin extends Plugin implements RepositoryPlugin, EnginePlugin {
         @Override
         public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry namedXContentRegistry,
-                                                               ClusterService clusterService, TransportService transportService) {
+                                                               BlobStoreMetadataService metadataService) {
             return Collections.singletonMap("source", SourceOnlySnapshotRepository.newRepositoryFactory());
         }
         @Override

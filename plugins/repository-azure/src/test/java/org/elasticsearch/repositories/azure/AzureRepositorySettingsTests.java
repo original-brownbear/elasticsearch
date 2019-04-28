@@ -29,6 +29,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -53,8 +54,8 @@ public class AzureRepositorySettingsTests extends ESTestCase {
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
         final AzureRepository azureRepository = new AzureRepository(new RepositoryMetaData("foo", "azure", internalSettings),
             TestEnvironment.newEnvironment(
-                internalSettings), NamedXContentRegistry.EMPTY, mock(AzureStorageService.class), clusterService,
-            mock(TransportService.class));
+                internalSettings), NamedXContentRegistry.EMPTY, mock(AzureStorageService.class),
+            new BlobStoreMetadataService(clusterService, mock(TransportService.class)));
         assertThat(azureRepository.getBlobStore(), is(nullValue()));
         return azureRepository;
     }

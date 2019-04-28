@@ -46,7 +46,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportService;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 

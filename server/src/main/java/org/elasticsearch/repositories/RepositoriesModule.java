@@ -25,11 +25,11 @@ import org.elasticsearch.common.inject.AbstractModule;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.plugins.RepositoryPlugin;
+import org.elasticsearch.repositories.blobstore.BlobStoreMetadataService;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.snapshots.RestoreService;
 import org.elasticsearch.snapshots.SnapshotShardsService;
 import org.elasticsearch.snapshots.SnapshotsService;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.Collections;
@@ -45,14 +45,15 @@ public class RepositoriesModule extends AbstractModule {
     private final RepositoriesService repositoriesService;
 
     public RepositoriesModule(Environment env, List<RepositoryPlugin> repoPlugins, TransportService transportService,
-                              ClusterService clusterService, ThreadPool threadPool, NamedXContentRegistry namedXContentRegistry) {
+                              ClusterService clusterService, NamedXContentRegistry namedXContentRegistry,
+                              BlobStoreMetadataService metadataService) {
         Map<String, Repository.Factory> factories = new HashMap<>();
         factories.put(FsRepository.TYPE, metadata ->
-            new FsRepository(metadata, env, namedXContentRegistry, clusterService, transportService));
+            new FsRepository(metadata, env, namedXContentRegistry, metadataService));
 
         for (RepositoryPlugin repoPlugin : repoPlugins) {
             Map<String, Repository.Factory> newRepoTypes =
-                repoPlugin.getRepositories(env, namedXContentRegistry, clusterService, transportService);
+                repoPlugin.getRepositories(env, namedXContentRegistry, metadataService);
             for (Map.Entry<String, Repository.Factory> entry : newRepoTypes.entrySet()) {
                 if (factories.put(entry.getKey(), entry.getValue()) != null) {
                     throw new IllegalArgumentException("Repository type [" + entry.getKey() + "] is already registered");
@@ -63,7 +64,7 @@ public class RepositoriesModule extends AbstractModule {
         Map<String, Repository.Factory> internalFactories = new HashMap<>();
         for (RepositoryPlugin repoPlugin : repoPlugins) {
             Map<String, Repository.Factory> newRepoTypes =
-                repoPlugin.getInternalRepositories(env, namedXContentRegistry, clusterService, transportService);
+                repoPlugin.getInternalRepositories(env, namedXContentRegistry, metadataService);
             for (Map.Entry<String, Repository.Factory> entry : newRepoTypes.entrySet()) {
                 if (internalFactories.put(entry.getKey(), entry.getValue()) != null) {
                     throw new IllegalArgumentException("Internal repository type [" + entry.getKey() + "] is already registered");
@@ -78,7 +79,7 @@ public class RepositoriesModule extends AbstractModule {
         Map<String, Repository.Factory> repositoryTypes = Collections.unmodifiableMap(factories);
         Map<String, Repository.Factory> internalRepositoryTypes = Collections.unmodifiableMap(internalFactories);
         repositoriesService = new RepositoriesService(env.settings(), clusterService, transportService, repositoryTypes,
-            internalRepositoryTypes, threadPool);
+            internalRepositoryTypes, metadataService.threadPool());
     }
 
     @Override
