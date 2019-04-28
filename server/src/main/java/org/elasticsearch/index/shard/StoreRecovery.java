@@ -32,6 +32,7 @@ import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.routing.RecoverySource;
@@ -50,6 +51,7 @@ import org.elasticsearch.index.translog.Translog;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.RepositoryData;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -469,7 +471,9 @@ final class StoreRecovery {
             if (!shardId.getIndexName().equals(indexName)) {
                 snapshotShardId = new ShardId(indexName, IndexMetaData.INDEX_UUID_NA_VALUE, shardId.id());
             }
-            final IndexId indexId = repository.getRepositoryData().resolveIndexId(indexName);
+            PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
+            repository.getRepositoryData(future);
+            final IndexId indexId = future.actionGet().resolveIndexId(indexName);
             repository.restoreShard(indexShard, restoreSource.snapshot().getSnapshotId(),
                 restoreSource.version(), indexId, snapshotShardId, indexShard.recoveryState());
             final Store store = indexShard.store();

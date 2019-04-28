@@ -68,8 +68,8 @@ public class FilterRepository implements Repository {
     }
 
     @Override
-    public RepositoryData getRepositoryData() {
-        return in.getRepositoryData();
+    public void getRepositoryData(ActionListener<RepositoryData> listener ) {
+        in.getRepositoryData(listener);
     }
 
     @Override
@@ -100,8 +100,8 @@ public class FilterRepository implements Repository {
     }
 
     @Override
-    public String startVerification() {
-        return in.startVerification();
+    public void startVerification(ActionListener<String> listener) {
+        in.startVerification(listener);
     }
 
     @Override

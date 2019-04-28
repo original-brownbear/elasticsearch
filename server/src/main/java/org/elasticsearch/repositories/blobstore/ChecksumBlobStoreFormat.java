@@ -23,9 +23,11 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.store.OutputStreamIndexOutput;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.blobstore.BlobContainer;
+import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
@@ -46,6 +48,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 
 /**
  * Snapshot metadata file format used in v2.0 and above
@@ -146,13 +149,33 @@ public class ChecksumBlobStoreFormat<T extends ToXContent> extends BlobStoreForm
      * @param blobContainer blob container
      * @param name          blob name
      */
-    public void write(T obj, BlobContainer blobContainer, String name) throws IOException {
+    public void write(T obj, BlobContainer blobContainer, String name, BlobStoreRepositoryMetadata metaService,
+                      ActionListener<Void> listener) throws IOException {
         final String blobName = blobName(name);
-        writeTo(obj, blobName, bytesArray -> {
-            try (InputStream stream = bytesArray.streamInput()) {
-                blobContainer.writeBlob(blobName, stream, bytesArray.length(), true);
+        Iterable<BlobMetaData> uploads = Collections.singletonList(new BlobMetaData() {
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public long length() {
+                return 0;
             }
         });
+        metaService.addUploads(uploads, ActionListener.wrap(v -> {
+            try {
+                writeTo(obj, blobName, bytesArray -> {
+                    try (InputStream stream = bytesArray.streamInput()) {
+                        blobContainer.writeBlob(blobName, stream, bytesArray.length(), true);
+                    }
+                    // TODO: Put actual length into these uploads
+                    metaService.completeUploads(uploads, listener);
+                });
+            } catch (Exception e) {
+                listener.onFailure(e);
+            }
+        }, listener::onFailure));
     }
 
     private void writeTo(final T obj, final String blobName, final CheckedConsumer<BytesArray, IOException> consumer) throws IOException {

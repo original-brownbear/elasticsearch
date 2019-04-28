@@ -107,7 +107,7 @@ public interface Repository extends LifecycleComponent {
      * and the indices across all snapshots found in the repository.  Throws a {@link RepositoryException}
      * if there was an error in reading the data.
      */
-    RepositoryData getRepositoryData();
+    void getRepositoryData(ActionListener<RepositoryData> listener);
 
     /**
      * Starts snapshotting process
@@ -162,9 +162,10 @@ public interface Repository extends LifecycleComponent {
      * If the verification token is not null, it's passed to all data nodes for verification. If it's null - no
      * additional verification is required
      *
-     * @return verification token that should be passed to all Index Shard Repositories for additional verification or null
+     * @param listener listener for verification token that should be passed to all Index Shard Repositories for additional verification
+     *                 or null
      */
-    String startVerification();
+    void startVerification(ActionListener<String> listener);
 
     /**
      * Called at the end of repository verification process.
@@ -177,7 +178,7 @@ public interface Repository extends LifecycleComponent {
 
     /**
      * Verifies repository settings on data node.
-     * @param verificationToken value returned by {@link org.elasticsearch.repositories.Repository#startVerification()}
+     * @param verificationToken value returned by {@link org.elasticsearch.repositories.Repository#startVerification}
      * @param localNode         the local node information, for inclusion in verification errors
      */
     void verify(String verificationToken, DiscoveryNode localNode);

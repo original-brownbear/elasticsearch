@@ -236,36 +236,47 @@ public class RepositoriesService implements ClusterStateApplier {
         try {
             threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
                 try {
-                    final String verificationToken = repository.startVerification();
-                    if (verificationToken != null) {
-                        try {
-                            verifyAction.verify(repositoryName, verificationToken, ActionListener.delegateFailure(listener,
-                                (delegatedListener, verifyResponse) -> threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
+                    repository.startVerification(
+                        new ActionListener<>() {
+                            @Override
+                            public void onResponse(String verificationToken) {
+                                if (verificationToken != null) {
                                     try {
-                                        repository.endVerification(verificationToken);
+                                        verifyAction.verify(repositoryName, verificationToken, ActionListener.delegateFailure(listener,
+                                            (delegatedListener, verifyResponse) -> threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
+                                                try {
+                                                    repository.endVerification(verificationToken);
+                                                } catch (Exception e) {
+                                                    logger.warn(() -> new ParameterizedMessage(
+                                                        "[{}] failed to finish repository verification", repositoryName), e);
+                                                    delegatedListener.onFailure(e);
+                                                    return;
+                                                }
+                                                delegatedListener.onResponse(verifyResponse);
+                                            })));
                                     } catch (Exception e) {
-                                        logger.warn(() -> new ParameterizedMessage(
-                                            "[{}] failed to finish repository verification", repositoryName), e);
-                                        delegatedListener.onFailure(e);
-                                        return;
+                                        threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
+                                            try {
+                                                repository.endVerification(verificationToken);
+                                            } catch (Exception inner) {
+                                                inner.addSuppressed(e);
+                                                logger.warn(() -> new ParameterizedMessage(
+                                                    "[{}] failed to finish repository verification", repositoryName), inner);
+                                            }
+                                            listener.onFailure(e);
+                                        });
                                     }
-                                    delegatedListener.onResponse(verifyResponse);
-                                })));
-                        } catch (Exception e) {
-                            threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
-                                try {
-                                    repository.endVerification(verificationToken);
-                                } catch (Exception inner) {
-                                    inner.addSuppressed(e);
-                                    logger.warn(() -> new ParameterizedMessage(
-                                        "[{}] failed to finish repository verification", repositoryName), inner);
+                                } else {
+                                    listener.onResponse(Collections.emptyList());
                                 }
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
                                 listener.onFailure(e);
-                            });
+                            }
                         }
-                    } else {
-                        listener.onResponse(Collections.emptyList());
-                    }
+                    );
                 } catch (Exception e) {
                     listener.onFailure(e);
                 }

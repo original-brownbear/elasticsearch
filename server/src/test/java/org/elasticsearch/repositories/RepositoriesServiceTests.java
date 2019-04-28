@@ -143,13 +143,13 @@ public class RepositoriesServiceTests extends ESTestCase {
         }
 
         @Override
-        public IndexMetaData getSnapshotIndexMetaData(SnapshotId snapshotId, IndexId index) throws IOException {
+        public IndexMetaData getSnapshotIndexMetaData(SnapshotId snapshotId, IndexId index) {
             return null;
         }
 
         @Override
-        public RepositoryData getRepositoryData() {
-            return null;
+        public void getRepositoryData(ActionListener<RepositoryData> listener) {
+            listener.onResponse(null);
         }
 
         @Override
@@ -180,8 +180,8 @@ public class RepositoriesServiceTests extends ESTestCase {
         }
 
         @Override
-        public String startVerification() {
-            return null;
+        public void startVerification(ActionListener<String> listener) {
+            listener.onResponse(null);
         }
 
         @Override

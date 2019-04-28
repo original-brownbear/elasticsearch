@@ -35,6 +35,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.GroupedActionListener;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
@@ -92,7 +93,6 @@ import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.snapshots.InvalidSnapshotNameException;
-import org.elasticsearch.snapshots.SnapshotCreationException;
 import org.elasticsearch.snapshots.SnapshotException;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
@@ -397,10 +397,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         if (isReadOnly()) {
             throw new RepositoryException(metadata.name(), "cannot create snapshot in a readonly repository");
         }
-        try {
-            final String snapshotName = snapshotId.getName();
-            // check if the snapshot name already exists in the repository
-            final RepositoryData repositoryData = getRepositoryData();
+        final String snapshotName = snapshotId.getName();
+        // check if the snapshot name already exists in the repository
+        getRepositoryData(ActionListener.wrap(repositoryData -> {
             if (repositoryData.getAllSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName))) {
                 throw new InvalidSnapshotNameException(metadata.name(), snapshotId.getName(), "snapshot with the same name already exists");
             }
@@ -409,18 +408,33 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
 
             // Write Global MetaData
-            globalMetaDataFormat.write(clusterMetaData, blobContainer(), snapshotId.getUUID());
+            globalMetaDataFormat.write(clusterMetaData, blobContainer(), snapshotId.getUUID(), blobMetaDataService,
+                ActionListener.wrap(v -> {
+                // write the index metadata for each index in the snapshot
+                        for (IndexId index : indices) {
+                            final IndexMetaData indexMetaData = clusterMetaData.index(index.getName());
+                            final BlobPath indexPath = basePath().add("indices").add(index.getId());
+                            final BlobContainer indexMetaDataBlobContainer = blobStore().blobContainer(indexPath);
+                            indexMetaDataFormat.write(indexMetaData, indexMetaDataBlobContainer, snapshotId.getUUID(), blobMetaDataService,
+                                new ActionListener<>() {
+                                    @Override
+                                    public void onResponse(final Void aVoid) {
+                                        // TODO: Do stuff duh
+                                    }
 
-            // write the index metadata for each index in the snapshot
-            for (IndexId index : indices) {
-                final IndexMetaData indexMetaData = clusterMetaData.index(index.getName());
-                final BlobPath indexPath = basePath().add("indices").add(index.getId());
-                final BlobContainer indexMetaDataBlobContainer = blobStore().blobContainer(indexPath);
-                indexMetaDataFormat.write(indexMetaData, indexMetaDataBlobContainer, snapshotId.getUUID());
-            }
-        } catch (IOException ex) {
-            throw new SnapshotCreationException(metadata.name(), snapshotId, ex);
-        }
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        throw new AssertionError(e);
+                                    }
+                                });
+                        }
+                    },
+                    e -> {
+                        throw new AssertionError(e);
+                    }));
+        }, e -> {
+            throw new AssertionError(e);
+        }));
     }
 
     @Override
@@ -437,44 +451,38 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             } catch (IllegalStateException | SnapshotException | ElasticsearchParseException ex) {
                 logger.warn(() -> new ParameterizedMessage("cannot read snapshot file [{}]", snapshotId), ex);
             }
-            // Delete snapshot from the index file, since it is the maintainer of truth of active snapshots
-            final RepositoryData repositoryData;
-            final RepositoryData updatedRepositoryData;
-            try {
-                repositoryData = getRepositoryData();
-                updatedRepositoryData = repositoryData.removeSnapshot(snapshotId);
-                writeIndexGen(updatedRepositoryData, repositoryStateId);
-            } catch (Exception ex) {
-                listener.onFailure(new RepositoryException(metadata.name(), "failed to delete snapshot [" + snapshotId + "]", ex));
-                return;
-            }
             final SnapshotInfo finalSnapshotInfo = snapshot;
-            final Collection<IndexId> unreferencedIndices = Sets.newHashSet(repositoryData.getIndices().values());
-            unreferencedIndices.removeAll(updatedRepositoryData.getIndices().values());
-            try {
-                blobContainer().deleteBlobsIgnoringIfNotExists(
-                    Arrays.asList(snapshotFormat.blobName(snapshotId.getUUID()), globalMetaDataFormat.blobName(snapshotId.getUUID())));
-            } catch (IOException e) {
-                logger.warn(() -> new ParameterizedMessage("[{}] Unable to delete global metadata files", snapshotId), e);
-            }
-            deleteIndices(
-                Optional.ofNullable(finalSnapshotInfo)
-                    .map(info -> info.indices().stream().map(repositoryData::resolveIndexId).collect(Collectors.toList()))
-                    .orElse(Collections.emptyList()),
-                snapshotId,
-                ActionListener.map(listener, v -> {
+            // Delete snapshot from the index file, since it is the maintainer of truth of active snapshots
+                getRepositoryData(ActionListener.wrap(repositoryData -> {
+                    final RepositoryData updatedRepositoryData = repositoryData.removeSnapshot(snapshotId);
+                    writeIndexGen(updatedRepositoryData, repositoryStateId);
+                    final Collection<IndexId> unreferencedIndices = Sets.newHashSet(repositoryData.getIndices().values());
+                    unreferencedIndices.removeAll(updatedRepositoryData.getIndices().values());
                     try {
-                        blobStore().blobContainer(basePath().add("indices")).deleteBlobsIgnoringIfNotExists(
-                            unreferencedIndices.stream().map(IndexId::getId).collect(Collectors.toList()));
+                        blobContainer().deleteBlobsIgnoringIfNotExists(
+                            Arrays.asList(snapshotFormat.blobName(snapshotId.getUUID()), globalMetaDataFormat.blobName(snapshotId.getUUID())));
                     } catch (IOException e) {
-                        logger.warn(() ->
-                            new ParameterizedMessage(
-                                "[{}] indices {} are no longer part of any snapshots in the repository, " +
-                                    "but failed to clean up their index folders.", metadata.name(), unreferencedIndices), e);
+                        logger.warn(() -> new ParameterizedMessage("[{}] Unable to delete global metadata files", snapshotId), e);
                     }
-                    return null;
-                })
-            );
+                    deleteIndices(
+                        Optional.ofNullable(finalSnapshotInfo)
+                            .map(info -> info.indices().stream().map(repositoryData::resolveIndexId).collect(Collectors.toList()))
+                            .orElse(Collections.emptyList()),
+                        snapshotId,
+                        ActionListener.map(listener, v -> {
+                            try {
+                                blobStore().blobContainer(basePath().add("indices")).deleteBlobsIgnoringIfNotExists(
+                                    unreferencedIndices.stream().map(IndexId::getId).collect(Collectors.toList()));
+                            } catch (IOException e) {
+                                logger.warn(() ->
+                                    new ParameterizedMessage(
+                                        "[{}] indices {} are no longer part of any snapshots in the repository, " +
+                                            "but failed to clean up their index folders.", metadata.name(), unreferencedIndices), e);
+                            }
+                            return null;
+                        })
+                    );
+                }, ex -> listener.onFailure(new RepositoryException(metadata.name(), "failed to delete snapshot [" + snapshotId + "]", ex))));
         }
     }
 
@@ -539,9 +547,22 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             startTime, failure, System.currentTimeMillis(), totalShards, shardFailures,
             includeGlobalState);
         try {
-            snapshotFormat.write(blobStoreSnapshot, blobContainer(), snapshotId.getUUID());
-            final RepositoryData repositoryData = getRepositoryData();
-            writeIndexGen(repositoryData.addSnapshot(snapshotId, blobStoreSnapshot.state(), indices), repositoryStateId);
+            snapshotFormat.write(blobStoreSnapshot, blobContainer(), snapshotId.getUUID(), blobMetaDataService,
+                ActionListener.wrap(v -> {
+                        getRepositoryData(
+                            ActionListener.wrap(
+                                repositoryData -> writeIndexGen(
+                                    repositoryData.addSnapshot(snapshotId, blobStoreSnapshot.state(), indices),
+                                    repositoryStateId
+                                ),
+                                e -> {
+                                    throw new AssertionError(e);
+                                }));
+                    },
+                    e -> {
+                        throw new AssertionError(e);
+                    }));
+            // TODO: Below error handling goes into the callback
         } catch (FileAlreadyExistsException ex) {
             // if another master was elected and took over finalizing the snapshot, it is possible
             // that both nodes try to finalize the snapshot and write to the same blobs, so we just
@@ -617,12 +638,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public String startVerification() {
+    public void startVerification(ActionListener<String> listener) {
         try {
             if (isReadOnly()) {
                 // It's readonly - so there is not much we can do here to verify it apart from reading the blob store metadata
-                latestIndexBlobId();
-                return "read-only";
+                listener.onResponse("read-only");
             } else {
                 String seed = UUIDs.randomBase64UUID();
                 byte[] testBytes = Strings.toUTF8Bytes(seed);
@@ -632,7 +652,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 try (InputStream stream = bytes.streamInput()) {
                     testContainer.writeBlobAtomic(blobName, stream, bytes.length(), true);
                 }
-                return seed;
+                listener.onResponse(seed);
             }
         } catch (IOException exp) {
             throw new RepositoryVerificationException(metadata.name(), "path " + basePath() + " is not accessible on master node", exp);
@@ -651,52 +671,60 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public RepositoryData getRepositoryData() {
+    public void getRepositoryData(ActionListener<RepositoryData> listener) {
         try {
-            final long indexGen = latestIndexBlobId();
-            final String snapshotsIndexBlobName = INDEX_FILE_PREFIX + Long.toString(indexGen);
+            latestIndexBlobId(ActionListener.delegateFailure(listener, (l, indexGen) ->
+                ActionListener.completeWith(l, () -> {
+                    try {
+                        final String snapshotsIndexBlobName = INDEX_FILE_PREFIX + Long.toString(indexGen);
 
-            RepositoryData repositoryData;
-            try (InputStream blob = blobContainer().readBlob(snapshotsIndexBlobName)) {
-                BytesStreamOutput out = new BytesStreamOutput();
-                Streams.copy(blob, out);
-                // EMPTY is safe here because RepositoryData#fromXContent calls namedObject
-                try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
-                    LoggingDeprecationHandler.INSTANCE, out.bytes(), XContentType.JSON)) {
-                    repositoryData = RepositoryData.snapshotsFromXContent(parser, indexGen);
-                } catch (NotXContentException e) {
-                    logger.warn("[{}] index blob is not valid x-content [{} bytes]", snapshotsIndexBlobName, out.bytes().length());
-                    throw e;
-                }
-            }
+                        RepositoryData repositoryData;
+                        try (InputStream blob = blobContainer().readBlob(snapshotsIndexBlobName)) {
+                            BytesStreamOutput out = new BytesStreamOutput();
+                            Streams.copy(blob, out);
+                            // EMPTY is safe here because RepositoryData#fromXContent calls namedObject
+                            try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
+                                LoggingDeprecationHandler.INSTANCE, out.bytes(), XContentType.JSON)) {
+                                repositoryData = RepositoryData.snapshotsFromXContent(parser, indexGen);
+                            } catch (NotXContentException e) {
+                                logger.warn("[{}] index blob is not valid x-content [{} bytes]", snapshotsIndexBlobName,
+                                    out.bytes().length());
+                                throw e;
+                            }
+                        }
 
-            // now load the incompatible snapshot ids, if they exist
-            try (InputStream blob = blobContainer().readBlob(INCOMPATIBLE_SNAPSHOTS_BLOB)) {
-                BytesStreamOutput out = new BytesStreamOutput();
-                Streams.copy(blob, out);
-                try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
-                    LoggingDeprecationHandler.INSTANCE, out.bytes(), XContentType.JSON)) {
-                    repositoryData = repositoryData.incompatibleSnapshotsFromXContent(parser);
-                }
-            } catch (NoSuchFileException e) {
-                if (isReadOnly()) {
-                    logger.debug("[{}] Incompatible snapshots blob [{}] does not exist, the likely " +
-                                 "reason is that there are no incompatible snapshots in the repository",
-                                 metadata.name(), INCOMPATIBLE_SNAPSHOTS_BLOB);
-                } else {
-                    // write an empty incompatible-snapshots blob - we do this so that there
-                    // is a blob present, which helps speed up some cloud-based repositories
-                    // (e.g. S3), which retry if a blob is missing with exponential backoff,
-                    // delaying the read of repository data and sometimes causing a timeout
-                    writeIncompatibleSnapshots(RepositoryData.EMPTY);
-                }
-            }
-            return repositoryData;
-        } catch (NoSuchFileException ex) {
-            // repository doesn't have an index blob, its a new blank repo
-            return RepositoryData.EMPTY;
-        } catch (IOException ioe) {
-            throw new RepositoryException(metadata.name(), "could not read repository data from index blob", ioe);
+                        // now load the incompatible snapshot ids, if they exist
+                        try (InputStream blob = blobContainer().readBlob(INCOMPATIBLE_SNAPSHOTS_BLOB)) {
+                            BytesStreamOutput out = new BytesStreamOutput();
+                            Streams.copy(blob, out);
+                            try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
+                                LoggingDeprecationHandler.INSTANCE, out.bytes(), XContentType.JSON)) {
+                                repositoryData = repositoryData.incompatibleSnapshotsFromXContent(parser);
+                            }
+                        } catch (NoSuchFileException e) {
+                            if (isReadOnly()) {
+                                logger.debug("[{}] Incompatible snapshots blob [{}] does not exist, the likely " +
+                                        "reason is that there are no incompatible snapshots in the repository",
+                                    metadata.name(), INCOMPATIBLE_SNAPSHOTS_BLOB);
+                            } else {
+                                // write an empty incompatible-snapshots blob - we do this so that there
+                                // is a blob present, which helps speed up some cloud-based repositories
+                                // (e.g. S3), which retry if a blob is missing with exponential backoff,
+                                // delaying the read of repository data and sometimes causing a timeout
+                                writeIncompatibleSnapshots(RepositoryData.EMPTY);
+                            }
+                        }
+                        return repositoryData;
+                    } catch (NoSuchFileException ex) {
+                        // repository doesn't have an index blob, its a new blank repo
+                        return RepositoryData.EMPTY;
+                    } catch (IOException ioe) {
+                        throw new RepositoryException(metadata.name(), "could not read repository data from index blob", ioe);
+                    }
+                })
+            ));
+        } catch (IOException e) {
+            listener.onFailure(e);
         }
     }
 
@@ -711,7 +739,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     protected void writeIndexGen(final RepositoryData repositoryData, final long repositoryStateId) throws IOException {
         assert isReadOnly() == false; // can not write to a read only repository
-        final long currentGen = latestIndexBlobId();
+        PlainActionFuture<Long> future = PlainActionFuture.newFuture();
+        latestIndexBlobId(future);
+        final long currentGen = future.actionGet();
         if (currentGen != repositoryStateId) {
             // the index file was updated by a concurrent operation, so we were operating on stale
             // repository data
@@ -776,7 +806,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      *
      * Package private for testing
      */
-    long latestIndexBlobId() throws IOException {
+    void latestIndexBlobId(ActionListener<Long> listener) throws IOException {
         try {
             // First, try listing all index-N blobs (there should only be two index-N blobs at any given
             // time in a repository if cleanup is happening properly) and pick the index-N blob with the
@@ -789,14 +819,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             // illegal to delete a file while it is being read elsewhere (e.g. Windows).  For read-only
             // repositories, we read for index.latest, both because listing blob prefixes is often unsupported
             // and because the index.latest blob will never be deleted and re-written.
-            return listBlobsToGetLatestIndexId();
+            listBlobsToGetLatestIndexId(listener);
         } catch (UnsupportedOperationException e) {
             // If its a read-only repository, listing blobs by prefix may not be supported (e.g. a URL repository),
             // in this case, try reading the latest index generation from the index.latest blob
             try {
-                return readSnapshotIndexLatestBlob();
+                listener.onResponse(readSnapshotIndexLatestBlob());
             } catch (NoSuchFileException nsfe) {
-                return RepositoryData.EMPTY_REPO_GEN;
+                listener.onResponse(RepositoryData.EMPTY_REPO_GEN);
             }
         }
     }
@@ -810,31 +840,45 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
-    private long listBlobsToGetLatestIndexId() throws IOException {
-        Map<String, BlobMetaData> blobs = blobContainer().listBlobsByPrefix(INDEX_FILE_PREFIX);
-        long latest = RepositoryData.EMPTY_REPO_GEN;
-        if (blobs.isEmpty()) {
-            // no snapshot index blobs have been written yet
-            return latest;
-        }
-        for (final BlobMetaData blobMetaData : blobs.values()) {
-            final String blobName = blobMetaData.name();
-            try {
-                final long curr = Long.parseLong(blobName.substring(INDEX_FILE_PREFIX.length()));
-                latest = Math.max(latest, curr);
-            } catch (NumberFormatException nfe) {
-                // the index- blob wasn't of the format index-N where N is a number,
-                // no idea what this blob is but it doesn't belong in the repository!
-                logger.warn("[{}] Unknown blob in the repository: {}", metadata.name(), blobName);
+    private void listBlobsToGetLatestIndexId(ActionListener<Long> listener) {
+        blobMetaDataService.list(INDEX_FILE_PREFIX, ActionListener.delegateFailure(listener, (l, blobs) -> {
+            long latest = RepositoryData.EMPTY_REPO_GEN;
+            for (BlobMetaData blobMetaData : blobs) {
+                final String blobName = blobMetaData.name();
+                try {
+                    final long curr = Long.parseLong(blobName.substring(INDEX_FILE_PREFIX.length()));
+                    latest = Math.max(latest, curr);
+                } catch (NumberFormatException nfe) {
+                    // the index- blob wasn't of the format index-N where N is a number,
+                    // no idea what this blob is but it doesn't belong in the repository!
+                    logger.warn("[{}] Unknown blob in the repository: {}", metadata.name(), blobName);
+                }
             }
-        }
-        return latest;
+            l.onResponse(latest);
+        }));
     }
 
-    private void writeAtomic(final String blobName, final BytesReference bytesRef, boolean failIfAlreadyExists) throws IOException {
-        try (InputStream stream = bytesRef.streamInput()) {
-            blobContainer().writeBlobAtomic(blobName, stream, bytesRef.length(), failIfAlreadyExists);
-        }
+    private void writeAtomic(final String blobName, final BytesReference bytesRef, boolean failIfAlreadyExists) {
+        blobMetaDataService.addUploads(Collections.singletonList(new BlobMetaData() {
+            @Override
+            public String name() {
+                return blobName;
+            }
+
+            @Override
+            public long length() {
+                return bytesRef.length();
+            }
+        }), ActionListener.wrap(
+            v -> {
+                try (InputStream stream = bytesRef.streamInput()) {
+                    blobContainer().writeBlobAtomic(blobName, stream, bytesRef.length(), failIfAlreadyExists);
+                }
+            },
+            e -> {
+                throw new AssertionError(e);
+            }
+        ));
     }
 
     @Override
@@ -883,7 +927,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         assertSnapshotOrGenericThread();
         if (isReadOnly()) {
             try {
-                latestIndexBlobId();
+                PlainActionFuture<Long> future = PlainActionFuture.newFuture();
+                latestIndexBlobId(future);
+                future.actionGet();
             } catch (IOException e) {
                 throw new RepositoryVerificationException(metadata.name(), "path " + basePath() +
                     " is not accessible on node " + localNode, e);
@@ -1245,7 +1291,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             //TODO: The time stored in snapshot doesn't include cleanup time.
             logger.trace("[{}] [{}] writing shard snapshot file", shardId, snapshotId);
             try {
-                indexShardSnapshotFormat.write(snapshot, blobContainer, snapshotId.getUUID());
+                indexShardSnapshotFormat.write(snapshot, blobContainer, snapshotId.getUUID(), blobMetaDataService,
+                    ActionListener.wrap(v -> {
+                        // TODO: below logic goes to the callback
+                    }, e -> {
+                        throw new AssertionError(e);
+                    }));
             } catch (IOException e) {
                 throw new IndexShardSnapshotFailedException(shardId, "Failed to write commit point", e);
             }

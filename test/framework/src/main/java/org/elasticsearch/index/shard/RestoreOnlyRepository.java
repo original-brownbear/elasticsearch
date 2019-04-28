@@ -86,10 +86,12 @@ public abstract class RestoreOnlyRepository extends AbstractLifecycleComponent i
     }
 
     @Override
-    public RepositoryData getRepositoryData() {
-        Map<IndexId, Set<SnapshotId>> map = new HashMap<>();
-        map.put(new IndexId(indexName, "blah"), emptySet());
-        return new RepositoryData(EMPTY_REPO_GEN, Collections.emptyMap(), Collections.emptyMap(), map, Collections.emptyList());
+    public void getRepositoryData(ActionListener<RepositoryData> listener) {
+        ActionListener.completeWith(listener, () -> {
+            Map<IndexId, Set<SnapshotId>> map = new HashMap<>();
+            map.put(new IndexId(indexName, "blah"), emptySet());
+            return new RepositoryData(EMPTY_REPO_GEN, Collections.emptyMap(), Collections.emptyMap(), map, Collections.emptyList());
+        });
     }
 
     @Override
@@ -119,8 +121,8 @@ public abstract class RestoreOnlyRepository extends AbstractLifecycleComponent i
     }
 
     @Override
-    public String startVerification() {
-        return null;
+    public void startVerification(ActionListener<String> listener) {
+        listener.onResponse(null);
     }
 
     @Override

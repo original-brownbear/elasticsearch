@@ -19,6 +19,7 @@
 package org.elasticsearch.repositories.blobstore;
 
 import org.apache.lucene.util.SetOnce;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequestBuilder;
@@ -39,6 +40,7 @@ import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.snapshots.SnapshotMissingException;
 import org.elasticsearch.snapshots.SnapshotRestoreException;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.test.rest.yaml.section.Assertion;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.Arrays;
@@ -262,8 +264,18 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         final CountDownLatch latch = new CountDownLatch(1);
         threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
             indicesBlobContainer.set(repository.blobStore().blobContainer(repository.basePath().add("indices")));
-            repositoryData.set(repository.getRepositoryData());
-            latch.countDown();
+            repository.getRepositoryData(new ActionListener<>() {
+                @Override
+                public void onResponse(RepositoryData data) {
+                    repositoryData.set(data);
+                    latch.countDown();
+                }
+
+                @Override
+                public void onFailure(final Exception e) {
+                    throw new AssertionError(e);
+                }
+            });
         });
 
         latch.await();

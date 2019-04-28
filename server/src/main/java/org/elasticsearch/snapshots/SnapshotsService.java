@@ -148,12 +148,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * Gets the {@link RepositoryData} for the given repository.
      *
      * @param repositoryName repository name
-     * @return repository data
      */
-    public RepositoryData getRepositoryData(final String repositoryName) {
+    public void getRepositoryData(String repositoryName, ActionListener<RepositoryData> listener) {
         Repository repository = repositoriesService.repository(repositoryName);
         assert repository != null; // should only be called once we've validated the repository exists
-        return repository.getRepositoryData();
+        repository.getRepositoryData(listener);
     }
 
     /**
@@ -260,77 +259,85 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         final String snapshotName = indexNameExpressionResolver.resolveDateMathExpression(request.snapshot());
         validate(repositoryName, snapshotName);
         final SnapshotId snapshotId = new SnapshotId(snapshotName, UUIDs.randomBase64UUID()); // new UUID for the snapshot
-        final RepositoryData repositoryData = repositoriesService.repository(repositoryName).getRepositoryData();
-
-        clusterService.submitStateUpdateTask("create_snapshot [" + snapshotName + ']', new ClusterStateUpdateTask() {
-
-            private SnapshotsInProgress.Entry newSnapshot = null;
-
+        repositoriesService.repository(repositoryName).getRepositoryData(new ActionListener<>() {
             @Override
-            public ClusterState execute(ClusterState currentState) {
-                validate(repositoryName, snapshotName, currentState);
-                SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
-                if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
-                    throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName,
-                        "cannot snapshot while a snapshot deletion is in-progress");
-                }
-                SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE);
-                if (snapshots == null || snapshots.entries().isEmpty()) {
-                    // Store newSnapshot here to be processed in clusterStateProcessed
-                    List<String> indices = Arrays.asList(indexNameExpressionResolver.concreteIndexNames(currentState,
-                                                        request.indicesOptions(), request.indices()));
-                    logger.trace("[{}][{}] creating snapshot for indices [{}]", repositoryName, snapshotName, indices);
-                    List<IndexId> snapshotIndices = repositoryData.resolveNewIndices(indices);
-                    newSnapshot = new SnapshotsInProgress.Entry(new Snapshot(repositoryName, snapshotId),
-                                                                request.includeGlobalState(),
-                                                                request.partial(),
-                                                                State.INIT,
-                                                                snapshotIndices,
-                                                                System.currentTimeMillis(),
-                                                                repositoryData.getGenId(),
-                                                                null);
-                    initializingSnapshots.add(newSnapshot.snapshot());
-                    snapshots = new SnapshotsInProgress(newSnapshot);
-                } else {
-                    throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName, " a snapshot is already running");
-                }
-                return ClusterState.builder(currentState).putCustom(SnapshotsInProgress.TYPE, snapshots).build();
+            public void onResponse(final RepositoryData repositoryData) {
+                clusterService.submitStateUpdateTask("create_snapshot [" + snapshotName + ']', new ClusterStateUpdateTask() {
+
+                    private SnapshotsInProgress.Entry newSnapshot = null;
+
+                    @Override
+                    public ClusterState execute(ClusterState currentState) {
+                        validate(repositoryName, snapshotName, currentState);
+                        SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
+                        if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
+                            throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName,
+                                "cannot snapshot while a snapshot deletion is in-progress");
+                        }
+                        SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE);
+                        if (snapshots == null || snapshots.entries().isEmpty()) {
+                            // Store newSnapshot here to be processed in clusterStateProcessed
+                            List<String> indices = Arrays.asList(indexNameExpressionResolver.concreteIndexNames(currentState,
+                                request.indicesOptions(), request.indices()));
+                            logger.trace("[{}][{}] creating snapshot for indices [{}]", repositoryName, snapshotName, indices);
+                            List<IndexId> snapshotIndices = repositoryData.resolveNewIndices(indices);
+                            newSnapshot = new SnapshotsInProgress.Entry(new Snapshot(repositoryName, snapshotId),
+                                request.includeGlobalState(),
+                                request.partial(),
+                                State.INIT,
+                                snapshotIndices,
+                                System.currentTimeMillis(),
+                                repositoryData.getGenId(),
+                                null);
+                            initializingSnapshots.add(newSnapshot.snapshot());
+                            snapshots = new SnapshotsInProgress(newSnapshot);
+                        } else {
+                            throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName, " a snapshot is already running");
+                        }
+                        return ClusterState.builder(currentState).putCustom(SnapshotsInProgress.TYPE, snapshots).build();
+                    }
+
+                    @Override
+                    public void onFailure(String source, Exception e) {
+                        logger.warn(() -> new ParameterizedMessage("[{}][{}] failed to create snapshot", repositoryName, snapshotName), e);
+                        if (newSnapshot != null) {
+                            initializingSnapshots.remove(newSnapshot.snapshot());
+                        }
+                        newSnapshot = null;
+                        listener.onFailure(e);
+                    }
+
+                    @Override
+                    public void clusterStateProcessed(String source, ClusterState oldState, final ClusterState newState) {
+                        if (newSnapshot != null) {
+                            final Snapshot current = newSnapshot.snapshot();
+                            assert initializingSnapshots.contains(current);
+                            beginSnapshot(newState, newSnapshot, request.partial(), new ActionListener<>() {
+                                @Override
+                                public void onResponse(final Snapshot snapshot) {
+                                    initializingSnapshots.remove(snapshot);
+                                    listener.onResponse(snapshot);
+                                }
+
+                                @Override
+                                public void onFailure(final Exception e) {
+                                    initializingSnapshots.remove(current);
+                                    listener.onFailure(e);
+                                }
+                            });
+                        }
+                    }
+
+                    @Override
+                    public TimeValue timeout() {
+                        return request.masterNodeTimeout();
+                    }
+                });
             }
 
             @Override
-            public void onFailure(String source, Exception e) {
-                logger.warn(() -> new ParameterizedMessage("[{}][{}] failed to create snapshot", repositoryName, snapshotName), e);
-                if (newSnapshot != null) {
-                    initializingSnapshots.remove(newSnapshot.snapshot());
-                }
-                newSnapshot = null;
+            public void onFailure(Exception e) {
                 listener.onFailure(e);
-            }
-
-            @Override
-            public void clusterStateProcessed(String source, ClusterState oldState, final ClusterState newState) {
-                if (newSnapshot != null) {
-                    final Snapshot current = newSnapshot.snapshot();
-                    assert initializingSnapshots.contains(current);
-                    beginSnapshot(newState, newSnapshot, request.partial(), new ActionListener<>() {
-                        @Override
-                        public void onResponse(final Snapshot snapshot) {
-                            initializingSnapshots.remove(snapshot);
-                            listener.onResponse(snapshot);
-                        }
-
-                        @Override
-                        public void onFailure(final Exception e) {
-                            initializingSnapshots.remove(current);
-                            listener.onFailure(e);
-                        }
-                    });
-                }
-            }
-
-            @Override
-            public TimeValue timeout() {
-                return request.masterNodeTimeout();
             }
         });
     }
@@ -1095,31 +1102,40 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                final boolean immediatePriority) {
         // First, look for the snapshot in the repository
         final Repository repository = repositoriesService.repository(repositoryName);
-        final RepositoryData repositoryData = repository.getRepositoryData();
-        final Optional<SnapshotId> incompatibleSnapshotId =
-            repositoryData.getIncompatibleSnapshotIds().stream().filter(s -> snapshotName.equals(s.getName())).findFirst();
-        if (incompatibleSnapshotId.isPresent()) {
-            throw new SnapshotException(repositoryName, snapshotName, "cannot delete incompatible snapshot");
-        }
-        Optional<SnapshotId> matchedEntry = repositoryData.getSnapshotIds()
-                                                .stream()
-                                                .filter(s -> s.getName().equals(snapshotName))
-                                                .findFirst();
-        // if nothing found by the same name, then look in the cluster state for current in progress snapshots
-        long repoGenId = repositoryData.getGenId();
-        if (matchedEntry.isPresent() == false) {
-            Optional<SnapshotsInProgress.Entry> matchedInProgress = currentSnapshots(repositoryName, Collections.emptyList()).stream()
-                               .filter(s -> s.snapshot().getSnapshotId().getName().equals(snapshotName)).findFirst();
-            if (matchedInProgress.isPresent()) {
-                matchedEntry = matchedInProgress.map(s -> s.snapshot().getSnapshotId());
-                // Derive repository generation if a snapshot is in progress because it will increment the generation when it finishes
-                repoGenId = matchedInProgress.get().getRepositoryStateId() + 1L;
+        repository.getRepositoryData(new ActionListener<>() {
+            @Override
+            public void onResponse(RepositoryData repositoryData) {
+                final Optional<SnapshotId> incompatibleSnapshotId =
+                    repositoryData.getIncompatibleSnapshotIds().stream().filter(s -> snapshotName.equals(s.getName())).findFirst();
+                if (incompatibleSnapshotId.isPresent()) {
+                    throw new SnapshotException(repositoryName, snapshotName, "cannot delete incompatible snapshot");
+                }
+                Optional<SnapshotId> matchedEntry = repositoryData.getSnapshotIds()
+                    .stream()
+                    .filter(s -> s.getName().equals(snapshotName))
+                    .findFirst();
+                // if nothing found by the same name, then look in the cluster state for current in progress snapshots
+                long repoGenId = repositoryData.getGenId();
+                if (matchedEntry.isPresent() == false) {
+                    Optional<SnapshotsInProgress.Entry> matchedInProgress = currentSnapshots(repositoryName, Collections.emptyList()).stream()
+                        .filter(s -> s.snapshot().getSnapshotId().getName().equals(snapshotName)).findFirst();
+                    if (matchedInProgress.isPresent()) {
+                        matchedEntry = matchedInProgress.map(s -> s.snapshot().getSnapshotId());
+                        // Derive repository generation if a snapshot is in progress because it will increment the generation when it finishes
+                        repoGenId = matchedInProgress.get().getRepositoryStateId() + 1L;
+                    }
+                }
+                if (matchedEntry.isPresent() == false) {
+                    throw new SnapshotMissingException(repositoryName, snapshotName);
+                }
+                deleteSnapshot(new Snapshot(repositoryName, matchedEntry.get()), listener, repoGenId, immediatePriority);
             }
-        }
-        if (matchedEntry.isPresent() == false) {
-            throw new SnapshotMissingException(repositoryName, snapshotName);
-        }
-        deleteSnapshot(new Snapshot(repositoryName, matchedEntry.get()), listener, repoGenId, immediatePriority);
+
+            @Override
+            public void onFailure(Exception e) {
+                listener.onFailure(e);
+            }
+        });
     }
 
     /**

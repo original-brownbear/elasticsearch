@@ -22,6 +22,7 @@ package org.elasticsearch.action.admin.cluster.snapshots.get;
 import org.apache.lucene.util.CollectionUtil;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockException;
@@ -93,7 +94,9 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
 
             final RepositoryData repositoryData;
             if (isCurrentSnapshotsOnly(request.snapshots()) == false) {
-                repositoryData = snapshotsService.getRepositoryData(repository);
+                PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
+                snapshotsService.getRepositoryData(repository, future);
+                repositoryData = future.actionGet();
                 for (SnapshotId snapshotId : repositoryData.getAllSnapshotIds()) {
                     allSnapshotIds.put(snapshotId.getName(), snapshotId);
                 }

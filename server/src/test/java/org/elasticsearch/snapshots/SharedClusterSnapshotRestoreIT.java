@@ -24,6 +24,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
@@ -3851,8 +3852,18 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         final SetOnce<RepositoryData> repositoryData = new SetOnce<>();
         final CountDownLatch latch = new CountDownLatch(1);
         threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
-            repositoryData.set(repository.getRepositoryData());
-            latch.countDown();
+            repository.getRepositoryData(new ActionListener<>() {
+                @Override
+                public void onResponse(final RepositoryData data) {
+                    repositoryData.set(data);
+                    latch.countDown();
+                }
+
+                @Override
+                public void onFailure(final Exception e) {
+                    throw new AssertionError(e);
+                }
+            });
         });
 
         latch.await();

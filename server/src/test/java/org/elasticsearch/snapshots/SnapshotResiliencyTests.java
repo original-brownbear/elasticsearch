@@ -66,6 +66,7 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.action.support.DestructiveOperations;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateHelper;
@@ -305,7 +306,9 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
+        repository.getRepositoryData(future);
+        Collection<SnapshotId> snapshotIds = future.actionGet().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
         final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
@@ -380,7 +383,9 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = randomMaster.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = randomMaster.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
+        repository.getRepositoryData(future);
+        Collection<SnapshotId> snapshotIds = future.actionGet().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
     }
 
@@ -419,7 +424,9 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
+        repository.getRepositoryData(future);
+        Collection<SnapshotId> snapshotIds = future.actionGet().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
         final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
@@ -518,7 +525,9 @@ public class SnapshotResiliencyTests extends ESTestCase {
             .clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
+        repository.getRepositoryData(future);
+        Collection<SnapshotId> snapshotIds = future.actionGet().getSnapshotIds();
         assertThat(snapshotIds, either(hasSize(1)).or(hasSize(0)));
     }
 

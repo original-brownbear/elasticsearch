@@ -23,6 +23,7 @@ import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.SnapshotsInProgress;
@@ -206,7 +207,9 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
         final String repositoryName = request.repository();
         if (Strings.hasText(repositoryName) && request.snapshots() != null && request.snapshots().length > 0) {
             final Set<String> requestedSnapshotNames = Sets.newHashSet(request.snapshots());
-            final RepositoryData repositoryData = snapshotsService.getRepositoryData(repositoryName);
+            PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
+            snapshotsService.getRepositoryData(repositoryName, future);
+            final RepositoryData repositoryData = future.actionGet();
             final Map<String, SnapshotId> matchedSnapshotIds = repositoryData.getAllSnapshotIds().stream()
                 .filter(s -> requestedSnapshotNames.contains(s.getName()))
                 .collect(Collectors.toMap(SnapshotId::getName, Function.identity()));

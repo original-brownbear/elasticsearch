@@ -21,6 +21,8 @@ package org.elasticsearch.snapshots;
 
 import org.elasticsearch.ElasticsearchCorruptionException;
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.blobstore.BlobPath;
@@ -37,12 +39,14 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.translog.BufferedChecksumStreamOutput;
+import org.elasticsearch.repositories.blobstore.BlobStoreRepositoryMetadata;
 import org.elasticsearch.repositories.blobstore.ChecksumBlobStoreFormat;
 import org.elasticsearch.snapshots.mockstore.BlobContainerWrapper;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -57,6 +61,43 @@ import static org.hamcrest.Matchers.greaterThan;
 public class BlobStoreFormatIT extends AbstractSnapshotIntegTestCase {
 
     public static final String BLOB_CODEC = "blob";
+
+    private static final BlobStoreRepositoryMetadata NOOP_BLOB_META = new BlobStoreRepositoryMetadata() {
+        @Override
+        public void addTombstones(final Iterable<String> blobs, final ActionListener<Void> listener) {
+            listener.onResponse(null);
+        }
+
+        @Override
+        public void pruneTombstones(final Iterable<String> blobs, final ActionListener<Void> listener) {
+            listener.onResponse(null);
+        }
+
+        @Override
+        public void addUploads(final Iterable<BlobMetaData> blobs, final ActionListener<Void> listener) {
+            listener.onResponse(null);
+        }
+
+        @Override
+        public void completeUploads(final Iterable<BlobMetaData> blobs, final ActionListener<Void> listener) {
+            listener.onResponse(null);
+        }
+
+        @Override
+        public void pendingUploads(final ActionListener<Iterable<String>> listener) {
+            listener.onResponse(Collections.emptyList());
+        }
+
+        @Override
+        public void tombstones(final ActionListener<Iterable<String>> listener) {
+            listener.onResponse(Collections.emptyList());
+        }
+
+        @Override
+        public void list(final String prefix, final ActionListener<Iterable<? extends BlobMetaData>> listener) {
+            listener.onResponse(Collections.emptyList());
+        }
+    };
 
     private static class BlobObj implements ToXContentFragment {
 
@@ -118,9 +159,12 @@ public class BlobStoreFormatIT extends AbstractSnapshotIntegTestCase {
             xContentRegistry(), true, XContentType.SMILE);
 
         // Write blobs in different formats
-        checksumJSON.write(new BlobObj("checksum json"), blobContainer, "check-json");
-        checksumSMILE.write(new BlobObj("checksum smile"), blobContainer, "check-smile");
-        checksumSMILECompressed.write(new BlobObj("checksum smile compressed"), blobContainer, "check-smile-comp");
+        checksumJSON.write(new BlobObj("checksum json"), blobContainer, "check-json",
+            NOOP_BLOB_META, ActionTestUtils.assertNoFailureListener(r -> {}));
+        checksumSMILE.write(new BlobObj("checksum smile"), blobContainer, "check-smile", NOOP_BLOB_META,
+            ActionTestUtils.assertNoFailureListener(r -> {}));
+        checksumSMILECompressed.write(new BlobObj("checksum smile compressed"), blobContainer, "check-smile-comp",
+            NOOP_BLOB_META, ActionTestUtils.assertNoFailureListener(r -> {}));
 
         // Assert that all checksum blobs can be read by all formats
         assertEquals(checksumJSON.read(blobContainer, "check-json").getText(), "checksum json");
@@ -143,8 +187,10 @@ public class BlobStoreFormatIT extends AbstractSnapshotIntegTestCase {
         ChecksumBlobStoreFormat<BlobObj> checksumFormatComp = new ChecksumBlobStoreFormat<>(BLOB_CODEC, "%s", BlobObj::fromXContent,
             xContentRegistry(), true, randomBoolean() ? XContentType.SMILE : XContentType.JSON);
         BlobObj blobObj = new BlobObj(veryRedundantText.toString());
-        checksumFormatComp.write(blobObj, blobContainer, "blob-comp");
-        checksumFormat.write(blobObj, blobContainer, "blob-not-comp");
+        checksumFormatComp.write(blobObj, blobContainer, "blob-comp",
+            NOOP_BLOB_META, ActionTestUtils.assertNoFailureListener(r -> {}));
+        checksumFormat.write(blobObj, blobContainer, "blob-not-comp",
+            NOOP_BLOB_META, ActionTestUtils.assertNoFailureListener(r -> {}));
         Map<String, BlobMetaData> blobs = blobContainer.listBlobsByPrefix("blob-");
         assertEquals(blobs.size(), 2);
         assertThat(blobs.get("blob-not-comp").length(), greaterThan(blobs.get("blob-comp").length()));
@@ -157,7 +203,7 @@ public class BlobStoreFormatIT extends AbstractSnapshotIntegTestCase {
         BlobObj blobObj = new BlobObj(testString);
         ChecksumBlobStoreFormat<BlobObj> checksumFormat = new ChecksumBlobStoreFormat<>(BLOB_CODEC, "%s", BlobObj::fromXContent,
             xContentRegistry(), randomBoolean(), randomBoolean() ? XContentType.SMILE : XContentType.JSON);
-        checksumFormat.write(blobObj, blobContainer, "test-path");
+        checksumFormat.write(blobObj, blobContainer, "test-path", NOOP_BLOB_META, ActionTestUtils.assertNoFailureListener(r -> {}));
         assertEquals(checksumFormat.read(blobContainer, "test-path").getText(), testString);
         randomCorruption(blobContainer, "test-path");
         try {
