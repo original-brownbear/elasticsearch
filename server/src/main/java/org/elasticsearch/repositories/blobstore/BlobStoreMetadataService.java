@@ -248,6 +248,7 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
         private void storeNextState(RepoStateId stateId, String s, ActionListener<Void> listener) {
             persistence.store(stateId, pendingTrie, ActionListener.wrap(v -> {
                 synchronized (mutex) {
+                    assert persistedStateId != null;
                     if (persistedStateId.time() > stateId.time()) {
                         listener.onResponse(null);
                         return;
@@ -380,6 +381,12 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
 
                         @Override
                         public void onFailure(String source, Exception e) {
+                            synchronized (mutex) {
+                                final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
+                                outstandingListeners = Collections.emptyList();
+                                // TODO: Handle no longer master ex. properly
+                                ActionListener.onFailure(currentListeners, e);
+                            }
                             logger.warn("Failed to submit repository state initialization task", e);
                         }
                     });

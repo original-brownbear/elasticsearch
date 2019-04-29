@@ -462,9 +462,7 @@ final class StoreRecovery {
                     indexShard.getEngine().fillSeqNoGaps(indexShard.getPendingPrimaryTerm());
                     indexShard.finalizeRecovery();
                     indexShard.postRecovery("restore done");
-                }, e -> {
-                    throw new AssertionError(e);
-                })
+                }, listener::onFailure)
             );
         } catch (Exception e) {
             listener.onFailure(new IndexShardRestoreFailedException(shardId, "restore failed", e));

@@ -2369,8 +2369,8 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                         final Repository repository = repositoriesService.repository(recoverySource.snapshot().getRepository());
                         restoreFromRepository(repository, new ActionListener<>() {
                             @Override
-                            public void onResponse(Boolean aBoolean) {
-                                if (aBoolean) {
+                            public void onResponse(Boolean restored) {
+                                if (restored) {
                                     recoveryListener.onRecoveryDone(recoveryState);
                                 }
                             }

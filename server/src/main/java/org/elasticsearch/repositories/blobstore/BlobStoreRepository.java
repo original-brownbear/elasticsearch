@@ -959,24 +959,28 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     @Override
     public void snapshotShard(IndexShard shard, Store store, SnapshotId snapshotId, IndexId indexId, IndexCommit snapshotIndexCommit,
                               IndexShardSnapshotStatus snapshotStatus, ActionListener<Void> listener) {
-        SnapshotContext snapshotContext =
-            new SnapshotContext(store, snapshotId, indexId, snapshotStatus, threadPool.absoluteTimeInMillis());
-        snapshotContext.snapshot(snapshotIndexCommit, new ActionListener<>() {
-            @Override
-            public void onResponse(Void aVoid) {
-                listener.onResponse(null);
-            }
-
-            @Override
-            public void onFailure(final Exception e) {
-                snapshotStatus.moveToFailed(System.currentTimeMillis(), ExceptionsHelper.detailedMessage(e));
-                if (e instanceof IndexShardSnapshotFailedException) {
-                    throw (IndexShardSnapshotFailedException) e;
-                } else {
-                    throw new IndexShardSnapshotFailedException(store.shardId(), e);
+        try {
+            SnapshotContext snapshotContext =
+                new SnapshotContext(store, snapshotId, indexId, snapshotStatus, threadPool.absoluteTimeInMillis());
+            snapshotContext.snapshot(snapshotIndexCommit, new ActionListener<>() {
+                @Override
+                public void onResponse(Void aVoid) {
+                    listener.onResponse(null);
                 }
-            }
-        });
+
+                @Override
+                public void onFailure(final Exception e) {
+                    snapshotStatus.moveToFailed(System.currentTimeMillis(), ExceptionsHelper.detailedMessage(e));
+                    if (e instanceof IndexShardSnapshotFailedException) {
+                        listener.onFailure(e);
+                    } else {
+                        listener.onFailure(new IndexShardSnapshotFailedException(store.shardId(), e));
+                    }
+                }
+            });
+        } catch (Exception e) {
+            listener.onFailure(e);
+        }
     }
 
     @Override
