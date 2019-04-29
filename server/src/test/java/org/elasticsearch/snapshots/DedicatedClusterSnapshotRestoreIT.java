@@ -240,7 +240,7 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
     }
 
     public void testRestoreCustomMetadata() throws Exception {
-        Path tempDir = randomRepoPath();
+        final Path tempDir = randomRepoPath();
 
         logger.info("--> start node");
         internalCluster().startNode();

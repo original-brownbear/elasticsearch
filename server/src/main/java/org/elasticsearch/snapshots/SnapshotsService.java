@@ -590,6 +590,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 userCreateSnapshotListener.onFailure(inner);
                             }
                         });
+            } else {
+                userCreateSnapshotListener.onFailure(e);
             }
         }
     }

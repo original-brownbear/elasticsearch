@@ -150,32 +150,30 @@ public class ChecksumBlobStoreFormat<T extends ToXContent> extends BlobStoreForm
      * @param name          blob name
      */
     public void write(T obj, BlobContainer blobContainer, String name, BlobStoreRepositoryMetadataService metaService,
-                      ActionListener<Void> listener) throws IOException {
-        final String blobName = blobName(name);
-        Iterable<BlobMetaData> uploads = Collections.singletonList(new BlobMetaData() {
-            @Override
-            public String name() {
-                return name;
-            }
+        ActionListener<Void> listener) {
+        try {
+            final String blobName = blobName(name);
+            Iterable<BlobMetaData> uploads = Collections.singletonList(new BlobMetaData() {
+                @Override
+                public String name() {
+                    return name;
+                }
 
-            @Override
-            public long length() {
-                return 0;
-            }
-        });
-        metaService.addUploads(uploads, ActionListener.wrap(v -> {
-            try {
-                writeTo(obj, blobName, bytesArray -> {
-                    try (InputStream stream = bytesArray.streamInput()) {
-                        blobContainer.writeBlob(blobName, stream, bytesArray.length(), true);
-                    }
-                    // TODO: Put actual length into these uploads
-                    metaService.completeUploads(uploads, listener);
-                });
-            } catch (Exception e) {
-                listener.onFailure(e);
-            }
-        }, listener::onFailure));
+                @Override
+                public long length() {
+                    return 0;
+                }
+            });
+            metaService.addUploads(uploads, ActionListener.wrap(v -> writeTo(obj, blobName, bytesArray -> {
+                try (InputStream stream = bytesArray.streamInput()) {
+                    blobContainer.writeBlob(blobName, stream, bytesArray.length(), true);
+                }
+                // TODO: Put actual length into these uploads
+                metaService.completeUploads(uploads, listener);
+            }), listener::onFailure));
+        } catch (Exception e) {
+            listener.onFailure(e);
+        }
     }
 
     private void writeTo(final T obj, final String blobName, final CheckedConsumer<BytesArray, IOException> consumer) throws IOException {

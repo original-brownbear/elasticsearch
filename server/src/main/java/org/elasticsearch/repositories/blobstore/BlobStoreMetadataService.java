@@ -45,9 +45,9 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportException;
+import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
@@ -74,7 +74,7 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
 
     private final Map<RepoStateId, RepoMetaTrie> stateCache = new LinkedHashMap<>() {
         protected boolean removeEldestEntry(Map.Entry eldest) {
-            return size() > 1;
+            return size() > 10;
         }
     };
 
@@ -135,6 +135,28 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
 
         void repoStateId(RepoStateId id) {
             repoStateId = id;
+            synchronized (mutex) {
+                final RepoMetaTrie trie = id.vectorTime == 0 ? new RepoMetaTrie(Collections.emptyMap()) : stateCache.get(id);
+                if (trie == null) {
+                    persistence.load(id, new ActionListener<>() {
+                        @Override
+                        public void onResponse(RepoMetaTrie repoMetaTrie) {
+                            final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
+                            outstandingListeners = Collections.emptyList();
+                            ActionListener.onResponse(currentListeners, repoMetaTrie);
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            logger.warn("Failed to load new state", e);
+                        }
+                    });
+                } else {
+                    final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
+                    outstandingListeners = Collections.emptyList();
+                    ActionListener.onResponse(currentListeners, trie);
+                }
+            }
         }
 
         @Override
@@ -149,31 +171,24 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
 
         @Override
         public void addUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) {
+            final List<String> names = new ArrayList<>();
+            for (BlobMetaData blob : blobs) {
+                names.add(blob.name());
+            }
+            transportService.sendRequest(transportService.getLocalNode(), UPDATE_BLOB_STATUS_ACTION_NAME,
+                new BlobUploadRequest(repoName, false, names), new BlobUploadResponseHandler(listener));
+        }
+
+        public void doAddUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) {
             final String nodeId = transportService.getLocalNode().getId();
-            final CheckedConsumer<RepoMetaTrie, Exception> consumer = repoMetaTrie ->  {
-            final RepoStateId stateId = incrementId();
-                persistence.store(stateId, repoMetaTrie.withUploads(blobs, nodeId), ActionListener.wrap(v ->
-                    clusterService.submitStateUpdateTask("add uploads", new ClusterStateUpdateTask() {
-                        @Override
-                        public ClusterState execute(ClusterState currentState) {
-                            final RepositoriesState repositoriesState = currentState.custom(RepositoriesState.TYPE);
-                            return ClusterState.builder(currentState).putCustom(
-                                RepositoriesState.TYPE, repositoriesState.with(repoName, stateId)
-                            ).build();
-                        }
-
-                        @Override
-                        public void onFailure(String source, Exception e) {
-                            listener.onFailure(e);
-                        }
-
-                        @Override
-                        public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
-                            listener.onResponse(null);
-                        }
-                    }), listener::onFailure));
+            final CheckedConsumer<RepoMetaTrie, Exception> consumer = repoMetaTrie -> {
+                final RepoStateId stateId = incrementId();
+                synchronized (mutex) {
+                    pendingTrie = (pendingTrie == null ? repoMetaTrie : pendingTrie).withUploads(blobs, nodeId);
+                }
+                stateCache.put(stateId, pendingTrie);
+                storeNextState(listener, stateId, "add uploads");
             };
-            // TODO: If not master use network to add these uploads and get names.
             if (repoStateId == null) {
                 synchronized (mutex) {
                     final List<ActionListener<RepoMetaTrie>> listeners = new ArrayList<>(outstandingListeners);
@@ -181,37 +196,42 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
                     outstandingListeners = listeners;
                 }
             } else {
-                persistence.load(repoStateId, ActionListener.wrap(consumer, listener::onFailure));
+                final RepoMetaTrie trie;
+                synchronized (mutex) {
+                    trie = stateCache.get(repoStateId);
+                }
+                if (trie == null) {
+                    persistence.load(repoStateId, ActionListener.wrap(consumer, listener::onFailure));
+                } else {
+                    try {
+                        consumer.accept(trie);
+                    } catch (Exception e) {
+                        listener.onFailure(e);
+                    }
+                }
             }
         }
 
         @Override
         public void completeUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) {
+            final List<String> names = new ArrayList<>();
+            for (BlobMetaData blob : blobs) {
+                names.add(blob.name());
+            }
+            transportService.sendRequest(transportService.getLocalNode(), UPDATE_BLOB_STATUS_ACTION_NAME,
+                new BlobUploadRequest(repoName, true, names), new BlobUploadResponseHandler(listener));
+        }
+
+        public void doCompleteUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) {
             final String nodeId = transportService.getLocalNode().getId();
             final CheckedConsumer<RepoMetaTrie, Exception> consumer = repoMetaTrie ->  {
                 final RepoStateId stateId = incrementId();
-                persistence.store(stateId, repoMetaTrie.withCompletedUploads(blobs, nodeId), ActionListener.wrap(v ->
-                    clusterService.submitStateUpdateTask("init repo in state", new ClusterStateUpdateTask() {
-                        @Override
-                        public ClusterState execute(ClusterState currentState) {
-                            final RepositoriesState repositoriesState = currentState.custom(RepositoriesState.TYPE);
-                            return ClusterState.builder(currentState).putCustom(
-                                RepositoriesState.TYPE, repositoriesState.with(repoName, stateId)
-                            ).build();
-                        }
-
-                        @Override
-                        public void onFailure(String source, Exception e) {
-                            listener.onFailure(e);
-                        }
-
-                        @Override
-                        public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
-                            listener.onResponse(null);
-                        }
-                    }), listener::onFailure));
+                synchronized (mutex) {
+                    pendingTrie = (pendingTrie == null ? repoMetaTrie : pendingTrie).withCompletedUploads(blobs, nodeId);
+                }
+                stateCache.put(stateId, pendingTrie);
+                storeNextState(listener, stateId, "update repo in state");
             };
-            // TODO: If not master use network to add these uploads and get names.
             if (repoStateId == null) {
                 synchronized (mutex) {
                     final List<ActionListener<RepoMetaTrie>> listeners = new ArrayList<>(outstandingListeners);
@@ -219,8 +239,43 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
                     outstandingListeners = listeners;
                 }
             } else {
-                persistence.load(repoStateId, ActionListener.wrap(consumer, listener::onFailure));
+                final RepoMetaTrie trie;
+                synchronized (mutex) {
+                    trie = stateCache.get(repoStateId);
+                }
+                if (trie == null) {
+                    persistence.load(repoStateId, ActionListener.wrap(consumer, listener::onFailure));
+                } else {
+                    try {
+                        consumer.accept(trie);
+                    } catch (Exception e) {
+                        listener.onFailure(e);
+                    }
+                }
             }
+        }
+
+        private void storeNextState(final ActionListener<Void> listener, final RepoStateId stateId, final String s) {
+            persistence.store(stateId, pendingTrie, ActionListener.wrap(v ->
+                clusterService.submitStateUpdateTask(s, new ClusterStateUpdateTask() {
+                    @Override
+                    public ClusterState execute(ClusterState currentState) {
+                        final RepositoriesState repositoriesState = currentState.custom(RepositoriesState.TYPE);
+                        return ClusterState.builder(currentState).putCustom(
+                            RepositoriesState.TYPE, repositoriesState.with(repoName, stateId)
+                        ).build();
+                    }
+
+                    @Override
+                    public void onFailure(String source, Exception e) {
+                        listener.onFailure(e);
+                    }
+
+                    @Override
+                    public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
+                        listener.onResponse(null);
+                    }
+                }), listener::onFailure));
         }
 
         private RepoStateId incrementId() {
@@ -289,47 +344,87 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
         }
 
         private void initRepoInClusterState() {
-            clusterService.submitStateUpdateTask("init repo [" + repoName + "] in state", new ClusterStateUpdateTask() {
+            persistence.recover(new ActionListener<>() {
                 @Override
-                public ClusterState execute(ClusterState currentState) {
-                    RepositoriesState repositoriesState = currentState.custom(RepositoriesState.TYPE);
-                    repositoriesState = repositoriesState == null ? new RepositoriesState(Collections.emptyMap()) : repositoriesState;
-                    if (repositoriesState.getStateId(repoName) != null) {
-                        return currentState;
-                    }
-                    return ClusterState.builder(currentState).putCustom(
-                        RepositoriesState.TYPE, repositoriesState.with(repoName, new RepoStateId(0L, UUIDs.base64UUID()))
-                    ).build();
-                }
-
-                @Override
-                public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
-                    RepositoriesState repositoriesState = newState.custom(RepositoriesState.TYPE);
-                    repoStateId = repositoriesState.getStateId(repoName);
-                    final RepoMetaTrie trie = new BlobStoreMetadataService.RepoMetaTrie(Collections.emptyMap());
-                    persistence.store(repoStateId, trie, new ActionListener<>() {
+                public void onResponse(RepoStateId foundStateId) {
+                    clusterService.submitStateUpdateTask("init repo [" + repoName + "] in state", new ClusterStateUpdateTask() {
                         @Override
-                        public void onResponse( RepoStateId repoStateId) {
-                            synchronized (mutex) {
-                                stateCache.put(repoStateId, trie);
-                                final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
-                                outstandingListeners = Collections.emptyList();
-                                ActionListener.onResponse(currentListeners, stateCache.get(repoStateId));
+                        public ClusterState execute(ClusterState currentState) {
+                            RepositoriesState repositoriesState = currentState.custom(RepositoriesState.TYPE);
+                            repositoriesState = repositoriesState == null ? new RepositoriesState(Collections.emptyMap()) : repositoriesState;
+                            if (repositoriesState.getStateId(repoName) != null) {
+                                return currentState;
                             }
+                            return ClusterState.builder(currentState)
+                                .putCustom(RepositoriesState.TYPE, repositoriesState.with(repoName, foundStateId)).build();
                         }
 
                         @Override
-                        public void onFailure(final Exception e) {
+                        public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
+                            RepositoriesState repositoriesState = newState.custom(RepositoriesState.TYPE);
+                            repoStateId = repositoriesState.getStateId(repoName);
+                            final RepoMetaTrie trie = new BlobStoreMetadataService.RepoMetaTrie(Collections.emptyMap());
+                            persistence.store(repoStateId, trie, new ActionListener<>() {
+                                @Override
+                                public void onResponse(RepoStateId repoStateId) {
+                                    synchronized (mutex) {
+                                        stateCache.put(repoStateId, trie);
+                                        final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
+                                        outstandingListeners = Collections.emptyList();
+                                        ActionListener.onResponse(currentListeners, stateCache.get(repoStateId));
+                                    }
+                                }
 
+                                @Override
+                                public void onFailure(Exception e) {
+                                    logger.warn("Failed to submit repository state initialization task.", e);
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(String source, Exception e) {
+                            logger.warn("Failed to submit repository state initialization task.", e);
                         }
                     });
                 }
 
                 @Override
-                public void onFailure(String source, Exception e) {
-                    logger.warn("Failed to submit repository state initialization task.");
+                public void onFailure(Exception e) {
+                    logger.warn("Failed to recover stateId", e);
                 }
             });
+        }
+
+        private final class BlobUploadResponseHandler implements TransportResponseHandler<BlobUploadResponse> {
+
+            private final ActionListener<Void> listener;
+
+            BlobUploadResponseHandler(ActionListener<Void> listener) {
+                this.listener = listener;
+            }
+
+            @Override
+            public BlobUploadResponse read(StreamInput in) throws IOException {
+                final BlobUploadResponse resp = new BlobUploadResponse();
+                resp.readFrom(in);
+                return resp;
+            }
+
+            @Override
+            public void handleException(TransportException exp) {
+                listener.onFailure(exp);
+            }
+
+            @Override
+            public String executor() {
+                return ThreadPool.Names.GENERIC;
+            }
+
+            @Override
+            public void handleResponse(BlobUploadResponse response) {
+                listener.onResponse(null);
+            }
         }
     }
 
@@ -401,13 +496,21 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
             this.data = data;
         }
 
-        RepoMetaTrie(StreamInput input) {
-            data = Collections.emptyMap();
+        RepoMetaTrie(StreamInput input) throws IOException {
+            this(
+                input.readMap(StreamInput::readString, in -> {
+                    String name = in.readString();
+                    long length = in.readLong();
+                    BlobStoreRepositoryMetadataService.BlobState state = in.readEnum(BlobStoreRepositoryMetadataService.BlobState.class);
+                    String uploader = in.readOptionalString();
+                    return new BlobStoreBlobMetaData(name, length, state, uploader);
+                }));
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeMap(data, StreamOutput::writeString, (out1, value) -> {
+                out1.writeString(value.name);
                 out1.writeLong(value.length);
                 out1.writeEnum(value.state);
                 out1.writeOptionalString(value.uploader);
@@ -585,11 +688,32 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
      * Internal request that is used to send changes in snapshot status to master
      */
     public static class BlobUploadRequest extends MasterNodeRequest<BlobUploadRequest> {
-        private Snapshot snapshot;
-        private ShardId shardId;
 
-        public BlobUploadRequest() {
+        private String repoName;
 
+        private boolean completed;
+
+        private List<String> blobs;
+
+        BlobUploadRequest() {
+        }
+
+        public BlobUploadRequest(String repoName, boolean completed, List<String> blobs) {
+            this.repoName = repoName;
+            this.completed = completed;
+            this.blobs = blobs;
+        }
+
+        public String repoName() {
+            return repoName;
+        }
+
+        public boolean completed() {
+            return completed;
+        }
+
+        public List<String> blobs() {
+            return blobs;
         }
 
         @Override
@@ -600,37 +724,24 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
         @Override
         public void readFrom(StreamInput in) throws IOException {
             super.readFrom(in);
-            snapshot = new Snapshot(in);
-            shardId = ShardId.readShardId(in);
+            repoName = in.readString();
+            completed = in.readBoolean();
+            blobs = in.readStringList();
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             super.writeTo(out);
-            snapshot.writeTo(out);
-            shardId.writeTo(out);
-        }
-
-        public Snapshot snapshot() {
-            return snapshot;
-        }
-
-        public ShardId shardId() {
-            return shardId;
-        }
-
-        @Override
-        public String toString() {
-            // TODO: FOO
-            return "TODO";
+            out.writeString(repoName);
+            out.writeBoolean(completed);
+            out.writeStringCollection(blobs);
         }
     }
 
-    static class BlobUploadRequestResponse extends ActionResponse {
-
+    static class BlobUploadResponse extends ActionResponse {
     }
 
-    private class BlobUploadAction extends TransportMasterNodeAction<BlobUploadRequest, BlobUploadRequestResponse> {
+    private class BlobUploadAction extends TransportMasterNodeAction<BlobUploadRequest, BlobUploadResponse> {
 
         BlobUploadAction(TransportService transportService, ClusterService clusterService,
             ThreadPool threadPool, ActionFilters actionFilters, IndexNameExpressionResolver indexNameExpressionResolver) {
@@ -642,18 +753,50 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
 
         @Override
         protected String executor() {
-            return ThreadPool.Names.SAME;
+            return ThreadPool.Names.GENERIC;
         }
 
         @Override
-        protected BlobUploadRequestResponse newResponse() {
-            return new BlobUploadRequestResponse();
+        protected BlobUploadResponse newResponse() {
+            return new BlobUploadResponse();
         }
 
         @Override
-        protected void masterOperation(BlobUploadRequest request, ClusterState state,
-            ActionListener<BlobUploadRequestResponse> listener) {
+        protected void masterOperation(BlobUploadRequest request, ClusterState state, ActionListener<BlobUploadResponse> listener) {
+            ActionListener<Void> wrapped = ActionListener.map(listener, v -> new BlobUploadResponse());
+            try {
+                if (request.completed()) {
+                    metaStores.get(request.repoName()).doCompleteUploads(request.blobs.stream().map(
+                        s -> new BlobMetaData() {
+                            @Override
+                            public String name() {
+                                return s;
+                            }
 
+                            @Override
+                            public long length() {
+                                return 0;
+                            }
+                        }
+                    ).collect(Collectors.toList()), wrapped);
+                } else {
+                    metaStores.get(request.repoName()).doAddUploads(request.blobs.stream().map(
+                        s -> new BlobMetaData() {
+                            @Override
+                            public String name() {
+                                return s;
+                            }
+
+                            @Override
+                            public long length() {
+                                return 0;
+                            }
+                        }
+                    ).collect(Collectors.toList()), wrapped);
+                }
+            } catch (Exception e) {
+                listener.onFailure(e);
+            }
         }
 
         @Override
