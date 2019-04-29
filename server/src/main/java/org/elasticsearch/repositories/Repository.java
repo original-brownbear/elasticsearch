@@ -116,7 +116,7 @@ public interface Repository extends LifecycleComponent {
      * @param indices    list of indices to be snapshotted
      * @param metaData   cluster metadata
      */
-    void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData);
+    void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, ActionListener<Void> listener);
 
     /**
      * Finalizes snapshotting process
@@ -131,10 +131,10 @@ public interface Repository extends LifecycleComponent {
      * @param shardFailures list of shard failures
      * @param repositoryStateId the unique id identifying the state of the repository when the snapshot began
      * @param includeGlobalState include cluster global state
-     * @return snapshot description
      */
-    SnapshotInfo finalizeSnapshot(SnapshotId snapshotId, List<IndexId> indices, long startTime, String failure, int totalShards,
-                                  List<SnapshotShardFailure> shardFailures, long repositoryStateId, boolean includeGlobalState);
+    void finalizeSnapshot(SnapshotId snapshotId, List<IndexId> indices, long startTime, String failure, int totalShards,
+                                  List<SnapshotShardFailure> shardFailures, long repositoryStateId, boolean includeGlobalState,
+                                  ActionListener<SnapshotInfo> listener);
 
     /**
      * Deletes snapshot

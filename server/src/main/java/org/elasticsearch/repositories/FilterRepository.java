@@ -73,15 +73,16 @@ public class FilterRepository implements Repository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData) {
-        in.initializeSnapshot(snapshotId, indices, metaData);
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, ActionListener<Void> listener) {
+        in.initializeSnapshot(snapshotId, indices, metaData, listener);
     }
 
     @Override
-    public SnapshotInfo finalizeSnapshot(SnapshotId snapshotId, List<IndexId> indices, long startTime, String failure, int totalShards,
-                                         List<SnapshotShardFailure> shardFailures, long repositoryStateId, boolean includeGlobalState) {
-        return in.finalizeSnapshot(snapshotId, indices, startTime, failure, totalShards, shardFailures, repositoryStateId,
-            includeGlobalState);
+    public void finalizeSnapshot(SnapshotId snapshotId, List<IndexId> indices, long startTime, String failure, int totalShards,
+                                         List<SnapshotShardFailure> shardFailures, long repositoryStateId, boolean includeGlobalState,
+                                         ActionListener<SnapshotInfo> listener) {
+        in.finalizeSnapshot(
+            snapshotId, indices, startTime, failure, totalShards, shardFailures, repositoryStateId, includeGlobalState, listener);
     }
 
     @Override

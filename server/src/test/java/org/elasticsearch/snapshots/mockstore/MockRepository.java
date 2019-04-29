@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.CorruptIndexException;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.blobstore.BlobContainer;
@@ -132,11 +133,11 @@ public class MockRepository extends FsRepository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata, ActionListener<Void> listener) {
         if (blockOnInitialization) {
             blockExecution();
         }
-        super.initializeSnapshot(snapshotId, indices, clusterMetadata);
+        super.initializeSnapshot(snapshotId, indices, clusterMetadata, listener);
     }
 
     private static RepositoryMetaData overrideSettings(RepositoryMetaData metadata, Environment environment) {

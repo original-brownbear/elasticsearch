@@ -146,7 +146,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         repository.getRepositoryData(future);
         assertThat(future.actionGet().getSnapshotIds().size(), equalTo(0));
         final RepositoryData emptyData = RepositoryData.EMPTY;
-        repository.writeIndexGen(emptyData, emptyData.getGenId());
+        repository.writeIndexGen(emptyData, emptyData.getGenId(), PlainActionFuture.newFuture());
         PlainActionFuture<RepositoryData> future2 = PlainActionFuture.newFuture();
         repository.getRepositoryData(future2);
         RepositoryData repoData = future2.actionGet();
@@ -157,7 +157,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
 
         // write to and read from an index file with snapshots but no indices
         repoData = addRandomSnapshotsToRepoData(repoData, false);
-        repository.writeIndexGen(repoData, repoData.getGenId());
+        repository.writeIndexGen(repoData, repoData.getGenId(), PlainActionFuture.newFuture());
         PlainActionFuture<RepositoryData> future3 = PlainActionFuture.newFuture();
         repository.getRepositoryData(future3);
         assertEquals(repoData, future3.actionGet());
@@ -166,7 +166,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         PlainActionFuture<RepositoryData> future4 = PlainActionFuture.newFuture();
         repository.getRepositoryData(future4);
         repoData = addRandomSnapshotsToRepoData(future4.actionGet(), true);
-        repository.writeIndexGen(repoData, repoData.getGenId());
+        repository.writeIndexGen(repoData, repoData.getGenId(), PlainActionFuture.newFuture());
         PlainActionFuture<RepositoryData> future5 = PlainActionFuture.newFuture();
         repository.getRepositoryData(future5);
         assertEquals(repoData, future5.actionGet());
@@ -181,11 +181,12 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
 
         // write to index generational file
         RepositoryData repositoryData = generateRandomRepoData();
-        repository.writeIndexGen(repositoryData, repositoryData.getGenId());
+        repository.writeIndexGen(repositoryData, repositoryData.getGenId(), PlainActionFuture.newFuture());
 
         // write repo data again to index generational file, errors because we already wrote to the
         // N+1 generation from which this repository data instance was created
-        expectThrows(RepositoryException.class, () -> repository.writeIndexGen(repositoryData, repositoryData.getGenId()));
+        expectThrows(RepositoryException.class,
+            () -> repository.writeIndexGen(repositoryData, repositoryData.getGenId(), PlainActionFuture.newFuture()));
     }
 
     public void testReadAndWriteIncompatibleSnapshots() throws Exception {
@@ -196,7 +197,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         repository.getRepositoryData(future);
         assertEquals(0, future.actionGet().getIncompatibleSnapshotIds().size());
         RepositoryData emptyData = RepositoryData.EMPTY;
-        repository.writeIndexGen(emptyData, emptyData.getGenId());
+        repository.writeIndexGen(emptyData, emptyData.getGenId(), PlainActionFuture.newFuture());
         repository.writeIncompatibleSnapshots(emptyData);
         PlainActionFuture<RepositoryData> future2 = PlainActionFuture.newFuture();
         repository.getRepositoryData(future2);
@@ -223,7 +224,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
     public void testIncompatibleSnapshotsBlobExists() throws Exception {
         final BlobStoreRepository repository = setupRepo();
         RepositoryData emptyData = RepositoryData.EMPTY;
-        repository.writeIndexGen(emptyData, emptyData.getGenId());
+        repository.writeIndexGen(emptyData, emptyData.getGenId(), PlainActionFuture.newFuture());
         PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
         repository.getRepositoryData(future);
         RepositoryData repoData = future.actionGet();
@@ -232,7 +233,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         PlainActionFuture<RepositoryData> future2= PlainActionFuture.newFuture();
         repository.getRepositoryData(future2);
         repoData = addRandomSnapshotsToRepoData(future2.actionGet(), true);
-        repository.writeIndexGen(repoData, repoData.getGenId());
+        repository.writeIndexGen(repoData, repoData.getGenId(), PlainActionFuture.newFuture());
         PlainActionFuture<RepositoryData> future3= PlainActionFuture.newFuture();
         repository.getRepositoryData(future3);
         assertEquals(0, future3.actionGet().getIncompatibleSnapshotIds().size());
