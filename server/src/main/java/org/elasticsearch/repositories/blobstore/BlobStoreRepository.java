@@ -954,18 +954,25 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public void snapshotShard(IndexShard shard, Store store, SnapshotId snapshotId, IndexId indexId, IndexCommit snapshotIndexCommit,
-                              IndexShardSnapshotStatus snapshotStatus) {
-        SnapshotContext snapshotContext = new SnapshotContext(store, snapshotId, indexId, snapshotStatus, System.currentTimeMillis());
-        try {
-            snapshotContext.snapshot(snapshotIndexCommit);
-        } catch (Exception e) {
-            snapshotStatus.moveToFailed(System.currentTimeMillis(), ExceptionsHelper.detailedMessage(e));
-            if (e instanceof IndexShardSnapshotFailedException) {
-                throw (IndexShardSnapshotFailedException) e;
-            } else {
-                throw new IndexShardSnapshotFailedException(store.shardId(), e);
+                              IndexShardSnapshotStatus snapshotStatus, ActionListener<Void> listener) {
+        SnapshotContext snapshotContext =
+            new SnapshotContext(store, snapshotId, indexId, snapshotStatus, threadPool.absoluteTimeInMillis());
+        snapshotContext.snapshot(snapshotIndexCommit, new ActionListener<>() {
+            @Override
+            public void onResponse(Void aVoid) {
+                listener.onResponse(null);
             }
-        }
+
+            @Override
+            public void onFailure(final Exception e) {
+                snapshotStatus.moveToFailed(System.currentTimeMillis(), ExceptionsHelper.detailedMessage(e));
+                if (e instanceof IndexShardSnapshotFailedException) {
+                    throw (IndexShardSnapshotFailedException) e;
+                } else {
+                    throw new IndexShardSnapshotFailedException(store.shardId(), e);
+                }
+            }
+        });
     }
 
     @Override
@@ -1246,134 +1253,139 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
          *
          * @param snapshotIndexCommit snapshot commit point
          */
-        public void snapshot(final IndexCommit snapshotIndexCommit) {
-            logger.debug("[{}] [{}] snapshot to [{}] ...", shardId, snapshotId, metadata.name());
-
-            final Map<String, BlobMetaData> blobs;
+        public void snapshot(IndexCommit snapshotIndexCommit, ActionListener<Void> listener) {
             try {
-                blobs = blobContainer.listBlobs();
-            } catch (IOException e) {
-                throw new IndexShardSnapshotFailedException(shardId, "failed to list blobs", e);
-            }
+                logger.debug("[{}] [{}] snapshot to [{}] ...", shardId, snapshotId, metadata.name());
 
-            Tuple<BlobStoreIndexShardSnapshots, Integer> tuple = buildBlobStoreIndexShardSnapshots(blobs);
-            BlobStoreIndexShardSnapshots snapshots = tuple.v1();
-            int fileListGeneration = tuple.v2();
-
-            if (snapshots.snapshots().stream().anyMatch(sf -> sf.snapshot().equals(snapshotId.getName()))) {
-                throw new IndexShardSnapshotFailedException(shardId,
-                    "Duplicate snapshot name [" + snapshotId.getName() + "] detected, aborting");
-            }
-
-            final List<BlobStoreIndexShardSnapshot.FileInfo> indexCommitPointFiles = new ArrayList<>();
-
-            store.incRef();
-            int indexIncrementalFileCount = 0;
-            int indexTotalNumberOfFiles = 0;
-            long indexIncrementalSize = 0;
-            long indexTotalFileCount = 0;
-            try {
-                ArrayList<BlobStoreIndexShardSnapshot.FileInfo> filesToSnapshot = new ArrayList<>();
-                final Store.MetadataSnapshot metadata;
-                // TODO apparently we don't use the MetadataSnapshot#.recoveryDiff(...) here but we should
-                final Collection<String> fileNames;
+                final Map<String, BlobMetaData> blobs;
                 try {
-                    logger.trace("[{}] [{}] Loading store metadata using index commit [{}]", shardId, snapshotId, snapshotIndexCommit);
-                    metadata = store.getMetadata(snapshotIndexCommit);
-                    fileNames = snapshotIndexCommit.getFileNames();
+                    blobs = blobContainer.listBlobs();
                 } catch (IOException e) {
-                    throw new IndexShardSnapshotFailedException(shardId, "Failed to get store file metadata", e);
+                    throw new IndexShardSnapshotFailedException(shardId, "failed to list blobs", e);
                 }
-                for (String fileName : fileNames) {
-                    if (snapshotStatus.isAborted()) {
-                        logger.debug("[{}] [{}] Aborted on the file [{}], exiting", shardId, snapshotId, fileName);
-                        throw new IndexShardSnapshotFailedException(shardId, "Aborted");
-                    }
 
-                    logger.trace("[{}] [{}] Processing [{}]", shardId, snapshotId, fileName);
-                    final StoreFileMetaData md = metadata.get(fileName);
-                    BlobStoreIndexShardSnapshot.FileInfo existingFileInfo = null;
-                    List<BlobStoreIndexShardSnapshot.FileInfo> filesInfo = snapshots.findPhysicalIndexFiles(fileName);
-                    if (filesInfo != null) {
-                        for (BlobStoreIndexShardSnapshot.FileInfo fileInfo : filesInfo) {
-                            try {
-                                // in 1.3.3 we added additional hashes for .si / segments_N files
-                                // to ensure we don't double the space in the repo since old snapshots
-                                // don't have this hash we try to read that hash from the blob store
-                                // in a bwc compatible way.
-                                maybeRecalculateMetadataHash(blobContainer, fileInfo, metadata);
-                            } catch (Exception e) {
-                                logger.warn(() -> new ParameterizedMessage("{} Can't calculate hash from blob for file [{}] [{}]",
-                                    shardId, fileInfo.physicalName(), fileInfo.metadata()), e);
+                Tuple<BlobStoreIndexShardSnapshots, Integer> tuple = buildBlobStoreIndexShardSnapshots(blobs);
+                BlobStoreIndexShardSnapshots snapshots = tuple.v1();
+                int fileListGeneration = tuple.v2();
+
+                if (snapshots.snapshots().stream().anyMatch(sf -> sf.snapshot().equals(snapshotId.getName()))) {
+                    throw new IndexShardSnapshotFailedException(shardId,
+                        "Duplicate snapshot name [" + snapshotId.getName() + "] detected, aborting");
+                }
+
+                final List<BlobStoreIndexShardSnapshot.FileInfo> indexCommitPointFiles = new ArrayList<>();
+
+                store.incRef();
+                int indexIncrementalFileCount = 0;
+                int indexTotalNumberOfFiles = 0;
+                long indexIncrementalSize = 0;
+                long indexTotalFileCount = 0;
+                try {
+                    ArrayList<BlobStoreIndexShardSnapshot.FileInfo> filesToSnapshot = new ArrayList<>();
+                    final Store.MetadataSnapshot metadata;
+                    // TODO apparently we don't use the MetadataSnapshot#.recoveryDiff(...) here but we should
+                    final Collection<String> fileNames;
+                    try {
+                        logger.trace("[{}] [{}] Loading store metadata using index commit [{}]", shardId, snapshotId, snapshotIndexCommit);
+                        metadata = store.getMetadata(snapshotIndexCommit);
+                        fileNames = snapshotIndexCommit.getFileNames();
+                    } catch (IOException e) {
+                        throw new IndexShardSnapshotFailedException(shardId, "Failed to get store file metadata", e);
+                    }
+                    for (String fileName : fileNames) {
+                        if (snapshotStatus.isAborted()) {
+                            logger.debug("[{}] [{}] Aborted on the file [{}], exiting", shardId, snapshotId, fileName);
+                            throw new IndexShardSnapshotFailedException(shardId, "Aborted");
+                        }
+
+                        logger.trace("[{}] [{}] Processing [{}]", shardId, snapshotId, fileName);
+                        final StoreFileMetaData md = metadata.get(fileName);
+                        BlobStoreIndexShardSnapshot.FileInfo existingFileInfo = null;
+                        List<BlobStoreIndexShardSnapshot.FileInfo> filesInfo = snapshots.findPhysicalIndexFiles(fileName);
+                        if (filesInfo != null) {
+                            for (BlobStoreIndexShardSnapshot.FileInfo fileInfo : filesInfo) {
+                                try {
+                                    // in 1.3.3 we added additional hashes for .si / segments_N files
+                                    // to ensure we don't double the space in the repo since old snapshots
+                                    // don't have this hash we try to read that hash from the blob store
+                                    // in a bwc compatible way.
+                                    maybeRecalculateMetadataHash(blobContainer, fileInfo, metadata);
+                                } catch (Exception e) {
+                                    logger.warn(() -> new ParameterizedMessage("{} Can't calculate hash from blob for file [{}] [{}]",
+                                        shardId, fileInfo.physicalName(), fileInfo.metadata()), e);
+                                }
+                                if (fileInfo.isSame(md) && snapshotFileExistsInBlobs(fileInfo, blobs)) {
+                                    // a commit point file with the same name, size and checksum was already copied to repository
+                                    // we will reuse it for this snapshot
+                                    existingFileInfo = fileInfo;
+                                    break;
+                                }
                             }
-                            if (fileInfo.isSame(md) && snapshotFileExistsInBlobs(fileInfo, blobs)) {
-                                // a commit point file with the same name, size and checksum was already copied to repository
-                                // we will reuse it for this snapshot
-                                existingFileInfo = fileInfo;
-                                break;
-                            }
+                        }
+
+                        indexTotalFileCount += md.length();
+                        indexTotalNumberOfFiles++;
+
+                        if (existingFileInfo == null) {
+                            indexIncrementalFileCount++;
+                            indexIncrementalSize += md.length();
+                            // create a new FileInfo
+                            BlobStoreIndexShardSnapshot.FileInfo snapshotFileInfo =
+                                new BlobStoreIndexShardSnapshot.FileInfo(DATA_BLOB_PREFIX + UUIDs.randomBase64UUID(), md, chunkSize());
+                            indexCommitPointFiles.add(snapshotFileInfo);
+                            filesToSnapshot.add(snapshotFileInfo);
+                        } else {
+                            indexCommitPointFiles.add(existingFileInfo);
                         }
                     }
 
-                    indexTotalFileCount += md.length();
-                    indexTotalNumberOfFiles++;
+                    snapshotStatus.moveToStarted(startTime, indexIncrementalFileCount,
+                        indexTotalNumberOfFiles, indexIncrementalSize, indexTotalFileCount);
 
-                    if (existingFileInfo == null) {
-                        indexIncrementalFileCount++;
-                        indexIncrementalSize += md.length();
-                        // create a new FileInfo
-                        BlobStoreIndexShardSnapshot.FileInfo snapshotFileInfo =
-                            new BlobStoreIndexShardSnapshot.FileInfo(DATA_BLOB_PREFIX + UUIDs.randomBase64UUID(), md, chunkSize());
-                        indexCommitPointFiles.add(snapshotFileInfo);
-                        filesToSnapshot.add(snapshotFileInfo);
-                    } else {
-                        indexCommitPointFiles.add(existingFileInfo);
+                    for (BlobStoreIndexShardSnapshot.FileInfo snapshotFileInfo : filesToSnapshot) {
+                        try {
+                            snapshotFile(snapshotFileInfo);
+                        } catch (IOException e) {
+                            throw new IndexShardSnapshotFailedException(shardId, "Failed to perform snapshot (index files)", e);
+                        }
                     }
+                } finally {
+                    store.decRef();
                 }
 
-                snapshotStatus.moveToStarted(startTime, indexIncrementalFileCount,
-                    indexTotalNumberOfFiles, indexIncrementalSize, indexTotalFileCount);
+                final IndexShardSnapshotStatus.Copy lastSnapshotStatus = snapshotStatus.moveToFinalize(snapshotIndexCommit.getGeneration());
 
-                for (BlobStoreIndexShardSnapshot.FileInfo snapshotFileInfo : filesToSnapshot) {
-                    try {
-                        snapshotFile(snapshotFileInfo);
-                    } catch (IOException e) {
-                        throw new IndexShardSnapshotFailedException(shardId, "Failed to perform snapshot (index files)", e);
-                    }
-                }
-            } finally {
-                store.decRef();
+                // now create and write the commit point
+                final BlobStoreIndexShardSnapshot snapshot = new BlobStoreIndexShardSnapshot(snapshotId.getName(),
+                    lastSnapshotStatus.getIndexVersion(),
+                    indexCommitPointFiles,
+                    lastSnapshotStatus.getStartTime(),
+                    // snapshotStatus.startTime() is assigned on the same machine,
+                    // so it's safe to use with VLong
+                    System.currentTimeMillis() - lastSnapshotStatus.getStartTime(),
+                    lastSnapshotStatus.getIncrementalFileCount(),
+                    lastSnapshotStatus.getIncrementalSize()
+                );
+
+                //TODO: The time stored in snapshot doesn't include cleanup time.
+                logger.trace("[{}] [{}] writing shard snapshot file", shardId, snapshotId);
+                indexShardSnapshotFormat.write(snapshot, blobContainer, snapshotId.getUUID(), blobMetaDataService(),
+                    ActionListener.wrap(v -> {
+                        // delete all files that are not referenced by any commit point
+                        // build a new BlobStoreIndexShardSnapshot, that includes this one and all the saved ones
+                        List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
+                        newSnapshotsList.add(new SnapshotFiles(snapshot.snapshot(), snapshot.indexFiles()));
+                        for (SnapshotFiles point : snapshots) {
+                            newSnapshotsList.add(point);
+                        }
+                        // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
+                        finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot creation [" + snapshotId + "]");
+                        snapshotStatus.moveToDone(System.currentTimeMillis());
+                        listener.onResponse(null);
+                    }, listener::onFailure));
+            } catch (Exception e) {
+                listener.onFailure(e);
             }
-
-            final IndexShardSnapshotStatus.Copy lastSnapshotStatus = snapshotStatus.moveToFinalize(snapshotIndexCommit.getGeneration());
-
-            // now create and write the commit point
-            final BlobStoreIndexShardSnapshot snapshot = new BlobStoreIndexShardSnapshot(snapshotId.getName(),
-                                                                        lastSnapshotStatus.getIndexVersion(),
-                                                                        indexCommitPointFiles,
-                                                                        lastSnapshotStatus.getStartTime(),
-                                                                        // snapshotStatus.startTime() is assigned on the same machine,
-                                                                        // so it's safe to use with VLong
-                                                                        System.currentTimeMillis() - lastSnapshotStatus.getStartTime(),
-                                                                        lastSnapshotStatus.getIncrementalFileCount(),
-                                                                        lastSnapshotStatus.getIncrementalSize()
-            );
-
-            //TODO: The time stored in snapshot doesn't include cleanup time.
-            logger.trace("[{}] [{}] writing shard snapshot file", shardId, snapshotId);
-            final PlainActionFuture<Void> future = PlainActionFuture.newFuture();
-            indexShardSnapshotFormat.write(snapshot, blobContainer, snapshotId.getUUID(), blobMetaDataService(), future);
-            future.actionGet();
-            // delete all files that are not referenced by any commit point
-            // build a new BlobStoreIndexShardSnapshot, that includes this one and all the saved ones
-            List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
-            newSnapshotsList.add(new SnapshotFiles(snapshot.snapshot(), snapshot.indexFiles()));
-            for (SnapshotFiles point : snapshots) {
-                newSnapshotsList.add(point);
-            }
-            // finalize the snapshot and rewrite the snapshot index with the next sequential snapshot index
-            finalize(newSnapshotsList, fileListGeneration + 1, blobs, "snapshot creation [" + snapshotId + "]");
-            snapshotStatus.moveToDone(System.currentTimeMillis());
         }
 
         /**

@@ -364,14 +364,20 @@ public class SnapshotShardsService extends AbstractLifecycleComponent implements
         final Repository repository = snapshotsService.getRepositoriesService().repository(snapshot.getRepository());
         try {
             // we flush first to make sure we get the latest writes snapshotted
-            try (Engine.IndexCommitRef snapshotRef = indexShard.acquireLastIndexCommit(true)) {
-                repository.snapshotShard(indexShard, indexShard.store(), snapshot.getSnapshotId(), indexId, snapshotRef.getIndexCommit(),
-                    snapshotStatus);
-                if (logger.isDebugEnabled()) {
-                    final IndexShardSnapshotStatus.Copy lastSnapshotStatus = snapshotStatus.asCopy();
-                    logger.debug("snapshot ({}) completed to {} with {}", snapshot, repository, lastSnapshotStatus);
-                }
+            Engine.IndexCommitRef snapshotRef = indexShard.acquireLastIndexCommit(true);
+            repository.snapshotShard(indexShard, indexShard.store(), snapshot.getSnapshotId(), indexId, snapshotRef.getIndexCommit(),
+                snapshotStatus, ActionListener.wrap(() -> {
+                    try {
+                        snapshotRef.close();
+                    } catch (IOException e) {
+                        throw new AssertionError(e);
+                    }
+                }));
+            if (logger.isDebugEnabled()) {
+                final IndexShardSnapshotStatus.Copy lastSnapshotStatus = snapshotStatus.asCopy();
+                logger.debug("snapshot ({}) completed to {} with {}", snapshot, repository, lastSnapshotStatus);
             }
+
         } catch (SnapshotFailedEngineException | IndexShardSnapshotFailedException e) {
             throw e;
         } catch (Exception e) {

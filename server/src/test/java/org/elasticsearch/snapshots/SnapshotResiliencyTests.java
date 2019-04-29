@@ -384,10 +384,11 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = randomMaster.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = randomMaster.repositoriesService.repository(repoName);
-        PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
-        repository.getRepositoryData(future);
-        Collection<SnapshotId> snapshotIds = future.actionGet().getSnapshotIds();
-        assertThat(snapshotIds, hasSize(1));
+        repository.getRepositoryData(assertNoFailureListener(r -> {
+            Collection<SnapshotId> snapshotIds = r.getSnapshotIds();
+            assertThat(snapshotIds, hasSize(1));
+        }));
+        deterministicTaskQueue.runAllRunnableTasks();
     }
 
     public void testConcurrentSnapshotCreateAndDelete() {
@@ -425,16 +426,16 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
-        repository.getRepositoryData(future);
-        Collection<SnapshotId> snapshotIds = future.actionGet().getSnapshotIds();
-        assertThat(snapshotIds, hasSize(1));
-
-        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
-        assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
-        assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
-        assertEquals(shards, snapshotInfo.successfulShards());
-        assertEquals(0, snapshotInfo.failedShards());
+        repository.getRepositoryData(assertNoFailureListener(r -> {
+            Collection<SnapshotId> snapshotIds = r.getSnapshotIds();
+            assertThat(snapshotIds, hasSize(1));
+            final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+            assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
+            assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
+            assertEquals(shards, snapshotInfo.successfulShards());
+            assertEquals(0, snapshotInfo.failedShards());
+        }));
+        deterministicTaskQueue.runAllRunnableTasks();
     }
 
     /**
@@ -526,10 +527,11 @@ public class SnapshotResiliencyTests extends ESTestCase {
             .clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
-        repository.getRepositoryData(future);
-        Collection<SnapshotId> snapshotIds = future.actionGet().getSnapshotIds();
-        assertThat(snapshotIds, either(hasSize(1)).or(hasSize(0)));
+        repository.getRepositoryData(assertNoFailureListener(r -> {
+            Collection<SnapshotId> snapshotIds = r.getSnapshotIds();
+            assertThat(snapshotIds, either(hasSize(1)).or(hasSize(0)));
+        }));
+        deterministicTaskQueue.runAllRunnableTasks();
     }
 
     /**
