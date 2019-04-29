@@ -468,7 +468,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                                     failureMessage.append("Indices are closed ");
                                                     failureMessage.append(closed);
                                                 }
-                                                entries.add(new SnapshotsInProgress.Entry(entry, State.FAILED, shards, failureMessage.toString()));
+                                                entries.add(
+                                                    new SnapshotsInProgress.Entry(entry, State.FAILED, shards, failureMessage.toString()));
                                                 continue;
                                             }
                                         }

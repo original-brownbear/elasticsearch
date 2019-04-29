@@ -12,6 +12,7 @@ import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.SimpleFSDirectory;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
@@ -70,7 +71,7 @@ public final class SourceOnlySnapshotRepository extends FilterRepository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, ActionListener<Void> listener) {
         // we process the index metadata at snapshot time. This means if somebody tries to restore
         // a _source only snapshot with a plain repository it will be just fine since we already set the
         // required engine, that the index is read-only and the mapping to a default mapping
@@ -97,15 +98,15 @@ public final class SourceOnlySnapshotRepository extends FilterRepository {
                 indexMetadataBuilder.settingsVersion(1 + indexMetadataBuilder.settingsVersion());
                 builder.put(indexMetadataBuilder);
             }
-            super.initializeSnapshot(snapshotId, indices, builder.build());
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+            super.initializeSnapshot(snapshotId, indices, builder.build(), listener);
+        } catch (Exception ex) {
+            listener.onFailure(ex);
         }
     }
 
     @Override
     public void snapshotShard(IndexShard shard, Store store, SnapshotId snapshotId, IndexId indexId, IndexCommit snapshotIndexCommit,
-                              IndexShardSnapshotStatus snapshotStatus) {
+                              IndexShardSnapshotStatus snapshotStatus, ActionListener<Void> listener) {
         if (shard.mapperService().documentMapper() != null // if there is no mapping this is null
             && shard.mapperService().documentMapper().sourceMapper().isComplete() == false) {
             throw new IllegalStateException("Can't snapshot _source only on an index that has incomplete source ie. has _source disabled " +
@@ -133,7 +134,7 @@ public final class SourceOnlySnapshotRepository extends FilterRepository {
             store.incRef();
             try (DirectoryReader reader = DirectoryReader.open(tempStore.directory())) {
                 IndexCommit indexCommit = reader.getIndexCommit();
-                super.snapshotShard(shard, tempStore, snapshotId, indexId, indexCommit, snapshotStatus);
+                super.snapshotShard(shard, tempStore, snapshotId, indexId, indexCommit, snapshotStatus, listener);
             } finally {
                 store.decRef();
             }

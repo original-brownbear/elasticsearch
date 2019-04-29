@@ -66,7 +66,6 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.action.support.DestructiveOperations;
-import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateHelper;
@@ -307,16 +306,16 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
-        repository.getRepositoryData(future);
-        Collection<SnapshotId> snapshotIds = future.actionGet().getSnapshotIds();
-        assertThat(snapshotIds, hasSize(1));
+        repository.getRepositoryData(assertNoFailureListener(r -> {
+            Collection<SnapshotId> snapshotIds = r.getSnapshotIds();
+            assertThat(snapshotIds, hasSize(1));
 
-        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
-        assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
-        assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
-        assertEquals(shards, snapshotInfo.successfulShards());
-        assertEquals(0, snapshotInfo.failedShards());
+            final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+            assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
+            assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
+            assertEquals(shards, snapshotInfo.successfulShards());
+            assertEquals(0, snapshotInfo.failedShards());
+        }));
     }
 
     public void testSnapshotWithNodeDisconnects() {

@@ -445,6 +445,7 @@ public class ShardFollowTaskReplicationTests extends ESIndexLevelReplicationTest
                 ShardRouting routing = ShardRoutingHelper.newWithRestoreSource(primary.routingEntry(),
                     new RecoverySource.SnapshotRecoverySource(UUIDs.randomBase64UUID(), snapshot, Version.CURRENT, "test"));
                 primary.markAsRecovering("remote recovery from leader", new RecoveryState(routing, localNode, null));
+                final PlainActionFuture<Boolean> future = PlainActionFuture.newFuture();
                 primary.restoreFromRepository(new RestoreOnlyRepository(index.getName()) {
                     @Override
                     public void restoreShard(IndexShard shard, SnapshotId snapshotId, Version version,
@@ -463,7 +464,8 @@ public class ShardFollowTaskReplicationTests extends ESIndexLevelReplicationTest
                             throw new AssertionError(ex);
                         }
                     }
-                });
+                }, future);
+                future.actionGet();
             }
         };
     }

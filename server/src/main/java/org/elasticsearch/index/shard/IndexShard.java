@@ -1688,12 +1688,16 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         return storeRecovery.recoverFromStore(this);
     }
 
-    public boolean restoreFromRepository(Repository repository) {
-        assert shardRouting.primary() : "recover from store only makes sense if the shard is a primary shard";
-        assert recoveryState.getRecoverySource().getType() == RecoverySource.Type.SNAPSHOT : "invalid recovery type: " +
-            recoveryState.getRecoverySource();
-        StoreRecovery storeRecovery = new StoreRecovery(shardId, logger);
-        return storeRecovery.recoverFromRepository(this, repository);
+    public void restoreFromRepository(Repository repository, ActionListener<Boolean> listener) {
+        try {
+            assert shardRouting.primary() : "recover from store only makes sense if the shard is a primary shard";
+            assert recoveryState.getRecoverySource().getType() == RecoverySource.Type.SNAPSHOT : "invalid recovery type: " +
+                recoveryState.getRecoverySource();
+            StoreRecovery storeRecovery = new StoreRecovery(shardId, logger);
+            storeRecovery.recoverFromRepository(this, repository, listener);
+        } catch (Exception e) {
+            listener.onFailure(e);
+        }
     }
 
     /**
@@ -2363,9 +2367,20 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                 threadPool.generic().execute(() -> {
                     try {
                         final Repository repository = repositoriesService.repository(recoverySource.snapshot().getRepository());
-                        if (restoreFromRepository(repository)) {
-                            recoveryListener.onRecoveryDone(recoveryState);
-                        }
+                        restoreFromRepository(repository, new ActionListener<>() {
+                            @Override
+                            public void onResponse(Boolean aBoolean) {
+                                if (aBoolean) {
+                                    recoveryListener.onRecoveryDone(recoveryState);
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                recoveryListener.onRecoveryFailure(recoveryState,
+                                    new RecoveryFailedException(recoveryState, null, e), true);
+                            }
+                        });
                     } catch (Exception e) {
                         recoveryListener.onRecoveryFailure(recoveryState,
                             new RecoveryFailedException(recoveryState, null, e), true);

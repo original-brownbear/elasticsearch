@@ -355,7 +355,8 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
                         @Override
                         public ClusterState execute(ClusterState currentState) {
                             RepositoriesState repositoriesState = currentState.custom(RepositoriesState.TYPE);
-                            repositoriesState = repositoriesState == null ? new RepositoriesState(Collections.emptyMap()) : repositoriesState;
+                            repositoriesState =
+                                repositoriesState == null ? new RepositoriesState(Collections.emptyMap()) : repositoriesState;
                             if (repositoriesState.getStateId(repoName) != null) {
                                 return currentState;
                             }

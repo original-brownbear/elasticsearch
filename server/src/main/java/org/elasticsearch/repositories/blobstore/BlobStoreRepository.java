@@ -294,7 +294,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                     protected void doRun() throws IOException {
                                         final BytesStreamOutput tmp = new BytesStreamOutput();
                                         data.writeTo(tmp);
-                                        blobContainer().writeBlob(stateId.blob(), tmp.bytes().streamInput(), tmp.bytes().length(), true);
+                                        blobContainer().writeBlob(
+                                            stateId.blob(), tmp.bytes().streamInput(), tmp.bytes().length(), true);
                                         listener.onResponse(stateId);
                                     }
                                 });
@@ -476,10 +477,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             // check if the snapshot name already exists in the repository
             getRepositoryData(ActionListener.wrap(repositoryData -> {
                 if (repositoryData.getAllSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName))) {
-                    throw new InvalidSnapshotNameException(metadata.name(), snapshotId.getName(), "snapshot with the same name already exists");
+                    throw new InvalidSnapshotNameException(
+                        metadata.name(), snapshotId.getName(), "snapshot with the same name already exists");
                 }
                 if (snapshotFormat.exists(blobContainer(), snapshotId.getUUID())) {
-                    throw new InvalidSnapshotNameException(metadata.name(), snapshotId.getName(), "snapshot with the same name already exists");
+                    throw new InvalidSnapshotNameException(
+                        metadata.name(), snapshotId.getName(), "snapshot with the same name already exists");
                 }
 
                 // Write Global MetaData
@@ -533,7 +536,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             try {
                                 blobContainer().deleteBlobsIgnoringIfNotExists(
                                     Arrays.asList(
-                                        snapshotFormat.blobName(snapshotId.getUUID()), globalMetaDataFormat.blobName(snapshotId.getUUID())));
+                                        snapshotFormat.blobName(
+                                            snapshotId.getUUID()), globalMetaDataFormat.blobName(snapshotId.getUUID())));
                             } catch (IOException e) {
                                 logger.warn(() -> new ParameterizedMessage("[{}] Unable to delete global metadata files", snapshotId), e);
                             }
@@ -550,7 +554,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                         logger.warn(() ->
                                             new ParameterizedMessage(
                                                 "[{}] indices {} are no longer part of any snapshots in the repository, " +
-                                                    "but failed to clean up their index folders.", metadata.name(), unreferencedIndices), e);
+                                                    "but failed to clean up their index folders.", metadata.name(), unreferencedIndices),
+                                            e);
                                     }
                                     return null;
                                 })
@@ -735,8 +740,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     public void getRepositoryData(ActionListener<RepositoryData> listener) {
         try {
             latestIndexBlobId(ActionListener.delegateFailure(listener, (l, indexGen) ->
-                threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new ActionRunnable<>(listener) {
-
+                threadPool.executor(ThreadPool.Names.GENERIC).execute(new ActionRunnable<>(listener) {
                     @Override
                     protected void doRun() {
                         ActionListener.completeWith(l, () -> {
