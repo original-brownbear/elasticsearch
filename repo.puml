@@ -1,0 +1,15 @@
+@startuml
+
+== Initialization ==
+
+Repository <- Master: Write "blobmeta" blob with id "0"
+"Cluster State" <- Master: Create RepositoriesState containing repo with state id "0"
+"Cluster State" -> "Data Nodes": Data nodes receive state id 0
+"Data Nodes" -> Repository: Data nodes read state with id 0
+
+note over "Data Nodes"
+Now data nodes and master
+perform existing verification
+steps
+end note
+@enduml

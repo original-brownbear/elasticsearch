@@ -1,0 +1,84 @@
+@startuml
+
+note over Master
+1. Meta blob contains tree of all blobs in the repository
+  - Meta blob could be kept in CS up to a certain byte size
+  - Meta blob could be split into multiple blobs after a certain size
+2. For each blob record state, uploader (node id), size, checksum
+3. States are: DONE, DELETED or UPLOADING
+4. For DELETED also put height of when DELETED marker was put into meta first
+end note
+
+== Write Blob ==
+
+Node -> Master : TransportMasterOperation to asks to write blob
+Master -> Repository: Write updated metadata containing \nblob in state UPLOADING
+Master -> "Cluster State": Update reference to new metadata
+Master -> Node: Respond to node that it is good to upload
+Node -> Repository: Upload blob
+Node -> Master: TransportMasterOperation asking \nto complete upload of blob
+Master -> Repository: Write updated metadata containing\n blob in state DONE
+Master -> "Cluster State": Update reference to new metadata id
+
+note over Master
+1. No blob is ever written without being recorded in a metadata blob referenced by the CS.
+2. Master always knows about the blobs in progress even on failover
+end note
+
+== Delete Blob ==
+
+note over Master
+1. Only master deletes blobs from repository
+2. Blobs marked as deleted but with uploader nodeId not connected are physically
+deleted repeatedly over a period of n state updates (could use time here as well)
+to ensure no dangling node writes of any stale data
+end note
+
+Master -> Repository: Write blobmeta with blob in DELETED state
+Master -> "Cluster State": Update reference to new metadata id
+alt blob was in DONE state
+Master -> Repository: Delete blob
+Master -> Repository: Remove entry for blob and write new metadata
+Master -> "Cluster State": Update reference to new metadata id
+else blob was in UPLOADING state
+Master -> "Uploading Node": Request abort
+note over Master
+If abort gets response, do normal delete operation.
+If abort fails, put DELETED marker and physically delete blob.
+DELETED marker is pruned on successive updates after N updates or when
+uploading node reconnects and abort succeeds.
+end note
+end
+
+== Lost Cluster State ==
+
+Master -> Repository: List blobmeta-* blobs and take highest ID
+alt unique highest ID (N)
+note over Master
+Nothing to do here, worst case a dangling master could write a competing
+blob at height N but it wouldn't get committed to the CS and hence become irrelevant
+after another write (if another failure occurs => see below).
+end note
+else multiple IDs for highest ID value
+Master -> Repository: load all blobs for the highest ID
+
+note over Master
+Merge all meta blobs:
+- Mark all pending blobs as deleted
+- Mark all deleted blobs as deleted
+- assert:
+   - Deleted blobs must exist in all meta at the same height
+   - Pending blobs must either be pending or not exist in all meta at the same height
+end note
+
+Master -> Repository: Write new meta blob
+
+end
+Master -> "Cluster State": Put reference to highest ID into CS
+
+note over Master
+1. This is safe assuming a consistent LIST call (GCS, Azure, HDFS)
+2. This can be made safe on S3 by waiting or exploiting multi-part write
+end note
+
+@enduml
