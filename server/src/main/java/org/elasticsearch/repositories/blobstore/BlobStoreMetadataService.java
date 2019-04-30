@@ -59,6 +59,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public final class BlobStoreMetadataService extends AbstractLifecycleComponent implements ClusterStateApplier {
@@ -126,7 +127,7 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
         /**
          * State Id of last meta state that was written to persistent storage and published to the cluster state.
          */
-        private volatile RepoStateId safeRepoStateId;
+        private final AtomicReference<RepoStateId> safeRepoStateId = new AtomicReference<>();
 
         /**
          * State Id of last meta state that was written to persistent storage.
@@ -143,7 +144,9 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
         }
 
         void repoStateId(RepoStateId id) {
-            safeRepoStateId = id;
+            if (Objects.equals(safeRepoStateId.getAndSet(id), id)) {
+                return;
+            }
             synchronized (mutex) {
                 final RepoMetaTrie trie = id.vectorTime == 0 ? new RepoMetaTrie(Collections.emptyMap()) : stateCache.get(id);
                 if (trie == null) {
@@ -191,7 +194,7 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
                 new BlobUploadRequest(repoName, false, names), new BlobUploadResponseHandler(listener));
         }
 
-        public void doAddUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) {
+        private void doAddUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) {
             final String nodeId = transportService.getLocalNode().getId();
             executeUpdate(listener, repoMetaTrie -> {
                 final RepoStateId stateId = incrementId();
@@ -213,7 +216,7 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
                 new BlobUploadRequest(repoName, true, names), new BlobUploadResponseHandler(listener));
         }
 
-        public void doCompleteUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) {
+        private void doCompleteUploads(Iterable<BlobMetaData> blobs, ActionListener<Void> listener) {
             final String nodeId = transportService.getLocalNode().getId();
             executeUpdate(listener, repoMetaTrie ->  {
                 final RepoStateId stateId = incrementId();
@@ -235,10 +238,10 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
             } else {
                 final RepoMetaTrie trie;
                 synchronized (mutex) {
-                    trie = stateCache.get(safeRepoStateId);
+                    trie = stateCache.get(safeRepoStateId.get());
                 }
                 if (trie == null) {
-                    persistence.load(safeRepoStateId, ActionListener.wrap(consumer, listener::onFailure));
+                    persistence.load(safeRepoStateId.get(), ActionListener.wrap(consumer, listener::onFailure));
                 } else {
                     try {
                         consumer.accept(trie);
@@ -280,7 +283,7 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
                     @Override
                     public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                         final RepositoriesState repositoriesState = newState.custom(RepositoriesState.TYPE);
-                        safeRepoStateId = repositoriesState.getStateId(repoName);
+                        safeRepoStateId.set(repositoriesState.getStateId(repoName));
                         listener.onResponse(null);
                     }
                 });
@@ -290,7 +293,7 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
         private RepoStateId incrementId() {
             synchronized (mutex) {
                 if (nextStateId == null) {
-                    nextStateId = safeRepoStateId.next();
+                    nextStateId = safeRepoStateId.get().next();
                 } else {
                     nextStateId = nextStateId.next();
                 }
@@ -315,13 +318,16 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
 
         private void load(ActionListener<RepoMetaTrie> listener) {
             final RepoMetaTrie repoMetaTrie;
-            if (safeRepoStateId != null) {
-                synchronized (mutex) {
-                    repoMetaTrie = stateCache.get(safeRepoStateId);
+            final RepoStateId safe = safeRepoStateId.get();
+            if (safe == null) {
+                repoMetaTrie = null;
+                if (clusterService.state().nodes().isLocalNodeElectedMaster()) {
+                    initRepoInClusterState();
                 }
             } else {
-                repoMetaTrie = null;
-                initRepoInClusterState();
+                synchronized (mutex) {
+                    repoMetaTrie = stateCache.get(safe);
+                }
             }
             if (repoMetaTrie == null) {
                 synchronized (mutex) {
@@ -332,8 +338,8 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
             } else {
                 listener.onResponse(repoMetaTrie);
             }
-            if (safeRepoStateId != null) {
-                persistence.load(safeRepoStateId, new ActionListener<>() {
+            if (safe != null) {
+                persistence.load(safe, new ActionListener<>() {
                     @Override
                     public void onResponse(RepoMetaTrie repoMetaTrie) {
                         final List<ActionListener<RepoMetaTrie>> currentListeners;
@@ -372,14 +378,15 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
                         @Override
                         public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                             RepositoriesState repositoriesState = newState.custom(RepositoriesState.TYPE);
-                            safeRepoStateId = repositoriesState.getStateId(repoName);
-                            persistedStateId = safeRepoStateId;
+                            final RepoStateId safe = repositoriesState.getStateId(repoName);
+                            safeRepoStateId.set(safe);
+                            persistedStateId = safe;
                             final RepoMetaTrie trie = new BlobStoreMetadataService.RepoMetaTrie(Collections.emptyMap());
                             synchronized (mutex) {
-                                stateCache.put(safeRepoStateId, trie);
+                                stateCache.put(safe, trie);
                                 final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
                                 outstandingListeners = Collections.emptyList();
-                                ActionListener.onResponse(currentListeners, stateCache.get(safeRepoStateId));
+                                ActionListener.onResponse(currentListeners, stateCache.get(safe));
                             }
                         }
 
@@ -460,13 +467,15 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
 
         for (Map.Entry<String, MetaDataStorage> entry : repos.entrySet()) {
             final RepoStateId stateId = repositoriesState == null ? null : repositoriesState.getStateId(entry.getKey());
+            final MetaDataStorage metaDataStorage = entry.getValue();
             if (stateId == null) {
                 if (event.state().nodes().isLocalNodeElectedMaster() == true) {
-                    entry.getValue().initRepoInClusterState();
+                    metaDataStorage.initRepoInClusterState();
                 }
                 continue;
+            } else {
+                metaDataStorage.repoStateId(stateId);
             }
-            entry.getValue().repoStateId(stateId);
         }
 
         if (event.previousState().nodes().isLocalNodeElectedMaster() == false) {
