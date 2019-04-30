@@ -1,0 +1,35 @@
+@startuml
+
+Master <-> Repository: Collect all files to be deleted
+Master -> Repository: Write updated blobmeta with all deleted files marked as DELETED \nand mark new repository generation\nindex-N (root level as well as shard level!)\nas UPLOADING in the same update
+note over Master
+ Losing CS here can easily be recovered by failing the UPLOADING blobs (marking as DELETED) and
+ removing the DELETED markers added at the previous height.
+end note
+Master -> "Cluster State": Update pointer to new repo state
+Master -> Repository: Upload new index-N blob
+note over Master
+ Losing CS here can easily be recovered by failing the UPLOADING blobs (marking them as DELETED) and
+ removing the DELETED markers added at the previous height.
+end note
+Master -> Repository: Write blobmeta with the index-N blobs marked as DONE
+note over Master
+ Losing CS here can easily be recovered by executing deletes all pending DELETED blobs
+ since no more UPLOADING blobs exist at this point.
+end note
+Master -> "Cluster State": Update pointer to new blobmeta
+Master -> Repository: Execute physical deletes
+note over Master
+ Losing CS here is a non-issue. We simply execute the deletes resulting from DELETED markers again.
+end note
+Master -> Repository: Write updated blobmeta with pruned tombstones
+Master -> "Cluster State": Update pointer to new blobmeta
+
+note over Master
+Note:
+1. We retain the old behaviour of moving to a new set of index-N files
+ before deleting any other files (snapshot-, segment blobs etc.)
+2. We can roll back any failures by tracking the height of each delete and upload
+and only execute deletes once all uploads from that height have finished.
+end note
+@enduml

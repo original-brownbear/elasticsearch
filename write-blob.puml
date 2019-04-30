@@ -7,6 +7,8 @@ note over Master
 2. For each blob record state, uploader (node id), size, checksum
 3. States are: DONE, DELETED or UPLOADING
 4. For DELETED also put height of when DELETED marker was put into meta first
+5. Do not proccess DELETED tombstones while UPLOADING blobs are pending
+If uploading fails for a certain height, remove all tombstones added at that height
 end note
 
 == Write Blob ==
