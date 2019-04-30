@@ -33,6 +33,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.ClusterStateUpdateTask;
 import org.elasticsearch.cluster.NamedDiff;
+import org.elasticsearch.cluster.NotMasterException;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -149,9 +150,12 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
                     persistence.load(id, new ActionListener<>() {
                         @Override
                         public void onResponse(RepoMetaTrie repoMetaTrie) {
-                            final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
-                            outstandingListeners = Collections.emptyList();
-                            ActionListener.onResponse(currentListeners, repoMetaTrie);
+                            synchronized (mutex) {
+                                stateCache.put(id, repoMetaTrie);
+                                final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
+                                outstandingListeners = Collections.emptyList();
+                                ActionListener.onResponse(currentListeners, repoMetaTrie);
+                            }
                         }
 
                         @Override
@@ -381,13 +385,17 @@ public final class BlobStoreMetadataService extends AbstractLifecycleComponent i
 
                         @Override
                         public void onFailure(String source, Exception e) {
-                            synchronized (mutex) {
-                                final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
-                                outstandingListeners = Collections.emptyList();
-                                // TODO: Handle no longer master ex. properly
-                                ActionListener.onFailure(currentListeners, e);
+                            if (e instanceof NotMasterException == false) {
+                                synchronized (mutex) {
+                                    final List<ActionListener<RepoMetaTrie>> currentListeners = outstandingListeners;
+                                    outstandingListeners = Collections.emptyList();
+                                    // TODO: Handle no longer master ex. properly
+                                    ActionListener.onFailure(currentListeners, e);
+                                }
+                                logger.warn("Failed to submit repository state initialization task", e);
+                            } else {
+                                logger.warn("Master failover during repository init, waiting for new master to be elected.");
                             }
-                            logger.warn("Failed to submit repository state initialization task", e);
                         }
                     });
                 }
