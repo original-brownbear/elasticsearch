@@ -6,7 +6,6 @@ Object 1 {
     meta-absdfxcvxc323.dat: DONE
     shard/path/index-3: DONE
     shard/path/segment-1: DONE
-    shard/path/segment-2: DONE
 }
 
 Object 2 {
@@ -21,16 +20,16 @@ Object 2 {
 
 1 --|> 2: Delete snapshot absdfxcvxc323
 
-2 -|> 3_1: Rollback on failover
+2 -|> 3_1: Rollback on lost cluster state
 2 --|> 3_2: All uploads succeed
 
 Object 3_1 {
     index-5: DELETED (3)
-    index-4: DONE (2)
+    index-4: DONE
     snap-absdfxcvxc323: DONE
     meta-absdfxcvxc323.dat: DONE
     shard/path/index-3: DONE
-    shard/path/index-4: DELETED
+    shard/path/index-4: DELETED (3)
     shard/path/segment-1: DONE
 }
 
@@ -44,11 +43,22 @@ Object 3_2 {
     shard/path/segment-1: DELETED (2)
 }
 
-3_2 --|> 4: All uploads at height 2 succeeded,\n execute physical deletes and prune tombstones
+3_2 --|> 4_1: All uploads at height 2 succeeded,\n execute physical deletes and prune tombstones
+3_1 --|> 4_2: No more uploads at height 3,\n execute physical deletes and prune tombstones
 
-Object 4 {
+
+Object 4_1 {
     index-5: DONE
     shard/path/index-4: DONE
 }
+
+Object 4_2 {
+    index-4: DONE
+    snap-absdfxcvxc323: DONE
+    meta-absdfxcvxc323.dat: DONE
+    shard/path/index-3: DONE
+    shard/path/segment-1: DONE
+}
+note left: equal to state 1
 
 @enduml
