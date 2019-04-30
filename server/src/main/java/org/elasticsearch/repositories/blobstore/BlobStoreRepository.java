@@ -743,53 +743,46 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 threadPool.executor(ThreadPool.Names.GENERIC).execute(new ActionRunnable<>(listener) {
                     @Override
                     protected void doRun() {
-                        ActionListener.completeWith(l, () -> {
-                            try {
-                                final String snapshotsIndexBlobName = INDEX_FILE_PREFIX + Long.toString(indexGen);
-                                RepositoryData repositoryData;
-                                try (InputStream blob = blobContainer().readBlob(snapshotsIndexBlobName)) {
-                                    BytesStreamOutput out = new BytesStreamOutput();
-                                    Streams.copy(blob, out);
-                                    // EMPTY is safe here because RepositoryData#fromXContent calls namedObject
-                                    try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
-                                        LoggingDeprecationHandler.INSTANCE, out.bytes(), XContentType.JSON)) {
-                                        repositoryData = RepositoryData.snapshotsFromXContent(parser, indexGen);
-                                    } catch (NotXContentException e) {
-                                        logger.warn("[{}] index blob is not valid x-content [{} bytes]", snapshotsIndexBlobName,
-                                            out.bytes().length());
-                                        throw e;
-                                    }
+                        try {
+                            final String snapshotsIndexBlobName = INDEX_FILE_PREFIX + Long.toString(indexGen);
+                            RepositoryData repositoryData;
+                            try (InputStream blob = blobContainer().readBlob(snapshotsIndexBlobName)) {
+                                BytesStreamOutput out = new BytesStreamOutput();
+                                Streams.copy(blob, out);
+                                // EMPTY is safe here because RepositoryData#fromXContent calls namedObject
+                                try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
+                                    LoggingDeprecationHandler.INSTANCE, out.bytes(), XContentType.JSON)) {
+                                    repositoryData = RepositoryData.snapshotsFromXContent(parser, indexGen);
+                                } catch (NotXContentException e) {
+                                    logger.warn("[{}] index blob is not valid x-content [{} bytes]", snapshotsIndexBlobName,
+                                        out.bytes().length());
+                                    throw e;
                                 }
-
-                                // now load the incompatible snapshot ids, if they exist
-                                try (InputStream blob = blobContainer().readBlob(INCOMPATIBLE_SNAPSHOTS_BLOB)) {
-                                    BytesStreamOutput out = new BytesStreamOutput();
-                                    Streams.copy(blob, out);
-                                    try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
-                                        LoggingDeprecationHandler.INSTANCE, out.bytes(), XContentType.JSON)) {
-                                        repositoryData = repositoryData.incompatibleSnapshotsFromXContent(parser);
-                                    }
-                                } catch (NoSuchFileException e) {
-                                    if (isReadOnly()) {
-                                        logger.debug("[{}] Incompatible snapshots blob [{}] does not exist, the likely " +
-                                                "reason is that there are no incompatible snapshots in the repository",
-                                            metadata.name(), INCOMPATIBLE_SNAPSHOTS_BLOB);
-                                    } else {
-                                        // write an empty incompatible-snapshots blob - we do this so that there
-                                        // is a blob present, which helps speed up some cloud-based repositories
-                                        // (e.g. S3), which retry if a blob is missing with exponential backoff,
-                                        // delaying the read of repository data and sometimes causing a timeout
-                                        writeIncompatibleSnapshots(RepositoryData.EMPTY);
-                                    }
-                                }
-                                return repositoryData;
-                            } catch (NoSuchFileException ex) {
-                                // repository doesn't have an index blob, its a new blank repo
-                                return RepositoryData.EMPTY;
-                            } catch (IOException ioe) {
-                                throw new RepositoryException(metadata.name(), "could not read repository data from index blob", ioe);
                             }
-                        });
+
+                            // now load the incompatible snapshot ids, if they exist
+                            blobMetaDataService().list(INCOMPATIBLE_SNAPSHOTS_BLOB, ActionListener.wrap(
+                                list -> {
+                                    if (list.iterator().hasNext()) {
+                                        try (InputStream blob = blobContainer().readBlob(INCOMPATIBLE_SNAPSHOTS_BLOB)) {
+                                            BytesStreamOutput out = new BytesStreamOutput();
+                                            Streams.copy(blob, out);
+                                            try (XContentParser parser = XContentHelper.createParser(NamedXContentRegistry.EMPTY,
+                                                LoggingDeprecationHandler.INSTANCE, out.bytes(), XContentType.JSON)) {
+                                                listener.onResponse(repositoryData.incompatibleSnapshotsFromXContent(parser));
+                                            }
+                                        }
+                                    } else {
+                                        listener.onResponse(repositoryData);
+                                    }
+                                }, listener::onFailure
+                            ));
+                        } catch (NoSuchFileException ex) {
+                            // repository doesn't have an index blob, its a new blank repo
+                            listener.onResponse(RepositoryData.EMPTY);
+                        } catch (IOException ioe) {
+                            throw new RepositoryException(metadata.name(), "could not read repository data from index blob", ioe);
+                        }
                     }
                 })));
         } catch (IOException e) {
