@@ -1,0 +1,75 @@
+@startuml
+
+Object 1 {
+    index-4: DONE
+    snap-absdfxcvxc323: DONE
+    meta-absdfxcvxc323.dat: DONE
+    shard/path/index-3: DONE
+    shard/path/segment-1: DONE
+}
+
+Object 2 {
+    index-5: UPLOADING (2)
+    index-4: DELETED (2)
+    snap-absdfxcvxc323: DONE
+    snap-cdffgfxcvxc642: UPLOADING
+    meta-absdfxcvxc323.dat: DONE
+    meta-cdffgfxcvxc642.dat: UPLOADING
+    shard/path/index-3: DELETED (2)
+    shard/path/index-4: UPLOADING (2)
+    shard/path/segment-1: DONE
+}
+
+1 --|> 2: Create snapshot cdffgfxcvxc642
+
+2 -|> 3_1: Rollback on lost cluster state
+2 --|> 3_2: All uploads succeed
+
+Object 3_1 {
+    index-5: DELETED (3)
+    index-4: DONE
+    snap-absdfxcvxc323: DONE
+    snap-cdffgfxcvxc642: DELETED (3)
+    meta-absdfxcvxc323.dat: DONE
+    meta-cdffgfxcvxc642.dat: DELETED (3)
+    shard/path/index-3: DONE
+    shard/path/index-4: DELETED (3)
+    shard/path/segment-1: DONE
+}
+
+Object 3_2 {
+    index-5: DONE
+    index-4: DELETED (2)
+    snap-absdfxcvxc323: DONE
+    snap-cdffgfxcvxc642: DONE
+    meta-absdfxcvxc323.dat: DONE
+    meta-cdffgfxcvxc642.dat: DONE
+    shard/path/index-3: DELETED (2)
+    shard/path/index-4: DONE
+    shard/path/segment-1: DONE
+}
+
+3_2 --|> 4_1: All uploads at height 2 succeeded,\n execute physical deletes and prune tombstones
+3_1 --|> 4_2: No more uploads at height 3,\n execute physical deletes and prune tombstones
+
+
+Object 4_1 {
+    index-5: DONE
+    snap-absdfxcvxc323: DONE
+    snap-cdffgfxcvxc642: DONE
+    meta-absdfxcvxc323.dat: DONE
+    meta-cdffgfxcvxc642.dat: DONE
+    shard/path/index-4: DONE
+    shard/path/segment-1: DONE
+}
+
+Object 4_2 {
+    index-4: DONE
+    snap-absdfxcvxc323: DONE
+    meta-absdfxcvxc323.dat: DONE
+    shard/path/index-3: DONE
+    shard/path/segment-1: DONE
+}
+note left: equal to state 1
+
+@enduml
