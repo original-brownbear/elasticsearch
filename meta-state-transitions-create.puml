@@ -1,5 +1,6 @@
 @startuml
 
+
 Object 1 {
     index-4: DONE
     snap-absdfxcvxc323: DONE
@@ -7,23 +8,41 @@ Object 1 {
     shard/path/index-3: DONE
     shard/path/segment-1: DONE
 }
+note top
+Note: The height of DONE markers is only added where needed for understanding the state transitions.
+end note
 
 Object 2 {
     index-5: UPLOADING (2)
     index-4: DELETED (2)
     snap-absdfxcvxc323: DONE
-    snap-cdffgfxcvxc642: UPLOADING
+    snap-cdffgfxcvxc642: UPLOADING (2)
     meta-absdfxcvxc323.dat: DONE
-    meta-cdffgfxcvxc642.dat: UPLOADING
+    meta-cdffgfxcvxc642.dat: UPLOADING (2)
     shard/path/index-3: DELETED (2)
     shard/path/index-4: UPLOADING (2)
     shard/path/segment-1: DONE
 }
 
+Object 2_1 {
+    index-5: UPLOADING (2)
+    index-4: DELETED (2)
+    snap-absdfxcvxc323: DONE
+    snap-cdffgfxcvxc642: DONE (2)
+    meta-absdfxcvxc323.dat: DONE
+    meta-cdffgfxcvxc642.dat: UPLOADING (2)
+    shard/path/index-3: DELETED (2)
+    shard/path/index-4: DONE (2)
+    shard/path/segment-1: DONE
+}
+
 1 --|> 2: Create snapshot cdffgfxcvxc642
 
+2 --|> 2_1: Some uploads succeed
+
+2_1 -|> 3_1: Rollback on lost cluster state
 2 -|> 3_1: Rollback on lost cluster state
-2 --|> 3_2: All uploads succeed
+2_1 --|> 3_2: All uploads succeed
 
 Object 3_1 {
     index-5: DELETED (3)

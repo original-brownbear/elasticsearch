@@ -21,7 +21,9 @@ Object 2 {
 1 --|> 2: Delete snapshot absdfxcvxc323
 
 2 -|> 3_1: Rollback on lost cluster state
-2 --|> 3_2: All uploads succeed
+2 --|> 3_2: Some uploads succeed
+3_2 --|> 3_3: All uploads succeed
+3_2 --|> 3_1: Rollback on lost cluster state
 
 Object 3_1 {
     index-5: DELETED (3)
@@ -34,6 +36,16 @@ Object 3_1 {
 }
 
 Object 3_2 {
+    index-5: DONE (2)
+    index-4: DELETED (2)
+    snap-absdfxcvxc323: DELETED (2)
+    meta-absdfxcvxc323.dat: DELETED (2)
+    shard/path/index-3: DELETED (2)
+    shard/path/index-4: UPLOADING (2)
+    shard/path/segment-1: DELETED (2)
+}
+
+Object 3_3 {
     index-5: DONE
     index-4: DELETED (2)
     snap-absdfxcvxc323: DELETED (2)
@@ -43,7 +55,7 @@ Object 3_2 {
     shard/path/segment-1: DELETED (2)
 }
 
-3_2 --|> 4_1: All uploads at height 2 succeeded,\n execute physical deletes and prune tombstones
+3_3 --|> 4_1: All uploads at height 2 succeeded,\n execute physical deletes and prune tombstones
 3_1 --|> 4_2: No more uploads at height 3,\n execute physical deletes and prune tombstones
 
 
