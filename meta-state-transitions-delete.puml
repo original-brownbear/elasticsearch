@@ -1,7 +1,7 @@
 @startuml
 
 Object 1 {
-    =Repository blobmeta
+    =Repository Blobmeta
     index-4: DONE
     snap-absdfxcvxc323: DONE
     meta-absdfxcvxc323.dat: DONE
