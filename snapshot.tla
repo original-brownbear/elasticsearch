@@ -35,11 +35,17 @@ vars == <<clusterState, repositoryMeta, outstandingSnapshots>>
 NextIndex == IF repositoryMeta.blobs[IndexNBlobs[1]].state = "NULL" THEN
                 1
              ELSE
-                CHOOSE i \in 1..Len(IndexNBlobs): \A j \in 1..Len(IndexNBlobs): i > j /\ repositoryMeta.blobs[IndexNBlobs[j]].state = "DONE"
+                IF repositoryMeta.blobs[IndexNBlobs[Len(IndexNBlobs)]].state = "DONE" THEN
+                    1
+                ELSE
+                    CHOOSE i \in 1..Len(IndexNBlobs): \A j \in 1..Len(IndexNBlobs):
+                        /\ i = j + 1
+                        /\ repositoryMeta.blobs[IndexNBlobs[j]].state = "DONE"
+                        /\ repositoryMeta.blobs[IndexNBlobs[i]].state = "NULL"
 
-MarkUploads(s) == repositoryMeta' = [
-                                     repositoryMeta EXCEPT !.repoStateId = @ + 1,
-                                    !.blobs = [
+MarkUploads(s) == repositoryMeta' = [repositoryMeta EXCEPT
+                                        !.repoStateId = @ + 1,
+                                        !.blobs = [
                                                 blob \in Blobs |-> [height |-> clusterState.height,
                                                 state |->
                                                     IF blob \in s THEN
@@ -50,12 +56,12 @@ MarkUploads(s) == repositoryMeta' = [
                                                            "UPLOADING"
                                                         ELSE
                                                             repositoryMeta.blobs[blob].state
-
                                                     ]]]
 
-StartUploading == \A b \in Blobs : \/ repositoryMeta.blobs[b].state = "DONE"
-                                   \/ repositoryMeta.blobs[b].state = "NULL"
-                  /\ \/ clusterState.snapshotInProgress = "snapshot-A"
+
+StartUploading == /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE", "NULL"}
+                  /\
+                     \/ clusterState.snapshotInProgress = "snapshot-A"
                         /\ MarkUploads(Segments.snapshotA)
                      \/ clusterState.snapshotInProgress = "snapshot-B"
                         /\ MarkUploads(Segments.snapshotB)
@@ -69,6 +75,26 @@ StartSnapshot == /\ clusterState.snapshotInProgress = "NULL"
                     /\  clusterState' = [clusterState EXCEPT !.snapshotInProgress = s]
                 /\ UNCHANGED <<repositoryMeta>>
 
+FinishOneUpload == \E b \in Blobs:
+                        /\ repositoryMeta.blobs[b].state = "UPLOADING"
+                        /\ repositoryMeta' = [
+                                     repositoryMeta EXCEPT !.repoStateId = @ + 1,
+                                     !.blobs = [
+                                                blob \in Blobs |-> [height |-> clusterState.height,
+                                                state |->
+                                                    IF blob = b THEN
+                                                        "DONE"
+                                                    ELSE
+                                                        repositoryMeta.blobs[blob].state
+                                                    ]]]
+                  /\ UNCHANGED <<clusterState, outstandingSnapshots>>
+
+FinishSnapshot == /\ clusterState.snapshotInProgress /= "NULL"
+                  /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE", "NULL"}
+                  /\ \E b \in Blobs : repositoryMeta.blobs[b].state = "DONE"
+                  /\ clusterState' = [clusterState EXCEPT !.snapshotInProgress = "NULL"]
+                  /\ UNCHANGED <<repositoryMeta, outstandingSnapshots>>
+
 TypeOK == \A b \in Blobs: repositoryMeta.blobs[b].state \in {"NULL", "UPLOADING", "DONE", "DELETED"}
 
 BlobMetaOK == /\ \A b \in Blobs: repositoryMeta.blobs[b].height <= clusterState.height
@@ -78,10 +104,12 @@ AllOK == TypeOK /\ BlobMetaOK
 
 Next == \/ StartSnapshot
         \/ StartUploading
+        \/ FinishOneUpload
+        \/ FinishSnapshot
 
 Spec == Init /\ [][Next]_vars
 
 =============================================================================
 \* Modification History
-\* Last modified Wed May 01 14:12:09 CEST 2019 by armin
+\* Last modified Wed May 01 15:00:43 CEST 2019 by armin
 \* Created Wed May 01 10:25:51 CEST 2019 by armin
