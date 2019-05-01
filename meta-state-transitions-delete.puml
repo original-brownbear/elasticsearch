@@ -1,14 +1,26 @@
 @startuml
 
 Object 1 {
+    =Repository blobmeta
     index-4: DONE
     snap-absdfxcvxc323: DONE
     meta-absdfxcvxc323.dat: DONE
     shard/path/index-3: DONE
     shard/path/segment-1: DONE
+    =Cluster State
+    id: 0
+    height: 1
 }
+note top
+ Note:
+ 1. The height of DONE markers is only added where needed for understanding
+      the state transitions.
+ 2. Blobmeta id in the CS is omitted for brevity where not uniquely given due
+      to multiple paths to state.
+end note
 
 Object 2 {
+    =Repository Blobmeta
     index-5: UPLOADING (2)
     index-4: DELETED (2)
     snap-absdfxcvxc323: DELETED (2)
@@ -16,6 +28,9 @@ Object 2 {
     shard/path/index-3: DELETED (2)
     shard/path/index-4: UPLOADING (2)
     shard/path/segment-1: DELETED (2)
+    =Cluster State
+    id: 1
+    height: 2
 }
 
 1 --|> 2: Delete snapshot absdfxcvxc323
@@ -26,6 +41,7 @@ Object 2 {
 3_2 --|> 3_1: Rollback on lost cluster state
 
 Object 3_1 {
+    =Repository Blobmeta
     index-5: DELETED (3)
     index-4: DONE
     snap-absdfxcvxc323: DONE
@@ -33,9 +49,13 @@ Object 3_1 {
     shard/path/index-3: DONE
     shard/path/index-4: DELETED (3)
     shard/path/segment-1: DONE
+    =Cluster State
+    id: ...
+    height: 3
 }
 
 Object 3_2 {
+    =Repository Blobmeta
     index-5: DONE (2)
     index-4: DELETED (2)
     snap-absdfxcvxc323: DELETED (2)
@@ -43,9 +63,13 @@ Object 3_2 {
     shard/path/index-3: DELETED (2)
     shard/path/index-4: UPLOADING (2)
     shard/path/segment-1: DELETED (2)
+    =Cluster State
+    id: 2
+    height: 2
 }
 
 Object 3_3 {
+    =Repository Blobmeta
     index-5: DONE
     index-4: DELETED (2)
     snap-absdfxcvxc323: DELETED (2)
@@ -53,6 +77,9 @@ Object 3_3 {
     shard/path/index-3: DELETED (2)
     shard/path/index-4: DONE
     shard/path/segment-1: DELETED (2)
+    =Cluster State
+    id: 3
+    height: 2
 }
 
 3_3 --|> 4_1: All uploads at height 2 succeeded,\n execute physical deletes and prune tombstones
@@ -60,16 +87,24 @@ Object 3_3 {
 
 
 Object 4_1 {
+    =Repository Blobmeta
     index-5: DONE
     shard/path/index-4: DONE
+    =Cluster State
+    id: 4
+    height: 3
 }
 
 Object 4_2 {
+    =Repository Blobmeta
     index-4: DONE
     snap-absdfxcvxc323: DONE
     meta-absdfxcvxc323.dat: DONE
     shard/path/index-3: DONE
     shard/path/segment-1: DONE
+    =Cluster State
+    id: ...
+    height: 4
 }
 note left: equal to state 1
 

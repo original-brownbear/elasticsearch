@@ -4,13 +4,16 @@ note over Master
 1. Meta blob contains tree of all blobs in the repository
   - Meta blob could be kept in CS up to a certain byte size
   - Meta blob could be split into multiple blobs after a certain size
-2. For each blob record state, uploader (node id), size, checksum
+2. For each blob record state, uploader (node id), size, checksum, height
 3. States are: DONE, DELETED or UPLOADING
-4. For DELETED also put height of when DELETED marker was put into meta first
-5. Do not proccess DELETED tombstones while UPLOADING blobs are pending
+4. Do not proccess DELETED tombstones while UPLOADING blobs are pending
 If uploading fails for a certain height, remove all tombstones added at that height
 end note
 
+note over "Cluster State"
+Note: The following examples omit the use of height in the cluster state.
+Height is only relevant for multiple subsequent operations.
+end note
 == Write Blob ==
 
 Node -> Master : TransportMasterOperation to asks to write blob
