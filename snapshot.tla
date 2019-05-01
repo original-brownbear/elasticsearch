@@ -126,6 +126,10 @@ BlobMetaOK == /\ \/ \A b \in Blobs: repositoryMeta.blobs[b].height <= clusterSta
               \* There should not be pending uploads from different heights, all uploads at a certain height must
               \* fail or complete before incrementing the height.
               /\ Cardinality({repositoryMeta.blobs[b].height: b \in {bl \in Blobs: repositoryMeta.blobs[bl].state = "UPLOADING"}}) <= 1
+              \* All blobs marked as existing in the metadata exist
+              /\ \A b \in {bl \in Blobs: repositoryMeta.blobs[bl].state = "DONE"}: physicalBlobs[b] = TRUE
+              \* No blobs exist that aren't tracked by the metadata.
+              /\ \A b \in {bl \in Blobs: repositoryMeta.blobs[bl].state = "NULL"}: physicalBlobs[b] = FALSE
 
 
 AllOK == TypeOK /\ BlobMetaOK
@@ -140,5 +144,5 @@ Spec == Init /\ [][Next]_vars
 
 =============================================================================
 \* Modification History
-\* Last modified Wed May 01 18:02:15 CEST 2019 by armin
+\* Last modified Wed May 01 18:06:49 CEST 2019 by armin
 \* Created Wed May 01 10:25:51 CEST 2019 by armin
