@@ -4,9 +4,10 @@ EXTENDS Naturals, FiniteSets, Sequences, TLC
 
 Snapshots == {"snapshot-A", "snapshot-B"}
 
+AllSegments == {"path/to/shard/segment-X", "path/to/shard/segment-Y, path/to/shard/segment-Z"}
+
 Segments == [
-        snapshotA |-> {"path/to/shard/segment-X", "path/to/shard/segment-Y"},
-        snapshotB |-> {"path/to/shard/segment-X", "path/to/shard/segment-Z"}
+        Snapshots -> SUBSET(AllSegments)
     ]
 
 
@@ -15,9 +16,8 @@ IndexNBlobs == <<"index-1", "index-2", "index-3", "index-4">>
 IndexBlobSet == {IndexNBlobs[i]: i \in 1..Len(IndexNBlobs)}
 
 Blobs == IndexBlobSet \union {
-    "path/to/shard/index-1", "path/to/shard/index-2",
     "snapshot-A", "snapshot-B"
-} \union Segments.snapshotA \union Segments.snapshotB
+} \union AllSegments
 
 VARIABLES clusterState, repositoryMeta, outstandingSnapshots
 
@@ -38,17 +38,18 @@ NextIndex == IF repositoryMeta.blobs[IndexNBlobs[1]].state = "NULL" THEN
                 IF repositoryMeta.blobs[IndexNBlobs[Len(IndexNBlobs)]].state = "DONE" THEN
                     1
                 ELSE
-                    CHOOSE i \in 1..Len(IndexNBlobs): \A j \in 1..Len(IndexNBlobs):
+                    CHOOSE i \in 1..Len(IndexNBlobs): \E j \in 1..Len(IndexNBlobs):
                         /\ i = j + 1
                         /\ repositoryMeta.blobs[IndexNBlobs[j]].state = "DONE"
                         /\ repositoryMeta.blobs[IndexNBlobs[i]].state = "NULL"
 
-MarkUploads(s) == repositoryMeta' = [repositoryMeta EXCEPT
+MarkUploads(snapshotBlob) == \E segs \in Segments:
+                                    /\ repositoryMeta' = [repositoryMeta EXCEPT
                                         !.repoStateId = @ + 1,
                                         !.blobs = [
                                                 blob \in Blobs |-> [height |-> clusterState.height,
                                                 state |->
-                                                    IF blob \in s THEN
+                                                    IF blob \in segs[snapshotBlob] \/ blob = snapshotBlob THEN
                                                         "UPLOADING"
                                                     ELSE
                                                         IF blob = IndexNBlobs[NextIndex]
@@ -60,11 +61,8 @@ MarkUploads(s) == repositoryMeta' = [repositoryMeta EXCEPT
 
 
 StartUploading == /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE", "NULL"}
-                  /\
-                     \/ clusterState.snapshotInProgress = "snapshot-A"
-                        /\ MarkUploads(Segments.snapshotA)
-                     \/ clusterState.snapshotInProgress = "snapshot-B"
-                        /\ MarkUploads(Segments.snapshotB)
+                  /\ clusterState.snapshotInProgress \in Snapshots
+                     /\ MarkUploads(clusterState.snapshotInProgress)
                   /\ clusterState' = [clusterState EXCEPT !.height = @ + 1, !.repoStateId = repositoryMeta.repoStateId + 1]
                   /\ UNCHANGED <<outstandingSnapshots>>
 
@@ -91,6 +89,7 @@ FinishOneUpload == \E b \in Blobs:
 
 FinishSnapshot == /\ clusterState.snapshotInProgress /= "NULL"
                   /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE", "NULL"}
+                  /\ repositoryMeta.blobs[clusterState.snapshotInProgress].state = "DONE"
                   /\ \E b \in Blobs : repositoryMeta.blobs[b].state = "DONE"
                   /\ clusterState' = [clusterState EXCEPT !.snapshotInProgress = "NULL"]
                   /\ UNCHANGED <<repositoryMeta, outstandingSnapshots>>
@@ -111,5 +110,5 @@ Spec == Init /\ [][Next]_vars
 
 =============================================================================
 \* Modification History
-\* Last modified Wed May 01 15:00:43 CEST 2019 by armin
+\* Last modified Wed May 01 16:01:51 CEST 2019 by armin
 \* Created Wed May 01 10:25:51 CEST 2019 by armin
