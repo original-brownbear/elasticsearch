@@ -11,8 +11,8 @@ Snapshots == {"snapshot-A", "snapshot-B"}
 
 AllSegments == {"path/to/shard/segment-X", "path/to/shard/segment-Y", "path/to/shard/segment-Z"}
 
+\* We test all possible mappings of snapshot names to segment files.
 Segments == [Snapshots -> SUBSET(AllSegments)]
-
 
 IndexNBlobs == <<"index-1", "index-2", "index-3", "index-4">>
 
@@ -28,6 +28,7 @@ VARIABLES clusterState, repositoryMeta, outstandingSnapshots, physicalBlobs, seg
 \* Utilities
 
 Max(s) == CHOOSE x \in s : \A y \in s : x >= y
+
 ----
 
 Init == \E segs \in Segments:
@@ -35,7 +36,8 @@ Init == \E segs \in Segments:
                     repoStateId |-> 0,
                     height |-> 0,
                     snapshotInProgress |-> "NULL",
-                    snapshotDeletionInProgress |-> "NULL"
+                    snapshotDeletionInProgress |-> "NULL",
+                    wasMaster |-> FALSE
                 ]
             /\ repositoryMeta = [repoStateId |-> 1, blobs |-> [b \in Blobs |-> [height |-> 0, state |-> "NULL"]]]
             /\ outstandingSnapshots = Snapshots
@@ -45,6 +47,9 @@ Init == \E segs \in Segments:
 
 vars == <<clusterState, repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
 
+----
+
+\* Get the next N for writing a new Index-N blob
 NextIndex == IF repositoryMeta.blobs[IndexNBlobs[1]].state = "NULL" THEN
                 1
              ELSE
@@ -53,56 +58,77 @@ NextIndex == IF repositoryMeta.blobs[IndexNBlobs[1]].state = "NULL" THEN
                     /\ repositoryMeta.blobs[IndexNBlobs[j]].state = "DONE"
                     /\ repositoryMeta.blobs[IndexNBlobs[i]].state = "NULL"
 
+\* Mark all files resulting from the snapshot as "UPLOADING" in the metadata
 MarkUploads(snapshotBlob) == /\ repositoryMeta' = [repositoryMeta EXCEPT
                                                        !.repoStateId = @ + 1,
                                                        !.blobs = [
-                                                            blob \in Blobs |-> [height |-> clusterState.height,
-                                                                                state  |->
-                                                                                    IF blob \in segmentMap[snapshotBlob] \/ blob = snapshotBlob THEN
-                                                                                        "UPLOADING"
-                                                                                    ELSE
-                                                                                        IF blob = IndexNBlobs[NextIndex]
-                                                                                        THEN
-                                                                                           "UPLOADING"
-                                                                                        ELSE
-                                                                                            repositoryMeta.blobs[blob].state
-                                                                                    ]]]
+                                                            blob \in Blobs |->
+                                                                IF blob \in segmentMap[snapshotBlob] \/ blob = snapshotBlob \/ blob = IndexNBlobs[NextIndex] THEN
+                                                                    [state |-> "UPLOADING", height |-> clusterState.height]
+                                                                ELSE
+                                                                    repositoryMeta.blobs[blob]
+                                                              ]]
+
+RollbackLastStep == /\ repositoryMeta' = [repositoryMeta EXCEPT
+                                                       !.repoStateId = @ + 1,
+                                                       !.blobs = [
+                                                            blob \in Blobs |->
+                                                                IF \/ repositoryMeta.blobs[blob].state = "UPLOADING"
+                                                                   \/ repositoryMeta.blobs[blob].state = "DONE"
+                                                                        /\ repositoryMeta.blobs[blob].height = clusterState.height
+                                                                THEN
+                                                                    [state |-> "DELETED", height |-> clusterState.height]
+                                                                ELSE
+                                                                    repositoryMeta.blobs[blob]
+                                                              ]]
 
 
-StartUploading == /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE", "NULL"}
+\* Are there any pending uploads in the repository meta?
+UploadsInProgress == Cardinality({bl \in Blobs: repositoryMeta.blobs[bl].state = "UPLOADING"}) > 0
+
+DeletesInProgress == Cardinality({bl \in Blobs: repositoryMeta.blobs[bl].state = "DELETED"}) > 0
+
+----
+
+StartUploading == /\ clusterState.wasMaster = TRUE
+                  /\ UploadsInProgress = FALSE
+                  /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE", "NULL"}
                   /\ clusterState.snapshotInProgress \in Snapshots
                      /\ repositoryMeta.blobs[clusterState.snapshotInProgress].state = "NULL"
                      /\ MarkUploads(clusterState.snapshotInProgress)
-                  /\ clusterState' = [clusterState EXCEPT !.height = @ + 1, !.repoStateId = repositoryMeta.repoStateId + 1]
+                  /\ clusterState' = [clusterState EXCEPT !.repoStateId = repositoryMeta.repoStateId + 1]
                   /\ indexBlobContent' = [indexBlobContent EXCEPT ![IndexNBlobs[NextIndex]] =
                         (IF NextIndex - 1 = 0 THEN {} ELSE indexBlobContent[IndexNBlobs[NextIndex - 1]]) \union {clusterState.snapshotInProgress}]
                   /\ UNCHANGED <<outstandingSnapshots, physicalBlobs, segmentMap>>
 
 \* Starting the snapshot process by adding the snapshot to the cluster state.
-StartSnapshot == /\ clusterState.snapshotInProgress = "NULL"
+StartSnapshot == /\ clusterState.wasMaster = TRUE
+                 /\ UploadsInProgress = FALSE
+                 /\ clusterState.snapshotInProgress = "NULL"
                  /\ clusterState.snapshotDeletionInProgress = "NULL"
                  /\ \E s \in outstandingSnapshots:
                     /\ outstandingSnapshots' = outstandingSnapshots \ {s}
-                    /\  clusterState' = [clusterState EXCEPT !.snapshotInProgress = s]
+                    /\  clusterState' = [clusterState EXCEPT !.snapshotInProgress = s, !.height = @ + 1]
                 /\ UNCHANGED <<repositoryMeta, physicalBlobs, segmentMap, indexBlobContent>>
 
 \* Finish a single upload. Modeled as a single step of updating the repository metablob and writing the file.
 FinishOneUpload == \E b \in Blobs:
+                        /\ clusterState.wasMaster = TRUE
                         /\ repositoryMeta.blobs[b].state = "UPLOADING"
                         /\ repositoryMeta' = [
                                      repositoryMeta EXCEPT !.repoStateId = @ + 1,
                                      !.blobs = [
-                                                blob \in Blobs |-> [height |-> clusterState.height,
-                                                state |->
+                                                blob \in Blobs |->
                                                     IF blob = b THEN
-                                                        "DONE"
+                                                        [state |-> "DONE", height |-> repositoryMeta.blobs[blob].height]
                                                     ELSE
-                                                        repositoryMeta.blobs[blob].state
-                                                    ]]]
+                                                        repositoryMeta.blobs[blob]
+                                                    ]]
                         /\ physicalBlobs' = [physicalBlobs EXCEPT ![b] = TRUE]
                   /\ UNCHANGED <<clusterState, outstandingSnapshots, segmentMap, indexBlobContent>>
 
-FinishSnapshot == /\ clusterState.snapshotInProgress /= "NULL"
+FinishSnapshot == /\ clusterState.wasMaster = TRUE
+                  /\ clusterState.snapshotInProgress /= "NULL"
                   /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE", "NULL"}
                   /\ repositoryMeta.blobs[clusterState.snapshotInProgress].state = "DONE"
                   /\ clusterState' = [clusterState EXCEPT
@@ -111,21 +137,45 @@ FinishSnapshot == /\ clusterState.snapshotInProgress /= "NULL"
                   /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
 
 \* Losing the cluster state (i.e. restoring from scratch) by moving all CS entries back to defaults
-LoseClusterState == /\ clusterState' = [
+LoseClusterState == /\ clusterState.wasMaster = TRUE
+                    /\ clusterState' = [
                             repoStateId |-> 0,
                             height |-> 0,
                             snapshotInProgress |-> "NULL",
-                            snapshotDeletionInProgress |-> "NULL"
+                            snapshotDeletionInProgress |-> "NULL",
+                            wasMaster |-> FALSE
                         ]
                     /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
 
-StateIsEmpty == clusterState.height = 0 /\ clusterState.repoStateId = 0
-
-RecoverStateAndHeight == /\ StateIsEmpty
-                         /\ /\ clusterState' = [clusterState EXCEPT
-                                        !.height = Max({repositoryMeta.blobs[b].state :b \in Blobs}),
-                                        !.repoStateId = repositoryMeta.repoStateId]
+RecoverStateAndHeight == /\ clusterState.wasMaster = FALSE
+                         /\ clusterState' = [clusterState EXCEPT
+                                        !.height = Max({repositoryMeta.blobs[b].height :b \in Blobs}) + (IF UploadsInProgress THEN 0 ELSE 1),
+                                        !.repoStateId = repositoryMeta.repoStateId,
+                                        !.wasMaster = TRUE]
                          /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
+
+CleanupDanglingRepositoryState == /\ UploadsInProgress
+                                  /\ clusterState.snapshotInProgress = "NULL"
+                                  /\ clusterState.wasMaster
+                                  /\ RollbackLastStep
+                                  /\ UNCHANGED <<clusterState, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
+
+ExecuteOneDelete == /\ clusterState.wasMaster
+                    /\ UploadsInProgress = FALSE \* Physical deletes may only run after all uploads finished
+                    /\ DeletesInProgress
+                    /\ \E b \in { bl \in Blobs: repositoryMeta.blobs[bl].state = "DELETED"}:
+                            /\ physicalBlobs' = [physicalBlobs EXCEPT ![b] = FALSE]
+                            /\ repositoryMeta' = [repositoryMeta EXCEPT
+                                                           !.repoStateId = @ + 1,
+                                                           !.blobs = [
+                                                                blob \in Blobs |->
+                                                                    IF blob = b THEN
+                                                                        [state |-> "NULL", height |-> 0]
+                                                                    ELSE
+                                                                        repositoryMeta.blobs[blob]
+                                                                  ]]
+                    /\ UNCHANGED <<clusterState, outstandingSnapshots, segmentMap, indexBlobContent>>
+
 
 -----
 
@@ -140,22 +190,34 @@ NoStaleBlobs == /\ {b \in Blobs: repositoryMeta.blobs[b].state \in {"DONE", "UPL
                                             sn \in Snapshots: repositoryMeta.blobs[sn].state \in {"DONE", "UPLOADING"}}})
                                                 \union {sn \in Snapshots: repositoryMeta.blobs[sn].state \in {"DONE", "UPLOADING"}}
                                                     \union {ib \in IndexBlobSet: repositoryMeta.blobs[ib].state \in {"DONE", "UPLOADING"}}
+                /\ \A b \in Blobs:
+                        repositoryMeta.blobs[b].height < clusterState.height => repositoryMeta.blobs[b].state \in {"DONE", "NULL", "DELETED"}
+
 \* TODO: check that the heights are consistent
 BlobMetaOK == /\ \/ Max({repositoryMeta.blobs[b].height: b \in Blobs}) <= clusterState.height
                     /\ repositoryMeta.repoStateId >= clusterState.repoStateId
                     \* Either we have a state that is in sync with the repo or the pointers in the state are zeroed out
-                 \/ StateIsEmpty
+                 \/ clusterState.wasMaster = FALSE
               /\ Cardinality({bl \in IndexBlobSet: repositoryMeta.blobs[bl].state = "UPLOADING"}) <= 1
               \* There should not be pending uploads from different heights, all uploads at a certain height must
               \* fail or complete before incrementing the height.
               /\ Cardinality({repositoryMeta.blobs[b].height: b \in {bl \in Blobs: repositoryMeta.blobs[bl].state = "UPLOADING"}}) <= 1
               \* All blobs marked as existing in the metadata exist
-              /\ \A b \in {bl \in Blobs: repositoryMeta.blobs[bl].state = "DONE"}: physicalBlobs[b] = TRUE
+              /\ \A b \in Blobs: repositoryMeta.blobs[b].state = "DONE" => physicalBlobs[b] = TRUE
               \* No blobs exist that aren't tracked by the metadata
-              /\ \A b \in {bl \in Blobs: repositoryMeta.blobs[bl].state = "NULL"}: physicalBlobs[b] = FALSE
+              /\ \A b \in Blobs: repositoryMeta.blobs[b].state = "NULL" => physicalBlobs[b] = FALSE
 
 
 AllOK == TypeOK /\ BlobMetaOK /\ NoStaleBlobs
+
+-----
+
+AttemptAllSnapshots == <>[](outstandingSnapshots = {})
+
+AllBlobsReachFinalState == <>[] (\A b \in Blobs:
+                                    /\ repositoryMeta.blobs[b].state = "NULL"
+                                        \/ repositoryMeta.blobs[b].state = "DONE")
+
 
 -----
 
@@ -164,5 +226,16 @@ Next == \/ StartSnapshot
         \/ FinishOneUpload
         \/ FinishSnapshot
         \/ LoseClusterState
+        \/ CleanupDanglingRepositoryState
+        \/ RecoverStateAndHeight
+        \/ ExecuteOneDelete
 
-Spec == Init /\ [][Next]_vars
+Spec == /\ Init
+        /\ [][Next]_vars
+        /\ SF_vars(StartSnapshot)
+        /\ SF_vars(StartUploading)
+        /\ SF_vars(FinishOneUpload)
+        /\ SF_vars(ExecuteOneDelete)
+        /\ SF_vars(FinishSnapshot)
+        /\ SF_vars(CleanupDanglingRepositoryState)
+        /\ WF_vars(RecoverStateAndHeight)
