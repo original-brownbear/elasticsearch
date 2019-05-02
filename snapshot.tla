@@ -22,7 +22,7 @@ IndexBlobSet == {IndexNBlobs[i]: i \in 1..Len(IndexNBlobs)}
 
 Blobs == IndexBlobSet \union Snapshots \union AllSegments
 
-VARIABLES clusterState, repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap
+VARIABLES clusterState, repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent
 
 ----
 \* Utilities
@@ -41,8 +41,9 @@ Init == \E segs \in Segments:
             /\ outstandingSnapshots = Snapshots
             /\ physicalBlobs = [b \in Blobs |-> FALSE]
             /\ segmentMap = segs
+            /\ indexBlobContent = [i \in IndexBlobSet |-> {}]
 
-vars == <<clusterState, repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap>>
+vars == <<clusterState, repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
 
 NextIndex == IF repositoryMeta.blobs[IndexNBlobs[1]].state = "NULL" THEN
                 1
@@ -73,6 +74,8 @@ StartUploading == /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE",
                      /\ repositoryMeta.blobs[clusterState.snapshotInProgress].state = "NULL"
                      /\ MarkUploads(clusterState.snapshotInProgress)
                   /\ clusterState' = [clusterState EXCEPT !.height = @ + 1, !.repoStateId = repositoryMeta.repoStateId + 1]
+                  /\ indexBlobContent' = [indexBlobContent EXCEPT ![IndexNBlobs[NextIndex]] =
+                        (IF NextIndex - 1 = 0 THEN {} ELSE indexBlobContent[IndexNBlobs[NextIndex - 1]]) \union {clusterState.snapshotInProgress}]
                   /\ UNCHANGED <<outstandingSnapshots, physicalBlobs, segmentMap>>
 
 \* Starting the snapshot process by adding the snapshot to the cluster state.
@@ -81,7 +84,7 @@ StartSnapshot == /\ clusterState.snapshotInProgress = "NULL"
                  /\ \E s \in outstandingSnapshots:
                     /\ outstandingSnapshots' = outstandingSnapshots \ {s}
                     /\  clusterState' = [clusterState EXCEPT !.snapshotInProgress = s]
-                /\ UNCHANGED <<repositoryMeta, physicalBlobs, segmentMap>>
+                /\ UNCHANGED <<repositoryMeta, physicalBlobs, segmentMap, indexBlobContent>>
 
 \* Finish a single upload. Modeled as a single step of updating the repository metablob and writing the file.
 FinishOneUpload == \E b \in Blobs:
@@ -97,7 +100,7 @@ FinishOneUpload == \E b \in Blobs:
                                                         repositoryMeta.blobs[blob].state
                                                     ]]]
                         /\ physicalBlobs' = [physicalBlobs EXCEPT ![b] = TRUE]
-                  /\ UNCHANGED <<clusterState, outstandingSnapshots, segmentMap>>
+                  /\ UNCHANGED <<clusterState, outstandingSnapshots, segmentMap, indexBlobContent>>
 
 FinishSnapshot == /\ clusterState.snapshotInProgress /= "NULL"
                   /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE", "NULL"}
@@ -105,15 +108,16 @@ FinishSnapshot == /\ clusterState.snapshotInProgress /= "NULL"
                   /\ clusterState' = [clusterState EXCEPT
                                      !.snapshotInProgress = "NULL",
                                      !.repoStateId = repositoryMeta.repoStateId]
-                  /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap>>
+                  /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
 
+\* Losing the cluster state (i.e. restoring from scratch) by moving all CS entries back to defaults
 LoseClusterState == /\ clusterState' = [
                             repoStateId |-> 0,
                             height |-> 0,
                             snapshotInProgress |-> "NULL",
                             snapshotDeletionInProgress |-> "NULL"
                         ]
-                    /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap>>
+                    /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
 
 StateIsEmpty == clusterState.height = 0 /\ clusterState.repoStateId = 0
 
@@ -121,7 +125,7 @@ RecoverStateAndHeight == /\ StateIsEmpty
                          /\ /\ clusterState' = [clusterState EXCEPT
                                         !.height = Max({repositoryMeta.blobs[b].state :b \in Blobs}),
                                         !.repoStateId = repositoryMeta.repoStateId]
-                         /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap>>
+                         /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap, indexBlobContent>>
 
 -----
 
