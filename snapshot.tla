@@ -1,5 +1,10 @@
 ----------------------------- MODULE blobstore -----------------------------
 
+\* Simplified specification of the snapshot create and delete blob store interaction.
+\* The specification assumes just a single metadata file per snapshot that references
+\* all segment files belonging to the snapshot. The real repository structure by comparison
+\* contains another two layers of hierarchy by organizing segments into shards and shards into indices.
+
 EXTENDS Naturals, FiniteSets, Sequences, TLC
 
 Snapshots == {"snapshot-A", "snapshot-B"}
@@ -70,6 +75,7 @@ StartUploading == /\ \A b \in Blobs : repositoryMeta.blobs[b].state \in {"DONE",
                   /\ clusterState' = [clusterState EXCEPT !.height = @ + 1, !.repoStateId = repositoryMeta.repoStateId + 1]
                   /\ UNCHANGED <<outstandingSnapshots, physicalBlobs, segmentMap>>
 
+\* Starting the snapshot process by adding the snapshot to the cluster state.
 StartSnapshot == /\ clusterState.snapshotInProgress = "NULL"
                  /\ clusterState.snapshotDeletionInProgress = "NULL"
                  /\ \E s \in outstandingSnapshots:
@@ -77,6 +83,7 @@ StartSnapshot == /\ clusterState.snapshotInProgress = "NULL"
                     /\  clusterState' = [clusterState EXCEPT !.snapshotInProgress = s]
                 /\ UNCHANGED <<repositoryMeta, physicalBlobs, segmentMap>>
 
+\* Finish a single upload. Modeled as a single step of updating the repository metablob and writing the file.
 FinishOneUpload == \E b \in Blobs:
                         /\ repositoryMeta.blobs[b].state = "UPLOADING"
                         /\ repositoryMeta' = [
@@ -116,6 +123,8 @@ RecoverStateAndHeight == /\ StateIsEmpty
                                         !.repoStateId = repositoryMeta.repoStateId]
                          /\ UNCHANGED <<repositoryMeta, outstandingSnapshots, physicalBlobs, segmentMap>>
 
+-----
+
 TypeOK == \A b \in Blobs: repositoryMeta.blobs[b].state \in {"NULL", "UPLOADING", "DONE", "DELETED"}
 
 \* All segments must be referenced by snapshots, i.e. the set of all uploading or existing blobs
@@ -127,9 +136,10 @@ NoStaleBlobs == /\ {b \in Blobs: repositoryMeta.blobs[b].state \in {"DONE", "UPL
                                             sn \in Snapshots: repositoryMeta.blobs[sn].state \in {"DONE", "UPLOADING"}}})
                                                 \union {sn \in Snapshots: repositoryMeta.blobs[sn].state \in {"DONE", "UPLOADING"}}
                                                     \union {ib \in IndexBlobSet: repositoryMeta.blobs[ib].state \in {"DONE", "UPLOADING"}}
-
-BlobMetaOK == /\ \/ \A b \in Blobs: repositoryMeta.blobs[b].height <= clusterState.height
+\* TODO: check that the heights are consistent
+BlobMetaOK == /\ \/ Max({repositoryMeta.blobs[b].height: b \in Blobs}) <= clusterState.height
                     /\ repositoryMeta.repoStateId >= clusterState.repoStateId
+                    \* Either we have a state that is in sync with the repo or the pointers in the state are zeroed out
                  \/ StateIsEmpty
               /\ Cardinality({bl \in IndexBlobSet: repositoryMeta.blobs[bl].state = "UPLOADING"}) <= 1
               \* There should not be pending uploads from different heights, all uploads at a certain height must
@@ -143,6 +153,8 @@ BlobMetaOK == /\ \/ \A b \in Blobs: repositoryMeta.blobs[b].height <= clusterSta
 
 AllOK == TypeOK /\ BlobMetaOK /\ NoStaleBlobs
 
+-----
+
 Next == \/ StartSnapshot
         \/ StartUploading
         \/ FinishOneUpload
@@ -150,4 +162,3 @@ Next == \/ StartSnapshot
         \/ LoseClusterState
 
 Spec == Init /\ [][Next]_vars
-
