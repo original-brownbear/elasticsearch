@@ -118,7 +118,7 @@ UpdateRepoMeta(newBlobs, startedSnapshot) ==
                                         ELSE
                                             master.nextSnapshotState
                                       ]
-                                /\ blobMetaStates' = {meta \in (blobMetaStates \union {newRepoMeta}): meta.repoStateId >= clusterState.repoStateId}
+                                /\ blobMetaStates' = {master.repositoryMeta, newRepoMeta}
 
 \* Mark all files resulting from the snapshot as "UPLOADING" in the metadata
 MarkUploads(snapshotBlob) ==
@@ -142,12 +142,12 @@ RollbackLastStep == UpdateRepoMeta([blob \in Blobs |->
                                         master.repositoryMeta.blobs[blob]
                                   ], FALSE)
 
+MasterHasCleanRepo == master.hasPreviousState /\ master.tryCleanDanglingMeta = FALSE
+
 \* Can master update new the repository meta?
 \* Master can only update it again if it is in sync with the repository and there isn't an update
 \* to the blob meta pending that didn't yet get published to the CS
-CanUpdateRepoMeta == master.hasPreviousState /\ master.unpublished = {}
-
-MasterHasCleanRepo == master.hasPreviousState /\ master.tryCleanDanglingMeta = FALSE
+CanUpdateRepoMeta == MasterHasCleanRepo /\ master.unpublished = {}
 
 UploadingBlobs == {b \in Blobs: master.repositoryMeta.blobs[b].state = "UPLOADING"}
 
@@ -282,7 +282,8 @@ CleanDanglingMeta == /\ master.hasPreviousState
                      /\ master.tryCleanDanglingMeta
                      /\ master.repositoryMeta.repoStateId = clusterState.repoStateId
                      /\ master' = [master EXCEPT !.tryCleanDanglingMeta = FALSE]
-                     /\ blobMetaStates' = {master.repositoryMeta}
+                     /\ blobMetaStates' = {m \in blobMetaStates: m.repoStateId <= clusterState.repoStateId}
+                                          \union {master.repositoryMeta}
                      /\ UNCHANGED <<clusterState,
                                     outstandingSnapshots,
                                     physicalBlobs,
@@ -352,12 +353,12 @@ ExecuteOneDelete == /\ CanUpdateRepoMeta
                                    indexBlobContent,
                                    dataNode>>
 
-\* Publish
+\* Publish next repo state to CS.
 PublishNextRepoStateId == /\ \E s \in master.unpublished:
                             /\ clusterState' = [clusterState EXCEPT !.repoStateId = s]
                             /\ master' = [master EXCEPT
                                             !.unpublished = @ \ {s},
-                                            !.pendingUpload = @ \union UploadingBlobs]
+                                            !.pendingUpload = (@ \union UploadingBlobs)]
                           /\ UNCHANGED <<outstandingSnapshots,
                                          physicalBlobs,
                                          segmentMap,
@@ -441,3 +442,8 @@ Spec == /\ Init
         /\ SF_vars(MasterPublishesNextSnapshotState)
         /\ SF_vars(CleanDanglingMeta)
         /\ WF_vars(RecoverStateAndHeight)
+
+=============================================================================
+\* Modification History
+\* Last modified Fri May 03 18:47:12 CEST 2019 by armin
+\* Created Wed May 01 10:25:51 CEST 2019 by armin
