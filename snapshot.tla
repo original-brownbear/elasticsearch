@@ -53,7 +53,7 @@ EmptyClusterState == [repoStateId |-> InitialRepoStateId,
 
 EmptyRepoMeta == [
     repoStateId |-> InitialRepoStateId,
-    parent      |-> NullRepoStateId,
+    parent      |-> NullRepoStateId,  
     blobs       |-> {}]
 
 EmptyMasterMemory == [unpublished |-> {},
@@ -89,20 +89,27 @@ vars == <<clusterState,
 ----
 \* Utilities around the Blobstore
 
+EqualTypeAndName(a, b) == a.type = b.type /\ a.name = b.name
+
 IndexBlobs(repoMeta) == {b \in repoMeta.blobs: b.type = "INDEX"}
 SnapshotBlobs(repoMeta) == {b \in repoMeta.blobs: b.type = "SNAPSHOT"}
-
-CurrentIndexBlob == IF IndexBlobs(master.repositoryMeta) = {} THEN
-                        NULL
-                    ELSE
-                        CHOOSE index \in IndexBlobs(master.repositoryMeta) : index.name = Max({i.name: i \in IndexBlobs(master.repositoryMeta)})
 
 ValidIndexBlobs(repositoryMeta) == {i \in IndexBlobs(repositoryMeta): i.state = "DONE"}
 
 HighestValidIndexBlob(repositoryMeta) == IF ValidIndexBlobs(repositoryMeta) = {} THEN
                                             NULL
                                          ELSE
-                                            CHOOSE index \in ValidIndexBlobs(master.repositoryMeta) : index.name = Max({i.name: i \in ValidIndexBlobs(master.repositoryMeta)})
+                                            CHOOSE index \in 
+                                                ValidIndexBlobs(master.repositoryMeta): 
+                                                    index.name = Max(
+                                                        {i.name: 
+                                                            i \in ValidIndexBlobs(master.repositoryMeta)})
+                                
+SnapshotsInIndexBlob(indexBlobMeta) == IF indexBlobMeta = NULL THEN
+                                        {}
+                                       ELSE
+                                       (CHOOSE blob \in physicalBlobs.blobs: 
+                                            blob.type = "INDEX" /\ blob.name = indexBlobMeta.name).snapshots 
 
 \* Get the next N for writing a new Index-N blob
 NextIndex == IF IndexBlobs(master.repositoryMeta) = {} THEN
@@ -110,50 +117,50 @@ NextIndex == IF IndexBlobs(master.repositoryMeta) = {} THEN
              ELSE
                 Max({i.name: i \in IndexBlobs(master.repositoryMeta)}) + 1
 
-BestRepoMeta == CHOOSE x \in physicalBlobs.metaBlobs :
-                        \A y \in physicalBlobs.metaBlobs :
-                            x.repoStateId.time >= y.repoStateId.time
-
 NextRepoStateId(repoId) == [uuid |-> nextRepoMetaUUID, time |-> repoId.time + 1]
 
-MaxHeightInRepo(repoMeta) == MaxOrZero({b.height :b \in repoMeta.blobs})
+MaxHeightInRepo(repoMeta) == MaxOrZero({b.height :b \in repoMeta.blobs}) 
 
+\* Create new repo meta with the given updates and move snapshot state in CS to started 
+\* iff startedSnapshot is TRUE.
 UpdateRepoMeta(newBlobs, deletedBlobs, startedSnapshot) ==
                             LET nextRepoState == NextRepoStateId(clusterState.repoStateId)
                                 newRepoMeta   == [master.repositoryMeta EXCEPT
                                                     !.repoStateId = nextRepoState,
-                                                    !.blobs = ((@ \ deletedBlobs) \ {b \in @: \E n \in newBlobs: b.type = n.type /\ b.name = n.name}) \union newBlobs ]
+                                                    !.blobs = (
+                                                        (@ \ deletedBlobs) \ 
+                                                            {b \in @: \E n \in newBlobs: 
+                                                                EqualTypeAndName(b,n)}) 
+                                                                    \union newBlobs]
                             IN
                                 /\ master' = [master EXCEPT
-                                    !.repositoryMeta = newRepoMeta,
-                                    !.unpublished = @ \union {nextRepoState},
-                                    !.uploaded = master.uploaded \
-                                                    {b \in master.uploaded:
-                                                        \E n \in newBlobs:
-                                                            /\ n.type = b.type
-                                                            /\ n.name = b.name
-                                                            /\ n.state = "DONE"},
-                                    !.justDeleted = @ \intersect newBlobs,
-                                    !.nextSnapshotState =
-                                        IF startedSnapshot THEN
-                                            "STARTED"
-                                        ELSE
-                                            master.nextSnapshotState
-                                      ]
+                                                !.repositoryMeta = newRepoMeta,
+                                                !.unpublished = @ \union {nextRepoState},
+                                                !.uploaded = @ \{b \in @: 
+                                                                    \E n \in newBlobs: 
+                                                                        /\ EqualTypeAndName(b,n) 
+                                                                        /\ n.state = "DONE"},
+                                                !.justDeleted = @ \intersect newBlobs,
+                                                !.tryCleanDanglingMeta = TRUE, 
+                                                !.nextSnapshotState =
+                                                    IF startedSnapshot THEN
+                                                        "STARTED"
+                                                    ELSE
+                                                        master.nextSnapshotState
+                                    ]
                                 \* TODO don't assume write + deletes to be atomic, do one of the two first
-                                /\ physicalBlobs' = [physicalBlobs EXCEPT !.metaBlobs = {master.repositoryMeta, newRepoMeta}]
+                                /\ physicalBlobs' = [physicalBlobs EXCEPT !.metaBlobs = @ \union {newRepoMeta}]
                                 /\ nextRepoMetaUUID' = nextRepoMetaUUID + 1
 
-NewUploadingBlob(blobName) == [name |-> blobName, state |-> "UPLOADING", height |-> clusterState.height]
+NewUploadingBlob(blobName, blobType) == [type |-> blobType, name |-> blobName, state |-> "UPLOADING", height |-> clusterState.height]
 
 \* Mark all files resulting from the snapshot as "UPLOADING" in the metadata
 MarkUploads ==
     UpdateRepoMeta(
-    {[type|-> "SNAPSHOT", name |-> clusterState.snapshotInProgress.name, state |-> "UPLOADING", height |-> clusterState.height]}
-    \union {[type|-> "SEGMENT", name |-> segmentId, state |-> "UPLOADING", height |-> clusterState.height]: segmentId \in segmentMap[clusterState.snapshotInProgress.name]}
-    \union {[type|-> "INDEX",
-             name |-> NextIndex,
-             snapshots |-> {clusterState.snapshotInProgress.name} \union (IF CurrentIndexBlob = NULL THEN {} ELSE CurrentIndexBlob.snapshots), state |-> "UPLOADING", height |-> clusterState.height]},
+       {NewUploadingBlob(clusterState.snapshotInProgress.name, "SNAPSHOT"),
+        NewUploadingBlob(NextIndex, "INDEX")} \union 
+            {NewUploadingBlob(segmentId,"SEGMENT"): 
+                segmentId \in segmentMap[clusterState.snapshotInProgress.name]},
     {},
     TRUE)
 
@@ -197,16 +204,15 @@ AbortSnapshot == /\ SnapshotInProgress
 
 ----
 
-StartUploading == /\ MasterHasCleanRepo
-                  /\ CanUpdateRepoMeta
+StartUploading == /\ CanUpdateRepoMeta
                   /\ UploadsInProgress = FALSE
                   /\ \A b \in master.repositoryMeta.blobs : b.state \in FinalStates
                   /\ clusterState.snapshotInProgress.name \in Snapshots
                      /\ clusterState.snapshotInProgress.state = "INIT"
                      /\ MarkUploads
                   /\ UNCHANGED <<clusterState,
-                                 outstandingSnapshots,
-                                 segmentMap,
+                                 outstandingSnapshots, 
+                                 segmentMap, 
                                  dataNode>>
 
 \* Starting the snapshot process by adding the snapshot to the cluster state.
@@ -228,15 +234,15 @@ MasterUploadsOneBlob == /\ CanUpdateRepoMeta
                         /\ clusterState.snapshotInProgress.state = "STARTED"
                         /\ \E b \in master.pendingUpload:
                             /\ master' = [master EXCEPT !.pendingUpload = @ \ {b}, !.uploaded = @ \union {b}]
-                            /\ physicalBlobs' = [physicalBlobs EXCEPT
+                            /\ physicalBlobs' = [physicalBlobs EXCEPT 
                                                     !.blobs = @ \union {
-                                                    IF b.type = "INDEX" THEN
-                                                        [type |-> "INDEX",
-                                                         name |-> b.name,
-                                                         snapshots |-> (IF HighestValidIndexBlob(master.repositoryMeta) = NULL THEN
-                                                                        {}
-                                                                       ELSE
-                                                                        HighestValidIndexBlob(master.repositoryMeta).snapshots)
+                                                    IF b.type = "INDEX" THEN 
+                                                        [type |-> "INDEX", 
+                                                         name |-> b.name, 
+                                                         snapshots |-> (IF HighestValidIndexBlob(master.repositoryMeta) = NULL THEN 
+                                                                        {} 
+                                                                       ELSE 
+                                                                        SnapshotsInIndexBlob(HighestValidIndexBlob(master.repositoryMeta))) 
                                                                             \union {clusterState.snapshotInProgress.name}]
                                                     ELSE
                                                         [type |-> b.type, name |-> b.name]}]
@@ -275,8 +281,8 @@ FinishSnapshot == /\ CanUpdateRepoMeta
                   /\ clusterState.snapshotInProgress.state = "STARTED"
                   /\ \A b \in master.repositoryMeta.blobs : b.state \in FinalStates
                   /\ \E blob \in master.repositoryMeta.blobs:
-                            /\ blob.type = "SNAPSHOT"
-                            /\ blob.name = clusterState.snapshotInProgress.name
+                            /\ blob.type = "SNAPSHOT" 
+                            /\ blob.name = clusterState.snapshotInProgress.name 
                             /\ blob.state = "DONE"
                   /\ clusterState' = [clusterState EXCEPT !.snapshotInProgress = EmptySnapshotInProgress]
                   /\ UNCHANGED <<outstandingSnapshots,
@@ -299,7 +305,7 @@ LoseClusterState == /\ master.hasPreviousState
 MasterFailOver == /\ master.hasPreviousState
                   /\ master' = [EmptyMasterMemory EXCEPT
                                     !.tryCleanDanglingMeta = TRUE,
-                                    !.repositoryMeta = CHOOSE metaState \in physicalBlobs.metaBlobs:
+                                    !.repositoryMeta = CHOOSE metaState \in physicalBlobs.metaBlobs: 
                                         metaState.repoStateId = clusterState.repoStateId]
                   /\ AbortSnapshot
                   /\ UNCHANGED <<outstandingSnapshots,
@@ -312,8 +318,11 @@ CleanDanglingMeta == /\ master.hasPreviousState
                      /\ master.tryCleanDanglingMeta
                      /\ master.repositoryMeta.repoStateId = clusterState.repoStateId
                      /\ master' = [master EXCEPT !.tryCleanDanglingMeta = FALSE]
-                     /\ physicalBlobs' = [physicalBlobs EXCEPT !.metaBlobs = {m \in physicalBlobs.metaBlobs: m.repoStateId.time <= clusterState.repoStateId.time}
-                                          \union {master.repositoryMeta}]
+                     /\ physicalBlobs' = [physicalBlobs EXCEPT 
+                                            !.metaBlobs = {
+                                                m \in physicalBlobs.metaBlobs: 
+                                                    m.repoStateId.time >= clusterState.repoStateId.time} 
+                                                        \union {master.repositoryMeta}]
                      /\ UNCHANGED <<clusterState,
                                     outstandingSnapshots,
                                     segmentMap,
@@ -328,20 +337,25 @@ HandleAbortedSnapshot == /\ MasterHasCleanRepo
                             \/ UploadsInProgress = FALSE
                                 /\ clusterState' = [
                                     clusterState EXCEPT !.snapshotInProgress = EmptySnapshotInProgress]
-                                /\ UNCHANGED <<master,
-                                               physicalBlobs,
+                                /\ UNCHANGED <<master, 
+                                               physicalBlobs, 
                                                nextRepoMetaUUID>>
                         /\ UNCHANGED <<outstandingSnapshots,
                                        segmentMap,
                                        dataNode>>
 
-RecoverStateAndHeight == LET repoMeta == BestRepoMeta
+RecoverStateAndHeight == LET repoMeta == CHOOSE x \in physicalBlobs.metaBlobs : 
+                                            \A y \in physicalBlobs.metaBlobs : 
+                                                x.repoStateId.time >= y.repoStateId.time
                          IN
                          /\ master.hasPreviousState = FALSE
                          /\ clusterState' = [clusterState EXCEPT
                                         !.height = MaxHeightInRepo(repoMeta),
                                         !.repoStateId = repoMeta.repoStateId]
-                         /\ master' = [master EXCEPT !.hasPreviousState = TRUE, !.repositoryMeta = repoMeta]
+                         /\ master' = [master EXCEPT 
+                                            !.hasPreviousState = TRUE,
+                                            !.tryCleanDanglingMeta = TRUE, 
+                                            !.repositoryMeta = repoMeta]
                          /\ UNCHANGED <<outstandingSnapshots,
                                         physicalBlobs,
                                         segmentMap,
@@ -361,7 +375,11 @@ CleanupDanglingRepositoryState == /\ UploadsInProgress
 RunDeletes == /\ CanUpdateRepoMeta
               /\ UploadsInProgress = FALSE
               /\ \E dels \in SUBSET(DeletedBlobs):
-                /\ physicalBlobs' = [physicalBlobs EXCEPT !.blobs = @ \ {b \in @: \E d \in dels: b.type = d.type /\ b.name = d.name}]
+                /\ physicalBlobs' = [physicalBlobs EXCEPT 
+                                        !.blobs = @ \ 
+                                                    {b \in @: 
+                                                        \E d \in dels: 
+                                                            b.type = d.type /\ b.name = d.name}]
                 /\ master' = [master EXCEPT !.justDeleted = @ \union dels]
               /\ UNCHANGED <<clusterState,
                              outstandingSnapshots,
@@ -382,7 +400,10 @@ PublishNextRepoStateId == /\ \E s \in master.unpublished:
                             /\ clusterState' = [clusterState EXCEPT !.repoStateId = s]
                             /\ master' = [master EXCEPT
                                             !.unpublished = {},
-                                            !.pendingUpload = {[type |-> b.type, name |-> b.name]: b \in UploadingBlobs} \ master.uploaded]
+                                            !.pendingUpload = 
+                                                {[type |-> b.type, name |-> b.name]: 
+                                                    b \in UploadingBlobs} 
+                                                        \ master.uploaded]
                           /\ UNCHANGED <<outstandingSnapshots,
                                          physicalBlobs,
                                          segmentMap,
@@ -395,9 +416,10 @@ LegalBlobStates == {"UPLOADING", "DONE", "DELETED"}
 LegalBlobTypes == {"INDEX", "SNAPSHOT", "SEGMENT"}
 
 \* Invariants
-TypeOK == /\ \A b \in master.repositoryMeta.blobs:
-                /\ b.state \in LegalBlobStates
+TypeOK == /\ \A b \in master.repositoryMeta.blobs: 
+                /\ b.state \in LegalBlobStates 
                 /\ b.type \in LegalBlobTypes
+                /\ DOMAIN b = {"type", "name", "height", "state"}
           /\ \A u \in master.uploaded: DOMAIN u = {"type", "name"}
           /\ \A p \in master.pendingUpload: DOMAIN p = {"type", "name"}
 
@@ -406,7 +428,7 @@ TypeOK == /\ \A b \in master.repositoryMeta.blobs:
 \* index blobs.
 
 NoStaleOrMissingSnapshotBlobs == \/ HighestValidIndexBlob(master.repositoryMeta) = NULL
-                                 \/ \A snapshot \in HighestValidIndexBlob(master.repositoryMeta).snapshots:
+                                 \/ \A snapshot \in SnapshotsInIndexBlob(HighestValidIndexBlob(master.repositoryMeta)): 
                                         \E snb \in SnapshotBlobs(master.repositoryMeta): snb.name = snapshot
 
 NoStaleBlobs == /\ NoStaleOrMissingSnapshotBlobs
@@ -414,9 +436,9 @@ NoStaleBlobs == /\ NoStaleOrMissingSnapshotBlobs
                 /\ \A b \in master.repositoryMeta.blobs:
                         b.height < clusterState.height => ~(b \in UploadingBlobs)
 
-NoBlobMetaIdCollisions == /\ \A x,y \in physicalBlobs.metaBlobs: x /= y => x.repoStateId.uuid /= y.repoStateId.uuid
+NoBlobMetaIdCollisions == /\ \A x,y \in physicalBlobs.metaBlobs: x /= y => x.repoStateId.uuid /= y.repoStateId.uuid 
 
-BlobMetaOK == /\ \A bl \in master.repositoryMeta.blobs: bl.state = "DONE" => \E pb \in physicalBlobs.blobs: pb.type = bl.type /\ pb.name = bl.name
+BlobMetaOK == /\ \A bl \in master.repositoryMeta.blobs: bl.state = "DONE" => \E pb \in physicalBlobs.blobs: EqualTypeAndName(pb, bl)
               /\ \/ master.hasPreviousState = FALSE
                  \/ MaxHeightInRepo(master.repositoryMeta) <= clusterState.height
                     /\ master.repositoryMeta.repoStateId.time >= clusterState.repoStateId.time
@@ -428,26 +450,28 @@ BlobMetaOK == /\ \A bl \in master.repositoryMeta.blobs: bl.state = "DONE" => \E 
                     \* All blobs marked as existing in the metadata exist
                     \* No blobs exist that aren't tracked by the metadata
                     \* TODO
+              /\ \/ ~\E m \in physicalBlobs.metaBlobs: m.repoStateId.time < clusterState.repoStateId.time - 1
+                 \/ master.tryCleanDanglingMeta
 
 MasterOk == /\ master.unpublished \in {{}, {master.repositoryMeta.repoStateId}}
             /\ master.pendingUpload \intersect master.uploaded = {}
-            /\ \A u \in master.uploaded:
-                    /\ \E b \in master.repositoryMeta.blobs:
-                        b.type = u.type /\ b.name = u.name /\ b.state = "UPLOADING"
-                    /\ (\E pb \in physicalBlobs.blobs: pb.type = u.type /\ pb.name = u.name)
+            /\ \A u \in master.uploaded: 
+                    /\ \E b \in master.repositoryMeta.blobs: 
+                        EqualTypeAndName(b, u) /\ b.state = "UPLOADING" 
+                    /\ (\E pb \in physicalBlobs.blobs: EqualTypeAndName(pb, u))
             /\ master.pendingUpload /= {} => UploadingBlobs /= {}
             /\ UploadingBlobs = {} => (master.pendingUpload = {} /\ master.uploaded = {})
             /\ (\A b \in master.repositoryMeta.blobs : b.state \in FinalStates) => (master.uploaded = {} /\ master.pendingUpload = {} /\ master.justDeleted = {})
             /\ master.nextSnapshotState = "STARTED" => clusterState.snapshotInProgress.state = "INIT"
-            /\ clusterState.snapshotInProgress.state = "STARTED" => master.nextSnapshotState = NULL
+            /\ clusterState.snapshotInProgress.state = "STARTED" => master.nextSnapshotState = NULL 
 
 AllHistoryTracked == master.repositoryMeta \in (physicalBlobs.metaBlobs \union {EmptyRepoMeta})
 
-AllOK == /\ TypeOK
-         /\ BlobMetaOK
-         /\ NoStaleBlobs
-         /\ MasterOk
-         /\ AllHistoryTracked
+AllOK == /\ TypeOK 
+         /\ BlobMetaOK 
+         /\ NoStaleBlobs 
+         /\ MasterOk 
+         /\ AllHistoryTracked 
          /\ NoBlobMetaIdCollisions
 
 -----
