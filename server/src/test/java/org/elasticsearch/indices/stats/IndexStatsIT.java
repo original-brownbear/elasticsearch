@@ -1009,7 +1009,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         assertEquals(total, shardTotal);
     }
 
-    @TestLogging("_root:DEBUG")  // this fails at a very low rate on CI: https://github.com/elastic/elasticsearch/issues/32506
+    @TestLogging("_root:TRACE")  // this fails at a very low rate on CI: https://github.com/elastic/elasticsearch/issues/32506
     public void testFilterCacheStats() throws Exception {
         Settings settings = Settings.builder().put(indexSettings()).put("number_of_replicas", 0).build();
         assertAcked(prepareCreate("index").setSettings(settings).get());
@@ -1029,7 +1029,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         // the query cache has an optimization that disables it automatically if there is contention,
         // so we run it in an assertBusy block which should eventually succeed
         final QueryBuilder searchQuery = QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"));
-        //logger.info("---> fired first search query.");
+        logger.info("---> fired first search query.");
         assertSearchResponse(client().prepareSearch("index").setQuery(searchQuery).get());
         assertBusy(() -> {
             IndicesStatsResponse stats = client().admin().indices().prepareStats("index").setQueryCache(true).get();
@@ -1041,7 +1041,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         });
 
         assertSearchResponse(client().prepareSearch("index").setQuery(searchQuery).get());
-        //logger.info("---> fired second search query.");
+        logger.info("---> fired second search query.");
         assertBusy(() -> {
             IndicesStatsResponse stats = client().admin().indices().prepareStats("index").setQueryCache(true).get();
             assertCumulativeQueryCacheStats(stats);
