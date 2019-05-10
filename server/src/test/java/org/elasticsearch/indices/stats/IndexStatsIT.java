@@ -50,6 +50,7 @@ import org.elasticsearch.index.MergeSchedulerConfig;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.cache.query.QueryCacheStats;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.translog.Translog;
@@ -1027,8 +1028,9 @@ public class IndexStatsIT extends ESIntegTestCase {
 
         // the query cache has an optimization that disables it automatically if there is contention,
         // so we run it in an assertBusy block which should eventually succeed
-        assertSearchResponse(client().prepareSearch("index")
-            .setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"))).get());
+        final QueryBuilder searchQuery = QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"));
+        //logger.info("---> fired first search query.");
+        assertSearchResponse(client().prepareSearch("index").setQuery(searchQuery).get());
         assertBusy(() -> {
             IndicesStatsResponse stats = client().admin().indices().prepareStats("index").setQueryCache(true).get();
             assertCumulativeQueryCacheStats(stats);
@@ -1038,8 +1040,8 @@ public class IndexStatsIT extends ESIntegTestCase {
             assertThat(stats.getTotal().queryCache.getCacheSize(), greaterThan(0L));
         });
 
-        assertSearchResponse(client().prepareSearch("index")
-            .setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"))).get());
+        assertSearchResponse(client().prepareSearch("index").setQuery(searchQuery).get());
+        //logger.info("---> fired second search query.");
         assertBusy(() -> {
             IndicesStatsResponse stats = client().admin().indices().prepareStats("index").setQueryCache(true).get();
             assertCumulativeQueryCacheStats(stats);
@@ -1049,6 +1051,7 @@ public class IndexStatsIT extends ESIntegTestCase {
             assertThat(stats.getTotal().queryCache.getCacheSize(), greaterThan(0L));
         });
 
+        logger.info("---> assertions for second query passed.");
         assertEquals(DocWriteResponse.Result.DELETED, client().prepareDelete("index", "type", "1").get().getResult());
         assertEquals(DocWriteResponse.Result.DELETED, client().prepareDelete("index", "type", "2").get().getResult());
         // Here we are testing that a fully deleted segment should be dropped and its cached is evicted.
@@ -1075,8 +1078,7 @@ public class IndexStatsIT extends ESIntegTestCase {
                 client().prepareIndex("index", "type", "2").setSource("foo", "baz"));
 
         assertBusy(() -> {
-            assertSearchResponse(client().prepareSearch("index")
-                .setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"))).get());
+            assertSearchResponse(client().prepareSearch("index").setQuery(searchQuery).get());
             IndicesStatsResponse stats = client().admin().indices().prepareStats("index").setQueryCache(true).get();
             assertCumulativeQueryCacheStats(stats);
             assertThat(stats.getTotal().queryCache.getHitCount(), greaterThan(0L));
