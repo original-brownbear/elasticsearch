@@ -1027,9 +1027,9 @@ public class IndexStatsIT extends ESIntegTestCase {
 
         // the query cache has an optimization that disables it automatically if there is contention,
         // so we run it in an assertBusy block which should eventually succeed
+        assertSearchResponse(client().prepareSearch("index")
+            .setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"))).get());
         assertBusy(() -> {
-            assertSearchResponse(client().prepareSearch("index")
-                .setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"))).get());
             IndicesStatsResponse stats = client().admin().indices().prepareStats("index").setQueryCache(true).get();
             assertCumulativeQueryCacheStats(stats);
             assertThat(stats.getTotal().queryCache.getHitCount(), equalTo(0L));
@@ -1038,9 +1038,9 @@ public class IndexStatsIT extends ESIntegTestCase {
             assertThat(stats.getTotal().queryCache.getCacheSize(), greaterThan(0L));
         });
 
+        assertSearchResponse(client().prepareSearch("index")
+            .setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"))).get());
         assertBusy(() -> {
-            assertSearchResponse(client().prepareSearch("index")
-                .setQuery(QueryBuilders.constantScoreQuery(QueryBuilders.matchQuery("foo", "baz"))).get());
             IndicesStatsResponse stats = client().admin().indices().prepareStats("index").setQueryCache(true).get();
             assertCumulativeQueryCacheStats(stats);
             assertThat(stats.getTotal().queryCache.getHitCount(), greaterThan(0L));
