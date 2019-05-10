@@ -27,6 +27,7 @@ import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
+import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.repositories.fs.FsRepository;
 
 import java.io.ByteArrayInputStream;
@@ -36,9 +37,12 @@ import java.io.InputStream;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -51,14 +55,14 @@ import java.util.Set;
  *     <li>Blobs can become visible to list operations with a delay.</li>
  * </ul>
  */
-public class MockEventuallyConsistentRepository extends FsRepository {
+public class MockEventuallyConsistentRepository extends BlobStoreRepository {
 
     private final DeterministicTaskQueue deterministicTaskQueue;
 
     private final Context context;
 
     public MockEventuallyConsistentRepository(RepositoryMetaData metadata, Environment environment,
-                          NamedXContentRegistry namedXContentRegistry, DeterministicTaskQueue deterministicTaskQueue, Context context) {
+                          NamedXContentRegistry namedXContentRegistry, Random random, Context context) {
         super(metadata, environment, namedXContentRegistry, deterministicTaskQueue.getThreadPool());
         this.deterministicTaskQueue = deterministicTaskQueue;
         this.context = context;
@@ -71,7 +75,22 @@ public class MockEventuallyConsistentRepository extends FsRepository {
 
     @Override
     protected BlobStore createBlobStore() throws Exception {
-        return new MockBlobStore(super.createBlobStore());
+        return new BlobStore() {
+            @Override
+            public BlobContainer blobContainer(BlobPath path) {
+                return null;
+            }
+
+            @Override
+            public void close() {
+                // NOOP
+            }
+        };
+    }
+
+    @Override
+    protected BlobPath basePath() {
+        return BlobPath.cleanPath();
     }
 
     /**
@@ -83,6 +102,8 @@ public class MockEventuallyConsistentRepository extends FsRepository {
 
         private final Map<BlobPath, Map<String, Runnable>> pendingWriteActions = new HashMap<>();
 
+        private final Map<BlobPath, List<AbstractOperation>> operations = new HashMap<>();
+
         private Map<String, Runnable> pendingActions(BlobPath path) {
             return pendingWriteActions.computeIfAbsent(path, p -> new HashMap<>());
         }
@@ -90,6 +111,12 @@ public class MockEventuallyConsistentRepository extends FsRepository {
         private Set<String> cachedMisses(BlobPath path) {
             return cachedMisses.computeIfAbsent(path, p -> new HashSet<>());
         }
+
+        private void addOperation(BlobPath path, AbstractOperation operation) {
+            operations.computeIfAbsent(path, k -> new ArrayList<>()).add(operation);
+        }
+
+
     }
 
     private class MockBlobStore extends BlobStoreWrapper {
@@ -197,6 +224,55 @@ public class MockEventuallyConsistentRepository extends FsRepository {
                                         final boolean failIfAlreadyExists) throws IOException {
                 writeBlob(blobName, inputStream, blobSize, failIfAlreadyExists);
             }
+        }
+    }
+
+    private static abstract class AbstractOperation {
+        final long sequence;
+        final BlobPath key;
+        final long timestamp;
+
+        AbstractOperation(long sequence, BlobPath key, long timestamp) {
+            this.sequence = sequence;
+            this.key = key;
+            this.timestamp = timestamp;
+        }
+    }
+
+    private static final class WriteOperation extends AbstractOperation {
+        final byte[] data;
+
+        WriteOperation(long sequence, BlobPath key, long timestamp, byte[] data) {
+            super(sequence, key, timestamp);
+            this.data = data;
+        }
+    }
+
+    private static final class ListOperation extends AbstractOperation {
+
+        final long result;
+
+        final String prefix;
+
+        ListOperation(long sequence, BlobPath key, long timestamp, String prefix, long result) {
+            super(sequence, key, timestamp);
+            this.prefix = prefix;
+            this.result = result;
+        }
+    }
+
+    private static final class ReadOperation extends AbstractOperation {
+        final long result;
+
+        ReadOperation(long sequence, BlobPath key, long timestamp, long result) {
+            super(sequence, key, timestamp);
+            this.result = result;
+        }
+    }
+
+    private static final class DeleteOperation extends AbstractOperation {
+        DeleteOperation(long sequence, BlobPath key, long timestamp) {
+            super(sequence, key, timestamp);
         }
     }
 }
