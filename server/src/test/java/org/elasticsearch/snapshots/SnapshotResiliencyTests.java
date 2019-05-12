@@ -152,6 +152,7 @@ import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.FetchPhase;
@@ -314,6 +315,95 @@ public class SnapshotResiliencyTests extends ESTestCase {
         assertEquals(shards, snapshotInfo.successfulShards());
         assertEquals(0, snapshotInfo.failedShards());
     }
+
+
+    public void testSuccessfulSnapshotWithConcurrentDynamicMappingUpdates() {
+        setupTestCluster(randomFrom(1, 3, 5), randomIntBetween(2, 10));
+
+        String repoName = "repo";
+        String snapshotName = "snapshot";
+        final String index = "test";
+
+        final int shards = randomIntBetween(1, 10);
+        final int documents = randomIntBetween(2, 100);
+        TestClusterNode masterNode =
+            testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+        final AtomicBoolean createdSnapshot = new AtomicBoolean();
+        final AtomicBoolean snapshotRestored = new AtomicBoolean();
+        final AtomicBoolean documentCountVerified = new AtomicBoolean();
+        masterNode.client.admin().cluster().preparePutRepository(repoName)
+            .setType(FsRepository.TYPE).setSettings(Settings.builder().put("location", randomAlphaOfLength(10)))
+            .execute(
+                assertNoFailureListener(
+                    () -> masterNode.client.admin().indices().create(
+                        new CreateIndexRequest(index).waitForActiveShards(ActiveShardCount.ALL)
+                            .settings(defaultIndexSettings(shards)),
+                        assertNoFailureListener(
+                            () -> {
+                                final Runnable afterIndexing = () ->
+                                    masterNode.client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
+                                        .setWaitForCompletion(true).execute(assertNoFailureListener(() -> {
+                                        createdSnapshot.set(true);
+                                        masterNode.client.admin().indices().delete(
+                                            new DeleteIndexRequest(index),
+                                            assertNoFailureListener(() -> masterNode.client.admin().cluster().restoreSnapshot(
+                                                new RestoreSnapshotRequest(repoName, snapshotName).waitForCompletion(true),
+                                                assertNoFailureListener(restoreSnapshotResponse -> {
+                                                    snapshotRestored.set(true);
+                                                    assertEquals(shards, restoreSnapshotResponse.getRestoreInfo().totalShards());
+                                                    masterNode.client.search(
+                                                        new SearchRequest(index).source(
+                                                            new SearchSourceBuilder().size(documents).docValueField("num").trackTotalHits(true)),
+                                                        assertNoFailureListener(r -> {
+                                                            assertEquals(
+                                                                (long) documents,
+                                                                Objects.requireNonNull(r.getHits().getTotalHits()).value
+                                                            );
+                                                            for (SearchHit hit : r.getHits().getHits()) {
+                                                                assertEquals(hit.getFields().size(), 2);
+                                                            }
+                                                            documentCountVerified.set(true);
+                                                        }));
+                                                })
+                                            )));
+                                    }));
+                                final AtomicBoolean initiatedSnapshot = new AtomicBoolean(false);
+                                for (int i = 0; i < documents; ++i) {
+                                    masterNode.client.bulk(
+                                        new BulkRequest().add(new IndexRequest(index).source(
+                                            Map.of("foo" + i, "bar" + i, "num", i)))
+                                            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE),
+                                        assertNoFailureListener(
+                                            bulkResponse -> {
+                                                assertFalse(
+                                                    "Failures in bulkresponse: " + bulkResponse.buildFailureMessage(),
+                                                    bulkResponse.hasFailures());
+                                                if (randomBoolean() && initiatedSnapshot.compareAndSet(false, true)) {
+                                                    afterIndexing.run();
+                                                }
+                                            }));
+                                }
+                                if (documents == 0) {
+                                    afterIndexing.run();
+                                }
+                            }))));
+        runUntil(documentCountVerified::get, TimeUnit.MINUTES.toMillis(5L));
+        assertTrue(createdSnapshot.get());
+        assertTrue(snapshotRestored.get());
+        assertTrue(documentCountVerified.get());
+        SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
+        assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
+        final Repository repository = masterNode.repositoriesService.repository(repoName);
+        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        assertThat(snapshotIds, hasSize(1));
+
+        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+        assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
+        assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
+        assertEquals(shards, snapshotInfo.successfulShards());
+        assertEquals(0, snapshotInfo.failedShards());
+    }
+
 
     public void testSnapshotWithNodeDisconnects() {
         final int dataNodes = randomIntBetween(2, 10);
