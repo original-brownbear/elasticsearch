@@ -46,6 +46,14 @@ MaxOrZero(s) == IF s = {} THEN 0 ELSE CHOOSE x \in s : \A y \in s : x >= y
 InitialRepoStateId == [time |-> 1, uuid |-> 1]
 
 EmptyClusterState == [repoStateId |-> InitialRepoStateId,
+(*
+    The height value is an incrementing integer that enables quasi-atomic operations across multiple blobs.
+    This works by storing the height of a blob together with its other metadata and incrementing said height before
+    executing an operation that creates and or deletes multiple blobs.
+    This way all of the blobs at a certain height can be rolled back together if part of them failed uploading.
+    By then running all uploads before all deletes in a certain height, we can always roll back partial uploads where some blobs
+    have failed in a clean way.
+*)
                       height |-> 1,
                       snapshotInProgress |-> NULL,
                       snapshotDeletionInProgress |-> NULL,
@@ -147,9 +155,12 @@ RemoveFromRepoMeta(repoMeta, removedBlobs) == [repoMeta EXCEPT
                                                     !.repoStateId = NextRepoStateId(repoMeta.repoStateId, clusterState.height),
                                                     !.blobs = {b \in @: ~\E m \in removedBlobs: EqualTypeAndName(m, b)}]
 
+(*
+    Update or add the given updates to the given repoMeta.
+*)
 UpdateInRepoMeta(repoMeta, updates) == [repoMeta EXCEPT
-                                                    !.repoStateId = NextRepoStateId(repoMeta.repoStateId, clusterState.height),
-                                                    !.blobs = (@ \ {b \in @: \E n \in updates: EqualTypeAndName(b,n)}) \union updates]
+                                         !.repoStateId = NextRepoStateId(repoMeta.repoStateId, clusterState.height),
+                                         !.blobs = (@ \ {b \in @: \E n \in updates: EqualTypeAndName(b,n)}) \union updates]
 
 ApplyToMaster(masterState, repoMeta, startedSnapshot) == [masterState EXCEPT
                                                 !.repositoryMeta = repoMeta,
