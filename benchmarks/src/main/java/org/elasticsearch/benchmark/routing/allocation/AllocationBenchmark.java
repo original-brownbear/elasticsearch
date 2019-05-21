@@ -116,7 +116,7 @@ public class AllocationBenchmark {
     private ClusterState initialClusterState;
 
     @Setup
-    public void setUp() throws Exception {
+    public void setUp() {
         final String[] params = indicesShardsReplicasNodes.split("\\|");
 
         int numIndices = toInt(params[0]);

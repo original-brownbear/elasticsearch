@@ -35,7 +35,6 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.gateway.GatewayAllocator;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -67,21 +66,18 @@ public final class Allocators {
     }
 
 
-    public static AllocationService createAllocationService(Settings settings) throws NoSuchMethodException, InstantiationException,
-        IllegalAccessException, InvocationTargetException {
+    public static AllocationService createAllocationService(Settings settings) {
         return createAllocationService(settings, new ClusterSettings(Settings.EMPTY, ClusterSettings
             .BUILT_IN_CLUSTER_SETTINGS));
     }
 
-    public static AllocationService createAllocationService(Settings settings, ClusterSettings clusterSettings) throws
-        InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public static AllocationService createAllocationService(Settings settings, ClusterSettings clusterSettings) {
         return new AllocationService(
             defaultAllocationDeciders(settings, clusterSettings),
             NoopGatewayAllocator.INSTANCE, new BalancedShardsAllocator(settings), EmptyClusterInfoService.INSTANCE);
     }
 
-    public static AllocationDeciders defaultAllocationDeciders(Settings settings, ClusterSettings clusterSettings) throws
-        IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException {
+    public static AllocationDeciders defaultAllocationDeciders(Settings settings, ClusterSettings clusterSettings) {
         Collection<AllocationDecider> deciders =
             ClusterModule.createAllocationDeciders(settings, clusterSettings, Collections.emptyList());
         return new AllocationDeciders(deciders);
