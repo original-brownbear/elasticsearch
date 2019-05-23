@@ -161,7 +161,17 @@ public class Netty4HttpServerPipeliningTests extends ESTestCase {
 
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, HttpPipelinedRequest<FullHttpRequest> msg) throws Exception {
-            executorService.submit(new PossiblySlowRunnable(ctx, msg));
+            try {
+                executorService.submit(new PossiblySlowRunnable(ctx, msg));
+            } finally {
+                ctx.read();
+            }
+        }
+
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            super.channelActive(ctx);
+            ctx.read();
         }
 
         @Override

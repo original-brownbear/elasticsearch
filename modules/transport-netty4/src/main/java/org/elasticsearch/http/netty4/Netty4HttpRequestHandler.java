@@ -68,7 +68,14 @@ class Netty4HttpRequestHandler extends SimpleChannelInboundHandler<HttpPipelined
         } finally {
             // As we have copied the buffer, we can release the request
             request.release();
+            ctx.read();
         }
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        super.channelActive(ctx);
+        ctx.read();
     }
 
     @Override

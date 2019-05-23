@@ -319,6 +319,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
         @Override
         protected void initChannel(Channel ch) throws Exception {
             Netty4HttpChannel nettyHttpChannel = new Netty4HttpChannel(ch);
+            ch.config().setAutoRead(false);
             ch.attr(HTTP_CHANNEL_KEY).set(nettyHttpChannel);
             ch.pipeline().addLast("read_timeout", new ReadTimeoutHandler(transport.readTimeoutMillis, TimeUnit.MILLISECONDS));
             final HttpRequestDecoder decoder = new HttpRequestDecoder(
