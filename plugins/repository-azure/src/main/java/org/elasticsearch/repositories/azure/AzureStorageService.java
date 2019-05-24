@@ -34,6 +34,12 @@ import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.blob.DeleteSnapshotsOption;
 import com.microsoft.azure.storage.blob.ListBlobItem;
+import com.microsoft.azure.storage.blob.PipelineOptions;
+import com.microsoft.azure.storage.blob.RequestRetryOptions;
+import com.microsoft.azure.storage.blob.RetryPolicyType;
+import com.microsoft.azure.storage.blob.ServiceURL;
+import com.microsoft.azure.storage.blob.SharedKeyCredentials;
+import com.microsoft.azure.storage.blob.StorageURL;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -48,8 +54,10 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.FileAlreadyExistsException;
 import java.security.InvalidKeyException;
 import java.util.EnumSet;
@@ -97,8 +105,8 @@ public class AzureStorageService {
         }
     }
 
-    private static CloudBlobClient buildClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException, URISyntaxException {
-        final CloudBlobClient client = createClient(azureStorageSettings);
+    private static ServiceURL buildClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException, URISyntaxException {
+        final ServiceURL client = createClient(azureStorageSettings);
         // Set timeout option if the user sets cloud.azure.storage.timeout or
         // cloud.azure.storage.xxx.timeout (it's negative by default)
         final long timeout = azureStorageSettings.getTimeout().getMillis();
@@ -115,9 +123,16 @@ public class AzureStorageService {
         return client;
     }
 
-    private static CloudBlobClient createClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException, URISyntaxException {
-        final String connectionString = azureStorageSettings.buildConnectionString();
-        return CloudStorageAccount.parse(connectionString).createCloudBlobClient();
+    private static ServiceURL createClient(AzureStorageSettings azureStorageSettings) throws MalformedURLException, InvalidKeyException {
+        final PipelineOptions options = new PipelineOptions();
+        final SharedKeyCredentials creds = new SharedKeyCredentials(azureStorageSettings.getAccount(), azureStorageSettings.getKey());
+        options.withRequestRetryOptions(
+            new RequestRetryOptions(
+                RetryPolicyType.EXPONENTIAL, 3, 10, 500L, 1000L,
+                azureStorageSettings.getAccount() + "-secondary.blob.core.windows.net"));
+        return new ServiceURL(
+            new URL("https://" + azureStorageSettings.getAccount() + ".blob.core.windows.net"),
+            StorageURL.createPipeline(creds, options));
     }
 
     private static OperationContext buildOperationContext(AzureStorageSettings azureStorageSettings) {

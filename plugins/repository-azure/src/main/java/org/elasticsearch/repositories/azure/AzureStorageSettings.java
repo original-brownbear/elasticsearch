@@ -129,6 +129,14 @@ final class AzureStorageSettings {
         this.locationMode = LocationMode.PRIMARY_ONLY;
     }
 
+    public String getKey() {
+        return key;
+    }
+
+    public String getAccount() {
+        return account;
+    }
+
     public String getEndpointSuffix() {
         return endpointSuffix;
     }
