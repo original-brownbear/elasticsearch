@@ -19,12 +19,9 @@
 
 package org.elasticsearch.repositories.azure;
 
-import com.microsoft.azure.storage.OperationContext;
-import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.blob.CloudBlobClient;
+import com.microsoft.azure.storage.blob.ServiceURL;
 import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.blobstore.support.PlainBlobMetaData;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.internal.io.Streams;
 
@@ -40,7 +37,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import static java.util.Collections.emptyMap;
 
@@ -66,9 +62,9 @@ public class AzureStorageServiceMock extends AzureStorageService {
     }
 
     @Override
-    public void deleteBlob(String account, String container, String blob) throws StorageException {
+    public void deleteBlob(String account, String container, String blob) throws IOException {
         if (blobs.remove(blob) == null) {
-            throw new StorageException("BlobNotFound", "[" + blob + "] does not exist.", 404, null, null);
+            throw new NoSuchFileException("BlobNotFound, [" + blob + "] does not exist.");
         }
     }
 
@@ -100,7 +96,7 @@ public class AzureStorageServiceMock extends AzureStorageService {
 
     @Override
     public void writeBlob(String account, String container, String blobName, InputStream inputStream, long blobSize,
-                          boolean failIfAlreadyExists) throws StorageException, FileAlreadyExistsException {
+                          boolean failIfAlreadyExists) throws IOException {
         if (failIfAlreadyExists && blobs.containsKey(blobName)) {
             throw new FileAlreadyExistsException(blobName);
         }
@@ -108,7 +104,7 @@ public class AzureStorageServiceMock extends AzureStorageService {
             blobs.put(blobName, outputStream);
             Streams.copy(inputStream, outputStream);
         } catch (IOException e) {
-            throw new StorageException("MOCK", "Error while writing mock stream", e);
+            throw new IOException("MOCK, Error while writing mock stream", e);
         }
     }
 
@@ -161,7 +157,7 @@ public class AzureStorageServiceMock extends AzureStorageService {
     }
 
     @Override
-    public Tuple<CloudBlobClient, Supplier<OperationContext>> client(String clientName) {
+    public ServiceURL client(String clientName) {
         return null;
     }
 

@@ -1,20 +1,20 @@
 /*
- * Licensed to Elasticsearch under one or more contributor
- * license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright
- * ownership. Elasticsearch licenses this file to you under
- * the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ 'Licensed to Elasticsearch under one or more contributor
+ 'license agreements. See the NOTICE file distributed with
+ 'this work for additional information regarding copyright
+ 'ownership. Elasticsearch licenses this file to you under
+ 'the Apache License, Version 2.0 (the "License"); you may
+ 'not use this file except in compliance with the License.
+ 'You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ '   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ 'Unless required by applicable law or agreed to in writing,
+ 'software distributed under the License is distributed on an
+ '"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ 'KIND, either express or implied.  See the License for the
+ 'specific language governing permissions and limitations
+ 'under the License.
  */
 
 esplugin {
@@ -23,15 +23,37 @@ esplugin {
 }
 
 dependencies {
+  compile 'com.microsoft.rest.v2:client-runtime:2.1.1'
+  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.9.9'
+  compile 'com.fasterxml.jackson.core:jackson-annotations:2.9.9'
+  compile 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
+  compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.9'
+  compile 'org.reactivestreams:reactive-streams:1.0.2'
+  compile 'io.reactivex.rxjava2:rxjava:2.2.8'
   compile 'com.microsoft.azure:azure-storage-blob:11.0.1'
   compile 'com.microsoft.azure:azure-keyvault-core:1.2.1'
   compile 'com.google.guava:guava:20.0'
   compile 'org.apache.commons:commons-lang3:3.4'
+  compile "org.slf4j:slf4j-api:${versions.slf4j}"
+  compile "org.apache.logging.log4j:log4j-slf4j-impl:${versions.log4j}"
+  compile "io.netty:netty-buffer:${versions.netty}"
+  compile "io.netty:netty-codec:${versions.netty}"
+  compile "io.netty:netty-codec-http:${versions.netty}"
+  compile "io.netty:netty-common:${versions.netty}"
+  compile "io.netty:netty-handler:${versions.netty}"
+  compile "io.netty:netty-resolver:${versions.netty}"
+  compile "io.netty:netty-transport:${versions.netty}"
 }
 
 dependencyLicenses {
   mapping from: /azure-.*/, to: 'azure'
-  mapping from: /jackson-.*/, to: 'jackson'
+  mapping from: /client-runtime/, to: 'azure'
+  mapping from: /jackson-.*/, to: 'azure' // TODO: Fix this obv.
+  mapping from: /reactive-streams/, to: 'azure' // TODO: Fix this obv.
+  mapping from: /rxjava/, to: 'azure' // TODO: Fix this obv.
+  mapping from: /slf4j-api/, to: 'azure' // TODO: Fix this obv.
+  mapping from: /log4j-slf4j-impl/, to: 'azure' // TODO: Fix this obv.
+  mapping from: /netty-.*/, to: 'azure' // TODO: Fix this obv.
   mapping from: /jersey-.*/, to: 'jersey'
   mapping from: /jaxb-.*/, to: 'jaxb'
   mapping from: /stax-.*/, to: 'stax'
@@ -40,8 +62,76 @@ dependencyLicenses {
 thirdPartyAudit {
     ignoreMissingClasses (
       // Optional and not enabled by Elasticsearch
-      'org.slf4j.Logger',
-      'org.slf4j.LoggerFactory'
+      'org.slf4j.ext.EventData',
+      'com.fasterxml.jackson.core.type.WritableTypeId',
+      'com.fasterxml.jackson.core.type.WritableTypeId$Inclusion',
+      'com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector',
+      'org.codehaus.stax2.LocationInfo',
+      'org.codehaus.stax2.XMLStreamLocation2',
+      'org.codehaus.stax2.XMLStreamReader2',
+      'org.codehaus.stax2.XMLStreamWriter2',
+      'org.codehaus.stax2.io.Stax2ByteArraySource',
+      'org.codehaus.stax2.io.Stax2CharArraySource',
+      'org.codehaus.stax2.ri.Stax2ReaderAdapter',
+      'org.codehaus.stax2.ri.Stax2WriterAdapter',
+      'com.google.protobuf.ExtensionRegistry',
+        'com.google.protobuf.ExtensionRegistryLite',
+        'com.google.protobuf.MessageLite',
+        'com.google.protobuf.MessageLite$Builder',
+        'com.google.protobuf.MessageLiteOrBuilder',
+        'com.google.protobuf.Parser',
+        'com.google.protobuf.nano.CodedOutputByteBufferNano',
+        'com.google.protobuf.nano.MessageNano',
+        'com.jcraft.jzlib.Deflater',
+        'com.jcraft.jzlib.Inflater',
+        'com.jcraft.jzlib.JZlib',
+        'com.jcraft.jzlib.JZlib$WrapperType',
+        'com.ning.compress.BufferRecycler',
+        'com.ning.compress.lzf.ChunkDecoder',
+        'com.ning.compress.lzf.ChunkEncoder',
+        'com.ning.compress.lzf.LZFEncoder',
+        'com.ning.compress.lzf.util.ChunkDecoderFactory',
+        'com.ning.compress.lzf.util.ChunkEncoderFactory',
+        'io.netty.handler.proxy.HttpProxyHandler',
+        'io.netty.internal.tcnative.Buffer',
+        'io.netty.internal.tcnative.CertificateCallback',
+        'io.netty.internal.tcnative.CertificateVerifier',
+        'io.netty.internal.tcnative.Library',
+        'io.netty.internal.tcnative.SSL',
+        'io.netty.internal.tcnative.SSLContext',
+        'io.netty.internal.tcnative.SSLPrivateKeyMethod',
+        'io.netty.internal.tcnative.SessionTicketKey',
+        'io.netty.internal.tcnative.SniHostNameMatcher',
+        'lzma.sdk.lzma.Encoder',
+        'net.jpountz.lz4.LZ4Compressor',
+        'net.jpountz.lz4.LZ4Factory',
+        'net.jpountz.lz4.LZ4FastDecompressor',
+        'net.jpountz.xxhash.StreamingXXHash32',
+        'net.jpountz.xxhash.XXHashFactory',
+        'org.apache.commons.logging.Log',
+        'org.apache.commons.logging.LogFactory',
+        'org.bouncycastle.asn1.x500.X500Name',
+        'org.bouncycastle.cert.X509v3CertificateBuilder',
+        'org.bouncycastle.cert.jcajce.JcaX509CertificateConverter',
+        'org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder',
+        'org.bouncycastle.jce.provider.BouncyCastleProvider',
+        'org.bouncycastle.operator.jcajce.JcaContentSignerBuilder',
+        'org.conscrypt.AllocatedBuffer',
+        'org.conscrypt.BufferAllocator',
+        'org.conscrypt.Conscrypt',
+        'org.conscrypt.HandshakeListener',
+        'org.eclipse.jetty.alpn.ALPN',
+        'org.eclipse.jetty.alpn.ALPN$ClientProvider',
+        'org.eclipse.jetty.alpn.ALPN$ServerProvider',
+        'org.eclipse.jetty.npn.NextProtoNego',
+        'org.eclipse.jetty.npn.NextProtoNego$ClientProvider',
+        'org.eclipse.jetty.npn.NextProtoNego$ServerProvider',
+        'org.jboss.marshalling.ByteInput',
+        'org.jboss.marshalling.ByteOutput',
+        'org.jboss.marshalling.Marshaller',
+        'org.jboss.marshalling.MarshallerFactory',
+        'org.jboss.marshalling.MarshallingConfiguration',
+        'org.jboss.marshalling.Unmarshaller'
     )
 
     ignoreViolations (
@@ -56,8 +146,25 @@ thirdPartyAudit {
       'com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper$1',
       'com.google.common.hash.LittleEndianByteArray$UnsafeByteArray',
       'com.google.common.primitives.UnsignedBytes$LexicographicalComparatorHolder$UnsafeComparator',
-      'com.google.common.primitives.UnsignedBytes$LexicographicalComparatorHolder$UnsafeComparator$1'
-   )
+      'com.google.common.primitives.UnsignedBytes$LexicographicalComparatorHolder$UnsafeComparator$1',
+      'io.netty.handler.ssl.util.OpenJdkSelfSignedCertGenerator',
+      'io.netty.util.internal.PlatformDependent0',
+      'io.netty.util.internal.PlatformDependent0$1',
+      'io.netty.util.internal.PlatformDependent0$2',
+      'io.netty.util.internal.PlatformDependent0$3',
+      'io.netty.util.internal.PlatformDependent0$5',
+      'io.netty.util.internal.shaded.org.jctools.queues.BaseLinkedQueueConsumerNodeRef',
+      'io.netty.util.internal.shaded.org.jctools.queues.BaseLinkedQueueProducerNodeRef',
+      'io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueColdProducerFields',
+      'io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueConsumerFields',
+      'io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueueProducerFields',
+      'io.netty.util.internal.shaded.org.jctools.queues.LinkedQueueNode',
+      'io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueConsumerIndexField',
+      'io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerIndexField',
+      'io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField',
+      'io.netty.util.internal.shaded.org.jctools.util.UnsafeAccess',
+      'io.netty.util.internal.shaded.org.jctools.util.UnsafeRefArrayAccess',
+    )
 }
 
 check {

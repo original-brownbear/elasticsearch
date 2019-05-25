@@ -19,9 +19,6 @@
 
 package org.elasticsearch.repositories.azure;
 
-import com.microsoft.azure.storage.LocationMode;
-import com.microsoft.azure.storage.StorageException;
-
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetaData;
@@ -31,8 +28,6 @@ import org.elasticsearch.repositories.azure.AzureRepository.Repository;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.nio.file.FileAlreadyExistsException;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
@@ -77,29 +72,27 @@ public class AzureBlobStore implements BlobStore {
     public void close() {
     }
 
-    public boolean containerExist() throws URISyntaxException, StorageException {
+    public boolean containerExist() {
         return service.doesContainerExist(clientName, container);
     }
 
-    public boolean blobExists(String blob) throws URISyntaxException, StorageException {
+    public boolean blobExists(String blob) {
         return service.blobExists(clientName, container, blob);
     }
 
-    public void deleteBlob(String blob) throws URISyntaxException, StorageException {
+    public void deleteBlob(String blob) throws IOException {
         service.deleteBlob(clientName, container, blob);
     }
 
-    public InputStream getInputStream(String blob) throws URISyntaxException, StorageException, IOException {
+    public InputStream getInputStream(String blob) throws IOException {
         return service.getInputStream(clientName, container, blob);
     }
 
-    public Map<String, BlobMetaData> listBlobsByPrefix(String keyPath, String prefix)
-        throws URISyntaxException, StorageException {
+    public Map<String, BlobMetaData> listBlobsByPrefix(String keyPath, String prefix) {
         return service.listBlobsByPrefix(clientName, container, keyPath, prefix);
     }
 
-    public void writeBlob(String blobName, InputStream inputStream, long blobSize, boolean failIfAlreadyExists)
-        throws URISyntaxException, StorageException, FileAlreadyExistsException {
+    public void writeBlob(String blobName, InputStream inputStream, long blobSize, boolean failIfAlreadyExists) throws IOException {
         service.writeBlob(this.clientName, container, blobName, inputStream, blobSize, failIfAlreadyExists);
     }
 }

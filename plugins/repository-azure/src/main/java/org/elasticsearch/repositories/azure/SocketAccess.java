@@ -19,7 +19,6 @@
 
 package org.elasticsearch.repositories.azure;
 
-import com.microsoft.azure.storage.StorageException;
 import org.elasticsearch.SpecialPermission;
 
 import java.io.IOException;
@@ -48,16 +47,16 @@ public final class SocketAccess {
         }
     }
 
-    public static <T> T doPrivilegedException(PrivilegedExceptionAction<T> operation) throws StorageException {
+    public static <T> T doPrivilegedException(PrivilegedExceptionAction<T> operation) {
         SpecialPermission.check();
         try {
             return AccessController.doPrivileged(operation);
         } catch (PrivilegedActionException e) {
-            throw (StorageException) e.getCause();
+            throw new RuntimeException(e.getCause());
         }
     }
 
-    public static void doPrivilegedVoidException(StorageRunnable action) throws StorageException, URISyntaxException {
+    public static void doPrivilegedVoidException(StorageRunnable action) throws URISyntaxException {
         SpecialPermission.check();
         try {
             AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
@@ -66,17 +65,17 @@ public final class SocketAccess {
             });
         } catch (PrivilegedActionException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof StorageException) {
-                throw (StorageException) cause;
-            } else {
+            if (cause instanceof URISyntaxException) {
                 throw (URISyntaxException) cause;
+            } else {
+                throw new RuntimeException(e.getCause());
             }
         }
     }
 
     @FunctionalInterface
     public interface StorageRunnable {
-        void executeCouldThrow() throws StorageException, URISyntaxException, IOException;
+        void executeCouldThrow() throws URISyntaxException, IOException;
     }
 
 }

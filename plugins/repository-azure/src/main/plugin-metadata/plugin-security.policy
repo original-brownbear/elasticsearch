@@ -20,4 +20,7 @@
 grant {
   // azure client opens socket connections for to access repository
   permission java.net.SocketPermission "*", "connect";
+  permission java.lang.reflect.ReflectPermission "*"; //TODO: More fine grained
+  permission java.lang.RuntimePermission "accessDeclaredMembers";
+  permission java.util.PropertyPermission "*", "read,write";
 };
