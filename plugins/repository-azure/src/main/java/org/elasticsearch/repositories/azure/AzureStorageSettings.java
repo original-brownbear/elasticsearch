@@ -56,11 +56,15 @@ final class AzureStorageSettings {
         Setting.affixKeySetting(AZURE_CLIENT_PREFIX_KEY, "max_retries",
             (key) -> Setting.intSetting(key, 4, Setting.Property.NodeScope),
             ACCOUNT_SETTING, KEY_SETTING);
+
+    public static final Setting<String> ENDPOINT_OVERRIDE_SETTING = Setting.affixKeySetting(AZURE_CLIENT_PREFIX_KEY, "endpoint_override",
+        key -> Setting.simpleString(key, "", Property.NodeScope), ACCOUNT_SETTING, KEY_SETTING);
+
     /**
      * Azure endpoint suffix. Default to core.windows.net (CloudStorageAccount.DEFAULT_DNS).
      */
     public static final Setting<String> ENDPOINT_SUFFIX_SETTING = Setting.affixKeySetting(AZURE_CLIENT_PREFIX_KEY, "endpoint_suffix",
-        key -> Setting.simpleString(key, Property.NodeScope), ACCOUNT_SETTING, KEY_SETTING);
+        key -> Setting.simpleString(key, "core.windows.net", Property.NodeScope), ACCOUNT_SETTING, KEY_SETTING);
 
     public static final AffixSetting<TimeValue> TIMEOUT_SETTING = Setting.affixKeySetting(AZURE_CLIENT_PREFIX_KEY, "timeout",
         (key) -> Setting.timeSetting(key, TimeValue.timeValueMinutes(-1), Property.NodeScope), ACCOUNT_SETTING, KEY_SETTING);
@@ -82,28 +86,31 @@ final class AzureStorageSettings {
     private final String account;
     private final String key;
     private final String endpointSuffix;
+    private final String endpointOverride;
     private final TimeValue timeout;
     private final int maxRetries;
     private final Proxy proxy;
     private final LocationMode locationMode;
 
     // copy-constructor
-    private AzureStorageSettings(String account, String key, String endpointSuffix, TimeValue timeout, int maxRetries, Proxy proxy,
-            LocationMode locationMode) {
+    private AzureStorageSettings(String account, String key, String endpointSuffix, String endpointOverride, TimeValue timeout,
+                                 int maxRetries, Proxy proxy, LocationMode locationMode) {
         this.account = account;
         this.key = key;
         this.endpointSuffix = endpointSuffix;
+        this.endpointOverride = endpointOverride;
         this.timeout = timeout;
         this.maxRetries = maxRetries;
         this.proxy = proxy;
         this.locationMode = locationMode;
     }
 
-    AzureStorageSettings(String account, String key, String endpointSuffix, TimeValue timeout, int maxRetries,
+    AzureStorageSettings(String account, String key, String endpointSuffix, String endpointOverride, TimeValue timeout, int maxRetries,
                                 Proxy.Type proxyType, String proxyHost, Integer proxyPort) {
         this.account = account;
         this.key = key;
         this.endpointSuffix = endpointSuffix;
+        this.endpointOverride = endpointOverride;
         this.timeout = timeout;
         this.maxRetries = maxRetries;
         // Register the proxy if we have any
@@ -135,6 +142,10 @@ final class AzureStorageSettings {
         return account;
     }
 
+    public String endpointOverride() {
+        return this.endpointOverride;
+    }
+
     public String getEndpointSuffix() {
         return endpointSuffix;
     }
@@ -149,19 +160,6 @@ final class AzureStorageSettings {
 
     public Proxy getProxy() {
         return proxy;
-    }
-
-    public String buildConnectionString() {
-        final StringBuilder connectionStringBuilder = new StringBuilder();
-        connectionStringBuilder.append("DefaultEndpointsProtocol=https")
-                .append(";AccountName=")
-                .append(account)
-                .append(";AccountKey=")
-                .append(key);
-        if (Strings.hasText(endpointSuffix)) {
-            connectionStringBuilder.append(";EndpointSuffix=").append(endpointSuffix);
-        }
-        return connectionStringBuilder.toString();
     }
 
     public LocationMode getLocationMode() {
@@ -210,6 +208,7 @@ final class AzureStorageSettings {
              SecureString key = getConfigValue(settings, clientName, KEY_SETTING)) {
             return new AzureStorageSettings(account.toString(), key.toString(),
                 getValue(settings, clientName, ENDPOINT_SUFFIX_SETTING),
+                getValue(settings, clientName, ENDPOINT_OVERRIDE_SETTING),
                 getValue(settings, clientName, TIMEOUT_SETTING),
                 getValue(settings, clientName, MAX_RETRIES_SETTING),
                 getValue(settings, clientName, PROXY_TYPE_SETTING),
@@ -235,7 +234,8 @@ final class AzureStorageSettings {
         final var map = new HashMap<String, AzureStorageSettings>();
         for (final Map.Entry<String, AzureStorageSettings> entry : clientsSettings.entrySet()) {
             final AzureStorageSettings azureSettings = new AzureStorageSettings(entry.getValue().account, entry.getValue().key,
-                    entry.getValue().endpointSuffix, entry.getValue().timeout, entry.getValue().maxRetries, entry.getValue().proxy,
+                    entry.getValue().endpointSuffix, entry.getValue().endpointOverride,
+                entry.getValue().timeout, entry.getValue().maxRetries, entry.getValue().proxy,
                     locationMode);
             map.put(entry.getKey(), azureSettings);
         }

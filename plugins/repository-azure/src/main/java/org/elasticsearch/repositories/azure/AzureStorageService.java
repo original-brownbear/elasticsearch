@@ -36,6 +36,7 @@ import io.reactivex.Flowable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.blobstore.support.PlainBlobMetaData;
 import org.elasticsearch.common.settings.Settings;
@@ -45,7 +46,6 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -89,12 +89,12 @@ public class AzureStorageService {
         }
         try {
             return buildClient(azureStorageSettings);
-        } catch (IllegalArgumentException | InvalidKeyException | MalformedURLException e) {
+        } catch (IllegalArgumentException | InvalidKeyException e) {
             throw new SettingsException("Invalid azure client settings with name [" + clientName + "]", e);
         }
     }
 
-    private static ServiceURL buildClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException, MalformedURLException {
+    private static ServiceURL buildClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException {
         final ServiceURL client = createClient(azureStorageSettings);
         // Set timeout option if the user sets cloud.azure.storage.timeout or
         // cloud.azure.storage.xxx.timeout (it's negative by default)
@@ -110,15 +110,18 @@ public class AzureStorageService {
         return client;
     }
 
-    private static ServiceURL createClient(AzureStorageSettings azureStorageSettings) throws MalformedURLException, InvalidKeyException {
+    private static ServiceURL createClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException {
         final PipelineOptions options = new PipelineOptions();
         final SharedKeyCredentials creds = new SharedKeyCredentials(azureStorageSettings.getAccount(), azureStorageSettings.getKey());
+        final String endpointOverride = azureStorageSettings.endpointOverride();
         options.withRequestRetryOptions(
             new RequestRetryOptions(
                 RetryPolicyType.EXPONENTIAL, 3, 10, 500L, 1000L,
-                azureStorageSettings.getAccount() + "-secondary.blob.core.windows.net"));
+                Strings.hasText(endpointOverride) ? endpointOverride :
+                    (azureStorageSettings.getAccount() + "-secondary.blob." + azureStorageSettings.getEndpointSuffix())));
         return SocketAccess.doPrivilegedException(() -> new ServiceURL(
-            new URL("https://" + azureStorageSettings.getAccount() + ".blob.core.windows.net"),
+            new URL(Strings.hasText(endpointOverride) ? endpointOverride :
+                ("https://" + azureStorageSettings.getAccount() + ".blob." + azureStorageSettings.getEndpointSuffix())),
             StorageURL.createPipeline(creds, options)));
     }
 
@@ -224,6 +227,7 @@ public class AzureStorageService {
             long left = blobSize;
             while (left > 0L) {
                 final int read = inputStream.read(buffer.array());
+                buffer.position(0).limit(read);
                 if (read > 0) {
                     left -= read;
                     final BlockBlobUploadResponse response = client(account).createContainerURL(container).createBlockBlobURL(blobName)

@@ -43,7 +43,6 @@ import static org.elasticsearch.repositories.azure.AzureStorageService.blobNameF
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -56,8 +55,8 @@ public class AzureStorageServiceTests extends ESTestCase {
         final Map<String, AzureStorageSettings> loadedSettings = AzureStorageSettings.load(settings);
         assertThat(loadedSettings.keySet(), containsInAnyOrder("azure1","azure2","azure3","default"));
 
-        assertThat(loadedSettings.get("azure1").getEndpointSuffix(), isEmptyString());
-        assertThat(loadedSettings.get("azure2").getEndpointSuffix(), isEmptyString());
+        assertThat(loadedSettings.get("azure1").getEndpointSuffix(), equalTo("core.windows.net"));
+        assertThat(loadedSettings.get("azure2").getEndpointSuffix(), equalTo("core.windows.net"));
         assertThat(loadedSettings.get("azure3").getEndpointSuffix(), equalTo("my_endpoint_suffix"));
     }
 
