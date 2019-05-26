@@ -19,6 +19,10 @@
 
 package org.elasticsearch.repositories.azure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.DefaultSerializerProvider;
+import com.microsoft.rest.v2.serializer.JacksonAdapter;
+import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsException;
@@ -30,6 +34,9 @@ import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import java.io.ByteArrayOutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +46,23 @@ import java.util.Map;
  * A plugin to add a repository type that writes to and from the Azure cloud storage service.
  */
 public class AzureRepositoryPlugin extends Plugin implements RepositoryPlugin, ReloadablePlugin {
+
+    static {
+        SpecialPermission.check();
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                Class.forName("org.elasticsearch.repositories.azure.AzureRepositoryPlugin");
+                Class.forName("com.microsoft.rest.v2.serializer.AdditionalPropertiesSerializer");
+                Class.forName("com.microsoft.rest.v2.http.HttpResponse").getFields();
+                final ObjectMapper mapper = new JacksonAdapter().serializer();
+                mapper.setSerializerProvider(new DefaultSerializerProvider.Impl());
+                mapper.writeValue(new ByteArrayOutputStream(), Collections.emptyMap());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            return null;
+        });
+    }
 
     // protected for testing
     final AzureStorageService azureStoreService;

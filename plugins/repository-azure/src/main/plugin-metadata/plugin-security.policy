@@ -23,4 +23,6 @@ grant {
   permission java.lang.reflect.ReflectPermission "*"; //TODO: More fine grained
   permission java.lang.RuntimePermission "accessDeclaredMembers";
   permission java.util.PropertyPermission "*", "read,write";
+  permission java.lang.RuntimePermission "getClassLoader";
+  permission org.elasticsearch.secure_sm.ThreadPermission "modifyArbitraryThreadGroup";
 };

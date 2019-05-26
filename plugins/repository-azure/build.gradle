@@ -24,10 +24,11 @@ esplugin {
 
 dependencies {
   compile 'com.microsoft.rest.v2:client-runtime:2.1.1'
-  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.9.9'
-  compile 'com.fasterxml.jackson.core:jackson-annotations:2.9.9'
-  compile 'com.fasterxml.jackson.core:jackson-databind:2.9.9'
-  compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.9'
+  compile "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:${versions.jackson}"
+  compile "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
+  compile "com.fasterxml.jackson.core:jackson-annotations:${versions.jackson}"
+  compile "com.fasterxml.jackson.core:jackson-databind:${versions.jackson}"
+  compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${versions.jackson}"
   compile 'org.reactivestreams:reactive-streams:1.0.2'
   compile 'io.reactivex.rxjava2:rxjava:2.2.8'
   compile 'com.microsoft.azure:azure-storage-blob:11.0.1'
@@ -63,8 +64,6 @@ thirdPartyAudit {
     ignoreMissingClasses (
       // Optional and not enabled by Elasticsearch
       'org.slf4j.ext.EventData',
-      'com.fasterxml.jackson.core.type.WritableTypeId',
-      'com.fasterxml.jackson.core.type.WritableTypeId$Inclusion',
       'com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector',
       'org.codehaus.stax2.LocationInfo',
       'org.codehaus.stax2.XMLStreamLocation2',

@@ -30,7 +30,6 @@ import com.microsoft.azure.storage.blob.SharedKeyCredentials;
 import com.microsoft.azure.storage.blob.StorageURL;
 import com.microsoft.azure.storage.blob.models.BlobDeleteResponse;
 import com.microsoft.azure.storage.blob.models.BlobItem;
-import com.microsoft.azure.storage.blob.models.BlockBlobUploadResponse;
 import com.microsoft.azure.storage.blob.models.ListBlobsHierarchySegmentResponse;
 import io.reactivex.Flowable;
 import org.apache.logging.log4j.LogManager;
@@ -111,18 +110,20 @@ public class AzureStorageService {
     }
 
     private static ServiceURL createClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException {
-        final PipelineOptions options = new PipelineOptions();
-        final SharedKeyCredentials creds = new SharedKeyCredentials(azureStorageSettings.getAccount(), azureStorageSettings.getKey());
-        final String endpointOverride = azureStorageSettings.endpointOverride();
-        options.withRequestRetryOptions(
-            new RequestRetryOptions(
-                RetryPolicyType.EXPONENTIAL, 3, 10, 500L, 1000L,
-                Strings.hasText(endpointOverride) ? endpointOverride :
-                    (azureStorageSettings.getAccount() + "-secondary.blob." + azureStorageSettings.getEndpointSuffix())));
-        return SocketAccess.doPrivilegedException(() -> new ServiceURL(
-            new URL(Strings.hasText(endpointOverride) ? endpointOverride :
-                ("https://" + azureStorageSettings.getAccount() + ".blob." + azureStorageSettings.getEndpointSuffix())),
-            StorageURL.createPipeline(creds, options)));
+        return SocketAccess.doPrivilegedException(() -> {
+            final PipelineOptions options = new PipelineOptions();
+            final SharedKeyCredentials creds = new SharedKeyCredentials(azureStorageSettings.getAccount(), azureStorageSettings.getKey());
+            final String endpointOverride = azureStorageSettings.endpointOverride();
+            options.withRequestRetryOptions(
+                new RequestRetryOptions(
+                    RetryPolicyType.EXPONENTIAL, 3, 10, 500L, 1000L,
+                    Strings.hasText(endpointOverride) ? endpointOverride :
+                        (azureStorageSettings.getAccount() + "-secondary.blob." + azureStorageSettings.getEndpointSuffix())));
+            return new ServiceURL(
+                new URL(Strings.hasText(endpointOverride) ? endpointOverride :
+                    ("https://" + azureStorageSettings.getAccount() + ".blob." + azureStorageSettings.getEndpointSuffix())),
+                StorageURL.createPipeline(creds, options));
+        });
     }
 
     /**
@@ -177,46 +178,51 @@ public class AzureStorageService {
     }
 
     public InputStream getInputStream(String account, String container, String blob) throws IOException {
-        final Iterator<ByteBuffer> buffers = SocketAccess.doPrivilegedException(
-            () -> client(account).createContainerURL(container).createBlobURL(blob)
-                .download().blockingGet().body(new ReliableDownloadOptions()).blockingIterable().iterator());
-        return new InputStream() {
+        return SocketAccess.doPrivilegedException(() -> {
+            final Iterator<ByteBuffer> buffers =
+                client(account).createContainerURL(container).createBlobURL(blob)
+                    .download().blockingGet().body(new ReliableDownloadOptions()).blockingIterable().iterator();
+            return new InputStream() {
 
-            private ByteBuffer current = buffers.hasNext() ? buffers.next() : ByteBuffer.allocate(0);
+                private ByteBuffer current = buffers.hasNext() ? buffers.next() : ByteBuffer.allocate(0);
 
-            @Override
-            public int read() {
-                if (current.hasRemaining()) {
-                    return current.get() & 0xFF;
-                } else if (buffers.hasNext()) {
-                    current = buffers.next();
-                    assert current.hasRemaining();
-                    return current.get();
+                @Override
+                public int read() {
+                    if (current.hasRemaining()) {
+                        return current.get() & 0xFF;
+                    } else if (buffers.hasNext()) {
+                        current = buffers.next();
+                        assert current.hasRemaining();
+                        return current.get();
+                    }
+                    return -1;
                 }
-                return -1;
-            }
-        };
+            };
+        });
     }
 
     public Map<String, BlobMetaData> listBlobsByPrefix(String account, String container, String keyPath, String prefix) {
-        final Map<String, BlobMetaData> blobsBuilder = new HashMap<>();
-        ListBlobsHierarchySegmentResponse response = client(account).createContainerURL(container)
-            .listBlobsHierarchySegment(null, "/", new ListBlobsOptions().withPrefix(prefix)).blockingGet().body();
-        for (BlobItem blobItem : response.segment().blobItems()) {
-            final long length = blobItem.properties().contentLength();
-            final String name = blobItem.name();
-            blobsBuilder.put(name, new PlainBlobMetaData(name, length));
-        }
-        while (response.nextMarker() != null) {
-            response = client(account).createContainerURL(container)
-                .listBlobsHierarchySegment(response.nextMarker(), "/", new ListBlobsOptions().withPrefix(prefix)).blockingGet().body();
+        return SocketAccess.doPrivilegedException(() -> {
+            final Map<String, BlobMetaData> blobsBuilder = new HashMap<>();
+            ListBlobsHierarchySegmentResponse response = client(account).createContainerURL(container)
+                .listBlobsHierarchySegment(null, "/", new ListBlobsOptions().withPrefix(prefix)).blockingGet().body();
             for (BlobItem blobItem : response.segment().blobItems()) {
                 final long length = blobItem.properties().contentLength();
                 final String name = blobItem.name();
                 blobsBuilder.put(name, new PlainBlobMetaData(name, length));
             }
-        }
-        return Map.copyOf(blobsBuilder);
+            while (response.nextMarker() != null) {
+                response = client(account).createContainerURL(container)
+                    .listBlobsHierarchySegment(response.nextMarker(), "/",
+                        new ListBlobsOptions().withPrefix(prefix)).blockingGet().body();
+                for (BlobItem blobItem : response.segment().blobItems()) {
+                    final long length = blobItem.properties().contentLength();
+                    final String name = blobItem.name();
+                    blobsBuilder.put(name, new PlainBlobMetaData(name, length));
+                }
+            }
+            return Map.copyOf(blobsBuilder);
+        });
     }
 
     public void writeBlob(String account, String container, String blobName, InputStream inputStream, long blobSize,
@@ -230,9 +236,8 @@ public class AzureStorageService {
                 buffer.position(0).limit(read);
                 if (read > 0) {
                     left -= read;
-                    final BlockBlobUploadResponse response = client(account).createContainerURL(container).createBlockBlobURL(blobName)
-                        .upload(Flowable.just(buffer), blobSize).blockingGet();
-                    assert response != null;
+                    client(account).createContainerURL(container).createBlockBlobURL(blobName).upload(Flowable.just(buffer), blobSize)
+                        .blockingGet();
                 } else {
                     break;
                 }
