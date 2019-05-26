@@ -31,6 +31,7 @@ import com.microsoft.azure.storage.blob.StorageURL;
 import com.microsoft.azure.storage.blob.models.BlobDeleteResponse;
 import com.microsoft.azure.storage.blob.models.BlobItem;
 import com.microsoft.azure.storage.blob.models.ListBlobsHierarchySegmentResponse;
+import com.microsoft.rest.v2.http.HttpClient;
 import io.reactivex.Flowable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -111,7 +112,9 @@ public class AzureStorageService {
 
     private static ServiceURL createClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException {
         return SocketAccess.doPrivilegedException(() -> {
-            final PipelineOptions options = new PipelineOptions();
+            final PipelineOptions options = new PipelineOptions().withClient(HttpClient.createDefault());
+            // TODO: kick off request here to set up SM correctly
+            //options.client().sendRequestAsync(new HttpRequest("foo", "http://google.com", new HttpResponseDecoder()))
             final SharedKeyCredentials creds = new SharedKeyCredentials(azureStorageSettings.getAccount(), azureStorageSettings.getKey());
             final String endpointOverride = azureStorageSettings.endpointOverride();
             options.withRequestRetryOptions(
