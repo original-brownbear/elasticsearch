@@ -114,6 +114,7 @@ public class AzureStorageService {
         return SocketAccess.doPrivilegedException(() -> {
             final PipelineOptions options = new PipelineOptions().withClient(HttpClient.createDefault());
             // TODO: kick off request here to set up SM correctly
+            // TODO: Alternative, just create a wrapped client that runs in privileged block!
             //options.client().sendRequestAsync(new HttpRequest("foo", "http://google.com", new HttpResponseDecoder()))
             final SharedKeyCredentials creds = new SharedKeyCredentials(azureStorageSettings.getAccount(), azureStorageSettings.getKey());
             final String endpointOverride = azureStorageSettings.endpointOverride();
