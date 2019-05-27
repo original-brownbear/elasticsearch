@@ -32,7 +32,10 @@ import com.microsoft.azure.storage.blob.models.BlobDeleteResponse;
 import com.microsoft.azure.storage.blob.models.BlobItem;
 import com.microsoft.azure.storage.blob.models.ListBlobsHierarchySegmentResponse;
 import com.microsoft.rest.v2.http.HttpClient;
+import com.microsoft.rest.v2.http.HttpRequest;
+import com.microsoft.rest.v2.http.HttpResponse;
 import io.reactivex.Flowable;
+import io.reactivex.Single;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -49,7 +52,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.security.InvalidKeyException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -89,12 +91,12 @@ public class AzureStorageService {
         }
         try {
             return buildClient(azureStorageSettings);
-        } catch (IllegalArgumentException | InvalidKeyException e) {
+        } catch (IllegalArgumentException e) {
             throw new SettingsException("Invalid azure client settings with name [" + clientName + "]", e);
         }
     }
 
-    private static ServiceURL buildClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException {
+    private static ServiceURL buildClient(AzureStorageSettings azureStorageSettings) {
         final ServiceURL client = createClient(azureStorageSettings);
         // Set timeout option if the user sets cloud.azure.storage.timeout or
         // cloud.azure.storage.xxx.timeout (it's negative by default)
@@ -110,22 +112,26 @@ public class AzureStorageService {
         return client;
     }
 
-    private static ServiceURL createClient(AzureStorageSettings azureStorageSettings) throws InvalidKeyException {
+    private static ServiceURL createClient(AzureStorageSettings azureStorageSettings) {
         return SocketAccess.doPrivilegedException(() -> {
-            final PipelineOptions options = new PipelineOptions().withClient(HttpClient.createDefault());
-            // TODO: kick off request here to set up SM correctly
-            // TODO: Alternative, just create a wrapped client that runs in privileged block!
-            //options.client().sendRequestAsync(new HttpRequest("foo", "http://google.com", new HttpResponseDecoder()))
+            final HttpClient client = HttpClient.createDefault();
+            final PipelineOptions options = new PipelineOptions().withClient(new HttpClient() {
+                @Override
+                public Single<HttpResponse> sendRequestAsync(HttpRequest request) {
+                    return client.sendRequestAsync(new HttpRequest(request.callerMethod(), request.httpMethod(),
+                        request.url(), request.responseDecoder()));
+                }
+            });
             final SharedKeyCredentials creds = new SharedKeyCredentials(azureStorageSettings.getAccount(), azureStorageSettings.getKey());
             final String endpointOverride = azureStorageSettings.endpointOverride();
             options.withRequestRetryOptions(
                 new RequestRetryOptions(
                     RetryPolicyType.EXPONENTIAL, 3, 10, 500L, 1000L,
                     Strings.hasText(endpointOverride) ? endpointOverride :
-                        (azureStorageSettings.getAccount() + "-secondary.blob." + azureStorageSettings.getEndpointSuffix())));
+                        azureStorageSettings.getAccount() + "-secondary.blob." + azureStorageSettings.getEndpointSuffix()));
             return new ServiceURL(
                 new URL(Strings.hasText(endpointOverride) ? endpointOverride :
-                    ("https://" + azureStorageSettings.getAccount() + ".blob." + azureStorageSettings.getEndpointSuffix())),
+                    "https://" + azureStorageSettings.getAccount() + ".blob." + azureStorageSettings.getEndpointSuffix()),
                 StorageURL.createPipeline(creds, options));
         });
     }
