@@ -58,10 +58,12 @@ public abstract class AbstractThirdPartyRepositoryTestCase extends ESSingleNodeT
         }
         client().admin().indices().prepareRefresh().get();
 
+        final String snapshotName = "test-snap-" + System.currentTimeMillis();
+
         logger.info("--> snapshot");
         CreateSnapshotResponse createSnapshotResponse = client().admin()
             .cluster()
-            .prepareCreateSnapshot("test-repo", "test-snap")
+            .prepareCreateSnapshot("test-repo", snapshotName)
             .setWaitForCompletion(true)
             .setIndices("test-idx-*", "-test-idx-3")
             .get();
@@ -72,11 +74,16 @@ public abstract class AbstractThirdPartyRepositoryTestCase extends ESSingleNodeT
         assertThat(client().admin()
                 .cluster()
                 .prepareGetSnapshots("test-repo")
-                .setSnapshots("test-snap")
+                .setSnapshots(snapshotName)
                 .get()
                 .getSnapshots()
                 .get(0)
                 .state(),
             equalTo(SnapshotState.SUCCESS));
+
+        assertTrue(client().admin()
+                .cluster()
+                .prepareDeleteSnapshot("test-repo", snapshotName).get().isAcknowledged());
+
     }
 }
