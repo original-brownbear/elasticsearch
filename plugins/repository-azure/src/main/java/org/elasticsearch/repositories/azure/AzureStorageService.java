@@ -31,11 +31,7 @@ import com.microsoft.azure.storage.blob.StorageURL;
 import com.microsoft.azure.storage.blob.models.BlobDeleteResponse;
 import com.microsoft.azure.storage.blob.models.BlobItem;
 import com.microsoft.azure.storage.blob.models.ListBlobsHierarchySegmentResponse;
-import com.microsoft.rest.v2.http.HttpClient;
-import com.microsoft.rest.v2.http.HttpRequest;
-import com.microsoft.rest.v2.http.HttpResponse;
 import io.reactivex.Flowable;
-import io.reactivex.Single;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -114,14 +110,7 @@ public class AzureStorageService {
 
     private static ServiceURL createClient(AzureStorageSettings azureStorageSettings) {
         return SocketAccess.doPrivilegedException(() -> {
-            final HttpClient client = HttpClient.createDefault();
-            final PipelineOptions options = new PipelineOptions().withClient(new HttpClient() {
-                @Override
-                public Single<HttpResponse> sendRequestAsync(HttpRequest request) {
-                    return client.sendRequestAsync(new HttpRequest(request.callerMethod(), request.httpMethod(),
-                        request.url(), request.responseDecoder()));
-                }
-            });
+            final PipelineOptions options = new PipelineOptions();
             final SharedKeyCredentials creds = new SharedKeyCredentials(azureStorageSettings.getAccount(), azureStorageSettings.getKey());
             final String endpointOverride = azureStorageSettings.endpointOverride();
             options.withRequestRetryOptions(

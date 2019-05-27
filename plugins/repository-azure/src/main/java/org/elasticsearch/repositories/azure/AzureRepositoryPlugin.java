@@ -21,7 +21,8 @@ package org.elasticsearch.repositories.azure;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ser.DefaultSerializerProvider;
-import com.microsoft.rest.v2.http.HttpClient;
+import com.microsoft.rest.v2.RestProxy;
+import com.microsoft.rest.v2.protocol.SerializerEncoding;
 import com.microsoft.rest.v2.serializer.JacksonAdapter;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.common.settings.Setting;
@@ -59,7 +60,7 @@ public class AzureRepositoryPlugin extends Plugin implements RepositoryPlugin, R
                 final ObjectMapper mapper = new JacksonAdapter().serializer();
                 mapper.setSerializerProvider(new DefaultSerializerProvider.Impl());
                 mapper.writeValue(new ByteArrayOutputStream(), Collections.emptyMap());
-                HttpClient.createDefault();
+                RestProxy.createDefaultSerializer().serialize(Collections.emptyMap(), SerializerEncoding.JSON);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

@@ -20,9 +20,12 @@
 grant {
   // azure client opens socket connections for to access repository
   permission java.net.SocketPermission "*", "connect";
-  permission java.lang.reflect.ReflectPermission "*"; //TODO: More fine grained
-  permission java.lang.RuntimePermission "accessDeclaredMembers";
   permission java.util.PropertyPermission "*", "read,write";
   permission java.lang.RuntimePermission "getClassLoader";
   permission org.elasticsearch.secure_sm.ThreadPermission "modifyArbitraryThreadGroup";
 };
+
+grant codebase "${codebase.client-runtime}" {
+   permission java.lang.RuntimePermission "accessDeclaredMembers";
+   permission java.lang.reflect.ReflectPermission "*"; //TODO: More fine grained
+}
