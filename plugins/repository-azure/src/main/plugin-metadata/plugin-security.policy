@@ -23,9 +23,6 @@ grant {
   permission java.util.PropertyPermission "*", "read,write";
   permission java.lang.RuntimePermission "getClassLoader";
   permission org.elasticsearch.secure_sm.ThreadPermission "modifyArbitraryThreadGroup";
+  permission java.lang.RuntimePermission "accessDeclaredMembers";
+  permission java.lang.reflect.ReflectPermission "newProxyInPackage.com.microsoft.azure.storage.blob";
 };
-
-grant codebase "${codebase.client-runtime}" {
-   permission java.lang.RuntimePermission "accessDeclaredMembers";
-   permission java.lang.reflect.ReflectPermission "*"; //TODO: More fine grained
-}
