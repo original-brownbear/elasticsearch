@@ -42,6 +42,7 @@ dependencies {
   compile "io.netty:netty-codec-http:${versions.netty}"
   compile "io.netty:netty-common:${versions.netty}"
   compile "io.netty:netty-handler:${versions.netty}"
+  compile "io.netty:netty-handler-proxy:${versions.netty}"
   compile "io.netty:netty-resolver:${versions.netty}"
   compile "io.netty:netty-transport:${versions.netty}"
 }
@@ -91,7 +92,6 @@ thirdPartyAudit {
         'com.ning.compress.lzf.LZFEncoder',
         'com.ning.compress.lzf.util.ChunkDecoderFactory',
         'com.ning.compress.lzf.util.ChunkEncoderFactory',
-        'io.netty.handler.proxy.HttpProxyHandler',
         'io.netty.internal.tcnative.Buffer',
         'io.netty.internal.tcnative.CertificateCallback',
         'io.netty.internal.tcnative.CertificateVerifier',
@@ -130,7 +130,29 @@ thirdPartyAudit {
         'org.jboss.marshalling.Marshaller',
         'org.jboss.marshalling.MarshallerFactory',
         'org.jboss.marshalling.MarshallingConfiguration',
-        'org.jboss.marshalling.Unmarshaller'
+        'org.jboss.marshalling.Unmarshaller',
+      'io.netty.handler.codec.socksx.v4.DefaultSocks4CommandRequest',
+      'io.netty.handler.codec.socksx.v4.Socks4ClientDecoder',
+      'io.netty.handler.codec.socksx.v4.Socks4ClientEncoder',
+      'io.netty.handler.codec.socksx.v4.Socks4CommandResponse',
+      'io.netty.handler.codec.socksx.v4.Socks4CommandStatus',
+      'io.netty.handler.codec.socksx.v4.Socks4CommandType',
+      'io.netty.handler.codec.socksx.v5.DefaultSocks5CommandRequest',
+      'io.netty.handler.codec.socksx.v5.DefaultSocks5InitialRequest',
+      'io.netty.handler.codec.socksx.v5.DefaultSocks5PasswordAuthRequest',
+      'io.netty.handler.codec.socksx.v5.Socks5AddressType',
+      'io.netty.handler.codec.socksx.v5.Socks5AuthMethod',
+      'io.netty.handler.codec.socksx.v5.Socks5ClientEncoder',
+      'io.netty.handler.codec.socksx.v5.Socks5CommandResponse',
+      'io.netty.handler.codec.socksx.v5.Socks5CommandResponseDecoder',
+      'io.netty.handler.codec.socksx.v5.Socks5CommandStatus',
+      'io.netty.handler.codec.socksx.v5.Socks5CommandType',
+      'io.netty.handler.codec.socksx.v5.Socks5InitialRequest',
+      'io.netty.handler.codec.socksx.v5.Socks5InitialResponse',
+      'io.netty.handler.codec.socksx.v5.Socks5InitialResponseDecoder',
+      'io.netty.handler.codec.socksx.v5.Socks5PasswordAuthResponse',
+      'io.netty.handler.codec.socksx.v5.Socks5PasswordAuthResponseDecoder',
+      'io.netty.handler.codec.socksx.v5.Socks5PasswordAuthStatus'
     )
 
     ignoreViolations (
@@ -162,7 +184,7 @@ thirdPartyAudit {
       'io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerIndexField',
       'io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField',
       'io.netty.util.internal.shaded.org.jctools.util.UnsafeAccess',
-      'io.netty.util.internal.shaded.org.jctools.util.UnsafeRefArrayAccess',
+      'io.netty.util.internal.shaded.org.jctools.util.UnsafeRefArrayAccess'
     )
 }
 
