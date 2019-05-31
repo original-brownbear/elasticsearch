@@ -356,6 +356,7 @@ public final class UnassignedInfo implements ToXContentFragment, Writeable {
      */
     public long getRemainingDelay(final long nanoTimeNow, final Settings indexSettings) {
         long delayTimeoutNanos = INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.get(indexSettings).nanos();
+        assert reason == Reason.NODE_LEFT;
         assert nanoTimeNow >= unassignedTimeNanos;
         return Math.max(0L, delayTimeoutNanos - (nanoTimeNow - unassignedTimeNanos));
     }
