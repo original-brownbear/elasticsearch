@@ -352,7 +352,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetaData) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetaData, long repositoryStateId) {
         if (isReadOnly()) {
             throw new RepositoryException(metadata.name(), "cannot create snapshot in a readonly repository");
         }
@@ -360,6 +360,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final String snapshotName = snapshotId.getName();
             // check if the snapshot name already exists in the repository
             final RepositoryData repositoryData = getRepositoryData();
+            ensureNoConcurrentMod(repositoryStateId, repositoryData.getGenId());
             if (repositoryData.getAllSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName))) {
                 throw new InvalidSnapshotNameException(metadata.name(), snapshotId.getName(), "snapshot with the same name already exists");
             }
@@ -671,13 +672,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     protected void writeIndexGen(final RepositoryData repositoryData, final long repositoryStateId) throws IOException {
         assert isReadOnly() == false; // can not write to a read only repository
         final long currentGen = latestIndexBlobId();
-        if (currentGen != repositoryStateId) {
-            // the index file was updated by a concurrent operation, so we were operating on stale
-            // repository data
-            throw new RepositoryException(metadata.name(), "concurrent modification of the index-N file, expected current generation [" +
-                                              repositoryStateId + "], actual current generation [" + currentGen +
-                                              "] - possibly due to simultaneous snapshot deletion requests");
-        }
+        ensureNoConcurrentMod(repositoryStateId, currentGen);
         final long newGen = currentGen + 1;
         final BytesReference snapshotsBytes;
         try (BytesStreamOutput bStream = new BytesStreamOutput()) {
@@ -706,6 +701,16 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
         logger.debug("Repository [{}] updating index.latest with generation [{}]", metadata.name(), newGen);
         writeAtomic(INDEX_LATEST_BLOB, genBytes, false);
+    }
+
+    private void ensureNoConcurrentMod(long assumedStateId, long foundStateId) {
+        if (foundStateId != assumedStateId) {
+            // the index file was updated by a concurrent operation, so we were operating on stale
+            // repository data
+            throw new RepositoryException(metadata.name(), "concurrent modification of the index-N file, expected current generation [" +
+                assumedStateId + "], actual current generation [" + foundStateId +
+                "] - possibly due to simultaneous snapshot deletion requests");
+        }
     }
 
     /**

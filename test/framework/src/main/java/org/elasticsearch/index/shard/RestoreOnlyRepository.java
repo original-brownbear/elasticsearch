@@ -94,7 +94,7 @@ public abstract class RestoreOnlyRepository extends AbstractLifecycleComponent i
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, long repositoryStateId) {
     }
 
     @Override

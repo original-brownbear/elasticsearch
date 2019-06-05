@@ -249,7 +249,7 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, long repositoryStateId) {
         throw new UnsupportedOperationException("Unsupported for repository of type: " + TYPE);
     }
 

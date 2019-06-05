@@ -131,11 +131,11 @@ public class MockRepository extends FsRepository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata, long repositoryStateId) {
         if (blockOnInitialization) {
             blockExecution();
         }
-        super.initializeSnapshot(snapshotId, indices, clusterMetadata);
+        super.initializeSnapshot(snapshotId, indices, clusterMetadata, repositoryStateId);
     }
 
     private static RepositoryMetaData overrideSettings(RepositoryMetaData metadata, Environment environment) {

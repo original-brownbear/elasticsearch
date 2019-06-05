@@ -47,7 +47,7 @@ import java.util.function.Function;
  * <p>
  * To perform a snapshot:
  * <ul>
- * <li>Master calls {@link #initializeSnapshot(SnapshotId, List, org.elasticsearch.cluster.metadata.MetaData)}
+ * <li>Master calls {@link #initializeSnapshot(SnapshotId, List, org.elasticsearch.cluster.metadata.MetaData, long)}
  * with list of indices that will be included into the snapshot</li>
  * <li>Data nodes call {@link Repository#snapshotShard(Store, MapperService, SnapshotId, IndexId, IndexCommit, IndexShardSnapshotStatus)}
  * for each shard</li>
@@ -112,11 +112,12 @@ public interface Repository extends LifecycleComponent {
     /**
      * Starts snapshotting process
      *
-     * @param snapshotId snapshot id
-     * @param indices    list of indices to be snapshotted
-     * @param metaData   cluster metadata
+     * @param snapshotId  snapshot id
+     * @param indices     list of indices to be snapshotted
+     * @param metaData    cluster metadata
+     * @param repositoryStateId the unique id identifying the state of the repository when the snapshot began
      */
-    void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData);
+    void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, long repositoryStateId);
 
     /**
      * Finalizes snapshotting process

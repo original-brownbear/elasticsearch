@@ -134,7 +134,7 @@ public class AzureRepository extends BlobStoreRepository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata, long repositoryStateId) {
         try {
             final AzureBlobStore blobStore = (AzureBlobStore) blobStore();
             if (blobStore.containerExist() == false) {
@@ -144,7 +144,7 @@ public class AzureRepository extends BlobStoreRepository {
         } catch (URISyntaxException | StorageException e) {
             throw new SnapshotCreationException(metadata.name(), snapshotId, e);
         }
-        super.initializeSnapshot(snapshotId, indices, clusterMetadata);
+        super.initializeSnapshot(snapshotId, indices, clusterMetadata, repositoryStateId);
     }
 
     @Override

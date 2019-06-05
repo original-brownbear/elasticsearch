@@ -410,7 +410,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     metaData = builder.build();
                 }
 
-                repository.initializeSnapshot(snapshot.snapshot().getSnapshotId(), snapshot.indices(), metaData);
+                repository.initializeSnapshot(
+                    snapshot.snapshot().getSnapshotId(), snapshot.indices(), metaData, snapshot.getRepositoryStateId());
                 snapshotCreated = true;
 
                 logger.info("snapshot [{}] started", snapshot.snapshot());

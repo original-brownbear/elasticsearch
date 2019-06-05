@@ -71,7 +71,7 @@ public final class SourceOnlySnapshotRepository extends FilterRepository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, long repositoryStateId) {
         // we process the index metadata at snapshot time. This means if somebody tries to restore
         // a _source only snapshot with a plain repository it will be just fine since we already set the
         // required engine, that the index is read-only and the mapping to a default mapping
@@ -98,7 +98,7 @@ public final class SourceOnlySnapshotRepository extends FilterRepository {
                 indexMetadataBuilder.settingsVersion(1 + indexMetadataBuilder.settingsVersion());
                 builder.put(indexMetadataBuilder);
             }
-            super.initializeSnapshot(snapshotId, indices, builder.build());
+            super.initializeSnapshot(snapshotId, indices, builder.build(), repositoryStateId);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }

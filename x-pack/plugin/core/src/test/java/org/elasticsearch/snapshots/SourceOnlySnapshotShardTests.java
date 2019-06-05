@@ -196,7 +196,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
             runAsSnapshot(shard.getThreadPool(), () -> {
                 repository.initializeSnapshot(snapshotId, Arrays.asList(indexId),
                     MetaData.builder().put(shard.indexSettings()
-                    .getIndexMetaData(), false).build());
+                    .getIndexMetaData(), false).build(), repository.getRepositoryData().getGenId());
                 repository.snapshotShard(shard.store(), shard.mapperService(), snapshotId, indexId, snapshotRef.getIndexCommit(),
                     indexShardSnapshotStatus);
             });
