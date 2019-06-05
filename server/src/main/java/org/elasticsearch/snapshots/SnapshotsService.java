@@ -130,6 +130,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     // Set of snapshots that are currently being ended by this node
     private final Set<Snapshot> endingSnapshots = Collections.synchronizedSet(new HashSet<>());
 
+    private final Map<String, RepositoryData> latestRepositoryData = new ConcurrentHashMap<>();
+
     public SnapshotsService(Settings settings, ClusterService clusterService, IndexNameExpressionResolver indexNameExpressionResolver,
                             RepositoriesService repositoriesService, ThreadPool threadPool) {
         this.clusterService = clusterService;
@@ -260,6 +262,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         validate(repositoryName, snapshotName);
         final SnapshotId snapshotId = new SnapshotId(snapshotName, UUIDs.randomBase64UUID()); // new UUID for the snapshot
         final RepositoryData repositoryData = repositoriesService.repository(repositoryName).getRepositoryData();
+        latestRepositoryData.put(repositoryName, repositoryData);
 
         clusterService.submitStateUpdateTask("create_snapshot [" + snapshotName + ']', new ClusterStateUpdateTask() {
 
@@ -549,26 +552,37 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         }
 
         private void cleanupAfterError(Exception exception) {
-            if(snapshotCreated) {
-                try {
+            if (snapshotCreated) {
+                loadRepositoryData(snapshot.snapshot().getRepository(), ActionListener.runAfter(ActionListener.wrap(repositoryData ->
                     repositoriesService.repository(snapshot.snapshot().getRepository())
-                                       .finalizeSnapshot(snapshot.snapshot().getSnapshotId(),
-                                                         snapshot.indices(),
-                                                         snapshot.startTime(),
-                                                         ExceptionsHelper.detailedMessage(exception),
-                                                         0,
-                                                         Collections.emptyList(),
-                                                         getRepositoryData(snapshot.snapshot().getRepository()), //TODO: cache this
-                                                         snapshot.includeGlobalState());
-                } catch (Exception inner) {
+                        .finalizeSnapshot(snapshot.snapshot().getSnapshotId(),
+                            snapshot.indices(),
+                            snapshot.startTime(),
+                            ExceptionsHelper.detailedMessage(exception),
+                            0,
+                            Collections.emptyList(),
+                            repositoryData,
+                            snapshot.includeGlobalState()), inner -> {
                     inner.addSuppressed(exception);
                     logger.warn(() -> new ParameterizedMessage("[{}] failed to close snapshot in repository",
                         snapshot.snapshot()), inner);
-                }
+                }), () -> userCreateSnapshotListener.onFailure(e)));
             }
-            userCreateSnapshotListener.onFailure(e);
         }
+    }
 
+    private void loadRepositoryData(String repository, ActionListener<RepositoryData> listener) {
+        RepositoryData repositoryData = latestRepositoryData.get(repository);
+        if (repositoryData == null) {
+            threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new ActionRunnable<>(listener) {
+                @Override
+                protected void doRun() {
+                    listener.onResponse(latestRepositoryData.computeIfAbsent(repository, r -> getRepositoryData(r)));
+                }
+            });
+        } else {
+            listener.onResponse(repositoryData);
+        }
     }
 
     private static SnapshotInfo inProgressSnapshot(SnapshotsInProgress.Entry entry) {
@@ -971,7 +985,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             protected void doRun() {
                 final Snapshot snapshot = entry.snapshot();
-                final Repository repository = repositoriesService.repository(snapshot.getRepository());
                 final String failure = entry.failure();
                 logger.trace("[{}] finalizing snapshot in repository, state: [{}], failure[{}]", snapshot, entry.state(), failure);
                 ArrayList<SnapshotShardFailure> shardFailures = new ArrayList<>();
@@ -982,17 +995,20 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         shardFailures.add(new SnapshotShardFailure(status.nodeId(), shardId, status.reason()));
                     }
                 }
-                SnapshotInfo snapshotInfo = repository.finalizeSnapshot(
-                    snapshot.getSnapshotId(),
-                    entry.indices(),
-                    entry.startTime(),
-                    failure,
-                    entry.shards().size(),
-                    unmodifiableList(shardFailures),
-                    repository.getRepositoryData(), // TODO: cache this
-                    entry.includeGlobalState());
-                removeSnapshotFromClusterState(snapshot, snapshotInfo, null);
-                logger.info("snapshot [{}] completed with state [{}]", snapshot, snapshotInfo.state());
+                final Repository repository = repositoriesService.repository(snapshot.getRepository());
+                loadRepositoryData(snapshot.getRepository(), ActionListener.wrap(repositoryData -> {
+                    SnapshotInfo snapshotInfo = repository.finalizeSnapshot(
+                        snapshot.getSnapshotId(),
+                        entry.indices(),
+                        entry.startTime(),
+                        failure,
+                        entry.shards().size(),
+                        unmodifiableList(shardFailures),
+                        repository.getRepositoryData(), // TODO: cache this
+                        entry.includeGlobalState());
+                    removeSnapshotFromClusterState(snapshot, snapshotInfo, null);
+                    logger.info("snapshot [{}] completed with state [{}]", snapshot, snapshotInfo.state());
+                }, this::onFailure));
             }
 
             @Override
@@ -1049,6 +1065,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             public void onFailure(String source, Exception e) {
                 logger.warn(() -> new ParameterizedMessage("[{}] failed to remove snapshot metadata", snapshot), e);
                 endingSnapshots.remove(snapshot);
+                latestRepositoryData.remove(snapshot.getRepository());
                 if (listener != null) {
                     listener.onFailure(e);
                 }
@@ -1057,6 +1074,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public void onNoLongerMaster(String source) {
                 endingSnapshots.remove(snapshot);
+                latestRepositoryData.remove(snapshot.getRepository());
                 if (listener != null) {
                     listener.onNoLongerMaster();
                 }
@@ -1077,6 +1095,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     }
                 }
                 endingSnapshots.remove(snapshot);
+                latestRepositoryData.remove(snapshot.getRepository());
                 if (listener != null) {
                     listener.onResponse(snapshotInfo);
                 }
@@ -1097,6 +1116,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         // First, look for the snapshot in the repository
         final Repository repository = repositoriesService.repository(repositoryName);
         final RepositoryData repositoryData = repository.getRepositoryData();
+        latestRepositoryData.put(repositoryName, repositoryData);
         final Optional<SnapshotId> incompatibleSnapshotId =
             repositoryData.getIncompatibleSnapshotIds().stream().filter(s -> snapshotName.equals(s.getName())).findFirst();
         if (incompatibleSnapshotId.isPresent()) {
