@@ -352,15 +352,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetaData, long repositoryStateId) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetaData, RepositoryData repositoryData) {
         if (isReadOnly()) {
             throw new RepositoryException(metadata.name(), "cannot create snapshot in a readonly repository");
         }
         try {
             final String snapshotName = snapshotId.getName();
             // check if the snapshot name already exists in the repository
-            final RepositoryData repositoryData = getRepositoryData();
-            ensureNoConcurrentMod(repositoryStateId, repositoryData.getGenId());
+            ensureNoConcurrentMod(repositoryData.getGenId(), latestIndexBlobId());
             if (repositoryData.getAllSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName))) {
                 throw new InvalidSnapshotNameException(metadata.name(), snapshotId.getName(), "snapshot with the same name already exists");
             }

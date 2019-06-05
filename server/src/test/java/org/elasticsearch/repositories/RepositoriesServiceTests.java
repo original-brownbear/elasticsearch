@@ -153,7 +153,7 @@ public class RepositoriesServiceTests extends ESTestCase {
         }
 
         @Override
-        public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, long repositoryStateId) {
+        public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, RepositoryData repositoryData) {
 
         }
 

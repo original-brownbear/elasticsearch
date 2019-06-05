@@ -33,6 +33,7 @@ import org.elasticsearch.index.translog.TranslogStats;
 import org.elasticsearch.repositories.FilterRepository;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.RepositoryData;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -71,7 +72,7 @@ public final class SourceOnlySnapshotRepository extends FilterRepository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, long repositoryStateId) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, RepositoryData repositoryData) {
         // we process the index metadata at snapshot time. This means if somebody tries to restore
         // a _source only snapshot with a plain repository it will be just fine since we already set the
         // required engine, that the index is read-only and the mapping to a default mapping
@@ -98,7 +99,7 @@ public final class SourceOnlySnapshotRepository extends FilterRepository {
                 indexMetadataBuilder.settingsVersion(1 + indexMetadataBuilder.settingsVersion());
                 builder.put(indexMetadataBuilder);
             }
-            super.initializeSnapshot(snapshotId, indices, builder.build(), repositoryStateId);
+            super.initializeSnapshot(snapshotId, indices, builder.build(), repositoryData);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }

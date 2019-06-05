@@ -40,6 +40,7 @@ import org.elasticsearch.env.Environment;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -131,11 +132,11 @@ public class MockRepository extends FsRepository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata, long repositoryStateId) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata, RepositoryData repositoryData) {
         if (blockOnInitialization) {
             blockExecution();
         }
-        super.initializeSnapshot(snapshotId, indices, clusterMetadata, repositoryStateId);
+        super.initializeSnapshot(snapshotId, indices, clusterMetadata, repositoryData);
     }
 
     private static RepositoryMetaData overrideSettings(RepositoryMetaData metadata, Environment environment) {

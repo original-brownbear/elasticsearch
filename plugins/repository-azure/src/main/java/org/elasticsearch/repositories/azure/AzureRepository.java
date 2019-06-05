@@ -35,6 +35,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.repositories.IndexId;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.snapshots.SnapshotCreationException;
 import org.elasticsearch.snapshots.SnapshotId;
@@ -134,7 +135,7 @@ public class AzureRepository extends BlobStoreRepository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata, long repositoryStateId) {
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData clusterMetadata, RepositoryData repositoryData) {
         try {
             final AzureBlobStore blobStore = (AzureBlobStore) blobStore();
             if (blobStore.containerExist() == false) {
@@ -144,7 +145,7 @@ public class AzureRepository extends BlobStoreRepository {
         } catch (URISyntaxException | StorageException e) {
             throw new SnapshotCreationException(metadata.name(), snapshotId, e);
         }
-        super.initializeSnapshot(snapshotId, indices, clusterMetadata, repositoryStateId);
+        super.initializeSnapshot(snapshotId, indices, clusterMetadata, repositoryData);
     }
 
     @Override

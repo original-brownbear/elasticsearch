@@ -73,8 +73,8 @@ public class FilterRepository implements Repository {
     }
 
     @Override
-    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, long repositoryStateId) {
-        in.initializeSnapshot(snapshotId, indices, metaData, repositoryStateId);
+    public void initializeSnapshot(SnapshotId snapshotId, List<IndexId> indices, MetaData metaData, RepositoryData repositoryData) {
+        in.initializeSnapshot(snapshotId, indices, metaData, repositoryData);
     }
 
     @Override
