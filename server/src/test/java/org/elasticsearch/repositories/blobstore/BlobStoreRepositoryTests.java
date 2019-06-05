@@ -141,7 +141,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         // write to and read from a index file with no entries
         assertThat(repository.getRepositoryData().getSnapshotIds().size(), equalTo(0));
         final RepositoryData emptyData = RepositoryData.EMPTY;
-        repository.writeIndexGen(emptyData, emptyData.getGenId());
+        repository.writeIndexGen(emptyData, emptyData);
         RepositoryData repoData = repository.getRepositoryData();
         assertEquals(repoData, emptyData);
         assertEquals(repoData.getIndices().size(), 0);
@@ -150,12 +150,12 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
 
         // write to and read from an index file with snapshots but no indices
         repoData = addRandomSnapshotsToRepoData(repoData, false);
-        repository.writeIndexGen(repoData, repoData.getGenId());
+        repository.writeIndexGen(repoData, repoData);
         assertEquals(repoData, repository.getRepositoryData());
 
         // write to and read from a index file with random repository data
         repoData = addRandomSnapshotsToRepoData(repository.getRepositoryData(), true);
-        repository.writeIndexGen(repoData, repoData.getGenId());
+        repository.writeIndexGen(repoData, repoData);
         assertEquals(repoData, repository.getRepositoryData());
     }
 
@@ -164,21 +164,21 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
 
         // write to index generational file
         RepositoryData repositoryData = generateRandomRepoData();
-        repository.writeIndexGen(repositoryData, repositoryData.getGenId());
+        repository.writeIndexGen(repositoryData, repositoryData);
         assertThat(repository.getRepositoryData(), equalTo(repositoryData));
         assertThat(repository.latestIndexBlobId(), equalTo(0L));
         assertThat(repository.readSnapshotIndexLatestBlob(), equalTo(0L));
 
         // adding more and writing to a new index generational file
         repositoryData = addRandomSnapshotsToRepoData(repository.getRepositoryData(), true);
-        repository.writeIndexGen(repositoryData, repositoryData.getGenId());
+        repository.writeIndexGen(repositoryData, repositoryData);
         assertEquals(repository.getRepositoryData(), repositoryData);
         assertThat(repository.latestIndexBlobId(), equalTo(1L));
         assertThat(repository.readSnapshotIndexLatestBlob(), equalTo(1L));
 
         // removing a snapshot and writing to a new index generational file
         repositoryData = repository.getRepositoryData().removeSnapshot(repositoryData.getSnapshotIds().iterator().next());
-        repository.writeIndexGen(repositoryData, repositoryData.getGenId());
+        repository.writeIndexGen(repositoryData, repositoryData);
         assertEquals(repository.getRepositoryData(), repositoryData);
         assertThat(repository.latestIndexBlobId(), equalTo(2L));
         assertThat(repository.readSnapshotIndexLatestBlob(), equalTo(2L));
@@ -189,11 +189,11 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
 
         // write to index generational file
         RepositoryData repositoryData = generateRandomRepoData();
-        repository.writeIndexGen(repositoryData, repositoryData.getGenId());
+        repository.writeIndexGen(repositoryData, repositoryData);
 
         // write repo data again to index generational file, errors because we already wrote to the
         // N+1 generation from which this repository data instance was created
-        expectThrows(RepositoryException.class, () -> repository.writeIndexGen(repositoryData, repositoryData.getGenId()));
+        expectThrows(RepositoryException.class, () -> repository.writeIndexGen(repositoryData, repositoryData));
     }
 
     public void testReadAndWriteIncompatibleSnapshots() throws Exception {
@@ -202,7 +202,7 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         // write to and read from incompatible snapshots file with no entries
         assertEquals(0, repository.getRepositoryData().getIncompatibleSnapshotIds().size());
         RepositoryData emptyData = RepositoryData.EMPTY;
-        repository.writeIndexGen(emptyData, emptyData.getGenId());
+        repository.writeIndexGen(emptyData, emptyData);
         repository.writeIncompatibleSnapshots(emptyData);
         RepositoryData readData = repository.getRepositoryData();
         assertEquals(emptyData, readData);
@@ -226,12 +226,12 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
     public void testIncompatibleSnapshotsBlobExists() throws Exception {
         final BlobStoreRepository repository = setupRepo();
         RepositoryData emptyData = RepositoryData.EMPTY;
-        repository.writeIndexGen(emptyData, emptyData.getGenId());
+        repository.writeIndexGen(emptyData, emptyData);
         RepositoryData repoData = repository.getRepositoryData();
         assertEquals(emptyData, repoData);
         assertTrue(repository.blobContainer().blobExists("incompatible-snapshots"));
         repoData = addRandomSnapshotsToRepoData(repository.getRepositoryData(), true);
-        repository.writeIndexGen(repoData, repoData.getGenId());
+        repository.writeIndexGen(repoData, repoData);
         assertEquals(0, repository.getRepositoryData().getIncompatibleSnapshotIds().size());
     }
 
