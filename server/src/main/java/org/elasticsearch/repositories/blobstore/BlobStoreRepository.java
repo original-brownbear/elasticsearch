@@ -399,7 +399,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             try {
                 repositoryData = getRepositoryData();
                 updatedRepositoryData = repositoryData.removeSnapshot(snapshotId);
-                writeIndexGen(updatedRepositoryData, repositoryStateId);
+                writeIndexGen(updatedRepositoryData, repositoryData);
             } catch (Exception ex) {
                 listener.onFailure(new RepositoryException(metadata.name(), "failed to delete snapshot [" + snapshotId + "]", ex));
                 return;
@@ -488,7 +488,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                          final String failure,
                                          final int totalShards,
                                          final List<SnapshotShardFailure> shardFailures,
-                                         final long repositoryStateId,
+                                         final RepositoryData repositoryData,
                                          final boolean includeGlobalState) {
         SnapshotInfo blobStoreSnapshot = new SnapshotInfo(snapshotId,
             indices.stream().map(IndexId::getName).collect(Collectors.toList()),
@@ -496,8 +496,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             includeGlobalState);
         try {
             snapshotFormat.write(blobStoreSnapshot, blobContainer(), snapshotId.getUUID());
-            final RepositoryData repositoryData = getRepositoryData();
-            writeIndexGen(repositoryData.addSnapshot(snapshotId, blobStoreSnapshot.state(), indices), repositoryStateId);
+            writeIndexGen(repositoryData.addSnapshot(snapshotId, blobStoreSnapshot.state(), indices), repositoryData);
         } catch (FileAlreadyExistsException ex) {
             // if another master was elected and took over finalizing the snapshot, it is possible
             // that both nodes try to finalize the snapshot and write to the same blobs, so we just
@@ -668,16 +667,16 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         return readOnly;
     }
 
-    protected void writeIndexGen(final RepositoryData repositoryData, final long repositoryStateId) throws IOException {
+    protected void writeIndexGen(final RepositoryData newRepositoryData, final RepositoryData currentRepositoryData) throws IOException {
         assert isReadOnly() == false; // can not write to a read only repository
         final long currentGen = latestIndexBlobId();
-        ensureNoConcurrentMod(repositoryStateId, currentGen);
+        ensureNoConcurrentMod(currentRepositoryData.getGenId(), currentGen);
         final long newGen = currentGen + 1;
         final BytesReference snapshotsBytes;
         try (BytesStreamOutput bStream = new BytesStreamOutput()) {
             try (StreamOutput stream = new OutputStreamStreamOutput(bStream)) {
                 XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON, stream);
-                repositoryData.snapshotsToXContent(builder);
+                newRepositoryData.snapshotsToXContent(builder);
                 builder.close();
             }
             snapshotsBytes = bStream.bytes();

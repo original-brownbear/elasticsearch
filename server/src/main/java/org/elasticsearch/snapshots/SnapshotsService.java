@@ -558,7 +558,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                                          ExceptionsHelper.detailedMessage(exception),
                                                          0,
                                                          Collections.emptyList(),
-                                                         snapshot.getRepositoryStateId(),
+                                                         getRepositoryData(snapshot.snapshot().getRepository()), //TODO: cache this
                                                          snapshot.includeGlobalState());
                 } catch (Exception inner) {
                     inner.addSuppressed(exception);
@@ -989,7 +989,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     failure,
                     entry.shards().size(),
                     unmodifiableList(shardFailures),
-                    entry.getRepositoryStateId(),
+                    repository.getRepositoryData(), // TODO: cache this
                     entry.includeGlobalState());
                 removeSnapshotFromClusterState(snapshot, snapshotInfo, null);
                 logger.info("snapshot [{}] completed with state [{}]", snapshot, snapshotInfo.state());
