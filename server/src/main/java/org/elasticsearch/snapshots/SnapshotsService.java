@@ -76,6 +76,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -155,6 +156,21 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         Repository repository = repositoriesService.repository(repositoryName);
         assert repository != null; // should only be called once we've validated the repository exists
         return repository.getRepositoryData();
+    }
+
+    public RepositoryData getRepositoryData(SnapshotsInProgress.Entry snapshot) {
+        final Snapshot sn = snapshot.snapshot();
+        final RepositoryData repositoryData = cachedRepoData.computeIfAbsent(
+            sn.getSnapshotId(), k -> {
+                final RepositoryData data = repositoriesService.repository(sn.getRepository()).getRepositoryData();
+                if (data.getGenId() != snapshot.getRepositoryStateId()) {
+                    throw new IllegalStateException(
+                        "Current repository data version is different from what the given snapshot operation assumes. Found ["
+                            + data.getGenId() + "] but expected [" + snapshot.getRepositoryStateId() + ']');
+                }
+                return data;
+            });
+        return repositoryData;
     }
 
     /**
@@ -703,9 +719,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     @Override
     public void applyClusterState(ClusterChangedEvent event) {
         try {
+            final SnapshotsInProgress snapshotsInProgress = event.state().custom(SnapshotsInProgress.TYPE);
             if (event.localNodeMaster()) {
                 // We don't remove old master when master flips anymore. So, we need to check for change in master
-                final SnapshotsInProgress snapshotsInProgress = event.state().custom(SnapshotsInProgress.TYPE);
                 final boolean newMaster = event.previousState().nodes().isLocalNodeElectedMaster() == false;
                 if (snapshotsInProgress != null) {
                     if (newMaster || removedNodesCleanupNeeded(snapshotsInProgress, event.nodesDelta().removedNodes())) {
@@ -727,6 +743,21 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 if (newMaster) {
                     finalizeSnapshotDeletionFromPreviousMaster(event);
                 }
+            }
+            final SnapshotDeletionsInProgress deletionsInProgress = event.state().custom(SnapshotDeletionsInProgress.TYPE);
+            if (snapshotsInProgress != null && cachedRepoData.isEmpty() == false
+                && (deletionsInProgress == null || deletionsInProgress.hasDeletionsInProgress() == false)) {
+                final Iterator<SnapshotId> snapshotIdIterator = cachedRepoData.keySet().iterator();
+                final Set<SnapshotId> activeSnapshots =
+                    snapshotsInProgress.entries().stream().map(entry -> entry.snapshot().getSnapshotId()).collect(Collectors.toSet());
+                while (snapshotIdIterator.hasNext()) {
+                    final SnapshotId snapshotId = snapshotIdIterator.next();
+                    if (activeSnapshots.contains(snapshotId) == false) {
+                        snapshotIdIterator.remove();
+                    }
+                }
+            } else {
+                cachedRepoData.clear();
             }
         } catch (Exception e) {
             logger.warn("Failed to update snapshot state ", e);
@@ -1093,7 +1124,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             private void cleanup() {
                 endingSnapshots.remove(snapshot);
-                cachedRepoData.remove(snapshot.getSnapshotId());
             }
         });
     }

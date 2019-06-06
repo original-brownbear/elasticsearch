@@ -158,7 +158,6 @@ public interface Repository extends LifecycleComponent {
      */
     long getRestoreThrottleTimeInNanos();
 
-
     /**
      * Verifies repository on the master node and returns the verification token.
      * <p>
