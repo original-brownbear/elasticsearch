@@ -808,10 +808,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public void snapshotShard(Store store, MapperService mapperService, SnapshotId snapshotId, IndexId indexId,
-                              IndexCommit snapshotIndexCommit, IndexShardSnapshotStatus snapshotStatus) {
+                              IndexCommit snapshotIndexCommit, IndexShardSnapshotStatus snapshotStatus, RepositoryData repositoryData) {
         SnapshotContext snapshotContext = new SnapshotContext(store, snapshotId, indexId, snapshotStatus, System.currentTimeMillis());
         try {
-            snapshotContext.snapshot(snapshotIndexCommit);
+            snapshotContext.snapshot(snapshotIndexCommit, repositoryData);
         } catch (Exception e) {
             snapshotStatus.moveToFailed(System.currentTimeMillis(), ExceptionsHelper.detailedMessage(e));
             if (e instanceof IndexShardSnapshotFailedException) {
@@ -894,6 +894,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
         protected final SnapshotId snapshotId;
 
+        protected final IndexId indexId;
+
         protected final ShardId shardId;
 
         protected final BlobContainer blobContainer;
@@ -905,6 +907,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         Context(SnapshotId snapshotId, IndexId indexId, ShardId shardId, ShardId snapshotShardId) {
             this.snapshotId = snapshotId;
             this.shardId = shardId;
+            this.indexId = indexId;
             blobContainer = blobStore().blobContainer(basePath().add("indices").add(indexId.getId())
                 .add(Integer.toString(snapshotShardId.getId())));
         }
@@ -1077,12 +1080,19 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
          *
          * @param snapshotIndexCommit snapshot commit point
          */
-        public void snapshot(final IndexCommit snapshotIndexCommit) {
+        public void snapshot(final IndexCommit snapshotIndexCommit, RepositoryData repositoryData) {
             logger.debug("[{}] [{}] snapshot to [{}] ...", shardId, snapshotId, metadata.name());
 
+            final String generation = repositoryData.shardGeneration(indexId, shardId);
+            if (generation == null) {
+                // TODO: just work from scratch no incremental shenanigans
+            } else {
+                // TODO: incremental stuff
+            }
             final Map<String, BlobMetaData> blobs;
             try {
-                blobs = blobContainer.listBlobs();
+                blobs = blobContainer.listBlobs(); // TODO: Do not list here, let's just do this as a sort of recovery action on master
+                                                   //       once and then go from there
             } catch (IOException e) {
                 throw new IndexShardSnapshotFailedException(shardId, "failed to list blobs", e);
             }

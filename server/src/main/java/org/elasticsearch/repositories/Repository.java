@@ -206,7 +206,7 @@ public interface Repository extends LifecycleComponent {
      * @param snapshotStatus      snapshot status
      */
     void snapshotShard(Store store, MapperService mapperService, SnapshotId snapshotId, IndexId indexId, IndexCommit snapshotIndexCommit,
-                       IndexShardSnapshotStatus snapshotStatus);
+                       IndexShardSnapshotStatus snapshotStatus, RepositoryData repositoryData);
 
     /**
      * Restores snapshot of the shard.

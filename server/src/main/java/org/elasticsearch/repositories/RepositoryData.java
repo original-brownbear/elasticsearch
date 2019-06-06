@@ -26,6 +26,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotState;
 
@@ -83,6 +84,8 @@ public final class RepositoryData {
      */
     private final List<SnapshotId> incompatibleSnapshotIds;
 
+    private final Map<IndexId, Map<ShardId,String>> shardGenerations = Collections.emptyMap();
+
     public RepositoryData(long genId,
                           Map<String, SnapshotId> snapshotIds,
                           Map<String, SnapshotState> snapshotStates,
@@ -99,6 +102,10 @@ public final class RepositoryData {
 
     protected RepositoryData copy() {
         return new RepositoryData(genId, snapshotIds, snapshotStates, indexSnapshots, incompatibleSnapshotIds);
+    }
+
+    public String shardGeneration(IndexId indexId, ShardId shardId) {
+        return shardGenerations.getOrDefault(indexId, Collections.emptyMap()).get(shardId);
     }
 
     /**
