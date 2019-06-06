@@ -105,7 +105,7 @@ public abstract class RestoreOnlyRepository extends AbstractLifecycleComponent i
     }
 
     @Override
-    public void deleteSnapshot(SnapshotId snapshotId, long repositoryStateId, ActionListener<Void> listener) {
+    public void deleteSnapshot(SnapshotId snapshotId, RepositoryData repositoryData, ActionListener<Void> listener) {
         listener.onResponse(null);
     }
 

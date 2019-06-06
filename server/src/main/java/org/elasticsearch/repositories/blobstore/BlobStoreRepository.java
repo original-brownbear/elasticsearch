@@ -385,7 +385,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public void deleteSnapshot(SnapshotId snapshotId, long repositoryStateId, ActionListener<Void> listener) {
+    public void deleteSnapshot(SnapshotId snapshotId, RepositoryData repositoryData, ActionListener<Void> listener) {
         if (isReadOnly()) {
             listener.onFailure(new RepositoryException(metadata.name(), "cannot delete snapshot from a readonly repository"));
         } else {
@@ -399,10 +399,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 logger.warn(() -> new ParameterizedMessage("cannot read snapshot file [{}]", snapshotId), ex);
             }
             // Delete snapshot from the index file, since it is the maintainer of truth of active snapshots
-            final RepositoryData repositoryData;
             final RepositoryData updatedRepositoryData;
             try {
-                repositoryData = getRepositoryData();
                 updatedRepositoryData = repositoryData.removeSnapshot(snapshotId);
                 writeIndexGen(updatedRepositoryData, repositoryData);
             } catch (Exception ex) {

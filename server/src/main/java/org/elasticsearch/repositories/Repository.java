@@ -143,10 +143,10 @@ public interface Repository extends LifecycleComponent {
      * Deletes snapshot
      *
      * @param snapshotId snapshot id
-     * @param repositoryStateId the unique id identifying the state of the repository when the snapshot deletion began
+     * @param repositoryData the RepositoryData from the time the deletion was started
      * @param listener completion listener
      */
-    void deleteSnapshot(SnapshotId snapshotId, long repositoryStateId, ActionListener<Void> listener);
+    void deleteSnapshot(SnapshotId snapshotId, RepositoryData repositoryData, ActionListener<Void> listener);
 
     /**
      * Returns snapshot throttle time in nanoseconds
