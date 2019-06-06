@@ -199,6 +199,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final BlobPath basePath;
 
+    private volatile RepositoryData currentRepositoryData = RepositoryData.EMPTY;
+
     /**
      * Constructs new BlobStoreRepository
      * @param metadata   The metadata for this repository including name and settings
@@ -620,8 +622,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         try {
             final long indexGen = latestIndexBlobId();
             final String snapshotsIndexBlobName = INDEX_FILE_PREFIX + Long.toString(indexGen);
-
+            final RepositoryData currentCached = currentRepositoryData;
+            if (currentCached.getGenId() == indexGen) {
+                return currentCached;
+            }
             RepositoryData repositoryData;
+
             try (InputStream blob = blobContainer().readBlob(snapshotsIndexBlobName)) {
                 BytesStreamOutput out = new BytesStreamOutput();
                 Streams.copy(blob, out);
@@ -656,6 +662,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     writeIncompatibleSnapshots(RepositoryData.EMPTY);
                 }
             }
+            currentRepositoryData = repositoryData;
             return repositoryData;
         } catch (NoSuchFileException ex) {
             // repository doesn't have an index blob, its a new blank repo
