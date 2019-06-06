@@ -691,6 +691,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                               repositoryStateId + "], actual current generation [" + currentGen +
                                               "] - possibly due to simultaneous snapshot deletion requests");
         }
+        assert repositoryData.getGenId() == currentGen + 1;
         final long newGen = currentGen + 1;
         final BytesReference snapshotsBytes;
         try (BytesStreamOutput bStream = new BytesStreamOutput()) {
@@ -713,6 +714,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
         logger.debug("Repository [{}] updating index.latest with generation [{}]", metadata.name(), newGen);
         writeAtomic(INDEX_LATEST_BLOB, genBytes, false);
+        currentRepositoryData = repositoryData;
         // delete the N-2 index file if it exists, keep the previous one around as a backup
         if (newGen - 2 >= 0) {
             final String oldSnapshotIndexFile = INDEX_FILE_PREFIX + Long.toString(newGen - 2);

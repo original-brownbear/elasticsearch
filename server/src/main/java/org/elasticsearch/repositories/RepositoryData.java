@@ -171,7 +171,7 @@ public final class RepositoryData {
         for (final IndexId indexId : snapshottedIndices) {
             allIndexSnapshots.computeIfAbsent(indexId, k -> new LinkedHashSet<>()).add(snapshotId);
         }
-        return new RepositoryData(genId, snapshots, newSnapshotStates, allIndexSnapshots, incompatibleSnapshotIds);
+        return new RepositoryData(genId + 1, snapshots, newSnapshotStates, allIndexSnapshots, incompatibleSnapshotIds);
     }
 
     /**
@@ -205,7 +205,7 @@ public final class RepositoryData {
             indexSnapshots.put(indexId, set);
         }
 
-        return new RepositoryData(genId, newSnapshotIds, newSnapshotStates, indexSnapshots, incompatibleSnapshotIds);
+        return new RepositoryData(genId + 1, newSnapshotIds, newSnapshotStates, indexSnapshots, incompatibleSnapshotIds);
     }
 
     /**
