@@ -46,6 +46,8 @@ public class AzureStorageCleanupThirdPartyTests extends AbstractThirdPartyReposi
         final boolean hasSasToken = Strings.hasText(System.getProperty("test.azure.sas"));
         if (hasSasToken == false) {
             assertThat(System.getProperty("test.azure.key"), not(blankOrNullString()));
+        } else {
+            assertThat(System.getProperty("test.azure.key"), blankOrNullString());
         }
         assertThat(System.getProperty("test.azure.container"), not(blankOrNullString()));
         assertThat(System.getProperty("test.azure.base"), not(blankOrNullString()));
