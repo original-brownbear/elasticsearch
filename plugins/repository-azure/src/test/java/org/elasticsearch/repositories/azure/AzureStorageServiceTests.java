@@ -162,11 +162,10 @@ public class AzureStorageServiceTests extends ESTestCase {
             final AzureStorageService azureStorageService = plugin.azureStoreService;
             final CloudBlobClient client11 = azureStorageService.client("azure1").v1();
             assertThat(client11.getEndpoint().toString(), equalTo("https://myaccount1.blob.core.windows.net"));
-            plugin.reload(settings2);
+            final SettingsException e = expectThrows(SettingsException.class, () -> plugin.reload(settings2));
+            assertThat(e.getMessage(), is("Neither a secret key nor a shared access token was set."));
             // existing client untouched
             assertThat(client11.getEndpoint().toString(), equalTo("https://myaccount1.blob.core.windows.net"));
-            final SettingsException e = expectThrows(SettingsException.class, () -> azureStorageService.client("azure1"));
-            assertThat(e.getMessage(), is("Invalid azure client settings with name [azure1]"));
         }
     }
 
