@@ -161,7 +161,7 @@ final class AzureStorageSettings {
             throw new SettingsException("Neither a secret key nor a shared access token was set.");
         }
         if (hasSasToken && hasKey) {
-            throw new SettingsException("Both a secret as well as a shared access token was set.");
+            throw new SettingsException("Both a secret as well as a shared access token were set.");
         }
         final StringBuilder connectionStringBuilder = new StringBuilder();
         connectionStringBuilder.append("DefaultEndpointsProtocol=https").append(";AccountName=").append(account);
