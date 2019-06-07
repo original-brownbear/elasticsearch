@@ -99,7 +99,7 @@ public class RepositoryDataTests extends ESTestCase {
                 assertEquals(snapshotIds.size(), 1); // if it was a new index, only the new snapshot should be in its set
             }
         }
-        assertEquals(repositoryData.getGenId(), newRepoData.getGenId());
+        assertEquals(repositoryData.getGenId() + 1, newRepoData.getGenId());
     }
 
     public void testInitIndices() {
