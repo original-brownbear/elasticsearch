@@ -19,7 +19,6 @@
 
 package org.elasticsearch.http.netty4;
 
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -48,7 +47,7 @@ class Netty4HttpRequestHandler extends SimpleChannelInboundHandler<HttpPipelined
                     request.protocolVersion(),
                     request.method(),
                     request.uri(),
-                    Unpooled.copiedBuffer(request.content()),
+                    request.content(),
                     request.headers(),
                     request.trailingHeaders());
 
