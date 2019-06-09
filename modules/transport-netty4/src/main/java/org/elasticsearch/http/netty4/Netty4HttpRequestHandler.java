@@ -22,7 +22,6 @@ package org.elasticsearch.http.netty4;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.http.HttpPipelinedRequest;
@@ -42,14 +41,7 @@ class Netty4HttpRequestHandler extends SimpleChannelInboundHandler<HttpPipelined
         FullHttpRequest request = msg.getRequest();
 
         try {
-            final FullHttpRequest copiedRequest =
-                new DefaultFullHttpRequest(
-                    request.protocolVersion(),
-                    request.method(),
-                    request.uri(),
-                    request.content(),
-                    request.headers(),
-                    request.trailingHeaders());
+            final FullHttpRequest copiedRequest = request.copy();
 
             Netty4HttpRequest httpRequest = new Netty4HttpRequest(copiedRequest, msg.getSequence());
 
