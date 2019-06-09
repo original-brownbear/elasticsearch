@@ -179,7 +179,7 @@ abstract class InitialSearchPhase<FirstResult extends SearchPhaseResult> extends
         executor.execute(new AbstractRunnable() {
             @Override
             public void onFailure(Exception e) {
-
+                throw new AssertionError(e);
             }
 
             @Override
