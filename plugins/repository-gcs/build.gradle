@@ -69,7 +69,6 @@ dependencyLicenses {
 thirdPartyAudit {
     ignoreViolations (
         // uses internal java api: sun.misc.Unsafe
-        'com.google.protobuf.MessageSchema',
         'com.google.protobuf.UnsafeUtil',
         'com.google.protobuf.UnsafeUtil$1',
         'com.google.protobuf.UnsafeUtil$JvmMemoryAccessor',
