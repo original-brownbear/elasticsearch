@@ -105,7 +105,13 @@ public class GoogleCloudStorageService {
     private static Storage createClient(String clientName, GoogleCloudStorageClientSettings clientSettings) throws IOException {
         logger.debug(() -> new ParameterizedMessage("creating GCS client with client_name [{}], endpoint [{}]", clientName,
                 clientSettings.getHost()));
-        final HttpTransport httpTransport = SocketAccess.doPrivilegedIOException(GoogleCloudStorageService::createHttpTransport);
+        final HttpTransport httpTransport = SocketAccess.doPrivilegedIOException(() -> {
+            final NetHttpTransport.Builder builder = new NetHttpTransport.Builder();
+            // requires java.lang.RuntimePermission "setFactory"
+            // Pin the TLS trust certificates.
+            builder.trustCertificates(GoogleUtils.getCertificateTrustStore());
+            return builder.build();
+        });
         final HttpTransportOptions httpTransportOptions = HttpTransportOptions.newBuilder()
                 .setConnectTimeout(toTimeout(clientSettings.getConnectTimeout()))
                 .setReadTimeout(toTimeout(clientSettings.getReadTimeout()))
@@ -141,16 +147,6 @@ public class GoogleCloudStorageService {
             storageOptionsBuilder.setCredentials(serviceAccountCredentials);
         }
         return storageOptionsBuilder.build().getService();
-    }
-
-    /**
-     * Pins the TLS trust certificates.
-     **/
-    private static HttpTransport createHttpTransport() throws Exception {
-        final NetHttpTransport.Builder builder = new NetHttpTransport.Builder();
-        // requires java.lang.RuntimePermission "setFactory"
-        builder.trustCertificates(GoogleUtils.getCertificateTrustStore());
-        return builder.build();
     }
 
     /**
