@@ -274,7 +274,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             SearchRequest ccsSearchRequest = SearchRequest.subSearchRequest(searchRequest, indices.indices(),
                 clusterAlias, timeProvider.getAbsoluteStartMillis(), true);
             Client remoteClusterClient = remoteClusterService.getRemoteClusterClient(threadPool, clusterAlias);
-            remoteClusterClient.search(ccsSearchRequest, new ActionListener<SearchResponse>() {
+            remoteClusterClient.search(ccsSearchRequest, new ActionListener<>() {
                 @Override
                 public void onResponse(SearchResponse searchResponse) {
                     Map<String, ProfileShardResult> profileResults = searchResponse.getProfileResults();
@@ -359,7 +359,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             ClusterSearchShardsRequest searchShardsRequest = new ClusterSearchShardsRequest(indices)
                 .indicesOptions(indicesOptions).local(true).preference(preference).routing(routing);
             clusterClient.admin().cluster().searchShards(searchShardsRequest,
-                new CCSActionListener<ClusterSearchShardsResponse, Map<String, ClusterSearchShardsResponse>>(
+                new CCSActionListener<>(
                     clusterAlias, skipUnavailable, responsesCountDown, skippedClusters, exceptions, listener) {
                     @Override
                     void innerOnResponse(ClusterSearchShardsResponse clusterSearchShardsResponse) {
@@ -379,7 +379,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                                                              AtomicInteger skippedClusters, AtomicReference<Exception> exceptions,
                                                              SearchResponseMerger searchResponseMerger, int totalClusters,
                                                              ActionListener<SearchResponse> originalListener) {
-        return new CCSActionListener<SearchResponse, SearchResponse>(clusterAlias, skipUnavailable, countDown, skippedClusters,
+        return new CCSActionListener<>(clusterAlias, skipUnavailable, countDown, skippedClusters,
             exceptions, originalListener) {
             @Override
             void innerOnResponse(SearchResponse searchResponse) {
@@ -514,7 +514,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 //Note that the indices set to the new SearchRequest won't be retrieved from it, as they have been already resolved and
                 //will be provided separately to executeSearch.
                 SearchRequest writeIndicesRequest = SearchRequest.subSearchRequest(searchRequest, writeIndices,
-                    RemoteClusterService.LOCAL_CLUSTER_GROUP_KEY, timeProvider.getAbsoluteStartMillis(), false);
+                    RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY, timeProvider.getAbsoluteStartMillis(), false);
                 executeSearch(task, timeProvider, writeIndicesRequest, localIndices, writeIndices, routingMap,
                     aliasFilter, concreteIndexBoosts, remoteShardIterators, remoteConnections, clusterState, countDownActionListener,
                     SearchResponse.Clusters.EMPTY);
@@ -522,7 +522,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                 //Note that the indices set to the new SearchRequest won't be retrieved from it, as they have been already resolved and
                 //will be provided separately to executeSearch.
                 SearchRequest readOnlyIndicesRequest = SearchRequest.subSearchRequest(searchRequest, readOnlyIndices,
-                    RemoteClusterService.LOCAL_CLUSTER_GROUP_KEY, timeProvider.getAbsoluteStartMillis(), false);
+                    RemoteClusterAware.LOCAL_CLUSTER_GROUP_KEY, timeProvider.getAbsoluteStartMillis(), false);
                 executeSearch(task, timeProvider, readOnlyIndicesRequest, localIndices, readOnlyIndices, routingMap,
                     aliasFilter, concreteIndexBoosts, Collections.emptyList(), (alias, id) -> null, clusterState, countDownActionListener,
                     SearchResponse.Clusters.EMPTY);
@@ -631,7 +631,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         return new GroupShardsIterator<>(shards);
     }
 
-    private AbstractSearchAsyncAction searchAsyncAction(SearchTask task, SearchRequest searchRequest,
+    private AbstractSearchAsyncAction<?> searchAsyncAction(SearchTask task, SearchRequest searchRequest,
                                                         GroupShardsIterator<SearchShardIterator> shardIterators,
                                                         SearchTimeProvider timeProvider,
                                                         BiFunction<String, String, Transport.Connection> connectionLookup,
@@ -647,7 +647,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             return new CanMatchPreFilterSearchPhase(logger, searchTransportService, connectionLookup,
                 aliasFilter, concreteIndexBoosts, indexRoutings, executor, searchRequest, listener, shardIterators,
                 timeProvider, clusterStateVersion, task, (iter) -> {
-                AbstractSearchAsyncAction action = searchAsyncAction(task, searchRequest, iter, timeProvider, connectionLookup,
+                AbstractSearchAsyncAction<?> action = searchAsyncAction(task, searchRequest, iter, timeProvider, connectionLookup,
                     clusterStateVersion, aliasFilter, concreteIndexBoosts, indexRoutings, listener, false, clusters);
                 return new SearchPhase(action.getName()) {
                     @Override

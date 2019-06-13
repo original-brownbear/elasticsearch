@@ -34,7 +34,6 @@ import org.elasticsearch.search.internal.InternalSearchResponse;
 import org.elasticsearch.transport.RemoteClusterService;
 import org.elasticsearch.transport.Transport;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -148,14 +147,14 @@ abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements R
                 connection = getConnection(target.getClusterAlias(), node);
             } catch (Exception ex) {
                 onShardFailure("query", counter, target.getScrollId(),
-                    ex, null, () -> SearchScrollAsyncAction.this.moveToNextPhase(clusterNodeLookup));
+                    ex, null, () -> moveToNextPhase(clusterNodeLookup));
                 continue;
             }
             final InternalScrollSearchRequest internalRequest = internalScrollSearchRequest(target.getScrollId(), request);
             // we can't create a SearchShardTarget here since we don't know the index and shard ID we are talking to
             // we only know the node and the search context ID. Yet, the response will contain the SearchShardTarget
             // from the target node instead...that's why we pass null here
-            SearchActionListener<T> searchActionListener = new SearchActionListener<T>(null, shardIndex) {
+            SearchActionListener<T> searchActionListener = new SearchActionListener<>(null, shardIndex) {
 
                 @Override
                 protected void setSearchShardTarget(T response) {
@@ -223,7 +222,7 @@ abstract class SearchScrollAsyncAction<T extends SearchPhaseResult> implements R
                                             final AtomicArray<? extends SearchPhaseResult> fetchResults) {
         return new SearchPhase("fetch") {
             @Override
-            public void run() throws IOException {
+            public void run() {
                 sendResponse(queryPhase, fetchResults);
             }
         };

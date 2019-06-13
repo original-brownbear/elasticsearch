@@ -56,7 +56,7 @@ public class MultiSearchRequest extends ActionRequest implements CompositeIndice
     public static final int MAX_CONCURRENT_SEARCH_REQUESTS_DEFAULT = 0;
 
     private int maxConcurrentSearchRequests = 0;
-    private List<SearchRequest> requests = new ArrayList<>();
+    private final List<SearchRequest> requests = new ArrayList<>();
 
     private IndicesOptions indicesOptions = IndicesOptions.strictExpandOpenAndForbidClosedIgnoreThrottled();
 

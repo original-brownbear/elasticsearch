@@ -91,7 +91,7 @@ public class ClearScrollResponse extends ActionResponse implements StatusToXCont
     /**
      * Parse the clear scroll response body into a new {@link ClearScrollResponse} object
      */
-    public static ClearScrollResponse fromXContent(XContentParser parser) throws IOException {
+    public static ClearScrollResponse fromXContent(XContentParser parser) {
         return PARSER.apply(parser, null);
     }
 

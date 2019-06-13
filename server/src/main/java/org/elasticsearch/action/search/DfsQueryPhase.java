@@ -28,7 +28,6 @@ import org.elasticsearch.search.query.QuerySearchRequest;
 import org.elasticsearch.search.query.QuerySearchResult;
 import org.elasticsearch.transport.Transport;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
@@ -61,7 +60,7 @@ final class DfsQueryPhase extends SearchPhase {
     }
 
     @Override
-    public void run() throws IOException {
+    public void run() {
         // TODO we can potentially also consume the actual per shard results from the initial phase here in the aggregateDfs
         // to free up memory early
         final List<DfsSearchResult> resultList = dfsSearchResults.asList();
@@ -76,7 +75,7 @@ final class DfsQueryPhase extends SearchPhase {
                     dfsResult.getRequestId(), dfs);
             final int shardIndex = dfsResult.getShardIndex();
             searchTransportService.sendExecuteQuery(connection, querySearchRequest, context.getTask(),
-                new SearchActionListener<QuerySearchResult>(searchShardTarget, shardIndex) {
+                new SearchActionListener<>(searchShardTarget, shardIndex) {
 
                     @Override
                     protected void innerOnResponse(QuerySearchResult response) {

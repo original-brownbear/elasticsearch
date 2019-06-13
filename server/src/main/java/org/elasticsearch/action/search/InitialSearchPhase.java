@@ -183,7 +183,7 @@ abstract class InitialSearchPhase<FirstResult extends SearchPhaseResult> extends
     private static final class PendingExecutions {
         private final int permits;
         private int permitsTaken = 0;
-        private ArrayDeque<Runnable> queue = new ArrayDeque<>();
+        private final ArrayDeque<Runnable> queue = new ArrayDeque<>();
 
         PendingExecutions(int permits) {
             assert permits > 0 : "not enough permits: " + permits;

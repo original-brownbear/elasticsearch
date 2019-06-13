@@ -76,8 +76,8 @@ final class FetchSearchPhase extends SearchPhase {
     }
 
     @Override
-    public void run() throws IOException {
-        context.execute(new ActionRunnable<SearchResponse>(context) {
+    public void run() {
+        context.execute(new ActionRunnable<>(context) {
             @Override
             public void doRun() throws IOException {
                 // we do the heavy lifting in this inner run method where we reduce aggs etc. that's why we fork this phase
@@ -160,7 +160,7 @@ final class FetchSearchPhase extends SearchPhase {
                               final ShardFetchSearchRequest fetchSearchRequest, final QuerySearchResult querySearchResult,
                               final Transport.Connection connection) {
         context.getSearchTransport().sendExecuteFetch(connection, fetchSearchRequest, context.getTask(),
-            new SearchActionListener<FetchSearchResult>(shardTarget, shardIndex) {
+            new SearchActionListener<>(shardTarget, shardIndex) {
                 @Override
                 public void innerOnResponse(FetchSearchResult result) {
                     counter.onResult(result);
@@ -209,7 +209,7 @@ final class FetchSearchPhase extends SearchPhase {
     private static SearchPhase sendResponsePhase(InternalSearchResponse response, String scrollId, SearchPhaseContext context) {
         return new SearchPhase("response") {
             @Override
-            public void run() throws IOException {
+            public void run() {
                 context.onResponse(context.buildSearchResponse(response, scrollId));
             }
         };
