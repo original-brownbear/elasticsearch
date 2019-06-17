@@ -159,7 +159,9 @@ import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.search.SearchModule;
 import org.elasticsearch.search.SearchService;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.FetchPhase;
 import org.elasticsearch.test.ESTestCase;
@@ -289,7 +291,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
                                 for (int i = 0; i < documents; ++i) {
                                     masterNode.client.bulk(
                                         new BulkRequest().add(new IndexRequest(index).source(
-                                            Collections.singletonMap("foo", "bar" + i)))
+                                            Map.ofEntries(Map.entry("foo", "bar" + i), Map.entry("date_in",
+                                                randomLongBetween(0, System.currentTimeMillis())))))
                                             .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE),
                                         assertNoFailureListener(
                                             bulkResponse -> {
@@ -325,7 +328,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
     @Repeat(iterations = 10000)
     public void testSearchDisruptions() {
         final int dataNodes = randomIntBetween(2, 10);
-        setupTestCluster(randomFrom(1, 3, 5), dataNodes);
+        final int masterNodeCount = randomFrom(1, 3, 5);
+        setupTestCluster(masterNodeCount, dataNodes);
 
         final String index = "test";
 
@@ -343,6 +347,42 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         for (int i = 0; i < randomIntBetween(0, dataNodes); ++i) {
                             scheduleNow(this::disconnectOrRestartDataNode);
                         }
+                        final Runnable maybeForceAllocate = new Runnable() {
+                            @Override
+                            public void run() {
+                                masterNode.client.admin().cluster().state(new ClusterStateRequest(), assertNoFailureListener(
+                                    resp -> {
+                                        final ShardRouting shardToRelocate =
+                                            resp.getState().routingTable().allShards(index).get(0);
+                                        final TestClusterNode currentPrimaryNode;
+                                        final TestClusterNode otherNode;
+                                        try {
+                                            currentPrimaryNode = testClusterNodes.nodeById(shardToRelocate.currentNodeId());
+                                            otherNode = testClusterNodes.randomDataNodeSafe(currentPrimaryNode.node.getName());
+                                        } catch (AssertionError e) {
+                                            // ignored
+                                            return;
+                                        }
+                                        final ShardRouting shardRouting = resp.getState().routingTable()
+                                            .shardRoutingTable(shardToRelocate.shardId()).primaryShard();
+                                        if (shardRouting.unassigned()
+                                            && shardRouting.unassignedInfo().getReason() == UnassignedInfo.Reason.NODE_LEFT) {
+                                            if (masterNodeCount > 1) {
+                                                scheduleNow(() -> testClusterNodes.stopNode(masterNode));
+                                            }
+                                            scheduleNow(
+                                                () -> testClusterNodes.randomMasterNodeSafe().client.admin().cluster().reroute(
+                                                    new ClusterRerouteRequest().add(
+                                                        new AllocateEmptyPrimaryAllocationCommand(
+                                                            index, shardRouting.shardId().id(), otherNode.node.getName(), true)
+                                                    ), noopListener()));
+                                        } else {
+                                            scheduleSoon(this);
+                                        }
+                                    }
+                                ));
+                            }
+                        };
                         final Runnable listTasksAndVerify = new Runnable() {
                             @Override
                             public void run() {
@@ -358,12 +398,15 @@ public class SnapshotResiliencyTests extends ESTestCase {
                                         }));
                             }
                         };
+                        scheduleNow(maybeForceAllocate);
                         masterNode.client.search(
                             new SearchRequest(index).source(
                                 new SearchSourceBuilder()
                                     .size(randomInt(documents + 10))
                                     .trackTotalHits(randomBoolean())
                                     .fetchSource(randomBoolean())
+                                .aggregation(new DateHistogramAggregationBuilder("hisss")
+                                    .minDocCount(10).field("date_in").missing(0))
                             ),
                             ActionListener.wrap(listTasksAndVerify));
                     };
@@ -371,8 +414,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     for (int i = 0; i < documents; ++i) {
                         masterNode.client.bulk(
                             new BulkRequest().add(new IndexRequest(index).source(
-                                Collections.singletonMap("foo", "bar" + i)))
-                                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE),
+                                Map.ofEntries(Map.entry("foo", "bar" + i), Map.entry("date_in",
+                                    randomLongBetween(0, System.currentTimeMillis()))))),
                             assertNoFailureListener(
                                 bulkResponse -> {
                                     assertFalse(
@@ -977,8 +1020,9 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         private final Logger logger = LogManager.getLogger(TestClusterNode.class);
 
-        private final NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(Stream.concat(
-            ClusterModule.getNamedWriteables().stream(), NetworkModule.getNamedWriteables().stream()).collect(Collectors.toList()));
+        private final NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(Stream.concat(Stream.concat(
+            ClusterModule.getNamedWriteables().stream(), NetworkModule.getNamedWriteables().stream()),
+            new SearchModule(Settings.EMPTY, Collections.emptyList()).getNamedWriteables().stream()).collect(Collectors.toList()));
 
         private final TransportService transportService;
 
