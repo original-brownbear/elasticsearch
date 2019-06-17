@@ -61,11 +61,14 @@ import org.elasticsearch.action.bulk.TransportBulkAction;
 import org.elasticsearch.action.bulk.TransportShardBulkAction;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.resync.TransportResyncReplicationAction;
+import org.elasticsearch.action.search.MultiSearchAction;
+import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchExecutionStatsCollector;
 import org.elasticsearch.action.search.SearchPhaseController;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchTransportService;
+import org.elasticsearch.action.search.TransportMultiSearchAction;
 import org.elasticsearch.action.search.TransportSearchAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActionTestUtils;
@@ -354,10 +357,9 @@ public class SnapshotResiliencyTests extends ESTestCase {
                                     resp -> {
                                         final ShardRouting shardToRelocate =
                                             resp.getState().routingTable().allShards(index).get(0);
-                                        final TestClusterNode currentPrimaryNode;
                                         final TestClusterNode otherNode;
                                         try {
-                                            currentPrimaryNode = testClusterNodes.nodeById(shardToRelocate.currentNodeId());
+                                            final TestClusterNode currentPrimaryNode = testClusterNodes.nodeById(shardToRelocate.currentNodeId());
                                             otherNode = testClusterNodes.randomDataNodeSafe(currentPrimaryNode.node.getName());
                                         } catch (AssertionError e) {
                                             // ignored
@@ -399,7 +401,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                             }
                         };
                         scheduleNow(maybeForceAllocate);
-                        masterNode.client.search(
+                        masterNode.client.multiSearch(new MultiSearchRequest().add(
                             new SearchRequest(index).source(
                                 new SearchSourceBuilder()
                                     .size(randomInt(documents + 10))
@@ -407,7 +409,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                                     .fetchSource(randomBoolean())
                                 .aggregation(new DateHistogramAggregationBuilder("hisss")
                                     .minDocCount(10).field("date_in").missing(0))
-                            ),
+                            )),
                             ActionListener.wrap(listTasksAndVerify));
                     };
                     final AtomicInteger countdown = new AtomicInteger(documents);
@@ -1321,6 +1323,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     snapshotsService, actionFilters, indexNameExpressionResolver
                 ));
             actions.put(ListTasksAction.INSTANCE, new TransportListTasksAction(clusterService, transportService, actionFilters));
+            actions.put(MultiSearchAction.INSTANCE,
+                new TransportMultiSearchAction(settings, threadPool, transportService, clusterService, actionFilters, client));
             client.initialize(actions, () -> clusterService.localNode().getId(), transportService.getRemoteClusterService());
         }
 
