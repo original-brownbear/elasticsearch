@@ -19,12 +19,16 @@
 
 package org.elasticsearch.snapshots;
 
+import com.carrotsearch.randomizedtesting.annotations.Repeat;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.Action;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.RequestValidators;
+import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksAction;
+import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksRequest;
+import org.elasticsearch.action.admin.cluster.node.tasks.list.TransportListTasksAction;
 import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryAction;
 import org.elasticsearch.action.admin.cluster.repositories.put.TransportPutRepositoryAction;
 import org.elasticsearch.action.admin.cluster.reroute.ClusterRerouteAction;
@@ -64,6 +68,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchTransportService;
 import org.elasticsearch.action.search.TransportSearchAction;
 import org.elasticsearch.action.support.ActionFilters;
+import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.action.support.DestructiveOperations;
@@ -315,6 +320,76 @@ public class SnapshotResiliencyTests extends ESTestCase {
         assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
         assertEquals(shards, snapshotInfo.successfulShards());
         assertEquals(0, snapshotInfo.failedShards());
+    }
+
+    @Repeat(iterations = 10000)
+    public void testSearchDisruptions() {
+        final int dataNodes = randomIntBetween(2, 10);
+        setupTestCluster(randomFrom(1, 3, 5), dataNodes);
+
+        final String index = "test";
+
+        final int shards = randomIntBetween(1, 10);
+        final int documents = randomIntBetween(0, 100);
+        TestClusterNode masterNode =
+            testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+        final AtomicBoolean documentCountVerified = new AtomicBoolean();
+        masterNode.client.admin().indices().create(
+            new CreateIndexRequest(index).waitForActiveShards(ActiveShardCount.ALL)
+                .settings(defaultIndexSettings(shards)),
+            assertNoFailureListener(
+                () -> {
+                    final Runnable afterIndexing = () -> {
+                        for (int i = 0; i < randomIntBetween(0, dataNodes); ++i) {
+                            scheduleNow(this::disconnectOrRestartDataNode);
+                        }
+                        final Runnable listTasksAndVerify = new Runnable() {
+                            @Override
+                            public void run() {
+                                masterNode.client.admin().cluster().listTasks(new ListTasksRequest(),
+                                    ActionTestUtils.assertNoFailureListener(
+                                        listTasksResponse -> {
+                                            if (listTasksResponse.getTasks().stream()
+                                                .anyMatch(taskInfo -> taskInfo.getAction().contains("search")) == false) {
+                                                documentCountVerified.set(true);
+                                            } else {
+                                                scheduleSoon(this);
+                                            }
+                                        }));
+                            }
+                        };
+                        masterNode.client.search(
+                            new SearchRequest(index).source(
+                                new SearchSourceBuilder()
+                                    .size(randomInt(documents + 10))
+                                    .trackTotalHits(randomBoolean())
+                                    .fetchSource(randomBoolean())
+                            ),
+                            ActionListener.wrap(listTasksAndVerify));
+                    };
+                    final AtomicInteger countdown = new AtomicInteger(documents);
+                    for (int i = 0; i < documents; ++i) {
+                        masterNode.client.bulk(
+                            new BulkRequest().add(new IndexRequest(index).source(
+                                Collections.singletonMap("foo", "bar" + i)))
+                                .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE),
+                            assertNoFailureListener(
+                                bulkResponse -> {
+                                    assertFalse(
+                                        "Failures in bulkresponse: " + bulkResponse.buildFailureMessage(),
+                                        bulkResponse.hasFailures());
+                                    if (countdown.decrementAndGet() == 0) {
+                                        afterIndexing.run();
+                                    }
+                                }));
+                    }
+                    if (documents == 0) {
+                        afterIndexing.run();
+                    }
+                }));
+        runUntil(documentCountVerified::get, TimeUnit.MINUTES.toMillis(5L));
+        assertTrue(documentCountVerified.get());
+        clearDisruptionsAndAwaitSync();
     }
 
     public void testSnapshotWithNodeDisconnects() {
@@ -667,7 +742,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         deterministicTaskQueue.runAllRunnableTasks();
 
         final VotingConfiguration votingConfiguration = new VotingConfiguration(testClusterNodes.nodes.values().stream().map(n -> n.node)
-                .filter(DiscoveryNode::isMasterNode).map(DiscoveryNode::getId).collect(Collectors.toSet()));
+            .filter(DiscoveryNode::isMasterNode).map(DiscoveryNode::getId).collect(Collectors.toSet()));
         testClusterNodes.nodes.values().stream().filter(n -> n.node.isMasterNode()).forEach(
             testClusterNode -> testClusterNode.coordinator.setInitialConfiguration(votingConfiguration));
 
@@ -1109,15 +1184,15 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     shardStateAction,
                     actionFilters,
                     indexNameExpressionResolver),
-                    new RetentionLeaseBackgroundSyncAction(
-                            settings,
-                            transportService,
-                            clusterService,
-                            indicesService,
-                            threadPool,
-                            shardStateAction,
-                            actionFilters,
-                            indexNameExpressionResolver));
+                new RetentionLeaseBackgroundSyncAction(
+                    settings,
+                    transportService,
+                    clusterService,
+                    indicesService,
+                    threadPool,
+                    shardStateAction,
+                    actionFilters,
+                    indexNameExpressionResolver));
             Map<Action, TransportAction> actions = new HashMap<>();
             final MetaDataCreateIndexService metaDataCreateIndexService = new MetaDataCreateIndexService(settings, clusterService,
                 indicesService,
@@ -1201,6 +1276,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     transportService, clusterService, threadPool,
                     snapshotsService, actionFilters, indexNameExpressionResolver
                 ));
+            actions.put(ListTasksAction.INSTANCE, new TransportListTasksAction(clusterService, transportService, actionFilters));
             client.initialize(actions, () -> clusterService.localNode().getId(), transportService.getRemoteClusterService());
         }
 
