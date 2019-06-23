@@ -28,7 +28,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.Tuple;
-import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -40,6 +39,7 @@ import org.elasticsearch.http.HttpRequest;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,7 +49,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.elasticsearch.common.unit.ByteSizeValue.parseBytesSizeValue;
 import static org.elasticsearch.common.unit.TimeValue.parseTimeValue;
 
 public class RestRequest implements ToXContent.Params {
@@ -288,7 +287,7 @@ public class RestRequest implements ToXContent.Params {
      * @return the list of currently consumed parameters.
      */
     List<String> consumedParams() {
-        return consumedParams.stream().collect(Collectors.toList());
+        return new ArrayList<>(consumedParams);
     }
 
     /**
@@ -359,10 +358,6 @@ public class RestRequest implements ToXContent.Params {
 
     public TimeValue paramAsTime(String key, TimeValue defaultValue) {
         return parseTimeValue(param(key), defaultValue, key);
-    }
-
-    public ByteSizeValue paramAsSize(String key, ByteSizeValue defaultValue) {
-        return parseBytesSizeValue(param(key), defaultValue, key);
     }
 
     public String[] paramAsStringArray(String key, String[] defaultValue) {

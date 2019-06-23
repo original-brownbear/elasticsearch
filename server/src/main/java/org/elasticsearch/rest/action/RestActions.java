@@ -134,9 +134,9 @@ public class RestActions {
      * @param failures The failure exceptions related to {@code failed}.
      * @see #buildNodesHeader(XContentBuilder, Params, BaseNodesResponse)
      */
-    public static void buildNodesHeader(final XContentBuilder builder, final Params params,
-                                        final int total, final int successful, final int failed,
-                                        final List<FailedNodeException> failures) throws IOException {
+    private static void buildNodesHeader(final XContentBuilder builder, final Params params,
+                                         final int total, final int successful, final int failed,
+                                         final List<FailedNodeException> failures) throws IOException {
         builder.startObject("_nodes");
         builder.field("total", total);
         builder.field("successful", successful);
@@ -173,9 +173,9 @@ public class RestActions {
      * @return Never {@code null}.
      * @throws IOException if building the response causes an issue
      */
-    public static <NodesResponse extends BaseNodesResponse & ToXContent> BytesRestResponse nodesResponse(final XContentBuilder builder,
-                                                                                                         final Params params,
-                                                                                                         final NodesResponse response)
+    private static <NodesResponse extends BaseNodesResponse & ToXContent> BytesRestResponse nodesResponse(final XContentBuilder builder,
+                                                                                                          final Params params,
+                                                                                                          final NodesResponse response)
             throws IOException {
         builder.startObject();
         RestActions.buildNodesHeader(builder, params, response);

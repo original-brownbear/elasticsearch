@@ -109,7 +109,7 @@ public class RestGetFieldMappingAction extends BaseRestHandler {
      * Helper method to find out if the only included fieldmapping metadata is typed NULL, which means
      * that type and index exist, but the field did not
      */
-    private boolean isFieldMappingMissingField(Map<String, Map<String, Map<String, FieldMappingMetaData>>> mappingsByIndex) {
+    private static boolean isFieldMappingMissingField(Map<String, Map<String, Map<String, FieldMappingMetaData>>> mappingsByIndex) {
         if (mappingsByIndex.size() != 1) {
             return false;
         }

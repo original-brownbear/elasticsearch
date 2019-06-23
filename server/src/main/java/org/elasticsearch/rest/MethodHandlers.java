@@ -19,7 +19,7 @@
 
 package org.elasticsearch.rest;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -34,7 +34,7 @@ final class MethodHandlers {
 
     MethodHandlers(String path, RestHandler handler, RestRequest.Method... methods) {
         this.path = path;
-        this.methodHandlers = new HashMap<>(methods.length);
+        this.methodHandlers = new EnumMap<>(RestRequest.Method.class);
         for (RestRequest.Method method : methods) {
             methodHandlers.put(method, handler);
         }
@@ -44,12 +44,11 @@ final class MethodHandlers {
      * Add an additional method and handler for an existing path. Note that {@code MethodHandlers}
      * does not allow replacing the handler for an already existing method.
      */
-    public MethodHandlers addMethod(RestRequest.Method method, RestHandler handler) {
+    private void addMethod(RestRequest.Method method, RestHandler handler) {
         RestHandler existing = methodHandlers.putIfAbsent(method, handler);
         if (existing != null) {
             throw new IllegalArgumentException("Cannot replace existing handler for [" + path + "] for method: " + method);
         }
-        return this;
     }
 
     /**

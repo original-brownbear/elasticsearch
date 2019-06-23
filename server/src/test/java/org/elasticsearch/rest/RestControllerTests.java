@@ -76,7 +76,6 @@ public class RestControllerTests extends ESTestCase {
 
     @Before
     public void setup() {
-        Settings settings = Settings.EMPTY;
         circuitBreakerService = new HierarchyCircuitBreakerService(
             Settings.builder()
                 .put(HierarchyCircuitBreakerService.IN_FLIGHT_REQUESTS_CIRCUIT_BREAKER_LIMIT_SETTING.getKey(), BREAKER_LIMIT)
@@ -144,18 +143,18 @@ public class RestControllerTests extends ESTestCase {
         RestRequest fakeRequest = new FakeRestRequest.Builder(xContentRegistry()).withPath("/trip").build();
         for (Iterator<MethodHandlers> it = controller.getAllHandlers(fakeRequest); it.hasNext(); ) {
             Optional<MethodHandlers> mHandler = Optional.ofNullable(it.next());
-            assertTrue(mHandler.map(mh -> controller.canTripCircuitBreaker(mh.getHandler(RestRequest.Method.GET))).orElse(true));
+            assertTrue(mHandler.map(mh -> RestController.canTripCircuitBreaker(mh.getHandler(RestRequest.Method.GET))).orElse(true));
         }
         // assume trip even on unknown paths
         fakeRequest = new FakeRestRequest.Builder(xContentRegistry()).withPath("/unknown-path").build();
         for (Iterator<MethodHandlers> it = controller.getAllHandlers(fakeRequest); it.hasNext(); ) {
             Optional<MethodHandlers> mHandler = Optional.ofNullable(it.next());
-            assertTrue(mHandler.map(mh -> controller.canTripCircuitBreaker(mh.getHandler(RestRequest.Method.GET))).orElse(true));
+            assertTrue(mHandler.map(mh -> RestController.canTripCircuitBreaker(mh.getHandler(RestRequest.Method.GET))).orElse(true));
         }
         fakeRequest = new FakeRestRequest.Builder(xContentRegistry()).withPath("/do-not-trip").build();
         for (Iterator<MethodHandlers> it = controller.getAllHandlers(fakeRequest); it.hasNext(); ) {
             Optional<MethodHandlers> mHandler = Optional.ofNullable(it.next());
-            assertFalse(mHandler.map(mh -> controller.canTripCircuitBreaker(mh.getHandler(RestRequest.Method.GET))).orElse(false));
+            assertFalse(mHandler.map(mh -> RestController.canTripCircuitBreaker(mh.getHandler(RestRequest.Method.GET))).orElse(false));
         }
     }
 

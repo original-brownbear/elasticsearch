@@ -30,12 +30,7 @@ import java.util.regex.Pattern;
 
 public class RestUtils {
 
-    public static final PathTrie.Decoder REST_DECODER = new PathTrie.Decoder() {
-        @Override
-        public String decode(String value) {
-            return RestUtils.decodeComponent(value);
-        }
-    };
+    public static final PathTrie.Decoder REST_DECODER = RestUtils::decodeComponent;
 
     public static void decodeQueryString(String s, int fromIndex, Map<String, String> params) {
         if (fromIndex < 0) {
@@ -45,7 +40,7 @@ public class RestUtils {
             return;
         }
 
-        int queryStringLength = s.contains("#") ? s.indexOf("#") : s.length();
+        int queryStringLength = s.contains("#") ? s.indexOf('#') : s.length();
 
         String name = null;
         int pos = fromIndex; // Beginning of the unprocessed region
@@ -245,9 +240,8 @@ public class RestUtils {
         if (Strings.isNullOrEmpty(corsSetting)) {
             return new String[0];
         }
-        return Arrays.asList(corsSetting.split(","))
-                     .stream()
+        return Arrays.stream(corsSetting.split(","))
                      .map(String::trim)
-                     .toArray(size -> new String[size]);
+                     .toArray(String[]::new);
     }
 }

@@ -57,7 +57,7 @@ public class PathTrie<T> {
         WILDCARD_NODES_ALLOWED
     }
 
-    static EnumSet<TrieMatchingMode> EXPLICIT_OR_ROOT_WILDCARD =
+    private static final EnumSet<TrieMatchingMode> EXPLICIT_OR_ROOT_WILDCARD =
             EnumSet.of(TrieMatchingMode.EXPLICIT_NODES_ONLY, TrieMatchingMode.WILDCARD_ROOT_NODES_ALLOWED);
 
     public interface Decoder {
@@ -79,7 +79,6 @@ public class PathTrie<T> {
     public class TrieNode {
         private transient String key;
         private transient T value;
-        private boolean isWildcard;
         private final String wildcard;
 
         private transient String namedWildcard;
@@ -89,7 +88,6 @@ public class PathTrie<T> {
         public TrieNode(String key, T value, String wildcard) {
             this.key = key;
             this.wildcard = wildcard;
-            this.isWildcard = (key.equals(wildcard));
             this.value = value;
             this.children = emptyMap();
             if (isNamedWildcard(key)) {
@@ -357,14 +355,14 @@ public class PathTrie<T> {
         return new PathTrieIterator<>(this, path, paramSupplier);
     }
 
-    class PathTrieIterator<T> implements Iterator<T> {
+    private static class PathTrieIterator<T> implements Iterator<T> {
 
         private final List<TrieMatchingMode> modes;
         private final Supplier<Map<String, String>> paramSupplier;
         private final PathTrie<T> trie;
         private final String path;
 
-        PathTrieIterator(PathTrie trie, String path, Supplier<Map<String, String>> paramSupplier) {
+        PathTrieIterator(PathTrie<T> trie, String path, Supplier<Map<String, String>> paramSupplier) {
             this.path = path;
             this.trie = trie;
             this.paramSupplier = paramSupplier;
