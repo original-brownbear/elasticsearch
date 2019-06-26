@@ -27,8 +27,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -38,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -153,31 +152,24 @@ public class NioSelector implements Closeable {
             closePendingChannels();
             preSelect();
             long nanosUntilNextTask = taskScheduler.nanosUntilNextTask(System.nanoTime());
-            int ready;
+            final Consumer<SelectionKey> keyConsumer = sk -> {
+                if (sk.isValid()) {
+                    try {
+                        processKey(sk);
+                    } catch (CancelledKeyException cke) {
+                        eventHandler.genericChannelException((ChannelContext<?>) sk.attachment(), cke);
+                    }
+                } else {
+                    eventHandler.genericChannelException((ChannelContext<?>) sk.attachment(), new CancelledKeyException());
+                }
+            };
             if (wokenUp.getAndSet(false) || nanosUntilNextTask == 0) {
-                ready = selector.selectNow();
+                selector.selectNow(keyConsumer);
             } else {
                 long millisUntilNextTask = TimeUnit.NANOSECONDS.toMillis(nanosUntilNextTask);
                 // Only select until the next task needs to be run. Do not select with a value of 0 because
                 // that blocks without a timeout.
-                ready = selector.select(Math.min(300, Math.max(millisUntilNextTask, 1)));
-            }
-            if (ready > 0) {
-                Set<SelectionKey> selectionKeys = selector.selectedKeys();
-                Iterator<SelectionKey> keyIterator = selectionKeys.iterator();
-                while (keyIterator.hasNext()) {
-                    SelectionKey sk = keyIterator.next();
-                    keyIterator.remove();
-                    if (sk.isValid()) {
-                        try {
-                            processKey(sk);
-                        } catch (CancelledKeyException cke) {
-                            eventHandler.genericChannelException((ChannelContext<?>) sk.attachment(),  cke);
-                        }
-                    } else {
-                        eventHandler.genericChannelException((ChannelContext<?>) sk.attachment(),  new CancelledKeyException());
-                    }
-                }
+                selector.select(keyConsumer, Math.min(300, Math.max(millisUntilNextTask, 1)));
             }
 
             handleScheduledTasks(System.nanoTime());

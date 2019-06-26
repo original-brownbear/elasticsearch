@@ -33,7 +33,7 @@ public final class SelectionKeyUtils {
      * @throws CancelledKeyException if the key was already cancelled
      */
     public static void setWriteInterested(SelectionKey selectionKey) throws CancelledKeyException {
-        selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_WRITE);
+        selectionKey.interestOpsOr(SelectionKey.OP_WRITE);
     }
 
     /**
@@ -43,7 +43,7 @@ public final class SelectionKeyUtils {
      * @throws CancelledKeyException if the key was already cancelled
      */
     public static void removeWriteInterested(SelectionKey selectionKey) throws CancelledKeyException {
-        selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_WRITE);
+        selectionKey.interestOpsAnd(~SelectionKey.OP_WRITE);
     }
 
     /**
@@ -53,7 +53,7 @@ public final class SelectionKeyUtils {
      * @throws CancelledKeyException if the key was already cancelled
      */
     public static void setConnectAndReadInterested(SelectionKey selectionKey) throws CancelledKeyException {
-        selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
+        selectionKey.interestOpsOr(SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
     }
 
     /**
@@ -64,7 +64,7 @@ public final class SelectionKeyUtils {
      * @throws CancelledKeyException if the key was already cancelled
      */
     public static void setConnectReadAndWriteInterested(SelectionKey selectionKey) throws CancelledKeyException {
-        selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+        selectionKey.interestOpsOr(SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
     }
 
     /**
@@ -74,7 +74,7 @@ public final class SelectionKeyUtils {
      * @throws CancelledKeyException if the key was already cancelled
      */
     public static void removeConnectInterested(SelectionKey selectionKey) throws CancelledKeyException {
-        selectionKey.interestOps(selectionKey.interestOps() & ~SelectionKey.OP_CONNECT);
+        selectionKey.interestOpsAnd(~SelectionKey.OP_CONNECT);
     }
 
     /**
@@ -84,7 +84,7 @@ public final class SelectionKeyUtils {
      * @throws CancelledKeyException if the key was already cancelled
      */
     public static void setAcceptInterested(SelectionKey selectionKey) throws CancelledKeyException {
-        selectionKey.interestOps(selectionKey.interestOps() | SelectionKey.OP_ACCEPT);
+        selectionKey.interestOpsOr(SelectionKey.OP_ACCEPT);
     }
 
 
