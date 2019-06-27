@@ -52,9 +52,7 @@ import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.transport.TransportRequestOptions;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
-import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -199,7 +197,7 @@ public class MockNioTransport extends TcpTransport {
         }
 
         @Override
-        public MockSocketChannel createChannel(NioSelector selector, SocketChannel channel) throws IOException {
+        public MockSocketChannel createChannel(NioSelector selector, SocketChannel channel) {
             MockSocketChannel nioChannel = new MockSocketChannel(isClient == false, profileName, channel);
             IntFunction<Page> pageSupplier = (length) -> {
                 if (length > PageCacheRecycler.BYTE_PAGE_SIZE) {
@@ -213,17 +211,6 @@ public class MockNioTransport extends TcpTransport {
             BytesChannelContext context = new BytesChannelContext(nioChannel, selector, (e) -> exceptionCaught(nioChannel, e),
                 readWriteHandler, new InboundChannelBuffer(pageSupplier));
             nioChannel.setContext(context);
-            nioChannel.addConnectListener((v, e) -> {
-                if (e == null) {
-                    if (channel.isConnected()) {
-                        try {
-                            channel.setOption(StandardSocketOptions.SO_LINGER, 0);
-                        } catch (IOException ex) {
-                            throw new UncheckedIOException(new IOException());
-                        }
-                    }
-                }
-            });
             return nioChannel;
         }
 
