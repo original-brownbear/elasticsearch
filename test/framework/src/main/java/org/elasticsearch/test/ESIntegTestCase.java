@@ -583,7 +583,9 @@ public abstract class ESIntegTestCase extends ESTestCase {
     }
 
     private static void awaitAllTasks() {
-        client().admin().cluster().prepareListTasks().setWaitForCompletion(true).get();
+        if (cluster() != null && cluster().size() > 0) {
+            client().admin().cluster().prepareListTasks().setWaitForCompletion(true).get();
+        }
     }
 
     /**
