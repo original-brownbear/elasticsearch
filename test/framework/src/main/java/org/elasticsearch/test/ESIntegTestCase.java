@@ -560,8 +560,9 @@ public abstract class ESIntegTestCase extends ESTestCase {
                     ensureClusterStateConsistency();
                     beforeIndexDeletion();
                     cluster().wipe(excludeTemplates()); // wipe after to make sure we fail in the test that didn't ack the delete
-                    awaitAllTasks();
                     if (afterClass || currentClusterScope == Scope.TEST) {
+                        clearDisruptionScheme();
+                        awaitAllTasks();
                         cluster().close();
                     }
                     cluster().assertAfterTest();
