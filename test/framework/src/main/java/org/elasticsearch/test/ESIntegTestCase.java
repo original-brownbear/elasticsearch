@@ -560,6 +560,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
                     ensureClusterStateConsistency();
                     beforeIndexDeletion();
                     cluster().wipe(excludeTemplates()); // wipe after to make sure we fail in the test that didn't ack the delete
+                    awaitAllTasks();
                     if (afterClass || currentClusterScope == Scope.TEST) {
                         cluster().close();
                     }
@@ -578,6 +579,10 @@ public abstract class ESIntegTestCase extends ESTestCase {
                 // afterTestRule.forceFailure();
             }
         }
+    }
+
+    private static void awaitAllTasks() {
+        client().admin().cluster().prepareListTasks().setWaitForCompletion(true).get();
     }
 
     /**
