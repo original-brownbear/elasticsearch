@@ -18,7 +18,10 @@
  */
 package org.elasticsearch.repositories.s3;
 
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.status.SnapshotStatus;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.settings.MockSecureSettings;
@@ -27,16 +30,18 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.AbstractThirdPartyRepositoryTestCase;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
-import org.elasticsearch.test.StreamsUtils;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.Executor;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.not;
 
 public class S3RepositoryThirdPartyTests extends AbstractThirdPartyRepositoryTestCase {
@@ -63,18 +68,77 @@ public class S3RepositoryThirdPartyTests extends AbstractThirdPartyRepositoryTes
         Settings.Builder settings = Settings.builder()
             .put("bucket", System.getProperty("test.s3.bucket"))
             .put("base_path", System.getProperty("test.s3.base", "testpath"));
-        final String endpointPath = System.getProperty("test.s3.endpoint");
-        if (endpointPath != null) {
-            try {
-                settings = settings.put("endpoint", StreamsUtils.copyToStringFromClasspath("/" + endpointPath));
-            } catch (IOException e) {
-                throw new AssertionError(e);
-            }
+        final String endpoint = System.getProperty("test.s3.endpoint");
+        if (endpoint != null) {
+            settings = settings.put("endpoint", endpoint);
         }
         AcknowledgedResponse putRepositoryResponse = client().admin().cluster().preparePutRepository("test-repo")
             .setType("s3")
             .setSettings(settings).get();
         assertThat(putRepositoryResponse.isAcknowledged(), equalTo(true));
+    }
+
+    public void testCreateTwentySnapshots() {
+
+        final AtomicInteger putCount = new AtomicInteger(0);
+
+        createIndex("test-idx-1");
+        createIndex("test-idx-2");
+        final List<String> snapshotNames = new ArrayList<>();
+        ensureGreen();
+        for (int j = 0; j < 20; ++j) {
+            logger.info("--> indexing some data");
+            for (int i = 0; i < 100; i++) {
+                client().prepareIndex("test-idx-1", "doc", Integer.toString(i)).setSource("foo", "bar" + j * i).get();
+                client().prepareIndex("test-idx-2", "doc", Integer.toString(i)).setSource("foo", "bar" + j * i).get();
+            }
+            client().admin().indices().prepareRefresh().get();
+
+            final String snapshotName = "test-snap-" + System.currentTimeMillis();
+            snapshotNames.add(snapshotName);
+            logger.info("--> snapshot");
+            CreateSnapshotResponse createSnapshotResponse = client().admin()
+                .cluster()
+                .prepareCreateSnapshot("test-repo", snapshotName)
+                .setWaitForCompletion(true)
+                .setIndices("test-idx-1", "test-idx-2")
+                .get();
+            assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
+            assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
+                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        }
+
+        final List<SnapshotStatus> snapshotStatusList = client().admin().cluster().prepareSnapshotStatus()
+            .addSnapshots(snapshotNames.toArray(Strings.EMPTY_ARRAY)).setRepository("test-repo").get().getSnapshots();
+        for (final SnapshotStatus snapshotStatus : snapshotStatusList) {
+            putCount.addAndGet(snapshotStatus.getStats().getIncrementalFileCount());
+        }
+
+        final int expectedPuts = putCount.get()
+            + 20 // index-N blobs for 20 snapshots
+            + 20 * 2 // meta- blobs for 20 snapshots with 2 indices each
+            + 20 * 2 // snap- blobs for 20 snapshots with 2 shards each
+            + 20 * 2 // index-N blobs for 20 snapshots with 2 shards each
+            + 20  // root level snap-for 20 snapshots
+            + 20; // root level meta- for 20 snapshots
+
+        // PUT: 383 seen vs. 380 expected (difference explained by 1 put for new incompatible snapshots, 2 unexplained so far)
+
+        final int getCount =
+        +    20 * 2   // list index-N (twice per snapshot on start and finalize)
+        +    20 * 3   // initialize snapshot loads latest index-N separately
+        +    20 * 2   // get latest index-N (twice per snapshot)
+        +    20 * 2   // get incompatible snapshots (same as index-N)
+        +    20 * 2   // get shard index-N
+        +    20 * 2;  // list each shard's blobs
+
+        // GET: 383 seen vs. 260  // Difference is calculated as follows:
+        // 20        from loading each snapshot-info blob
+        // 20 * 2    from getting snap- in each of the 2 shards for all snapshots
+        // 20 * 2    from getting index metadata for each snapshot/index pair
+        // 20        from index-N generation check
+        // 1 + 1 + 1 from loading repositoryData
+        logger.info("Put Count: {} data files, expected overall {}", putCount.get(), expectedPuts);
     }
 
     @Override
