@@ -123,7 +123,7 @@ public class S3RepositoryThirdPartyTests extends AbstractThirdPartyRepositoryTes
             + 20 // root level meta- for 20 snapshots
             + 1; // Put incompatible snapshots
 
-        // PUT: 384 seen vs. 380 expected (difference explained by 3 puts of verify blobs)
+        // PUT: 384 seen vs. 381 expected (difference explained by 3 puts of verify blobs)
         // PUT /testb/testpath/tests-KS397dCRSZO2r57VS4MZXQ/master.dat
         // PUT /testb/testpath/tests--5zClnTlRrq21p2Ccsrtew/master.dat
         // PUT /testb/testpath/tests--5zClnTlRrq21p2Ccsrtew/data-HQ7b1blGQg6ttIDsqTkUQw.dat
