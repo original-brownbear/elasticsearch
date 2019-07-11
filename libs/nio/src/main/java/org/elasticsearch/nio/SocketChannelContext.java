@@ -81,6 +81,10 @@ public abstract class SocketChannelContext extends ChannelContext<SocketChannel>
         return connectContext.isDone() && connectContext.isCompletedExceptionally() == false;
     }
 
+    protected InboundChannelBuffer rawNetworkBuffer() {
+        return channelBuffer;
+    }
+
     /**
      * This method will attempt to complete the connection process for this channel. It should be called for
      * new channels or for a channel that has produced a OP_CONNECT event. If this method returns true then

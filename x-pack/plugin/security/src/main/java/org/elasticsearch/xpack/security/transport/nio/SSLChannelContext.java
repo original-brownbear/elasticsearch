@@ -55,6 +55,11 @@ public final class SSLChannelContext extends SocketChannelContext {
     }
 
     @Override
+    protected InboundChannelBuffer rawNetworkBuffer() {
+        return networkReadBuffer;
+    }
+
+    @Override
     public void register() throws IOException {
         super.register();
         sslDriver.init();
