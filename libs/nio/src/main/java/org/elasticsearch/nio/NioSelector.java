@@ -436,7 +436,13 @@ public class NioSelector implements Closeable {
             if (newChannel.isOpen()) {
                 eventHandler.handleRegistration(newChannel);
                 if (newChannel instanceof SocketChannelContext) {
-                    attemptConnect((SocketChannelContext) newChannel, false);
+                    final SocketChannelContext socketChannelContext = (SocketChannelContext) newChannel;
+                    attemptConnect(socketChannelContext, false);
+                    socketChannelContext.addConnectListener((v,e) -> {
+                        if (e != null) {
+                            handleRead(socketChannelContext);
+                        }
+                    });
                 }
             } else {
                 eventHandler.registrationException(newChannel, new ClosedChannelException());
