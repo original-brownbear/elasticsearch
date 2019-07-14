@@ -19,10 +19,16 @@
 
 package org.elasticsearch.test.disruption;
 
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthAction;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.GroupedActionListener;
+import org.elasticsearch.action.support.PlainActionFuture;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.NodeConnectionsService;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -48,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasSize;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0, autoManageMasterNodes = false)
 public class NetworkDisruptionIT extends ESIntegTestCase {
@@ -149,6 +156,36 @@ public class NetworkDisruptionIT extends ESIntegTestCase {
 
         latch.await(30, TimeUnit.SECONDS);
         assertEquals("All requests must respond, requests: " + requests, 0, latch.getCount());
+    }
+
+    public void testCoordinatingNodeThrottles() throws InterruptedException {
+        internalCluster().setBootstrapMasterNodeIndex(0);
+        internalCluster().ensureAtLeastNumDataNodes(2);
+        final String coordinatingNode = internalCluster().startCoordinatingOnlyNode(Settings.EMPTY);
+        createIndex("test", Settings.builder().put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 10).build());
+        for (int i = 0; i < 1000; ++i) {
+            index("test", "_doc", "docId" + i, "foo", "bar");
+        }
+        refresh("test");
+        //internalCluster().setDisruptionScheme(networkDisruption);
+        //networkDisruption.startDisrupting();
+        final PlainActionFuture<Collection<SearchResponse>> future = PlainActionFuture.newFuture();
+        final int searches = 100;
+        final ActionListener<SearchResponse> listener = new GroupedActionListener<>(future, searches);
+        final Client client = client(coordinatingNode);
+        while (true) {
+            TimeUnit.MILLISECONDS.sleep(10L); // Setting the sleep 1s here fixes this to not OOM
+            logger.info("---> Round");
+            for (int i = 0; i < searches; ++i) {
+                client.prepareSearch("test").setAllowPartialSearchResults(false).setRequestCache(false).execute(listener);
+            }
+            try {
+                final Collection<SearchResponse> responses = future.actionGet();
+                assertThat(responses, hasSize(searches));
+            } catch (Exception e) {
+                // ignored
+            }
+        }
     }
 
     private Tuple<TransportService, TransportService> findDisruptedPair(NetworkDisruption.DisruptedLinks disruptedLinks) {

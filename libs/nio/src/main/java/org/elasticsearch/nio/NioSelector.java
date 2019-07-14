@@ -243,7 +243,7 @@ public class NioSelector implements Closeable {
                         handleWrite(channelContext);
                     }
                     if (channelContext.selectorShouldClose() == false && (ops & SelectionKey.OP_READ) != 0) {
-                        handleRead(channelContext);
+                            handleRead(channelContext);
                     }
                 }
             }
