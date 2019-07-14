@@ -392,20 +392,25 @@ public abstract class StreamInput extends InputStream {
         return null;
     }
 
+    private static final int THREAD_LOCAL_CHARS_LIMIT = 1024;
+
     // we don't use a CharsRefBuilder since we exactly know the size of the character array up front
     // this prevents calling grow for every character since we don't need this
-    private final CharsRef spare = new CharsRef();
+    private static final ThreadLocal<CharsRef> spare = ThreadLocal.withInitial(() -> new CharsRef(THREAD_LOCAL_CHARS_LIMIT));
 
     public String readString() throws IOException {
         // TODO it would be nice to not call readByte() for every character but we don't know how much to read up-front
         // we can make the loop much more complicated but that won't buy us much compared to the bounds checks in readByte()
         final int charCount = readArraySize();
-        if (spare.chars.length < charCount) {
-            // we don't use ArrayUtils.grow since there is no need to copy the array
-            spare.chars = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
+        final CharsRef charsRef;
+        if (charCount > THREAD_LOCAL_CHARS_LIMIT) {
+            charsRef = new CharsRef(charCount);
+        } else {
+            charsRef = spare.get();
         }
-        spare.length = charCount;
-        final char[] buffer = spare.chars;
+        charsRef.length = charCount;
+        assert charsRef.chars.length >= charCount;
+        final char[] buffer = charsRef.chars;
         for (int i = 0; i < charCount; i++) {
             final int c = readByte() & 0xff;
             switch (c >> 4) {
@@ -430,7 +435,7 @@ public abstract class StreamInput extends InputStream {
                     throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
             }
         }
-        return spare.toString();
+        return charsRef.toString();
     }
 
     public SecureString readSecureString() throws IOException {
