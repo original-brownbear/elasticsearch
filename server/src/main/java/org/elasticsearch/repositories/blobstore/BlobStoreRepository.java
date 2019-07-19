@@ -1147,13 +1147,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 logger.warn(() -> new ParameterizedMessage("failed to read index file [{}]", file), e);
                 throw e;
             }
-        } else if (blobKeys.stream().anyMatch(k -> k.startsWith(SNAPSHOT_PREFIX) || k.startsWith(DATA_BLOB_PREFIX))) {
-            assert blobKeys.stream().noneMatch(k -> k.startsWith(INDEX_FILE_PREFIX));
-            throw new IllegalStateException(
-                "Could not find a readable index-N file in a non-empty shard snapshot directory [" + shardContainer.path() + "]");
-        } else {
-            return new Tuple<>(new BlobStoreIndexShardSnapshots(Collections.emptyList()), RepositoryData.EMPTY_REPO_GEN);
+        } else if (blobKeys.isEmpty() == false) {
+            logger.warn("Could not find a readable index-N file in a non-empty shard snapshot directory [{}]", shardContainer.path());
         }
+        return new Tuple<>(new BlobStoreIndexShardSnapshots(Collections.emptyList()), RepositoryData.EMPTY_REPO_GEN);
     }
 
     /**

@@ -1660,9 +1660,14 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
             client().admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-2")
                 .setWaitForCompletion(true).setIndices("test-idx-1").get();
         assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
-        assertEquals(
-            createSnapshotResponse.getSnapshotInfo().successfulShards(), createSnapshotResponse.getSnapshotInfo().totalShards() - 1);
-        // TODO: Assert failed shard details
+        assertEquals(createSnapshotResponse.getSnapshotInfo().successfulShards(), createSnapshotResponse.getSnapshotInfo().totalShards());
+
+        logger.info("--> restoring the first snapshot, the repository should not have lost any shard data despite deleting index-N, " +
+                        "because it should have iterated over the snap-*.data files as backup");
+        client().admin().indices().prepareDelete("test-idx-1", "test-idx-2").get();
+        RestoreSnapshotResponse restoreSnapshotResponse =
+            client().admin().cluster().prepareRestoreSnapshot("test-repo", "test-snap-1").setWaitForCompletion(true).get();
+        assertEquals(0, restoreSnapshotResponse.getRestoreInfo().failedShards());
     }
 
     public void testSnapshotClosedIndex() throws Exception {
