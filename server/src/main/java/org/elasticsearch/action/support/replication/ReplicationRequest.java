@@ -75,7 +75,7 @@ public abstract class ReplicationRequest<Request extends ReplicationRequest<Requ
         }
         waitForActiveShards = ActiveShardCount.readFrom(in);
         timeout = in.readTimeValue();
-        index = in.readString();
+        index = in.readCommonString();
         routedBasedOnClusterVersion = in.readVLong();
     }
 
