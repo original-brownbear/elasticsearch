@@ -66,7 +66,7 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
 
     public DeleteRequest(StreamInput in) throws IOException {
         super(in);
-        type = in.readString();
+        type = in.readCommonString();
         id = in.readString();
         routing = in.readOptionalString();
         version = in.readLong();

@@ -130,7 +130,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
     public UpdateRequest(StreamInput in) throws IOException {
         super(in);
         waitForActiveShards = ActiveShardCount.readFrom(in);
-        type = in.readString();
+        type = in.readCommonString();
         id = in.readString();
         routing = in.readOptionalString();
         if (in.readBoolean()) {
