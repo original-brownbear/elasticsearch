@@ -560,7 +560,7 @@ public class DiscoveryNodes extends AbstractDiffable<DiscoveryNodes> implements 
     public static DiscoveryNodes readFrom(StreamInput in, DiscoveryNode localNode) throws IOException {
         Builder builder = new Builder();
         if (in.readBoolean()) {
-            builder.masterNodeId(in.readString());
+            builder.masterNodeId(in.readCommonString());
         }
         if (localNode != null) {
             builder.localNodeId(localNode.getId());

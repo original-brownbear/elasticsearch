@@ -706,7 +706,7 @@ public class IndexMetaData implements Diffable<IndexMetaData>, ToXContentFragmen
         }
 
         IndexMetaDataDiff(StreamInput in) throws IOException {
-            index = in.readString();
+            index = in.readCommonString();
             routingNumShards = in.readInt();
             version = in.readLong();
             mappingVersion = in.readVLong();

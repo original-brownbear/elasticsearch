@@ -103,7 +103,7 @@ public abstract class InboundMessage extends NetworkMessage implements Closeable
                     } else {
                         features = Collections.unmodifiableSet(new TreeSet<>(Arrays.asList(featuresFound)));
                     }
-                    final String action = streamInput.readString();
+                    final String action = streamInput.readCommonString();
                     message = new Request(threadContext, remoteVersion, status, requestId, action, features, streamInput);
                 } else {
                     message = new Response(threadContext, remoteVersion, status, requestId, streamInput);

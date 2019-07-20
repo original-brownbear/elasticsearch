@@ -209,11 +209,11 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
      * @throws IOException if there is an error while reading from the stream
      */
     public DiscoveryNode(StreamInput in) throws IOException {
-        this.nodeName = in.readString().intern();
-        this.nodeId = in.readString().intern();
-        this.ephemeralId = in.readString().intern();
-        this.hostName = in.readString().intern();
-        this.hostAddress = in.readString().intern();
+        this.nodeName = in.readCommonString().intern();
+        this.nodeId = in.readCommonString().intern();
+        this.ephemeralId = in.readCommonString().intern();
+        this.hostName = in.readCommonString().intern();
+        this.hostAddress = in.readCommonString().intern();
         this.address = new TransportAddress(in);
         int size = in.readVInt();
         this.attributes = new HashMap<>(size);
@@ -224,8 +224,8 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
         final Set<DiscoveryNodeRole> roles = new HashSet<>(rolesSize);
         if (in.getVersion().onOrAfter(Version.V_7_3_0)) {
             for (int i = 0; i < rolesSize; i++) {
-                final String roleName = in.readString();
-                final String roleNameAbbreviation = in.readString();
+                final String roleName = in.readCommonString();
+                final String roleNameAbbreviation = in.readCommonString();
                 final DiscoveryNodeRole role = roleNameToPossibleRoles.get(roleName);
                 if (role == null) {
                     roles.add(new DiscoveryNodeRole.UnknownRole(roleName, roleNameAbbreviation));

@@ -530,7 +530,7 @@ public final class Settings implements ToXContentFragment {
         Builder builder = new Builder();
         int numberOfSettings = in.readVInt();
         for (int i = 0; i < numberOfSettings; i++) {
-            String key = in.readString();
+            String key = in.readCommonString();
             Object value = in.readGenericValue();
             if (value == null) {
                 builder.putNull(key);

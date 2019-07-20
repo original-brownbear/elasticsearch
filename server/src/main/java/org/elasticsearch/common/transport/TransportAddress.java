@@ -73,7 +73,7 @@ public final class TransportAddress implements Writeable, ToXContentFragment {
         final int len = in.readByte();
         final byte[] a = new byte[len]; // 4 bytes (IPv4) or 16 bytes (IPv6)
         in.readFully(a);
-        String host = in.readString(); // the host string was serialized so we can ignore the passed in version
+        String host = in.readCommonString(); // the host string was serialized so we can ignore the passed in version
         final InetAddress inetAddress = InetAddress.getByAddress(host, a);
         int port = in.readInt();
         this.address = new InetSocketAddress(inetAddress, port);

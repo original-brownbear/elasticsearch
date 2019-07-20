@@ -39,6 +39,7 @@ import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -418,6 +419,40 @@ public abstract class StreamInput extends InputStream {
         } else {
             charsRef = smallSpare.get();
         }
+        doReadString(charCount, charsRef);
+        return charsRef.toString();
+    }
+
+    private static final Map<CharsRef, String> commonStringsCache = ConcurrentCollections.newConcurrentMap();
+
+    public String readCommonString() throws IOException {
+        final int charCount = readArraySize();
+        final CharsRef charsRef;
+        if (charCount > SMALL_STRING_LIMIT) {
+            if (largeSpare == null) {
+                largeSpare = new CharsRef(ArrayUtil.oversize(charCount, Character.BYTES));
+            } else if (largeSpare.chars.length < charCount) {
+                // we don't use ArrayUtils.grow since there is no need to copy the array
+                largeSpare.chars = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
+            }
+            charsRef = largeSpare;
+            doReadString(charCount, largeSpare);
+            return charsRef.toString();
+        } else {
+            charsRef = smallSpare.get();
+            doReadString(charCount, charsRef);
+            final String cached = commonStringsCache.get(charsRef);
+            if (cached == null) {
+                final String res = charsRef.toString();
+                commonStringsCache.put(new CharsRef(res), res);
+                return res;
+            } else {
+                return cached;
+            }
+        }
+    }
+
+    private void doReadString(int charCount, CharsRef charsRef) throws IOException {
         charsRef.length = charCount;
         final char[] buffer = charsRef.chars;
         for (int i = 0; i < charCount; i++) {
@@ -444,7 +479,6 @@ public abstract class StreamInput extends InputStream {
                     throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
             }
         }
-        return charsRef.toString();
     }
 
     public SecureString readSecureString() throws IOException {

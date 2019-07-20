@@ -194,7 +194,7 @@ public class MappingMetaData extends AbstractDiffable<MappingMetaData> {
     }
 
     public MappingMetaData(StreamInput in) throws IOException {
-        type = in.readString();
+        type = in.readCommonString();
         source = CompressedXContent.readCompressedString(in);
         // routing
         routing = new Routing(in.readBoolean());
