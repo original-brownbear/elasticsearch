@@ -33,6 +33,7 @@ import org.joda.time.DateTimeZone;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -761,6 +762,33 @@ public class BytesStreamsTests extends ESTestCase {
         output.writeVInt(value);
         StreamInput input = output.bytes().streamInput();
         assertEquals(value, input.readVInt());
+    }
+
+    public void testReadTonsOfStrings() throws IOException {
+        final List<String> strings = Arrays.asList("foo", "baaaar", "sdfsdfsüüüüsdä",
+            "sdfsdfsüüüüsdä".repeat(50));
+        BytesStreamOutput output = new BytesStreamOutput();
+        for (int i = 0; i < 1000; ++i) {
+            for (String string : strings) {
+                output.writeString(string);
+            }
+        }
+        StreamInput input = output.bytes().streamInput();
+        input.mark(Integer.MAX_VALUE);
+        int count = 0;
+        final long start = System.nanoTime();
+        for (int i = 0; i < 20_000_000; ++i) {
+            final String string = input.readString();
+            if (string != null) {
+                count ++;
+                if (count == 4000) {
+                    count = 0;
+                    input.reset();
+                    input.mark(Integer.MAX_VALUE);
+                }
+            }
+        }
+        System.out.println("Took " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
     }
 
     public void testVLong() throws IOException {

@@ -420,8 +420,13 @@ public abstract class StreamInput extends InputStream {
         }
         charsRef.length = charCount;
         final char[] buffer = charsRef.chars;
-        for (int i = 0; i < charCount; i++) {
-            final int c = readByte() & 0xff;
+        final byte[] bytesBuffer = StreamOutput.scratch.get();
+        int i = 0;
+        int limit = Math.min(buffer.length, charCount);
+        int pos = 0;
+        readBytes(bytesBuffer, 0, limit);
+        for (; i < charCount; i++) {
+            final int c = bytesBuffer[pos++] & 0xff;
             switch (c >> 4) {
                 case 0:
                 case 1:
@@ -435,10 +440,11 @@ public abstract class StreamInput extends InputStream {
                     break;
                 case 12:
                 case 13:
-                    buffer[i] = ((char) ((c & 0x1F) << 6 | readByte() & 0x3F));
+
+                    buffer[i] = ((char) ((c & 0x1F) << 6 | bytesBuffer[pos++] & 0x3F));
                     break;
                 case 14:
-                    buffer[i] = ((char) ((c & 0x0F) << 12 | (readByte() & 0x3F) << 6 | (readByte() & 0x3F) << 0));
+                    buffer[i] = ((char) ((c & 0x0F) << 12 | (bytesBuffer[pos++] & 0x3F) << 6 | (bytesBuffer[pos++] & 0x3F) << 0));
                     break;
                 default:
                     throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
