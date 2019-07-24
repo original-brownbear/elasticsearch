@@ -21,8 +21,6 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -36,6 +34,7 @@ import io.netty.channel.RecvByteBufAllocator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioChannelOption;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
@@ -59,7 +58,8 @@ import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.core.internal.net.NetUtils;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.CopySocketChannel;
+import org.elasticsearch.transport.CopyBytesServerSocketChannel;
+import org.elasticsearch.transport.CopyBytesSocketChannel;
 import org.elasticsearch.transport.Netty4PluginConfig;
 import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.transport.TransportSettings;
@@ -113,7 +113,7 @@ public class Netty4Transport extends TcpTransport {
                            NetworkService networkService, PageCacheRecycler pageCacheRecycler,
                            NamedWriteableRegistry namedWriteableRegistry, CircuitBreakerService circuitBreakerService) {
         super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService);
-//        Netty4Utils.setAvailableProcessors(EsExecutors.PROCESSORS_SETTING.get(settings));
+        Netty4Utils.setAvailableProcessors(EsExecutors.PROCESSORS_SETTING.get(settings));
         this.pluginConfig = pluginConfig;
         this.workerCount = WORKER_COUNT.get(settings);
 
@@ -153,7 +153,11 @@ public class Netty4Transport extends TcpTransport {
     private Bootstrap createClientBootstrap(NioEventLoopGroup eventLoopGroup) {
         final Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(eventLoopGroup);
-        bootstrap.channel(CopySocketChannel.class);
+        if (pluginConfig.isDirectBufferPoolingDisabled()) {
+            bootstrap.channel(CopyBytesSocketChannel.class);
+        } else {
+            bootstrap.channel(NioSocketChannel.class);
+        }
 
         bootstrap.option(ChannelOption.TCP_NODELAY, TransportSettings.TCP_NO_DELAY.get(settings));
         bootstrap.option(ChannelOption.SO_KEEPALIVE, TransportSettings.TCP_KEEP_ALIVE.get(settings));
@@ -211,7 +215,11 @@ public class Netty4Transport extends TcpTransport {
         final ServerBootstrap serverBootstrap = new ServerBootstrap();
 
         serverBootstrap.group(eventLoopGroup);
-        serverBootstrap.channel(NioServerSocketChannel.class);
+        if (pluginConfig.isDirectBufferPoolingDisabled()) {
+            serverBootstrap.channel(CopyBytesServerSocketChannel.class);
+        } else {
+            serverBootstrap.channel(NioServerSocketChannel.class);
+        }
 
         serverBootstrap.childHandler(getServerChannelInitializer(name));
         serverBootstrap.handler(new ServerChannelExceptionHandler());
