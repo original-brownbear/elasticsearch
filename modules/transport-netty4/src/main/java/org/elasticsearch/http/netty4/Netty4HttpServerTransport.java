@@ -62,6 +62,7 @@ import org.elasticsearch.http.HttpReadTimeoutException;
 import org.elasticsearch.http.HttpServerChannel;
 import org.elasticsearch.http.netty4.cors.Netty4CorsHandler;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.CopyBytesServerSocketChannel;
 import org.elasticsearch.transport.Netty4PluginConfig;
 import org.elasticsearch.transport.netty4.Netty4Utils;
 
@@ -147,7 +148,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
     private final int maxCompositeBufferComponents;
     private final Netty4PluginConfig pluginConfig;
 
-    protected volatile ServerBootstrap serverBootstrap;
+    private volatile ServerBootstrap serverBootstrap;
 
     public Netty4HttpServerTransport(Settings settings, Netty4PluginConfig pluginConfig, NetworkService networkService, BigArrays bigArrays,
                                      ThreadPool threadPool, NamedXContentRegistry xContentRegistry, Dispatcher dispatcher) {
@@ -186,7 +187,11 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
 
             serverBootstrap.group(new NioEventLoopGroup(workerCount, daemonThreadFactory(settings,
                 HTTP_SERVER_WORKER_THREAD_NAME_PREFIX)));
-            serverBootstrap.channel(NioServerSocketChannel.class);
+            if (pluginConfig.isDirectBufferPoolingDisabled()) {
+                serverBootstrap.channel(CopyBytesServerSocketChannel.class);
+            } else {
+                serverBootstrap.channel(NioServerSocketChannel.class);
+            }
 
             serverBootstrap.childHandler(configureServerChannelHandler());
             serverBootstrap.handler(new ServerChannelExceptionHandler(this));
