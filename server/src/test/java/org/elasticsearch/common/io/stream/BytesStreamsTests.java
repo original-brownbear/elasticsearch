@@ -835,4 +835,34 @@ public class BytesStreamsTests extends ESTestCase {
         assertEqualityAfterSerialize(timeValue, 1 + out.bytes().length());
     }
 
+    public void testReadTonsOfStrings() throws IOException {
+        final BytesReference buffer;
+        try (BytesStreamOutput out = new BytesStreamOutput()) {
+            for (int i = 0; i < 1000; ++i) {
+                out.writeString("Fooo");
+                out.writeString("Bar");
+                out.writeString("Füüüüüü");
+                out.writeString("Füüüüüü".repeat(10));
+            }
+            buffer = out.bytes();
+            final StreamInput streamInput = buffer.streamInput();
+            streamInput.mark(0);
+            final long start = System.nanoTime();
+            for (int i = 0; i < 100_000_000; ++i) {
+                if (i % 1000 == 0) {
+                    streamInput.reset();
+                }
+                String str = streamInput.readString();
+                assert str != null;
+                str = streamInput.readString();
+                assert str != null;
+                str = streamInput.readString();
+                assert str != null;
+                str = streamInput.readString();
+                assert str != null;
+            }
+            System.out.println("Took " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
+        }
+    }
+
 }
