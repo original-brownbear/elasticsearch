@@ -402,11 +402,7 @@ public abstract class StreamInput extends InputStream {
     // this prevents calling grow for every character since we don't need this
     private CharsRef largeSpare;
 
-    private static boolean FAST_PATH = true;
-
     public String readString() throws IOException {
-        // TODO it would be nice to not call readByte() for every character but we don't know how much to read up-front
-        // we can make the loop much more complicated but that won't buy us much compared to the bounds checks in readByte()
         final int charCount = readArraySize();
         final CharsRef charsRef;
         if (charCount > SMALL_STRING_LIMIT) {
@@ -421,35 +417,7 @@ public abstract class StreamInput extends InputStream {
             charsRef = smallSpare.get();
         }
         charsRef.length = charCount;
-        if (FAST_PATH) {
-            return stringDeserializer.get().readString(charCount, charsRef, this);
-        }
-        final char[] buffer = charsRef.chars;
-        for (int i = 0; i < charCount; i++) {
-            final int c = readByte() & 0xff;
-            switch (c >> 4) {
-                case 0:
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                    buffer[i] = (char) c;
-                    break;
-                case 12:
-                case 13:
-                    buffer[i] = ((char) ((c & 0x1F) << 6 | readByte() & 0x3F));
-                    break;
-                case 14:
-                    buffer[i] = ((char) ((c & 0x0F) << 12 | (readByte() & 0x3F) << 6 | (readByte() & 0x3F) << 0));
-                    break;
-                default:
-                    throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
-            }
-        }
-        return charsRef.toString();
+        return stringDeserializer.get().readString(charCount, charsRef, this);
     }
 
     private static final ThreadLocal<StringDeserializer> stringDeserializer = ThreadLocal.withInitial(StringDeserializer::new);
@@ -458,85 +426,170 @@ public abstract class StreamInput extends InputStream {
 
         private final byte[] buffer = new byte[1024];
 
-        private int charCount;
-
-        private int charsProduced;
-
-        private int posByteArray;
+       private int posByteArray;
 
         private int limitByteArray;
 
-        String readString(int charCount, CharsRef charsRef, StreamInput input) throws IOException {
-            this.charCount = charCount;
-            charsProduced = 0;
-            posByteArray = 0;
-            limitByteArray = 0;
-            while (charsProduced < charCount) {
-                fillBuffer(input);
-                extractChars(charsRef);
-            }
-            return charsRef.toString();
-        }
+       String readString(int charCount, CharsRef charsRef, StreamInput input) throws IOException {
+           int charsProduced = 0;
+           posByteArray = 0;
+           limitByteArray = 0;
+           int missing = 0;
+           final byte[] byteBuffer = buffer;
+           final char[] buf = charsRef.chars;
+           while (missing != 0 || charsProduced < charCount) {
+               final int charsLeft = charCount - charsProduced;
+               int bufferFree = byteBuffer.length - limitByteArray;
+               final int readAtLeast;
+               if (missing > 0) {
+                   readAtLeast = missing + charsLeft - 1;
+                   missing = 0;
+               } else {
+                   readAtLeast = charsLeft;
+               }
+               if (bufferFree < readAtLeast) {
+                   bufferFree += compactBuffer();
+               }
+               final int toRead = Math.min(bufferFree, readAtLeast);
+               input.readBytes(byteBuffer, limitByteArray, toRead);
+               limitByteArray += toRead;
+               int bl;
+               while ((bl = (limitByteArray - posByteArray)) > 2) {
+                   for (int i = 0; i < bl / 3; ++i) {
+                       final int c = byteBuffer[posByteArray++] & 0xff;
+                       switch (c >> 4) {
+                           case 0:
+                           case 1:
+                           case 2:
+                           case 3:
+                           case 4:
+                           case 5:
+                           case 6:
+                           case 7:
+                               buf[charsProduced++] = (char) c;
+                               break;
+                           case 12:
+                           case 13:
+                               buf[charsProduced++] = fromTwo(c, byteBuffer[posByteArray++]);
+                               break;
+                           case 14:
+                               buf[charsProduced++] = fromThree(c, byteBuffer[posByteArray++], byteBuffer[posByteArray++]);
+                               break;
+                           default:
+                               throwOnBroken(c);
+                       }
+                   }
+               }
+               if (bl == 0) {
+                   continue;
+               }
+               if (bl == 2) {
+                   final int c = byteBuffer[posByteArray++] & 0xff;
+                   switch (c >> 4) {
+                       case 0:
+                       case 1:
+                       case 2:
+                       case 3:
+                       case 4:
+                       case 5:
+                       case 6:
+                       case 7:
+                           buf[charsProduced++] = (char) c;
+                           bl = 1;
+                           break;
+                       case 12:
+                       case 13:
+                           buf[charsProduced++] = fromTwo(c, byteBuffer[posByteArray++]);
+                           continue;
+                       case 14:
+                           posByteArray--;
+                           missing = 1;
+                           continue;
+                       default:
+                           throwOnBroken(c);
+                   }
+               }
+               if (bl == 1) {
+                   final int c = byteBuffer[posByteArray++] & 0xff;
+                   switch (c >> 4) {
+                       case 0:
+                       case 1:
+                       case 2:
+                       case 3:
+                       case 4:
+                       case 5:
+                       case 6:
+                       case 7:
+                           buf[charsProduced++] = (char) c;
+                           break;
+                       case 12:
+                       case 13:
+                           missing = 1;
+                           posByteArray--;
+                           continue;
+                       case 14:
+                           missing = 2;
+                           posByteArray--;
+                           continue;
+                       default:
+                           throwOnBroken(c);
+                   }
+               }
+           }
+           readRest(charCount - charsProduced, input, charsProduced, buf);
+           return charsRef.toString();
+       }
 
-        private void fillBuffer(StreamInput input) throws IOException {
-            final int charsLeft = charCount - charsProduced;
-            final int bufferLeft = bufferedLeft();
-            final int len = limitByteArray - posByteArray;
-            if (bufferLeft < charsLeft) {
-                if (posByteArray > 0) {
-                    System.arraycopy(buffer, posByteArray, buffer, 0, len);
-                    posByteArray = 0;
-                    limitByteArray = len;
-                }
-                final int toRead = Math.min(bufferFree(), charsLeft);
-                input.readBytes(buffer, limitByteArray, toRead);
-                limitByteArray += toRead;
-            }
-        }
+       private static char fromTwo(int first, byte second) {
+           return ((char) ((first & 0x1F) << 6 | second & 0x3F));
+       }
 
-        private int bufferFree() {
-            return buffer.length - limitByteArray;
-        }
+       private static char fromThree(int first, byte second, byte third) {
+           return ((char) ((first & 0x0F) << 12 | (second & 0x3F) << 6 | (third & 0x3F)));
+       }
 
-        private int bufferedLeft() {
-            return limitByteArray - posByteArray;
-        }
+       private static void readRest(int left, StreamInput input, int charsProduced, char[] buf) throws IOException {
+           for (int i = 0; i < left; i++) {
+               final int c = input.readByte() & 0xff;
+               switch (c >> 4) {
+                   case 0:
+                   case 1:
+                   case 2:
+                   case 3:
+                   case 4:
+                   case 5:
+                   case 6:
+                   case 7:
+                       buf[charsProduced++] = (char) c;
+                       break;
+                   case 12:
+                   case 13:
+                       buf[charsProduced++] = fromTwo(c, input.readByte());
+                       break;
+                   case 14:
+                       buf[charsProduced++] = fromThree(c, input.readByte(), input.readByte());
+                       break;
+                   default:
+                       throwOnBroken(c);
+               }
+           }
+       }
 
-        private int charsLeft() {
-            return charCount - charsProduced;
-        }
+       private int compactBuffer() {
+           final int startPos = posByteArray;
+           if (startPos > 0) {
+               final int len = limitByteArray - posByteArray;
+               System.arraycopy(buffer, startPos, buffer, 0, len);
+               posByteArray = 0;
+               limitByteArray = len;
+               return startPos;
+           }
+           return 0;
+       }
 
-        void extractChars(CharsRef charsRef) throws IOException {
-            int charsToRead;
-            while ((charsToRead = Math.min(bufferedLeft(), charsLeft())) > 0) {
-                final char[] buf = charsRef.chars;
-                for (int i = 0; i < charsToRead; i++) {
-                    final int c = buffer[posByteArray++] & 0xff;
-                    switch (c >> 4) {
-                        case 0:
-                        case 1:
-                        case 2:
-                        case 3:
-                        case 4:
-                        case 5:
-                        case 6:
-                        case 7:
-                            buf[charsProduced++] = (char) c;
-                            break;
-                        case 12:
-                        case 13:
-                            buf[charsProduced++] = ((char) ((c & 0x1F) << 6 | buffer[posByteArray++] & 0x3F));
-                            break;
-                        case 14:
-                            buf[charsProduced++] =
-                                ((char) ((c & 0x0F) << 12 | (buffer[posByteArray++] & 0x3F) << 6 | (buffer[posByteArray++] & 0x3F)));
-                            break;
-                        default:
-                            throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
-                    }
-                }
-            }
-        }
+       private static void throwOnBroken(int c) throws IOException {
+           throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
+       }
    }
 
     public SecureString readSecureString() throws IOException {

@@ -840,9 +840,10 @@ public class BytesStreamsTests extends ESTestCase {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             for (int i = 0; i < 1000; ++i) {
                 out.writeString("Fooo");
+                out.writeString("Fooo".repeat(50));
                 out.writeString("Bar");
                 out.writeString("Füüüüüü");
-                out.writeString("Füüüüüü".repeat(10));
+                out.writeString("Füüüüüü".repeat(50));
             }
             buffer = out.bytes();
             final StreamInput streamInput = buffer.streamInput();
@@ -853,6 +854,8 @@ public class BytesStreamsTests extends ESTestCase {
                     streamInput.reset();
                 }
                 String str = streamInput.readString();
+                assert str != null;
+                str = streamInput.readString();
                 assert str != null;
                 str = streamInput.readString();
                 assert str != null;
