@@ -21,6 +21,7 @@ package org.elasticsearch.rest;
 
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.xcontent.XContent;
+import org.elasticsearch.http.HttpRequest;
 
 /**
  * Handler for REST requests
@@ -34,6 +35,15 @@ public interface RestHandler {
      * @param client A client to use to make internal requests on behalf of the original request
      */
     void handleRequest(RestRequest request, RestChannel channel, NodeClient client) throws Exception;
+
+    /**
+     *
+     * @return true if this handler will invoke {@link HttpRequest#release()} on the http request returned by
+     * {@link org.elasticsearch.rest.RestRequest#getHttpRequest()} once it no longer requires the requests content.
+     */
+    default boolean releasesMemory() {
+        return false;
+    }
 
     default boolean canTripCircuitBreaker() {
         return true;
