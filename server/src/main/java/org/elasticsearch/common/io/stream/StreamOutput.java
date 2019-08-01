@@ -392,6 +392,67 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     public void writeString(String str) throws IOException {
+        if (version.onOrAfter(Version.V_8_0_0)) {
+            writeStringNewFormat(str);
+        } else {
+            writeStringLegacyFormat(str);
+        }
+    }
+
+    private void writeStringNewFormat(String str) throws IOException {
+        final int charCount = str.length();
+        byte[] buffer = scratch.get();
+        int offset = 4;
+        boolean chunked = false;
+        for (int i = 0; i < charCount; i++) {
+            final int c = str.charAt(i);
+            if (c <= 0x007F) {
+                buffer[offset++] = ((byte) c);
+            } else if (c > 0x07FF) {
+                buffer[offset++] = ((byte) (0xE0 | c >> 12 & 0x0F));
+                buffer[offset++] = ((byte) (0x80 | c >> 6 & 0x3F));
+                buffer[offset++] = ((byte) (0x80 | c >> 0 & 0x3F));
+            } else {
+                buffer[offset++] = ((byte) (0xC0 | c >> 6 & 0x1F));
+                buffer[offset++] = ((byte) (0x80 | c >> 0 & 0x3F));
+            }
+            // make sure any possible char can fit into the buffer in any possible iteration
+            // we need at most 3 bytes so we flush the buffer once we have less than 3 bytes
+            // left before we start another iteration
+            if (offset > buffer.length - 3) {
+                if (chunked == false) {
+                    int byteLen = offset - 4;
+                    for (int j = i + 1; j < charCount; ++j) {
+                        final int charAhead = str.charAt(j);
+                        if (charAhead <= 0x007F) {
+                            byteLen++;
+                        } else if (charAhead > 0x07FF) {
+                            byteLen += 3;
+                        } else {
+                            byteLen += 2;
+                        }
+                    }
+                    buffer[0] = (byte) (byteLen >> 24);
+                    buffer[1] = (byte) (byteLen >> 16);
+                    buffer[2] = (byte) (byteLen >> 8);
+                    buffer[3] = (byte) byteLen;
+                    chunked = true;
+                }
+                writeBytes(buffer, offset);
+                offset = 0;
+            }
+        }
+        if (chunked == false) {
+            int byteLen = offset - 4;
+            buffer[0] = (byte) (byteLen >> 24);
+            buffer[1] = (byte) (byteLen >> 16);
+            buffer[2] = (byte) (byteLen >> 8);
+            buffer[3] = (byte) byteLen;
+        }
+        writeBytes(buffer, offset);
+    }
+
+    private void writeStringLegacyFormat(String str) throws IOException {
         final int charCount = str.length();
         byte[] buffer = scratch.get();
         int offset = 0;

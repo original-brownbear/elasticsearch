@@ -406,6 +406,101 @@ public abstract class StreamInput extends InputStream {
     private CharsRef largeSpare;
 
     public String readString() throws IOException {
+        if (version.onOrAfter(Version.V_8_0_0)) {
+            return readStringNewFormat();
+        } else {
+            return readStringLegacyFormat();
+        }
+    }
+
+    private String readStringNewFormat() throws IOException {
+        final int byteCount = readInt();
+        final int charCountMax = 3 * byteCount;
+        final CharsRef charsRef;
+        if (charCountMax > SMALL_STRING_LIMIT) {
+            if (largeSpare == null) {
+                largeSpare = new CharsRef(ArrayUtil.oversize(charCountMax, Character.BYTES));
+            } else if (largeSpare.chars.length < charCountMax) {
+                // we don't use ArrayUtils.grow since there is no need to copy the array
+                largeSpare.chars = new char[ArrayUtil.oversize(charCountMax, Character.BYTES)];
+            }
+            charsRef = largeSpare;
+        } else {
+            charsRef = smallSpare.get();
+        }
+        int bytesRead = 0;
+        int charsProduced = 0;
+        int posByteArray = 0;
+        int limitByteArray = 0;
+        final byte[] byteBuffer = stringReadBuffer.get();
+        final char[] charBuffer = charsRef.chars;
+        while (bytesRead != byteCount || limitByteArray != posByteArray) {
+            int bufferFree = byteBuffer.length - limitByteArray;
+            // Determine the minimum amount of bytes that are left in the string
+            final int minRemainingBytes = byteCount - bytesRead;
+            final int toRead;
+            if (bufferFree < minRemainingBytes) {
+                // We don't have enough space left in the byte array to read as much as we'd like to so we free up as many bytes in the
+                // buffer by moving unused bytes that didn't make up a full char in the last iteration to the beginning of the buffer,
+                // if there are any
+                if (posByteArray > 0) {
+                    limitByteArray = limitByteArray - posByteArray;
+                    switch (limitByteArray) { // We only have 0, 1 or 2 => no need to bother with a native call to System#arrayCopy
+                        case 1:
+                            byteBuffer[0] = byteBuffer[posByteArray];
+                            break;
+                        case 2:
+                            byteBuffer[0] = byteBuffer[posByteArray];
+                            byteBuffer[1] = byteBuffer[posByteArray + 1];
+                            break;
+                    }
+                    assert limitByteArray <= 2 : "We never copy more than 2 bytes here since a char is 3 bytes max";
+                    toRead = Math.min(bufferFree + posByteArray, minRemainingBytes);
+                    posByteArray = 0;
+                } else {
+                    toRead = bufferFree;
+                }
+            } else {
+                toRead = minRemainingBytes;
+            }
+            readBytes(byteBuffer, limitByteArray, toRead);
+            limitByteArray += toRead;
+            bytesRead += toRead;
+            int bufferedBytesRemaining;
+            // As long as we at least have three bytes buffered we don't need to do any bounds checking when getting the next byte since we
+            // read 3 bytes per char/iteration at most
+            int remainingBuffer;
+            while ((remainingBuffer = limitByteArray - posByteArray) > 2 || (remainingBuffer > 0 && bytesRead == byteCount)) {
+                final int c = byteBuffer[posByteArray++] & 0xff;
+                switch (c >> 4) {
+                    case 0:
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                    case 6:
+                    case 7:
+                        charBuffer[charsProduced++] = (char) c;
+                        break;
+                    case 12:
+                    case 13:
+                        charBuffer[charsProduced++] = (char) ((c & 0x1F) << 6 | byteBuffer[posByteArray++] & 0x3F);
+                        break;
+                    case 14:
+                        charBuffer[charsProduced++] =
+                            (char) ((c & 0x0F) << 12 | (byteBuffer[posByteArray++] & 0x3F) << 6 | (byteBuffer[posByteArray++] & 0x3F));
+                        break;
+                    default:
+                        throwOnBrokenChar(c);
+                }
+            }
+        }
+        charsRef.length = charsProduced;
+        return charsRef.toString();
+    }
+
+    private String readStringLegacyFormat() throws IOException {
         final int charCount = readArraySize();
         final CharsRef charsRef;
         if (charCount > SMALL_STRING_LIMIT) {
