@@ -28,6 +28,7 @@ import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BitUtil;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.CharsRef;
+import org.apache.lucene.util.UnicodeUtil;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.CharArrays;
@@ -394,6 +395,11 @@ public abstract class StreamInput extends InputStream {
     // Maximum char-count to de-serialize via the thread-local CharsRef buffer
     private static final int SMALL_STRING_LIMIT = 1024;
 
+    // Reusable bytes for deserializing strings
+    private static final ThreadLocal<byte[]> smallByteSpare = ThreadLocal.withInitial(() -> new byte[SMALL_STRING_LIMIT]);
+
+    private byte[] largeByteSpare;
+
     // Thread-local buffer for smaller strings
     private static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
 
@@ -403,9 +409,31 @@ public abstract class StreamInput extends InputStream {
     private CharsRef largeSpare;
 
     public String readString() throws IOException {
-        // TODO it would be nice to not call readByte() for every character but we don't know how much to read up-front
-        // we can make the loop much more complicated but that won't buy us much compared to the bounds checks in readByte()
-        final int charCount = readArraySize();
+        if (version.onOrAfter(Version.V_8_0_0)) {
+            return readStringNewFormat();
+        } else {
+            return readStringLegacyFormat();
+        }
+    }
+
+    private String readStringNewFormat() throws IOException {
+        final int byteCount = readInt();
+        final byte[] buffer;
+        if (byteCount > SMALL_STRING_LIMIT) {
+            if (largeByteSpare == null || largeByteSpare.length < byteCount) {
+                largeByteSpare = new byte[ArrayUtil.oversize(byteCount, Byte.BYTES)];
+            }
+            buffer = largeByteSpare;
+        } else {
+            buffer = smallByteSpare.get();
+        }
+        readBytes(buffer, 0, byteCount);
+        final char[] ref = getCharSpare(byteCount).chars;
+        final int len = UnicodeUtil.UTF8toUTF16(buffer, 0, byteCount, ref);
+        return new String(ref, 0, len);
+    }
+
+    private CharsRef getCharSpare(int charCount) {
         final CharsRef charsRef;
         if (charCount > SMALL_STRING_LIMIT) {
             if (largeSpare == null) {
@@ -418,6 +446,12 @@ public abstract class StreamInput extends InputStream {
         } else {
             charsRef = smallSpare.get();
         }
+        return charsRef;
+    }
+
+    private String readStringLegacyFormat() throws IOException {
+        final int charCount = readArraySize();
+        final CharsRef charsRef = getCharSpare(charCount);
         charsRef.length = charCount;
         final char[] buffer = charsRef.chars;
         for (int i = 0; i < charCount; i++) {
