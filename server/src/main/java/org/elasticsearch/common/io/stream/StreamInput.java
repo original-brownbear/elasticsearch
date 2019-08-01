@@ -398,7 +398,7 @@ public abstract class StreamInput extends InputStream {
     private static final ThreadLocal<byte[]> stringReadBuffer = ThreadLocal.withInitial(() -> new byte[1024]);
 
     // Thread-local buffer for smaller strings
-    private static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
+    private static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT * 3));
 
     // Larger buffer used for long strings that can't fit into the thread-local buffer
     // We don't use a CharsRefBuilder since we exactly know the size of the character array up front
@@ -417,7 +417,7 @@ public abstract class StreamInput extends InputStream {
         final int byteCount = readInt();
         final int charCountMax = 3 * byteCount;
         final CharsRef charsRef;
-        if (charCountMax > SMALL_STRING_LIMIT) {
+        if (charCountMax > SMALL_STRING_LIMIT * 3) {
             if (largeSpare == null) {
                 largeSpare = new CharsRef(ArrayUtil.oversize(charCountMax, Character.BYTES));
             } else if (largeSpare.chars.length < charCountMax) {
@@ -437,9 +437,9 @@ public abstract class StreamInput extends InputStream {
         while (bytesRead != byteCount || limitByteArray != posByteArray) {
             int bufferFree = byteBuffer.length - limitByteArray;
             // Determine the minimum amount of bytes that are left in the string
-            final int minRemainingBytes = byteCount - bytesRead;
+            final int unreadBytes = byteCount - bytesRead;
             final int toRead;
-            if (bufferFree < minRemainingBytes) {
+            if (bufferFree < unreadBytes) {
                 // We don't have enough space left in the byte array to read as much as we'd like to so we free up as many bytes in the
                 // buffer by moving unused bytes that didn't make up a full char in the last iteration to the beginning of the buffer,
                 // if there are any
@@ -454,23 +454,22 @@ public abstract class StreamInput extends InputStream {
                             byteBuffer[1] = byteBuffer[posByteArray + 1];
                             break;
                     }
-                    assert limitByteArray <= 2 : "We never copy more than 2 bytes here since a char is 3 bytes max";
-                    toRead = Math.min(bufferFree + posByteArray, minRemainingBytes);
+                    toRead = Math.min(bufferFree + posByteArray, unreadBytes);
                     posByteArray = 0;
                 } else {
                     toRead = bufferFree;
                 }
             } else {
-                toRead = minRemainingBytes;
+                toRead = unreadBytes;
             }
             readBytes(byteBuffer, limitByteArray, toRead);
             limitByteArray += toRead;
             bytesRead += toRead;
-            int bufferedBytesRemaining;
             // As long as we at least have three bytes buffered we don't need to do any bounds checking when getting the next byte since we
-            // read 3 bytes per char/iteration at most
-            int remainingBuffer;
-            while ((remainingBuffer = limitByteArray - posByteArray) > 2 || (remainingBuffer > 0 && bytesRead == byteCount)) {
+            // read 3 bytes per char/iteration at most. Also, if we know that there are no more bytes coming there is no need for bounds
+            // checking.
+            final int boundary = bytesRead == byteCount ? 0 : 2;
+            while ((limitByteArray - posByteArray) > boundary) {
                 final int c = byteBuffer[posByteArray++] & 0xff;
                 switch (c >> 4) {
                     case 0:
@@ -515,110 +514,29 @@ public abstract class StreamInput extends InputStream {
             charsRef = smallSpare.get();
         }
         charsRef.length = charCount;
-        int charsProduced = 0;
-        int posByteArray = 0;
-        int limitByteArray = 0;
-        int missingFromPartial = 0;
-        final byte[] byteBuffer = stringReadBuffer.get();
-        final char[] charBuffer = charsRef.chars;
-        int charsLeft;
-        while ((charsLeft = charCount - charsProduced) > 0) {
-            int bufferFree = byteBuffer.length - limitByteArray;
-            // Determine the minimum amount of bytes that are left in the string
-            final int minRemainingBytes;
-            if (missingFromPartial > 0) {
-                // One byte for each remaining char except for the already partially read char
-                minRemainingBytes = missingFromPartial + charsLeft - 1;
-                missingFromPartial = 0;
-            } else {
-                // Each char has at least a single byte
-                minRemainingBytes = charsLeft;
-            }
-            final int toRead;
-            if (bufferFree < minRemainingBytes) {
-                // We don't have enough space left in the byte array to read as much as we'd like to so we free up as many bytes in the
-                // buffer by moving unused bytes that didn't make up a full char in the last iteration to the beginning of the buffer,
-                // if there are any
-                if (posByteArray > 0) {
-                    limitByteArray = limitByteArray - posByteArray;
-                    switch (limitByteArray) { // We only have 0, 1 or 2 => no need to bother with a native call to System#arrayCopy
-                        case 1:
-                            byteBuffer[0] = byteBuffer[posByteArray];
-                            break;
-                        case 2:
-                            byteBuffer[0] = byteBuffer[posByteArray];
-                            byteBuffer[1] = byteBuffer[posByteArray + 1];
-                            break;
-                    }
-                    assert limitByteArray <= 2 : "We never copy more than 2 bytes here since a char is 3 bytes max";
-                    toRead = Math.min(bufferFree + posByteArray, minRemainingBytes);
-                    posByteArray = 0;
-                } else {
-                    toRead = bufferFree;
-                }
-            } else {
-                toRead = minRemainingBytes;
-            }
-            readBytes(byteBuffer, limitByteArray, toRead);
-            limitByteArray += toRead;
-            int bufferedBytesRemaining;
-            // As long as we at least have three bytes buffered we don't need to do any bounds checking when getting the next byte since we
-            // read 3 bytes per char/iteration at most
-            while ((bufferedBytesRemaining = (limitByteArray - posByteArray)) > 2) {
-                final int c = byteBuffer[posByteArray++] & 0xff;
-                switch (c >> 4) {
-                    case 0:
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                        charBuffer[charsProduced++] = (char) c;
-                        break;
-                    case 12:
-                    case 13:
-                        charBuffer[charsProduced++] = (char) ((c & 0x1F) << 6 | byteBuffer[posByteArray++] & 0x3F);
-                        break;
-                    case 14:
-                        charBuffer[charsProduced++] =
-                            (char) ((c & 0x0F) << 12 | (byteBuffer[posByteArray++] & 0x3F) << 6 | (byteBuffer[posByteArray++] & 0x3F));
-                        break;
-                    default:
-                        throwOnBrokenChar(c);
-                }
-            }
-            // try to extract chars from remaining bytes with bounds checks for multi-byte chars
-            REMAINING:
-            while (bufferedBytesRemaining > 0) {
-                final int c = byteBuffer[posByteArray] & 0xff;
-                switch (c >> 4) {
-                    case 0:
-                    case 1:
-                    case 2:
-                    case 3:
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                        charBuffer[charsProduced++] = (char) c;
-                        posByteArray++;
-                        --bufferedBytesRemaining;
-                        break;
-                    case 12:
-                    case 13:
-                        if ((missingFromPartial = 2 - bufferedBytesRemaining) == 0) {
-                            posByteArray++;
-                            charBuffer[charsProduced++] = (char) ((c & 0x1F) << 6 | byteBuffer[posByteArray++] & 0x3F);
-                        }
-                        break REMAINING;
-                    case 14:
-                        missingFromPartial = 3 - bufferedBytesRemaining;
-                        break REMAINING;
-                    default:
-                        throwOnBrokenChar(c);
-                }
+        final char[] buffer = charsRef.chars;
+        for (int i = 0; i < charCount; i++) {
+            final int c = readByte() & 0xff;
+            switch (c >> 4) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    buffer[i] = (char) c;
+                    break;
+                case 12:
+                case 13:
+                    buffer[i] = ((char) ((c & 0x1F) << 6 | readByte() & 0x3F));
+                    break;
+                case 14:
+                    buffer[i] = ((char) ((c & 0x0F) << 12 | (readByte() & 0x3F) << 6 | (readByte() & 0x3F) << 0));
+                    break;
+                default:
+                    throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
             }
         }
         return charsRef.toString();
