@@ -984,17 +984,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             filesListener.onResponse(null);
             final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
             for (BlobStoreIndexShardSnapshot.FileInfo snapshotFileInfo : filesToSnapshot) {
-                executor.execute(new ActionRunnable<>(filesListener) {
-                    @Override
-                    protected void doRun() {
-                        try {
-                            snapshotFile(snapshotFileInfo, indexId, shardId, snapshotId, snapshotStatus, store);
-                            filesListener.onResponse(null);
-                        } catch (IOException e) {
-                            throw new IndexShardSnapshotFailedException(shardId, "Failed to perform snapshot (index files)", e);
-                        }
+                executor.execute(ActionRunnable.wrap(filesListener, l -> {
+                    try {
+                        snapshotFile(snapshotFileInfo, indexId, shardId, snapshotId, snapshotStatus, store);
+                        l.onResponse(null);
+                    } catch (IOException e) {
+                        throw new IndexShardSnapshotFailedException(shardId, "Failed to perform snapshot (index files)", e);
                     }
-                });
+                }));
             }
         } catch (Exception e) {
             onFailure.accept(e);
