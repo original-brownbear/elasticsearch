@@ -156,7 +156,7 @@ class ByteBufStreamInput extends StreamInput {
         }
     }
 
-    public int skipBytes(int n) throws IOException {
+    private int skipBytes(int n) throws IOException {
         int nBytes = Math.min(available(), n);
         buffer.skipBytes(nBytes);
         return nBytes;

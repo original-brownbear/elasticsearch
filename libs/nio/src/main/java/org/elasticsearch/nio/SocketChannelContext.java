@@ -81,11 +81,6 @@ public abstract class SocketChannelContext extends ChannelContext<SocketChannel>
     }
 
     @Override
-    public NioSocketChannel getChannel() {
-        return channel;
-    }
-
-    @Override
     protected void register() throws IOException {
         super.register();
 

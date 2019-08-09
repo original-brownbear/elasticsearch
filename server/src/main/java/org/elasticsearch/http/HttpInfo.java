@@ -94,7 +94,7 @@ public class HttpInfo implements Writeable, ToXContentFragment {
             }
         }
         builder.field(Fields.PUBLISH_ADDRESS, publishAddressString);
-        builder.humanReadableField(Fields.MAX_CONTENT_LENGTH_IN_BYTES, Fields.MAX_CONTENT_LENGTH, maxContentLength());
+        builder.humanReadableField(Fields.MAX_CONTENT_LENGTH_IN_BYTES, Fields.MAX_CONTENT_LENGTH, new ByteSizeValue(maxContentLength));
         builder.endObject();
         return builder;
     }
@@ -105,13 +105,5 @@ public class HttpInfo implements Writeable, ToXContentFragment {
 
     public BoundTransportAddress getAddress() {
         return address();
-    }
-
-    public ByteSizeValue maxContentLength() {
-        return new ByteSizeValue(maxContentLength);
-    }
-
-    public ByteSizeValue getMaxContentLength() {
-        return maxContentLength();
     }
 }

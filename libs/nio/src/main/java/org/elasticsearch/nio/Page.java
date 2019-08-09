@@ -33,10 +33,6 @@ public class Page implements Closeable {
     // released.
     private final RefCountedCloseable refCountedCloseable;
 
-    public Page(ByteBuffer byteBuffer) {
-        this(byteBuffer, () -> {});
-    }
-
     public Page(ByteBuffer byteBuffer, Runnable closeable) {
         this(byteBuffer, new RefCountedCloseable(closeable));
     }

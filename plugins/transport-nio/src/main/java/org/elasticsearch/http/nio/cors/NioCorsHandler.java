@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 public class NioCorsHandler extends ChannelDuplexHandler {
 
     public static final String ANY_ORIGIN = "*";
-    private static Pattern SCHEME_PATTERN = Pattern.compile("^https?://");
+    private static final Pattern SCHEME_PATTERN = Pattern.compile("^https?://");
 
     private final CorsHandler.Config config;
     private FullHttpRequest request;

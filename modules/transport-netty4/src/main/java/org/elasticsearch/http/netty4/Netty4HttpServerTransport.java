@@ -100,7 +100,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
 
     private static final String SETTING_KEY_HTTP_NETTY_MAX_COMPOSITE_BUFFER_COMPONENTS = "http.netty.max_composite_buffer_components";
 
-    public static Setting<Integer> SETTING_HTTP_NETTY_MAX_COMPOSITE_BUFFER_COMPONENTS =
+    public static final Setting<Integer> SETTING_HTTP_NETTY_MAX_COMPOSITE_BUFFER_COMPONENTS =
         new Setting<>(SETTING_KEY_HTTP_NETTY_MAX_COMPOSITE_BUFFER_COMPONENTS, (s) -> {
             ByteSizeValue maxContentLength = SETTING_HTTP_MAX_CONTENT_LENGTH.get(s);
             /*
@@ -134,10 +134,6 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
     public static final Setting<ByteSizeValue> SETTING_HTTP_NETTY_RECEIVE_PREDICTOR_SIZE =
         Setting.byteSizeSetting("http.netty.receive_predictor_size", new ByteSizeValue(64, ByteSizeUnit.KB), Property.NodeScope);
 
-    private final ByteSizeValue maxInitialLineLength;
-    private final ByteSizeValue maxHeaderSize;
-    private final ByteSizeValue maxChunkSize;
-
     private final int workerCount;
 
     private final int pipeliningMaxEvents;
@@ -154,9 +150,6 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
         super(settings, networkService, bigArrays, threadPool, xContentRegistry, dispatcher);
         Netty4Utils.setAvailableProcessors(EsExecutors.PROCESSORS_SETTING.get(settings));
 
-        this.maxChunkSize = SETTING_HTTP_MAX_CHUNK_SIZE.get(settings);
-        this.maxHeaderSize = SETTING_HTTP_MAX_HEADER_SIZE.get(settings);
-        this.maxInitialLineLength = SETTING_HTTP_MAX_INITIAL_LINE_LENGTH.get(settings);
         this.pipeliningMaxEvents = SETTING_PIPELINING_MAX_EVENTS.get(settings);
 
         this.maxCompositeBufferComponents = SETTING_HTTP_NETTY_MAX_COMPOSITE_BUFFER_COMPONENTS.get(settings);
@@ -167,14 +160,15 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
         ByteSizeValue receivePredictor = SETTING_HTTP_NETTY_RECEIVE_PREDICTOR_SIZE.get(settings);
         recvByteBufAllocator = new FixedRecvByteBufAllocator(receivePredictor.bytesAsInt());
 
-        logger.debug("using max_chunk_size[{}], max_header_size[{}], max_initial_line_length[{}], max_content_length[{}], " +
-                "receive_predictor[{}], max_composite_buffer_components[{}], pipelining_max_events[{}]",
-            maxChunkSize, maxHeaderSize, maxInitialLineLength, maxContentLength, receivePredictor, maxCompositeBufferComponents,
-            pipeliningMaxEvents);
-    }
-
-    public Settings settings() {
-        return this.settings;
+        if (logger.isDebugEnabled()) {
+            final ByteSizeValue maxChunkSize = SETTING_HTTP_MAX_CHUNK_SIZE.get(settings);
+            final ByteSizeValue maxHeaderSize = SETTING_HTTP_MAX_HEADER_SIZE.get(settings);
+            final ByteSizeValue maxInitialLineLength = SETTING_HTTP_MAX_INITIAL_LINE_LENGTH.get(settings);
+            logger.debug("using max_chunk_size[{}], max_header_size[{}], max_initial_line_length[{}], max_content_length[{}], " +
+                    "receive_predictor[{}], max_composite_buffer_components[{}], pipelining_max_events[{}]",
+                maxChunkSize, maxHeaderSize, maxInitialLineLength, maxContentLength, receivePredictor, maxCompositeBufferComponents,
+                pipeliningMaxEvents);
+        }
     }
 
     @Override
@@ -283,7 +277,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
     }
 
     static final AttributeKey<Netty4HttpChannel> HTTP_CHANNEL_KEY = AttributeKey.newInstance("es-http-channel");
-    static final AttributeKey<Netty4HttpServerChannel> HTTP_SERVER_CHANNEL_KEY = AttributeKey.newInstance("es-http-server-channel");
+    private static final AttributeKey<Netty4HttpServerChannel> HTTP_SERVER_CHANNEL_KEY = AttributeKey.newInstance("es-http-server-channel");
 
     protected static class HttpChannelHandler extends ChannelInitializer<Channel> {
 

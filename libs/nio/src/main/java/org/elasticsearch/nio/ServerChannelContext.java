@@ -96,11 +96,6 @@ public class ServerChannelContext extends ChannelContext<ServerSocketChannel> {
         return selector;
     }
 
-    @Override
-    public NioServerSocketChannel getChannel() {
-        return channel;
-    }
-
     private void configureSocket(ServerSocket socket) throws IOException {
         socket.setReuseAddress(config.tcpReuseAddress());
     }

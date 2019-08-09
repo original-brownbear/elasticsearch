@@ -114,6 +114,4 @@ public abstract class ChannelContext<S extends SelectableChannel & NetworkChanne
 
     public abstract NioSelector getSelector();
 
-    public abstract NioChannel getChannel();
-
 }
