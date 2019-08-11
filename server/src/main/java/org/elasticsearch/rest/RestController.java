@@ -32,6 +32,7 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.path.PathTrie;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.core.internal.io.Streams;
@@ -158,7 +159,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
 
     @Override
     public void dispatchRequest(RestRequest request, RestChannel channel, ThreadContext threadContext) {
-        if (request.rawPath().equals("/favicon.ico")) {
+        if (channel.rawPath().equals("/favicon.ico")) {
             handleFavicon(request.method(), request.uri(), channel);
             return;
         }
@@ -262,7 +263,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
 
     private void tryAllHandlers(final RestRequest request, final RestChannel channel, final ThreadContext threadContext) throws Exception {
         for (String key : headersToCopy) {
-            String httpHeader = request.header(key);
+            String httpHeader = channel.header(key);
             if (httpHeader != null) {
                 threadContext.putHeader(key, httpHeader);
             }
@@ -275,7 +276,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
             return;
         }
 
-        final String rawPath = request.rawPath();
+        final String rawPath = channel.rawPath();
         final String uri = request.uri();
         final RestRequest.Method requestMethod;
         try {
@@ -467,8 +468,18 @@ public class RestController implements HttpServerTransport.Dispatcher {
         }
 
         @Override
-        public RestRequest request() {
-            return delegate.request();
+        public String rawPath() {
+            return delegate.rawPath();
+        }
+
+        @Override
+        public ToXContent.Params params() {
+            return delegate.params();
+        }
+
+        @Override
+        public String header(String name) {
+            return delegate.header(name);
         }
 
         @Override

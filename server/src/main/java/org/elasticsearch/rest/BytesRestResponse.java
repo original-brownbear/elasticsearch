@@ -93,7 +93,8 @@ public class BytesRestResponse extends RestResponse {
 
     public BytesRestResponse(RestChannel channel, RestStatus status, Exception e) throws IOException {
         this.status = status;
-        try (XContentBuilder builder = build(channel, status, e)) {
+        try (XContentBuilder builder = build(channel.newErrorBuilder().startObject(), channel.detailedErrorsEnabled(), channel.params(),
+                                             channel.rawPath(), status, e)) {
             this.content = BytesReference.bytes(builder);
             this.contentType = builder.contentType().mediaType();
         }
@@ -119,23 +120,24 @@ public class BytesRestResponse extends RestResponse {
 
     private static final Logger SUPPRESSED_ERROR_LOGGER = LogManager.getLogger("rest.suppressed");
 
-    private static XContentBuilder build(RestChannel channel, RestStatus status, Exception e) throws IOException {
-        ToXContent.Params params = channel.request();
+    private static XContentBuilder build(XContentBuilder builder, boolean detailed, ToXContent.Params params, String rawPath,
+                                         RestStatus status, Exception e) throws IOException {
         if (params.paramAsBoolean("error_trace", !REST_EXCEPTION_SKIP_STACK_TRACE_DEFAULT)) {
             params =  new ToXContent.DelegatingMapParams(singletonMap(REST_EXCEPTION_SKIP_STACK_TRACE, "false"), params);
-        } else if (e != null) {
-            Supplier<?> messageSupplier = () -> new ParameterizedMessage("path: {}, params: {}",
-                    channel.request().rawPath(), channel.request().params());
+        } else {
+            if (e != null) {
+                final ToXContent.Params finalParams = params;
+                Supplier<?> messageSupplier = () -> new ParameterizedMessage("path: {}, params: {}", rawPath, finalParams);
 
-            if (status.getStatus() < 500) {
-                SUPPRESSED_ERROR_LOGGER.debug(messageSupplier, e);
-            } else {
-                SUPPRESSED_ERROR_LOGGER.warn(messageSupplier, e);
+                if (status.getStatus() < 500) {
+                    SUPPRESSED_ERROR_LOGGER.debug(messageSupplier, e);
+                } else {
+                    SUPPRESSED_ERROR_LOGGER.warn(messageSupplier, e);
+                }
             }
         }
 
-        XContentBuilder builder = channel.newErrorBuilder().startObject();
-        ElasticsearchException.generateFailureXContent(builder, params, e, channel.detailedErrorsEnabled());
+        ElasticsearchException.generateFailureXContent(builder, params, e, detailed);
         builder.field(STATUS, status.getStatus());
         builder.endObject();
         return builder;

@@ -76,9 +76,9 @@ public class RestNodesUsageAction extends BaseRestHandler {
             @Override
             public RestResponse buildResponse(NodesUsageResponse response, XContentBuilder builder) throws Exception {
                 builder.startObject();
-                RestActions.buildNodesHeader(builder, channel.request(), response);
+                RestActions.buildNodesHeader(builder, channel.params(), response);
                 builder.field("cluster_name", response.getClusterName().value());
-                response.toXContent(builder, channel.request());
+                response.toXContent(builder, channel.params());
                 builder.endObject();
 
                 return new BytesRestResponse(RestStatus.OK, builder);

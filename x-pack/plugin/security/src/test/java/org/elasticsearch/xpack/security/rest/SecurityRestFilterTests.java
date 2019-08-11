@@ -97,7 +97,7 @@ public class SecurityRestFilterTests extends ESTestCase {
             callback.onFailure(exception);
             return Void.TYPE;
         }).when(authcService).authenticate(eq(request), any(ActionListener.class));
-        when(channel.request()).thenReturn(request);
+        when(channel.params()).thenReturn(request);
         when(channel.newErrorBuilder()).thenReturn(JsonXContent.contentBuilder());
         filter.handleRequest(request, channel, null);
         ArgumentCaptor<BytesRestResponse> response = ArgumentCaptor.forClass(BytesRestResponse.class);
@@ -119,7 +119,6 @@ public class SecurityRestFilterTests extends ESTestCase {
         FakeRestRequest restRequest = new FakeRestRequest.Builder(NamedXContentRegistry.EMPTY)
                 .withContent(new BytesArray("{\"password\": \"" + SecuritySettingsSourceField.TEST_PASSWORD + "\", \"foo\": \"bar\"}"),
                         XContentType.JSON).build();
-        when(channel.request()).thenReturn(restRequest);
         SetOnce<RestRequest> handlerRequest = new SetOnce<>();
         restHandler = new FilteredRestHandler() {
             @Override

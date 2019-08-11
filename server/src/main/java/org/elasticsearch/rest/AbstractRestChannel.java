@@ -22,6 +22,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -40,6 +41,7 @@ public abstract class AbstractRestChannel implements RestChannel {
     private static final Predicate<String> EXCLUDE_FILTER = INCLUDE_FILTER.negate();
 
     protected final RestRequest request;
+    private final XContentType xContentType;
     private final boolean detailedErrorsEnabled;
     private final String format;
     private final String filterPath;
@@ -62,17 +64,18 @@ public abstract class AbstractRestChannel implements RestChannel {
         this.filterPath = request.param("filter_path", null);
         this.pretty = request.paramAsBoolean("pretty", false);
         this.human = request.paramAsBoolean("human", false);
+        this.xContentType = request.getXContentType();
     }
 
     @Override
     public XContentBuilder newBuilder() throws IOException {
-        return newBuilder(request.getXContentType(), true);
+        return newBuilder(xContentType, true);
     }
 
     @Override
     public XContentBuilder newErrorBuilder() throws IOException {
         // Disable filtering when building error responses
-        return newBuilder(request.getXContentType(), false);
+        return newBuilder(xContentType, false);
     }
 
     /**
@@ -157,10 +160,18 @@ public abstract class AbstractRestChannel implements RestChannel {
         return new BytesStreamOutput();
     }
 
-    @Override
-    public RestRequest request() {
-        return this.request;
+    public String rawPath() {
+        return request.rawPath();
     }
+
+    public ToXContent.Params params() {
+        return request;
+    }
+
+    public String header(String name) {
+        return request.header(name);
+    }
+
 
     @Override
     public boolean detailedErrorsEnabled() {

@@ -190,7 +190,7 @@ public class DefaultRestChannelTests extends ESTestCase {
         HttpHandlingSettings handlingSettings = HttpHandlingSettings.fromSettings(settings);
 
         // send a response
-        DefaultRestChannel channel = new DefaultRestChannel(httpChannel, httpRequest, request, bigArrays, handlingSettings,
+        DefaultRestChannel channel = new DefaultRestChannel(request, bigArrays, handlingSettings,
             threadPool.getThreadContext());
         TestRestResponse resp = new TestRestResponse();
         final String customHeader = "custom-header";
@@ -218,7 +218,7 @@ public class DefaultRestChannelTests extends ESTestCase {
         HttpHandlingSettings handlingSettings = HttpHandlingSettings.fromSettings(settings);
 
         // send a response
-        DefaultRestChannel channel = new DefaultRestChannel(httpChannel, httpRequest, request, bigArrays, handlingSettings,
+        DefaultRestChannel channel = new DefaultRestChannel(request, bigArrays, handlingSettings,
             threadPool.getThreadContext());
         channel.sendResponse(new TestRestResponse());
 
@@ -238,7 +238,7 @@ public class DefaultRestChannelTests extends ESTestCase {
         final RestRequest request = RestRequest.request(xContentRegistry(), httpRequest, httpChannel);
         HttpHandlingSettings handlingSettings = HttpHandlingSettings.fromSettings(settings);
 
-        DefaultRestChannel channel = new DefaultRestChannel(httpChannel, httpRequest, request, bigArrays, handlingSettings,
+        DefaultRestChannel channel = new DefaultRestChannel(request, bigArrays, handlingSettings,
             threadPool.getThreadContext());
         final BytesRestResponse response = new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR,
             JsonXContent.contentBuilder().startObject().endObject());
@@ -288,7 +288,7 @@ public class DefaultRestChannelTests extends ESTestCase {
 
         HttpHandlingSettings handlingSettings = HttpHandlingSettings.fromSettings(settings);
 
-        DefaultRestChannel channel = new DefaultRestChannel(httpChannel, httpRequest, request, bigArrays, handlingSettings,
+        DefaultRestChannel channel = new DefaultRestChannel(request, bigArrays, handlingSettings,
             threadPool.getThreadContext());
         channel.sendResponse(new TestRestResponse());
         Class<ActionListener<Void>> listenerClass = (Class<ActionListener<Void>>) (Class) ActionListener.class;
@@ -319,7 +319,7 @@ public class DefaultRestChannelTests extends ESTestCase {
         }, httpChannel);
         request.getHttpRequest().getHeaders().put(DefaultRestChannel.CONNECTION, Collections.singletonList(httpConnectionHeaderValue));
 
-        DefaultRestChannel channel = new DefaultRestChannel(httpChannel, request.getHttpRequest(), request, bigArrays,
+        DefaultRestChannel channel = new DefaultRestChannel(request, bigArrays,
             HttpHandlingSettings.fromSettings(Settings.EMPTY), threadPool.getThreadContext());
 
         // ESTestCase#after will invoke ensureAllArraysAreReleased which will fail if the response content was not released
@@ -356,7 +356,7 @@ public class DefaultRestChannelTests extends ESTestCase {
         }, httpChannel);
         request.getHttpRequest().getHeaders().put(DefaultRestChannel.CONNECTION, Collections.singletonList(httpConnectionHeaderValue));
 
-        DefaultRestChannel channel = new DefaultRestChannel(httpChannel, request.getHttpRequest(), request, bigArrays,
+        DefaultRestChannel channel = new DefaultRestChannel(request, bigArrays,
             HttpHandlingSettings.fromSettings(Settings.EMPTY), threadPool.getThreadContext());
 
         // ESTestCase#after will invoke ensureAllArraysAreReleased which will fail if the response content was not released
@@ -387,7 +387,7 @@ public class DefaultRestChannelTests extends ESTestCase {
         final RestRequest request = RestRequest.request(xContentRegistry(), httpRequest, httpChannel);
 
         HttpHandlingSettings httpHandlingSettings = HttpHandlingSettings.fromSettings(settings);
-        RestChannel channel = new DefaultRestChannel(httpChannel, httpRequest, request, bigArrays, httpHandlingSettings,
+        RestChannel channel = new DefaultRestChannel(request, bigArrays, httpHandlingSettings,
             threadPool.getThreadContext());
         channel.sendResponse(new TestRestResponse());
 

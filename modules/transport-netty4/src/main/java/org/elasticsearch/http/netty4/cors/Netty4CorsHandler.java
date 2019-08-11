@@ -90,23 +90,23 @@ public class Netty4CorsHandler extends ChannelDuplexHandler {
     }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
         assert msg instanceof Netty4HttpResponse : "Invalid message type: " + msg.getClass();
         Netty4HttpResponse response = (Netty4HttpResponse) msg;
-        setCorsResponseHeaders(response.getRequest().nettyRequest(), response, config);
+        final HttpHeaders requestHeaders = response.getRequestHeaders();
+        setCorsResponseHeaders(requestHeaders.get(HttpHeaderNames.ORIGIN), requestHeaders.get(HttpHeaderNames.HOST), response, config);
         ctx.write(response, promise);
     }
 
-    public static void setCorsResponseHeaders(HttpRequest request, HttpResponse resp, CorsHandler.Config config) {
+    private static void setCorsResponseHeaders(String originHeader, String hostHeader, HttpResponse resp, CorsHandler.Config config) {
         if (!config.isCorsSupportEnabled()) {
             return;
         }
-        String originHeader = request.headers().get(HttpHeaderNames.ORIGIN);
         if (!Strings.isNullOrEmpty(originHeader)) {
             final String originHeaderVal;
             if (config.isAnyOriginSupported()) {
                 originHeaderVal = ANY_ORIGIN;
-            } else if (config.isOriginAllowed(originHeader) || isSameOrigin(originHeader, request.headers().get(HttpHeaderNames.HOST))) {
+            } else if (config.isOriginAllowed(originHeader) || isSameOrigin(originHeader, hostHeader)) {
                 originHeaderVal = originHeader;
             } else {
                 originHeaderVal = null;

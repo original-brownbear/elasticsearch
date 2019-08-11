@@ -98,7 +98,7 @@ public class RestListTasksAction extends BaseRestHandler {
                 @Override
                 public RestResponse buildResponse(T response, XContentBuilder builder) throws Exception {
                     builder.startObject();
-                    response.toXContentGroupedByNode(builder, channel.request(), nodesInCluster.get());
+                    response.toXContentGroupedByNode(builder, channel.params(), nodesInCluster.get());
                     builder.endObject();
                     return new BytesRestResponse(RestStatus.OK, builder);
                 }
@@ -108,7 +108,7 @@ public class RestListTasksAction extends BaseRestHandler {
                 @Override
                 public RestResponse buildResponse(T response, XContentBuilder builder) throws Exception {
                     builder.startObject();
-                    response.toXContentGroupedByParents(builder, channel.request());
+                    response.toXContentGroupedByParents(builder, channel.params());
                     builder.endObject();
                     return new BytesRestResponse(RestStatus.OK, builder);
                 }

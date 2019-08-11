@@ -47,7 +47,7 @@ public class BulkIndexByScrollResponseContentListener extends RestBuilderListene
     @Override
     public RestResponse buildResponse(BulkByScrollResponse response, XContentBuilder builder) throws Exception {
         builder.startObject();
-        response.toXContent(builder, new ToXContent.DelegatingMapParams(params, channel.request()));
+        response.toXContent(builder, new ToXContent.DelegatingMapParams(params, channel.params()));
         builder.endObject();
         return new BytesRestResponse(getStatus(response), builder);
     }

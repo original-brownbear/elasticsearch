@@ -29,11 +29,11 @@ import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.SizeValue;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestChannel;
-import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 
@@ -50,8 +50,8 @@ import java.util.Set;
 public class RestTable {
 
     public static RestResponse buildResponse(Table table, RestChannel channel) throws Exception {
-        RestRequest request = channel.request();
-        XContentType xContentType = XContentType.fromMediaTypeOrFormat(request.param("format", request.header("Accept")));
+        ToXContent.Params request = channel.params();
+        XContentType xContentType = XContentType.fromMediaTypeOrFormat(request.param("format", channel.header("Accept")));
         if (xContentType != null) {
             return buildXContentBuilder(table, channel);
         }
@@ -59,7 +59,7 @@ public class RestTable {
     }
 
     public static RestResponse buildXContentBuilder(Table table, RestChannel channel) throws Exception {
-        RestRequest request = channel.request();
+        ToXContent.Params request = channel.params();
         XContentBuilder builder = channel.newBuilder();
         List<DisplayHeader> displayHeaders = buildDisplayHeaders(table, request);
 
@@ -77,7 +77,7 @@ public class RestTable {
     }
 
     public static RestResponse buildTextPlainResponse(Table table, RestChannel channel) throws IOException {
-        RestRequest request = channel.request();
+        ToXContent.Params request = channel.params();
         boolean verbose = request.paramAsBoolean("v", false);
 
         List<DisplayHeader> headers = buildDisplayHeaders(table, request);
@@ -115,8 +115,14 @@ public class RestTable {
         return new BytesRestResponse(RestStatus.OK, BytesRestResponse.TEXT_CONTENT_TYPE, bytesOut.bytes());
     }
 
-    static List<Integer> getRowOrder(Table table, RestRequest request) {
-        String[] columnOrdering = request.paramAsStringArray("s", null);
+    static List<Integer> getRowOrder(Table table, ToXContent.Params request) {
+        final String paramS = request.param("s");
+        final String[] columnOrdering;
+        if (paramS == null) {
+            columnOrdering = null;
+        } else {
+            columnOrdering = Strings.splitStringByCommaToArray(paramS);
+        }
 
         List<Integer> rowOrder = new ArrayList<>();
         for (int i = 0; i < table.getRows().size(); i++) {
@@ -147,10 +153,11 @@ public class RestTable {
         return rowOrder;
     }
 
-    static List<DisplayHeader> buildDisplayHeaders(Table table, RestRequest request) {
+    static List<DisplayHeader> buildDisplayHeaders(Table table, ToXContent.Params request) {
         List<DisplayHeader> display = new ArrayList<>();
-        if (request.hasParam("h")) {
-            Set<String> headers = expandHeadersFromRequest(table, request);
+        final String paramH = request.param("h");
+        if (paramH != null) {
+            Set<String> headers = expandHeadersFromRequest(table, paramH);
 
             for (String possibility : headers) {
                 DisplayHeader dispHeader = null;
@@ -200,11 +207,11 @@ public class RestTable {
     }
 
 
-    static boolean checkOutputTimestamp(DisplayHeader dispHeader, RestRequest request) {
+    static boolean checkOutputTimestamp(DisplayHeader dispHeader, ToXContent.Params request) {
         return checkOutputTimestamp(dispHeader.name, request);
     }
 
-    static boolean checkOutputTimestamp(String disp, RestRequest request) {
+    static boolean checkOutputTimestamp(String disp, ToXContent.Params request) {
         if (Table.TIMESTAMP.equals(disp) || Table.EPOCH.equals(disp)) {
             return request.paramAsBoolean("ts", true);
         } else {
@@ -219,11 +226,11 @@ public class RestTable {
      * that everything is only added once to the returned headers, even if 'h=bulk.*.bulk.*' is specified
      * or some headers are contained twice due to matching aliases
      */
-    private static Set<String> expandHeadersFromRequest(Table table, RestRequest request) {
+    private static Set<String> expandHeadersFromRequest(Table table, String paramH) {
         Set<String> headers = new LinkedHashSet<>(table.getHeaders().size());
 
         // check headers and aliases
-        for (String header : Strings.splitStringByCommaToArray(request.param("h"))) {
+        for (String header : Strings.splitStringByCommaToArray(paramH)) {
             if (Regex.isSimpleMatchPattern(header)) {
                 for (Table.Cell tableHeaderCell : table.getHeaders()) {
                     String configuredHeader = tableHeaderCell.value.toString();
@@ -247,7 +254,7 @@ public class RestTable {
         return headers;
     }
 
-    public static int[] buildHelpWidths(Table table, RestRequest request) {
+    public static int[] buildHelpWidths(Table table, ToXContent.Params request) {
         int[] width = new int[3];
         for (Table.Cell cell : table.getHeaders()) {
             String v = renderValue(request, cell.value);
@@ -271,7 +278,7 @@ public class RestTable {
         return width;
     }
 
-    private static int[] buildWidths(Table table, RestRequest request, boolean verbose, List<DisplayHeader> headers) {
+    private static int[] buildWidths(Table table, ToXContent.Params request, boolean verbose, List<DisplayHeader> headers) {
         int[] width = new int[headers.size()];
         int i;
 
@@ -300,11 +307,12 @@ public class RestTable {
         return width;
     }
 
-    public static void pad(Table.Cell cell, int width, RestRequest request, UTF8StreamWriter out) throws IOException {
+    public static void pad(Table.Cell cell, int width, ToXContent.Params request, UTF8StreamWriter out) throws IOException {
       pad(cell, width, request, out, false);
     }
 
-    public static void pad(Table.Cell cell, int width, RestRequest request, UTF8StreamWriter out, boolean isLast) throws IOException {
+    public static void pad(Table.Cell cell, int width, ToXContent.Params request, UTF8StreamWriter out,
+                           boolean isLast) throws IOException {
         String sValue = renderValue(request, cell.value);
         int length = sValue == null ? 0 : sValue.length();
         byte leftOver = (byte) (width - length);
@@ -332,7 +340,7 @@ public class RestTable {
         }
     }
 
-    private static String renderValue(RestRequest request, Object value) {
+    private static String renderValue(ToXContent.Params request, Object value) {
         if (value == null) {
             return null;
         }

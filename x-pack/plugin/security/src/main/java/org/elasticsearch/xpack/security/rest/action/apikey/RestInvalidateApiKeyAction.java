@@ -55,7 +55,7 @@ public final class RestInvalidateApiKeyAction extends ApiKeyBaseRestHandler {
                     @Override
                     public RestResponse buildResponse(InvalidateApiKeyResponse invalidateResp,
                                                       XContentBuilder builder) throws Exception {
-                        invalidateResp.toXContent(builder, channel.request());
+                        invalidateResp.toXContent(builder, channel.params());
                         return new BytesRestResponse(RestStatus.OK, builder);
                     }
                 });

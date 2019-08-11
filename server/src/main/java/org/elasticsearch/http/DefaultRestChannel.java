@@ -54,19 +54,14 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
     static final String CONTENT_LENGTH = "content-length";
     static final String SET_COOKIE = "set-cookie";
 
-    private final HttpRequest httpRequest;
     private final BigArrays bigArrays;
-    private final HttpHandlingSettings settings;
+    private final boolean resetCookies;
     private final ThreadContext threadContext;
-    private final HttpChannel httpChannel;
 
-    DefaultRestChannel(HttpChannel httpChannel, HttpRequest httpRequest, RestRequest request, BigArrays bigArrays,
-                       HttpHandlingSettings settings, ThreadContext threadContext) {
+    DefaultRestChannel(RestRequest request, BigArrays bigArrays, HttpHandlingSettings settings, ThreadContext threadContext) {
         super(request, settings.getDetailedErrorsEnabled());
-        this.httpChannel = httpChannel;
-        this.httpRequest = httpRequest;
         this.bigArrays = bigArrays;
-        this.settings = settings;
+        this.resetCookies = settings.isResetCookies();
         this.threadContext = threadContext;
     }
 
@@ -78,6 +73,7 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
     @Override
     public void sendResponse(RestResponse restResponse) {
         final ArrayList<Releasable> toClose = new ArrayList<>(3);
+        final HttpChannel httpChannel = request.getHttpChannel();
         if (isCloseConnection()) {
             toClose.add(() -> CloseableChannel.closeChannel(httpChannel));
         }
@@ -99,7 +95,7 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
                     "request HTTP method is unsupported but HTTP status is not METHOD_NOT_ALLOWED(405)";
             }
 
-            final HttpResponse httpResponse = httpRequest.createResponse(restResponse.status(), finalContent);
+            final HttpResponse httpResponse = request.getHttpRequest().createResponse(restResponse.status(), finalContent);
 
             // TODO: Ideally we should move the setting of Cors headers into :server
             // NioCorsHandler.setCorsResponseHeaders(nettyRequest, resp, corsConfig);
@@ -156,7 +152,7 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
     }
 
     private void addCookies(HttpResponse response) {
-        if (settings.isResetCookies()) {
+        if (resetCookies) {
             List<String> cookies = request.getHttpRequest().strictCookies();
             if (cookies.isEmpty() == false) {
                 for (String cookie : cookies) {
@@ -169,7 +165,7 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
     // Determine if the request connection should be closed on completion.
     private boolean isCloseConnection() {
         final boolean http10 = isHttp10();
-        return CLOSE.equalsIgnoreCase(request.header(CONNECTION)) || (http10 && !KEEP_ALIVE.equalsIgnoreCase(request.header(CONNECTION)));
+        return CLOSE.equalsIgnoreCase(header(CONNECTION)) || (http10 && !KEEP_ALIVE.equalsIgnoreCase(header(CONNECTION)));
     }
 
     // Determine if the request protocol version is HTTP 1.0

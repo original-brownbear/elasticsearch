@@ -44,7 +44,7 @@ public final class RestGetApiKeyAction extends ApiKeyBaseRestHandler {
                 new RestBuilderListener<GetApiKeyResponse>(channel) {
                     @Override
                     public RestResponse buildResponse(GetApiKeyResponse getApiKeyResponse, XContentBuilder builder) throws Exception {
-                        getApiKeyResponse.toXContent(builder, channel.request());
+                        getApiKeyResponse.toXContent(builder, channel.params());
 
                         // return HTTP status 404 if no API key found for API key id
                         if (Strings.hasText(apiKeyId) && getApiKeyResponse.getApiKeyInfos().length == 0) {

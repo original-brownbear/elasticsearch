@@ -21,6 +21,7 @@ package org.elasticsearch.rest;
 
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentType;
 
@@ -36,13 +37,17 @@ public interface RestChannel {
     XContentBuilder newErrorBuilder() throws IOException;
 
     XContentBuilder newBuilder(@Nullable XContentType xContentType, boolean useFiltering) throws IOException;
-    
+
     XContentBuilder newBuilder(@Nullable XContentType xContentType, @Nullable XContentType responseContentType,
             boolean useFiltering) throws IOException;
 
     BytesStreamOutput bytesOutput();
 
-    RestRequest request();
+    String rawPath();
+
+    ToXContent.Params params();
+
+    String header(String name);
 
     /**
      * @return true iff an error response should contain additional details like exception traces.

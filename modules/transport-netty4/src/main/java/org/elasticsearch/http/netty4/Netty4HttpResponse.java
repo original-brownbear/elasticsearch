@@ -20,7 +20,9 @@
 package org.elasticsearch.http.netty4;
 
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.http.HttpPipelinedMessage;
 import org.elasticsearch.http.HttpResponse;
@@ -30,12 +32,12 @@ import org.elasticsearch.transport.netty4.Netty4Utils;
 public class Netty4HttpResponse extends DefaultFullHttpResponse implements HttpResponse, HttpPipelinedMessage {
 
     private final int sequence;
-    private final Netty4HttpRequest request;
+    private final HttpHeaders headers;
 
-    Netty4HttpResponse(Netty4HttpRequest request, RestStatus status, BytesReference content) {
-        super(request.nettyRequest().protocolVersion(), HttpResponseStatus.valueOf(status.getStatus()), Netty4Utils.toByteBuf(content));
-        this.sequence = request.sequence();
-        this.request = request;
+    Netty4HttpResponse(HttpVersion httpVersion, int sequence, HttpHeaders headers, RestStatus status, BytesReference content) {
+        super(httpVersion, HttpResponseStatus.valueOf(status.getStatus()), Netty4Utils.toByteBuf(content));
+        this.sequence = sequence;
+        this.headers = headers;
     }
 
     @Override
@@ -53,8 +55,8 @@ public class Netty4HttpResponse extends DefaultFullHttpResponse implements HttpR
         return sequence;
     }
 
-    public Netty4HttpRequest getRequest() {
-        return request;
+    public HttpHeaders getRequestHeaders() {
+        return headers;
     }
 }
 
