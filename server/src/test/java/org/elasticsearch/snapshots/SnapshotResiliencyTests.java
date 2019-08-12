@@ -524,6 +524,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         clearDisruptionsAndAwaitSync();
 
+        deterministicTaskQueue.runAllRunnableTasks();
         assertTrue(createdSnapshot.get());
         final SnapshotsInProgress finalSnapshotsInProgress = testClusterNodes.randomDataNodeSafe()
             .clusterService.state().custom(SnapshotsInProgress.TYPE);

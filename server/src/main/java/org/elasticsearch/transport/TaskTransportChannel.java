@@ -41,27 +41,34 @@ public class TaskTransportChannel implements TransportChannel {
         this.channel = channel;
         this.task = task;
         this.taskManager = taskManager;
-        leak = leakTracker.track(this);
-    }
+        if (task.getAction().contains("search")) {
+            leak = leakTracker.track(this);
+        } else {
+            leak = null;
+        }    }
 
     @Override
     public String getProfileName() {
+        recordAccess();
         return channel.getProfileName();
     }
 
     @Override
     public String getChannelType() {
+        recordAccess();
         return channel.getChannelType();
     }
 
     @Override
     public void sendResponse(TransportResponse response) throws IOException {
+        recordAccess();
         endTask();
         channel.sendResponse(response);
     }
 
     @Override
     public void sendResponse(Exception exception) throws IOException {
+        recordAccess();
         endTask();
         channel.sendResponse(exception);
     }
@@ -72,13 +79,20 @@ public class TaskTransportChannel implements TransportChannel {
     }
 
     public TransportChannel getChannel() {
+        recordAccess();
         return channel;
     }
 
+    public void recordAccess() {
+        if (leak != null) {
+            leak.record();
+        }
+    }
+
     public void endTask() {
+        taskManager.unregister(task);
         if (leak != null) {
             leak.close();
         }
-        taskManager.unregister(task);
     }
 }

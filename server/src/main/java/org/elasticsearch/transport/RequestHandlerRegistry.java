@@ -62,6 +62,7 @@ public class RequestHandlerRegistry<Request extends TransportRequest> {
         final TaskTransportChannel taskTransportChannel = new TaskTransportChannel(taskManager, task, channel);
         try {
             handler.messageReceived(request, taskTransportChannel, task);
+            taskTransportChannel.recordAccess();
             success = true;
         } finally {
             if (success == false) {

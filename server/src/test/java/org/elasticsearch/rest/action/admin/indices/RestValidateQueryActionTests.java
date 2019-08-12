@@ -18,12 +18,13 @@
  */
 package org.elasticsearch.rest.action.admin.indices;
 
-import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
+import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.admin.indices.validate.query.ValidateQueryAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.TransportAction;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.settings.Settings;
@@ -76,6 +77,7 @@ public class RestValidateQueryActionTests extends AbstractSearchTestCase {
             new ActionFilters(Collections.emptySet()), taskManager) {
             @Override
             protected void doExecute(Task task, ActionRequest request, ActionListener listener) {
+                listener.onResponse(new AcknowledgedResponse(true));
             }
         };
 
@@ -108,9 +110,9 @@ public class RestValidateQueryActionTests extends AbstractSearchTestCase {
         action.handleRequest(request, channel, client);
 
         // THEN query is valid (i.e. not marked as invalid)
-        assertThat(channel.responses().get(), equalTo(0));
+        assertThat(channel.responses().get(), equalTo(1));
         assertThat(channel.errors().get(), equalTo(0));
-        assertNull(channel.capturedResponse());
+        assertNotNull(channel.capturedResponse());
     }
 
     public void testRestValidateQueryAction_emptyQuery() throws Exception {
