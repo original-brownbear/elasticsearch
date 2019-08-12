@@ -117,6 +117,7 @@ import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.search.MockSearchService;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchService;
+import org.elasticsearch.tasks.TaskManager;
 import org.elasticsearch.test.client.RandomizingClient;
 import org.elasticsearch.test.disruption.NetworkDisruption;
 import org.elasticsearch.test.disruption.ServiceDisruptionScheme;
@@ -180,6 +181,7 @@ import static org.elasticsearch.test.XContentTestUtils.differenceBetweenMapsIgno
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoTimeout;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.equalTo;
@@ -539,6 +541,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
                     }
                     ensureClusterSizeConsistency();
                     ensureClusterStateConsistency();
+                    ensureNoPendingTasks();
                     beforeIndexDeletion();
                     cluster().wipe(excludeTemplates()); // wipe after to make sure we fail in the test that didn't ack the delete
                     if (afterClass || currentClusterScope == Scope.TEST) {
@@ -996,6 +999,16 @@ public abstract class ESIntegTestCase extends ESTestCase {
         if (cluster() != null && cluster().size() > 0) { // if static init fails the cluster can be null
             logger.trace("Check consistency for [{}] nodes", cluster().size());
             assertNoTimeout(client().admin().cluster().prepareHealth().setWaitForNodes(Integer.toString(cluster().size())).get());
+        }
+    }
+
+    private void ensureNoPendingTasks() throws Exception {
+        final List<TaskManager> taskManagers = new ArrayList<>();
+        internalCluster().getInstances(TransportService.class).forEach( transportService ->
+            taskManagers.add(transportService.getTaskManager())
+        );
+        for (TaskManager taskManager : taskManagers) {
+            assertBusy(() -> assertThat(taskManager.getTasks(), anEmptyMap()), 1L, TimeUnit.MINUTES);
         }
     }
 
