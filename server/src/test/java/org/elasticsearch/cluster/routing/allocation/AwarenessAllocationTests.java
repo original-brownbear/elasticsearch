@@ -36,9 +36,11 @@ import org.elasticsearch.cluster.routing.allocation.command.MoveAllocationComman
 import org.elasticsearch.cluster.routing.allocation.decider.AwarenessAllocationDecider;
 import org.elasticsearch.cluster.routing.allocation.decider.ClusterRebalanceAllocationDecider;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.index.shard.ShardId;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.singletonMap;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.INITIALIZING;
@@ -879,16 +881,14 @@ public class AwarenessAllocationTests extends ESAllocationTestCase {
 
     public void testMultipleAwarenessAttributes2() {
         AllocationService strategy = createAllocationService(Settings.builder()
-            .put(AwarenessAllocationDecider.CLUSTER_ROUTING_ALLOCATION_AWARENESS_ATTRIBUTE_SETTING.getKey(), "zone, rack")
-            .put(AwarenessAllocationDecider.CLUSTER_ROUTING_ALLOCATION_AWARENESS_FORCE_GROUP_SETTING.getKey() + "zone.values", "a, b")
-            .put(AwarenessAllocationDecider.CLUSTER_ROUTING_ALLOCATION_AWARENESS_FORCE_GROUP_SETTING.getKey() + "rack.values", "c, d")
+            .put(AwarenessAllocationDecider.CLUSTER_ROUTING_ALLOCATION_AWARENESS_ATTRIBUTE_SETTING.getKey(), "group, switch, rack")
             .put(ClusterRebalanceAllocationDecider.CLUSTER_ROUTING_ALLOCATION_ALLOW_REBALANCE_SETTING.getKey(), "always")
             .build());
 
         logger.info("Building initial routing table for 'testUnbalancedZones'");
 
         MetaData metaData = MetaData.builder()
-            .put(IndexMetaData.builder("test").settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(1))
+            .put(IndexMetaData.builder("test").settings(settings(Version.CURRENT)).numberOfShards(8).numberOfReplicas(4))
             .build();
 
         RoutingTable initialRoutingTable = RoutingTable.builder().addAsNew(metaData.index("test")).build();
@@ -897,29 +897,80 @@ public class AwarenessAllocationTests extends ESAllocationTestCase {
             org.elasticsearch.cluster.ClusterName.CLUSTER_NAME_SETTING.getDefault(Settings.EMPTY)
         ).metaData(metaData).routingTable(initialRoutingTable).build();
 
-        logger.info("--> adding two nodes in different zones and do rerouting");
+        logger.info("--> adding 8 nodes in different zones and do rerouting");
+
         Map<String, String> nodeAAttributes = new HashMap<>();
-        nodeAAttributes.put("zone", "a");
-        nodeAAttributes.put("rack", "c");
+        nodeAAttributes.put("group", "g1");
+        nodeAAttributes.put("switch", "s1");
+        nodeAAttributes.put("rack", "g1s1r1");
+
         Map<String, String> nodeBAttributes = new HashMap<>();
-        nodeBAttributes.put("zone", "b");
-        nodeBAttributes.put("rack", "d");
+        nodeBAttributes.put("group", "g1");
+        nodeBAttributes.put("switch", "s1");
+        nodeBAttributes.put("rack", "g1s1r2");
+
+        Map<String, String> nodeCAttributes = new HashMap<>();
+        nodeCAttributes.put("group", "g1");
+        nodeCAttributes.put("switch", "s2");
+        nodeCAttributes.put("rack", "g1s2r3");
+
+        Map<String, String> nodeDAttributes = new HashMap<>();
+        nodeDAttributes.put("group", "g1");
+        nodeDAttributes.put("switch", "s2");
+        nodeDAttributes.put("rack", "g1s2r4");
+
+        Map<String, String> nodeEAttributes = new HashMap<>();
+        nodeEAttributes.put("group", "g2");
+        nodeEAttributes.put("switch", "s3");
+        nodeEAttributes.put("rack", "g1s3r5");
+
+        Map<String, String> nodeFAttributes = new HashMap<>();
+        nodeFAttributes.put("group", "g2");
+        nodeFAttributes.put("switch", "s3");
+        nodeFAttributes.put("rack", "g1s3r6");
+
+        Map<String, String> nodeGAttributes = new HashMap<>();
+        nodeGAttributes.put("group", "g2");
+        nodeGAttributes.put("switch", "s4");
+        nodeGAttributes.put("rack", "g1s4r7");
+
+        Map<String, String> nodeHAttributes = new HashMap<>();
+        nodeHAttributes.put("group", "g2");
+        nodeHAttributes.put("switch", "s4");
+        nodeHAttributes.put("rack", "g1s4r8");
+
         clusterState = ClusterState.builder(clusterState).nodes(DiscoveryNodes.builder()
             .add(newNode("A-0", nodeAAttributes))
             .add(newNode("B-0", nodeBAttributes))
+            .add(newNode("C-0", nodeCAttributes))
+            .add(newNode("D-0", nodeDAttributes))
+            .add(newNode("E-0", nodeEAttributes))
+            .add(newNode("F-0", nodeFAttributes))
+            .add(newNode("G-0", nodeGAttributes))
+            .add(newNode("H-0", nodeHAttributes))
         ).build();
+
         clusterState = strategy.reroute(clusterState, "reroute");
-        assertThat(clusterState.getRoutingNodes().shardsWithState(STARTED).size(), equalTo(0));
-        assertThat(clusterState.getRoutingNodes().shardsWithState(INITIALIZING).size(), equalTo(1));
+
+        //assertThat(clusterState.getRoutingNodes().shardsWithState(INITIALIZING).size(), equalTo(8));
 
         logger.info("--> start the shards (primaries)");
         clusterState = startInitializingShardsAndReroute(strategy, clusterState);
-        assertThat(clusterState.getRoutingNodes().shardsWithState(STARTED).size(), equalTo(1));
-        assertThat(clusterState.getRoutingNodes().shardsWithState(INITIALIZING).size(), equalTo(1));
+        //assertThat(clusterState.getRoutingNodes().shardsWithState(STARTED).size(), equalTo(8));
 
         clusterState = startInitializingShardsAndReroute(strategy, clusterState);
         logger.info("--> all replicas are allocated and started since we have one node in each zone and rack");
-        assertThat(clusterState.getRoutingNodes().shardsWithState(STARTED).size(), equalTo(2));
-        assertThat(clusterState.getRoutingNodes().shardsWithState(INITIALIZING).size(), equalTo(0));
+        clusterState = startInitializingShardsAndReroute(strategy, clusterState);
+        //assertThat(clusterState.getRoutingNodes().shardsWithState(STARTED).size(), equalTo(40));
+
+        final Map<ShardId, Map<String, AtomicInteger>> attributes = new HashMap<>();
+        for (ShardRouting s : clusterState.getRoutingTable().allShards()) {
+            final Map<String, AtomicInteger> seenCounts = attributes.computeIfAbsent(s.shardId(), k -> new HashMap<>());
+            clusterState.nodes().get(s.currentNodeId()).getAttributes().forEach((k, v) -> {
+                    seenCounts.computeIfAbsent(v, kk -> new AtomicInteger(0)).incrementAndGet();
+                }
+            );
+        }
+        assertNotNull(clusterState);
     }
 }

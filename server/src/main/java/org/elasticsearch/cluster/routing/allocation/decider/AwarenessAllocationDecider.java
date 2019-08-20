@@ -19,12 +19,8 @@
 
 package org.elasticsearch.cluster.routing.allocation.decider;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-
 import com.carrotsearch.hppc.ObjectIntHashMap;
+import com.carrotsearch.hppc.cursors.ObjectCursor;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.routing.RoutingNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
@@ -34,6 +30,11 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
 
@@ -195,8 +196,16 @@ public class AwarenessAllocationDecider extends AllocationDecider {
                         currentNodeCount,
                         maximumNodeCount);
             }
+            if (currentNodeCount == maximumNodeCount && (shardCount % numberOfAttributes) != 0) {
+                for (ObjectCursor<String> cursor : nodesPerAttribute.keys()) {
+                    if (shardPerAttribute.get(cursor.value) == 0) {
+                        return allocation.decision(Decision.NO, NAME,
+                            "there are too many copies of the shard allocated to nodes with attribute [%s=%s], but the awareness attribute [%s] has not allocated",
+                            awarenessAttribute, node.node().getAttributes().get(awarenessAttribute), cursor.value);
+                    }
+                }
+            }
         }
-
         return allocation.decision(Decision.YES, NAME, "node meets all awareness attribute requirements");
     }
 }
