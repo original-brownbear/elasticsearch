@@ -82,6 +82,14 @@ public interface TcpChannel extends CloseableChannel {
      */
     ChannelStats getChannelStats();
 
+    default void reserveBytes(long bytes) {
+
+    }
+
+    default void releaseBytes(long bytes) {
+
+    }
+
     class ChannelStats {
 
         private volatile long lastAccessedTime;

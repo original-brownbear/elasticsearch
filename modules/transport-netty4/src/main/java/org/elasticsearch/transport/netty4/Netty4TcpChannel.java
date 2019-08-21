@@ -31,6 +31,7 @@ import org.elasticsearch.transport.TcpChannel;
 import org.elasticsearch.transport.TransportException;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Netty4TcpChannel implements TcpChannel {
 
@@ -152,6 +153,22 @@ public class Netty4TcpChannel implements TcpChannel {
 
     public Channel getNettyChannel() {
         return channel;
+    }
+
+    private final AtomicLong reservedBytes = new AtomicLong(0L);
+
+    @Override
+    public void reserveBytes(long bytes) {
+        if (reservedBytes.addAndGet(bytes) > 1048576) {
+            channel.config().setAutoRead(false);
+        }
+    }
+
+    @Override
+    public void releaseBytes(long bytes) {
+        if (reservedBytes.addAndGet(-bytes) <= 1048576) {
+            channel.config().setAutoRead(true);
+        }
     }
 
     @Override

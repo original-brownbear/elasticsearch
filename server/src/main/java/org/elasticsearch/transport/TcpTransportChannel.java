@@ -42,6 +42,7 @@ public final class TcpTransportChannel implements TransportChannel {
                         CircuitBreakerService breakerService, long reservedBytes, boolean compressResponse) {
         this.version = version;
         this.channel = channel;
+        channel.reserveBytes(reservedBytes);
         this.outboundHandler = outboundHandler;
         this.action = action;
         this.requestId = requestId;
@@ -79,6 +80,7 @@ public final class TcpTransportChannel implements TransportChannel {
         if (released.compareAndSet(false, true)) {
             assert (releaseBy = new Exception()) != null; // easier to debug if it's already closed
             breakerService.getBreaker(CircuitBreaker.IN_FLIGHT_REQUESTS).addWithoutBreaking(-reservedBytes);
+            channel.releaseBytes(reservedBytes);
         } else if (isExceptionResponse == false) {
             // only fail if we are not sending an error - we might send the error triggered by the previous
             // sendResponse call
