@@ -159,14 +159,14 @@ public class Netty4TcpChannel implements TcpChannel {
 
     @Override
     public void reserveBytes(long bytes) {
-        if (reservedBytes.addAndGet(bytes) > 1048576) {
+        if (reservedBytes.addAndGet(bytes) > 256 * 256) {
             channel.config().setAutoRead(false);
         }
     }
 
     @Override
     public void releaseBytes(long bytes) {
-        if (reservedBytes.addAndGet(-bytes) <= 1048576) {
+        if (reservedBytes.addAndGet(-bytes) <= 256 * 256) {
             channel.config().setAutoRead(true);
         }
     }
