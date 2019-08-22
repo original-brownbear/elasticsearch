@@ -18,7 +18,9 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.persistent.AllocatedPersistentTask;
 import org.elasticsearch.persistent.PersistentTaskState;
 import org.elasticsearch.persistent.PersistentTasksCustomMetaData;
@@ -32,8 +34,7 @@ import org.elasticsearch.xpack.core.dataframe.transforms.DataFrameTransform;
 import org.elasticsearch.xpack.core.dataframe.transforms.DataFrameTransformCheckpoint;
 import org.elasticsearch.xpack.core.dataframe.transforms.DataFrameTransformConfig;
 import org.elasticsearch.xpack.core.dataframe.transforms.DataFrameTransformState;
-import org.elasticsearch.xpack.core.dataframe.transforms.DataFrameTransformStateAndStats;
-import org.elasticsearch.xpack.core.dataframe.transforms.DataFrameTransformTaskState;
+import org.elasticsearch.xpack.core.dataframe.transforms.DataFrameTransformStoredDoc;
 import org.elasticsearch.xpack.core.indexing.IndexerState;
 import org.elasticsearch.xpack.core.scheduler.SchedulerEngine;
 import org.elasticsearch.xpack.dataframe.DataFrame;
@@ -61,13 +62,16 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
     private final SchedulerEngine schedulerEngine;
     private final ThreadPool threadPool;
     private final DataFrameAuditor auditor;
+    private volatile int numFailureRetries;
 
     public DataFrameTransformPersistentTasksExecutor(Client client,
                                                      DataFrameTransformsConfigManager transformsConfigManager,
                                                      DataFrameTransformsCheckpointService dataFrameTransformsCheckpointService,
                                                      SchedulerEngine schedulerEngine,
                                                      DataFrameAuditor auditor,
-                                                     ThreadPool threadPool) {
+                                                     ThreadPool threadPool,
+                                                     ClusterService clusterService,
+                                                     Settings settings) {
         super(DataFrameField.TASK_NAME, DataFrame.TASK_THREAD_POOL_NAME);
         this.client = client;
         this.transformsConfigManager = transformsConfigManager;
@@ -75,6 +79,9 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
         this.schedulerEngine = schedulerEngine;
         this.auditor = auditor;
         this.threadPool = threadPool;
+        this.numFailureRetries = DataFrameTransformTask.NUM_FAILURE_RETRIES_SETTING.get(settings);
+        clusterService.getClusterSettings()
+            .addSettingsUpdateConsumer(DataFrameTransformTask.NUM_FAILURE_RETRIES_SETTING, this::setNumFailureRetries);
     }
 
     @Override
@@ -112,13 +119,14 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
     protected void nodeOperation(AllocatedPersistentTask task, @Nullable DataFrameTransform params, PersistentTaskState state) {
         final String transformId = params.getId();
         final DataFrameTransformTask buildTask = (DataFrameTransformTask) task;
-        final DataFrameTransformState transformPTaskState = (DataFrameTransformState) state;
-        // If the transform is failed then the Persistent Task Service will
-        // try to restart it on a node restart. Exiting here leaves the
-        // transform in the failed state and it must be force closed.
-        if (transformPTaskState != null && transformPTaskState.getTaskState() == DataFrameTransformTaskState.FAILED) {
-            return;
-        }
+        // NOTE: DataFrameTransformPersistentTasksExecutor#createTask pulls in the stored task state from the ClusterState when the object
+        // is created. DataFrameTransformTask#ctor takes into account setting the task as failed if that is passed in with the
+        // persisted state.
+        // DataFrameTransformPersistentTasksExecutor#startTask will fail as DataFrameTransformTask#start, when force == false, will return
+        // a failure indicating that a failed task cannot be started.
+        //
+        // We want the rest of the state to be populated in the task when it is loaded on the node so that users can force start it again
+        // later if they want.
 
         final DataFrameTransformTask.ClientDataFrameIndexerBuilder indexerBuilder =
             new DataFrameTransformTask.ClientDataFrameIndexerBuilder(transformId)
@@ -137,11 +145,20 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
         // <5> load next checkpoint
         ActionListener<DataFrameTransformCheckpoint> getTransformNextCheckpointListener = ActionListener.wrap(
                 nextCheckpoint -> {
-                    indexerBuilder.setNextCheckpoint(nextCheckpoint);
+
+                    if (nextCheckpoint.isEmpty()) {
+                        // extra safety: reset position and progress if next checkpoint is empty
+                        // prevents a failure if for some reason the next checkpoint has been deleted
+                        indexerBuilder.setInitialPosition(null);
+                        indexerBuilder.setProgress(null);
+                    } else {
+                        logger.trace("[{}] Loaded next checkpoint [{}] found, starting the task", transformId,
+                                nextCheckpoint.getCheckpoint());
+                        indexerBuilder.setNextCheckpoint(nextCheckpoint);
+                    }
 
                     final long lastCheckpoint = stateHolder.get().getCheckpoint();
 
-                    logger.trace("[{}] No next checkpoint found, starting the task", transformId);
                     startTask(buildTask, indexerBuilder, lastCheckpoint, startTaskListener);
                 },
                 error -> {
@@ -157,14 +174,10 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
                 lastCheckpoint -> {
                     indexerBuilder.setLastCheckpoint(lastCheckpoint);
 
-                    final long nextCheckpoint = stateHolder.get().getInProgressCheckpoint();
-
-                    if (nextCheckpoint > 0) {
-                        transformsConfigManager.getTransformCheckpoint(transformId, nextCheckpoint, getTransformNextCheckpointListener);
-                    } else {
-                        logger.trace("[{}] No next checkpoint found, starting the task", transformId);
-                        startTask(buildTask, indexerBuilder, lastCheckpoint.getCheckpoint(), startTaskListener);
-                    }
+                    logger.trace("[{}] Loaded last checkpoint [{}], looking for next checkpoint", transformId,
+                            lastCheckpoint.getCheckpoint());
+                    transformsConfigManager.getTransformCheckpoint(transformId, lastCheckpoint.getCheckpoint() + 1,
+                            getTransformNextCheckpointListener);
                 },
                 error -> {
                     String msg = DataFrameMessages.getMessage(DataFrameMessages.FAILED_TO_LOAD_TRANSFORM_CHECKPOINT, transformId);
@@ -176,7 +189,7 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
         // <3> Set the previous stats (if they exist), initialize the indexer, start the task (If it is STOPPED)
         // Since we don't create the task until `_start` is called, if we see that the task state is stopped, attempt to start
         // Schedule execution regardless
-        ActionListener<DataFrameTransformStateAndStats> transformStatsActionListener = ActionListener.wrap(
+        ActionListener<DataFrameTransformStoredDoc> transformStatsActionListener = ActionListener.wrap(
             stateAndStats -> {
                 logger.trace("[{}] initializing state and stats: [{}]", transformId, stateAndStats.toString());
                 indexerBuilder.setInitialStats(stateAndStats.getTransformStats())
@@ -192,8 +205,8 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
                 final long lastCheckpoint = stateHolder.get().getCheckpoint();
 
                 if (lastCheckpoint == 0) {
-                    logger.trace("[{}] No checkpoint found, starting the task", transformId);
-                    startTask(buildTask, indexerBuilder, lastCheckpoint, startTaskListener);
+                    logger.trace("[{}] No last checkpoint found, looking for next checkpoint", transformId);
+                    transformsConfigManager.getTransformCheckpoint(transformId, lastCheckpoint + 1, getTransformNextCheckpointListener);
                 } else {
                     logger.trace ("[{}] Restore last checkpoint: [{}]", transformId, lastCheckpoint);
                     transformsConfigManager.getTransformCheckpoint(transformId, lastCheckpoint, getTransformLastCheckpointListener);
@@ -215,7 +228,7 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
         ActionListener<Map<String, String>> getFieldMappingsListener = ActionListener.wrap(
             fieldMappings -> {
                 indexerBuilder.setFieldMappings(fieldMappings);
-                transformsConfigManager.getTransformStats(transformId, transformStatsActionListener);
+                transformsConfigManager.getTransformStoredDoc(transformId, transformStatsActionListener);
             },
             error -> {
                 String msg = DataFrameMessages.getMessage(DataFrameMessages.DATA_FRAME_UNABLE_TO_GATHER_FIELD_MAPPINGS,
@@ -285,7 +298,12 @@ public class DataFrameTransformPersistentTasksExecutor extends PersistentTasksEx
                            Long previousCheckpoint,
                            ActionListener<StartDataFrameTransformTaskAction.Response> listener) {
         buildTask.initializeIndexer(indexerBuilder);
-        buildTask.start(previousCheckpoint, listener);
+        // DataFrameTransformTask#start will fail if the task state is FAILED
+        buildTask.setNumFailureRetries(numFailureRetries).start(previousCheckpoint, false, listener);
+    }
+
+    private void setNumFailureRetries(int numFailureRetries) {
+        this.numFailureRetries = numFailureRetries;
     }
 
     @Override
