@@ -23,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.Version;
-import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.metrics.MeanMetric;
@@ -164,7 +163,7 @@ public class InboundHandler {
                     throw new ActionNotFoundTransportException(action);
                 }
                 transportChannel = new TcpTransportChannel(outboundHandler, channel, action, requestId, version,
-                    circuitBreakerService, messageLengthBytes, message.isCompress());
+                    messageLengthBytes, message.isCompress());
                 final TransportRequest request = reg.newRequest(stream);
                 request.remoteAddress(new TransportAddress(channel.getRemoteAddress()));
                 // in case we throw an exception, i.e. when the limit is hit, we don't want to verify
@@ -180,7 +179,7 @@ public class InboundHandler {
             // the circuit breaker tripped
             if (transportChannel == null) {
                 transportChannel = new TcpTransportChannel(outboundHandler, channel, action, requestId, version,
-                    circuitBreakerService, 0, message.isCompress());
+                    0, message.isCompress());
             }
             try {
                 transportChannel.sendResponse(e);

@@ -157,16 +157,18 @@ public class Netty4TcpChannel implements TcpChannel {
 
     private final AtomicLong reservedBytes = new AtomicLong(0L);
 
+    private static final long MEMORY_LIMIT = 1024 * 1024;
+
     @Override
     public void reserveBytes(long bytes) {
-        if (reservedBytes.addAndGet(bytes) > 256 * 256) {
+        if (reservedBytes.addAndGet(bytes) > MEMORY_LIMIT) {
             channel.config().setAutoRead(false);
         }
     }
 
     @Override
     public void releaseBytes(long bytes) {
-        if (reservedBytes.addAndGet(-bytes) <= 256 * 256) {
+        if (reservedBytes.addAndGet(-bytes) <= MEMORY_LIMIT) {
             channel.config().setAutoRead(true);
         }
     }
