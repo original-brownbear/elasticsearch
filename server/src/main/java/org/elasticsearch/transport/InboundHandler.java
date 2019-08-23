@@ -163,12 +163,6 @@ public class InboundHandler {
                 if (reg == null) {
                     throw new ActionNotFoundTransportException(action);
                 }
-                CircuitBreaker breaker = circuitBreakerService.getBreaker(CircuitBreaker.IN_FLIGHT_REQUESTS);
-                if (reg.canTripCircuitBreaker()) {
-                    breaker.addEstimateBytesAndMaybeBreak(messageLengthBytes, "<transport_request>");
-                } else {
-                    breaker.addWithoutBreaking(messageLengthBytes);
-                }
                 transportChannel = new TcpTransportChannel(outboundHandler, channel, action, requestId, version,
                     circuitBreakerService, messageLengthBytes, message.isCompress());
                 final TransportRequest request = reg.newRequest(stream);

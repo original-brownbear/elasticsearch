@@ -20,7 +20,6 @@
 package org.elasticsearch.transport;
 
 import org.elasticsearch.Version;
-import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 
 import java.io.IOException;
@@ -79,7 +78,6 @@ public final class TcpTransportChannel implements TransportChannel {
     private void release(boolean isExceptionResponse) {
         if (released.compareAndSet(false, true)) {
             assert (releaseBy = new Exception()) != null; // easier to debug if it's already closed
-            breakerService.getBreaker(CircuitBreaker.IN_FLIGHT_REQUESTS).addWithoutBreaking(-reservedBytes);
             channel.releaseBytes(reservedBytes);
         } else if (isExceptionResponse == false) {
             // only fail if we are not sending an error - we might send the error triggered by the previous
