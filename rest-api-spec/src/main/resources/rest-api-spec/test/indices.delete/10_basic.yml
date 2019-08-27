@@ -47,12 +47,16 @@ setup:
       indices.delete:
         index: alias,index2
         ignore_unavailable: true
+
+  - match: { acknowledged: true }
+
   - do:
       indices.get:
         index: index,index2
         ignore_unavailable: true
   - is_true: index
   - is_false: index2
+  - match: { acknowledged: true }
 ---
 "Delete index against wildcard matching alias":
   - do:

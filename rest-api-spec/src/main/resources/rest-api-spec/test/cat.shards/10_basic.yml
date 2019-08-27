@@ -116,6 +116,8 @@
       indices.delete:
         index: sync_id_test
 
+  - match: { acknowledged: true }
+
   - do:
       indices.create:
         index: sync_id_no_flush_test
@@ -135,6 +137,8 @@
   - do:
       indices.delete:
         index: sync_id_no_flush_test
+
+  - match: { acknowledged: true }
 
   - do:
       indices.create:
