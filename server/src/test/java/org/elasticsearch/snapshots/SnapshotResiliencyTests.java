@@ -130,6 +130,7 @@ import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.discovery.MasterNotDiscoveredException;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.TestEnvironment;
@@ -151,6 +152,7 @@ import org.elasticsearch.indices.recovery.PeerRecoverySourceService;
 import org.elasticsearch.indices.recovery.PeerRecoveryTargetService;
 import org.elasticsearch.indices.recovery.RecoverySettings;
 import org.elasticsearch.ingest.IngestService;
+import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.node.ResponseCollectorService;
 import org.elasticsearch.plugins.PluginsService;
 import org.elasticsearch.repositories.RepositoriesService;
@@ -305,6 +307,115 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
+        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        assertThat(snapshotIds, hasSize(1));
+
+        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+        assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
+        assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
+        assertEquals(shards, snapshotInfo.successfulShards());
+        assertEquals(0, snapshotInfo.failedShards());
+    }
+
+    public void testRestoreWithMasterFailover() {
+        setupTestCluster(randomFrom(3, 5), randomIntBetween(2, 10));
+
+        String repoName = "repo";
+        String snapshotName = "snapshot";
+        final String index = "test";
+        final int shards = randomIntBetween(1, 10);
+        final int documents = randomIntBetween(0, 100);
+
+        final TestClusterNode masterNode =
+            testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+
+        final StepListener<CreateSnapshotResponse> createSnapshotResponseListener = new StepListener<>();
+
+        continueOrDie(createRepoAndIndex(masterNode, repoName, index, shards), createIndexResponse -> {
+            final Runnable afterIndexing = () -> masterNode.client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
+                .setWaitForCompletion(true).execute(createSnapshotResponseListener);
+            if (documents == 0) {
+                afterIndexing.run();
+            } else {
+                final BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+                for (int i = 0; i < documents; ++i) {
+                    bulkRequest.add(new IndexRequest(index).source(Collections.singletonMap("foo", "bar" + i)));
+                }
+                final StepListener<BulkResponse> bulkResponseStepListener = new StepListener<>();
+                masterNode.client.bulk(bulkRequest, bulkResponseStepListener);
+                continueOrDie(bulkResponseStepListener, bulkResponse -> {
+                    assertFalse("Failures in bulk response: " + bulkResponse.buildFailureMessage(), bulkResponse.hasFailures());
+                    assertEquals(documents, bulkResponse.getItems().length);
+                    afterIndexing.run();
+                });
+            }
+        });
+
+        final StepListener<AcknowledgedResponse> deleteIndexListener = new StepListener<>();
+
+        continueOrDie(createSnapshotResponseListener,
+            createSnapshotResponse -> masterNode.client.admin().indices().delete(new DeleteIndexRequest(index), deleteIndexListener));
+
+        final StepListener<RestoreSnapshotResponse> restoreSnapshotResponseListener = new StepListener<>();
+        continueOrDie(deleteIndexListener, ignored -> {
+            scheduleNow(() -> testClusterNodes.randomMasterNodeSafe().restart());
+            testClusterNodes.randomMasterNodeSafe().client.admin().cluster().restoreSnapshot(
+                new RestoreSnapshotRequest(repoName, snapshotName).waitForCompletion(true), new ActionListener<>() {
+                    @Override
+                    public void onResponse(RestoreSnapshotResponse restoreSnapshotResponse) {
+                        restoreSnapshotResponseListener.onResponse(restoreSnapshotResponse);
+                        clearDisruptionsAndAwaitSync();
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        if (e instanceof NodeClosedException || e instanceof MasterNotDiscoveredException) {
+                            testClusterNodes.randomMasterNodeSafe().client.admin().cluster().restoreSnapshot(
+                                new RestoreSnapshotRequest(repoName, snapshotName).waitForCompletion(true), this);
+                            clearDisruptionsAndAwaitSync();
+                        } else {
+                            restoreSnapshotResponseListener.onFailure(e);
+                        }
+                    }
+                });
+        });
+
+        final StepListener<SearchResponse> searchResponseListener = new StepListener<>();
+        continueOrDie(restoreSnapshotResponseListener, restoreSnapshotResponse -> {
+            assertEquals(shards, restoreSnapshotResponse.getRestoreInfo().totalShards());
+            deterministicTaskQueue.runAllRunnableTasks();
+            testClusterNodes.randomMasterNodeSafe().client.search(
+                new SearchRequest(index).source(new SearchSourceBuilder().size(0).trackTotalHits(true)), new ActionListener<>() {
+                    @Override
+                    public void onResponse(SearchResponse searchResponse) {
+                        if (searchResponse.getFailedShards() > 0) {
+                            onFailure(null);
+                        } else {
+                            searchResponseListener.onResponse(searchResponse);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        testClusterNodes.randomMasterNodeSafe().client.search(
+                            new SearchRequest(index).source(new SearchSourceBuilder().size(0).trackTotalHits(true)), this);
+                    }
+                });
+        });
+
+        final AtomicBoolean documentCountVerified = new AtomicBoolean();
+        continueOrDie(searchResponseListener, r -> {
+            assertEquals(documents, Objects.requireNonNull(r.getHits().getTotalHits()).value);
+            documentCountVerified.set(true);
+        });
+
+        runUntil(documentCountVerified::get, TimeUnit.MINUTES.toMillis(15L));
+        assertNotNull(createSnapshotResponseListener.result());
+        assertNotNull(restoreSnapshotResponseListener.result());
+        assertTrue(documentCountVerified.get());
+        SnapshotsInProgress finalSnapshotsInProgress = testClusterNodes.randomMasterNodeSafe().clusterService.state().custom(SnapshotsInProgress.TYPE);
+        assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
+        final Repository repository = testClusterNodes.randomMasterNodeSafe().repositoriesService.repository(repoName);
         Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
@@ -594,7 +705,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         // TODO: randomize replica count settings once recovery operations aren't blocking anymore
         return Settings.builder()
             .put(IndexMetaData.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), shards)
-            .put(IndexMetaData.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 0).build();
+            .put(IndexMetaData.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), 1).build();
     }
 
     private static <T> void continueOrDie(StepListener<T> listener, CheckedConsumer<T, Exception> onResponse) {
@@ -1058,7 +1169,6 @@ public class SnapshotResiliencyTests extends ESTestCase {
         }
         public void restart() {
             testClusterNodes.disconnectNode(this);
-            final ClusterState oldState = this.clusterService.state();
             stop();
             testClusterNodes.nodes.remove(node.getName());
             scheduleSoon(() -> {
@@ -1067,7 +1177,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         new DiscoveryNode(node.getName(), node.getId(), node.getAddress(), emptyMap(),
                             node.getRoles(), Version.CURRENT), disruption);
                     testClusterNodes.nodes.put(node.getName(), restartedNode);
-                    restartedNode.start(oldState);
+                    restartedNode.start(ClusterState.EMPTY_STATE);
                 } catch (IOException e) {
                     throw new AssertionError(e);
                 }
