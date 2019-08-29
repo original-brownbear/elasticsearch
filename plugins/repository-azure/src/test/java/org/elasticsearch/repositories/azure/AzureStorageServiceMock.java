@@ -36,6 +36,7 @@ import java.net.SocketPermission;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
 import java.security.AccessController;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -64,6 +65,13 @@ public class AzureStorageServiceMock extends AzureStorageService {
     public void deleteBlob(String account, String container, String blob) throws StorageException {
         if (blobs.remove(blob) == null) {
             throw new StorageException("BlobNotFound", "[" + blob + "] does not exist.", 404, null, null);
+        }
+    }
+
+    @Override
+    public void deleteBlobsIgnoringIfNotExists(String account, String container, Collection<String> blobs) {
+        for (String blob : blobs) {
+            this.blobs.remove(blob);
         }
     }
 
