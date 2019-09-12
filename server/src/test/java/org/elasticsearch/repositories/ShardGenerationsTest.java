@@ -20,8 +20,14 @@ package org.elasticsearch.repositories;
 
 import org.elasticsearch.test.ESTestCase;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.anEmptyMap;
 
 public class ShardGenerationsTest extends ESTestCase {
 
+    public void testFindObsoleteGenerations() {
+        final int NumberOfIndices =
+        final ShardGenerations previous = ShardGenerations.builder().build();
+        final ShardGenerations next = ShardGenerations.builder().build();
+        assertThat(next.obsoleteShardGenerations(previous), anEmptyMap());
+    }
 }

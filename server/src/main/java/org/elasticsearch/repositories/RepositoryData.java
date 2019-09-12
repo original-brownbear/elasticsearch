@@ -270,6 +270,8 @@ public final class RepositoryData {
         return snapshotIndices;
     }
 
+    public static final String SHARDS = "shards";
+
     private static final String SNAPSHOTS = "snapshots";
     private static final String INDICES = "indices";
     private static final String INDEX_ID = "id";
