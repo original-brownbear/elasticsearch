@@ -21,8 +21,11 @@ package org.elasticsearch.repositories;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.common.xcontent.DeprecationHandler;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.smile.SmileXContent;
 import org.elasticsearch.test.ESTestCase;
 
@@ -34,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.endsWith;
@@ -241,8 +245,18 @@ public class ShardGenerationsTests extends ESTestCase {
 
         gens.toXContent(smileBuilder, ToXContent.EMPTY_PARAMS);
 
-        final BytesReference bytes = BytesReference.bytes(smileBuilder);
-
+        try (XContentParser parser = SmileXContent.smileXContent.createParser(NamedXContentRegistry.EMPTY,
+            DeprecationHandler.THROW_UNSUPPORTED_OPERATION, BytesReference.bytes(smileBuilder).streamInput())) {
+            @SuppressWarnings("unchecked")
+            final Map<String, List<String>> asMap = (Map) parser.map();
+            assertThat(asMap.keySet(), equalTo(indexIds.stream().map(IndexId::getId).collect(Collectors.toSet())));
+            asMap.forEach((idx, shardGens) -> {
+                final IndexId indexId = indexIds.stream().filter(i -> i.getId().equals(idx)).findFirst().get();
+                for (int i = 0; i < shardGens.size(); ++i) {
+                    assertThat(shardGens.get(i), equalTo(gens.getShardGen(indexId, i)));
+                }
+            });
+        }
     }
 
     private static ShardGenerations randomShardGeneration() {
