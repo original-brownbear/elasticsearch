@@ -95,7 +95,6 @@ import org.elasticsearch.cluster.coordination.Coordinator;
 import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
 import org.elasticsearch.cluster.coordination.ElectionStrategy;
 import org.elasticsearch.cluster.coordination.InMemoryPersistedState;
-import org.elasticsearch.cluster.coordination.MockSinglePrioritizingExecutor;
 import org.elasticsearch.cluster.metadata.AliasValidator;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
@@ -111,7 +110,6 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.routing.allocation.command.AllocateEmptyPrimaryAllocationCommand;
-import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.FakeThreadPoolMasterService;
 import org.elasticsearch.cluster.service.MasterService;
@@ -125,7 +123,6 @@ import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
-import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
@@ -187,6 +184,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -863,17 +861,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             masterService = new FakeThreadPoolMasterService(node.getName(), "test", deterministicTaskQueue::scheduleNow);
             threadPool = deterministicTaskQueue.getThreadPool();
             clusterService = new ClusterService(nodeSettings, clusterSettings, masterService,
-                new ClusterApplierService(node.getName(), nodeSettings, clusterSettings, threadPool) {
-                    @Override
-                    protected PrioritizedEsThreadPoolExecutor createThreadPoolExecutor() {
-                        return new MockSinglePrioritizingExecutor(node.getName(), deterministicTaskQueue);
-                    }
-
-                    @Override
-                    protected void connectToNodesAndWait(ClusterState newClusterState) {
-                        // don't do anything, and don't block
-                    }
-                });
+                new DisruptableClusterApplierService(node.getName(), nodeSettings, clusterSettings, deterministicTaskQueue,
+                    Function.identity()));
             clusterService.setNodeConnectionsService(
                 new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(), transportService));
             mockTransport = new DisruptableMockTransport(node, logger) {
@@ -935,6 +924,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             snapshotsService =
                 new SnapshotsService(nodeSettings, clusterService, indexNameExpressionResolver, repositoriesService, threadPool);
             nodeEnv = new NodeEnvironment(nodeSettings, environment);
+            nodeEnvironments.add(nodeEnv);
             final NamedXContentRegistry namedXContentRegistry = new NamedXContentRegistry(Collections.emptyList());
             final ScriptService scriptService = new ScriptService(nodeSettings, emptyMap(), emptyMap());
             client = new NodeClient(nodeSettings, threadPool);

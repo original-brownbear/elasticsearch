@@ -21,7 +21,6 @@ package org.elasticsearch.cluster.coordination;
 import com.carrotsearch.randomizedtesting.RandomizedContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterModule;
 import org.elasticsearch.cluster.ClusterState;
@@ -38,7 +37,6 @@ import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
-import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.FakeThreadPoolMasterService;
 import org.elasticsearch.common.Nullable;
@@ -49,12 +47,10 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 import org.elasticsearch.discovery.DiscoveryModule;
 import org.elasticsearch.discovery.SeedHostsProvider;
 import org.elasticsearch.env.NodeEnvironment;
@@ -90,7 +86,6 @@ import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -133,16 +128,7 @@ import static org.hamcrest.Matchers.sameInstance;
 
 public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
 
-    protected final List<NodeEnvironment> nodeEnvironments = new ArrayList<>();
     protected final Set<Cluster.MockPersistedState> openPersistedStates = new HashSet<>();
-
-    @After
-    public void closeNodeEnvironmentsAfterEachTest() {
-        for (NodeEnvironment nodeEnvironment : nodeEnvironments) {
-            nodeEnvironment.close();
-        }
-        nodeEnvironments.clear();
-    }
 
     @After
     public void assertAllPersistedStatesClosed() {
@@ -1230,82 +1216,12 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
         }
     }
 
-    static class DisruptableClusterApplierService extends ClusterApplierService {
-        private final String nodeName;
-        private final DeterministicTaskQueue deterministicTaskQueue;
-        ClusterStateApplyResponse clusterStateApplyResponse = ClusterStateApplyResponse.SUCCEED;
-
-        DisruptableClusterApplierService(String nodeName, Settings settings, ClusterSettings clusterSettings,
-                                         DeterministicTaskQueue deterministicTaskQueue, Function<Runnable, Runnable> runnableWrapper) {
-            super(nodeName, settings, clusterSettings, deterministicTaskQueue.getThreadPool(runnableWrapper));
-            this.nodeName = nodeName;
-            this.deterministicTaskQueue = deterministicTaskQueue;
-            addStateApplier(event -> {
-                switch (clusterStateApplyResponse) {
-                    case SUCCEED:
-                    case HANG:
-                        final ClusterState oldClusterState = event.previousState();
-                        final ClusterState newClusterState = event.state();
-                        assert oldClusterState.version() <= newClusterState.version() : "updating cluster state from version "
-                            + oldClusterState.version() + " to stale version " + newClusterState.version();
-                        break;
-                    case FAIL:
-                        throw new ElasticsearchException("simulated cluster state applier failure");
-                }
-            });
-        }
-
-        @Override
-        protected PrioritizedEsThreadPoolExecutor createThreadPoolExecutor() {
-            return new MockSinglePrioritizingExecutor(nodeName, deterministicTaskQueue);
-        }
-
-        @Override
-        public void onNewClusterState(String source, Supplier<ClusterState> clusterStateSupplier, ClusterApplyListener listener) {
-            if (clusterStateApplyResponse == ClusterStateApplyResponse.HANG) {
-                if (randomBoolean()) {
-                    // apply cluster state, but don't notify listener
-                    super.onNewClusterState(source, clusterStateSupplier, (source1, e) -> {
-                        // ignore result
-                    });
-                }
-            } else {
-                super.onNewClusterState(source, clusterStateSupplier, listener);
-            }
-        }
-
-        @Override
-        protected void connectToNodesAndWait(ClusterState newClusterState) {
-            // don't do anything, and don't block
-        }
-    }
-
     protected DiscoveryNode createDiscoveryNode(int nodeIndex, boolean masterEligible) {
         final TransportAddress address = buildNewFakeTransportAddress();
         return new DiscoveryNode("", "node" + nodeIndex,
             UUIDs.randomBase64UUID(random()), // generated deterministically for repeatable tests
             address.address().getHostString(), address.getAddress(), address, Collections.emptyMap(),
             masterEligible ? DiscoveryNodeRole.BUILT_IN_ROLES : emptySet(), Version.CURRENT);
-    }
-
-    /**
-     * How to behave with a new cluster state
-     */
-    enum ClusterStateApplyResponse {
-        /**
-         * Apply the state (default)
-         */
-        SUCCEED,
-
-        /**
-         * Reject the state with an exception.
-         */
-        FAIL,
-
-        /**
-         * Never respond either way.
-         */
-        HANG,
     }
 
     public ClusterState setValue(ClusterState clusterState, int key, long value) {
