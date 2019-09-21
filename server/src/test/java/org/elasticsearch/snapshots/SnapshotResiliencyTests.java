@@ -1121,6 +1121,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                         new DiscoveryNode(localNode.getName(), getId(), localNode.getAddress(), emptyMap(),
                             localNode.getRoles(), Version.CURRENT), disruption);
                     testClusterNodes.nodes.put(localNode.getName(), restartedNode);
+                    testClusterNodes.disconnectedNodes.remove(restartedNode.localNode.getName());
                     restartedNode.start(oldState);
                 } catch (IOException e) {
                     throw new AssertionError(e);
