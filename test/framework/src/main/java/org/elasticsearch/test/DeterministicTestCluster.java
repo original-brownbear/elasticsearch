@@ -18,11 +18,14 @@
  */
 package org.elasticsearch.test;
 
+import org.apache.logging.log4j.CloseableThreadContext;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.cluster.coordination.AbstractCoordinatorTestCase;
 import org.elasticsearch.cluster.coordination.Coordinator;
 import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.disruption.DisruptableMockTransport;
@@ -34,7 +37,7 @@ import java.util.Set;
 
 import static org.elasticsearch.node.Node.NODE_NAME_SETTING;
 
-public class DeterministicTestCluster {
+public abstract class DeterministicTestCluster implements Releasable {
 
     public final Set<String> disconnectedNodes = new HashSet<>();
 
@@ -44,6 +47,28 @@ public class DeterministicTestCluster {
         deterministicTaskQueue = new DeterministicTaskQueue(
             // TODO does ThreadPool need a node name any more?
             Settings.builder().put(NODE_NAME_SETTING.getKey(), "deterministic-task-queue").build(), random);
+    }
+
+    public static Runnable onNodeLog(DiscoveryNode node, Runnable runnable) {
+        final String nodeId = getNodeIdForLogContext(node);
+        return new Runnable() {
+            @Override
+            public void run() {
+                try (CloseableThreadContext.Instance ignored =
+                         CloseableThreadContext.put(AbstractCoordinatorTestCase.NODE_ID_LOG_CONTEXT_KEY, nodeId)) {
+                    runnable.run();
+                }
+            }
+
+            @Override
+            public String toString() {
+                return nodeId + ": " + runnable.toString();
+            }
+        };
+    }
+
+    public static String getNodeIdForLogContext(DiscoveryNode node) {
+        return "{" + node.getId() + "}{" + node.getEphemeralId() + "}";
     }
 
     public static class DeterministicNode {

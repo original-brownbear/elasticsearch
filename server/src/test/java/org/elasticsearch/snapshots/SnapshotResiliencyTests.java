@@ -92,7 +92,6 @@ import org.elasticsearch.cluster.coordination.ClusterBootstrapService;
 import org.elasticsearch.cluster.coordination.CoordinationMetaData.VotingConfiguration;
 import org.elasticsearch.cluster.coordination.CoordinationState;
 import org.elasticsearch.cluster.coordination.Coordinator;
-import org.elasticsearch.cluster.coordination.CoordinatorTests;
 import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
 import org.elasticsearch.cluster.coordination.ElectionStrategy;
 import org.elasticsearch.cluster.coordination.InMemoryPersistedState;
@@ -234,7 +233,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 (BlobStoreRepository) testClusterNodes.randomMasterNodeSafe().repositoriesService.repository("repo"),
                 Runnable::run);
         } finally {
-            testClusterNodes.nodes.values().forEach(TestClusterNode::stop);
+            testClusterNodes.close();
         }
     }
 
@@ -830,6 +829,11 @@ public class SnapshotResiliencyTests extends ESTestCase {
             assertTrue(master.localNode.isMasterNode());
             return master;
         }
+
+        @Override
+        public void close() {
+            nodes.values().forEach(TestClusterNode::stop);
+        }
     }
 
     private final class TestClusterNode extends DeterministicTestCluster.DeterministicNode {
@@ -878,6 +882,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         // don't do anything, and don't block
                     }
                 });
+            clusterService.setNodeConnectionsService(
+                new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(), transportService));
             mockTransport = new DisruptableMockTransport(node, logger) {
                 @Override
                 protected ConnectionStatus getConnectionStatus(DiscoveryNode destination) {
@@ -894,7 +900,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
                 @Override
                 protected void execute(Runnable runnable) {
-                    scheduleNow(CoordinatorTests.onNodeLog(getLocalNode(), runnable));
+                    scheduleNow(DeterministicTestCluster.onNodeLog(getLocalNode(), runnable));
                 }
 
                 @Override
@@ -903,7 +909,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 }
             };
             transportService = mockTransport.createTransportService(
-                nodeSettings, deterministicTaskQueue.getThreadPool(runnable -> CoordinatorTests.onNodeLog(node, runnable)),
+                nodeSettings, deterministicTaskQueue.getThreadPool(runnable -> DeterministicTestCluster.onNodeLog(node, runnable)),
                 new TransportInterceptor() {
                     @Override
                     public <T extends TransportRequest> TransportRequestHandler<T> interceptHandler(String action, String executor,
@@ -1168,8 +1174,6 @@ public class SnapshotResiliencyTests extends ESTestCase {
             masterService.setClusterStatePublisher(coordinator);
             coordinator.start();
             masterService.start();
-            clusterService.getClusterApplierService().setNodeConnectionsService(
-                new NodeConnectionsService(clusterService.getSettings(), threadPool, transportService));
             clusterService.getClusterApplierService().start();
             indicesService.start();
             indicesClusterStateService.start();

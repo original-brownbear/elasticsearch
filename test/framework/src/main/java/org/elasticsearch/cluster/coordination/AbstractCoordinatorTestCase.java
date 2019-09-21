@@ -19,7 +19,6 @@
 package org.elasticsearch.cluster.coordination;
 
 import com.carrotsearch.randomizedtesting.RandomizedContext;
-import org.apache.logging.log4j.CloseableThreadContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.ElasticsearchException;
@@ -50,7 +49,6 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
@@ -231,7 +229,7 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
             // then wait for the new leader to commit a state without the old leader
             + DEFAULT_CLUSTER_STATE_UPDATE_DELAY;
 
-    class Cluster extends DeterministicTestCluster implements Releasable {
+    class Cluster extends DeterministicTestCluster {
 
         static final long EXTREME_DELAY_VARIABILITY = 10000L;
         static final long DEFAULT_DELAY_VARIABILITY = 100L;
@@ -1176,27 +1174,6 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
     }
 
     public static final String NODE_ID_LOG_CONTEXT_KEY = "nodeId";
-
-    protected static String getNodeIdForLogContext(DiscoveryNode node) {
-        return "{" + node.getId() + "}{" + node.getEphemeralId() + "}";
-    }
-
-    public static Runnable onNodeLog(DiscoveryNode node, Runnable runnable) {
-        final String nodeId = getNodeIdForLogContext(node);
-        return new Runnable() {
-            @Override
-            public void run() {
-                try (CloseableThreadContext.Instance ignored = CloseableThreadContext.put(NODE_ID_LOG_CONTEXT_KEY, nodeId)) {
-                    runnable.run();
-                }
-            }
-
-            @Override
-            public String toString() {
-                return nodeId + ": " + runnable.toString();
-            }
-        };
-    }
 
     static class AckCollector implements ClusterStatePublisher.AckListener {
 

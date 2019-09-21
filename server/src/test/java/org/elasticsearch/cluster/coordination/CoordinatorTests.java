@@ -42,6 +42,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.discovery.DiscoveryModule;
 import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.test.DeterministicTestCluster;
 import org.elasticsearch.test.MockLogAppender;
 
 import java.io.IOException;
@@ -1233,8 +1234,8 @@ public class CoordinatorTests extends AbstractCoordinatorTestCase {
                                 startsWith("master not discovered or elected yet, an election requires at least 2 nodes with ids from ["));
 
                             final List<ClusterNode> matchingNodes = cluster.clusterNodes.stream()
-                                .filter(n -> event.getContextData().<String>getValue(NODE_ID_LOG_CONTEXT_KEY)
-                                    .equals(getNodeIdForLogContext(n.getLocalNode()))).collect(Collectors.toList());
+                                .filter(n -> event.getContextData().<String>getValue(NODE_ID_LOG_CONTEXT_KEY).equals(
+                                    DeterministicTestCluster.getNodeIdForLogContext(n.getLocalNode()))).collect(Collectors.toList());
                             assertThat(matchingNodes, hasSize(1));
 
                             assertTrue(Regex.simpleMatch(
