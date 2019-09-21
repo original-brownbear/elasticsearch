@@ -21,7 +21,6 @@ package org.elasticsearch.cluster.coordination;
 import com.carrotsearch.randomizedtesting.RandomizedContext;
 import org.apache.logging.log4j.CloseableThreadContext;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
@@ -66,12 +65,12 @@ import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.gateway.MetaStateService;
 import org.elasticsearch.gateway.MockGatewayMetaState;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.test.DeterministicTestCluster;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.disruption.DisruptableMockTransport;
 import org.elasticsearch.test.disruption.DisruptableMockTransport.ConnectionStatus;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportInterceptor;
-import org.elasticsearch.transport.TransportService;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.IsCollectionContaining;
 import org.junit.After;
@@ -122,7 +121,6 @@ import static org.elasticsearch.cluster.coordination.NoMasterBlockService.NO_MAS
 import static org.elasticsearch.cluster.coordination.Reconfigurator.CLUSTER_AUTO_SHRINK_VOTING_CONFIGURATION;
 import static org.elasticsearch.discovery.PeerFinder.DISCOVERY_FIND_PEERS_INTERVAL_SETTING;
 import static org.elasticsearch.gateway.GatewayService.STATE_NOT_RECOVERED_BLOCK;
-import static org.elasticsearch.node.Node.NODE_NAME_SETTING;
 import static org.elasticsearch.transport.TransportService.NOOP_TRANSPORT_INTERCEPTOR;
 import static org.elasticsearch.transport.TransportSettings.CONNECT_TIMEOUT;
 import static org.hamcrest.Matchers.empty;
@@ -233,20 +231,16 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
             // then wait for the new leader to commit a state without the old leader
             + DEFAULT_CLUSTER_STATE_UPDATE_DELAY;
 
-    class Cluster implements Releasable {
+    class Cluster extends DeterministicTestCluster implements Releasable {
 
         static final long EXTREME_DELAY_VARIABILITY = 10000L;
         static final long DEFAULT_DELAY_VARIABILITY = 100L;
 
         final List<ClusterNode> clusterNodes;
-        final DeterministicTaskQueue deterministicTaskQueue = new DeterministicTaskQueue(
-            // TODO does ThreadPool need a node name any more?
-            Settings.builder().put(NODE_NAME_SETTING.getKey(), "deterministic-task-queue").build(), random());
         private boolean disruptStorage;
 
         final VotingConfiguration initialConfiguration;
 
-        private final Set<String> disconnectedNodes = new HashSet<>();
         private final Set<String> blackholedNodes = new HashSet<>();
         private final Set<Tuple<String,String>> blackholedConnections = new HashSet<>();
         private final Map<Long, ClusterState> committedStatesByVersion = new HashMap<>();
@@ -263,6 +257,7 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
         }
 
         Cluster(int initialNodeCount, boolean allNodesMasterEligible, Settings nodeSettings) {
+            super(random());
             deterministicTaskQueue.setExecutionDelayVariabilityMillis(DEFAULT_DELAY_VARIABILITY);
 
             assertThat(initialNodeCount, greaterThan(0));
@@ -841,19 +836,12 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
             }
         }
 
-        class ClusterNode {
-            private final Logger logger = LogManager.getLogger(ClusterNode.class);
-
+        class ClusterNode extends DeterministicNode {
             private final int nodeIndex;
-            Coordinator coordinator;
-            private final DiscoveryNode localNode;
             final MockPersistedState persistedState;
-            final Settings nodeSettings;
             private AckedFakeThreadPoolMasterService masterService;
             private DisruptableClusterApplierService clusterApplierService;
-            private ClusterService clusterService;
-            TransportService transportService;
-            private DisruptableMockTransport mockTransport;
+
             List<BiConsumer<DiscoveryNode, ClusterState>> extraJoinValidators = new ArrayList<>();
 
             ClusterNode(int nodeIndex, boolean masterEligible, Settings nodeSettings) {
@@ -861,10 +849,13 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
             }
 
             ClusterNode(int nodeIndex, DiscoveryNode localNode, Function<DiscoveryNode, MockPersistedState> persistedStateSupplier,
-                        Settings nodeSettings) {
+                Settings nodeSettings) {
+                super(nodeSettings.hasValue(DiscoveryModule.DISCOVERY_TYPE_SETTING.getKey()) ?
+                        nodeSettings : Settings.builder().put(nodeSettings)
+                        .putList(ClusterBootstrapService.INITIAL_MASTER_NODES_SETTING.getKey(),
+                            ClusterBootstrapService.INITIAL_MASTER_NODES_SETTING.get(Settings.EMPTY)).build(), // suppress auto-bootstrap
+                    localNode, LogManager.getLogger(ClusterNode.class));
                 this.nodeIndex = nodeIndex;
-                this.localNode = localNode;
-                this.nodeSettings = nodeSettings;
                 persistedState = persistedStateSupplier.apply(localNode);
                 assertTrue("must use a fresh PersistedState", openPersistedStates.add(persistedState));
                 boolean success = false;
@@ -896,33 +887,27 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
                             .filter(transport -> transport.getLocalNode().getAddress().equals(address)).findAny();
                     }
                 };
-
-                final Settings settings = nodeSettings.hasValue(DiscoveryModule.DISCOVERY_TYPE_SETTING.getKey()) ?
-                    nodeSettings : Settings.builder().put(nodeSettings)
-                    .putList(ClusterBootstrapService.INITIAL_MASTER_NODES_SETTING.getKey(),
-                        ClusterBootstrapService.INITIAL_MASTER_NODES_SETTING.get(Settings.EMPTY)).build(); // suppress auto-bootstrap
                 transportService = mockTransport.createTransportService(
-                    settings, deterministicTaskQueue.getThreadPool(this::onNode),
+                    nodeSettings, deterministicTaskQueue.getThreadPool(this::onNode),
                     getTransportInterceptor(localNode, deterministicTaskQueue.getThreadPool(this::onNode)),
                     a -> localNode, null, emptySet());
                 masterService = new AckedFakeThreadPoolMasterService(localNode.getId(), "test",
                     runnable -> deterministicTaskQueue.scheduleNow(onNode(runnable)));
-                final ClusterSettings clusterSettings = new ClusterSettings(settings, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS);
-                clusterApplierService = new DisruptableClusterApplierService(localNode.getId(), settings, clusterSettings,
+                clusterApplierService = new DisruptableClusterApplierService(localNode.getId(), nodeSettings, clusterSettings,
                     deterministicTaskQueue, this::onNode);
-                clusterService = new ClusterService(settings, clusterSettings, masterService, clusterApplierService);
+                clusterService = new ClusterService(nodeSettings, clusterSettings, masterService, clusterApplierService);
                 clusterService.setNodeConnectionsService(
                     new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(this::onNode),
                         transportService));
                 final Collection<BiConsumer<DiscoveryNode, ClusterState>> onJoinValidators =
                     Collections.singletonList((dn, cs) -> extraJoinValidators.forEach(validator -> validator.accept(dn, cs)));
                 final AllocationService allocationService = ESAllocationTestCase.createAllocationService(Settings.EMPTY);
-                coordinator = new Coordinator("test_node", settings, clusterSettings, transportService, writableRegistry(),
+                coordinator = new Coordinator("test_node", nodeSettings, clusterSettings, transportService, writableRegistry(),
                     allocationService, masterService, this::getPersistedState,
                     Cluster.this::provideSeedHosts, clusterApplierService, onJoinValidators, Randomness.get(), (s, p, r) -> {},
                     getElectionStrategy());
                 masterService.setClusterStatePublisher(coordinator);
-                final GatewayService gatewayService = new GatewayService(settings, allocationService, clusterService,
+                final GatewayService gatewayService = new GatewayService(nodeSettings, allocationService, clusterService,
                     deterministicTaskQueue.getThreadPool(this::onNode), coordinator, null);
 
                 logger.trace("starting up [{}]", localNode);
