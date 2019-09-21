@@ -161,7 +161,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.FetchPhase;
 import org.elasticsearch.snapshots.mockstore.MockEventuallyConsistentRepository;
 import org.elasticsearch.test.DeterministicTestCluster;
-import org.elasticsearch.test.ESTestCase;
+import org.elasticsearch.test.ESDeterministicTestCase;
 import org.elasticsearch.test.disruption.DisruptableMockTransport;
 import org.elasticsearch.test.disruption.NetworkDisruption;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -203,7 +203,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.Mockito.mock;
 
-public class SnapshotResiliencyTests extends ESTestCase {
+public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
     private TestClusterNodes testClusterNodes;
 
@@ -737,7 +737,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         }
 
         private TestClusterNode newNode(String nodeName, DiscoveryNodeRole role) throws IOException {
-            return new TestClusterNode(deterministicTaskQueue,
+            return new TestClusterNode(nextNodeIndex.getAndIncrement(), deterministicTaskQueue,
                 new DiscoveryNode(nodeName, randomAlphaOfLength(10), buildNewFakeTransportAddress(), emptyMap(),
                     Collections.singleton(role), Version.CURRENT), this::getDisruption);
         }
@@ -855,9 +855,9 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         private final Supplier<NetworkDisruption.DisruptedLinks> disruption;
 
-        TestClusterNode(DeterministicTaskQueue deterministicTaskQueue, DiscoveryNode node,
+        TestClusterNode(int nodeIndex, DeterministicTaskQueue deterministicTaskQueue, DiscoveryNode node,
                         Supplier<NetworkDisruption.DisruptedLinks> disruption) throws IOException {
-            super(createEnvironment(node.getName()).settings(), node, LogManager.getLogger(TestClusterNode.class));
+            super(nodeIndex, createEnvironment(node.getName()).settings(), node, LogManager.getLogger(TestClusterNode.class));
             this.disruption = disruption;
             final Environment environment = createEnvironment(node.getName());
             masterService = new FakeThreadPoolMasterService(node.getName(), "test", deterministicTaskQueue::scheduleNow);
@@ -1127,8 +1127,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
             testClusterNodes.nodes.remove(localNode.getName());
             scheduleSoon(() -> {
                 try {
-                    final TestClusterNode restartedNode = new TestClusterNode(testClusterNodes.deterministicTaskQueue,
-                        new DiscoveryNode(localNode.getName(), localNode.getId(), localNode.getAddress(), emptyMap(),
+                    final TestClusterNode restartedNode = new TestClusterNode(nodeIndex, testClusterNodes.deterministicTaskQueue,
+                        new DiscoveryNode(localNode.getName(), getId(), localNode.getAddress(), emptyMap(),
                             localNode.getRoles(), Version.CURRENT), disruption);
                     testClusterNodes.nodes.put(localNode.getName(), restartedNode);
                     restartedNode.start(oldState);

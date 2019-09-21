@@ -64,7 +64,7 @@ import org.elasticsearch.gateway.MetaStateService;
 import org.elasticsearch.gateway.MockGatewayMetaState;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.test.DeterministicTestCluster;
-import org.elasticsearch.test.ESTestCase;
+import org.elasticsearch.test.ESDeterministicTestCase;
 import org.elasticsearch.test.disruption.DisruptableMockTransport;
 import org.elasticsearch.test.disruption.DisruptableMockTransport.ConnectionStatus;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -87,7 +87,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -132,17 +131,10 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
-public class AbstractCoordinatorTestCase extends ESTestCase {
+public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
 
     protected final List<NodeEnvironment> nodeEnvironments = new ArrayList<>();
     protected final Set<Cluster.MockPersistedState> openPersistedStates = new HashSet<>();
-
-    protected final AtomicInteger nextNodeIndex = new AtomicInteger();
-
-    @Before
-    public void resetNodeIndexBeforeEachTest() {
-        nextNodeIndex.set(0);
-    }
 
     @After
     public void closeNodeEnvironmentsAfterEachTest() {
@@ -835,7 +827,6 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
         }
 
         class ClusterNode extends DeterministicNode {
-            private final int nodeIndex;
             final MockPersistedState persistedState;
             private AckedFakeThreadPoolMasterService masterService;
             private DisruptableClusterApplierService clusterApplierService;
@@ -848,12 +839,12 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
 
             ClusterNode(int nodeIndex, DiscoveryNode localNode, Function<DiscoveryNode, MockPersistedState> persistedStateSupplier,
                 Settings nodeSettings) {
-                super(nodeSettings.hasValue(DiscoveryModule.DISCOVERY_TYPE_SETTING.getKey()) ?
+                super(nodeIndex,
+                    nodeSettings.hasValue(DiscoveryModule.DISCOVERY_TYPE_SETTING.getKey()) ?
                         nodeSettings : Settings.builder().put(nodeSettings)
                         .putList(ClusterBootstrapService.INITIAL_MASTER_NODES_SETTING.getKey(),
                             ClusterBootstrapService.INITIAL_MASTER_NODES_SETTING.get(Settings.EMPTY)).build(), // suppress auto-bootstrap
                     localNode, LogManager.getLogger(ClusterNode.class));
-                this.nodeIndex = nodeIndex;
                 persistedState = persistedStateSupplier.apply(localNode);
                 assertTrue("must use a fresh PersistedState", openPersistedStates.add(persistedState));
                 boolean success = false;
@@ -949,10 +940,6 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
 
             private CoordinationState.PersistedState getPersistedState() {
                 return persistedState;
-            }
-
-            String getId() {
-                return localNode.getId();
             }
 
             DiscoveryNode getLocalNode() {

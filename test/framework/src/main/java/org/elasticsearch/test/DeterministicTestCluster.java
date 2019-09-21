@@ -73,6 +73,8 @@ public abstract class DeterministicTestCluster implements Releasable {
 
     public abstract static class DeterministicNode implements Releasable {
 
+        protected final int nodeIndex;
+
         public final Settings nodeSettings;
 
         public final ClusterSettings clusterSettings;
@@ -89,11 +91,16 @@ public abstract class DeterministicTestCluster implements Releasable {
 
         public TransportService transportService;
 
-        public DeterministicNode(Settings nodeSettings, DiscoveryNode localNode, Logger logger) {
+        public DeterministicNode(int nodeIndex, Settings nodeSettings, DiscoveryNode localNode, Logger logger) {
+            this.nodeIndex = nodeIndex;
             this.nodeSettings = nodeSettings;
             this.localNode = localNode;
             clusterSettings = new ClusterSettings(nodeSettings, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS);
             this.logger = logger;
+        }
+
+        public String getId() {
+            return localNode.getId();
         }
     }
 }
