@@ -714,7 +714,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
             for (int i = 0; i < masterNodes; ++i) {
                 nodes.computeIfAbsent("node" + i, nodeName -> {
                     try {
-                        return newMasterNode(nodeName);
+                        return newNode(nodeName, DiscoveryNodeRole.MASTER_ROLE);
                     } catch (IOException e) {
                         throw new AssertionError(e);
                     }
@@ -723,7 +723,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
             for (int i = 0; i < dataNodes; ++i) {
                 nodes.computeIfAbsent("data-node" + i, nodeName -> {
                     try {
-                        return newDataNode(nodeName);
+                        return newNode(nodeName, DiscoveryNodeRole.DATA_ROLE);
                     } catch (IOException e) {
                         throw new AssertionError(e);
                     }
@@ -734,14 +734,6 @@ public class SnapshotResiliencyTests extends ESTestCase {
         public TestClusterNode nodeById(final String nodeId) {
             return nodes.values().stream().filter(n -> n.localNode.getId().equals(nodeId)).findFirst()
                 .orElseThrow(() -> new AssertionError("Could not find node by id [" + nodeId + ']'));
-        }
-
-        private TestClusterNode newMasterNode(String nodeName) throws IOException {
-            return newNode(nodeName, DiscoveryNodeRole.MASTER_ROLE);
-        }
-
-        private TestClusterNode newDataNode(String nodeName) throws IOException {
-            return newNode(nodeName, DiscoveryNodeRole.DATA_ROLE);
         }
 
         private TestClusterNode newNode(String nodeName, DiscoveryNodeRole role) throws IOException {
@@ -762,7 +754,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         }
 
         public void stopNode(TestClusterNode node) {
-            node.stop();
+            node.close();
             nodes.remove(node.localNode.getName());
         }
 
@@ -832,7 +824,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         @Override
         public void close() {
-            nodes.values().forEach(TestClusterNode::stop);
+            nodes.values().forEach(TestClusterNode::close);
         }
     }
 
@@ -1131,7 +1123,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         public void restart() {
             testClusterNodes.disconnectNode(this);
             final ClusterState oldState = this.clusterService.state();
-            stop();
+            close();
             testClusterNodes.nodes.remove(localNode.getName());
             scheduleSoon(() -> {
                 try {
@@ -1146,7 +1138,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
             });
         }
 
-        public void stop() {
+        @Override
+        public void close() {
             testClusterNodes.disconnectNode(this);
             indicesService.close();
             clusterService.close();

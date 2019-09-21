@@ -71,7 +71,7 @@ public abstract class DeterministicTestCluster implements Releasable {
         return "{" + node.getId() + "}{" + node.getEphemeralId() + "}";
     }
 
-    public static class DeterministicNode {
+    public abstract static class DeterministicNode implements Releasable {
 
         public final Settings nodeSettings;
 

@@ -917,7 +917,8 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
                 coordinator.startInitialJoin();
             }
 
-            void close() {
+            @Override
+            public void close() {
                 assertThat("must add nodes to a cluster before closing them", clusterNodes, hasItem(ClusterNode.this));
                 onNode(() -> {
                     logger.trace("closing");
