@@ -59,11 +59,8 @@ import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.gateway.MetaStateService;
 import org.elasticsearch.gateway.MockGatewayMetaState;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.test.DeterministicTestCluster;
 import org.elasticsearch.test.ESDeterministicTestCase;
 import org.elasticsearch.test.disruption.DisruptableMockTransport.ConnectionStatus;
-import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.TransportInterceptor;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.IsCollectionContaining;
 import org.junit.After;
@@ -112,7 +109,6 @@ import static org.elasticsearch.cluster.coordination.NoMasterBlockService.NO_MAS
 import static org.elasticsearch.cluster.coordination.Reconfigurator.CLUSTER_AUTO_SHRINK_VOTING_CONFIGURATION;
 import static org.elasticsearch.discovery.PeerFinder.DISCOVERY_FIND_PEERS_INTERVAL_SETTING;
 import static org.elasticsearch.gateway.GatewayService.STATE_NOT_RECOVERED_BLOCK;
-import static org.elasticsearch.transport.TransportService.NOOP_TRANSPORT_INTERCEPTOR;
 import static org.elasticsearch.transport.TransportSettings.CONNECT_TIMEOUT;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -850,11 +846,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
             }
 
             private void setUp() {
-                mockTransport = mockTransport(this, () -> Cluster.this);
-                transportService = mockTransport.createTransportService(
-                    nodeSettings, deterministicTaskQueue.getThreadPool(this::onNode),
-                    getTransportInterceptor(localNode, deterministicTaskQueue.getThreadPool(this::onNode)),
-                    a -> localNode, null, emptySet());
                 masterService = new AckedFakeThreadPoolMasterService(localNode.getId(), "test",
                     runnable -> deterministicTaskQueue.scheduleNow(onNode(runnable)));
                 clusterApplierService = new DisruptableClusterApplierService(localNode.getId(), nodeSettings, clusterSettings,
@@ -1127,10 +1118,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
             return seedHostsList != null ? seedHostsList
                 : clusterNodes.stream().map(ClusterNode::getLocalNode).map(DiscoveryNode::getAddress).collect(Collectors.toList());
         }
-    }
-
-    protected TransportInterceptor getTransportInterceptor(DiscoveryNode localNode, ThreadPool threadPool) {
-        return NOOP_TRANSPORT_INTERCEPTOR;
     }
 
     protected ElectionStrategy getElectionStrategy() {

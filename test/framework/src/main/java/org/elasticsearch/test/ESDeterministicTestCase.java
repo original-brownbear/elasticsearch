@@ -18,29 +18,48 @@
  */
 package org.elasticsearch.test;
 
+import org.apache.logging.log4j.CloseableThreadContext;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cluster.ClusterModule;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.coordination.AbstractCoordinatorTestCase;
+import org.elasticsearch.cluster.coordination.Coordinator;
 import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
 import org.elasticsearch.cluster.coordination.MockSinglePrioritizingExecutor;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterApplierService;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 import org.elasticsearch.env.NodeEnvironment;
+import org.elasticsearch.test.disruption.DisruptableMockTransport;
+import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportInterceptor;
+import org.elasticsearch.transport.TransportService;
 import org.junit.After;
 import org.junit.Before;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Collections.emptySet;
+import static org.elasticsearch.node.Node.NODE_NAME_SETTING;
+import static org.elasticsearch.transport.TransportService.NOOP_TRANSPORT_INTERCEPTOR;
 
 public class ESDeterministicTestCase extends ESTestCase {
 
@@ -82,6 +101,14 @@ public class ESDeterministicTestCase extends ESTestCase {
          * Never respond either way.
          */
         HANG,
+    }
+
+    protected TransportInterceptor getTransportInterceptor(DiscoveryNode localNode, ThreadPool threadPool) {
+        return NOOP_TRANSPORT_INTERCEPTOR;
+    }
+
+    public static String getNodeIdForLogContext(DiscoveryNode node) {
+        return "{" + node.getId() + "}{" + node.getEphemeralId() + "}";
     }
 
     public static class DisruptableClusterApplierService extends ClusterApplierService {
@@ -132,6 +159,107 @@ public class ESDeterministicTestCase extends ESTestCase {
         @Override
         protected void connectToNodesAndWait(ClusterState newClusterState) {
             // don't do anything, and don't block
+        }
+    }
+
+    public abstract class DeterministicTestCluster implements Releasable {
+
+        public final Set<String> disconnectedNodes = new HashSet<>();
+
+        public final DeterministicTaskQueue deterministicTaskQueue;
+
+        public DeterministicTestCluster(Random random) {
+            deterministicTaskQueue = new DeterministicTaskQueue(
+                // TODO does ThreadPool need a node name any more?
+                Settings.builder().put(NODE_NAME_SETTING.getKey(), "deterministic-task-queue").build(), random);
+        }
+
+        public Runnable onNodeLog(DiscoveryNode node, Runnable runnable) {
+            final String nodeId = getNodeIdForLogContext(node);
+            return new Runnable() {
+                @Override
+                public void run() {
+                    try (CloseableThreadContext.Instance ignored =
+                             CloseableThreadContext.put(AbstractCoordinatorTestCase.NODE_ID_LOG_CONTEXT_KEY, nodeId)) {
+                        runnable.run();
+                    }
+                }
+
+                @Override
+                public String toString() {
+                    return nodeId + ": " + runnable.toString();
+                }
+            };
+        }
+
+        protected abstract DisruptableMockTransport.ConnectionStatus getConnectionStatus(DiscoveryNode sender, DiscoveryNode destination);
+
+        protected abstract Stream<? extends DeterministicNode> allNodes();
+
+        public abstract class DeterministicNode implements Releasable {
+
+            protected final int nodeIndex;
+
+            public final Settings nodeSettings;
+
+            public final ClusterSettings clusterSettings;
+
+            public final DiscoveryNode localNode;
+
+            protected final Logger logger;
+
+            public Coordinator coordinator;
+
+            protected final DisruptableMockTransport mockTransport;
+
+            public ClusterService clusterService;
+
+            public TransportService transportService;
+
+            public DeterministicNode(int nodeIndex, Settings nodeSettings, DiscoveryNode localNode, Logger logger) {
+                this.nodeIndex = nodeIndex;
+                this.nodeSettings = nodeSettings;
+                this.localNode = localNode;
+                clusterSettings = new ClusterSettings(nodeSettings, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS);
+                this.logger = logger;
+                mockTransport = mockTransport(this);
+                transportService = mockTransport.createTransportService(
+                    nodeSettings, deterministicTaskQueue.getThreadPool(this::onNode),
+                    getTransportInterceptor(localNode, deterministicTaskQueue.getThreadPool(this::onNode)),
+                    a -> localNode, null, emptySet());
+            }
+
+            public String getId() {
+                return localNode.getId();
+            }
+
+            protected abstract Runnable onNode(Runnable runnable);
+
+            private DisruptableMockTransport mockTransport(DeterministicNode node) {
+                return new DisruptableMockTransport(node.localNode, node.logger) {
+                    @Override
+                    protected ConnectionStatus getConnectionStatus(DiscoveryNode destination) {
+                        return DeterministicTestCluster.this.getConnectionStatus(getLocalNode(), destination);
+                    }
+
+                    @Override
+                    protected Optional<DisruptableMockTransport> getDisruptableMockTransport(TransportAddress address) {
+                        return DeterministicTestCluster.this.allNodes().map(cn -> cn.mockTransport)
+                            .filter(transport -> transport.getLocalNode().getAddress().equals(address))
+                            .findAny();
+                    }
+
+                    @Override
+                    protected void execute(Runnable runnable) {
+                        DeterministicTestCluster.this.deterministicTaskQueue.scheduleNow(node.onNode(runnable));
+                    }
+
+                    @Override
+                    protected NamedWriteableRegistry writeableRegistry() {
+                        return namedWriteableRegistry;
+                    }
+                };
+            }
         }
     }
 }

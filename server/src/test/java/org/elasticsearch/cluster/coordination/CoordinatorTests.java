@@ -42,7 +42,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.discovery.DiscoveryModule;
 import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.test.DeterministicTestCluster;
 import org.elasticsearch.test.MockLogAppender;
 
 import java.io.IOException;
@@ -1235,7 +1234,7 @@ public class CoordinatorTests extends AbstractCoordinatorTestCase {
 
                             final List<ClusterNode> matchingNodes = cluster.clusterNodes.stream()
                                 .filter(n -> event.getContextData().<String>getValue(NODE_ID_LOG_CONTEXT_KEY).equals(
-                                    DeterministicTestCluster.getNodeIdForLogContext(n.getLocalNode()))).collect(Collectors.toList());
+                                    getNodeIdForLogContext(n.getLocalNode()))).collect(Collectors.toList());
                             assertThat(matchingNodes, hasSize(1));
 
                             assertTrue(Regex.simpleMatch(

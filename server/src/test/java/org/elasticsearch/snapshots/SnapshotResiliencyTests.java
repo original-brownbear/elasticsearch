@@ -153,7 +153,6 @@ import org.elasticsearch.search.SearchService;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.FetchPhase;
 import org.elasticsearch.snapshots.mockstore.MockEventuallyConsistentRepository;
-import org.elasticsearch.test.DeterministicTestCluster;
 import org.elasticsearch.test.ESDeterministicTestCase;
 import org.elasticsearch.test.disruption.DisruptableMockTransport;
 import org.elasticsearch.test.disruption.NetworkDisruption;
@@ -199,7 +198,7 @@ import static org.mockito.Mockito.mock;
 
 public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
-    private TestClusterNodes testClusterNodes;
+    private TestCluster testCluster;
 
     private Path tempDir;
 
@@ -224,10 +223,10 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 blobStoreContext.forceConsistent();
             }
             BlobStoreTestUtil.assertConsistency(
-                (BlobStoreRepository) testClusterNodes.randomMasterNodeSafe().repositoriesService.repository("repo"),
+                (BlobStoreRepository) testCluster.randomMasterNodeSafe().repositoriesService.repository("repo"),
                 Runnable::run);
         } finally {
-            testClusterNodes.close();
+            testCluster.close();
         }
     }
 
@@ -240,8 +239,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         final int shards = randomIntBetween(1, 10);
         final int documents = randomIntBetween(0, 100);
 
-        final TestClusterNode masterNode =
-            testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+        final TestCluster.TestClusterNode masterNode =
+            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
 
         final StepListener<CreateSnapshotResponse> createSnapshotResponseListener = new StepListener<>();
 
@@ -313,8 +312,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         final String index = "test";
         final int shards = randomIntBetween(1, 10);
 
-        TestClusterNode masterNode =
-            testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+        TestCluster.TestClusterNode masterNode =
+            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
 
         final StepListener<CreateSnapshotResponse> createSnapshotResponseStepListener = new StepListener<>();
 
@@ -323,7 +322,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 scheduleNow(this::disconnectRandomDataNode);
             }
             if (randomBoolean()) {
-                scheduleNow(() -> testClusterNodes.clearNetworkDisruptions());
+                scheduleNow(() -> testCluster.clearNetworkDisruptions());
             }
             masterNode.client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName).execute(createSnapshotResponseStepListener);
         });
@@ -337,20 +336,20 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 scheduleNow(this::disconnectOrRestartMasterNode);
             }
             if (disconnectedMaster || randomBoolean()) {
-                scheduleSoon(() -> testClusterNodes.clearNetworkDisruptions());
+                scheduleSoon(() -> testCluster.clearNetworkDisruptions());
             } else if (randomBoolean()) {
-                scheduleNow(() -> testClusterNodes.clearNetworkDisruptions());
+                scheduleNow(() -> testCluster.clearNetworkDisruptions());
             }
         });
 
-        runUntil(() -> testClusterNodes.randomMasterNode().map(master -> {
+        runUntil(() -> testCluster.randomMasterNode().map(master -> {
             final SnapshotsInProgress snapshotsInProgress = master.clusterService.state().custom(SnapshotsInProgress.TYPE);
             return snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty();
         }).orElse(false), TimeUnit.MINUTES.toMillis(1L));
 
         clearDisruptionsAndAwaitSync();
 
-        final TestClusterNode randomMaster = testClusterNodes.randomMasterNode()
+        final TestCluster.TestClusterNode randomMaster = testCluster.randomMasterNode()
             .orElseThrow(() -> new AssertionError("expected to find at least one active master node"));
         SnapshotsInProgress finalSnapshotsInProgress = randomMaster.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
@@ -367,8 +366,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         final String index = "test";
         final int shards = randomIntBetween(1, 10);
 
-        TestClusterNode masterNode =
-            testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+        TestCluster.TestClusterNode masterNode =
+            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
 
         final StepListener<CreateSnapshotResponse> createSnapshotResponseStepListener = new StepListener<>();
 
@@ -388,7 +387,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         continueOrDie(createAnotherSnapshotResponseStepListener, createSnapshotResponse ->
             assertEquals(createSnapshotResponse.getSnapshotInfo().state(), SnapshotState.SUCCESS));
 
-        testClusterNodes.deterministicTaskQueue.runAllRunnableTasks();
+        testCluster.deterministicTaskQueue.runAllRunnableTasks();
 
         assertNotNull(createAnotherSnapshotResponseStepListener.result());
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
@@ -418,8 +417,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         final int shards = randomIntBetween(1, 10);
 
-        final TestClusterNode masterNode =
-            testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+        final TestCluster.TestClusterNode masterNode =
+            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
         final AtomicBoolean createdSnapshot = new AtomicBoolean();
         final AdminClient masterAdminClient = masterNode.client.admin();
 
@@ -430,9 +429,9 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         continueOrDie(clusterStateResponseStepListener, clusterStateResponse -> {
             final ShardRouting shardToRelocate = clusterStateResponse.getState().routingTable().allShards(index).get(0);
-            final TestClusterNode currentPrimaryNode = testClusterNodes.nodeById(shardToRelocate.currentNodeId());
-            final TestClusterNode otherNode = testClusterNodes.randomDataNodeSafe(currentPrimaryNode.localNode.getName());
-            scheduleNow(() -> testClusterNodes.stopNode(currentPrimaryNode));
+            final TestCluster.TestClusterNode currentPrimaryNode = testCluster.nodeById(shardToRelocate.currentNodeId());
+            final TestCluster.TestClusterNode otherNode = testCluster.randomDataNodeSafe(currentPrimaryNode.localNode.getName());
+            scheduleNow(() -> testCluster.stopNode(currentPrimaryNode));
             scheduleNow(new Runnable() {
                 @Override
                 public void run() {
@@ -443,16 +442,16 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                             updatedClusterState.getState().routingTable().shardRoutingTable(shardToRelocate.shardId()).primaryShard();
                         if (shardRouting.unassigned() && shardRouting.unassignedInfo().getReason() == UnassignedInfo.Reason.NODE_LEFT) {
                             if (masterNodeCount > 1) {
-                                scheduleNow(() -> testClusterNodes.stopNode(masterNode));
+                                scheduleNow(() -> testCluster.stopNode(masterNode));
                             }
-                            testClusterNodes.randomDataNodeSafe().client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
+                            testCluster.randomDataNodeSafe().client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
                                 .execute(ActionListener.wrap(() -> {
                                     createdSnapshot.set(true);
-                                    testClusterNodes.randomDataNodeSafe().client.admin().cluster().deleteSnapshot(
+                                    testCluster.randomDataNodeSafe().client.admin().cluster().deleteSnapshot(
                                         new DeleteSnapshotRequest(repoName, snapshotName), noopListener());
                                 }));
                             scheduleNow(
-                                () -> testClusterNodes.randomMasterNodeSafe().client.admin().cluster().reroute(
+                                () -> testCluster.randomMasterNodeSafe().client.admin().cluster().reroute(
                                     new ClusterRerouteRequest().add(new AllocateEmptyPrimaryAllocationCommand(
                                         index, shardRouting.shardId().id(), otherNode.localNode.getName(), true)), noopListener()));
                         } else {
@@ -463,7 +462,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             });
         });
 
-        runUntil(() -> testClusterNodes.randomMasterNode().map(master -> {
+        runUntil(() -> testCluster.randomMasterNode().map(master -> {
             if (createdSnapshot.get() == false) {
                 return false;
             }
@@ -474,7 +473,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         clearDisruptionsAndAwaitSync();
 
         assertTrue(createdSnapshot.get());
-        final SnapshotsInProgress finalSnapshotsInProgress = testClusterNodes.randomDataNodeSafe()
+        final SnapshotsInProgress finalSnapshotsInProgress = testCluster.randomDataNodeSafe()
             .clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = masterNode.repositoriesService.repository(repoName);
@@ -491,8 +490,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         final int shards = randomIntBetween(1, 10);
         final int documents = randomIntBetween(2, 100);
-        TestClusterNode masterNode =
-            testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+        TestCluster.TestClusterNode masterNode =
+            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
 
         final StepListener<CreateSnapshotResponse> createSnapshotResponseStepListener = new StepListener<>();
 
@@ -561,7 +560,35 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         assertEquals(0, snapshotInfo.failedShards());
     }
 
-    private StepListener<CreateIndexResponse> createRepoAndIndex(TestClusterNode masterNode, String repoName, String index, int shards) {
+    @Override
+    protected TransportInterceptor getTransportInterceptor(DiscoveryNode localNode, ThreadPool threadPool) {
+        return new TransportInterceptor() {
+            @Override
+            public <T extends TransportRequest> TransportRequestHandler<T> interceptHandler(String action, String executor,
+                boolean forceExecution, TransportRequestHandler<T> actualHandler) {
+                // TODO: Remove this hack once recoveries are async and can be used in these tests
+                if (action.startsWith("internal:index/shard/recovery")) {
+                    return (request, channel, task) -> scheduleSoon(
+                        new AbstractRunnable() {
+                            @Override
+                            protected void doRun() throws Exception {
+                                channel.sendResponse(new TransportException(new IOException("failed to recover shard")));
+                            }
+
+                            @Override
+                            public void onFailure(final Exception e) {
+                                throw new AssertionError(e);
+                            }
+                        });
+                } else {
+                    return actualHandler;
+                }
+            }
+        };
+    }
+
+    private StepListener<CreateIndexResponse> createRepoAndIndex(TestCluster.TestClusterNode masterNode, String repoName, String index,
+                                                                 int shards) {
         final AdminClient adminClient = masterNode.client.admin();
 
         final StepListener<AcknowledgedResponse> createRepositoryListener = new StepListener<>();
@@ -579,9 +606,9 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
     }
 
     private void clearDisruptionsAndAwaitSync() {
-        testClusterNodes.clearNetworkDisruptions();
+        testCluster.clearNetworkDisruptions();
         runUntil(() -> {
-            final List<Long> versions = testClusterNodes.nodes.values().stream()
+            final List<Long> versions = testCluster.nodes.values().stream()
                 .map(n -> n.clusterService.state().version()).distinct().collect(Collectors.toList());
             return versions.size() == 1L;
         }, TimeUnit.MINUTES.toMillis(1L));
@@ -591,14 +618,14 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         if (randomBoolean()) {
             disconnectRandomDataNode();
         } else {
-            testClusterNodes.randomDataNode().ifPresent(TestClusterNode::restart);
+            testCluster.randomDataNode().ifPresent(TestCluster.TestClusterNode::restart);
         }
     }
 
     private void disconnectOrRestartMasterNode() {
-        testClusterNodes.randomMasterNode().ifPresent(masterNode -> {
+        testCluster.randomMasterNode().ifPresent(masterNode -> {
             if (randomBoolean()) {
-                testClusterNodes.disconnectNode(masterNode);
+                testCluster.disconnectNode(masterNode);
             } else {
                 masterNode.restart();
             }
@@ -606,26 +633,26 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
     }
 
     private void disconnectRandomDataNode() {
-        testClusterNodes.randomDataNode().ifPresent(n -> testClusterNodes.disconnectNode(n));
+        testCluster.randomDataNode().ifPresent(n -> testCluster.disconnectNode(n));
     }
 
     private void startCluster() {
         final ClusterState initialClusterState =
-            new ClusterState.Builder(ClusterName.DEFAULT).nodes(testClusterNodes.discoveryNodes()).build();
-        testClusterNodes.nodes.values().forEach(testClusterNode -> testClusterNode.start(initialClusterState));
+            new ClusterState.Builder(ClusterName.DEFAULT).nodes(testCluster.discoveryNodes()).build();
+        testCluster.nodes.values().forEach(testClusterNode -> testClusterNode.start(initialClusterState));
 
-        testClusterNodes.deterministicTaskQueue.advanceTime();
-        testClusterNodes.deterministicTaskQueue.runAllRunnableTasks();
+        testCluster.deterministicTaskQueue.advanceTime();
+        testCluster.deterministicTaskQueue.runAllRunnableTasks();
 
         final VotingConfiguration votingConfiguration =
-            new VotingConfiguration(testClusterNodes.nodes.values().stream().map(n -> n.localNode)
+            new VotingConfiguration(testCluster.nodes.values().stream().map(n -> n.localNode)
                 .filter(DiscoveryNode::isMasterNode).map(DiscoveryNode::getId).collect(Collectors.toSet()));
-        testClusterNodes.nodes.values().stream().filter(n -> n.localNode.isMasterNode()).forEach(
+        testCluster.nodes.values().stream().filter(n -> n.localNode.isMasterNode()).forEach(
             testClusterNode -> testClusterNode.coordinator.setInitialConfiguration(votingConfiguration));
 
         runUntil(
             () -> {
-                List<String> masterNodeIds = testClusterNodes.nodes.values().stream()
+                List<String> masterNodeIds = testCluster.nodes.values().stream()
                     .map(node -> node.clusterService.state().nodes().getMasterNodeId())
                     .distinct().collect(Collectors.toList());
                 return masterNodeIds.size() == 1 && masterNodeIds.contains(null) == false;
@@ -635,29 +662,29 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
     }
 
     private void runUntil(Supplier<Boolean> fulfilled, long timeout) {
-        final long start = testClusterNodes.deterministicTaskQueue.getCurrentTimeMillis();
-        while (timeout > testClusterNodes.deterministicTaskQueue.getCurrentTimeMillis() - start) {
+        final long start = testCluster.deterministicTaskQueue.getCurrentTimeMillis();
+        while (timeout > testCluster.deterministicTaskQueue.getCurrentTimeMillis() - start) {
             if (fulfilled.get()) {
                 return;
             }
-            testClusterNodes.deterministicTaskQueue.runAllRunnableTasks();
-            testClusterNodes.deterministicTaskQueue.advanceTime();
+            testCluster.deterministicTaskQueue.runAllRunnableTasks();
+            testCluster.deterministicTaskQueue.advanceTime();
         }
         fail("Condition wasn't fulfilled.");
     }
 
     private void setupTestCluster(int masterNodes, int dataNodes) {
-        testClusterNodes = new TestClusterNodes(masterNodes, dataNodes);
+        testCluster = new TestCluster(masterNodes, dataNodes);
         startCluster();
     }
 
     private void scheduleSoon(Runnable runnable) {
-        testClusterNodes.deterministicTaskQueue.scheduleAt(
-            testClusterNodes.deterministicTaskQueue.getCurrentTimeMillis() + randomLongBetween(0, 100L), runnable);
+        testCluster.deterministicTaskQueue.scheduleAt(
+            testCluster.deterministicTaskQueue.getCurrentTimeMillis() + randomLongBetween(0, 100L), runnable);
     }
 
     private void scheduleNow(Runnable runnable) {
-        testClusterNodes.deterministicTaskQueue.scheduleNow(runnable);
+        testCluster.deterministicTaskQueue.scheduleNow(runnable);
     }
 
     private static Settings defaultIndexSettings(int shards) {
@@ -696,14 +723,14 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             state.nodes()).remove(node.getId()).add(node).localNodeId(node.getId())).build();
     }
 
-    private final class TestClusterNodes extends DeterministicTestCluster {
+    private final class TestCluster extends DeterministicTestCluster {
 
         // LinkedHashMap so we have deterministic ordering when iterating over the map in tests
         private final Map<String, TestClusterNode> nodes = new LinkedHashMap<>();
 
         private final DisconnectedNodes disruptedLinks = new DisconnectedNodes();
 
-        TestClusterNodes(int masterNodes, int dataNodes) {
+        TestCluster(int masterNodes, int dataNodes) {
             super((random()));
             for (int i = 0; i < masterNodes; ++i) {
                 nodes.computeIfAbsent("node" + i, nodeName -> {
@@ -742,7 +769,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         public Optional<TestClusterNode> randomMasterNode() {
             // Select from sorted list of data-nodes here to not have deterministic behaviour
-            final List<TestClusterNode> masterNodes = testClusterNodes.nodes.values().stream().filter(n -> n.localNode.isMasterNode())
+            final List<TestClusterNode> masterNodes = testCluster.nodes.values().stream().filter(n -> n.localNode.isMasterNode())
                 .sorted(Comparator.comparing(n -> n.localNode.getName())).collect(Collectors.toList());
             return masterNodes.isEmpty() ? Optional.empty() : Optional.of(randomFrom(masterNodes));
         }
@@ -758,7 +785,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         public Optional<TestClusterNode> randomDataNode(String... excludedNames) {
             // Select from sorted list of data-nodes here to not have deterministic behaviour
-            final List<TestClusterNode> dataNodes = testClusterNodes.nodes.values().stream().filter(n -> n.localNode.isDataNode())
+            final List<TestClusterNode> dataNodes = testCluster.nodes.values().stream().filter(n -> n.localNode.isDataNode())
                 .filter(n -> {
                     for (final String nodeName : excludedNames) {
                         if (n.localNode.getName().equals(nodeName)) {
@@ -772,20 +799,20 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         }
 
         public void disconnectNode(TestClusterNode node) {
-            if (testClusterNodes.disconnectedNodes.contains(node.localNode.getName())) {
+            if (testCluster.disconnectedNodes.contains(node.localNode.getName())) {
                 return;
             }
-            testClusterNodes.nodes.values().forEach(n -> n.transportService.getConnectionManager().disconnectFromNode(node.localNode));
+            testCluster.nodes.values().forEach(n -> n.transportService.getConnectionManager().disconnectFromNode(node.localNode));
             disruptedLinks.disconnect(node.localNode.getName());
         }
 
         public void clearNetworkDisruptions() {
-            final Set<String> disconnectedNodes = new HashSet<>(testClusterNodes.disconnectedNodes);
+            final Set<String> disconnectedNodes = new HashSet<>(testCluster.disconnectedNodes);
             disruptedLinks.clear();
             disconnectedNodes.forEach(nodeName -> {
-                if (testClusterNodes.nodes.containsKey(nodeName)) {
-                    final DiscoveryNode node = testClusterNodes.nodes.get(nodeName).localNode;
-                    testClusterNodes.nodes.values().forEach(n -> n.transportService.openConnection(node, null));
+                if (testCluster.nodes.containsKey(nodeName)) {
+                    final DiscoveryNode node = testCluster.nodes.get(nodeName).localNode;
+                    testCluster.nodes.values().forEach(n -> n.transportService.openConnection(node, null));
                 }
             });
         }
@@ -831,326 +858,298 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         protected Stream<TestClusterNode> allNodes() {
             return nodes.values().stream();
         }
-    }
 
-    private final class TestClusterNode extends DeterministicTestCluster.DeterministicNode {
+        private final class TestClusterNode extends DeterministicTestCluster.DeterministicNode {
 
-        private final RepositoriesService repositoriesService;
+            private final RepositoriesService repositoriesService;
 
-        private final SnapshotsService snapshotsService;
+            private final SnapshotsService snapshotsService;
 
-        private final SnapshotShardsService snapshotShardsService;
+            private final SnapshotShardsService snapshotShardsService;
 
-        private final IndicesService indicesService;
+            private final IndicesService indicesService;
 
-        private final IndicesClusterStateService indicesClusterStateService;
+            private final IndicesClusterStateService indicesClusterStateService;
 
-        private final MasterService masterService;
+            private final MasterService masterService;
 
-        private final AllocationService allocationService;
+            private final AllocationService allocationService;
 
-        private final NodeClient client;
+            private final NodeClient client;
 
-        private final NodeEnvironment nodeEnv;
+            private final NodeEnvironment nodeEnv;
 
-        private final ThreadPool threadPool;
+            private final ThreadPool threadPool;
 
-        private final Supplier<NetworkDisruption.DisruptedLinks> disruption;
+            private final Supplier<NetworkDisruption.DisruptedLinks> disruption;
 
-        TestClusterNode(int nodeIndex, DeterministicTaskQueue deterministicTaskQueue, DiscoveryNode node,
-                        Supplier<NetworkDisruption.DisruptedLinks> disruption) throws IOException {
-            super(nodeIndex, createEnvironment(node.getName()).settings(), node, LogManager.getLogger(TestClusterNode.class));
-            this.disruption = disruption;
-            final Environment environment = createEnvironment(node.getName());
-            masterService = new FakeThreadPoolMasterService(node.getName(), "test", deterministicTaskQueue::scheduleNow);
-            threadPool = deterministicTaskQueue.getThreadPool();
-            clusterService = new ClusterService(nodeSettings, clusterSettings, masterService,
-                new DisruptableClusterApplierService(node.getName(), nodeSettings, clusterSettings, deterministicTaskQueue,
-                    Function.identity()));
-            clusterService.setNodeConnectionsService(
-                new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(), transportService));
-            mockTransport = mockTransport(this, () -> testClusterNodes);
-            transportService = mockTransport.createTransportService(
-                nodeSettings, deterministicTaskQueue.getThreadPool(this::onNode),
-                new TransportInterceptor() {
-                    @Override
-                    public <T extends TransportRequest> TransportRequestHandler<T> interceptHandler(String action, String executor,
-                        boolean forceExecution, TransportRequestHandler<T> actualHandler) {
-                        // TODO: Remove this hack once recoveries are async and can be used in these tests
-                        if (action.startsWith("internal:index/shard/recovery")) {
-                            return (request, channel, task) -> scheduleSoon(
-                                new AbstractRunnable() {
-                                    @Override
-                                    protected void doRun() throws Exception {
-                                        channel.sendResponse(new TransportException(new IOException("failed to recover shard")));
-                                    }
-
-                                    @Override
-                                    public void onFailure(final Exception e) {
-                                        throw new AssertionError(e);
-                                    }
-                                });
-                        } else {
-                            return actualHandler;
-                        }
-                    }
-                },
-                a -> node, null, emptySet()
-            );
-            final IndexNameExpressionResolver indexNameExpressionResolver = new IndexNameExpressionResolver();
-            repositoriesService = new RepositoriesService(
-                nodeSettings, clusterService, transportService,
-                Collections.singletonMap(FsRepository.TYPE, getRepoFactory(environment)), emptyMap(), threadPool
-            );
-            snapshotsService =
-                new SnapshotsService(nodeSettings, clusterService, indexNameExpressionResolver, repositoriesService, threadPool);
-            nodeEnv = new NodeEnvironment(nodeSettings, environment);
-            nodeEnvironments.add(nodeEnv);
-            final NamedXContentRegistry namedXContentRegistry = new NamedXContentRegistry(Collections.emptyList());
-            final ScriptService scriptService = new ScriptService(nodeSettings, emptyMap(), emptyMap());
-            client = new NodeClient(nodeSettings, threadPool);
-            allocationService = ESAllocationTestCase.createAllocationService(nodeSettings);
-            final IndexScopedSettings indexScopedSettings =
-                new IndexScopedSettings(nodeSettings, IndexScopedSettings.BUILT_IN_INDEX_SETTINGS);
-            final BigArrays bigArrays = new BigArrays(new PageCacheRecycler(nodeSettings), null, "test");
-            final MapperRegistry mapperRegistry = new IndicesModule(Collections.emptyList()).getMapperRegistry();
-            indicesService = new IndicesService(
-                nodeSettings,
-                mock(PluginsService.class),
-                nodeEnv,
-                namedXContentRegistry,
-                new AnalysisRegistry(environment, emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap(),
-                    emptyMap(), emptyMap(), emptyMap(), emptyMap()),
-                indexNameExpressionResolver,
-                mapperRegistry,
-                namedWriteableRegistry,
-                threadPool,
-                indexScopedSettings,
-                new NoneCircuitBreakerService(),
-                bigArrays,
-                scriptService,
-                clusterService,
-                client,
-                new MetaStateService(nodeEnv, namedXContentRegistry),
-                Collections.emptyList(),
-                emptyMap()
-            );
-            final RecoverySettings recoverySettings = new RecoverySettings(nodeSettings, clusterSettings);
-            final ActionFilters actionFilters = new ActionFilters(emptySet());
-            snapshotShardsService = new SnapshotShardsService(
-                nodeSettings, clusterService, repositoriesService, threadPool,
-                transportService, indicesService, actionFilters, indexNameExpressionResolver);
-            final ShardStateAction shardStateAction = new ShardStateAction(
-                clusterService, transportService, allocationService,
-                new BatchedRerouteService(clusterService, allocationService::reroute),
-                threadPool
-            );
-            @SuppressWarnings("rawtypes")
-            Map<ActionType, TransportAction> actions = new HashMap<>();
-            actions.put(GlobalCheckpointSyncAction.TYPE,
-                new GlobalCheckpointSyncAction(nodeSettings, transportService, clusterService, indicesService,
-                    threadPool, shardStateAction, actionFilters, indexNameExpressionResolver));
-            actions.put(RetentionLeaseBackgroundSyncAction.TYPE,
-                new RetentionLeaseBackgroundSyncAction(nodeSettings, transportService, clusterService, indicesService, threadPool,
-                    shardStateAction, actionFilters, indexNameExpressionResolver));
-            actions.put(RetentionLeaseSyncAction.TYPE,
-                new RetentionLeaseSyncAction(nodeSettings, transportService, clusterService, indicesService, threadPool,
-                    shardStateAction, actionFilters, indexNameExpressionResolver));
-            final MetaDataMappingService metaDataMappingService = new MetaDataMappingService(clusterService, indicesService);
-            indicesClusterStateService = new IndicesClusterStateService(
-                nodeSettings,
-                indicesService,
-                clusterService,
-                threadPool,
-                new PeerRecoveryTargetService(threadPool, transportService, recoverySettings, clusterService),
-                shardStateAction,
-                new NodeMappingRefreshAction(transportService, metaDataMappingService),
-                repositoriesService,
-                mock(SearchService.class),
-                new SyncedFlushService(indicesService, clusterService, transportService, indexNameExpressionResolver),
-                new PeerRecoverySourceService(transportService, indicesService, recoverySettings),
-                snapshotShardsService,
-                new PrimaryReplicaSyncer(
-                    transportService,
-                    new TransportResyncReplicationAction(
-                        nodeSettings,
-                        transportService,
-                        clusterService,
-                        indicesService,
-                        threadPool,
-                        shardStateAction,
-                        actionFilters,
-                        indexNameExpressionResolver)),
-                client);
-            final MetaDataCreateIndexService metaDataCreateIndexService = new MetaDataCreateIndexService(nodeSettings, clusterService,
-                indicesService,
-                allocationService, new AliasValidator(), environment, indexScopedSettings,
-                threadPool, namedXContentRegistry, false);
-            actions.put(CreateIndexAction.INSTANCE,
-                new TransportCreateIndexAction(
-                    transportService, clusterService, threadPool,
-                    metaDataCreateIndexService,
-                    actionFilters, indexNameExpressionResolver
-                ));
-            final MappingUpdatedAction mappingUpdatedAction = new MappingUpdatedAction(nodeSettings, clusterSettings);
-            mappingUpdatedAction.setClient(client);
-            actions.put(BulkAction.INSTANCE,
-                new TransportBulkAction(threadPool, transportService, clusterService,
-                    new IngestService(
-                        clusterService, threadPool, environment, scriptService,
-                        new AnalysisModule(environment, Collections.emptyList()).getAnalysisRegistry(),
-                        Collections.emptyList(), client),
-                    client, actionFilters, indexNameExpressionResolver,
-                    new AutoCreateIndex(nodeSettings, clusterSettings, indexNameExpressionResolver)
-                ));
-            final TransportShardBulkAction transportShardBulkAction = new TransportShardBulkAction(nodeSettings, transportService,
-                clusterService, indicesService, threadPool, shardStateAction, mappingUpdatedAction, new UpdateHelper(scriptService),
-                actionFilters, indexNameExpressionResolver);
-            actions.put(TransportShardBulkAction.TYPE, transportShardBulkAction);
-            final RestoreService restoreService = new RestoreService(
-                clusterService, repositoriesService, allocationService,
-                metaDataCreateIndexService,
-                new MetaDataIndexUpgradeService(
-                    nodeSettings, namedXContentRegistry,
+            TestClusterNode(int nodeIndex, DeterministicTaskQueue deterministicTaskQueue, DiscoveryNode node,
+                Supplier<NetworkDisruption.DisruptedLinks> disruption) throws IOException {
+                super(nodeIndex, createEnvironment(node.getName()).settings(), node, LogManager.getLogger(TestClusterNode.class));
+                this.disruption = disruption;
+                final Environment environment = createEnvironment(node.getName());
+                masterService = new FakeThreadPoolMasterService(node.getName(), "test", deterministicTaskQueue::scheduleNow);
+                threadPool = deterministicTaskQueue.getThreadPool();
+                clusterService = new ClusterService(nodeSettings, clusterSettings, masterService,
+                    new DisruptableClusterApplierService(node.getName(), nodeSettings, clusterSettings, deterministicTaskQueue,
+                        Function.identity()));
+                clusterService.setNodeConnectionsService(
+                    new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(), transportService));
+                final IndexNameExpressionResolver indexNameExpressionResolver = new IndexNameExpressionResolver();
+                repositoriesService = new RepositoriesService(
+                    nodeSettings, clusterService, transportService,
+                    Collections.singletonMap(FsRepository.TYPE, getRepoFactory(environment)), emptyMap(), threadPool
+                );
+                snapshotsService =
+                    new SnapshotsService(nodeSettings, clusterService, indexNameExpressionResolver, repositoriesService, threadPool);
+                nodeEnv = new NodeEnvironment(nodeSettings, environment);
+                nodeEnvironments.add(nodeEnv);
+                final NamedXContentRegistry namedXContentRegistry = new NamedXContentRegistry(Collections.emptyList());
+                final ScriptService scriptService = new ScriptService(nodeSettings, emptyMap(), emptyMap());
+                client = new NodeClient(nodeSettings, threadPool);
+                allocationService = ESAllocationTestCase.createAllocationService(nodeSettings);
+                final IndexScopedSettings indexScopedSettings =
+                    new IndexScopedSettings(nodeSettings, IndexScopedSettings.BUILT_IN_INDEX_SETTINGS);
+                final BigArrays bigArrays = new BigArrays(new PageCacheRecycler(nodeSettings), null, "test");
+                final MapperRegistry mapperRegistry = new IndicesModule(Collections.emptyList()).getMapperRegistry();
+                indicesService = new IndicesService(
+                    nodeSettings,
+                    mock(PluginsService.class),
+                    nodeEnv,
+                    namedXContentRegistry,
+                    new AnalysisRegistry(environment, emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap(),
+                        emptyMap(), emptyMap(), emptyMap(), emptyMap()),
+                    indexNameExpressionResolver,
                     mapperRegistry,
+                    namedWriteableRegistry,
+                    threadPool,
                     indexScopedSettings,
-                    Collections.emptyList()
-                ),
-                clusterSettings
-            );
-            actions.put(PutMappingAction.INSTANCE,
-                new TransportPutMappingAction(transportService, clusterService, threadPool, metaDataMappingService,
-                    actionFilters, indexNameExpressionResolver, new RequestValidators<>(Collections.emptyList())));
-            final ResponseCollectorService responseCollectorService = new ResponseCollectorService(clusterService);
-            final SearchTransportService searchTransportService = new SearchTransportService(transportService,
-                SearchExecutionStatsCollector.makeWrapper(responseCollectorService));
-            final SearchService searchService = new SearchService(clusterService, indicesService, threadPool, scriptService,
-                bigArrays, new FetchPhase(Collections.emptyList()), responseCollectorService);
-            actions.put(SearchAction.INSTANCE,
-                new TransportSearchAction(threadPool, transportService, searchService,
-                    searchTransportService, new SearchPhaseController(searchService::createReduceContext), clusterService,
-                    actionFilters, indexNameExpressionResolver));
-            actions.put(RestoreSnapshotAction.INSTANCE,
-                new TransportRestoreSnapshotAction(transportService, clusterService, threadPool, restoreService, actionFilters,
-                    indexNameExpressionResolver));
-            actions.put(DeleteIndexAction.INSTANCE,
-                new TransportDeleteIndexAction(
-                    transportService, clusterService, threadPool,
-                    new MetaDataDeleteIndexService(nodeSettings, clusterService, allocationService), actionFilters,
-                    indexNameExpressionResolver, new DestructiveOperations(nodeSettings, clusterSettings)));
-            actions.put(PutRepositoryAction.INSTANCE,
-                new TransportPutRepositoryAction(
-                    transportService, clusterService, repositoriesService, threadPool,
-                    actionFilters, indexNameExpressionResolver
-                ));
-            actions.put(CreateSnapshotAction.INSTANCE,
-                new TransportCreateSnapshotAction(
-                    transportService, clusterService, threadPool,
-                    snapshotsService, actionFilters, indexNameExpressionResolver
-                ));
-            actions.put(ClusterRerouteAction.INSTANCE,
-                new TransportClusterRerouteAction(transportService, clusterService, threadPool, allocationService,
-                    actionFilters, indexNameExpressionResolver));
-            actions.put(ClusterStateAction.INSTANCE,
-                new TransportClusterStateAction(transportService, clusterService, threadPool,
-                    actionFilters, indexNameExpressionResolver));
-            actions.put(IndicesShardStoresAction.INSTANCE,
-                new TransportIndicesShardStoresAction(
-                    transportService, clusterService, threadPool, actionFilters, indexNameExpressionResolver,
-                    client));
-            actions.put(TransportNodesListGatewayStartedShards.TYPE, new TransportNodesListGatewayStartedShards(nodeSettings,
-                threadPool, clusterService, transportService, actionFilters, nodeEnv, indicesService, namedXContentRegistry));
-            actions.put(DeleteSnapshotAction.INSTANCE,
-                new TransportDeleteSnapshotAction(
-                    transportService, clusterService, threadPool,
-                    snapshotsService, actionFilters, indexNameExpressionResolver
-                ));
-            client.initialize(actions, transportService.getTaskManager(),
-                () -> clusterService.localNode().getId(), transportService.getRemoteClusterService());
-        }
+                    new NoneCircuitBreakerService(),
+                    bigArrays,
+                    scriptService,
+                    clusterService,
+                    client,
+                    new MetaStateService(nodeEnv, namedXContentRegistry),
+                    Collections.emptyList(),
+                    emptyMap()
+                );
+                final RecoverySettings recoverySettings = new RecoverySettings(nodeSettings, clusterSettings);
+                final ActionFilters actionFilters = new ActionFilters(emptySet());
+                snapshotShardsService = new SnapshotShardsService(
+                    nodeSettings, clusterService, repositoriesService, threadPool,
+                    transportService, indicesService, actionFilters, indexNameExpressionResolver);
+                final ShardStateAction shardStateAction = new ShardStateAction(
+                    clusterService, transportService, allocationService,
+                    new BatchedRerouteService(clusterService, allocationService::reroute),
+                    threadPool
+                );
+                @SuppressWarnings("rawtypes")
+                Map<ActionType, TransportAction> actions = new HashMap<>();
+                actions.put(GlobalCheckpointSyncAction.TYPE,
+                    new GlobalCheckpointSyncAction(nodeSettings, transportService, clusterService, indicesService,
+                        threadPool, shardStateAction, actionFilters, indexNameExpressionResolver));
+                actions.put(RetentionLeaseBackgroundSyncAction.TYPE,
+                    new RetentionLeaseBackgroundSyncAction(nodeSettings, transportService, clusterService, indicesService, threadPool,
+                        shardStateAction, actionFilters, indexNameExpressionResolver));
+                actions.put(RetentionLeaseSyncAction.TYPE,
+                    new RetentionLeaseSyncAction(nodeSettings, transportService, clusterService, indicesService, threadPool,
+                        shardStateAction, actionFilters, indexNameExpressionResolver));
+                final MetaDataMappingService metaDataMappingService = new MetaDataMappingService(clusterService, indicesService);
+                indicesClusterStateService = new IndicesClusterStateService(
+                    nodeSettings,
+                    indicesService,
+                    clusterService,
+                    threadPool,
+                    new PeerRecoveryTargetService(threadPool, transportService, recoverySettings, clusterService),
+                    shardStateAction,
+                    new NodeMappingRefreshAction(transportService, metaDataMappingService),
+                    repositoriesService,
+                    mock(SearchService.class),
+                    new SyncedFlushService(indicesService, clusterService, transportService, indexNameExpressionResolver),
+                    new PeerRecoverySourceService(transportService, indicesService, recoverySettings),
+                    snapshotShardsService,
+                    new PrimaryReplicaSyncer(
+                        transportService,
+                        new TransportResyncReplicationAction(
+                            nodeSettings,
+                            transportService,
+                            clusterService,
+                            indicesService,
+                            threadPool,
+                            shardStateAction,
+                            actionFilters,
+                            indexNameExpressionResolver)),
+                    client);
+                final MetaDataCreateIndexService metaDataCreateIndexService = new MetaDataCreateIndexService(nodeSettings, clusterService,
+                    indicesService,
+                    allocationService, new AliasValidator(), environment, indexScopedSettings,
+                    threadPool, namedXContentRegistry, false);
+                actions.put(CreateIndexAction.INSTANCE,
+                    new TransportCreateIndexAction(
+                        transportService, clusterService, threadPool,
+                        metaDataCreateIndexService,
+                        actionFilters, indexNameExpressionResolver
+                    ));
+                final MappingUpdatedAction mappingUpdatedAction = new MappingUpdatedAction(nodeSettings, clusterSettings);
+                mappingUpdatedAction.setClient(client);
+                actions.put(BulkAction.INSTANCE,
+                    new TransportBulkAction(threadPool, transportService, clusterService,
+                        new IngestService(
+                            clusterService, threadPool, environment, scriptService,
+                            new AnalysisModule(environment, Collections.emptyList()).getAnalysisRegistry(),
+                            Collections.emptyList(), client),
+                        client, actionFilters, indexNameExpressionResolver,
+                        new AutoCreateIndex(nodeSettings, clusterSettings, indexNameExpressionResolver)
+                    ));
+                final TransportShardBulkAction transportShardBulkAction = new TransportShardBulkAction(nodeSettings, transportService,
+                    clusterService, indicesService, threadPool, shardStateAction, mappingUpdatedAction, new UpdateHelper(scriptService),
+                    actionFilters, indexNameExpressionResolver);
+                actions.put(TransportShardBulkAction.TYPE, transportShardBulkAction);
+                final RestoreService restoreService = new RestoreService(
+                    clusterService, repositoriesService, allocationService,
+                    metaDataCreateIndexService,
+                    new MetaDataIndexUpgradeService(
+                        nodeSettings, namedXContentRegistry,
+                        mapperRegistry,
+                        indexScopedSettings,
+                        Collections.emptyList()
+                    ),
+                    clusterSettings
+                );
+                actions.put(PutMappingAction.INSTANCE,
+                    new TransportPutMappingAction(transportService, clusterService, threadPool, metaDataMappingService,
+                        actionFilters, indexNameExpressionResolver, new RequestValidators<>(Collections.emptyList())));
+                final ResponseCollectorService responseCollectorService = new ResponseCollectorService(clusterService);
+                final SearchTransportService searchTransportService = new SearchTransportService(transportService,
+                    SearchExecutionStatsCollector.makeWrapper(responseCollectorService));
+                final SearchService searchService = new SearchService(clusterService, indicesService, threadPool, scriptService,
+                    bigArrays, new FetchPhase(Collections.emptyList()), responseCollectorService);
+                actions.put(SearchAction.INSTANCE,
+                    new TransportSearchAction(threadPool, transportService, searchService,
+                        searchTransportService, new SearchPhaseController(searchService::createReduceContext), clusterService,
+                        actionFilters, indexNameExpressionResolver));
+                actions.put(RestoreSnapshotAction.INSTANCE,
+                    new TransportRestoreSnapshotAction(transportService, clusterService, threadPool, restoreService, actionFilters,
+                        indexNameExpressionResolver));
+                actions.put(DeleteIndexAction.INSTANCE,
+                    new TransportDeleteIndexAction(
+                        transportService, clusterService, threadPool,
+                        new MetaDataDeleteIndexService(nodeSettings, clusterService, allocationService), actionFilters,
+                        indexNameExpressionResolver, new DestructiveOperations(nodeSettings, clusterSettings)));
+                actions.put(PutRepositoryAction.INSTANCE,
+                    new TransportPutRepositoryAction(
+                        transportService, clusterService, repositoriesService, threadPool,
+                        actionFilters, indexNameExpressionResolver
+                    ));
+                actions.put(CreateSnapshotAction.INSTANCE,
+                    new TransportCreateSnapshotAction(
+                        transportService, clusterService, threadPool,
+                        snapshotsService, actionFilters, indexNameExpressionResolver
+                    ));
+                actions.put(ClusterRerouteAction.INSTANCE,
+                    new TransportClusterRerouteAction(transportService, clusterService, threadPool, allocationService,
+                        actionFilters, indexNameExpressionResolver));
+                actions.put(ClusterStateAction.INSTANCE,
+                    new TransportClusterStateAction(transportService, clusterService, threadPool,
+                        actionFilters, indexNameExpressionResolver));
+                actions.put(IndicesShardStoresAction.INSTANCE,
+                    new TransportIndicesShardStoresAction(
+                        transportService, clusterService, threadPool, actionFilters, indexNameExpressionResolver,
+                        client));
+                actions.put(TransportNodesListGatewayStartedShards.TYPE, new TransportNodesListGatewayStartedShards(nodeSettings,
+                    threadPool, clusterService, transportService, actionFilters, nodeEnv, indicesService, namedXContentRegistry));
+                actions.put(DeleteSnapshotAction.INSTANCE,
+                    new TransportDeleteSnapshotAction(
+                        transportService, clusterService, threadPool,
+                        snapshotsService, actionFilters, indexNameExpressionResolver
+                    ));
+                client.initialize(actions, transportService.getTaskManager(),
+                    () -> clusterService.localNode().getId(), transportService.getRemoteClusterService());
+            }
 
-        @Override
-        protected Runnable onNode(Runnable runnable) {
-            return DeterministicTestCluster.onNodeLog(localNode, runnable);
-        }
+            @Override
+            protected Runnable onNode(Runnable runnable) {
+                return onNodeLog(localNode, runnable);
+            }
 
-        private Repository.Factory getRepoFactory(Environment environment) {
-            // Run half the tests with the eventually consistent repository
-            if (blobStoreContext == null) {
-                return metaData -> {
-                    final Repository repository = new FsRepository(metaData, environment, xContentRegistry(), threadPool) {
-                        @Override
-                        protected void assertSnapshotOrGenericThread() {
-                            // eliminate thread name check as we create repo in the test thread
-                        }
+            private Repository.Factory getRepoFactory(Environment environment) {
+                // Run half the tests with the eventually consistent repository
+                if (blobStoreContext == null) {
+                    return metaData -> {
+                        final Repository repository = new FsRepository(metaData, environment, xContentRegistry(), threadPool) {
+                            @Override
+                            protected void assertSnapshotOrGenericThread() {
+                                // eliminate thread name check as we create repo in the test thread
+                            }
+                        };
+                        repository.start();
+                        return repository;
                     };
-                    repository.start();
-                    return repository;
-                };
-            } else {
-                return metaData -> {
-                    final Repository repository = new MockEventuallyConsistentRepository(
-                        metaData, xContentRegistry(), testClusterNodes.deterministicTaskQueue.getThreadPool(), blobStoreContext);
-                    repository.start();
-                    return repository;
-                };
-            }
-        }
-        public void restart() {
-            testClusterNodes.disconnectNode(this);
-            final ClusterState oldState = this.clusterService.state();
-            close();
-            testClusterNodes.nodes.remove(localNode.getName());
-            scheduleSoon(() -> {
-                try {
-                    final TestClusterNode restartedNode = new TestClusterNode(nodeIndex, testClusterNodes.deterministicTaskQueue,
-                        new DiscoveryNode(localNode.getName(), getId(), localNode.getAddress(), emptyMap(),
-                            localNode.getRoles(), Version.CURRENT), disruption);
-                    testClusterNodes.nodes.put(localNode.getName(), restartedNode);
-                    testClusterNodes.disconnectedNodes.remove(restartedNode.localNode.getName());
-                    restartedNode.start(oldState);
-                } catch (IOException e) {
-                    throw new AssertionError(e);
+                } else {
+                    return metaData -> {
+                        final Repository repository = new MockEventuallyConsistentRepository(
+                            metaData, xContentRegistry(), testCluster.deterministicTaskQueue.getThreadPool(), blobStoreContext);
+                        repository.start();
+                        return repository;
+                    };
                 }
-            });
-        }
-
-        @Override
-        public void close() {
-            testClusterNodes.disconnectNode(this);
-            indicesService.close();
-            clusterService.close();
-            indicesClusterStateService.close();
-            if (coordinator != null) {
-                coordinator.close();
             }
-            nodeEnv.close();
+            public void restart() {
+                testCluster.disconnectNode(this);
+                final ClusterState oldState = this.clusterService.state();
+                close();
+                testCluster.nodes.remove(localNode.getName());
+                scheduleSoon(() -> {
+                    try {
+                        final TestClusterNode restartedNode = new TestClusterNode(nodeIndex, testCluster.deterministicTaskQueue,
+                            new DiscoveryNode(localNode.getName(), getId(), localNode.getAddress(), emptyMap(),
+                                localNode.getRoles(), Version.CURRENT), disruption);
+                        testCluster.nodes.put(localNode.getName(), restartedNode);
+                        testCluster.disconnectedNodes.remove(restartedNode.localNode.getName());
+                        restartedNode.start(oldState);
+                    } catch (IOException e) {
+                        throw new AssertionError(e);
+                    }
+                });
+            }
+
+            @Override
+            public void close() {
+                testCluster.disconnectNode(this);
+                indicesService.close();
+                clusterService.close();
+                indicesClusterStateService.close();
+                if (coordinator != null) {
+                    coordinator.close();
+                }
+                nodeEnv.close();
+            }
+
+            public void start(ClusterState initialState) {
+                transportService.start();
+                transportService.acceptIncomingRequests();
+                snapshotsService.start();
+                snapshotShardsService.start();
+                final CoordinationState.PersistedState persistedState =
+                    new InMemoryPersistedState(initialState.term(), stateForNode(initialState, localNode));
+                coordinator = new Coordinator(localNode.getName(), clusterService.getSettings(),
+                    clusterService.getClusterSettings(), transportService, namedWriteableRegistry,
+                    allocationService, masterService, () -> persistedState,
+                    hostsResolver -> testCluster.nodes.values().stream().filter(n -> n.localNode.isMasterNode())
+                        .map(n -> n.localNode.getAddress()).collect(Collectors.toList()),
+                    clusterService.getClusterApplierService(), Collections.emptyList(), random(),
+                    new BatchedRerouteService(clusterService, allocationService::reroute), ElectionStrategy.DEFAULT_INSTANCE);
+                masterService.setClusterStatePublisher(coordinator);
+                coordinator.start();
+                masterService.start();
+                clusterService.getClusterApplierService().start();
+                indicesService.start();
+                indicesClusterStateService.start();
+                coordinator.startInitialJoin();
+            }
         }
 
-        public void start(ClusterState initialState) {
-            transportService.start();
-            transportService.acceptIncomingRequests();
-            snapshotsService.start();
-            snapshotShardsService.start();
-            final CoordinationState.PersistedState persistedState =
-                new InMemoryPersistedState(initialState.term(), stateForNode(initialState, localNode));
-            coordinator = new Coordinator(localNode.getName(), clusterService.getSettings(),
-                clusterService.getClusterSettings(), transportService, namedWriteableRegistry,
-                allocationService, masterService, () -> persistedState,
-                hostsResolver -> testClusterNodes.nodes.values().stream().filter(n -> n.localNode.isMasterNode())
-                    .map(n -> n.localNode.getAddress()).collect(Collectors.toList()),
-                clusterService.getClusterApplierService(), Collections.emptyList(), random(),
-                new BatchedRerouteService(clusterService, allocationService::reroute), ElectionStrategy.DEFAULT_INSTANCE);
-            masterService.setClusterStatePublisher(coordinator);
-            coordinator.start();
-            masterService.start();
-            clusterService.getClusterApplierService().start();
-            indicesService.start();
-            indicesClusterStateService.start();
-            coordinator.startInitialJoin();
-        }
     }
-
     private final class DisconnectedNodes extends NetworkDisruption.DisruptedLinks {
 
         @Override
@@ -1159,19 +1158,19 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 return false;
             }
             // Check if both nodes are still part of the cluster
-            if (testClusterNodes.nodes.containsKey(node1) == false
-                || testClusterNodes.nodes.containsKey(node2) == false) {
+            if (testCluster.nodes.containsKey(node1) == false
+                || testCluster.nodes.containsKey(node2) == false) {
                 return true;
             }
-            return testClusterNodes.disconnectedNodes.contains(node1) || testClusterNodes.disconnectedNodes.contains(node2);
+            return testCluster.disconnectedNodes.contains(node1) || testCluster.disconnectedNodes.contains(node2);
         }
 
         public void disconnect(String node) {
-            testClusterNodes.disconnectedNodes.add(node);
+            testCluster.disconnectedNodes.add(node);
         }
 
         public void clear() {
-            testClusterNodes.disconnectedNodes.clear();
+            testCluster.disconnectedNodes.clear();
         }
     }
 }
