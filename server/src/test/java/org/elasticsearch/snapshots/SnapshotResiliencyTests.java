@@ -179,7 +179,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -890,9 +889,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 final Environment environment = createEnvironment(node.getName());
                 masterService = new FakeThreadPoolMasterService(node.getName(), "test", deterministicTaskQueue::scheduleNow);
                 threadPool = deterministicTaskQueue.getThreadPool();
-                clusterService = new ClusterService(nodeSettings, clusterSettings, masterService,
-                    new DisruptableClusterApplierService(node.getName(), nodeSettings, clusterSettings, deterministicTaskQueue,
-                        Function.identity()));
+                clusterService = new ClusterService(nodeSettings, clusterSettings, masterService, clusterApplierService);
                 clusterService.setNodeConnectionsService(
                     new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(), transportService));
                 final IndexNameExpressionResolver indexNameExpressionResolver = new IndexNameExpressionResolver();

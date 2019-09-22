@@ -212,7 +212,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
 
         final VotingConfiguration initialConfiguration;
 
-        private final Set<String> blackholedNodes = new HashSet<>();
         private final Set<Tuple<String,String>> blackholedConnections = new HashSet<>();
         private final Map<Long, ClusterState> committedStatesByVersion = new HashMap<>();
         private final LinearizabilityChecker linearizabilityChecker = new LinearizabilityChecker();
@@ -613,7 +612,7 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
         }
 
         boolean nodeExists(DiscoveryNode node) {
-            return clusterNodes.stream().anyMatch(cn -> cn.getLocalNode().equals(node));
+            return allNodes().anyMatch(cn -> cn.getLocalNode().equals(node));
         }
 
         ClusterNode getAnyBootstrappableNode() {
@@ -816,7 +815,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
         class ClusterNode extends DeterministicNode {
             final MockPersistedState persistedState;
             private AckedFakeThreadPoolMasterService masterService;
-            private DisruptableClusterApplierService clusterApplierService;
 
             List<BiConsumer<DiscoveryNode, ClusterState>> extraJoinValidators = new ArrayList<>();
 
@@ -848,8 +846,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
             private void setUp() {
                 masterService = new AckedFakeThreadPoolMasterService(localNode.getId(), "test",
                     runnable -> deterministicTaskQueue.scheduleNow(onNode(runnable)));
-                clusterApplierService = new DisruptableClusterApplierService(localNode.getId(), nodeSettings, clusterSettings,
-                    deterministicTaskQueue, this::onNode);
                 clusterService = new ClusterService(nodeSettings, clusterSettings, masterService, clusterApplierService);
                 clusterService.setNodeConnectionsService(
                     new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(this::onNode),
@@ -1107,10 +1103,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
                             configurationWithPlaceholders), e);
                     }
                 }).run();
-            }
-
-            private boolean isNotUsefullyBootstrapped() {
-                return getLocalNode().isMasterNode() == false || coordinator.isInitialConfigurationSet() == false;
             }
         }
 

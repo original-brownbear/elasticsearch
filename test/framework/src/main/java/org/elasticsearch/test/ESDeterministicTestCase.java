@@ -166,6 +166,8 @@ public class ESDeterministicTestCase extends ESTestCase {
 
         public final Set<String> disconnectedNodes = new HashSet<>();
 
+        public final Set<String> blackholedNodes = new HashSet<>();
+
         public final DeterministicTaskQueue deterministicTaskQueue;
 
         public DeterministicTestCluster(Random random) {
@@ -212,6 +214,8 @@ public class ESDeterministicTestCase extends ESTestCase {
 
             protected final DisruptableMockTransport mockTransport;
 
+            protected DisruptableClusterApplierService clusterApplierService;
+
             public ClusterService clusterService;
 
             public TransportService transportService;
@@ -227,6 +231,8 @@ public class ESDeterministicTestCase extends ESTestCase {
                     nodeSettings, deterministicTaskQueue.getThreadPool(this::onNode),
                     getTransportInterceptor(localNode, deterministicTaskQueue.getThreadPool(this::onNode)),
                     a -> localNode, null, emptySet());
+                clusterApplierService = new DisruptableClusterApplierService(localNode.getId(), nodeSettings, clusterSettings,
+                    deterministicTaskQueue, this::onNode);
             }
 
             public String getId() {
@@ -234,6 +240,10 @@ public class ESDeterministicTestCase extends ESTestCase {
             }
 
             protected abstract Runnable onNode(Runnable runnable);
+
+            public boolean isNotUsefullyBootstrapped() {
+                return localNode.isMasterNode() == false || coordinator.isInitialConfigurationSet() == false;
+            }
 
             private DisruptableMockTransport mockTransport(DeterministicNode node) {
                 return new DisruptableMockTransport(node.localNode, node.logger) {
