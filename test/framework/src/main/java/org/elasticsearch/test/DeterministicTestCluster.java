@@ -25,15 +25,20 @@ import org.elasticsearch.cluster.coordination.Coordinator;
 import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.test.disruption.DisruptableMockTransport;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.elasticsearch.node.Node.NODE_NAME_SETTING;
 
@@ -66,6 +71,10 @@ public abstract class DeterministicTestCluster implements Releasable {
             }
         };
     }
+
+    protected abstract DisruptableMockTransport.ConnectionStatus getConnectionStatus(DiscoveryNode sender, DiscoveryNode destination);
+
+    protected abstract Stream<? extends DeterministicNode> allNodes();
 
     public static String getNodeIdForLogContext(DiscoveryNode node) {
         return "{" + node.getId() + "}{" + node.getEphemeralId() + "}";
@@ -101,6 +110,34 @@ public abstract class DeterministicTestCluster implements Releasable {
 
         public String getId() {
             return localNode.getId();
+        }
+
+        protected abstract Runnable onNode(Runnable runnable);
+
+        protected static DisruptableMockTransport mockTransport(DeterministicNode node, Supplier<DeterministicTestCluster> cluster) {
+            return new DisruptableMockTransport(node.localNode, node.logger) {
+                @Override
+                protected ConnectionStatus getConnectionStatus(DiscoveryNode destination) {
+                    return cluster.get().getConnectionStatus(getLocalNode(), destination);
+                }
+
+                @Override
+                protected Optional<DisruptableMockTransport> getDisruptableMockTransport(TransportAddress address) {
+                    return cluster.get().allNodes().map(cn -> cn.mockTransport)
+                        .filter(transport -> transport.getLocalNode().getAddress().equals(address))
+                        .findAny();
+                }
+
+                @Override
+                protected void execute(Runnable runnable) {
+                    cluster.get().deterministicTaskQueue.scheduleNow(node.onNode(runnable));
+                }
+
+                @Override
+                protected NamedWriteableRegistry writeableRegistry() {
+                    return ESDeterministicTestCase.namedWriteableRegistry;
+                }
+            };
         }
     }
 }

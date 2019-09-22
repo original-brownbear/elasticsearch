@@ -79,7 +79,6 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateHelper;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.cluster.ClusterModule;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ESAllocationTestCase;
@@ -115,11 +114,8 @@ import org.elasticsearch.cluster.service.FakeThreadPoolMasterService;
 import org.elasticsearch.cluster.service.MasterService;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
@@ -824,12 +820,20 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         public void close() {
             nodes.values().forEach(TestClusterNode::close);
         }
+
+        @Override
+        protected DisruptableMockTransport.ConnectionStatus getConnectionStatus(DiscoveryNode sender, DiscoveryNode destination) {
+            return this.disruptedLinks.disrupt(sender.getName(), destination.getName())
+                ? DisruptableMockTransport.ConnectionStatus.DISCONNECTED : DisruptableMockTransport.ConnectionStatus.CONNECTED;
+        }
+
+        @Override
+        protected Stream<TestClusterNode> allNodes() {
+            return nodes.values().stream();
+        }
     }
 
     private final class TestClusterNode extends DeterministicTestCluster.DeterministicNode {
-
-        private final NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(Stream.concat(
-            ClusterModule.getNamedWriteables().stream(), NetworkModule.getNamedWriteables().stream()).collect(Collectors.toList()));
 
         private final RepositoriesService repositoriesService;
 
@@ -865,32 +869,9 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                     Function.identity()));
             clusterService.setNodeConnectionsService(
                 new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(), transportService));
-            mockTransport = new DisruptableMockTransport(node, logger) {
-                @Override
-                protected ConnectionStatus getConnectionStatus(DiscoveryNode destination) {
-                    return disruption.get().disrupt(node.getName(), destination.getName())
-                        ? ConnectionStatus.DISCONNECTED : ConnectionStatus.CONNECTED;
-                }
-
-                @Override
-                protected Optional<DisruptableMockTransport> getDisruptableMockTransport(TransportAddress address) {
-                    return testClusterNodes.nodes.values().stream().map(cn -> cn.mockTransport)
-                        .filter(transport -> transport.getLocalNode().getAddress().equals(address))
-                        .findAny();
-                }
-
-                @Override
-                protected void execute(Runnable runnable) {
-                    scheduleNow(DeterministicTestCluster.onNodeLog(getLocalNode(), runnable));
-                }
-
-                @Override
-                protected NamedWriteableRegistry writeableRegistry() {
-                    return namedWriteableRegistry;
-                }
-            };
+            mockTransport = mockTransport(this, () -> testClusterNodes);
             transportService = mockTransport.createTransportService(
-                nodeSettings, deterministicTaskQueue.getThreadPool(runnable -> DeterministicTestCluster.onNodeLog(node, runnable)),
+                nodeSettings, deterministicTaskQueue.getThreadPool(this::onNode),
                 new TransportInterceptor() {
                     @Override
                     public <T extends TransportRequest> TransportRequestHandler<T> interceptHandler(String action, String executor,
@@ -1086,6 +1067,11 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 ));
             client.initialize(actions, transportService.getTaskManager(),
                 () -> clusterService.localNode().getId(), transportService.getRemoteClusterService());
+        }
+
+        @Override
+        protected Runnable onNode(Runnable runnable) {
+            return DeterministicTestCluster.onNodeLog(localNode, runnable);
         }
 
         private Repository.Factory getRepoFactory(Environment environment) {

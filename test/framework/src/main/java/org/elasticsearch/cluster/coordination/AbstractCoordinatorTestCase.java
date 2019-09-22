@@ -61,7 +61,6 @@ import org.elasticsearch.gateway.MockGatewayMetaState;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.test.DeterministicTestCluster;
 import org.elasticsearch.test.ESDeterministicTestCase;
-import org.elasticsearch.test.disruption.DisruptableMockTransport;
 import org.elasticsearch.test.disruption.DisruptableMockTransport.ConnectionStatus;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportInterceptor;
@@ -594,7 +593,8 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
         private final ConnectionStatus preferredUnknownNodeConnectionStatus =
             randomFrom(ConnectionStatus.DISCONNECTED, ConnectionStatus.BLACK_HOLE);
 
-        private ConnectionStatus getConnectionStatus(DiscoveryNode sender, DiscoveryNode destination) {
+        @Override
+        protected ConnectionStatus getConnectionStatus(DiscoveryNode sender, DiscoveryNode destination) {
             ConnectionStatus connectionStatus;
             if (blackholedNodes.contains(sender.getId()) || blackholedNodes.contains(destination.getId())) {
                 connectionStatus = ConnectionStatus.BLACK_HOLE;
@@ -609,6 +609,11 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
                     randomFrom(ConnectionStatus.DISCONNECTED, ConnectionStatus.BLACK_HOLE);
             }
             return connectionStatus;
+        }
+
+        @Override
+        protected Stream<ClusterNode> allNodes() {
+            return clusterNodes.stream();
         }
 
         boolean nodeExists(DiscoveryNode node) {
@@ -845,23 +850,7 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
             }
 
             private void setUp() {
-                mockTransport = new DisruptableMockTransport(localNode, logger) {
-                    @Override
-                    protected void execute(Runnable runnable) {
-                        deterministicTaskQueue.scheduleNow(onNode(runnable));
-                    }
-
-                    @Override
-                    protected ConnectionStatus getConnectionStatus(DiscoveryNode destination) {
-                        return Cluster.this.getConnectionStatus(getLocalNode(), destination);
-                    }
-
-                    @Override
-                    protected Optional<DisruptableMockTransport> getDisruptableMockTransport(TransportAddress address) {
-                        return clusterNodes.stream().map(cn -> cn.mockTransport)
-                            .filter(transport -> transport.getLocalNode().getAddress().equals(address)).findAny();
-                    }
-                };
+                mockTransport = mockTransport(this, () -> Cluster.this);
                 transportService = mockTransport.createTransportService(
                     nodeSettings, deterministicTaskQueue.getThreadPool(this::onNode),
                     getTransportInterceptor(localNode, deterministicTaskQueue.getThreadPool(this::onNode)),
@@ -954,7 +943,8 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
                 return clusterApplierService.clusterStateApplyResponse;
             }
 
-            Runnable onNode(Runnable runnable) {
+            @Override
+            protected Runnable onNode(Runnable runnable) {
                 final Runnable wrapped = onNodeLog(localNode, runnable);
                 return new Runnable() {
                     @Override
