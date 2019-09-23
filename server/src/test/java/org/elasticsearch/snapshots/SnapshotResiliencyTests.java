@@ -82,7 +82,6 @@ import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ESAllocationTestCase;
-import org.elasticsearch.cluster.NodeConnectionsService;
 import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.action.index.NodeMappingRefreshAction;
@@ -109,9 +108,6 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.routing.allocation.command.AllocateEmptyPrimaryAllocationCommand;
-import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.cluster.service.FakeThreadPoolMasterService;
-import org.elasticsearch.cluster.service.MasterService;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.settings.IndexScopedSettings;
@@ -866,8 +862,6 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
             private final IndicesClusterStateService indicesClusterStateService;
 
-            private final MasterService masterService;
-
             private final AllocationService allocationService;
 
             private final NodeClient client;
@@ -879,11 +873,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             TestClusterNode(int nodeIndex, DeterministicTaskQueue deterministicTaskQueue, DiscoveryNode node) throws IOException {
                 super(nodeIndex, createEnvironment(node.getName()).settings(), node, LogManager.getLogger(TestClusterNode.class));
                 final Environment environment = createEnvironment(node.getName());
-                masterService = new FakeThreadPoolMasterService(node.getName(), "test", deterministicTaskQueue::scheduleNow);
                 threadPool = deterministicTaskQueue.getThreadPool();
-                clusterService = new ClusterService(nodeSettings, clusterSettings, masterService, clusterApplierService);
-                clusterService.setNodeConnectionsService(
-                    new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(), transportService));
                 final IndexNameExpressionResolver indexNameExpressionResolver = new IndexNameExpressionResolver();
                 repositoriesService = new RepositoriesService(
                     nodeSettings, clusterService, transportService,
@@ -1137,6 +1127,5 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 coordinator.startInitialJoin();
             }
         }
-
     }
 }

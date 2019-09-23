@@ -23,19 +23,23 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cluster.ClusterModule;
 import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.NodeConnectionsService;
 import org.elasticsearch.cluster.coordination.AbstractCoordinatorTestCase;
+import org.elasticsearch.cluster.coordination.ClusterStatePublisher;
 import org.elasticsearch.cluster.coordination.Coordinator;
 import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
 import org.elasticsearch.cluster.coordination.MockSinglePrioritizingExecutor;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.cluster.service.FakeThreadPoolMasterService;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.test.disruption.DisruptableMockTransport;
@@ -52,6 +56,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -162,6 +167,34 @@ public class ESDeterministicTestCase extends ESTestCase {
         }
     }
 
+    public static class AckedFakeThreadPoolMasterService extends FakeThreadPoolMasterService {
+
+        public AbstractCoordinatorTestCase.AckCollector nextAckCollector = new AbstractCoordinatorTestCase.AckCollector();
+
+        public AckedFakeThreadPoolMasterService(String nodeName, String serviceName, Consumer<Runnable> onTaskAvailableToRun) {
+            super(nodeName, serviceName, onTaskAvailableToRun);
+        }
+
+        @Override
+        protected ClusterStatePublisher.AckListener wrapAckListener(ClusterStatePublisher.AckListener ackListener) {
+            final AbstractCoordinatorTestCase.AckCollector ackCollector = nextAckCollector;
+            nextAckCollector = new AbstractCoordinatorTestCase.AckCollector();
+            return new ClusterStatePublisher.AckListener() {
+                @Override
+                public void onCommit(TimeValue commitTime) {
+                    ackCollector.onCommit(commitTime);
+                    ackListener.onCommit(commitTime);
+                }
+
+                @Override
+                public void onNodeAck(DiscoveryNode node, Exception e) {
+                    ackCollector.onNodeAck(node, e);
+                    ackListener.onNodeAck(node, e);
+                }
+            };
+        }
+    }
+
     public abstract class DeterministicTestCluster implements Releasable {
 
         public final Set<String> disconnectedNodes = new HashSet<>();
@@ -216,9 +249,11 @@ public class ESDeterministicTestCase extends ESTestCase {
 
             protected DisruptableClusterApplierService clusterApplierService;
 
-            public ClusterService clusterService;
+            public final ClusterService clusterService;
 
-            public TransportService transportService;
+            public final TransportService transportService;
+
+            public final AckedFakeThreadPoolMasterService masterService;
 
             public DeterministicNode(int nodeIndex, Settings nodeSettings, DiscoveryNode localNode, Logger logger) {
                 this.nodeIndex = nodeIndex;
@@ -233,6 +268,12 @@ public class ESDeterministicTestCase extends ESTestCase {
                     a -> localNode, null, emptySet());
                 clusterApplierService = new DisruptableClusterApplierService(localNode.getId(), nodeSettings, clusterSettings,
                     deterministicTaskQueue, this::onNode);
+                masterService = new AckedFakeThreadPoolMasterService(localNode.getId(), "test",
+                    runnable -> deterministicTaskQueue.scheduleNow(onNode(runnable)));
+                clusterService = new ClusterService(nodeSettings, clusterSettings, masterService, clusterApplierService);
+                clusterService.setNodeConnectionsService(
+                    new NodeConnectionsService(clusterService.getSettings(), deterministicTaskQueue.getThreadPool(this::onNode),
+                        transportService));
             }
 
             public String getId() {
