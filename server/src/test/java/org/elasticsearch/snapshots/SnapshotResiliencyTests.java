@@ -765,7 +765,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         public Optional<TestClusterNode> randomMasterNode() {
             // Select from sorted list of data-nodes here to not have deterministic behaviour
-            final List<TestClusterNode> masterNodes = testCluster.nodes.values().stream().filter(n -> n.localNode.isMasterNode())
+            final List<TestClusterNode> masterNodes = allNodes().filter(n -> n.localNode.isMasterNode())
                 .sorted(Comparator.comparing(n -> n.localNode.getName())).collect(Collectors.toList());
             return masterNodes.isEmpty() ? Optional.empty() : Optional.of(randomFrom(masterNodes));
         }
@@ -781,34 +781,32 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         public Optional<TestClusterNode> randomDataNode(String... excludedNames) {
             // Select from sorted list of data-nodes here to not have deterministic behaviour
-            final List<TestClusterNode> dataNodes = testCluster.nodes.values().stream().filter(n -> n.localNode.isDataNode())
-                .filter(n -> {
-                    for (final String nodeName : excludedNames) {
-                        if (n.localNode.getName().equals(nodeName)) {
-                            return false;
-                        }
+            final List<TestClusterNode> dataNodes = allNodes().filter(n -> n.localNode.isDataNode()).filter(n -> {
+                for (final String nodeName : excludedNames) {
+                    if (n.localNode.getName().equals(nodeName)) {
+                        return false;
                     }
-                    return true;
-                })
-                .sorted(Comparator.comparing(n -> n.localNode.getName())).collect(Collectors.toList());
+                }
+                return true;
+            }).sorted(Comparator.comparing(n -> n.localNode.getName())).collect(Collectors.toList());
             return dataNodes.isEmpty() ? Optional.empty() : Optional.ofNullable(randomFrom(dataNodes));
         }
 
         public void disconnectNode(TestClusterNode node) {
-            if (testCluster.disconnectedNodes.contains(node.localNode.getName())) {
+            if (disconnectedNodes.contains(node.localNode.getName())) {
                 return;
             }
-            testCluster.nodes.values().forEach(n -> n.transportService.getConnectionManager().disconnectFromNode(node.localNode));
-            testCluster.disconnectedNodes.add(node.localNode.getName());
+            nodes.values().forEach(n -> n.transportService.getConnectionManager().disconnectFromNode(node.localNode));
+            disconnectedNodes.add(node.localNode.getName());
         }
 
         public void clearNetworkDisruptions() {
-            final Set<String> disconnectedNodes = new HashSet<>(testCluster.disconnectedNodes);
-            testCluster.disconnectedNodes.clear();
+            final Set<String> disconnectedNodes = new HashSet<>(this.disconnectedNodes);
+            this.disconnectedNodes.clear();
             disconnectedNodes.forEach(nodeName -> {
-                if (testCluster.nodes.containsKey(nodeName)) {
-                    final DiscoveryNode node = testCluster.nodes.get(nodeName).localNode;
-                    testCluster.nodes.values().forEach(n -> n.transportService.openConnection(node, null));
+                if (nodes.containsKey(nodeName)) {
+                    final DiscoveryNode node = nodes.get(nodeName).localNode;
+                    nodes.values().forEach(n -> n.transportService.openConnection(node, null));
                 }
             });
         }
@@ -851,11 +849,10 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 return false;
             }
             // Check if both nodes are still part of the cluster
-            if (testCluster.nodes.containsKey(node1) == false
-                || testCluster.nodes.containsKey(node2) == false) {
+            if (nodes.containsKey(node1) == false || nodes.containsKey(node2) == false) {
                 return true;
             }
-            return testCluster.disconnectedNodes.contains(node1) || testCluster.disconnectedNodes.contains(node2);
+            return disconnectedNodes.contains(node1) || disconnectedNodes.contains(node2);
         }
 
         @Override
@@ -1086,24 +1083,24 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 } else {
                     return metaData -> {
                         final Repository repository = new MockEventuallyConsistentRepository(
-                            metaData, xContentRegistry(), testCluster.deterministicTaskQueue.getThreadPool(), blobStoreContext);
+                            metaData, xContentRegistry(), deterministicTaskQueue.getThreadPool(), blobStoreContext);
                         repository.start();
                         return repository;
                     };
                 }
             }
             public void restart() {
-                testCluster.disconnectNode(this);
+                disconnectNode(this);
                 final ClusterState oldState = this.clusterService.state();
                 close();
-                testCluster.nodes.remove(localNode.getName());
+                nodes.remove(localNode.getName());
                 scheduleSoon(() -> {
                     try {
-                        final TestClusterNode restartedNode = new TestClusterNode(nodeIndex, testCluster.deterministicTaskQueue,
+                        final TestClusterNode restartedNode = new TestClusterNode(nodeIndex, deterministicTaskQueue,
                             new DiscoveryNode(localNode.getName(), getId(), localNode.getAddress(), emptyMap(),
                                 localNode.getRoles(), Version.CURRENT));
-                        testCluster.nodes.put(localNode.getName(), restartedNode);
-                        testCluster.disconnectedNodes.remove(restartedNode.localNode.getName());
+                        nodes.put(localNode.getName(), restartedNode);
+                        disconnectedNodes.remove(restartedNode.localNode.getName());
                         restartedNode.start(oldState);
                     } catch (IOException e) {
                         throw new AssertionError(e);
@@ -1113,7 +1110,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
             @Override
             public void close() {
-                testCluster.disconnectNode(this);
+                disconnectNode(this);
                 indicesService.close();
                 clusterService.close();
                 indicesClusterStateService.close();
@@ -1133,8 +1130,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 coordinator = new Coordinator(localNode.getName(), clusterService.getSettings(),
                     clusterService.getClusterSettings(), transportService, namedWriteableRegistry,
                     allocationService, masterService, () -> persistedState,
-                    hostsResolver -> testCluster.nodes.values().stream().filter(n -> n.localNode.isMasterNode())
-                        .map(n -> n.localNode.getAddress()).collect(Collectors.toList()),
+                    hostsResolver ->
+                        allNodes().filter(n -> n.localNode.isMasterNode()).map(n -> n.localNode.getAddress()).collect(Collectors.toList()),
                     clusterService.getClusterApplierService(), Collections.emptyList(), random(),
                     new BatchedRerouteService(clusterService, allocationService::reroute), ElectionStrategy.DEFAULT_INSTANCE);
                 masterService.setClusterStatePublisher(coordinator);
