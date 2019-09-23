@@ -155,7 +155,6 @@ import org.elasticsearch.search.fetch.FetchPhase;
 import org.elasticsearch.snapshots.mockstore.MockEventuallyConsistentRepository;
 import org.elasticsearch.test.ESDeterministicTestCase;
 import org.elasticsearch.test.disruption.DisruptableMockTransport;
-import org.elasticsearch.test.disruption.NetworkDisruption;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportInterceptor;
@@ -727,8 +726,6 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         // LinkedHashMap so we have deterministic ordering when iterating over the map in tests
         private final Map<String, TestClusterNode> nodes = new LinkedHashMap<>();
 
-        private final DisconnectedNodes disruptedLinks = new DisconnectedNodes();
-
         TestCluster(int masterNodes, int dataNodes) {
             super((random()));
             for (int i = 0; i < masterNodes; ++i) {
@@ -759,7 +756,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         private TestClusterNode newNode(String nodeName, DiscoveryNodeRole role) throws IOException {
             return new TestClusterNode(nextNodeIndex.getAndIncrement(), deterministicTaskQueue,
                 new DiscoveryNode(nodeName, randomAlphaOfLength(10), buildNewFakeTransportAddress(), emptyMap(),
-                    Collections.singleton(role), Version.CURRENT), this::getDisruption);
+                    Collections.singleton(role), Version.CURRENT));
         }
 
         public TestClusterNode randomMasterNodeSafe() {
@@ -802,22 +799,18 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                 return;
             }
             testCluster.nodes.values().forEach(n -> n.transportService.getConnectionManager().disconnectFromNode(node.localNode));
-            disruptedLinks.disconnect(node.localNode.getName());
+            testCluster.disconnectedNodes.add(node.localNode.getName());
         }
 
         public void clearNetworkDisruptions() {
             final Set<String> disconnectedNodes = new HashSet<>(testCluster.disconnectedNodes);
-            disruptedLinks.clear();
+            testCluster.disconnectedNodes.clear();
             disconnectedNodes.forEach(nodeName -> {
                 if (testCluster.nodes.containsKey(nodeName)) {
                     final DiscoveryNode node = testCluster.nodes.get(nodeName).localNode;
                     testCluster.nodes.values().forEach(n -> n.transportService.openConnection(node, null));
                 }
             });
-        }
-
-        private NetworkDisruption.DisruptedLinks getDisruption() {
-            return disruptedLinks;
         }
 
         /**
@@ -849,8 +842,20 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         @Override
         protected DisruptableMockTransport.ConnectionStatus getConnectionStatus(DiscoveryNode sender, DiscoveryNode destination) {
-            return this.disruptedLinks.disrupt(sender.getName(), destination.getName())
+            return areConnected(sender.getName(), destination.getName())
                 ? DisruptableMockTransport.ConnectionStatus.DISCONNECTED : DisruptableMockTransport.ConnectionStatus.CONNECTED;
+        }
+
+        private boolean areConnected(String node1, String node2) {
+            if (node1.equals(node2)) {
+                return false;
+            }
+            // Check if both nodes are still part of the cluster
+            if (testCluster.nodes.containsKey(node1) == false
+                || testCluster.nodes.containsKey(node2) == false) {
+                return true;
+            }
+            return testCluster.disconnectedNodes.contains(node1) || testCluster.disconnectedNodes.contains(node2);
         }
 
         @Override
@@ -880,12 +885,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
             private final ThreadPool threadPool;
 
-            private final Supplier<NetworkDisruption.DisruptedLinks> disruption;
-
-            TestClusterNode(int nodeIndex, DeterministicTaskQueue deterministicTaskQueue, DiscoveryNode node,
-                Supplier<NetworkDisruption.DisruptedLinks> disruption) throws IOException {
+            TestClusterNode(int nodeIndex, DeterministicTaskQueue deterministicTaskQueue, DiscoveryNode node) throws IOException {
                 super(nodeIndex, createEnvironment(node.getName()).settings(), node, LogManager.getLogger(TestClusterNode.class));
-                this.disruption = disruption;
                 final Environment environment = createEnvironment(node.getName());
                 masterService = new FakeThreadPoolMasterService(node.getName(), "test", deterministicTaskQueue::scheduleNow);
                 threadPool = deterministicTaskQueue.getThreadPool();
@@ -1100,7 +1101,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
                     try {
                         final TestClusterNode restartedNode = new TestClusterNode(nodeIndex, testCluster.deterministicTaskQueue,
                             new DiscoveryNode(localNode.getName(), getId(), localNode.getAddress(), emptyMap(),
-                                localNode.getRoles(), Version.CURRENT), disruption);
+                                localNode.getRoles(), Version.CURRENT));
                         testCluster.nodes.put(localNode.getName(), restartedNode);
                         testCluster.disconnectedNodes.remove(restartedNode.localNode.getName());
                         restartedNode.start(oldState);
@@ -1146,28 +1147,5 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             }
         }
 
-    }
-    private final class DisconnectedNodes extends NetworkDisruption.DisruptedLinks {
-
-        @Override
-        public boolean disrupt(String node1, String node2) {
-            if (node1.equals(node2)) {
-                return false;
-            }
-            // Check if both nodes are still part of the cluster
-            if (testCluster.nodes.containsKey(node1) == false
-                || testCluster.nodes.containsKey(node2) == false) {
-                return true;
-            }
-            return testCluster.disconnectedNodes.contains(node1) || testCluster.disconnectedNodes.contains(node2);
-        }
-
-        public void disconnect(String node) {
-            testCluster.disconnectedNodes.add(node);
-        }
-
-        public void clear() {
-            testCluster.disconnectedNodes.clear();
-        }
     }
 }
