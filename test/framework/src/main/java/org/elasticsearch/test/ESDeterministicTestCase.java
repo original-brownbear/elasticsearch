@@ -231,6 +231,10 @@ public class ESDeterministicTestCase extends ESTestCase {
 
         protected abstract Stream<? extends DeterministicNode> allNodes();
 
+        public boolean nodeExists(DiscoveryNode node) {
+            return allNodes().anyMatch(cn -> cn.getLocalNode().equals(node));
+        }
+
         public abstract class DeterministicNode implements Releasable {
 
             protected final int nodeIndex;
@@ -284,6 +288,14 @@ public class ESDeterministicTestCase extends ESTestCase {
 
             public boolean isNotUsefullyBootstrapped() {
                 return localNode.isMasterNode() == false || coordinator.isInitialConfigurationSet() == false;
+            }
+
+            public DiscoveryNode getLocalNode() {
+                return localNode;
+            }
+
+            public ClusterState getLastAppliedClusterState() {
+                return clusterApplierService.state();
             }
 
             private DisruptableMockTransport mockTransport(DeterministicNode node) {

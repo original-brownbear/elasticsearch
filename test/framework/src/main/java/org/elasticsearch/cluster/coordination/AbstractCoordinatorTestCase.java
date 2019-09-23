@@ -607,10 +607,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
             return clusterNodes.stream();
         }
 
-        boolean nodeExists(DiscoveryNode node) {
-            return allNodes().anyMatch(cn -> cn.getLocalNode().equals(node));
-        }
-
         ClusterNode getAnyBootstrappableNode() {
             return randomFrom(clusterNodes.stream().filter(n -> n.getLocalNode().isMasterNode())
                 .filter(n -> initialConfiguration.getNodeIds().contains(n.getLocalNode().getId()))
@@ -630,7 +626,7 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
         List<ClusterNode> getAllNodesExcept(ClusterNode... clusterNodes) {
             Set<String> forbiddenIds = Arrays.stream(clusterNodes).map(ClusterNode::getId).collect(Collectors.toSet());
             List<ClusterNode> acceptableNodes
-                = this.clusterNodes.stream().filter(n -> forbiddenIds.contains(n.getId()) == false).collect(Collectors.toList());
+                = allNodes().filter(n -> forbiddenIds.contains(n.getId()) == false).collect(Collectors.toList());
             return acceptableNodes;
         }
 
@@ -893,10 +889,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
                 return persistedState;
             }
 
-            DiscoveryNode getLocalNode() {
-                return localNode;
-            }
-
             boolean isLeader() {
                 return coordinator.getMode() == LEADER;
             }
@@ -1064,10 +1056,6 @@ public class AbstractCoordinatorTestCase extends ESDeterministicTestCase {
 
             void onDisconnectEventFrom(ClusterNode clusterNode) {
                 transportService.disconnectFromNode(clusterNode.localNode);
-            }
-
-            ClusterState getLastAppliedClusterState() {
-                return clusterApplierService.state();
             }
 
             void applyInitialConfiguration() {

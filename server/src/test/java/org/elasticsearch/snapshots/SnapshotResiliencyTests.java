@@ -283,7 +283,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         assertNotNull(createSnapshotResponseListener.result());
         assertNotNull(restoreSnapshotResponseListener.result());
         assertTrue(documentCountVerified.get());
-        SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
+        SnapshotsInProgress finalSnapshotsInProgress = masterNode.getLastAppliedClusterState().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
@@ -335,7 +335,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         });
 
         runUntil(() -> testCluster.randomMasterNode().map(master -> {
-            final SnapshotsInProgress snapshotsInProgress = master.clusterService.state().custom(SnapshotsInProgress.TYPE);
+            final SnapshotsInProgress snapshotsInProgress = master.getLastAppliedClusterState().custom(SnapshotsInProgress.TYPE);
             return snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty();
         }).orElse(false), TimeUnit.MINUTES.toMillis(1L));
 
@@ -343,7 +343,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         final TestCluster.TestClusterNode randomMaster = testCluster.randomMasterNode()
             .orElseThrow(() -> new AssertionError("expected to find at least one active master node"));
-        SnapshotsInProgress finalSnapshotsInProgress = randomMaster.clusterService.state().custom(SnapshotsInProgress.TYPE);
+        SnapshotsInProgress finalSnapshotsInProgress = randomMaster.getLastAppliedClusterState().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = randomMaster.repositoriesService.repository(repoName);
         Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
@@ -381,7 +381,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         testCluster.deterministicTaskQueue.runAllRunnableTasks();
 
         assertNotNull(createAnotherSnapshotResponseStepListener.result());
-        SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
+        SnapshotsInProgress finalSnapshotsInProgress = masterNode.getLastAppliedClusterState().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
@@ -456,7 +456,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             if (createdSnapshot.get() == false) {
                 return false;
             }
-            final SnapshotsInProgress snapshotsInProgress = master.clusterService.state().custom(SnapshotsInProgress.TYPE);
+            final SnapshotsInProgress snapshotsInProgress = master.getLastAppliedClusterState().custom(SnapshotsInProgress.TYPE);
             return snapshotsInProgress == null || snapshotsInProgress.entries().isEmpty();
         }).orElse(false), TimeUnit.MINUTES.toMillis(1L));
 
@@ -464,7 +464,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         assertTrue(createdSnapshot.get());
         final SnapshotsInProgress finalSnapshotsInProgress = testCluster.randomDataNodeSafe()
-            .clusterService.state().custom(SnapshotsInProgress.TYPE);
+            .getLastAppliedClusterState().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
@@ -526,7 +526,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             assertThat(
                 "Documents were restored but the restored index mapping was older than some documents and misses some of their fields",
                 (int) hitCount,
-                lessThanOrEqualTo(((Map<?, ?>) masterNode.clusterService.state().metaData().index(restoredIndex).mapping()
+                lessThanOrEqualTo(((Map<?, ?>) masterNode.getLastAppliedClusterState().metaData().index(restoredIndex).mapping()
                     .sourceAsMap().get("properties")).size())
             );
             documentCountVerified.set(true);
@@ -536,7 +536,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         assertNotNull(createSnapshotResponseStepListener.result());
         assertNotNull(restoreSnapshotResponseStepListener.result());
-        SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
+        SnapshotsInProgress finalSnapshotsInProgress = masterNode.getLastAppliedClusterState().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
@@ -597,8 +597,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
     private void clearDisruptionsAndAwaitSync() {
         testCluster.clearNetworkDisruptions();
         runUntil(() -> {
-            final List<Long> versions = testCluster.nodes.values().stream()
-                .map(n -> n.clusterService.state().version()).distinct().collect(Collectors.toList());
+            final Set<Long> versions =
+                testCluster.allNodes().map(n -> n.getLastAppliedClusterState().version()).collect(Collectors.toSet());
             return versions.size() == 1L;
         }, TimeUnit.MINUTES.toMillis(1L));
     }
@@ -628,21 +628,21 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
     private void startCluster() {
         final ClusterState initialClusterState =
             new ClusterState.Builder(ClusterName.DEFAULT).nodes(testCluster.discoveryNodes()).build();
-        testCluster.nodes.values().forEach(testClusterNode -> testClusterNode.start(initialClusterState));
+        testCluster.allNodes().forEach(testClusterNode -> testClusterNode.start(initialClusterState));
 
         testCluster.deterministicTaskQueue.advanceTime();
         testCluster.deterministicTaskQueue.runAllRunnableTasks();
 
         final VotingConfiguration votingConfiguration =
-            new VotingConfiguration(testCluster.nodes.values().stream().map(n -> n.localNode)
+            new VotingConfiguration(testCluster.allNodes().map(DeterministicTestCluster.DeterministicNode::getLocalNode)
                 .filter(DiscoveryNode::isMasterNode).map(DiscoveryNode::getId).collect(Collectors.toSet()));
-        testCluster.nodes.values().stream().filter(n -> n.localNode.isMasterNode()).forEach(
+        testCluster.allNodes().filter(n -> n.localNode.isMasterNode()).forEach(
             testClusterNode -> testClusterNode.coordinator.setInitialConfiguration(votingConfiguration));
 
         runUntil(
             () -> {
-                List<String> masterNodeIds = testCluster.nodes.values().stream()
-                    .map(node -> node.clusterService.state().nodes().getMasterNodeId())
+                List<String> masterNodeIds = testCluster.allNodes()
+                    .map(node -> node.getLastAppliedClusterState().nodes().getMasterNodeId())
                     .distinct().collect(Collectors.toList());
                 return masterNodeIds.size() == 1 && masterNodeIds.contains(null) == false;
             },
@@ -740,7 +740,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         }
 
         public TestClusterNode nodeById(final String nodeId) {
-            return nodes.values().stream().filter(n -> n.localNode.getId().equals(nodeId)).findFirst()
+            return allNodes().filter(n -> n.localNode.getId().equals(nodeId)).findFirst()
                 .orElseThrow(() -> new AssertionError("Could not find node by id [" + nodeId + ']'));
         }
 
@@ -808,7 +808,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
          */
         public DiscoveryNodes discoveryNodes() {
             DiscoveryNodes.Builder builder = DiscoveryNodes.builder();
-            nodes.values().forEach(node -> builder.add(node.localNode));
+            allNodes().forEach(node -> builder.add(node.localNode));
             return builder.build();
         }
 
@@ -817,7 +817,8 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
          * @return Master Node
          */
         public TestClusterNode currentMaster() {
-            TestClusterNode master = nodes.get(allNodes().iterator().next().clusterService.state().nodes().getMasterNode().getName());
+            TestClusterNode master =
+                nodes.get(allNodes().iterator().next().getLastAppliedClusterState().nodes().getMasterNode().getName());
             assertNotNull(master);
             assertTrue(master.localNode.isMasterNode());
             return master;
@@ -825,24 +826,19 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         @Override
         public void close() {
-            nodes.values().forEach(TestClusterNode::close);
+            allNodes().forEach(TestClusterNode::close);
         }
 
         @Override
         protected DisruptableMockTransport.ConnectionStatus getConnectionStatus(DiscoveryNode sender, DiscoveryNode destination) {
-            return areConnected(sender.getName(), destination.getName())
-                ? DisruptableMockTransport.ConnectionStatus.DISCONNECTED : DisruptableMockTransport.ConnectionStatus.CONNECTED;
-        }
-
-        private boolean areConnected(String node1, String node2) {
-            if (node1.equals(node2)) {
-                return false;
+            if (nodeExists(sender) == false || nodeExists(destination) == false) {
+                return DisruptableMockTransport.ConnectionStatus.DISCONNECTED;
             }
-            // Check if both nodes are still part of the cluster
-            if (nodes.containsKey(node1) == false || nodes.containsKey(node2) == false) {
-                return true;
+            if (sender.equals(destination)) {
+                return DisruptableMockTransport.ConnectionStatus.CONNECTED;
             }
-            return disconnectedNodes.contains(node1) || disconnectedNodes.contains(node2);
+            return (disconnectedNodes.contains(sender.getName()) || disconnectedNodes.contains(destination.getName())) ?
+                DisruptableMockTransport.ConnectionStatus.DISCONNECTED : DisruptableMockTransport.ConnectionStatus.CONNECTED;
         }
 
         @Override
@@ -1075,7 +1071,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
             }
             public void restart() {
                 disconnectNode(this);
-                final ClusterState oldState = this.clusterService.state();
+                final ClusterState oldState = getLastAppliedClusterState();
                 close();
                 nodes.remove(localNode.getName());
                 scheduleSoon(() -> {
