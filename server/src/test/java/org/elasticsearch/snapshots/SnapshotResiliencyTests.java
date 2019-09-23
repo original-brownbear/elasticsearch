@@ -237,8 +237,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         final int shards = randomIntBetween(1, 10);
         final int documents = randomIntBetween(0, 100);
 
-        final TestCluster.TestClusterNode masterNode =
-            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
+        final TestCluster.TestClusterNode masterNode = testCluster.currentMaster();
 
         final StepListener<CreateSnapshotResponse> createSnapshotResponseListener = new StepListener<>();
 
@@ -310,8 +309,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         final String index = "test";
         final int shards = randomIntBetween(1, 10);
 
-        TestCluster.TestClusterNode masterNode =
-            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
+        TestCluster.TestClusterNode masterNode = testCluster.currentMaster();
 
         final StepListener<CreateSnapshotResponse> createSnapshotResponseStepListener = new StepListener<>();
 
@@ -364,8 +362,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
         final String index = "test";
         final int shards = randomIntBetween(1, 10);
 
-        TestCluster.TestClusterNode masterNode =
-            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
+        TestCluster.TestClusterNode masterNode = testCluster.currentMaster();
 
         final StepListener<CreateSnapshotResponse> createSnapshotResponseStepListener = new StepListener<>();
 
@@ -415,8 +412,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         final int shards = randomIntBetween(1, 10);
 
-        final TestCluster.TestClusterNode masterNode =
-            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
+        final TestCluster.TestClusterNode masterNode = testCluster.currentMaster();
         final AtomicBoolean createdSnapshot = new AtomicBoolean();
         final AdminClient masterAdminClient = masterNode.client.admin();
 
@@ -488,8 +484,7 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         final int shards = randomIntBetween(1, 10);
         final int documents = randomIntBetween(2, 100);
-        TestCluster.TestClusterNode masterNode =
-            testCluster.currentMaster(testCluster.nodes.values().iterator().next().clusterService.state());
+        TestCluster.TestClusterNode masterNode = testCluster.currentMaster();
 
         final StepListener<CreateSnapshotResponse> createSnapshotResponseStepListener = new StepListener<>();
 
@@ -823,11 +818,10 @@ public class SnapshotResiliencyTests extends ESDeterministicTestCase {
 
         /**
          * Returns the {@link TestClusterNode} for the master node in the given {@link ClusterState}.
-         * @param state ClusterState
          * @return Master Node
          */
-        public TestClusterNode currentMaster(ClusterState state) {
-            TestClusterNode master = nodes.get(state.nodes().getMasterNode().getName());
+        public TestClusterNode currentMaster() {
+            TestClusterNode master = nodes.get(allNodes().iterator().next().clusterService.state().nodes().getMasterNode().getName());
             assertNotNull(master);
             assertTrue(master.localNode.isMasterNode());
             return master;
