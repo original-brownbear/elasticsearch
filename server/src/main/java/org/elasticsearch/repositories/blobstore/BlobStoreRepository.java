@@ -565,6 +565,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 results -> results.stream().flatMap(Collection::stream).collect(Collectors.toList())), indices.size());
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
         for (IndexId indexId : indices) {
+            final Set<SnapshotId> survivingSnapshots = repositoryData.getSnapshots(indexId).stream()
+                .filter(id -> id.equals(snapshotId) == false).collect(Collectors.toSet());
             executor.execute(ActionRunnable.wrap(deleteIndexMetaDataListener,
                 deleteIdxMetaListener -> {
                     IndexMetaData indexMetaData = null;
@@ -588,7 +590,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                 @Override
                                 protected void doRun() throws Exception {
                                     allShardsListener.onResponse(
-                                        deleteShardSnapshot(repositoryData, indexId, shard, snapshotId));
+                                        deleteShardSnapshot(survivingSnapshots, indexId, shard, snapshotId));
                                 }
 
                                 @Override
@@ -1218,7 +1220,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     /**
      * Delete shard snapshot
      */
-    private ShardSnapshotMetaDeleteResult deleteShardSnapshot(RepositoryData repositoryData, IndexId indexId, ShardId snapshotShardId,
+    private ShardSnapshotMetaDeleteResult deleteShardSnapshot(Set<SnapshotId> survivingSnapshots, IndexId indexId, ShardId snapshotShardId,
                                                               SnapshotId snapshotId) throws IOException {
         final BlobContainer shardContainer = shardContainer(indexId, snapshotShardId);
         final Set<String> blobs;
@@ -1234,8 +1236,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
         // Build a list of snapshots that should be preserved
         List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
-        final Set<String> survivingSnapshotNames =
-            repositoryData.getSnapshots(indexId).stream().map(SnapshotId::getName).collect(Collectors.toSet());
+        final Set<String> survivingSnapshotNames = survivingSnapshots.stream().map(SnapshotId::getName).collect(Collectors.toSet());
         for (SnapshotFiles point : snapshots) {
             if (survivingSnapshotNames.contains(point.snapshot())) {
                 newSnapshotsList.add(point);
@@ -1243,18 +1244,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
         final String indexGeneration = Long.toString(fileListGeneration + 1);
         try {
-            final List<String> blobsToDelete;
-            if (newSnapshotsList.isEmpty()) {
-                // If we deleted all snapshots, we don't need to create a new index file and simply delete all the blobs we found
-                blobsToDelete = List.copyOf(blobs);
-            } else {
-                final Set<String> survivingSnapshotUUIDs = repositoryData.getSnapshots(indexId).stream().map(SnapshotId::getUUID)
-                    .collect(Collectors.toSet());
-                final BlobStoreIndexShardSnapshots updatedSnapshots = new BlobStoreIndexShardSnapshots(newSnapshotsList);
-                indexShardSnapshotsFormat.writeAtomic(updatedSnapshots, shardContainer, indexGeneration);
-                blobsToDelete = unusedBlobs(blobs, survivingSnapshotUUIDs, updatedSnapshots);
-            }
-            return new ShardSnapshotMetaDeleteResult(indexId, snapshotShardId.id(), blobsToDelete);
+            final Set<String> survivingSnapshotUUIDs = survivingSnapshots.stream().map(SnapshotId::getUUID).collect(Collectors.toSet());
+            final BlobStoreIndexShardSnapshots updatedSnapshots = new BlobStoreIndexShardSnapshots(newSnapshotsList);
+            indexShardSnapshotsFormat.writeAtomic(updatedSnapshots, shardContainer, indexGeneration);
+            return new ShardSnapshotMetaDeleteResult(indexId, snapshotShardId.id(), unusedBlobs(blobs, survivingSnapshotUUIDs, updatedSnapshots));
         } catch (IOException e) {
             throw new IndexShardSnapshotFailedException(snapshotShardId,
                 "Failed to finalize snapshot deletion [" + snapshotId + "] with shard index ["
