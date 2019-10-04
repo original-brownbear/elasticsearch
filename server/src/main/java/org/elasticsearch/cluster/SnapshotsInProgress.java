@@ -42,9 +42,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.elasticsearch.snapshots.SnapshotInfo.METADATA_FIELD_INTRODUCED;
 
@@ -106,10 +109,24 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             } else {
                 this.shards = shards;
                 this.waitingIndices = findWaitingIndices(shards);
+                assert assertShardsConsistent(state, indices, shards);
             }
             this.repositoryStateId = repositoryStateId;
             this.failure = failure;
             this.userMetadata = userMetadata;
+        }
+
+        private static boolean assertShardsConsistent(State state, List<IndexId> indices,
+                                                      ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
+            if ((state == State.INIT || state == State.ABORTED) && shards.isEmpty()) {
+                return true;
+            }
+            final Set<String> indexNames = indices.stream().map(IndexId::getName).collect(Collectors.toSet());
+            final Set<String> indexNamesInShards = new HashSet<>();
+            shards.keysIt().forEachRemaining(s -> indexNamesInShards.add(s.getIndexName()));
+            assert indexNames.equals(indexNamesInShards)
+                : "Indices in shards " + indexNamesInShards + " differ from expected indices " + indexNames + " for state [" + state + "]";
+            return true;
         }
 
         public Entry(Snapshot snapshot, boolean includeGlobalState, boolean partial, State state, List<IndexId> indices,
