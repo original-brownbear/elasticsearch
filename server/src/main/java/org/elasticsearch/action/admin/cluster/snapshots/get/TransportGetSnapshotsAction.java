@@ -96,15 +96,13 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
         final String[] repositories = request.repositories();
         transportService.sendChildRequest(transportService.getLocalNode(), GetRepositoriesAction.NAME,
                 new GetRepositoriesRequest(repositories), task, TransportRequestOptions.EMPTY,
-                new ActionListenerResponseHandler<>(
-                        ActionListener.wrap(
-                                response ->
-                                        // switch to GENERIC thread pool because it might be long running operation
-                                        threadPool.executor(ThreadPool.Names.GENERIC).execute(
-                                                () -> getMultipleReposSnapshotInfo(response.repositories(), request.snapshots(),
-                                                        request.ignoreUnavailable(), request.verbose(), listener)),
-                                listener::onFailure),
-                        GetRepositoriesResponse::new));
+            new ActionListenerResponseHandler<>(
+                ActionListener.wrap(listener,
+                    (l, response) ->
+                        // switch to GENERIC thread pool because it might be long running operation
+                        threadPool.generic().execute(
+                            () -> getMultipleReposSnapshotInfo(response.repositories(), request.snapshots(),
+                                request.ignoreUnavailable(), request.verbose(), l))), GetRepositoriesResponse::new));
     }
 
     private void getMultipleReposSnapshotInfo(List<RepositoryMetaData> repos, String[] snapshots, boolean ignoreUnavailable,

@@ -439,13 +439,13 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      */
     private void cleanupStaleBlobs(Map<String, BlobContainer> foundIndices, Map<String, BlobMetaData> rootBlobs,
                                    RepositoryData newRepoData, ActionListener<DeleteResult> listener) {
-        final GroupedActionListener<DeleteResult> groupedListener = new GroupedActionListener<>(ActionListener.wrap(deleteResults -> {
+        final GroupedActionListener<DeleteResult> groupedListener = new GroupedActionListener<>(ActionListener.map(listener, results -> {
             DeleteResult deleteResult = DeleteResult.ZERO;
-            for (DeleteResult result : deleteResults) {
+            for (DeleteResult result : results) {
                 deleteResult = deleteResult.add(result);
             }
-            listener.onResponse(deleteResult);
-        }, listener::onFailure), 2);
+            return deleteResult;
+        }), 2);
 
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
         executor.execute(ActionRunnable.supply(groupedListener, () -> {

@@ -20,6 +20,7 @@
 package org.elasticsearch.action;
 
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.CheckedRunnable;
@@ -69,6 +70,25 @@ public interface ActionListener<Response> {
             @Override
             public void onFailure(Exception e) {
                 onFailure.accept(e);
+            }
+        };
+    }
+
+    static <T, R> ActionListener<R> wrap(ActionListener<T> delegate,
+                                         CheckedBiConsumer<ActionListener<T>, R, ? extends Exception> onResponse) {
+        return new ActionListener<R>() {
+            @Override
+            public void onResponse(R response) {
+                try {
+                    onResponse.accept(delegate, response);
+                } catch (Exception e) {
+                    onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                delegate.onFailure(e);
             }
         };
     }

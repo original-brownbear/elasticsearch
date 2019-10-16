@@ -369,7 +369,8 @@ public abstract class TransportReplicationAction<
                         onCompletionListener.onResponse(response);
                     }, e -> handleException(primaryShardReference, e));
 
-                    final ActionListener<Response> globalCheckpointSyncingListener = ActionListener.wrap(response -> {
+                    final ActionListener<Response> globalCheckpointSyncingListener = ActionListener.wrap(referenceClosingListener,
+                        (l, response) -> {
                         if (syncGlobalCheckpointAfterOperation) {
                             final IndexShard shard = primaryShardReference.indexShard;
                             try {
@@ -385,11 +386,11 @@ public abstract class TransportReplicationAction<
                                 }
                             }
                         }
-                        referenceClosingListener.onResponse(response);
-                    }, referenceClosingListener::onFailure);
+                        l.onResponse(response);
+                    });
 
                     new ReplicationOperation<>(primaryRequest.getRequest(), primaryShardReference,
-                        ActionListener.wrap(result -> result.respond(globalCheckpointSyncingListener), referenceClosingListener::onFailure),
+                        ActionListener.wrap(referenceClosingListener, (r, result) -> result.respond(globalCheckpointSyncingListener)),
                         newReplicasProxy(), logger, actionName, primaryRequest.getPrimaryTerm()).execute();
                 }
             } catch (Exception e) {
