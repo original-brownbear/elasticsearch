@@ -46,7 +46,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.Matchers.equalTo;
 
@@ -126,18 +125,6 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
             }
         });
         assertEquals("Unexpected file count, found: [" + found + "].", expectedCount, found.size());
-    }
-
-    public static int numberOfFiles(Path dir) throws IOException {
-        final AtomicInteger count = new AtomicInteger();
-        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                count.incrementAndGet();
-                return FileVisitResult.CONTINUE;
-            }
-        });
-        return count.get();
     }
 
     public static void stopNode(final String node) throws IOException {

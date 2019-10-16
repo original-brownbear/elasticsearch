@@ -85,6 +85,7 @@ import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
+import org.elasticsearch.repositories.blobstore.BlobStoreTestUtil;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.MockScriptEngine;
 import org.elasticsearch.script.StoredScriptsIT;
@@ -1294,17 +1295,17 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
             assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
                 equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
             // Store number of files after each snapshot
-            numberOfFiles[i] = numberOfFiles(repo);
+            numberOfFiles[i] = BlobStoreTestUtil.numberOfFiles(repo);
         }
         assertThat(client.prepareSearch("test-idx").setSize(0).get().getHits().getTotalHits().value, equalTo(10L * numberOfSnapshots));
-        int numberOfFilesBeforeDeletion = numberOfFiles(repo);
+        int numberOfFilesBeforeDeletion = BlobStoreTestUtil.numberOfFiles(repo);
 
         logger.info("--> delete all snapshots except the first one and last one");
         for (int i = 1; i < numberOfSnapshots - 1; i++) {
             client.admin().cluster().prepareDeleteSnapshot("test-repo", "test-snap-" + i).get();
         }
 
-        int numberOfFilesAfterDeletion = numberOfFiles(repo);
+        int numberOfFilesAfterDeletion = BlobStoreTestUtil.numberOfFiles(repo);
 
         assertThat(numberOfFilesAfterDeletion, lessThan(numberOfFilesBeforeDeletion));
 

@@ -31,6 +31,7 @@ import org.elasticsearch.plugins.EnginePlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.RepositoryPlugin;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.blobstore.BlobStoreTestUtil;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.slice.SliceBuilder;
@@ -40,6 +41,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.hamcrest.Matchers;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,6 +54,7 @@ import java.util.function.BiConsumer;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
+import static org.hamcrest.CoreMatchers.is;
 
 @ESIntegTestCase.ClusterScope(numDataNodes = 0)
 public class SourceOnlySnapshotIT extends ESIntegTestCase {
@@ -143,6 +146,45 @@ public class SourceOnlySnapshotIT extends ESIntegTestCase {
             .get();
         ensureGreen(sourceIdx);
         assertHits(sourceIdx, builders.length, true);
+    }
+
+    public void testSnapshotIncrementality() throws Exception {
+        final String sourceIdx = "test-idx";
+        final String repo = "test-repo";
+
+        logger.info("-->  starting a master node and a data node");
+        internalCluster().startMasterOnlyNode();
+        internalCluster().startDataOnlyNode();
+
+        final Path repoPath = randomRepoPath();
+        logger.info("-->  creating repository");
+        assertAcked(client().admin().cluster().preparePutRepository(repo).setType("source")
+            .setSettings(Settings.builder().put("location", repoPath)
+                .put("delegate_type", "fs")
+                .put("restore_minimal", true)
+                .put("compress", randomBoolean())));
+
+        int docs = between(10, 100);
+        for (int i = 0; i < docs; i++) {
+            client().prepareIndex(sourceIdx, "type").setSource("foo", "bar" + i).execute().actionGet();
+        }
+
+        logger.info("--> snapshot the index");
+        CreateSnapshotResponse createResponse1 = client().admin().cluster()
+            .prepareCreateSnapshot(repo, "snap-1")
+            .setWaitForCompletion(true).setIndices(sourceIdx).get();
+        assertEquals(SnapshotState.SUCCESS, createResponse1.getSnapshotInfo().state());
+        final int countAfterFirst = BlobStoreTestUtil.numberOfFiles(repoPath);
+
+        logger.info("--> snapshot the index again");
+        CreateSnapshotResponse createResponse2 = client().admin().cluster()
+            .prepareCreateSnapshot(repo, "snap-2")
+            .setWaitForCompletion(true).setIndices(sourceIdx).get();
+        assertEquals(SnapshotState.SUCCESS, createResponse2.getSnapshotInfo().state());
+
+        final int countAfterSecond = BlobStoreTestUtil.numberOfFiles(repoPath);
+
+        assertThat(countAfterFirst, is(countAfterSecond - 2 - createResponse1.getSnapshotInfo().totalShards() - 1));
     }
 
     private void assertMappings(String sourceIdx, boolean requireRouting, boolean useNested) throws IOException {

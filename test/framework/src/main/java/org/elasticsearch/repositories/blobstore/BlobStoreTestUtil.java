@@ -42,7 +42,12 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +56,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.Locale;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -231,5 +237,17 @@ public final class BlobStoreTestUtil {
                 assertEquals(entry.getValue().length(), blobs.get(entry.getKey()).length());
             }
         }
+    }
+
+    public static int numberOfFiles(Path dir) throws IOException {
+        final AtomicInteger count = new AtomicInteger();
+        Files.walkFileTree(dir, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                count.incrementAndGet();
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        return count.get();
     }
 }
