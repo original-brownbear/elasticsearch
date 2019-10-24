@@ -605,26 +605,29 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             if (isReadOnly()) {
                 throw new RepositoryException(metadata.name(), "cannot run cleanup on readonly repository");
             }
-            final RepositoryData repositoryData = getRepositoryData();
-            if (repositoryData.getGenId() != repositoryStateId) {
-                // Check that we are working on the expected repository version before gathering the data to clean up
-                throw new RepositoryException(metadata.name(), "concurrent modification of the repository before cleanup started, " +
-                    "expected current generation [" + repositoryStateId + "], actual current generation ["
-                    + repositoryData.getGenId() + "]");
-            }
-            Map<String, BlobMetaData> rootBlobs = blobContainer().listBlobs();
-            final Map<String, BlobContainer> foundIndices = blobStore().blobContainer(indicesPath()).children();
-            final Set<String> survivingIndexIds =
-                repositoryData.getIndices().values().stream().map(IndexId::getId).collect(Collectors.toSet());
-            final List<String> staleRootBlobs = staleRootBlobs(repositoryData, rootBlobs.keySet());
-            if (survivingIndexIds.equals(foundIndices.keySet()) && staleRootBlobs.isEmpty()) {
-                // Nothing to clean up we return
-                listener.onResponse(new RepositoryCleanupResult(DeleteResult.ZERO));
-            } else {
-                // write new index-N blob to ensure concurrent operations will fail
-                writeIndexGen(repositoryData, repositoryStateId, writeShardGens);
-                cleanupStaleBlobs(foundIndices, rootBlobs, repositoryData, ActionListener.map(listener, RepositoryCleanupResult::new));
-            }
+            final StepListener<RepositoryData> repoDataListener = new StepListener<>();
+            getRepositoryData(repoDataListener);
+            repoDataListener.whenComplete(repositoryData -> {
+                if (repositoryData.getGenId() != repositoryStateId) {
+                    // Check that we are working on the expected repository version before gathering the data to clean up
+                    throw new RepositoryException(metadata.name(), "concurrent modification of the repository before cleanup started, " +
+                        "expected current generation [" + repositoryStateId + "], actual current generation ["
+                        + repositoryData.getGenId() + "]");
+                }
+                Map<String, BlobMetaData> rootBlobs = blobContainer().listBlobs();
+                final Map<String, BlobContainer> foundIndices = blobStore().blobContainer(indicesPath()).children();
+                final Set<String> survivingIndexIds =
+                    repositoryData.getIndices().values().stream().map(IndexId::getId).collect(Collectors.toSet());
+                final List<String> staleRootBlobs = staleRootBlobs(repositoryData, rootBlobs.keySet());
+                if (survivingIndexIds.equals(foundIndices.keySet()) && staleRootBlobs.isEmpty()) {
+                    // Nothing to clean up we return
+                    listener.onResponse(new RepositoryCleanupResult(DeleteResult.ZERO));
+                } else {
+                    // write new index-N blob to ensure concurrent operations will fail
+                    writeIndexGen(repositoryData, repositoryStateId, writeShardGens);
+                    cleanupStaleBlobs(foundIndices, rootBlobs, repositoryData, ActionListener.map(listener, RepositoryCleanupResult::new));
+                }
+            }, listener::onFailure);
         } catch (Exception e) {
             listener.onFailure(e);
         }
@@ -729,14 +732,17 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             ActionListener.wrap(snapshotInfos -> {
                     assert snapshotInfos.size() == 1 : "Should have only received a single SnapshotInfo but received " + snapshotInfos;
                     final SnapshotInfo snapshotInfo = snapshotInfos.iterator().next();
-                    final RepositoryData existingRepositoryData = getRepositoryData();
-                    final RepositoryData updatedRepositoryData =
-                        existingRepositoryData.addSnapshot(snapshotId, snapshotInfo.state(), shardGenerations);
-                    writeIndexGen(updatedRepositoryData, repositoryStateId, writeShardGens);
-                    if (writeShardGens) {
-                        cleanupOldShardGens(existingRepositoryData, updatedRepositoryData);
-                    }
-                    listener.onResponse(snapshotInfo);
+                    final StepListener<RepositoryData> repoDataListener = new StepListener<>();
+                    getRepositoryData(repoDataListener);
+                    repoDataListener.whenComplete(existingRepositoryData -> {
+                        final RepositoryData updatedRepositoryData =
+                            existingRepositoryData.addSnapshot(snapshotId, snapshotInfo.state(), shardGenerations);
+                        writeIndexGen(updatedRepositoryData, repositoryStateId, writeShardGens);
+                        if (writeShardGens) {
+                            cleanupOldShardGens(existingRepositoryData, updatedRepositoryData);
+                        }
+                        listener.onResponse(snapshotInfo);
+                    }, listener::onFailure);
                 },
                 e -> listener.onFailure(new SnapshotException(metadata.name(), snapshotId, "failed to update snapshot in repository", e))),
             2 + indices.size());
@@ -899,12 +905,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public RepositoryData getRepositoryData() {
-        try {
-            return getRepositoryData(latestIndexBlobId());
-        } catch (IOException ioe) {
-            throw new RepositoryException(metadata.name(), "Could not determine repository generation from root blobs", ioe);
-        }
+    public void getRepositoryData(ActionListener<RepositoryData> listener) {
+        ActionListener.completeWith(listener, () -> {
+            try {
+                return getRepositoryData(latestIndexBlobId());
+            } catch (IOException ioe) {
+                throw new RepositoryException(metadata.name(), "Could not determine repository generation from root blobs", ioe);
+            }
+        });
     }
 
     private RepositoryData getRepositoryData(long indexGen) {
