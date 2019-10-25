@@ -199,6 +199,14 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
             repositoryData.withGenId(startingGeneration + 1), repositoryData.getGenId(), true));
     }
 
+    public void testAsLuceneIndexRoundTrip() throws IOException {
+        final RepositoryData repositoryData = generateRandomRepoData();
+        final Path path = ESIntegTestCase.randomRepoPath(node().settings());
+        repositoryData.asLuceneIndex(path);
+        final RepositoryData loaded = RepositoryData.fromLuceneIndex(path, repositoryData.getGenId());
+        assertThat(loaded, equalTo(repositoryData));
+    }
+
     public void testBadChunksize() throws Exception {
         final Client client = client();
         final Path location = ESIntegTestCase.randomRepoPath(node().settings());
