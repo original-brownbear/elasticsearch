@@ -42,6 +42,7 @@ import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -50,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.zip.ZipInputStream;
 
 import static org.elasticsearch.repositories.RepositoryDataTests.generateRandomRepoData;
 import static org.hamcrest.Matchers.equalTo;
@@ -202,8 +204,10 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
     public void testAsLuceneIndexRoundTrip() throws IOException {
         final RepositoryData repositoryData = generateRandomRepoData();
         final Path path = ESIntegTestCase.randomRepoPath(node().settings());
-        repositoryData.asLuceneIndex(path);
-        final RepositoryData loaded = RepositoryData.fromLuceneIndex(path, repositoryData.getGenId());
+        final byte[] serialized = repositoryData.asLuceneIndex(path);
+        final RepositoryData loaded = RepositoryData.fromLuceneIndex(
+            new ZipInputStream(new ByteArrayInputStream(serialized)),
+            ESIntegTestCase.randomRepoPath(node().settings()), repositoryData.getGenId());
         assertThat(loaded, equalTo(repositoryData));
     }
 

@@ -41,7 +41,9 @@ import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotState;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,6 +57,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * A class that represents the data in a repository, as captured in the
@@ -317,7 +323,7 @@ public final class RepositoryData {
         return snapshotIndices;
     }
 
-    public void asLuceneIndex(Path path) throws IOException {
+    public byte[] asLuceneIndex(Path path) throws IOException {
         try (FSDirectory directory = FSDirectory.open(path);
              IndexWriter writer = new IndexWriter(directory, new IndexWriterConfig())) {
             for (String snapshotId : snapshotIds.keySet()) {
@@ -347,13 +353,32 @@ public final class RepositoryData {
             writer.commit();
             writer.deleteUnusedFiles();
         }
+        try(Stream<Path> files = Files.list(path)) {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (ZipOutputStream out = new ZipOutputStream(baos)) {
+                for (String file : files.filter(p -> Files.isDirectory(p) == false)
+                    .map(Path::getFileName).map(Path::toString).toArray(String[]::new)) {
+                    final ZipEntry entry = new ZipEntry(file);
+                    out.putNextEntry(entry);
+                    Files.copy(path.resolve(file), out);
+                    out.closeEntry();
+                }
+            }
+            return baos.toByteArray();
+        }
     }
 
-    public static RepositoryData fromLuceneIndex(Path path, long genId) throws IOException {
+    public static RepositoryData fromLuceneIndex(ZipInputStream inputStream, final Path path, long genId) throws IOException {
         final Map<String, SnapshotId> snapshots = new HashMap<>();
         final Map<String, SnapshotState> snapshotStates = new HashMap<>();
         final Map<IndexId, Set<SnapshotId>> indexSnapshots = new HashMap<>();
         final ShardGenerations.Builder shardGenerations = ShardGenerations.builder();
+
+        Files.createDirectories(path);
+        ZipEntry entry;
+        while ((entry = inputStream.getNextEntry()) != null) {
+            Files.write(path.resolve(entry.getName()), inputStream.readAllBytes());
+        }
 
         try (FSDirectory directory = FSDirectory.open(path);
              IndexReader indexReader = DirectoryReader.open(directory)) {
