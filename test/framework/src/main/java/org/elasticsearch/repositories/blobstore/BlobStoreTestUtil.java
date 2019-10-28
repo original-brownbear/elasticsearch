@@ -27,10 +27,6 @@ import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
-import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.RepositoryData;
@@ -56,6 +52,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.zip.ZipInputStream;
 
 import static org.elasticsearch.test.ESTestCase.randomIntBetween;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -104,12 +101,11 @@ public final class BlobStoreTestUtil {
             assertIndexGenerations(blobContainer, latestGen);
             final RepositoryData repositoryData;
             try (InputStream blob = blobContainer.readBlob("index-" + latestGen);
-                 XContentParser parser = XContentType.JSON.xContent().createParser(NamedXContentRegistry.EMPTY,
-                     LoggingDeprecationHandler.INSTANCE, blob)) {
-                repositoryData = RepositoryData.snapshotsFromXContent(parser, latestGen);
+                 ZipInputStream zipInputStream = new ZipInputStream(blob)) {
+                repositoryData = RepositoryData.fromLuceneIndex(zipInputStream, latestGen);
             }
             assertIndexUUIDs(blobContainer, repositoryData);
-            assertSnapshotUUIDs(repository, repositoryData);
+            //assertSnapshotUUIDs(repository, repositoryData);
             assertShardIndexGenerations(blobContainer, repositoryData.shardGenerations());
         }));
         listener.actionGet(TimeValue.timeValueMinutes(1L));

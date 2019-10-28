@@ -65,11 +65,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
-import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.shard.ShardId;
@@ -116,6 +112,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.ZipInputStream;
 
 import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot.FileInfo.canonicalName;
 
@@ -730,8 +727,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     assert snapshotInfos.size() == 1 : "Should have only received a single SnapshotInfo but received " + snapshotInfos;
                     final SnapshotInfo snapshotInfo = snapshotInfos.iterator().next();
                     final RepositoryData existingRepositoryData = getRepositoryData();
-                    final RepositoryData updatedRepositoryData =
-                        existingRepositoryData.addSnapshot(snapshotId, snapshotInfo.state(), shardGenerations);
+                    final RepositoryData updatedRepositoryData = existingRepositoryData.addSnapshot(snapshotInfo, shardGenerations);
                     writeIndexGen(updatedRepositoryData, repositoryStateId, writeShardGens);
                     if (writeShardGens) {
                         cleanupOldShardGens(existingRepositoryData, updatedRepositoryData);
@@ -763,7 +759,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 indices.stream().map(IndexId::getName).collect(Collectors.toList()),
                 startTime, failure, threadPool.absoluteTimeInMillis(), totalShards, shardFailures,
                 includeGlobalState, userMetadata);
-            snapshotFormat.write(snapshotInfo, blobContainer(), snapshotId.getUUID(), false);
             return snapshotInfo;
         }));
     }
@@ -785,10 +780,15 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     @Override
     public SnapshotInfo getSnapshotInfo(final SnapshotId snapshotId) {
         try {
-            return snapshotFormat.read(blobContainer(), snapshotId.getUUID());
+            final RepositoryData repositoryData = getRepositoryData();
+            final SnapshotInfo snapshotInfo = repositoryData.getSnapshot(snapshotId);
+            if (snapshotInfo == null) {
+                return snapshotFormat.read(blobContainer(), snapshotId.getUUID());
+            }
+            return snapshotInfo;
         } catch (NoSuchFileException ex) {
             throw new SnapshotMissingException(metadata.name(), snapshotId, ex);
-        } catch (IOException | NotXContentException ex) {
+        } catch (RepositoryException | IOException | NotXContentException ex) {
             throw new SnapshotException(metadata.name(), snapshotId, "failed to get snapshots", ex);
         }
     }
@@ -916,9 +916,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
             // EMPTY is safe here because RepositoryData#fromXContent calls namedObject
             try (InputStream blob = blobContainer().readBlob(snapshotsIndexBlobName);
-                 XContentParser parser = XContentType.JSON.xContent().createParser(NamedXContentRegistry.EMPTY,
-                     LoggingDeprecationHandler.INSTANCE, blob)) {
-                return RepositoryData.snapshotsFromXContent(parser, indexGen);
+                 ZipInputStream zipInputStream = new ZipInputStream(blob)) {
+                return RepositoryData.fromLuceneIndex(zipInputStream, indexGen);
             }
         } catch (IOException ioe) {
             throw new RepositoryException(metadata.name(), "could not read repository data from index blob", ioe);
@@ -949,8 +948,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         // write the index file
         final String indexBlob = INDEX_FILE_PREFIX + Long.toString(newGen);
         logger.debug("Repository [{}] writing new index generational blob [{}]", metadata.name(), indexBlob);
-        writeAtomic(indexBlob,
-            BytesReference.bytes(repositoryData.snapshotsToXContent(XContentFactory.jsonBuilder(), writeShardGens)), true);
+        writeAtomic(indexBlob, repositoryData.asLuceneIndex(), true);
         // write the current generation to the index-latest file
         final BytesReference genBytes;
         try (BytesStreamOutput bStream = new BytesStreamOutput()) {

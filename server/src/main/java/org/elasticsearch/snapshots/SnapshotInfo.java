@@ -57,25 +57,25 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
     private static final String SNAPSHOT = "snapshot";
     private static final String UUID = "uuid";
     private static final String INDICES = "indices";
-    private static final String STATE = "state";
-    private static final String REASON = "reason";
-    private static final String START_TIME = "start_time";
+    public static final String STATE = "state";
+    public static final String REASON = "reason";
+    public static final String START_TIME = "start_time";
     private static final String START_TIME_IN_MILLIS = "start_time_in_millis";
-    private static final String END_TIME = "end_time";
+    public static final String END_TIME = "end_time";
     private static final String END_TIME_IN_MILLIS = "end_time_in_millis";
     private static final String DURATION = "duration";
     private static final String DURATION_IN_MILLIS = "duration_in_millis";
     private static final String FAILURES = "failures";
-    private static final String SHARDS = "shards";
+    public static final String SHARDS = "shards";
     private static final String TOTAL = "total";
     private static final String FAILED = "failed";
     private static final String SUCCESSFUL = "successful";
     private static final String VERSION_ID = "version_id";
-    private static final String VERSION = "version";
+    public static final String VERSION = "version";
     private static final String NAME = "name";
-    private static final String TOTAL_SHARDS = "total_shards";
-    private static final String SUCCESSFUL_SHARDS = "successful_shards";
-    private static final String INCLUDE_GLOBAL_STATE = "include_global_state";
+    public static final String TOTAL_SHARDS = "total_shards";
+    public static final String SUCCESSFUL_SHARDS = "successful_shards";
+    public static final String INCLUDE_GLOBAL_STATE = "include_global_state";
     private static final String USER_METADATA = "metadata";
 
     private static final Comparator<SnapshotInfo> COMPARATOR =
@@ -263,7 +263,7 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
              startTime, endTime, totalShards, totalShards - shardFailures.size(), shardFailures, includeGlobalState, userMetadata);
     }
 
-    private SnapshotInfo(SnapshotId snapshotId, List<String> indices, SnapshotState state, String reason, Version version,
+    public SnapshotInfo(SnapshotId snapshotId, List<String> indices, SnapshotState state, String reason, Version version,
                          long startTime, long endTime, int totalShards, int successfulShards, List<SnapshotShardFailure> shardFailures,
                          Boolean includeGlobalState, Map<String, Object> userMetadata) {
         this.snapshotId = Objects.requireNonNull(snapshotId);

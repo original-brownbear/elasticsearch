@@ -21,30 +21,42 @@ package org.elasticsearch.repositories;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexCommit;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.IOContext;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.ResourceNotFoundException;
+import org.elasticsearch.Version;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.lucene.store.IndexOutputOutputStream;
+import org.elasticsearch.common.lucene.store.InputStreamIndexInput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.snapshots.SnapshotId;
+import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotState;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,7 +69,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -104,8 +115,15 @@ public final class RepositoryData {
      */
     private final ShardGenerations shardGenerations;
 
+    private final Map<SnapshotId, SnapshotInfo> snapshots;
+
     public RepositoryData(long genId, Map<String, SnapshotId> snapshotIds, Map<String, SnapshotState> snapshotStates,
                           Map<IndexId, Set<SnapshotId>> indexSnapshots, ShardGenerations shardGenerations) {
+        this(genId, snapshotIds, snapshotStates, indexSnapshots, shardGenerations, Collections.emptyMap());
+    }
+
+    public RepositoryData(long genId, Map<String, SnapshotId> snapshotIds, Map<String, SnapshotState> snapshotStates,
+        Map<IndexId, Set<SnapshotId>> indexSnapshots, ShardGenerations shardGenerations,Map<SnapshotId, SnapshotInfo> snapshots) {
         this.genId = genId;
         this.snapshotIds = Collections.unmodifiableMap(snapshotIds);
         this.snapshotStates = Collections.unmodifiableMap(snapshotStates);
@@ -113,6 +131,7 @@ public final class RepositoryData {
             .collect(Collectors.toMap(IndexId::getName, Function.identity())));
         this.indexSnapshots = Collections.unmodifiableMap(indexSnapshots);
         this.shardGenerations = Objects.requireNonNull(shardGenerations);
+        this.snapshots = snapshots;
         assert indices.values().containsAll(shardGenerations.indices()) : "ShardGenerations contained indices "
             + shardGenerations.indices() + " but snapshots only reference indices " + indices.values();
     }
@@ -173,14 +192,13 @@ public final class RepositoryData {
      * Add a snapshot and its indices to the repository; returns a new instance.  If the snapshot
      * already exists in the repository data, this method throws an IllegalArgumentException.
      *
-     * @param snapshotId       Id of the new snapshot
-     * @param snapshotState    State of the new snapshot
+     * @param snapshotInfo     SnapshotInfo of the new snapshot
      * @param shardGenerations Updated shard generations in the new snapshot. For each index contained in the snapshot an array of new
      *                         generations indexed by the shard id they correspond to must be supplied.
      */
-    public RepositoryData addSnapshot(final SnapshotId snapshotId,
-                                      final SnapshotState snapshotState,
-                                      final ShardGenerations shardGenerations) {
+    public RepositoryData addSnapshot(SnapshotInfo snapshotInfo, ShardGenerations shardGenerations) {
+        final SnapshotId snapshotId = snapshotInfo.snapshotId();
+        final SnapshotState snapshotState = snapshotInfo.state();
         if (snapshotIds.containsKey(snapshotId.getUUID())) {
             // if the snapshot id already exists in the repository data, it means an old master
             // that is blocked from the cluster is trying to finalize a snapshot concurrently with
@@ -195,8 +213,10 @@ public final class RepositoryData {
         for (final IndexId indexId : shardGenerations.indices()) {
             allIndexSnapshots.computeIfAbsent(indexId, k -> new LinkedHashSet<>()).add(snapshotId);
         }
+        final HashMap<SnapshotId, SnapshotInfo> newSnapshotInfos = new HashMap<>(this.snapshots);
+        newSnapshotInfos.put(snapshotId, snapshotInfo);
         return new RepositoryData(genId, snapshots, newSnapshotStates, allIndexSnapshots,
-            ShardGenerations.builder().putAll(this.shardGenerations).putAll(shardGenerations).build());
+            ShardGenerations.builder().putAll(this.shardGenerations).putAll(shardGenerations).build(), newSnapshotInfos);
     }
 
     /**
@@ -323,8 +343,12 @@ public final class RepositoryData {
         return snapshotIndices;
     }
 
-    public byte[] asLuceneIndex(Path path) throws IOException {
-        try (FSDirectory directory = FSDirectory.open(path);
+    public SnapshotInfo getSnapshot(SnapshotId snapshotId) {
+        return snapshots.get(snapshotId);
+    }
+
+    public BytesReference asLuceneIndex() throws IOException {
+        try (Directory directory = new ByteBuffersDirectory();
              IndexWriter writer = new IndexWriter(directory, new IndexWriterConfig())) {
             for (String snapshotId : snapshotIds.keySet()) {
                 final Document document = new Document();
@@ -349,66 +373,110 @@ public final class RepositoryData {
                 }
                 writer.addDocument(document);
             }
+            for (SnapshotId snapshotId : snapshots.keySet()) {
+                final Document document = new Document();
+                document.add(new StringField("type", "snapshotInfo", Field.Store.NO));
+                document.add(new StringField("snapshot_id", snapshotId.getUUID(), Field.Store.YES));
+                final SnapshotInfo snapshotInfo = snapshots.get(snapshotId);
+                final String reason = snapshotInfo.reason();
+                if (reason != null) {
+                    document.add(new StringField(SnapshotInfo.REASON, reason, Field.Store.YES));
+                }
+                document.add(new StoredField(SnapshotInfo.START_TIME, snapshotInfo.startTime()));
+                document.add(new StoredField(SnapshotInfo.END_TIME, snapshotInfo.endTime()));
+                document.add(new StoredField(SnapshotInfo.SHARDS, snapshotInfo.totalShards()));
+                document.add(new StoredField(SnapshotInfo.SUCCESSFUL_SHARDS, snapshotInfo.successfulShards()));
+                document.add(new StoredField(SnapshotInfo.TOTAL_SHARDS, snapshotInfo.totalShards()));
+                document.add(new StoredField(SnapshotInfo.STATE, snapshotInfo.state().name()));
+                document.add(new StoredField(SnapshotInfo.VERSION, snapshotInfo.version().toString()));
+                document.add(new StoredField(SnapshotInfo.INCLUDE_GLOBAL_STATE, snapshotInfo.includeGlobalState().toString()));
+                writer.addDocument(document);
+            }
             writer.forceMerge(1);
             writer.commit();
             writer.deleteUnusedFiles();
-        }
-        try(Stream<Path> files = Files.list(path)) {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (ZipOutputStream out = new ZipOutputStream(baos)) {
-                for (String file : files.filter(p -> Files.isDirectory(p) == false)
-                    .map(Path::getFileName).map(Path::toString).toArray(String[]::new)) {
+            try (ZipOutputStream out = new ZipOutputStream(baos);
+                 DirectoryReader indexReader = DirectoryReader.open(directory)) {
+                IndexCommit indexCommit = indexReader.getIndexCommit();
+                for (String file : indexCommit.getFileNames()) {
                     final ZipEntry entry = new ZipEntry(file);
                     out.putNextEntry(entry);
-                    Files.copy(path.resolve(file), out);
+                    try (InputStream inputStream =
+                             new InputStreamIndexInput(directory.openInput(file, IOContext.READONCE), directory.fileLength(file))) {
+                        inputStream.transferTo(out);
+                    }
                     out.closeEntry();
                 }
             }
-            return baos.toByteArray();
+            return new BytesArray(baos.toByteArray());
         }
     }
 
-    public static RepositoryData fromLuceneIndex(ZipInputStream inputStream, final Path path, long genId) throws IOException {
+    public static RepositoryData fromLuceneIndex(ZipInputStream inputStream, long genId) throws IOException {
         final Map<String, SnapshotId> snapshots = new HashMap<>();
         final Map<String, SnapshotState> snapshotStates = new HashMap<>();
         final Map<IndexId, Set<SnapshotId>> indexSnapshots = new HashMap<>();
         final ShardGenerations.Builder shardGenerations = ShardGenerations.builder();
+        final Map<SnapshotId, SnapshotInfo> snapshotInfos = new HashMap<>();
 
-        Files.createDirectories(path);
-        ZipEntry entry;
-        while ((entry = inputStream.getNextEntry()) != null) {
-            Files.write(path.resolve(entry.getName()), inputStream.readAllBytes());
-        }
+        try (Directory directory = new ByteBuffersDirectory()) {
 
-        try (FSDirectory directory = FSDirectory.open(path);
-             IndexReader indexReader = DirectoryReader.open(directory)) {
-            IndexSearcher searcher = new IndexSearcher(indexReader);
-            final TopDocs snapshotDocs = searcher.search(new TermQuery(new Term("type", "snapshot")), Integer.MAX_VALUE);
-            for (int i = 0; i < snapshotDocs.scoreDocs.length; ++i) {
-                final Document document = searcher.doc(snapshotDocs.scoreDocs[i].doc);
-                final String name = document.get(NAME);
-                final String uuid = document.get(UUID);
-                snapshots.put(uuid, new SnapshotId(name, uuid));
-                snapshotStates.put(uuid, SnapshotState.valueOf(document.get(STATE)));
-            }
-            final TopDocs indexDocs = searcher.search(new TermQuery(new Term("type", "index")), Integer.MAX_VALUE);
-            for (int i = 0; i < indexDocs.scoreDocs.length; ++i) {
-                final Document document = searcher.doc(indexDocs.scoreDocs[i].doc);
-                final IndexId indexId = new IndexId(document.get(NAME), document.get(INDEX_ID));
-                final String[] snUUIDs = document.getValues(SNAPSHOTS);
-                for (final String snUUID : snUUIDs) {
-                    indexSnapshots.computeIfAbsent(indexId, k -> new HashSet<>()).add(
-                        new SnapshotId(snapshots.get(snUUID).getName(), snUUID));
-                }
-                final String[] gens = document.getValues(SHARD_GENERATIONS);
-                for (int j = 0; j < gens.length; j++) {
-                    final String gen = gens[j];
-                    shardGenerations.put(indexId, j, "_null".equals(gen) ? null : gen);
+            ZipEntry entry;
+            while ((entry = inputStream.getNextEntry()) != null) {
+                try (OutputStream out = new IndexOutputOutputStream(directory.createOutput(entry.getName(), IOContext.DEFAULT))) {
+                    inputStream.transferTo(out);
                 }
             }
+            try (IndexReader indexReader = DirectoryReader.open(directory)) {
+                IndexSearcher searcher = new IndexSearcher(indexReader);
+                final TopDocs snapshotDocs = searcher.search(new TermQuery(new Term("type", "snapshot")), Integer.MAX_VALUE);
+                for (int i = 0; i < snapshotDocs.scoreDocs.length; ++i) {
+                    final Document document = searcher.doc(snapshotDocs.scoreDocs[i].doc);
+                    final String name = document.get(NAME);
+                    final String uuid = document.get(UUID);
+                    snapshots.put(uuid, new SnapshotId(name, uuid));
+                    snapshotStates.put(uuid, SnapshotState.valueOf(document.get(STATE)));
+                }
+                final TopDocs indexDocs = searcher.search(new TermQuery(new Term("type", "index")), Integer.MAX_VALUE);
+                for (int i = 0; i < indexDocs.scoreDocs.length; ++i) {
+                    final Document document = searcher.doc(indexDocs.scoreDocs[i].doc);
+                    final IndexId indexId = new IndexId(document.get(NAME), document.get(INDEX_ID));
+                    final String[] snUUIDs = document.getValues(SNAPSHOTS);
+                    for (final String snUUID : snUUIDs) {
+                        indexSnapshots.computeIfAbsent(indexId, k -> new HashSet<>()).add(
+                            new SnapshotId(snapshots.get(snUUID).getName(), snUUID));
+                    }
+                    final String[] gens = document.getValues(SHARD_GENERATIONS);
+                    for (int j = 0; j < gens.length; j++) {
+                        final String gen = gens[j];
+                        shardGenerations.put(indexId, j, "_null".equals(gen) ? null : gen);
+                    }
+                }
+                final TopDocs snapshotInfoDocs = searcher.search(new TermQuery(new Term("type", "snapshotInfo")), Integer.MAX_VALUE);
+                for (int i = 0; i < snapshotInfoDocs.scoreDocs.length; ++i) {
+                    final Document document = searcher.doc(snapshotInfoDocs.scoreDocs[i].doc);
+                    final String snUUID = document.get("snapshot_id");
+                    final SnapshotId snapshotId = new SnapshotId(snapshots.get(snUUID).getName(), snUUID);
+                    final SnapshotState snapshotState = SnapshotState.valueOf(document.get(SnapshotInfo.STATE));
+                    final List<String> indices = new ArrayList<>();
+                    final TopDocs indicesInSnapshot = searcher.search(
+                        new BooleanQuery.Builder().add(new TermQuery(new Term("type", "index")), BooleanClause.Occur.MUST)
+                            .add(new TermQuery(new Term(SNAPSHOTS, snUUID)), BooleanClause.Occur.MUST).build(), Integer.MAX_VALUE);
+                    for (int k = 0; k < indicesInSnapshot.scoreDocs.length; ++k) {
+                        indices.add(searcher.doc(indicesInSnapshot.scoreDocs[k].doc).get(NAME));
+                    }
+                    final Version version = Version.fromString(document.get(SnapshotInfo.VERSION));
+                    final int successful = document.getField(SnapshotInfo.SUCCESSFUL_SHARDS).numericValue().intValue();
+                    final int total = document.getField(SnapshotInfo.TOTAL_SHARDS).numericValue().intValue();
+                    snapshotInfos.put(snapshotId, new SnapshotInfo(snapshotId, indices, snapshotState, document.get(SnapshotInfo.REASON),
+                        version, 0L, 0L, total, successful, Collections.emptyList(),
+                        Boolean.valueOf(document.get(SnapshotInfo.INCLUDE_GLOBAL_STATE)), Collections.emptyMap()));
+                }
+            }
         }
 
-        return new RepositoryData(genId, snapshots, snapshotStates, indexSnapshots, shardGenerations.build());
+        return new RepositoryData(genId, snapshots, snapshotStates, indexSnapshots, shardGenerations.build(), snapshotInfos);
     }
 
     private static final String SHARD_GENERATIONS = "shard_generations";

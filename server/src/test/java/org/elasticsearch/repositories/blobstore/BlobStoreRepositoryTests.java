@@ -23,6 +23,7 @@ import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRes
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -37,12 +38,12 @@ import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.snapshots.SnapshotId;
+import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -203,11 +204,9 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
 
     public void testAsLuceneIndexRoundTrip() throws IOException {
         final RepositoryData repositoryData = generateRandomRepoData();
-        final Path path = ESIntegTestCase.randomRepoPath(node().settings());
-        final byte[] serialized = repositoryData.asLuceneIndex(path);
+        final BytesReference serialized = repositoryData.asLuceneIndex();
         final RepositoryData loaded = RepositoryData.fromLuceneIndex(
-            new ZipInputStream(new ByteArrayInputStream(serialized)),
-            ESIntegTestCase.randomRepoPath(node().settings()), repositoryData.getGenId());
+            new ZipInputStream(serialized.streamInput()), repositoryData.getGenId());
         assertThat(loaded, equalTo(repositoryData));
     }
 
@@ -259,8 +258,8 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
             for (int j = 0; j < numIndices; j++) {
                 builder.put(new IndexId(randomAlphaOfLength(8), UUIDs.randomBase64UUID()), 0, "1");
             }
-            repoData = repoData.addSnapshot(snapshotId,
-                randomFrom(SnapshotState.SUCCESS, SnapshotState.PARTIAL, SnapshotState.FAILED), builder.build());
+            repoData = repoData.addSnapshot(new SnapshotInfo(snapshotId, Collections.emptyList(),
+                randomFrom(SnapshotState.SUCCESS, SnapshotState.PARTIAL, SnapshotState.FAILED)), builder.build());
         }
         return repoData;
     }

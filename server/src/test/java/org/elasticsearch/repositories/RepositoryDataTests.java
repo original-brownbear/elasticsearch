@@ -28,6 +28,7 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.snapshots.SnapshotId;
+import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.ESTestCase;
 
@@ -104,8 +105,9 @@ public class RepositoryDataTests extends ESTestCase {
             indices.add(indexId);
             builder.put(indexId, 0, "2");
         }
-        RepositoryData newRepoData = repositoryData.addSnapshot(newSnapshot,
-            randomFrom(SnapshotState.SUCCESS, SnapshotState.PARTIAL, SnapshotState.FAILED), builder.build());
+        RepositoryData newRepoData = repositoryData.addSnapshot(new SnapshotInfo(
+            newSnapshot, indexNames, randomFrom(SnapshotState.SUCCESS, SnapshotState.PARTIAL, SnapshotState.FAILED)),
+            builder.build());
         // verify that the new repository data has the new snapshot and its indices
         assertTrue(newRepoData.getSnapshotIds().contains(newSnapshot));
         for (IndexId indexId : indices) {
@@ -168,7 +170,8 @@ public class RepositoryDataTests extends ESTestCase {
     public void testGetSnapshotState() {
         final SnapshotId snapshotId = new SnapshotId(randomAlphaOfLength(8), UUIDs.randomBase64UUID());
         final SnapshotState state = randomFrom(SnapshotState.values());
-        final RepositoryData repositoryData = RepositoryData.EMPTY.addSnapshot(snapshotId, state, ShardGenerations.EMPTY);
+        final RepositoryData repositoryData =
+            RepositoryData.EMPTY.addSnapshot(new SnapshotInfo(snapshotId, Collections.emptyList(), state), ShardGenerations.EMPTY);
         assertEquals(state, repositoryData.getSnapshotState(snapshotId));
         assertNull(repositoryData.getSnapshotState(new SnapshotId(randomAlphaOfLength(8), UUIDs.randomBase64UUID())));
     }
@@ -280,7 +283,8 @@ public class RepositoryDataTests extends ESTestCase {
                     builder.put(someIndex, j, uuid);
                 }
             }
-            repositoryData = repositoryData.addSnapshot(snapshotId, randomFrom(SnapshotState.values()), builder.build());
+            repositoryData = repositoryData.addSnapshot(
+                new SnapshotInfo(snapshotId, Collections.emptyList(), randomFrom(SnapshotState.values())), builder.build());
         }
         return repositoryData;
     }
