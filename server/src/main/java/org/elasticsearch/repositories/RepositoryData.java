@@ -338,7 +338,8 @@ public final class RepositoryData {
                 }
                 final List<String> shardGenerations = shardGenerations().getGens(indices.get(indexName));
                 for (String shardGeneration : shardGenerations) {
-                    document.add(new StringField(SHARD_GENERATIONS, shardGeneration, Field.Store.YES));
+                    document.add(
+                        new StringField(SHARD_GENERATIONS, Objects.requireNonNullElse(shardGeneration, "_null"), Field.Store.YES));
                 }
                 writer.addDocument(document);
             }
@@ -376,7 +377,8 @@ public final class RepositoryData {
                 }
                 final String[] gens = document.getValues(SHARD_GENERATIONS);
                 for (int j = 0; j < gens.length; j++) {
-                    shardGenerations.put(indexId, j, gens[j]);
+                    final String gen = gens[j];
+                    shardGenerations.put(indexId, j, "_null".equals(gen) ? null : gen);
                 }
             }
         }
