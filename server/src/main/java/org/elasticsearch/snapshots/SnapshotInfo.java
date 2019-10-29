@@ -65,7 +65,7 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
     private static final String END_TIME_IN_MILLIS = "end_time_in_millis";
     private static final String DURATION = "duration";
     private static final String DURATION_IN_MILLIS = "duration_in_millis";
-    private static final String FAILURES = "failures";
+    public static final String FAILURES = "failures";
     public static final String SHARDS = "shards";
     private static final String TOTAL = "total";
     private static final String FAILED = "failed";

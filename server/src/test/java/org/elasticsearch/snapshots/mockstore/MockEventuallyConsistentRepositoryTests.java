@@ -18,17 +18,11 @@
  */
 package org.elasticsearch.snapshots.mockstore;
 
-import org.apache.lucene.util.SameThreadExecutorService;
-import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
-import org.elasticsearch.snapshots.SnapshotId;
-import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -37,12 +31,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
-import java.util.Collections;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
 
@@ -132,45 +124,6 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
             final AssertionError assertionError = expectThrows(AssertionError.class,
                 () -> container.writeBlob(blobName, new ByteArrayInputStream(blobData), lengthWritten, false));
             assertThat(assertionError.getMessage(), equalTo("Shard level snap-{uuid} blobs should never be overwritten"));
-        }
-    }
-
-    public void testOverwriteSnapshotInfoBlob() {
-        MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
-        final ThreadPool threadPool = mock(ThreadPool.class);
-        when(threadPool.executor(ThreadPool.Names.SNAPSHOT)).thenReturn(new SameThreadExecutorService());
-        when(threadPool.info(ThreadPool.Names.SNAPSHOT)).thenReturn(
-            new ThreadPool.Info(ThreadPool.Names.SNAPSHOT, ThreadPool.ThreadPoolType.FIXED, randomIntBetween(1, 10)));
-        try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
-            new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), threadPool, blobStoreContext)) {
-            repository.start();
-
-            // We create a snap- blob for snapshot "foo" in the first generation
-            final PlainActionFuture<SnapshotInfo> future = PlainActionFuture.newFuture();
-            final SnapshotId snapshotId = new SnapshotId("foo", UUIDs.randomBase64UUID());
-            // We try to write another snap- blob for "foo" in the next generation. It fails because the content differs.
-            repository.finalizeSnapshot(snapshotId, ShardGenerations.EMPTY, 1L, null, 5, Collections.emptyList(),
-                -1L, false, MetaData.EMPTY_META_DATA, Collections.emptyMap(), true, future);
-            future.actionGet();
-
-            // We try to write another snap- blob for "foo" in the next generation. It fails because the content differs.
-            final AssertionError assertionError = expectThrows(AssertionError.class,
-                () -> {
-                    final PlainActionFuture<SnapshotInfo> fut = PlainActionFuture.newFuture();
-                    repository.finalizeSnapshot(
-                        snapshotId, ShardGenerations.EMPTY, 1L, null, 6, Collections.emptyList(),
-                        0, false, MetaData.EMPTY_META_DATA, Collections.emptyMap(), true, fut);
-                    fut.actionGet();
-                });
-            assertThat(assertionError.getMessage(), equalTo("\nExpected: <6>\n     but: was <5>"));
-
-            // We try to write yet another snap- blob for "foo" in the next generation.
-            // It passes cleanly because the content of the blob except for the timestamps.
-            final PlainActionFuture<SnapshotInfo> future2 = PlainActionFuture.newFuture();
-            repository.finalizeSnapshot(snapshotId, ShardGenerations.EMPTY, 1L, null, 5, Collections.emptyList(),
-                0, false, MetaData.EMPTY_META_DATA, Collections.emptyMap(),true, future2);
-            future2.actionGet();
         }
     }
 

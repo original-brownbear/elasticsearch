@@ -44,6 +44,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.lucene.store.IndexOutputOutputStream;
 import org.elasticsearch.common.lucene.store.InputStreamIndexInput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -51,12 +52,14 @@ import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
+import org.elasticsearch.snapshots.SnapshotShardFailure;
 import org.elasticsearch.snapshots.SnapshotState;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,6 +72,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -347,6 +351,8 @@ public final class RepositoryData {
         return snapshots.get(snapshotId);
     }
 
+    private static final String NULL_GEN = "_null";
+
     public BytesReference asLuceneIndex() throws IOException {
         try (Directory directory = new ByteBuffersDirectory();
              IndexWriter writer = new IndexWriter(directory, new IndexWriterConfig())) {
@@ -369,7 +375,7 @@ public final class RepositoryData {
                 final List<String> shardGenerations = shardGenerations().getGens(indices.get(indexName));
                 for (String shardGeneration : shardGenerations) {
                     document.add(
-                        new StringField(SHARD_GENERATIONS, Objects.requireNonNullElse(shardGeneration, "_null"), Field.Store.YES));
+                        new StringField(SHARD_GENERATIONS, Objects.requireNonNullElse(shardGeneration, NULL_GEN), Field.Store.YES));
                 }
                 writer.addDocument(document);
             }
@@ -388,8 +394,19 @@ public final class RepositoryData {
                 document.add(new StoredField(SnapshotInfo.SUCCESSFUL_SHARDS, snapshotInfo.successfulShards()));
                 document.add(new StoredField(SnapshotInfo.TOTAL_SHARDS, snapshotInfo.totalShards()));
                 document.add(new StoredField(SnapshotInfo.STATE, snapshotInfo.state().name()));
-                document.add(new StoredField(SnapshotInfo.VERSION, snapshotInfo.version().toString()));
-                document.add(new StoredField(SnapshotInfo.INCLUDE_GLOBAL_STATE, snapshotInfo.includeGlobalState().toString()));
+                final Version version = snapshotInfo.version();
+                if (version != null) {
+                    document.add(new StoredField(SnapshotInfo.VERSION, version.toString()));
+                }
+                final Boolean includeGlobalState = snapshotInfo.includeGlobalState();
+                if (includeGlobalState != null) {
+                    document.add(new StoredField(SnapshotInfo.INCLUDE_GLOBAL_STATE, includeGlobalState.toString()));
+                }
+                for (SnapshotShardFailure shardFailure : snapshotInfo.shardFailures()) {
+                    final BytesStreamOutput baos = new BytesStreamOutput();
+                    shardFailure.writeTo(baos);
+                    document.add(new StoredField(SnapshotInfo.FAILURES, baos.bytes().toBytesRef()));
+                }
                 writer.addDocument(document);
             }
             writer.forceMerge(1);
@@ -450,7 +467,7 @@ public final class RepositoryData {
                     final String[] gens = document.getValues(SHARD_GENERATIONS);
                     for (int j = 0; j < gens.length; j++) {
                         final String gen = gens[j];
-                        shardGenerations.put(indexId, j, "_null".equals(gen) ? null : gen);
+                        shardGenerations.put(indexId, j, NULL_GEN.equals(gen) ? null : gen);
                     }
                 }
                 final TopDocs snapshotInfoDocs = searcher.search(new TermQuery(new Term("type", "snapshotInfo")), Integer.MAX_VALUE);
@@ -466,11 +483,31 @@ public final class RepositoryData {
                     for (int k = 0; k < indicesInSnapshot.scoreDocs.length; ++k) {
                         indices.add(searcher.doc(indicesInSnapshot.scoreDocs[k].doc).get(NAME));
                     }
-                    final Version version = Version.fromString(document.get(SnapshotInfo.VERSION));
+                    final String versionString = document.get(SnapshotInfo.VERSION);
+                    final Version version;
+                    if (versionString != null) {
+                        version = Version.fromString(document.get(SnapshotInfo.VERSION));
+                    } else {
+                        version = null;
+                    }
                     final int successful = document.getField(SnapshotInfo.SUCCESSFUL_SHARDS).numericValue().intValue();
                     final int total = document.getField(SnapshotInfo.TOTAL_SHARDS).numericValue().intValue();
                     snapshotInfos.put(snapshotId, new SnapshotInfo(snapshotId, indices, snapshotState, document.get(SnapshotInfo.REASON),
-                        version, 0L, 0L, total, successful, Collections.emptyList(),
+                        version, document.getField(SnapshotInfo.START_TIME).numericValue().longValue(),
+                        document.getField(SnapshotInfo.END_TIME).numericValue().longValue(), total, successful,
+                        Stream.of(document.getBinaryValues(SnapshotInfo.FAILURES)).map(bytesRef -> {
+                            try {
+                                return new BytesArray(bytesRef).streamInput();
+                            } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        }).map(input -> {
+                            try {
+                                return new SnapshotShardFailure(input);
+                            } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        }).collect(Collectors.toList()),
                         Boolean.valueOf(document.get(SnapshotInfo.INCLUDE_GLOBAL_STATE)), Collections.emptyMap()));
                 }
             }

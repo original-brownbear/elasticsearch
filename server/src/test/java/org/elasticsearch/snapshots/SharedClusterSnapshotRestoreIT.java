@@ -1515,51 +1515,6 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
                 .addSnapshots("test-snap-1").get().getSnapshots("test-repo"));
     }
 
-    public void testDeleteSnapshotWithCorruptedSnapshotFile() throws Exception {
-        Client client = client();
-
-        Path repo = randomRepoPath();
-        logger.info("-->  creating repository at {}", repo.toAbsolutePath());
-        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
-                .setType("fs").setSettings(Settings.builder()
-                        .put("location", repo)
-                        .put("compress", false)
-                        .put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES)));
-
-        createIndex("test-idx-1", "test-idx-2");
-        logger.info("--> indexing some data");
-        indexRandom(true,
-                client().prepareIndex("test-idx-1").setSource("foo", "bar"),
-                client().prepareIndex("test-idx-2").setSource("foo", "bar"));
-
-        logger.info("--> creating snapshot");
-        CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-1")
-            .setWaitForCompletion(true).setIndices("test-idx-*").get();
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
-            equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
-
-        logger.info("--> truncate snapshot file to make it unreadable");
-        Path snapshotPath = repo.resolve("snap-" + createSnapshotResponse.getSnapshotInfo().snapshotId().getUUID() + ".dat");
-        try(SeekableByteChannel outChan = Files.newByteChannel(snapshotPath, StandardOpenOption.WRITE)) {
-            outChan.truncate(randomInt(10));
-        }
-        logger.info("--> delete snapshot");
-        client.admin().cluster().prepareDeleteSnapshot("test-repo", "test-snap-1").get();
-
-        logger.info("--> make sure snapshot doesn't exist");
-        expectThrows(SnapshotMissingException.class,
-                () -> client.admin().cluster().prepareGetSnapshots("test-repo").addSnapshots("test-snap-1").get().
-                        getSnapshots("test-repo"));
-
-        logger.info("--> make sure that we can create the snapshot again");
-        createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-1")
-            .setWaitForCompletion(true).setIndices("test-idx-*").get();
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
-            equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
-    }
-
     /** Tests that a snapshot with a corrupted global state file can still be deleted */
     public void testDeleteSnapshotWithCorruptedGlobalState() throws Exception {
         final Path repo = randomRepoPath();
@@ -2764,58 +2719,6 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
                      () -> client.admin().cluster().prepareDeleteSnapshot("test-repo", "_foo").get());
         expectThrows(SnapshotMissingException.class,
                      () -> client.admin().cluster().prepareSnapshotStatus("test-repo").setSnapshots("_foo").get());
-    }
-
-    public void testListCorruptedSnapshot() throws Exception {
-        disableRepoConsistencyCheck("This test intentionally leaves a broken repository");
-
-        Client client = client();
-        Path repo = randomRepoPath();
-        logger.info("-->  creating repository at {}", repo.toAbsolutePath());
-        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
-                .setType("fs").setSettings(Settings.builder()
-                        .put("location", repo)
-                        .put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES)));
-
-        createIndex("test-idx-1", "test-idx-2", "test-idx-3");
-        logger.info("--> indexing some data");
-        indexRandom(true,
-                client().prepareIndex("test-idx-1").setSource("foo", "bar"),
-                client().prepareIndex("test-idx-2").setSource("foo", "bar"),
-                client().prepareIndex("test-idx-3").setSource("foo", "bar"));
-
-        logger.info("--> creating 2 snapshots");
-        CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-1")
-            .setWaitForCompletion(true).setIndices("test-idx-*").get();
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
-            equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
-
-        createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-2").setWaitForCompletion(true)
-            .setIndices("test-idx-*").get();
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
-            equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
-
-        logger.info("--> truncate snapshot file to make it unreadable");
-        Path snapshotPath = repo.resolve("snap-" + createSnapshotResponse.getSnapshotInfo().snapshotId().getUUID() + ".dat");
-        try(SeekableByteChannel outChan = Files.newByteChannel(snapshotPath, StandardOpenOption.WRITE)) {
-            outChan.truncate(randomInt(10));
-        }
-
-        logger.info("--> get snapshots request should return both snapshots");
-        List<SnapshotInfo> snapshotInfos = client.admin().cluster()
-                .prepareGetSnapshots("test-repo")
-                .setIgnoreUnavailable(true).get().getSnapshots("test-repo");
-
-        assertThat(snapshotInfos.size(), equalTo(1));
-        assertThat(snapshotInfos.get(0).state(), equalTo(SnapshotState.SUCCESS));
-        assertThat(snapshotInfos.get(0).snapshotId().getName(), equalTo("test-snap-1"));
-
-        final SnapshotException ex = expectThrows(SnapshotException.class, () ->
-                client.admin().cluster().prepareGetSnapshots("test-repo").setIgnoreUnavailable(false).get().getSnapshots("test-repo"));
-        assertThat(ex.getRepositoryName(), equalTo("test-repo"));
-        assertThat(ex.getSnapshotName(), equalTo("test-snap-2"));
     }
 
     /** Tests that a snapshot with a corrupted global state file can still be restored */
