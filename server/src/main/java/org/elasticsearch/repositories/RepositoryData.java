@@ -267,11 +267,11 @@ public final class RepositoryData {
             }
             indexSnapshots.put(indexId, set);
         }
-
+        final Map<SnapshotId, SnapshotInfo> infos = new HashMap<>(snapshots);
+        infos.remove(snapshotId);
         return new RepositoryData(genId, newSnapshotIds, newSnapshotStates, indexSnapshots,
             ShardGenerations.builder().putAll(shardGenerations).putAll(updatedShardGenerations)
-                .retainIndicesAndPruneDeletes(indexSnapshots.keySet()).build()
-        );
+                .retainIndicesAndPruneDeletes(indexSnapshots.keySet()).build(), infos);
     }
 
     /**
