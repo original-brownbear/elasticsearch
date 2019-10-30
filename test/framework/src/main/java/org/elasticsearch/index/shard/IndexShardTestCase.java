@@ -79,6 +79,7 @@ import org.elasticsearch.indices.recovery.RecoveryTarget;
 import org.elasticsearch.indices.recovery.StartRecoveryRequest;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.test.DummyShardLock;
 import org.elasticsearch.test.ESTestCase;
@@ -825,8 +826,10 @@ public abstract class IndexShardTestCase extends ESTestCase {
                                    final Repository repository) throws IOException {
         final Index index = shard.shardId().getIndex();
         final IndexId indexId = new IndexId(index.getName(), index.getUUID());
+        final PlainActionFuture<RepositoryData> repoDataFuture = PlainActionFuture.newFuture();
+        repository.getRepositoryData(repoDataFuture);
         final IndexShardSnapshotStatus snapshotStatus = IndexShardSnapshotStatus.newInitializing(
-            repository.getRepositoryData().shardGenerations().getShardGen(indexId, shard.shardId().getId()));
+            repoDataFuture.actionGet().shardGenerations().getShardGen(indexId, shard.shardId().getId()));
         final PlainActionFuture<String> future = PlainActionFuture.newFuture();
         final String shardGen;
         try (Engine.IndexCommitRef indexCommitRef = shard.acquireLastIndexCommit(true)) {

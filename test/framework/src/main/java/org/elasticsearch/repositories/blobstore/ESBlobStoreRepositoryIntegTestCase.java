@@ -24,6 +24,7 @@ import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRes
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobStore;
@@ -260,7 +261,9 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         final CountDownLatch latch = new CountDownLatch(1);
         threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
             indicesBlobContainer.set(repository.blobStore().blobContainer(repository.basePath().add("indices")));
-            repositoryData.set(repository.getRepositoryData());
+            final PlainActionFuture<RepositoryData> future = PlainActionFuture.newFuture();
+            repository.getRepositoryData(future);
+            repositoryData.set(future.actionGet());
             latch.countDown();
         });
 

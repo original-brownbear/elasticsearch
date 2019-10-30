@@ -60,6 +60,7 @@ import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -208,11 +209,13 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
                 repository.snapshotShard(shard.store(), shard.mapperService(), snapshotId, indexId, snapshotRef.getIndexCommit(),
                     indexShardSnapshotStatus, true, future);
                 future.actionGet();
+                final PlainActionFuture<RepositoryData> repoData = PlainActionFuture.newFuture();
+                repository.getRepositoryData(repoData);
                 final PlainActionFuture<SnapshotInfo> finFuture = PlainActionFuture.newFuture();
                 repository.finalizeSnapshot(snapshotId,
                     ShardGenerations.builder().put(indexId, 0, indexShardSnapshotStatus.generation()).build(),
                     indexShardSnapshotStatus.asCopy().getStartTime(), null, 1, Collections.emptyList(),
-                    repository.getRepositoryData().getGenId(), true,
+                    repoData.actionGet().getGenId(), true,
                     MetaData.builder().put(shard.indexSettings().getIndexMetaData(), false).build(), Collections.emptyMap(),
                     true,
                     finFuture);
