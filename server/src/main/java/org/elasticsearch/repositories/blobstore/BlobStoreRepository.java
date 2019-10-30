@@ -113,6 +113,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -899,15 +900,75 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
+    private List<ActionListener<RepositoryData>> newRepoDataListeners;
+
+    private final Object repoDataMutex = new Object();
+
+    private final AtomicLong latestRepoGenMin = new AtomicLong(RepositoryData.EMPTY_REPO_GEN);
+
     @Override
     public void getRepositoryData(ActionListener<RepositoryData> listener) {
-        ActionListener.completeWith(listener, () -> {
-            try {
-                return getRepositoryData(latestIndexBlobId());
-            } catch (IOException ioe) {
-                throw new RepositoryException(metadata.name(), "Could not determine repository generation from root blobs", ioe);
+        synchronized (repoDataMutex) {
+            if (newRepoDataListeners == null) {
+                final List<ActionListener<RepositoryData>> newListeners = new ArrayList<>();
+                newListeners.add(listener);
+                newRepoDataListeners = newListeners;
+                final long assumedGenBound = latestRepoGenMin.get();
+                threadPool.generic().execute(ActionRunnable.wrap(new ActionListener<RepositoryData>() {
+                    @Override
+                    public void onResponse(final RepositoryData repositoryData) {
+                        if (repositoryData.getGenId() < latestRepoGenMin.get()) {
+                            return;
+                        }
+                        final List<ActionListener<RepositoryData>> listeners;
+                        synchronized (repoDataMutex) {
+                            listeners = newRepoDataListeners;
+                            if (newRepoDataListeners == null) {
+                                return;
+                            }
+                            newRepoDataListeners = null;
+                        }
+                        for (ActionListener<RepositoryData> repositoryDataActionListener : listeners) {
+                            threadPool.generic().execute(
+                                ActionRunnable.wrap(repositoryDataActionListener, l -> l.onResponse(repositoryData)));
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Exception e) {
+                        if (assumedGenBound < latestRepoGenMin.get()) {
+                            return;
+                        }
+                        final Exception ex;
+                        if (e instanceof IOException) {
+                            ex = new RepositoryException(metadata.name(), "Could not determine repository generation from root blobs", e);
+                        } else {
+                            ex = e;
+                        }
+                        final List<ActionListener<RepositoryData>> listeners;
+                        synchronized (repoDataMutex) {
+                            if (newRepoDataListeners == null) {
+                                return;
+                            }
+                            listeners = newRepoDataListeners;
+                            newRepoDataListeners = null;
+                        }
+                        for (ActionListener<RepositoryData> repositoryDataActionListener : listeners) {
+                            threadPool.generic().execute(ActionRunnable.wrap(repositoryDataActionListener, l -> l.onFailure(ex)));
+                        }
+                    }
+                }, l -> {
+                    final long foundRepoGen = latestIndexBlobId();
+                    if (foundRepoGen == latestRepoGenMin.updateAndGet(known -> Math.max(known, foundRepoGen))) {
+                        l.onResponse(getRepositoryData(foundRepoGen));
+                    } else {
+                        logger.debug("skipping repo data load");
+                    }
+                }));
+            } else {
+                newRepoDataListeners.add(listener);
             }
-        });
+        }
     }
 
     private RepositoryData getRepositoryData(long indexGen) {
@@ -954,6 +1015,20 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         logger.debug("Repository [{}] writing new index generational blob [{}]", metadata.name(), indexBlob);
         writeAtomic(indexBlob,
             BytesReference.bytes(repositoryData.snapshotsToXContent(XContentFactory.jsonBuilder(), writeShardGens)), true);
+        latestRepoGenMin.set(newGen);
+        final List<ActionListener<RepositoryData>> listeners;
+        synchronized (repoDataMutex) {
+            if (newRepoDataListeners == null) {
+                listeners = Collections.emptyList();
+            } else {
+                listeners = newRepoDataListeners;
+                newRepoDataListeners = null;
+            }
+        }
+        for (ActionListener<RepositoryData> repositoryDataActionListener : listeners) {
+            threadPool.generic().execute(
+                ActionRunnable.wrap(repositoryDataActionListener, l -> l.onResponse(repositoryData)));
+        }
         // write the current generation to the index-latest file
         final BytesReference genBytes;
         try (BytesStreamOutput bStream = new BytesStreamOutput()) {

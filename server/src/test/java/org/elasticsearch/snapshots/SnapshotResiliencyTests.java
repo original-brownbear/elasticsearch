@@ -310,6 +310,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         final PlainActionFuture<RepositoryData> repoData = PlainActionFuture.newFuture();
         repository.getRepositoryData(repoData);
+        deterministicTaskQueue.runAllRunnableTasks();
         Collection<SnapshotId> snapshotIds = repoData.actionGet().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
@@ -373,6 +374,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         final Repository repository = randomMaster.repositoriesService.repository(repoName);
         final PlainActionFuture<RepositoryData> repoData = PlainActionFuture.newFuture();
         repository.getRepositoryData(repoData);
+        deterministicTaskQueue.runAllRunnableTasks();
         Collection<SnapshotId> snapshotIds = repoData.actionGet().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
     }
@@ -414,6 +416,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         final PlainActionFuture<RepositoryData> repoData = PlainActionFuture.newFuture();
         repository.getRepositoryData(repoData);
+        deterministicTaskQueue.runAllRunnableTasks();
         Collection<SnapshotId> snapshotIds = repoData.actionGet().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
@@ -500,6 +503,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         final PlainActionFuture<RepositoryData> repoData = PlainActionFuture.newFuture();
         repository.getRepositoryData(repoData);
+        deterministicTaskQueue.runAllRunnableTasks();
         Collection<SnapshotId> snapshotIds = repoData.actionGet().getSnapshotIds();
         assertThat(snapshotIds, either(hasSize(1)).or(hasSize(0)));
     }
@@ -575,6 +579,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         final PlainActionFuture<RepositoryData> repoData = PlainActionFuture.newFuture();
         repository.getRepositoryData(repoData);
+        deterministicTaskQueue.runAllRunnableTasks();
         Collection<SnapshotId> snapshotIds = repoData.actionGet().getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
