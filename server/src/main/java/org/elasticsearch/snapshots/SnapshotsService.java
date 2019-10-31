@@ -138,6 +138,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     // Set of snapshots that are currently being ended by this node
     private final Set<Snapshot> endingSnapshots = Collections.synchronizedSet(new HashSet<>());
 
+    private final Set<Snapshot> deletingSnapshots = Collections.synchronizedSet(new HashSet<>());
+
     public SnapshotsService(Settings settings, ClusterService clusterService, IndexNameExpressionResolver indexNameExpressionResolver,
                             RepositoriesService repositoriesService, ThreadPool threadPool) {
         this.clusterService = clusterService;
@@ -1363,15 +1365,19 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      */
     private void deleteSnapshotFromRepository(Snapshot snapshot, @Nullable ActionListener<Void> listener, long repositoryStateId,
                                               Version version) {
-        threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(ActionRunnable.wrap(listener, l -> {
-            Repository repository = repositoriesService.repository(snapshot.getRepository());
-            repository.deleteSnapshot(snapshot.getSnapshotId(), repositoryStateId, version.onOrAfter(SHARD_GEN_IN_REPO_DATA_VERSION),
-                ActionListener.wrap(v -> {
-                        logger.info("snapshot [{}] deleted", snapshot);
-                        removeSnapshotDeletionFromClusterState(snapshot, null, l);
-                    }, ex -> removeSnapshotDeletionFromClusterState(snapshot, ex, l)
-                ));
-        }));
+        if (deletingSnapshots.add(snapshot) == false) {
+            return;
+        }
+        threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(ActionRunnable.wrap(
+            ActionListener.runAfter(listener, () -> deletingSnapshots.remove(snapshot)), l -> {
+                Repository repository = repositoriesService.repository(snapshot.getRepository());
+                repository.deleteSnapshot(snapshot.getSnapshotId(), repositoryStateId, version.onOrAfter(SHARD_GEN_IN_REPO_DATA_VERSION),
+                    ActionListener.wrap(v -> {
+                            logger.info("snapshot [{}] deleted", snapshot);
+                            removeSnapshotDeletionFromClusterState(snapshot, null, l);
+                        }, ex -> removeSnapshotDeletionFromClusterState(snapshot, ex, l)
+                    ));
+            }));
     }
 
     /**
