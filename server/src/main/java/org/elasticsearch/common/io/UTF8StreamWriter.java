@@ -50,15 +50,6 @@ public final class UTF8StreamWriter extends Writer {
     }
 
     /**
-     * Creates a UTF-8 writer having a byte buffer of specified capacity.
-     *
-     * @param capacity the capacity of the byte buffer.
-     */
-    public UTF8StreamWriter(int capacity) {
-        _bytes = new byte[capacity];
-    }
-
-    /**
      * Sets the output stream to use for writing until this writer is closed.
      * For example:[code]
      * Writer writer = new UTF8StreamWriter().setOutputStream(out);

@@ -28,6 +28,7 @@ import com.fasterxml.jackson.core.json.JsonWriteContext;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.core.util.JsonGeneratorDelegate;
+import org.elasticsearch.common.ByteArrays;
 import org.elasticsearch.common.xcontent.DeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContent;
@@ -373,9 +374,9 @@ public class JsonXContentGenerator implements XContentGenerator {
     private static long transfer(InputStream in, OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         long transferred = 0;
-        byte[] buffer = new byte[8192];
+        byte[] buffer = ByteArrays.getArray(ByteArrays.SMALL_ARRAY_SIZE);
         int read;
-        while ((read = in.read(buffer, 0, 8192)) >= 0) {
+        while ((read = in.read(buffer, 0, buffer.length)) >= 0) {
             out.write(buffer, 0, read);
             transferred += read;
         }
@@ -493,7 +494,7 @@ public class JsonXContentGenerator implements XContentGenerator {
     private static long copyStream(InputStream in, OutputStream out) throws IOException {
         Objects.requireNonNull(in, "No InputStream specified");
         Objects.requireNonNull(out, "No OutputStream specified");
-        final byte[] buffer = new byte[8192];
+        final byte[] buffer = ByteArrays.getArray(ByteArrays.SMALL_ARRAY_SIZE);
         boolean success = false;
         try {
             long byteCount = 0;

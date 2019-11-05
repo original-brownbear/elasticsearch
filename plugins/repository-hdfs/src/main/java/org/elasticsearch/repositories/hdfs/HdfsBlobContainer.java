@@ -32,6 +32,7 @@ import org.elasticsearch.common.blobstore.DeleteResult;
 import org.elasticsearch.common.blobstore.fs.FsBlobContainer;
 import org.elasticsearch.common.blobstore.support.AbstractBlobContainer;
 import org.elasticsearch.common.blobstore.support.PlainBlobMetaData;
+import org.elasticsearch.common.ByteArrays;
 import org.elasticsearch.repositories.hdfs.HdfsBlobStore.Operation;
 
 import java.io.FileNotFoundException;
@@ -103,7 +104,7 @@ final class HdfsBlobContainer extends AbstractBlobContainer {
                 : EnumSet.of(CreateFlag.CREATE, CreateFlag.OVERWRITE, CreateFlag.SYNC_BLOCK);
             try (FSDataOutputStream stream = fileContext.create(blob, flags, CreateOpts.bufferSize(bufferSize))) {
                 int bytesRead;
-                byte[] buffer = new byte[bufferSize];
+                byte[] buffer = ByteArrays.getArray(bufferSize);
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     stream.write(buffer, 0, bytesRead);
                 }
@@ -122,7 +123,7 @@ final class HdfsBlobContainer extends AbstractBlobContainer {
             try (FSDataOutputStream stream = fileContext.create(
                 tempBlobPath, EnumSet.of(CreateFlag.CREATE, CreateFlag.SYNC_BLOCK),  CreateOpts.bufferSize(bufferSize))) {
                 int bytesRead;
-                byte[] buffer = new byte[bufferSize];
+                byte[] buffer = ByteArrays.getArray(bufferSize);
                 while ((bytesRead = inputStream.read(buffer)) != -1) {
                     stream.write(buffer, 0, bytesRead);
                 }

@@ -33,6 +33,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.common.CharArrays;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.ByteArrays;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.GeoPoint;
@@ -394,9 +395,6 @@ public abstract class StreamInput extends InputStream {
     // Maximum char-count to de-serialize via the thread-local CharsRef buffer
     private static final int SMALL_STRING_LIMIT = 1024;
 
-    // Reusable bytes for deserializing strings
-    private static final ThreadLocal<byte[]> stringReadBuffer = ThreadLocal.withInitial(() -> new byte[1024]);
-
     // Thread-local buffer for smaller strings
     private static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
 
@@ -424,7 +422,7 @@ public abstract class StreamInput extends InputStream {
         int offsetByteArray = 0;
         int sizeByteArray = 0;
         int missingFromPartial = 0;
-        final byte[] byteBuffer = stringReadBuffer.get();
+        final byte[] byteBuffer = ByteArrays.getArray(ByteArrays.SMALL_ARRAY_SIZE);
         final char[] charBuffer = charsRef.chars;
         for (; charsOffset < charCount; ) {
             final int charsLeft = charCount - charsOffset;

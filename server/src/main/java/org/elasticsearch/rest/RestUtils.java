@@ -20,6 +20,7 @@
 package org.elasticsearch.rest;
 
 import org.elasticsearch.common.Booleans;
+import org.elasticsearch.common.ByteArrays;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.path.PathTrie;
 
@@ -146,7 +147,7 @@ public class RestUtils {
         if (!decodingNeeded(s, size, plusAsSpace)) {
             return s;
         }
-        final byte[] buf = new byte[size];
+        final byte[] buf = ByteArrays.getArray(size);
         int pos = decode(s, size, buf, plusAsSpace);
         return new String(buf, 0, pos, charset);
     }
