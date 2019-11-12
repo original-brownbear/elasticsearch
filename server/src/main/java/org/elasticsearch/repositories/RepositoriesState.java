@@ -16,13 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.elasticsearch.repositories;
 
-import org.elasticsearch.Build;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.AbstractNamedDiffable;
 import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.NamedDiff;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -41,6 +44,14 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         this.states = states;
     }
 
+    public RepositoriesState(StreamInput in) throws IOException {
+        this(in.readMap(StreamInput::readString, State::new));
+    }
+
+    public static NamedDiff<ClusterState.Custom> readDiffFrom(StreamInput in) throws IOException {
+        return readDiffFrom(ClusterState.Custom.class, TYPE, in);
+    }
+
     @Override
     public Version getMinimalSupportedVersion() {
         return REPO_GEN_IN_CS_VERSION;
@@ -53,7 +64,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-
+        out.writeMap(states, StreamOutput::writeString, (o, v) -> v.writeTo(o));
     }
 
     @Override
@@ -65,7 +76,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         return new Builder();
     }
 
-    public static final class State {
+    public static final class State implements Writeable {
 
         private final long generation;
 
@@ -74,6 +85,16 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         private State(long generation, boolean pendingUpdate) {
             this.generation = generation;
             this.pendingUpdate = pendingUpdate;
+        }
+
+        private State(StreamInput in) throws IOException {
+            this(in.readLong(), in.readBoolean());
+        }
+
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {
+            out.writeLong(generation);
+            out.writeBoolean(pendingUpdate);
         }
     }
 

@@ -24,6 +24,7 @@ import com.amazonaws.util.Base16;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
@@ -43,7 +44,6 @@ import org.elasticsearch.repositories.blobstore.ESMockAPIBasedRepositoryIntegTes
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.RestUtils;
 import org.elasticsearch.snapshots.mockstore.BlobStoreWrapper;
-import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -128,8 +128,9 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
         }
 
         @Override
-        protected S3Repository createRepository(RepositoryMetaData metadata, NamedXContentRegistry registry, ThreadPool threadPool) {
-            return new S3Repository(metadata, registry, service, threadPool) {
+        protected S3Repository createRepository(RepositoryMetaData metadata, NamedXContentRegistry registry,
+                                                ClusterService clusterService) {
+            return new S3Repository(metadata, registry, service, clusterService) {
 
                 @Override
                 public BlobStore blobStore() {

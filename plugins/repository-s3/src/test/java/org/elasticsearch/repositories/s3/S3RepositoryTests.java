@@ -21,13 +21,13 @@ package org.elasticsearch.repositories.s3;
 
 import com.amazonaws.services.s3.AbstractAmazonS3;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.hamcrest.Matchers;
 
 import java.util.Map;
@@ -120,7 +120,7 @@ public class S3RepositoryTests extends ESTestCase {
     }
 
     private S3Repository createS3Repo(RepositoryMetaData metadata) {
-        return new S3Repository(metadata, NamedXContentRegistry.EMPTY, new DummyS3Service(), mock(ThreadPool.class)) {
+        return new S3Repository(metadata, NamedXContentRegistry.EMPTY, new DummyS3Service(), mock(ClusterService.class)) {
             @Override
             protected void assertSnapshotOrGenericThread() {
                 // eliminate thread name check as we create repo manually on test/main threads

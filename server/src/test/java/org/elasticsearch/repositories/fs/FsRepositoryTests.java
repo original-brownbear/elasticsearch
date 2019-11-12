@@ -43,6 +43,7 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingHelper;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -73,6 +74,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static org.elasticsearch.mock.orig.Mockito.mock;
 
 public class FsRepositoryTests extends ESTestCase {
 
@@ -90,7 +92,9 @@ public class FsRepositoryTests extends ESTestCase {
 
             int numDocs = indexDocs(directory);
             RepositoryMetaData metaData = new RepositoryMetaData("test", "fs", settings);
-            FsRepository repository = new FsRepository(metaData, new Environment(settings, null), NamedXContentRegistry.EMPTY, threadPool);
+            final ClusterService clusterService = mock(ClusterService.class);
+            FsRepository repository =
+                new FsRepository(metaData, new Environment(settings, null), NamedXContentRegistry.EMPTY, clusterService);
             repository.start();
             final Settings indexSettings = Settings.builder().put(IndexMetaData.SETTING_INDEX_UUID, "myindexUUID").build();
             IndexSettings idxSettings = IndexSettingsModule.newIndexSettings("myindex", indexSettings);

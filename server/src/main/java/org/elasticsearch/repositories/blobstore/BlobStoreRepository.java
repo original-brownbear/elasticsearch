@@ -35,10 +35,13 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.StepListener;
 import org.elasticsearch.action.support.GroupedActionListener;
+import org.elasticsearch.cluster.ClusterChangedEvent;
+import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Numbers;
 import org.elasticsearch.common.Strings;
@@ -127,7 +130,7 @@ import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSna
  * For in depth documentation on how exactly implementations of this class interact with the snapshot functionality please refer to the
  * documentation of the package {@link org.elasticsearch.repositories.blobstore}.
  */
-public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository {
+public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository, ClusterStateApplier {
     private static final Logger logger = LogManager.getLogger(BlobStoreRepository.class);
 
     protected final RepositoryMetaData metadata;
@@ -201,18 +204,21 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private final BlobPath basePath;
 
+    private final ClusterService clusterService;
+
     /**
      * Constructs new BlobStoreRepository
      * @param metadata   The metadata for this repository including name and settings
-     * @param threadPool Threadpool to run long running repository manipulations on asynchronously
+     * @param clusterService Cluster service
      */
     protected BlobStoreRepository(
         final RepositoryMetaData metadata,
         final NamedXContentRegistry namedXContentRegistry,
-        final ThreadPool threadPool,
+        final ClusterService clusterService,
         final BlobPath basePath) {
         this.metadata = metadata;
-        this.threadPool = threadPool;
+        this.threadPool = clusterService.getClusterApplierService().threadPool();
+        this.clusterService = clusterService;
         this.compress = COMPRESS_SETTING.get(metadata.settings());
         snapshotRateLimiter = getRateLimiter(metadata.settings(), "max_snapshot_bytes_per_sec", new ByteSizeValue(40, ByteSizeUnit.MB));
         restoreRateLimiter = getRateLimiter(metadata.settings(), "max_restore_bytes_per_sec", new ByteSizeValue(40, ByteSizeUnit.MB));
@@ -233,6 +239,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     protected void doStart() {
+        clusterService.addStateApplier(this);
         ByteSizeValue chunkSize = chunkSize();
         if (chunkSize != null && chunkSize.getBytes() <= 0) {
             throw new IllegalArgumentException("the chunk size cannot be negative: [" + chunkSize + "]");
@@ -240,7 +247,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    protected void doStop() {}
+    protected void doStop() {
+        clusterService.removeApplier(this);
+    }
 
     @Override
     protected void doClose() {
@@ -256,6 +265,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 logger.warn("cannot close blob store", t);
             }
         }
+    }
+
+    @Override
+    public void applyClusterState(ClusterChangedEvent event) {
+        // TODO
     }
 
     public ThreadPool threadPool() {

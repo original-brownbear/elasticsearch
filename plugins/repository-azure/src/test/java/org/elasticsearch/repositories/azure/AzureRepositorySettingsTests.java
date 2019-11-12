@@ -21,13 +21,13 @@ package org.elasticsearch.repositories.azure;
 
 import com.microsoft.azure.storage.LocationMode;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.threadpool.ThreadPool;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -42,8 +42,7 @@ public class AzureRepositorySettingsTests extends ESTestCase {
             .put(settings)
             .build();
         final AzureRepository azureRepository = new AzureRepository(new RepositoryMetaData("foo", "azure", internalSettings),
-            NamedXContentRegistry.EMPTY, mock(AzureStorageService.class),
-                                           mock(ThreadPool.class));
+            NamedXContentRegistry.EMPTY, mock(AzureStorageService.class), mock(ClusterService.class));
         assertThat(azureRepository.getBlobStore(), is(nullValue()));
         return azureRepository;
     }

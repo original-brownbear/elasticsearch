@@ -22,6 +22,7 @@ import org.apache.lucene.util.SameThreadExecutorService;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.settings.Settings;
@@ -50,7 +51,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ThreadPool.class), blobStoreContext)) {
+            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
             repository.start();
             final BlobContainer blobContainer = repository.blobStore().blobContainer(repository.basePath());
             final String blobName = randomAlphaOfLength(10);
@@ -70,7 +71,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ThreadPool.class), blobStoreContext)) {
+            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
             repository.start();
             final BlobContainer blobContainer = repository.blobStore().blobContainer(repository.basePath());
             final String blobName = randomAlphaOfLength(10);
@@ -86,7 +87,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ThreadPool.class), blobStoreContext)) {
+            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
             repository.start();
             final BlobContainer blobContainer = repository.blobStore().blobContainer(repository.basePath());
             final String blobName = randomAlphaOfLength(10);
@@ -104,7 +105,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ThreadPool.class), blobStoreContext)) {
+            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
             repository.start();
             final BlobContainer container = repository.blobStore().blobContainer(repository.basePath());
             final String blobName = randomAlphaOfLength(10);
@@ -121,7 +122,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ThreadPool.class), blobStoreContext)) {
+            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
             repository.start();
             final BlobContainer container =
                 repository.blobStore().blobContainer(repository.basePath().add("indices").add("someindex").add("0"));
@@ -143,7 +144,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
             new ThreadPool.Info(ThreadPool.Names.SNAPSHOT, ThreadPool.ThreadPoolType.FIXED, randomIntBetween(1, 10)));
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), threadPool, blobStoreContext)) {
+            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
             repository.start();
 
             // We create a snap- blob for snapshot "foo" in the first generation

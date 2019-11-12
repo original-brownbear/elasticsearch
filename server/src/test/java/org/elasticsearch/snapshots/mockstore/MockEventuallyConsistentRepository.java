@@ -21,6 +21,7 @@ package org.elasticsearch.snapshots.mockstore;
 
 import org.apache.lucene.codecs.CodecUtil;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetaData;
@@ -37,7 +38,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -71,9 +71,9 @@ public class MockEventuallyConsistentRepository extends BlobStoreRepository {
     public MockEventuallyConsistentRepository(
         final RepositoryMetaData metadata,
         final NamedXContentRegistry namedXContentRegistry,
-        final ThreadPool threadPool,
+        final ClusterService clusterService,
         final Context context) {
-        super(metadata, namedXContentRegistry, threadPool, BlobPath.cleanPath());
+        super(metadata, namedXContentRegistry, clusterService, BlobPath.cleanPath());
         this.context = context;
         this.namedXContentRegistry = namedXContentRegistry;
     }
