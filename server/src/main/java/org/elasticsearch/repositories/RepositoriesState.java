@@ -99,6 +99,10 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
             return generation;
         }
 
+        public boolean pending() {
+            return pendingUpdate;
+        }
+
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeLong(generation);

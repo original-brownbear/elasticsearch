@@ -297,7 +297,23 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
+    private final Object repoGenMutex = new Object();
+
+    private List<ActionListener<Void>> initListeners = null;
+
     private void initializeRepoInClusterState(ActionListener<Void> listener) {
+        final boolean initInProgress;
+        synchronized (repoGenMutex) {
+            initInProgress = initListeners != null;
+            if (initInProgress == false) {
+                initListeners = new ArrayList<>();
+            }
+            initListeners.add(listener);
+        }
+        if (initInProgress == true) {
+            logger.debug("Init already in progress");
+            return;
+        }
         logger.debug("Initializing repository ");
         threadPool.generic().execute(ActionRunnable.supply(ActionListener.wrap(gen ->
                 clusterService.submitStateUpdateTask("initialize_repo_gen", new ClusterStateUpdateTask() {
@@ -328,9 +344,21 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                         final RepositoriesState state = newState.custom(RepositoriesState.TYPE);
                         latestKnownRepoGen.updateAndGet(known -> Math.max(known, state.state(metadata.name()).generation()));
-                        listener.onResponse(null);
+                        final List<ActionListener<Void>> listeners;
+                        synchronized (repoGenMutex) {
+                            listeners = initListeners;
+                            initListeners = null;
+                        }
+                        ActionListener.onResponse(listeners, null);
                     }
-                }), listener::onFailure),
+                }), e -> {
+                final List<ActionListener<Void>> listeners;
+                synchronized (repoGenMutex) {
+                    listeners = initListeners;
+                    initListeners = null;
+                }
+                ActionListener.onFailure(listeners, e);
+            }),
             this::latestIndexBlobId));
     }
 

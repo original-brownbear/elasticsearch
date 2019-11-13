@@ -207,6 +207,8 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                     MetaData metaData = currentState.metaData();
                     MetaData.Builder mdBuilder = MetaData.builder(currentState.metaData());
                     RepositoriesMetaData repositories = metaData.custom(RepositoriesMetaData.TYPE);
+                    final RepositoriesState existingStates = currentState.custom(RepositoriesState.TYPE);
+                    final RepositoriesState.Builder updatedStates = RepositoriesState.builder();
                     if (repositories != null && repositories.repositories().size() > 0) {
                         List<RepositoryMetaData> repositoriesMetaData = new ArrayList<>(repositories.repositories().size());
                         boolean changed = false;
@@ -215,13 +217,18 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                                 logger.info("delete repository [{}]", repositoryMetaData.name());
                                 changed = true;
                             } else {
+                                final RepositoriesState.State repoState = existingStates.state(repositoryMetaData.name());
+                                if (repoState != null) {
+                                    updatedStates.putState(repositoryMetaData.name(), repoState.generation(), repoState.pending());
+                                }
                                 repositoriesMetaData.add(repositoryMetaData);
                             }
                         }
                         if (changed) {
                             repositories = new RepositoriesMetaData(repositoriesMetaData);
                             mdBuilder.putCustom(RepositoriesMetaData.TYPE, repositories);
-                            return ClusterState.builder(currentState).metaData(mdBuilder).build();
+                            return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updatedStates.build())
+                                .metaData(mdBuilder).build();
                         }
                     }
                     if (Regex.isMatchAllPattern(request.name())) { // we use a wildcard so we don't barf if it's not present.
