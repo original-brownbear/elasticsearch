@@ -20,8 +20,11 @@ package org.elasticsearch.snapshots.mockstore;
 
 import org.apache.lucene.util.SameThreadExecutorService;
 import org.elasticsearch.action.support.PlainActionFuture;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.ClusterStateUpdateTask;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
+import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
@@ -39,9 +42,13 @@ import java.io.InputStream;
 import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,7 +58,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
+            xContentRegistry(), mockClusterService(), blobStoreContext)) {
             repository.start();
             final BlobContainer blobContainer = repository.blobStore().blobContainer(repository.basePath());
             final String blobName = randomAlphaOfLength(10);
@@ -71,7 +78,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
+            xContentRegistry(), mockClusterService(), blobStoreContext)) {
             repository.start();
             final BlobContainer blobContainer = repository.blobStore().blobContainer(repository.basePath());
             final String blobName = randomAlphaOfLength(10);
@@ -87,7 +94,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
+            xContentRegistry(), mockClusterService(), blobStoreContext)) {
             repository.start();
             final BlobContainer blobContainer = repository.blobStore().blobContainer(repository.basePath());
             final String blobName = randomAlphaOfLength(10);
@@ -105,7 +112,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
+            xContentRegistry(), mockClusterService(), blobStoreContext)) {
             repository.start();
             final BlobContainer container = repository.blobStore().blobContainer(repository.basePath());
             final String blobName = randomAlphaOfLength(10);
@@ -122,7 +129,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
+            xContentRegistry(), mockClusterService(), blobStoreContext)) {
             repository.start();
             final BlobContainer container =
                 repository.blobStore().blobContainer(repository.basePath().add("indices").add("someindex").add("0"));
@@ -138,13 +145,9 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
 
     public void testOverwriteSnapshotInfoBlob() {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
-        final ThreadPool threadPool = mock(ThreadPool.class);
-        when(threadPool.executor(ThreadPool.Names.SNAPSHOT)).thenReturn(new SameThreadExecutorService());
-        when(threadPool.info(ThreadPool.Names.SNAPSHOT)).thenReturn(
-            new ThreadPool.Info(ThreadPool.Names.SNAPSHOT, ThreadPool.ThreadPoolType.FIXED, randomIntBetween(1, 10)));
         try (BlobStoreRepository repository = new MockEventuallyConsistentRepository(
             new RepositoryMetaData("testRepo", "mockEventuallyConsistent", Settings.EMPTY),
-            xContentRegistry(), mock(ClusterService.class), blobStoreContext)) {
+            xContentRegistry(), mockClusterService(), blobStoreContext)) {
             repository.start();
 
             // We create a snap- blob for snapshot "foo" in the first generation
@@ -178,5 +181,27 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
     private static void assertThrowsOnInconsistentRead(BlobContainer blobContainer, String blobName) {
         final AssertionError assertionError = expectThrows(AssertionError.class, () -> blobContainer.readBlob(blobName));
         assertThat(assertionError.getMessage(), equalTo("Inconsistent read on [" + blobName + ']'));
+    }
+
+    private static ClusterService mockClusterService() {
+        final ThreadPool threadPool = mock(ThreadPool.class);
+        when(threadPool.executor(ThreadPool.Names.SNAPSHOT)).thenReturn(new SameThreadExecutorService());
+        when(threadPool.generic()).thenReturn(new SameThreadExecutorService());
+        when(threadPool.info(ThreadPool.Names.SNAPSHOT)).thenReturn(
+            new ThreadPool.Info(ThreadPool.Names.SNAPSHOT, ThreadPool.ThreadPoolType.FIXED, randomIntBetween(1, 10)));
+        final ClusterService clusterService = mock(ClusterService.class);
+        final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
+        when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
+        final AtomicReference<ClusterState> currentState = new AtomicReference<>(ClusterState.EMPTY_STATE);
+        doAnswer(invocation -> {
+            final ClusterStateUpdateTask task = ((ClusterStateUpdateTask) invocation.getArguments()[1]);
+            final ClusterState current = currentState.get();
+            final ClusterState next = task.execute(current);
+            currentState.set(next);
+            task.clusterStateProcessed((String) invocation.getArguments()[0], current, next);
+            return null;
+        }).when(clusterService).submitStateUpdateTask(anyString(), any(ClusterStateUpdateTask.class));
+        when(clusterApplierService.threadPool()).thenReturn(threadPool);
+        return clusterService;
     }
 }

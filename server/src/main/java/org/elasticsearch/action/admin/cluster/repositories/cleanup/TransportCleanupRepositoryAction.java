@@ -179,14 +179,16 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                 new ClusterStateUpdateTask() {
                     @Override
                     public ClusterState execute(ClusterState currentState) {
-                        final RepositoryCleanupInProgress repositoryCleanupInProgress = currentState.custom(RepositoryCleanupInProgress.TYPE);
+                        final RepositoryCleanupInProgress repositoryCleanupInProgress =
+                            currentState.custom(RepositoryCleanupInProgress.TYPE);
                         if (repositoryCleanupInProgress != null && repositoryCleanupInProgress.cleanupInProgress() == false) {
                             throw new IllegalStateException(
                                 "Cannot cleanup [" + repositoryName + "] - a repository cleanup is already in-progress");
                         }
                         SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
                         if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
-                            throw new IllegalStateException("Cannot cleanup [" + repositoryName + "] - a snapshot is currently being deleted");
+                            throw new IllegalStateException(
+                                "Cannot cleanup [" + repositoryName + "] - a snapshot is currently being deleted");
                         }
                         SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE);
                         if (snapshots != null && !snapshots.entries().isEmpty()) {
@@ -245,7 +247,8 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                                             repositoryName, repositoryStateId, result);
                                         listener.onResponse(result);
                                     } else {
-                                        logger.warn(() -> new ParameterizedMessage("Failed to run repository cleanup operations on [{}][{}]",
+                                        logger.warn(() -> new ParameterizedMessage(
+                                            "Failed to run repository cleanup operations on [{}][{}]",
                                             repositoryName, repositoryStateId), failure);
                                         listener.onFailure(failure);
                                     }

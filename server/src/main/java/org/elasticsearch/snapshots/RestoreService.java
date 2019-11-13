@@ -242,7 +242,8 @@ public class RestoreService implements ClusterStateApplier {
 
                         if (indices.isEmpty() == false) {
                             // We have some indices to restore
-                            ImmutableOpenMap.Builder<ShardId, RestoreInProgress.ShardRestoreStatus> shardsBuilder = ImmutableOpenMap.builder();
+                            ImmutableOpenMap.Builder<ShardId, RestoreInProgress.ShardRestoreStatus> shardsBuilder =
+                                ImmutableOpenMap.builder();
                             final Version minIndexCompatibilityVersion = currentState.getNodes().getMaxNodeVersion()
                                 .minimumIndexCompatibilityVersion();
                             for (Map.Entry<String, String> indexEntry : indices.entrySet()) {
@@ -258,8 +259,8 @@ public class RestoreService implements ClusterStateApplier {
                                     snapshotIndexMetaData = metaDataIndexUpgradeService.upgradeIndexMetaData(snapshotIndexMetaData,
                                         minIndexCompatibilityVersion);
                                 } catch (Exception ex) {
-                                    throw new SnapshotRestoreException(snapshot, "cannot restore index [" + index + "] because it cannot be " +
-                                        "upgraded", ex);
+                                    throw new SnapshotRestoreException(snapshot, "cannot restore index [" + index +
+                                        "] because it cannot be upgraded", ex);
                                 }
                                 // Check that the index is closed or doesn't exist
                                 IndexMetaData currentIndexMetaData = currentState.metaData().index(renamedIndexName);
@@ -411,8 +412,8 @@ public class RestoreService implements ClusterStateApplier {
                         for (Map.Entry<String, String> renamedIndex : renamedIndices.entrySet()) {
                             if (aliases.contains(renamedIndex.getKey())) {
                                 throw new SnapshotRestoreException(snapshot,
-                                    "cannot rename index [" + renamedIndex.getValue() + "] into [" + renamedIndex.getKey() + "] because of " +
-                                        "conflict with an alias with the same name");
+                                    "cannot rename index [" + renamedIndex.getValue() + "] into [" + renamedIndex.getKey()
+                                        + "] because of conflict with an alias with the same name");
                             }
                         }
                     }
@@ -444,20 +445,21 @@ public class RestoreService implements ClusterStateApplier {
                         // Index exist - checking that it's closed
                         if (currentIndexMetaData.getState() != IndexMetaData.State.CLOSE) {
                             // TODO: Enable restore for open indices
-                            throw new SnapshotRestoreException(snapshot, "cannot restore index [" + renamedIndex + "] because an open index " +
+                            throw new SnapshotRestoreException(snapshot,
+                                "cannot restore index [" + renamedIndex + "] because an open index " +
                                 "with same name already exists in the cluster. Either close or delete the existing index or restore the " +
                                 "index under a different name by providing a rename pattern and replacement name");
                         }
                         // Index exist - checking if it's partial restore
                         if (partial) {
-                            throw new SnapshotRestoreException(snapshot, "cannot restore partial index [" + renamedIndex + "] because such " +
-                                "index already exists");
+                            throw new SnapshotRestoreException(snapshot, "cannot restore partial index [" + renamedIndex
+                                + "] because such index already exists");
                         }
                         // Make sure that the number of shards is the same. That's the only thing that we cannot change
                         if (currentIndexMetaData.getNumberOfShards() != snapshotIndexMetaData.getNumberOfShards()) {
                             throw new SnapshotRestoreException(snapshot,
-                                "cannot restore index [" + renamedIndex + "] with [" + currentIndexMetaData.getNumberOfShards() + "] shards " +
-                                    "from a snapshot of index [" + snapshotIndexMetaData.getIndex().getName() + "] with [" +
+                                "cannot restore index [" + renamedIndex + "] with [" + currentIndexMetaData.getNumberOfShards()
+                                    + "] shards from a snapshot of index [" + snapshotIndexMetaData.getIndex().getName() + "] with [" +
                                     snapshotIndexMetaData.getNumberOfShards() + "] shards");
                         }
                     }
@@ -466,7 +468,8 @@ public class RestoreService implements ClusterStateApplier {
                      * Optionally updates index settings in indexMetaData by removing settings listed in ignoreSettings and
                      * merging them with settings in changeSettings.
                      */
-                    private IndexMetaData updateIndexSettings(IndexMetaData indexMetaData, Settings changeSettings, String[] ignoreSettings) {
+                    private IndexMetaData updateIndexSettings(IndexMetaData indexMetaData, Settings changeSettings,
+                                                              String[] ignoreSettings) {
                         Settings normalizedChangeSettings = Settings.builder()
                             .put(changeSettings)
                             .normalizePrefix(IndexMetaData.INDEX_SETTING_PREFIX)
@@ -478,7 +481,8 @@ public class RestoreService implements ClusterStateApplier {
                         for (String ignoredSetting : ignoreSettings) {
                             if (!Regex.isSimpleMatchPattern(ignoredSetting)) {
                                 if (UNREMOVABLE_SETTINGS.contains(ignoredSetting)) {
-                                    throw new SnapshotRestoreException(snapshot, "cannot remove setting [" + ignoredSetting + "] on restore");
+                                    throw new SnapshotRestoreException(
+                                        snapshot, "cannot remove setting [" + ignoredSetting + "] on restore");
                                 } else {
                                     keyFilters.add(ignoredSetting);
                                 }
