@@ -131,8 +131,8 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
             (BlobStoreRepository) repositoriesService.repository(repositoryName);
         final List<SnapshotId> originalSnapshots = Arrays.asList(snapshotId1, snapshotId2);
 
-        List<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds().stream()
-            .sorted((s1, s2) -> s1.getName().compareTo(s2.getName())).collect(Collectors.toList());
+        List<SnapshotId> snapshotIds = PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData).getSnapshotIds()
+            .stream().sorted((s1, s2) -> s1.getName().compareTo(s2.getName())).collect(Collectors.toList());
         assertThat(snapshotIds, equalTo(originalSnapshots));
     }
 
@@ -140,12 +140,12 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         final BlobStoreRepository repository = setupRepo();
 
         // write to and read from a index file with no entries
-        assertThat(repository.getRepositoryData().getSnapshotIds().size(), equalTo(0));
+        assertThat(PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData).getSnapshotIds().size(), equalTo(0));
         final RepositoryData emptyData = RepositoryData.EMPTY;
         final PlainActionFuture<Void> future1 = PlainActionFuture.newFuture();
         repository.writeIndexGen(emptyData, emptyData.getGenId(), true, future1);
         future1.actionGet();
-        RepositoryData repoData = repository.getRepositoryData();
+        RepositoryData repoData = PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData);
         assertEquals(repoData, emptyData);
         assertEquals(repoData.getIndices().size(), 0);
         assertEquals(repoData.getSnapshotIds().size(), 0);
@@ -156,44 +156,45 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
         final PlainActionFuture<Void> future2 = PlainActionFuture.newFuture();
         repository.writeIndexGen(repoData, repoData.getGenId(), true, future2);
         future2.actionGet();
-        assertEquals(repoData, repository.getRepositoryData());
+        assertEquals(repoData, PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData));
 
         // write to and read from a index file with random repository data
-        repoData = addRandomSnapshotsToRepoData(repository.getRepositoryData(), true);
+        repoData = addRandomSnapshotsToRepoData(PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData), true);
         final PlainActionFuture<Void> future3 = PlainActionFuture.newFuture();
         repository.writeIndexGen(repoData, repoData.getGenId(), true, future3);
         future3.actionGet();
-        assertEquals(repoData, repository.getRepositoryData());
+        assertEquals(repoData, PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData));
     }
 
     public void testIndexGenerationalFiles() throws Exception {
         final BlobStoreRepository repository = setupRepo();
+        assertEquals(PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData), RepositoryData.EMPTY);
 
         // write to index generational file
         RepositoryData repositoryData = generateRandomRepoData();
         final PlainActionFuture<Void> future1 = PlainActionFuture.newFuture();
-        repository.writeIndexGen(repositoryData, repositoryData.getGenId(), true, future1);
+        repository.writeIndexGen(repositoryData, RepositoryData.EMPTY_REPO_GEN, true, future1);
         future1.actionGet();
-        assertThat(repository.getRepositoryData(), equalTo(repositoryData));
+        assertThat(PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData), equalTo(repositoryData));
         assertThat(repository.latestIndexBlobId(), equalTo(0L));
         assertThat(repository.readSnapshotIndexLatestBlob(), equalTo(0L));
 
         // adding more and writing to a new index generational file
-        repositoryData = addRandomSnapshotsToRepoData(repository.getRepositoryData(), true);
+        repositoryData = addRandomSnapshotsToRepoData(PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData), true);
         final PlainActionFuture<Void> future2 = PlainActionFuture.newFuture();
         repository.writeIndexGen(repositoryData, repositoryData.getGenId(), true, future2);
         future2.actionGet();
-        assertEquals(repository.getRepositoryData(), repositoryData);
+        assertEquals(PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData), repositoryData);
         assertThat(repository.latestIndexBlobId(), equalTo(1L));
         assertThat(repository.readSnapshotIndexLatestBlob(), equalTo(1L));
 
         // removing a snapshot and writing to a new index generational file
-        repositoryData = repository.getRepositoryData().removeSnapshot(
+        repositoryData = PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData).removeSnapshot(
             repositoryData.getSnapshotIds().iterator().next(), ShardGenerations.EMPTY);
         final PlainActionFuture<Void> future3 = PlainActionFuture.newFuture();
         repository.writeIndexGen(repositoryData, repositoryData.getGenId(), true, future3);
         future3.actionGet();
-        assertEquals(repository.getRepositoryData(), repositoryData);
+        assertEquals(PlainActionFuture.<RepositoryData, IOException>get(repository::getRepositoryData), repositoryData);
         assertThat(repository.latestIndexBlobId(), equalTo(2L));
         assertThat(repository.readSnapshotIndexLatestBlob(), equalTo(2L));
     }

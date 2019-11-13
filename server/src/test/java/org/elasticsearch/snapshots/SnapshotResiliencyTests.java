@@ -74,6 +74,7 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.action.support.DestructiveOperations;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -155,6 +156,7 @@ import org.elasticsearch.node.ResponseCollectorService;
 import org.elasticsearch.plugins.PluginsService;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.repositories.blobstore.BlobStoreTestUtil;
 import org.elasticsearch.repositories.fs.FsRepository;
@@ -306,7 +308,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
         final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
@@ -367,7 +369,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = randomMaster.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = randomMaster.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
     }
 
@@ -406,7 +408,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
         final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
@@ -489,8 +491,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
         final SnapshotsInProgress finalSnapshotsInProgress = testClusterNodes.randomDataNodeSafe()
             .clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
-        final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        final Repository repository = testClusterNodes.randomMasterNodeSafe().repositoriesService.repository(repoName);
+        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
         assertThat(snapshotIds, either(hasSize(1)).or(hasSize(0)));
     }
 
@@ -563,7 +565,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = repository.getRepositoryData().getSnapshotIds();
+        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
         assertThat(snapshotIds, hasSize(1));
 
         final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
@@ -571,6 +573,13 @@ public class SnapshotResiliencyTests extends ESTestCase {
         assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
         assertEquals(shards, snapshotInfo.successfulShards());
         assertEquals(0, snapshotInfo.failedShards());
+    }
+
+    private RepositoryData getRepositoryData(Repository repository) {
+        final PlainActionFuture<RepositoryData> res = PlainActionFuture.newFuture();
+        repository.getRepositoryData(res);
+        assertTrue(res.isDone());
+        return res.actionGet();
     }
 
     private StepListener<CreateIndexResponse> createRepoAndIndex(TestClusterNodes.TestClusterNode masterNode, String repoName,
@@ -793,11 +802,11 @@ public class SnapshotResiliencyTests extends ESTestCase {
         }
 
         public void disconnectNode(TestClusterNode node) {
-            if (disconnectedNodes.contains(node.node.getId())) {
+            if (disconnectedNodes.contains(node.node.getName())) {
                 return;
             }
             testClusterNodes.nodes.values().forEach(n -> n.transportService.getConnectionManager().disconnectFromNode(node.node));
-            disconnectedNodes.add(node.node.getId());
+            disconnectedNodes.add(node.node.getName());
         }
 
         public void clearNetworkDisruptions() {
@@ -807,7 +816,11 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 if (testClusterNodes.nodes.containsKey(nodeName)) {
                     final DiscoveryNode node = testClusterNodes.nodes.get(nodeName).node;
                     testClusterNodes.nodes.values().forEach(
-                        n -> n.transportService.openConnection(node, null, ActionListener.wrap(() -> {})));
+                        n -> n.transportService.openConnection(node, null, ActionListener.wrap(c -> {
+                            logger.debug("--> Connected [{}] to [{}]", n.node, node);
+                        }, e -> {
+                            throw new AssertionError(e);
+                        })));
                 }
             });
         }
@@ -900,7 +913,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         if (nodes.containsKey(node.getName()) == false || nodes.containsKey(destination.getName()) == false) {
                             return ConnectionStatus.DISCONNECTED;
                         }
-                        return disconnectedNodes.contains(node.getId()) || disconnectedNodes.contains(destination.getId())
+                        return disconnectedNodes.contains(node.getName()) || disconnectedNodes.contains(destination.getName())
                             ? ConnectionStatus.DISCONNECTED : ConnectionStatus.CONNECTED;
                     }
 

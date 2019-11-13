@@ -43,6 +43,8 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingHelper;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
+import org.elasticsearch.cluster.service.ClusterApplier;
+import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.settings.Settings;
@@ -74,7 +76,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
-import static org.elasticsearch.mock.orig.Mockito.mock;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class FsRepositoryTests extends ESTestCase {
 
@@ -93,6 +96,9 @@ public class FsRepositoryTests extends ESTestCase {
             int numDocs = indexDocs(directory);
             RepositoryMetaData metaData = new RepositoryMetaData("test", "fs", settings);
             final ClusterService clusterService = mock(ClusterService.class);
+            final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
+            when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
+            when(clusterApplierService.threadPool()).thenReturn(threadPool);
             FsRepository repository =
                 new FsRepository(metaData, new Environment(settings, null), NamedXContentRegistry.EMPTY, clusterService);
             repository.start();

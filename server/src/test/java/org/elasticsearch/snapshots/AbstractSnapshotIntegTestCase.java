@@ -20,6 +20,7 @@ package org.elasticsearch.snapshots;
 
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.cluster.routing.allocation.decider.EnableAllocationDecider;
 import org.elasticsearch.common.settings.Settings;
@@ -98,7 +99,7 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
         final SetOnce<RepositoryData> repositoryData = new SetOnce<>();
         final CountDownLatch latch = new CountDownLatch(1);
         threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
-            repositoryData.set(repository.getRepositoryData());
+            repositoryData.set(PlainActionFuture.get(repository::getRepositoryData));
             latch.countDown();
         });
 

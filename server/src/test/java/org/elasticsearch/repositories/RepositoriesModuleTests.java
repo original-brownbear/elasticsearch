@@ -75,7 +75,7 @@ public class RepositoriesModuleTests extends ESTestCase {
         when(plugin2.getRepositories(environment, contentRegistry, clusterService)).thenReturn(Collections.singletonMap("type1", factory));
 
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
-            () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), mock(ClusterService.class),
+            () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), clusterService,
                 threadPool, contentRegistry));
 
         assertEquals("Repository type [type1] is already registered", ex.getMessage());
@@ -88,7 +88,7 @@ public class RepositoriesModuleTests extends ESTestCase {
             .thenReturn(Collections.singletonMap("type1", factory));
 
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
-            () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), mock(ClusterService.class),
+            () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), clusterService,
                 threadPool, contentRegistry));
 
         assertEquals("Internal repository type [type1] is already registered", ex.getMessage());
@@ -100,8 +100,8 @@ public class RepositoriesModuleTests extends ESTestCase {
             .thenReturn(Collections.singletonMap("type1", factory));
 
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
-            () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), mock(ClusterService.class),
-                threadPool, contentRegistry));
+            () -> new RepositoriesModule(environment, repoPlugins, mock(TransportService.class), clusterService, threadPool,
+                contentRegistry));
 
         assertEquals("Internal repository type [type1] is already registered as a non-internal repository", ex.getMessage());
     }

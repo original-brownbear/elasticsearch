@@ -217,9 +217,11 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                                 logger.info("delete repository [{}]", repositoryMetaData.name());
                                 changed = true;
                             } else {
-                                final RepositoriesState.State repoState = existingStates.state(repositoryMetaData.name());
-                                if (repoState != null) {
-                                    updatedStates.putState(repositoryMetaData.name(), repoState.generation(), repoState.pending());
+                                if (existingStates != null) {
+                                    final RepositoriesState.State repoState = existingStates.state(repositoryMetaData.name());
+                                    if (repoState != null) {
+                                        updatedStates.putState(repositoryMetaData.name(), repoState.generation(), repoState.pending());
+                                    }
                                 }
                                 repositoriesMetaData.add(repositoryMetaData);
                             }
