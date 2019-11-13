@@ -36,7 +36,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
     public static final Version REPO_GEN_IN_CS_VERSION = Version.V_8_0_0;
 
-    public static final String TYPE = "repositories";
+    public static final String TYPE = "repositories_state";
 
     private final Map<String, State> states;
 
@@ -46,6 +46,10 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
     public RepositoriesState(StreamInput in) throws IOException {
         this(in.readMap(StreamInput::readString, State::new));
+    }
+
+    public State state(String repoName) {
+        return states.get(repoName);
     }
 
     public static NamedDiff<ClusterState.Custom> readDiffFrom(StreamInput in) throws IOException {
