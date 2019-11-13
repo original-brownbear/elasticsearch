@@ -63,7 +63,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
     @Override
     public String getWriteableName() {
-        return null;
+        return TYPE;
     }
 
     @Override
@@ -95,6 +95,10 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
             this(in.readLong(), in.readBoolean());
         }
 
+        public long generation() {
+            return generation;
+        }
+
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeLong(generation);
@@ -110,14 +114,17 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         }
 
         public Builder putAll(RepositoriesState state) {
-            // TODO
+            stateMap.putAll(state.states);
             return this;
         }
 
-        public Builder putState(String name, State state) {
-            // TODO
+        public Builder putState(String name, long generation, boolean pending) {
+            stateMap.put(name, new State(generation, pending));
             return this;
         }
 
+        public RepositoriesState build() {
+            return new RepositoriesState(Map.copyOf(stateMap));
+        }
     }
 }
