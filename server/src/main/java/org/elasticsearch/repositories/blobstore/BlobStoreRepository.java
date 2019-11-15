@@ -484,8 +484,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      */
     private RepositoryData safeRepositoryData(long repositoryStateId, Map<String, BlobMetaData> rootBlobs) {
         final long generation = latestGeneration(rootBlobs.keySet());
-        final long genToLoad = latestKnownRepoGen.updateAndGet(known -> Math.max(known, generation));
-        if (genToLoad != generation) {
+        final long genToLoad = latestKnownRepoGen.updateAndGet(known -> Math.max(known, repositoryStateId));
+        if (genToLoad > generation) {
             // It's always a possibility to not see the latest index-N in the listing here on an eventually consistent blob store, just
             // debug log it. Any blobs leaked as a result of an inconsistent listing here will be cleaned up in a subsequent cleanup or
             // snapshot delete run anyway.
@@ -493,8 +493,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 "current generation is at least [" + genToLoad + "]");
         }
         if (genToLoad != repositoryStateId) {
-            throw new IllegalStateException("Determined latest repository generation to be [" + genToLoad + "] but this operation " +
-                "assumes generation [" + repositoryStateId + "]");
+            throw new RepositoryException(metadata.name(), "concurrent modification of the index-N file, expected current generation [" +
+                repositoryStateId + "], actual current generation [" + genToLoad + "]");
         }
         return getRepositoryData(genToLoad);
     }
@@ -1033,7 +1033,23 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         if (generation < RepositoryData.EMPTY_REPO_GEN) {
             initializeRepoInClusterState(
                 ActionListener.wrap(v -> threadPool.generic().execute(
-                    ActionRunnable.supply(listener, () -> getRepositoryData(latestKnownRepoGen.get()))), listener::onFailure));
+                    ActionRunnable.supply(listener, () -> {
+                        while (true) {
+                            final long genToLoad = latestKnownRepoGen.get();
+                            try {
+                                return getRepositoryData(genToLoad);
+                            } catch (RepositoryException e) {
+                                if (genToLoad != latestKnownRepoGen.get()) {
+                                    logger.warn(
+                                        new ParameterizedMessage("Failed to load repository data generation [{}" +
+                                            "] because a concurrent operation moved the current generation to [{}]",
+                                            genToLoad, latestKnownRepoGen.get()), e);
+                                    continue;
+                                }
+                                throw e;
+                            }
+                        }
+                    })), listener::onFailure));
         } else {
             listener.onResponse(getRepositoryData(latestKnownRepoGen.get()));
         }
@@ -1054,13 +1070,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 return RepositoryData.snapshotsFromXContent(parser, indexGen);
             }
         } catch (IOException ioe) {
-            // If we fail to load the generation we tracked in latestKnownRepoGen we reset it.
-            // This is done as a fail-safe in case a user manually deletes the contents of the repository in which case subsequent
-            // operations must start from the EMPTY_REPO_GEN again
-            if (RepositoryData.EMPTY_REPO_GEN ==
-                latestKnownRepoGen.updateAndGet(known -> known == indexGen ? RepositoryData.EMPTY_REPO_GEN : known)) {
-                logger.warn("Resetting repository generation tracker because we failed to read generation [" + indexGen + "]");
-            }
             throw new RepositoryException(metadata.name(), "could not read repository data from index blob", ioe);
         }
     }
