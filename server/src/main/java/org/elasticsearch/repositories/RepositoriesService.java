@@ -444,7 +444,6 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
         }
     }
 
-
     private void ensureRepositoryNotInUse(ClusterState clusterState, String repository) {
         if (SnapshotsService.isRepositoryInUse(clusterState, repository) || RestoreService.isRepositoryInUse(clusterState, repository)) {
             throw new IllegalStateException("trying to modify or unregister repository that is currently used ");

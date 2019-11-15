@@ -73,7 +73,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     public String toString() {
         StringBuilder builder = new StringBuilder("SnapshotsInProgress[");
         for (int i = 0; i < entries.size(); i++) {
-            builder.append(entries.get(i).snapshot().getSnapshotId().getName());
+            builder.append(entries.get(i).toString());
             if (i + 1 < entries.size()) {
                 builder.append(",");
             }

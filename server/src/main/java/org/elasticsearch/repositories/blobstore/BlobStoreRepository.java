@@ -246,7 +246,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     protected void doStart() {
-        clusterService.addStateApplier(BlobStoreRepository.this);
+        if (isReadOnly() == false) {
+            clusterService.addStateApplier(BlobStoreRepository.this);
+        }
         ByteSizeValue chunkSize = chunkSize();
         if (chunkSize != null && chunkSize.getBytes() <= 0) {
             throw new IllegalArgumentException("the chunk size cannot be negative: [" + chunkSize + "]");
@@ -255,7 +257,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     protected void doStop() {
-        clusterService.removeApplier(this);
+        if (isReadOnly() == false) {
+            clusterService.removeApplier(this);
+        }
     }
 
     @Override
@@ -276,11 +280,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public void applyClusterState(ClusterChangedEvent event) {
-        if (isReadOnly()) {
-            // Read only repositories do not use the cluster-state for repository state tracking.
-            assert assertReadOnlyNotInCS(event.state());
-            return;
-        }
+        assert isReadOnly() == false : "Read only repositories are not initialized in the cluster state";
         assert assertTrackedGenerations(event.state());
         final RepositoriesState repositoriesState = event.state().custom(RepositoriesState.TYPE);
         if (repositoriesState != null) {
@@ -324,9 +324,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 "Snapshot delete in progress but repositories state not initialized";
         }
 
-        if (snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty() == false) {
+        if (snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty() == false
+            && snapshotsInProgress.entries().stream().anyMatch(entry -> entry.snapshot().getRepository().equals(repoName))) {
             assert repositoriesState != null && repositoriesState.state(repoName) != null :
-                "Snapshot creation in progress but repositories state not initialized";
+                "Snapshot creation [" + snapshotsInProgress + "] in progress but repositories state not initialized";
         }
 
         if (cleanupInProgress != null && cleanupInProgress.cleanupInProgress()) {
@@ -337,19 +338,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         return true;
     }
 
-    private boolean assertReadOnlyNotInCS(ClusterState state) {
-        final RepositoriesState repositoriesState = state.custom(RepositoriesState.TYPE);
-        assert repositoriesState == null || repositoriesState.state(metadata.name()) == null :
-            "Read only repositories are should not be tracked in CS but found [" + repositoriesState.state(metadata.name()) + "]";
-        return true;
-    }
-
     private final Object repoGenMutex = new Object();
 
     private List<ActionListener<Void>> initListeners = null;
 
     private void initializeRepoInClusterState(ActionListener<Void> listener) {
-        assert isReadOnly() == false : "Read only repositories are not initialized in the cluster state";
         final boolean initInProgress;
         synchronized (repoGenMutex) {
             initInProgress = initListeners != null;
