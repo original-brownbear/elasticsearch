@@ -39,6 +39,9 @@ import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.ClusterStateUpdateTask;
+import org.elasticsearch.cluster.RepositoryCleanupInProgress;
+import org.elasticsearch.cluster.SnapshotDeletionsInProgress;
+import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
@@ -273,6 +276,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public void applyClusterState(ClusterChangedEvent event) {
+        if (isReadOnly()) {
+            // Read only repositories do not use the cluster-state for repository state tracking.
+            assert assertReadOnlyNotInCS(event.state());
+            return;
+        }
+        assert assertTrackedGenerations(event.state());
         final RepositoriesState repositoriesState = event.state().custom(RepositoriesState.TYPE);
         if (repositoriesState != null) {
             final RepositoriesState.State repoState = repositoriesState.state(metadata.name());
@@ -302,11 +311,45 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
+    private boolean assertTrackedGenerations(ClusterState state) {
+        final SnapshotDeletionsInProgress deletionsInProgress = state.custom(SnapshotDeletionsInProgress.TYPE);
+        final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE);
+        final RepositoryCleanupInProgress cleanupInProgress = state.custom(RepositoryCleanupInProgress.TYPE);
+        final RepositoriesState repositoriesState = state.custom(RepositoriesState.TYPE);
+
+        final String repoName = metadata.name();
+
+        if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
+            assert repositoriesState != null && repositoriesState.state(repoName) != null :
+                "Snapshot delete in progress but repositories state not initialized";
+        }
+
+        if (snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty() == false) {
+            assert repositoriesState != null && repositoriesState.state(repoName) != null :
+                "Snapshot creation in progress but repositories state not initialized";
+        }
+
+        if (cleanupInProgress != null && cleanupInProgress.cleanupInProgress()) {
+            assert repositoriesState != null && repositoriesState.state(repoName) != null :
+                "Snapshot cleanup in progress but repositories state not initialized";
+        }
+
+        return true;
+    }
+
+    private boolean assertReadOnlyNotInCS(ClusterState state) {
+        final RepositoriesState repositoriesState = state.custom(RepositoriesState.TYPE);
+        assert repositoriesState == null || repositoriesState.state(metadata.name()) == null :
+            "Read only repositories are should not be tracked in CS but found [" + repositoriesState.state(metadata.name()) + "]";
+        return true;
+    }
+
     private final Object repoGenMutex = new Object();
 
     private List<ActionListener<Void>> initListeners = null;
 
     private void initializeRepoInClusterState(ActionListener<Void> listener) {
+        assert isReadOnly() == false : "Read only repositories are not initialized in the cluster state";
         final boolean initInProgress;
         synchronized (repoGenMutex) {
             initInProgress = initListeners != null;
@@ -368,7 +411,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 listeners = initListeners;
                 initListeners = null;
             }
-            ActionListener.onFailure(listeners, e);
+            ActionListener.onFailure(listeners, new RepositoryException(metadata.name(), "Failed to determine repository generation", e));
         }), this::latestIndexBlobId));
     }
 
@@ -1074,32 +1117,36 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         loadConsistentRepositoryData(listener);
     }
 
-    private void loadConsistentRepositoryData(final ActionListener<RepositoryData> listener) {
+    private void loadConsistentRepositoryData(ActionListener<RepositoryData> listener) {
         assert isReadOnly() == false : "Read only repository mounts can't use cluster-state-assisted repository data load";
         final long generation = latestKnownRepoGen.get();
         if (generation < RepositoryData.EMPTY_REPO_GEN) {
             initializeRepoInClusterState(
-                ActionListener.wrap(v -> threadPool.generic().execute(
-                    ActionRunnable.supply(listener, () -> {
-                        while (true) {
-                            final long genToLoad = latestKnownRepoGen.get();
-                            try {
-                                return getRepositoryData(genToLoad);
-                            } catch (RepositoryException e) {
-                                if (genToLoad != latestKnownRepoGen.get()) {
-                                    logger.warn(
-                                        new ParameterizedMessage("Failed to load repository data generation [{}" +
-                                            "] because a concurrent operation moved the current generation to [{}]",
-                                            genToLoad, latestKnownRepoGen.get()), e);
-                                    continue;
-                                }
-                                throw e;
-                            }
-                        }
-                    })), listener::onFailure));
+                ActionListener.wrap(v -> loadRepositoryData(listener), listener::onFailure));
         } else {
-            listener.onResponse(getRepositoryData(latestKnownRepoGen.get()));
+            loadRepositoryData(listener);
         }
+    }
+
+    private void loadRepositoryData(final ActionListener<RepositoryData> listener) {
+        threadPool.generic().execute(
+            ActionRunnable.supply(listener, () -> {
+                while (true) {
+                    final long genToLoad = latestKnownRepoGen.get();
+                    try {
+                        return getRepositoryData(genToLoad);
+                    } catch (RepositoryException e) {
+                        if (genToLoad != latestKnownRepoGen.get()) {
+                            logger.warn(
+                                new ParameterizedMessage("Failed to load repository data generation [{}" +
+                                    "] because a concurrent operation moved the current generation to [{}]",
+                                    genToLoad, latestKnownRepoGen.get()), e);
+                            continue;
+                        }
+                        throw e;
+                    }
+                }
+            }));
     }
 
     private RepositoryData getRepositoryData(long indexGen) {
@@ -1173,11 +1220,13 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             logger.debug("Repository [{}] writing new index generational blob [{}]", metadata.name(), indexBlob);
             writeAtomic(indexBlob,
                 BytesReference.bytes(repositoryData.snapshotsToXContent(XContentFactory.jsonBuilder(), writeShardGens)), true);
-            final long newLatestGen = latestKnownRepoGen.updateAndGet(known -> Math.max(known, newGen));
-            if (newGen != newLatestGen) {
+            if (newGen < latestKnownRepoGen.get()) {
+                assert false : "Wrote generation [" + newGen + "] but latest known repo gen concurrently changed to ["
+                    + latestKnownRepoGen.get() + "]";
                 // Don't mess up the index.latest blob
                 throw new IllegalStateException(
-                    "Wrote generation [" + newGen + "] but latest known repo gen concurrently changed to [" + newLatestGen + "]");
+                    "Wrote generation [" + newGen + "] but latest known repo gen concurrently changed to ["
+                        + latestKnownRepoGen.get() + "]");
             }
             // write the current generation to the index-latest file
             final BytesReference genBytes;
