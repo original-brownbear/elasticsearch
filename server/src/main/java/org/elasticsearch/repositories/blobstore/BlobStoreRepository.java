@@ -1192,8 +1192,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         return readOnly;
     }
 
-    protected void writeIndexGen(final RepositoryData repositoryData, final long expectedGen,
-        final boolean writeShardGens, ActionListener<Void> listener) {
+    protected void writeIndexGen(RepositoryData repositoryData, long expectedGen, boolean writeShardGens, ActionListener<Void> listener) {
         assert isReadOnly() == false; // can not write to a read only repository
         final long currentGen = repositoryData.getGenId();
         if (currentGen != expectedGen) {
@@ -1276,10 +1275,21 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
                 @Override
                 public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
+                    assert assertCSAfterNewGeneration(newState);
                     l.onResponse(null);
                 }
             });
         })), listener::onFailure);
+    }
+
+    private boolean assertCSAfterNewGeneration(ClusterState clusterState) {
+        final RepositoriesState repositoriesState = clusterState.custom(RepositoriesState.TYPE);
+        final RepositoriesState.State repoState = repositoriesState.state(metadata.name());
+        final long knownGeneration = latestKnownRepoGen.get();
+        assert knownGeneration == repoState.generation() : "Mismatch in assumed generation [" + knownGeneration
+            + "] and generation in CS [" + repoState.generation() + "]";
+        assert repoState.pending() == false : "State after new generation write must not be pending but was [" + repoState + "]";
+        return true;
     }
 
     /**

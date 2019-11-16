@@ -22,7 +22,9 @@ package org.elasticsearch.repositories.blobstore;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.TestUtil;
 import org.elasticsearch.action.support.PlainActionFuture;
+import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.ClusterStateApplier;
 import org.elasticsearch.cluster.ClusterStateUpdateTask;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
@@ -59,6 +61,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.Matchers.containsString;
@@ -207,14 +210,21 @@ public class BlobStoreRepositoryRestoreTests extends IndexShardTestCase {
         final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
         final AtomicReference<ClusterState> currentState = new AtomicReference<>(ClusterState.EMPTY_STATE);
+        final List<ClusterStateApplier> appliers = new CopyOnWriteArrayList<>();
         doAnswer(invocation -> {
             final ClusterStateUpdateTask task = ((ClusterStateUpdateTask) invocation.getArguments()[1]);
             final ClusterState current = currentState.get();
             final ClusterState next = task.execute(current);
             currentState.set(next);
+            appliers.forEach(applier -> applier.applyClusterState(
+                new ClusterChangedEvent((String) invocation.getArguments()[0], next, current)));
             task.clusterStateProcessed((String) invocation.getArguments()[0], current, next);
             return null;
         }).when(clusterService).submitStateUpdateTask(anyString(), any(ClusterStateUpdateTask.class));
+        doAnswer(invocation -> {
+            appliers.add((ClusterStateApplier) invocation.getArguments()[0]);
+            return null;
+        }).when(clusterService).addStateApplier(any(ClusterStateApplier.class));
         when(clusterApplierService.threadPool()).thenReturn(threadPool);
         final FsRepository repository = new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService) {
             @Override
