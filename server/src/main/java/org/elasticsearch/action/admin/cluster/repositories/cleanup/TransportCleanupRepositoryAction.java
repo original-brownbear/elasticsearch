@@ -181,7 +181,7 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                     public ClusterState execute(ClusterState currentState) {
                         final RepositoryCleanupInProgress repositoryCleanupInProgress =
                             currentState.custom(RepositoryCleanupInProgress.TYPE);
-                        if (repositoryCleanupInProgress != null && repositoryCleanupInProgress.cleanupInProgress() == false) {
+                        if (repositoryCleanupInProgress != null && repositoryCleanupInProgress.cleanupInProgress()) {
                             throw new IllegalStateException(
                                 "Cannot cleanup [" + repositoryName + "] - a repository cleanup is already in-progress");
                         }

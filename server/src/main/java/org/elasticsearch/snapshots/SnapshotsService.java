@@ -1196,7 +1196,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         "cannot delete - another snapshot is currently being deleted");
                 }
                 final RepositoryCleanupInProgress repositoryCleanupInProgress = currentState.custom(RepositoryCleanupInProgress.TYPE);
-                if (repositoryCleanupInProgress != null && repositoryCleanupInProgress.cleanupInProgress() == false) {
+                if (repositoryCleanupInProgress != null && repositoryCleanupInProgress.cleanupInProgress()) {
                     throw new ConcurrentSnapshotExecutionException(snapshot.getRepository(), snapshot.getSnapshotId().getName(),
                         "cannot delete snapshot while a repository cleanup is in-progress");
                 }
