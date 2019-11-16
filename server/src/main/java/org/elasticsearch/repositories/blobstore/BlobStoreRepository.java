@@ -214,6 +214,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     private final ClusterService clusterService;
 
     /**
+     * While running in a cluster with nodes older than {@link RepositoriesState#REPO_GEN_IN_CS_VERSION} in it, finding the latest
+     * repository generation is not done via the cluster state. This flag is set by {@link #applyClusterState} in case this node finds
+     * itself in such a mixed-version cluster containing nodes older than {@link RepositoriesState#REPO_GEN_IN_CS_VERSION} to ensure
+     * appropriate backwards compatible logic is used.
+     */
+    private volatile boolean bwcMode;
+
+    /**
      * Constructs new BlobStoreRepository
      * @param metadata   The metadata for this repository including name and settings
      * @param clusterService Cluster service
@@ -281,7 +289,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     @Override
     public void applyClusterState(ClusterChangedEvent event) {
         assert isReadOnly() == false : "Read only repositories are not initialized in the cluster state";
-        assert assertTrackedGenerations(event.state());
+        final ClusterState state = event.state();
+        bwcMode = state.nodes().getMinNodeVersion().before(RepositoriesState.REPO_GEN_IN_CS_VERSION);
+        if (bwcMode) {
+            return;
+        }
+        assert assertTrackedGenerations(state);
         final RepositoriesState repositoriesState = event.state().custom(RepositoriesState.TYPE);
         if (repositoriesState != null) {
             final RepositoriesState.State repoState = repositoriesState.state(metadata.name());
@@ -1096,7 +1109,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public void getRepositoryData(ActionListener<RepositoryData> listener) {
-        if (isReadOnly()) {
+        if (isReadOnly() || bwcMode) {
             // Retry loading RepositoryData in a loop in case we run into concurrent modifications of the repository.
             while (true) {
                 try {
@@ -1275,6 +1288,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
                 @Override
                 public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
+                    if (bwcMode) {
+                        latestKnownRepoGen.set(newGen);
+                    }
                     assert assertCSAfterNewGeneration(newState);
                     l.onResponse(null);
                 }
