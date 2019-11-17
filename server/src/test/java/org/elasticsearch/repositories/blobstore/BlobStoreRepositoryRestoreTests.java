@@ -22,17 +22,11 @@ package org.elasticsearch.repositories.blobstore;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.TestUtil;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateApplier;
-import org.elasticsearch.cluster.ClusterStateUpdateTask;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingHelper;
-import org.elasticsearch.cluster.service.ClusterApplierService;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.internal.io.IOUtils;
@@ -61,15 +55,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * This class tests the behavior of {@link BlobStoreRepository} when it
@@ -206,27 +193,8 @@ public class BlobStoreRepositoryRestoreTests extends IndexShardTestCase {
     private Repository createRepository() {
         Settings settings = Settings.builder().put("location", randomAlphaOfLength(10)).build();
         RepositoryMetaData repositoryMetaData = new RepositoryMetaData(randomAlphaOfLength(10), FsRepository.TYPE, settings);
-        final ClusterService clusterService = mock(ClusterService.class);
-        final ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
-        when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
-        final AtomicReference<ClusterState> currentState = new AtomicReference<>(ClusterState.EMPTY_STATE);
-        final List<ClusterStateApplier> appliers = new CopyOnWriteArrayList<>();
-        doAnswer(invocation -> {
-            final ClusterStateUpdateTask task = ((ClusterStateUpdateTask) invocation.getArguments()[1]);
-            final ClusterState current = currentState.get();
-            final ClusterState next = task.execute(current);
-            currentState.set(next);
-            appliers.forEach(applier -> applier.applyClusterState(
-                new ClusterChangedEvent((String) invocation.getArguments()[0], next, current)));
-            task.clusterStateProcessed((String) invocation.getArguments()[0], current, next);
-            return null;
-        }).when(clusterService).submitStateUpdateTask(anyString(), any(ClusterStateUpdateTask.class));
-        doAnswer(invocation -> {
-            appliers.add((ClusterStateApplier) invocation.getArguments()[0]);
-            return null;
-        }).when(clusterService).addStateApplier(any(ClusterStateApplier.class));
-        when(clusterApplierService.threadPool()).thenReturn(threadPool);
-        final FsRepository repository = new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(), clusterService) {
+        final FsRepository repository = new FsRepository(repositoryMetaData, createEnvironment(), xContentRegistry(),
+                                                         BlobStoreTestUtil.mockClusterService()) {
             @Override
             protected void assertSnapshotOrGenericThread() {
                 // eliminate thread name check as we create repo manually
