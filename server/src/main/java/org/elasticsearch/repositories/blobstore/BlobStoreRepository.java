@@ -1205,6 +1205,18 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         return readOnly;
     }
 
+    /**
+     * Writing a new index generation is a three step process.
+     * First, the {@link RepositoriesState.State} entry for this repository is set into {@code pending} state while its
+     * generation {@code N} remains unchanged.
+     * Second, the updated {@link RepositoryData} is written to generation {@code N + 1}.
+     * Lastly, the {@link RepositoriesState.State} entry for this repository is updated to the new generation {@code N + 1} and the pending
+     * flag set back to {@code false}.
+     * @param repositoryData RepositoryData to write
+     * @param expectedGen    expected repository generation at the start of the operation
+     * @param writeShardGens whether to write {@link ShardGenerations} to the new {@link RepositoryData} blob
+     * @param listener       completion listener
+     */
     protected void writeIndexGen(RepositoryData repositoryData, long expectedGen, boolean writeShardGens, ActionListener<Void> listener) {
         assert isReadOnly() == false; // can not write to a read only repository
         final long currentGen = repositoryData.getGenId();
@@ -1221,6 +1233,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             public ClusterState execute(ClusterState currentState) {
                 final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
                 final RepositoriesState.State repoState = state.state(metadata.name());
+                assert assertGenerationBeforeWrite(currentState, expectedGen);
                 final RepositoriesState updated =
                     RepositoriesState.builder().putAll(state).putState(metadata.name(), repoState.generation(), true).build();
                 return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updated).build();
@@ -1263,15 +1276,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
             logger.debug("Repository [{}] updating index.latest with generation [{}]", metadata.name(), newGen);
             writeAtomic(INDEX_LATEST_BLOB, genBytes, false);
-            // delete the N-2 index file if it exists, keep the previous one around as a backup
-            if (newGen - 2 >= 0) {
-                final String oldSnapshotIndexFile = INDEX_FILE_PREFIX + Long.toString(newGen - 2);
-                try {
-                    blobContainer().deleteBlobIgnoringIfNotExists(oldSnapshotIndexFile);
-                } catch (IOException e) {
-                    logger.warn("Failed to clean up old index blob [{}]", oldSnapshotIndexFile);
-                }
-            }
             clusterService.submitStateUpdateTask("update_repo_gen", new ClusterStateUpdateTask() {
                 @Override
                 public ClusterState execute(final ClusterState currentState) {
@@ -1292,10 +1296,30 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         latestKnownRepoGen.set(newGen);
                     }
                     assert assertCSAfterNewGeneration(newState);
-                    l.onResponse(null);
+                    threadPool.generic().execute(ActionRunnable.run(l, () -> {
+                        // delete the N-2 index file if it exists, keep the previous one around as a backup
+                        if (newGen - 2 >= 0) {
+                            final String oldSnapshotIndexFile = INDEX_FILE_PREFIX + Long.toString(newGen - 2);
+                            try {
+                                blobContainer().deleteBlobIgnoringIfNotExists(oldSnapshotIndexFile);
+                            } catch (IOException e) {
+                                logger.warn("Failed to clean up old index blob [{}]", oldSnapshotIndexFile);
+                            }
+                        }
+                    }));
                 }
             });
         })), listener::onFailure);
+    }
+
+    private boolean assertGenerationBeforeWrite(ClusterState currentState, long expectedGen) {
+        final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
+        final RepositoriesState.State repoState = state.state(metadata.name());
+        assert expectedGen == repoState.generation() :
+            "Expected generation [" + expectedGen + "] does not match generation tracked in [" + repoState + "]";
+        // TODO: Maybe do the below and ensure that the operation matches up
+        // assert repoState.pending() == false : "RepoState may not be pending before a write but was [" + repoState + "]";
+        return true;
     }
 
     private boolean assertCSAfterNewGeneration(ClusterState clusterState) {

@@ -23,9 +23,11 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.AbstractNamedDiffable;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.NamedDiff;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -80,7 +82,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         return new Builder();
     }
 
-    public static final class State implements Writeable {
+    public static final class State implements Writeable, ToXContent {
 
         private final long generation;
 
@@ -107,6 +109,21 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         public void writeTo(StreamOutput out) throws IOException {
             out.writeLong(generation);
             out.writeBoolean(pendingUpdate);
+        }
+
+        @Override
+        public String toString() {
+            return Strings.toString(this);
+        }
+
+        @Override
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+            return builder.startObject().field("generation", generation).field("pending", pendingUpdate).endObject();
+        }
+
+        @Override
+        public boolean isFragment() {
+            return false;
         }
     }
 
