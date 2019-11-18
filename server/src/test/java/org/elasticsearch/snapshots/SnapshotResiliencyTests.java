@@ -71,6 +71,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchTransportService;
 import org.elasticsearch.action.search.TransportSearchAction;
 import org.elasticsearch.action.support.ActionFilters;
+import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.AutoCreateIndex;
 import org.elasticsearch.action.support.DestructiveOperations;
@@ -723,7 +724,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         private final Map<String, TestClusterNode> nodes = new LinkedHashMap<>();
 
         /**
-         * Node ids that are disconnected from all other nodes.
+         * Node names that are disconnected from all other nodes.
          */
         private final Set<String> disconnectedNodes = new HashSet<>();
 
@@ -817,11 +818,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 if (testClusterNodes.nodes.containsKey(nodeName)) {
                     final DiscoveryNode node = testClusterNodes.nodes.get(nodeName).node;
                     testClusterNodes.nodes.values().forEach(
-                        n -> n.transportService.openConnection(node, null, ActionListener.wrap(c -> {
-                            logger.debug("--> Connected [{}] to [{}]", n.node, node);
-                        }, e -> {
-                            throw new AssertionError(e);
-                        })));
+                        n -> n.transportService.openConnection(node, null,
+                            ActionTestUtils.assertNoFailureListener(c -> logger.debug("--> Connected [{}] to [{}]", n.node, node))));
                 }
             });
         }
