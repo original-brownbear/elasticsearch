@@ -1147,6 +1147,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                final boolean immediatePriority) {
         // First, look for the snapshot in the repository
         final Repository repository = repositoriesService.repository(repositoryName);
+        if (repository.isReadOnly()) {
+            listener.onFailure(new RepositoryException(repositoryName, "cannot delete snapshot from a readonly repository"));
+            return;
+        }
         final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
         repository.getRepositoryData(repositoryDataListener);
         repositoryDataListener.whenComplete(repositoryData -> {
@@ -1167,10 +1171,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             }
             if (matchedEntry.isPresent() == false) {
                 throw new SnapshotMissingException(repositoryName, snapshotName);
-            }
-            if (repository.isReadOnly()) {
-                listener.onFailure(new RepositoryException(repositoryName, "cannot delete snapshot from a readonly repository"));
-                return;
             }
             deleteSnapshot(new Snapshot(repositoryName, matchedEntry.get()), listener, repoGenId, immediatePriority);
         }, listener::onFailure);
