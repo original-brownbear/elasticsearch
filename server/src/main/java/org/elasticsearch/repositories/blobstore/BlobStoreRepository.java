@@ -358,7 +358,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 + snapshotsInProgress + "] and [" + state + "]";
         }
 
-        if (cleanupInProgress != null && cleanupInProgress.cleanupInProgress()
+        if (cleanupInProgress != null && cleanupInProgress.hasCleanupInProgress()
             && cleanupInProgress.entries().stream().anyMatch(entry -> entry.repository().equals(repoName))) {
             assert repositoriesState != null && repositoriesState.state(repoName) != null :
                 "Snapshot cleanup in progress but repositories state not initialized";
