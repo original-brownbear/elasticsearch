@@ -1168,6 +1168,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             if (matchedEntry.isPresent() == false) {
                 throw new SnapshotMissingException(repositoryName, snapshotName);
             }
+            if (repository.isReadOnly()) {
+                listener.onFailure(new RepositoryException(repositoryName, "cannot delete snapshot from a readonly repository"));
+                return;
+            }
             deleteSnapshot(new Snapshot(repositoryName, matchedEntry.get()), listener, repoGenId, immediatePriority);
         }, listener::onFailure);
     }
