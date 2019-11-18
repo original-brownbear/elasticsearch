@@ -69,6 +69,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoriesService;
+import org.elasticsearch.repositories.RepositoriesState;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
@@ -1220,6 +1221,16 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         throw new ConcurrentSnapshotExecutionException(
                             snapshot, "another snapshot is currently running cannot delete because of [ " + snapshots + "]");
                     }
+                    final RepositoriesState repositoriesState = currentState.custom(RepositoriesState.TYPE);
+                    final RepositoriesState.State repoState = repositoriesState.state(snapshot.getRepository());
+                    if (repoState.generation() > repositoryStateId) {
+                        // TODO: we could just rerun the delete here, no need to fail
+                        throw new ConcurrentSnapshotExecutionException(
+                            snapshot, "Another concurrent operation moved repo state to [ " + repoState
+                            + "] but this delete assumed generation [" + repositoryStateId + "]");
+                    }
+                    assert repoState.generation() == repositoryStateId : "Generation mismatch between state [" + repoState
+                        + "] and assumed generation [" + repositoryStateId + "]";
                     // add the snapshot deletion to the cluster state
                     SnapshotDeletionsInProgress.Entry entry = new SnapshotDeletionsInProgress.Entry(
                         snapshot,
