@@ -101,7 +101,11 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
             return generation;
         }
 
-        public boolean pending() {
+        /**
+         * Whether or not index-N blob has been written already
+         * @return true iff index-N blob may not have been written safely
+         */
+        public boolean pendingWrite() {
             return pendingUpdate;
         }
 
