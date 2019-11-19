@@ -447,23 +447,18 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         continueOrDie(createOtherSnapshotResponseStepListener,
             createSnapshotResponse -> masterNode.client.admin().cluster().deleteSnapshot(
-                new DeleteSnapshotRequest(repoName, snapshotName), new ActionListener<>() {
-                    @Override
-                    public void onResponse(AcknowledgedResponse acknowledgedResponse) {
-                        deleteSnapshotStepListener.onResponse(true);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
+                new DeleteSnapshotRequest(repoName, snapshotName), ActionListener.wrap(
+                    resp -> deleteSnapshotStepListener.onResponse(true),
+                    e -> {
                         assertThat(e, instanceOf(ConcurrentSnapshotExecutionException.class));
                         deleteSnapshotStepListener.onResponse(false);
-                    }
-                }));
+                    })));
 
         final StepListener<CreateSnapshotResponse> createAnotherSnapshotResponseStepListener = new StepListener<>();
 
         continueOrDie(deleteSnapshotStepListener, deleted -> {
             if (deleted) {
+                // The delete worked out, creating a third snapshot
                 masterNode.client.admin().cluster()
                     .prepareCreateSnapshot(repoName, snapshotName).setWaitForCompletion(true)
                     .execute(createAnotherSnapshotResponseStepListener);
@@ -476,12 +471,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         deterministicTaskQueue.runAllRunnableTasks();
 
-        final CreateSnapshotResponse thirdSnapshotResponse;
-        try {
-            thirdSnapshotResponse = createAnotherSnapshotResponseStepListener.result();
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
+        final CreateSnapshotResponse thirdSnapshotResponse = createAnotherSnapshotResponseStepListener.result();
+
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
