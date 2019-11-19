@@ -417,10 +417,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     throw new RepositoryException(repository.getMetadata().name(), "cannot create snapshot in a readonly repository");
                 }
                 final String snapshotName = snapshot.snapshot().getSnapshotId().getName();
-                final StepListener<RepositoryData> repositoryDataStepListener = new StepListener<>();
-                repository.getRepositoryData(repositoryDataStepListener);
-                repositoryDataStepListener.whenComplete(repositoryData -> {
-// check if the snapshot name already exists in the repository
+                final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
+                repository.getRepositoryData(repositoryDataListener);
+                repositoryDataListener.whenComplete(repositoryData -> {
+                    // check if the snapshot name already exists in the repository
                     if (repositoryData.getSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName))) {
                         throw new InvalidSnapshotNameException(
                             repository.getMetadata().name(), snapshotName, "snapshot with the same name already exists");
@@ -1147,9 +1147,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                final boolean immediatePriority) {
         // First, look for the snapshot in the repository
         final Repository repository = repositoriesService.repository(repositoryName);
-        final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
-        repository.getRepositoryData(repositoryDataListener);
-        repositoryDataListener.whenComplete(repositoryData -> {
+        repository.getRepositoryData(ActionListener.wrap(repositoryData -> {
             Optional<SnapshotId> matchedEntry = repositoryData.getSnapshotIds()
                 .stream()
                 .filter(s -> s.getName().equals(snapshotName))
@@ -1173,7 +1171,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 return;
             }
             deleteSnapshot(new Snapshot(repositoryName, matchedEntry.get()), listener, repoGenId, immediatePriority);
-        }, listener::onFailure);
+        }, listener::onFailure));
     }
 
     /**

@@ -125,6 +125,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -942,26 +943,24 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         // directory if all nodes are at least at version SnapshotsService#SHARD_GEN_IN_REPO_DATA_VERSION
         // If there are older version nodes in the cluster, we don't need to run this cleanup as it will have already happened
         // when writing the index-${N} to each shard directory.
+        final Consumer<Exception> onUpdateFailure =
+            e -> listener.onFailure(new SnapshotException(metadata.name(), snapshotId, "failed to update snapshot in repository", e));
         final ActionListener<SnapshotInfo> allMetaListener = new GroupedActionListener<>(
             ActionListener.wrap(snapshotInfos -> {
-                    assert snapshotInfos.size() == 1 : "Should have only received a single SnapshotInfo but received " + snapshotInfos;
-                    final SnapshotInfo snapshotInfo = snapshotInfos.iterator().next();
-                    getRepositoryData(ActionListener.wrap(existingRepositoryData -> {
-                        final RepositoryData updatedRepositoryData =
-                            existingRepositoryData.addSnapshot(snapshotId, snapshotInfo.state(), shardGenerations);
-                        writeIndexGen(updatedRepositoryData, repositoryStateId, writeShardGens, ActionListener.wrap(v ->
-                                threadPool.generic().execute(ActionRunnable.wrap(listener, l -> {
-                                    if (writeShardGens) {
-                                        cleanupOldShardGens(existingRepositoryData, updatedRepositoryData);
-                                    }
-                                    l.onResponse(snapshotInfo);
-                                })),
-                            e -> listener.onFailure(
-                                new SnapshotException(metadata.name(), snapshotId, "failed to update snapshot in repository", e))));
-                    }, listener::onFailure));
-                },
-                e -> listener.onFailure(new SnapshotException(metadata.name(), snapshotId, "failed to update snapshot in repository", e))),
-            2 + indices.size());
+                assert snapshotInfos.size() == 1 : "Should have only received a single SnapshotInfo but received " + snapshotInfos;
+                final SnapshotInfo snapshotInfo = snapshotInfos.iterator().next();
+                getRepositoryData(ActionListener.wrap(existingRepositoryData -> {
+                    final RepositoryData updatedRepositoryData =
+                        existingRepositoryData.addSnapshot(snapshotId, snapshotInfo.state(), shardGenerations);
+                    writeIndexGen(updatedRepositoryData, repositoryStateId, writeShardGens, ActionListener.wrap(v ->
+                        threadPool.generic().execute(ActionRunnable.wrap(listener, l -> {
+                            if (writeShardGens) {
+                                cleanupOldShardGens(existingRepositoryData, updatedRepositoryData);
+                            }
+                            l.onResponse(snapshotInfo);
+                        })), onUpdateFailure));
+                }, listener::onFailure));
+            }, onUpdateFailure), 2 + indices.size());
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
 
         // We ignore all FileAlreadyExistsException when writing metadata since otherwise a master failover while in this method will
