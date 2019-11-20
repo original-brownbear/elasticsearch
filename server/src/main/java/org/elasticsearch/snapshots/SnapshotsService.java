@@ -1115,6 +1115,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
+                assert assertRepoNotPending(newState, snapshot.getRepository());
                 final List<ActionListener<SnapshotInfo>> completionListeners = snapshotCompletionListeners.remove(snapshot);
                 if (completionListeners != null) {
                     try {
@@ -1133,6 +1134,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
             }
         });
+    }
+
+    private static boolean assertRepoNotPending(ClusterState clusterState, String repository) {
+        final RepositoriesState repositoriesState = clusterState.custom(RepositoriesState.TYPE);
+        assert repositoriesState != null;
+        final RepositoriesState.State repoState = repositoriesState.state(repository);
+        assert repoState != null;
+        assert repoState.pendingWrite() == false : "Repository state [" + repoState + "] is pending";
+        return true;
     }
 
     /**

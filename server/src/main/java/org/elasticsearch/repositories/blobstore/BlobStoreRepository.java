@@ -1244,6 +1244,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 expectedGen + "], actual current generation [" + currentGen +
                 "] - possibly due to simultaneous snapshot deletion requests");
         }
+
+        // Step 1: Set repository generation state to pending == true.
         final StepListener<Void> setPendingStep = new StepListener<>();
         clusterService.submitStateUpdateTask("set_repo_gen_pending", new ClusterStateUpdateTask() {
             @Override
@@ -1260,6 +1262,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         "Expected generation [" + expectedGen + "] does not match generation tracked in [" + repoState + "]");
                 }
                 if (wasPending) {
+                    // State is ready for a write to the repository. We got here because of a master-failover and go ahead and rerun the
+                    // write to the repository.
                     return currentState;
                 }
                 final RepositoriesState updated =
@@ -1277,6 +1281,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 setPendingStep.onResponse(null);
             }
         });
+
+        // Step 2: Write new index-N blob to repository and update index.latest
         setPendingStep.whenComplete(v -> threadPool().generic().execute(ActionRunnable.wrap(listener, l -> {
             final long newGen = currentGen + 1;
             if (latestKnownRepoGen.get() >= newGen) {
@@ -1286,6 +1292,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             // write the index file
             final String indexBlob = INDEX_FILE_PREFIX + Long.toString(newGen);
             logger.debug("Repository [{}] writing new index generational blob [{}]", metadata.name(), indexBlob);
+            // TODO: if we fail here the CS might never get updated, add test for this and fix
             writeAtomic(indexBlob,
                 BytesReference.bytes(repositoryData.snapshotsToXContent(XContentFactory.jsonBuilder(), writeShardGens)), true);
             if (newGen < latestKnownRepoGen.get()) {
@@ -1303,6 +1310,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 genBytes = bStream.bytes();
             }
             logger.debug("Repository [{}] updating index.latest with generation [{}]", metadata.name(), newGen);
+            // Step 3: Update CS to reflect new repository generation.
+            // TODO: Hanging master could still mess up index.latest blob.
             writeAtomic(INDEX_LATEST_BLOB, genBytes, false);
             clusterService.submitStateUpdateTask("update_repo_gen", new ClusterStateUpdateTask() {
                 @Override
