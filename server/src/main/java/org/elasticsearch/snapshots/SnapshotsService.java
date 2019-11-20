@@ -1139,12 +1139,14 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         });
     }
 
-    private static boolean assertRepoNotPending(ClusterState clusterState, String repository) {
-        final RepositoriesState repositoriesState = clusterState.custom(RepositoriesState.TYPE);
-        assert repositoriesState != null;
-        final RepositoriesState.State repoState = repositoriesState.state(repository);
-        assert repoState != null;
-        assert repoState.pendingWrite() == false : "Repository state [" + repoState + "] is pending";
+    private boolean assertRepoNotPending(ClusterState clusterState, String repository) {
+        if (repositoriesService.repository(repository).isReadOnly() == false) {
+            final RepositoriesState repositoriesState = clusterState.custom(RepositoriesState.TYPE);
+            assert repositoriesState != null;
+            final RepositoriesState.State repoState = repositoriesState.state(repository);
+            assert repoState != null;
+            assert repoState.pendingWrite() == false : "Repository state [" + repoState + "] is pending";
+        }
         return true;
     }
 
