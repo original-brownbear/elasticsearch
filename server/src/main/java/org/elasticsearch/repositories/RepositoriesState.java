@@ -35,6 +35,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Tracks the current generation at which the {@link RepositoryData} for each writable
+ * {@link org.elasticsearch.repositories.blobstore.BlobStoreRepository} in the cluster can be found.
+ * See documentation for the package {@link org.elasticsearch.repositories.blobstore} for details.
+ */
 public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.Custom> implements ClusterState.Custom {
 
     public static final Version REPO_GEN_IN_CS_VERSION = Version.V_8_0_0;
@@ -125,10 +130,20 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
             this(in.readLong(), in.readLong());
         }
 
+        /**
+         * Returns the current repository generation for the repository.
+         *
+         * @return current repository generation that should be used for reads of the repository's {@link RepositoryData}
+         */
         public long generation() {
             return generation;
         }
 
+        /**
+         * Latest repository generation that a write was attempted for.
+         *
+         * @return latest repository generation that a write was attempted for
+         */
         public long pendingWrite() {
             return pendingWrite;
         }
