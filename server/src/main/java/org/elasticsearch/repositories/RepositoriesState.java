@@ -75,7 +75,18 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        return null;
+        builder.startObject();
+        for (Map.Entry<String, State> stringStateEntry : states.entrySet()) {
+            builder.field(stringStateEntry.getKey());
+            stringStateEntry.getValue().toXContent(builder, params);
+        }
+        builder.endObject();
+        return builder;
+    }
+
+    @Override
+    public boolean isFragment() {
+        return false;
     }
 
     public static Builder builder() {
@@ -86,33 +97,29 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
         private final long generation;
 
-        private final boolean pendingUpdate;
+        private final long pendingWrite;
 
-        private State(long generation, boolean pendingUpdate) {
+        private State(long generation, long pendingWrite) {
             this.generation = generation;
-            this.pendingUpdate = pendingUpdate;
+            this.pendingWrite = pendingWrite;
         }
 
         private State(StreamInput in) throws IOException {
-            this(in.readLong(), in.readBoolean());
+            this(in.readLong(), in.readLong());
         }
 
         public long generation() {
             return generation;
         }
 
-        /**
-         * Whether or not index-N blob has been written already
-         * @return true iff index-N blob may not have been written safely
-         */
-        public boolean pendingWrite() {
-            return pendingUpdate;
+        public long pendingWrite() {
+            return pendingWrite;
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeLong(generation);
-            out.writeBoolean(pendingUpdate);
+            out.writeLong(pendingWrite);
         }
 
         @Override
@@ -122,7 +129,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return builder.startObject().field("generation", generation).field("pending", pendingUpdate).endObject();
+            return builder.startObject().field("generation", generation).field("pending", pendingWrite).endObject();
         }
 
         @Override
@@ -143,7 +150,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
             return this;
         }
 
-        public Builder putState(String name, long generation, boolean pending) {
+        public Builder putState(String name, long generation, long pending) {
             stateMap.put(name, new State(generation, pending));
             return this;
         }
