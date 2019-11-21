@@ -1071,7 +1071,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     /**
      * Removes record of running snapshot from cluster state and notifies the listener when this action is complete
      * @param snapshot   snapshot
-     * @param failure          exception if snapshot failed
+     * @param failure    exception if snapshot failed
      * @param listener   listener to notify when snapshot information is removed from the cluster state
      */
     private void removeSnapshotFromClusterState(final Snapshot snapshot, @Nullable SnapshotInfo snapshotInfo, final Exception failure,
@@ -1118,7 +1118,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
-                assert assertRepoNotPending(newState, snapshot.getRepository());
+                assert failure != null || assertRepoNotPending(newState, snapshot.getRepository());
                 final List<ActionListener<SnapshotInfo>> completionListeners = snapshotCompletionListeners.remove(snapshot);
                 if (completionListeners != null) {
                     try {
