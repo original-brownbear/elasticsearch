@@ -1062,19 +1062,19 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * Removes record of running snapshot from cluster state
      * @param snapshot       snapshot
      * @param snapshotInfo   snapshot info if snapshot was successful
-     * @param e              exception if snapshot failed
+     * @param e              exception if snapshot failed, {@code null} otherwise
      */
-    private void removeSnapshotFromClusterState(final Snapshot snapshot, final SnapshotInfo snapshotInfo, final Exception e) {
+    private void removeSnapshotFromClusterState(final Snapshot snapshot, final SnapshotInfo snapshotInfo, @Nullable Exception e) {
         removeSnapshotFromClusterState(snapshot, snapshotInfo, e, null);
     }
 
     /**
      * Removes record of running snapshot from cluster state and notifies the listener when this action is complete
      * @param snapshot   snapshot
-     * @param failure    exception if snapshot failed
+     * @param failure    exception if snapshot failed, {@code null} otherwise
      * @param listener   listener to notify when snapshot information is removed from the cluster state
      */
-    private void removeSnapshotFromClusterState(final Snapshot snapshot, @Nullable SnapshotInfo snapshotInfo, final Exception failure,
+    private void removeSnapshotFromClusterState(final Snapshot snapshot, @Nullable SnapshotInfo snapshotInfo, @Nullable Exception failure,
                                                 @Nullable CleanupAfterErrorListener listener) {
         clusterService.submitStateUpdateTask("remove snapshot metadata", new ClusterStateUpdateTask() {
 
@@ -1123,6 +1123,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 if (completionListeners != null) {
                     try {
                         if (snapshotInfo == null) {
+                            assert failure != null;
                             ActionListener.onFailure(completionListeners, failure);
                         } else {
                             ActionListener.onResponse(completionListeners, snapshotInfo);
