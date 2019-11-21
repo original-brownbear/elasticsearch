@@ -303,7 +303,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final RepositoriesState.State repoState = repositoriesState.state(metadata.name());
             if (repoState != null) {
                 final long genInCS = repoState.generation();
-                if (repoState.pendingWrite()) {
+                if (repoState.pendingWrite() != genInCS) {
                     if (latestKnownRepoGen.get() - 1 > genInCS) {
                         logger.warn("Current known generation [{}] was ahead of generation tracked by CS [{}]",
                             latestKnownRepoGen.get(), repoState.generation());
@@ -346,8 +346,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final RepositoriesState.State repoState = repositoriesState.state(repoName);
             deleteGen = generation;
             assert generation == repoState.generation()
-                || (generation + 1 == repoState.generation() && repoState.pendingWrite() == false) : "Generation mismatch between ["
-                + deletionsInProgress + "] and [" + state + "]";
+                || (generation + 1 == repoState.generation() && repoState.pendingWrite() != repoState.generation()) :
+                "Generation mismatch between [" + deletionsInProgress + "] and [" + state + "]";
         }
 
         if (snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty() == false
@@ -361,8 +361,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             assert deleteGen > generation || deleteGen == RepositoryData.UNKNOWN_REPO_GEN : "Running snapshot at generation [" + generation
                 + "] clashes with running delete at generation [" + deleteGen + "]";
             assert generation == repoState.generation()
-                || (generation + 1 == repoState.generation() && repoState.pendingWrite() == false) : "Generation mismatch between ["
-                + snapshotsInProgress + "] and [" + state + "]";
+                || (generation + 1 == repoState.generation() && repoState.pendingWrite() != repoState.generation())
+                : "Generation mismatch between [" + snapshotsInProgress + "] and [" + state + "]";
         }
 
         if (cleanupInProgress != null && cleanupInProgress.hasCleanupInProgress()
@@ -376,8 +376,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     + "] and cleanup at gen [" + generation + "]";
             final RepositoriesState.State repoState = repositoriesState.state(repoName);
             assert generation == repoState.generation()
-                || (generation + 1 == repoState.generation() && repoState.pendingWrite() == false) : "Generation mismatch between ["
-                + cleanupInProgress + "] and [" + state + "]";
+                || (generation + 1 == repoState.generation() && repoState.pendingWrite() != repoState.generation()) :
+                "Generation mismatch between [" + cleanupInProgress + "] and [" + state + "]";
         }
 
         return true;
@@ -408,11 +408,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     final RepositoriesState existing = currentState.custom(RepositoriesState.TYPE);
                     final RepositoriesState updated;
                     if (existing == null) {
-                        updated = RepositoriesState.builder().putState(metadata.name(), gen, false).build();
+                        updated = RepositoriesState.builder().putState(metadata.name(), gen, gen).build();
                     } else {
                         final RepositoriesState.State repoState = existing.state(metadata.name());
                         if (repoState == null) {
-                            updated = RepositoriesState.builder().putAll(existing).putState(metadata.name(), gen, false).build();
+                            updated = RepositoriesState.builder().putAll(existing).putState(metadata.name(), gen, gen).build();
                         } else {
                             return currentState;
                         }
@@ -1252,7 +1252,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             public ClusterState execute(ClusterState currentState) {
                 final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
                 final RepositoriesState.State repoState = state.state(metadata.name());
-                final boolean wasPending = repoState.pendingWrite();
+                final boolean wasPending = repoState.pendingWrite() != repoState.generation();
                 if (wasPending) {
                     logger.warn("Trying to write new repository data of generation [{}] over unfinished write, repo is in state [{}]",
                         expectedGen + 1, repoState);
@@ -1267,7 +1267,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     return currentState;
                 }
                 final RepositoriesState updated =
-                    RepositoriesState.builder().putAll(state).putState(metadata.name(), repoState.generation(), true).build();
+                    RepositoriesState.builder().putAll(state).putState(
+                        metadata.name(), repoState.generation(), repoState.pendingWrite() + 1).build();
                 return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updated).build();
             }
 
@@ -1318,7 +1319,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 public ClusterState execute(ClusterState currentState) {
                     final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
                     final RepositoriesState.State repoState = state.state(metadata.name());
-                    final boolean wasPending = repoState.pendingWrite();
+                    final boolean wasPending = repoState.pendingWrite() != repoState.generation();
                     final long prevGeneration = repoState.generation();
                     if (prevGeneration != expectedGen) {
                         throw new IllegalStateException("Tried to update repo generation to [" + newGen
@@ -1329,7 +1330,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             "Tried to update non-pending repo state [" + repoState + "] after write to generation [" + newGen + "]");
                     }
                     final RepositoriesState updated =
-                        RepositoriesState.builder().putAll(state).putState(metadata.name(), newGen, false).build();
+                        RepositoriesState.builder().putAll(state).putState(metadata.name(), newGen, newGen).build();
                     return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updated).build();
                 }
 
@@ -1367,7 +1368,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         final long knownGeneration = latestKnownRepoGen.get();
         assert knownGeneration == repoState.generation() : "Mismatch in assumed generation [" + knownGeneration
             + "] and generation in CS [" + repoState.generation() + "]";
-        assert repoState.pendingWrite() == false : "State after new generation write must not be pending but was [" + repoState + "]";
+        assert repoState.pendingWrite() != repoState.generation() :
+            "State after new generation write must not be pending but was [" + repoState + "]";
         return true;
     }
 
