@@ -33,6 +33,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.Custom> implements ClusterState.Custom {
 
@@ -75,12 +76,10 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject();
         for (Map.Entry<String, State> stringStateEntry : states.entrySet()) {
             builder.field(stringStateEntry.getKey());
             stringStateEntry.getValue().toXContent(builder, params);
         }
-        builder.endObject();
         return builder;
     }
 
@@ -93,6 +92,23 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         return new Builder();
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (other instanceof RepositoriesState == false) {
+            return false;
+        }
+        final RepositoriesState that = (RepositoriesState) other;
+        return states.equals(that.states);
+    }
+
+    @Override
+    public int hashCode() {
+        return states.hashCode();
+    }
+
     public static final class State implements Writeable, ToXContent {
 
         private final long generation;
@@ -100,6 +116,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         private final long pendingWrite;
 
         private State(long generation, long pendingWrite) {
+            assert generation <= pendingWrite : "Pending generation [" + pendingWrite + "] smaller than generation [" + generation + "]";
             this.generation = generation;
             this.pendingWrite = pendingWrite;
         }
@@ -135,6 +152,23 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
         @Override
         public boolean isFragment() {
             return false;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+            if (other instanceof RepositoriesState.State == false) {
+                return false;
+            }
+            final RepositoriesState.State that = (RepositoriesState.State) other;
+            return this.generation == that.generation && this.pendingWrite == that.pendingWrite;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(generation, pendingWrite);
         }
     }
 

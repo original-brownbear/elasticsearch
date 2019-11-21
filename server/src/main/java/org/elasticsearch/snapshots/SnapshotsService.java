@@ -1145,7 +1145,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             assert repositoriesState != null;
             final RepositoriesState.State repoState = repositoriesState.state(repository);
             assert repoState != null;
-            assert repoState.pendingWrite() != repoState.generation() : "Repository state [" + repoState + "] is pending";
+            assert repoState.pendingWrite() == repoState.generation() : "Repository state [" + repoState + "] is pending";
         }
         return true;
     }
