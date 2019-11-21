@@ -59,6 +59,11 @@ public final class RepositoryData {
     public static final long UNKNOWN_REPO_GEN = -2L;
 
     /**
+     * Impossible generation that symbolizes that the repository generation information tracked in the cluster state has become corrupted.
+     */
+    public static final long CORRUPTED_REPO_GEN = -3L;
+
+    /**
      * An instance initialized for an empty repository.
      */
     public static final RepositoryData EMPTY = new RepositoryData(EMPTY_REPO_GEN,

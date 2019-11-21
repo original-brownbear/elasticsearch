@@ -31,6 +31,7 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.RateLimiter;
 import org.apache.lucene.util.SetOnce;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.StepListener;
@@ -1162,8 +1163,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         assert isReadOnly() == false : "Read only repository mounts can't use cluster-state-assisted repository data load";
         final long generation = latestKnownRepoGen.get();
         if (generation < RepositoryData.EMPTY_REPO_GEN) {
-            initializeRepoInClusterState(
-                ActionListener.wrap(v -> loadRepositoryData(listener), listener::onFailure));
+            if (generation == RepositoryData.CORRUPTED_REPO_GEN) {
+                listener.onFailure(corruptedStateException(null));
+            } else {
+                initializeRepoInClusterState(
+                    ActionListener.wrap(v -> loadRepositoryData(listener), listener::onFailure));
+            }
         } else {
             loadRepositoryData(listener);
         }
@@ -1171,11 +1176,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private void loadRepositoryData(final ActionListener<RepositoryData> listener) {
         threadPool.generic().execute(
-            ActionRunnable.supply(listener, () -> {
+            ActionRunnable.wrap(listener, l -> {
                 while (true) {
                     final long genToLoad = latestKnownRepoGen.get();
                     try {
-                        return getRepositoryData(genToLoad);
+                        l.onResponse(getRepositoryData(genToLoad));
+                        return;
                     } catch (RepositoryException e) {
                         if (genToLoad != latestKnownRepoGen.get()) {
                             logger.warn(
@@ -1183,11 +1189,25 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                     "] because a concurrent operation moved the current generation to [{}]",
                                     genToLoad, latestKnownRepoGen.get()), e);
                             continue;
+                        } else if (ExceptionsHelper.unwrap(e, NoSuchFileException.class) != null) {
+                            markRepoCorrupted(genToLoad, e,
+                                ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e)), listener::onFailure));
+                            return;
                         }
                         throw e;
                     }
                 }
             }));
+    }
+
+    private RepositoryException corruptedStateException(@Nullable Exception cause) {
+        return new RepositoryException(metadata.name(),
+            "Could not read repository data because the contents of the repository do not match with its " +
+                "expected state. This is likely the result of either concurrently modifying the contents of the " +
+                "repository by a process other than this cluster or an issue with the repository's underlying" +
+                "storage. The repository has been disabled to prevent corrupting its contents. To re-enable it " +
+                "and continue using it please remove the repository from the cluster and add it again to make " +
+                "the cluster recover the known state of the repository from its physical contents.", cause);
     }
 
     private RepositoryData getRepositoryData(long indexGen) {
@@ -1207,6 +1227,35 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         } catch (IOException ioe) {
             throw new RepositoryException(metadata.name(), "could not read repository data from index blob", ioe);
         }
+    }
+
+    private void markRepoCorrupted(long corruptedGeneration, Exception originalException, ActionListener<Void> listener) {
+        clusterService.submitStateUpdateTask("update_repo_gen", new ClusterStateUpdateTask() {
+            @Override
+            public ClusterState execute(ClusterState currentState) {
+                final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
+                final RepositoriesState.State repoState = state.state(metadata.name());
+                final long prevGeneration = repoState.generation();
+                if (prevGeneration != corruptedGeneration) {
+                    throw new IllegalStateException("Tried to mark repo generation [" + corruptedGeneration
+                        + "] as corrupted but its state concurrently changed to [" + repoState + "]");
+                }
+                final RepositoriesState updated = RepositoriesState.builder().putAll(state)
+                    .putState(metadata.name(), corruptedGeneration, repoState.pendingWrite()).build();
+                return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updated).build();
+            }
+
+            @Override
+            public void onFailure(String source, Exception e) {
+                listener.onFailure(new RepositoryException(metadata.name(), "Failed marking repository state as corrupted",
+                    ExceptionsHelper.useOrSuppress(e, originalException)));
+            }
+
+            @Override
+            public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
+                listener.onResponse(null);
+            }
+        });
     }
 
     private static String testBlobPrefix(String seed) {
@@ -1243,7 +1292,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
         // Step 1: Set repository generation state to pending == true.
         final StepListener<Void> setPendingStep = new StepListener<>();
-        clusterService.submitStateUpdateTask("set_repo_gen_pending", new ClusterStateUpdateTask() {
+        clusterService.submitStateUpdateTask("set pending repository generation", new ClusterStateUpdateTask() {
             @Override
             public ClusterState execute(ClusterState currentState) {
                 final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
@@ -1306,8 +1355,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 genBytes = bStream.bytes();
             }
             logger.debug("Repository [{}] updating index.latest with generation [{}]", metadata.name(), newGen);
+
             // Step 3: Update CS to reflect new repository generation.
-            // TODO: Hanging master could still mess up index.latest blob. Do we care?
             writeAtomic(INDEX_LATEST_BLOB, genBytes, false);
             clusterService.submitStateUpdateTask("update_repo_gen", new ClusterStateUpdateTask() {
                 @Override
