@@ -343,8 +343,6 @@ public class SnapshotResiliencyTests extends ESTestCase {
             masterNode.client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName).execute(createSnapshotResponseStepListener);
         });
 
-        final AtomicBoolean started = new AtomicBoolean(false);
-
         continueOrDie(createSnapshotResponseStepListener, createSnapshotResponse -> {
             for (int i = 0; i < randomIntBetween(0, dataNodes); ++i) {
                 scheduleNow(this::disconnectOrRestartDataNode);
@@ -358,12 +356,11 @@ public class SnapshotResiliencyTests extends ESTestCase {
             } else if (randomBoolean()) {
                 scheduleNow(() -> testClusterNodes.clearNetworkDisruptions());
             }
-            started.set(true);
         });
 
         runUntil(() -> testClusterNodes.randomMasterNode().map(master -> {
             final SnapshotsInProgress snapshotsInProgress = master.clusterService.state().custom(SnapshotsInProgress.TYPE);
-            return started.get() && snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty();
+            return snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty();
         }).orElse(false), TimeUnit.MINUTES.toMillis(1L));
 
         clearDisruptionsAndAwaitSync();
