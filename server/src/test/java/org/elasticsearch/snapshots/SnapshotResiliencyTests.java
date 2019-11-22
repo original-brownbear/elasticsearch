@@ -343,6 +343,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
             masterNode.client.admin().cluster().prepareCreateSnapshot(repoName, snapshotName).execute(createSnapshotResponseStepListener);
         });
 
+        final AtomicBoolean started = new AtomicBoolean(false);
+
         continueOrDie(createSnapshotResponseStepListener, createSnapshotResponse -> {
             for (int i = 0; i < randomIntBetween(0, dataNodes); ++i) {
                 scheduleNow(this::disconnectOrRestartDataNode);
@@ -356,11 +358,12 @@ public class SnapshotResiliencyTests extends ESTestCase {
             } else if (randomBoolean()) {
                 scheduleNow(() -> testClusterNodes.clearNetworkDisruptions());
             }
+            started.set(true);
         });
 
         runUntil(() -> testClusterNodes.randomMasterNode().map(master -> {
             final SnapshotsInProgress snapshotsInProgress = master.clusterService.state().custom(SnapshotsInProgress.TYPE);
-            return snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty();
+            return started.get() && snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty();
         }).orElse(false), TimeUnit.MINUTES.toMillis(1L));
 
         clearDisruptionsAndAwaitSync();
@@ -672,11 +675,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
     private void clearDisruptionsAndAwaitSync() {
         testClusterNodes.clearNetworkDisruptions();
-        runUntil(() -> {
-            final List<Long> versions = testClusterNodes.nodes.values().stream()
-                .map(n -> n.clusterService.state().version()).distinct().collect(Collectors.toList());
-            return versions.size() == 1L;
-        }, TimeUnit.MINUTES.toMillis(1L));
+        stabilize();
     }
 
     private void disconnectOrRestartDataNode() {
@@ -713,15 +712,21 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 .filter(DiscoveryNode::isMasterNode).map(DiscoveryNode::getId).collect(Collectors.toSet()));
         testClusterNodes.nodes.values().stream().filter(n -> n.node.isMasterNode()).forEach(
             testClusterNode -> testClusterNode.coordinator.setInitialConfiguration(votingConfiguration));
+        stabilize();
+    }
 
+    private void stabilize() {
         runUntil(
             () -> {
-                List<String> masterNodeIds = testClusterNodes.nodes.values().stream()
-                    .map(node -> node.clusterService.state().nodes().getMasterNodeId())
-                    .distinct().collect(Collectors.toList());
-                return masterNodeIds.size() == 1 && masterNodeIds.contains(null) == false;
+                final Set<String> masterNodeIds = testClusterNodes.nodes.values().stream()
+                    .map(node -> node.clusterService.state().nodes().getMasterNodeId()).collect(Collectors.toSet());
+                final Set<Long> terms = testClusterNodes.nodes.values().stream().map(node -> node.clusterService.state().term())
+                    .collect(Collectors.toSet());
+                final List<Long> versions = testClusterNodes.nodes.values().stream()
+                    .map(n -> n.clusterService.state().version()).distinct().collect(Collectors.toList());
+                return versions.size() == 1 && masterNodeIds.size() == 1 && masterNodeIds.contains(null) == false && terms.size() == 1;
             },
-            TimeUnit.SECONDS.toMillis(30L)
+            TimeUnit.MINUTES.toMillis(1L)
         );
     }
 
@@ -842,7 +847,9 @@ public class SnapshotResiliencyTests extends ESTestCase {
 
         public Optional<TestClusterNode> randomMasterNode() {
             // Select from sorted list of data-nodes here to not have deterministic behaviour
-            final List<TestClusterNode> masterNodes = testClusterNodes.nodes.values().stream().filter(n -> n.node.isMasterNode())
+            final List<TestClusterNode> masterNodes = testClusterNodes.nodes.values().stream()
+                .filter(n -> n.node.isMasterNode())
+                .filter(n -> disconnectedNodes.contains(n.node.getName()) == false)
                 .sorted(Comparator.comparing(n -> n.node.getName())).collect(Collectors.toList());
             return masterNodes.isEmpty() ? Optional.empty() : Optional.of(randomFrom(masterNodes));
         }

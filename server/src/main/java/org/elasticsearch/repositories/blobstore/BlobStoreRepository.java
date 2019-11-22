@@ -399,7 +399,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
         logger.debug("Initializing repository ");
         threadPool.generic().execute(ActionRunnable.supply(ActionListener.wrap(gen ->
-            clusterService.submitStateUpdateTask("initialize_repo_gen", new ClusterStateUpdateTask() {
+            clusterService.submitStateUpdateTask("initialize repository generation", new ClusterStateUpdateTask() {
                 @Override
                 public ClusterState execute(ClusterState currentState) {
                     final RepositoriesState existing = currentState.custom(RepositoriesState.TYPE);
