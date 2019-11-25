@@ -375,13 +375,15 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         return true;
     }
 
-    private final Object repoGenMutex = new Object();
+    // Lock for {@link #initListeners}
+    private final Object repoGenInitMutex = new Object();
 
+    // Listeners to resolve once the repository generation has been successfully initialized in the cluster state
     private List<ActionListener<Void>> initListeners = null;
 
     private void initializeRepoInClusterState(ActionListener<Void> listener) {
         final boolean initInProgress;
-        synchronized (repoGenMutex) {
+        synchronized (repoGenInitMutex) {
             initInProgress = initListeners != null;
             if (initInProgress == false) {
                 initListeners = new ArrayList<>();
@@ -412,7 +414,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
 
                 @Override
-                public void onFailure(String source, final Exception e) {
+                public void onFailure(String source, Exception e) {
                     logger.warn(new ParameterizedMessage("Failed to initialize repository [{}] in cluster state [{}]",
                         repoName, source), e);
                     failInitListeners(e);
@@ -430,7 +432,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private List<ActionListener<Void>> getAndClearInitListeners() {
         final List<ActionListener<Void>> listeners;
-        synchronized (repoGenMutex) {
+        synchronized (repoGenInitMutex) {
             listeners = initListeners;
             initListeners = null;
         }
@@ -1156,8 +1158,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             if (generation == RepositoryData.CORRUPTED_REPO_GEN) {
                 listener.onFailure(corruptedStateException(null));
             } else {
-                initializeRepoInClusterState(
-                    ActionListener.wrap(v -> loadRepositoryData(listener), listener::onFailure));
+                initializeRepoInClusterState(ActionListener.wrap(v -> loadRepositoryData(listener), listener::onFailure));
             }
         } else {
             loadRepositoryData(listener);
