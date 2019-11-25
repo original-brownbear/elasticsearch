@@ -268,8 +268,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         final SnapshotId snapshotId = new SnapshotId(snapshotName, UUIDs.randomBase64UUID()); // new UUID for the snapshot
         final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
         repositoriesService.repository(repositoryName).getRepositoryData(repositoryDataListener);
-
-        repositoryDataListener.whenComplete(repositoryData ->
+        repositoryDataListener.whenComplete(repositoryData -> {
             clusterService.submitStateUpdateTask("create_snapshot [" + snapshotName + ']', new ClusterStateUpdateTask() {
 
                 private SnapshotsInProgress.Entry newSnapshot = null;
@@ -347,7 +346,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 public TimeValue timeout() {
                     return request.masterNodeTimeout();
                 }
-            }), listener::onFailure);
+            });
+        }, listener::onFailure);
     }
 
     /**
@@ -1124,7 +1124,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 if (completionListeners != null) {
                     try {
                         if (snapshotInfo == null) {
-                            assert failure != null;
                             ActionListener.onFailure(completionListeners, failure);
                         } else {
                             ActionListener.onResponse(completionListeners, snapshotInfo);
