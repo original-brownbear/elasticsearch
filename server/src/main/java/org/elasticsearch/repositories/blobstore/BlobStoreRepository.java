@@ -389,10 +389,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             initListeners.add(listener);
         }
         if (initInProgress == true) {
-            logger.debug("Init already in progress");
             return;
         }
-        logger.debug("Initializing repository ");
         final String repoName = metadata.name();
         threadPool.generic().execute(ActionRunnable.supply(ActionListener.wrap(gen ->
             clusterService.submitStateUpdateTask("initialize repository generation", new ClusterStateUpdateTask() {
