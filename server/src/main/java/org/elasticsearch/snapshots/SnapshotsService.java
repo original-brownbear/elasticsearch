@@ -1183,6 +1183,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             if (matchedEntry.isPresent() == false) {
                 throw new SnapshotMissingException(repositoryName, snapshotName);
             }
+            // Break out early on read only repository to avoid putting the delete into the cluster state for a read-only repo
             if (repository.isReadOnly()) {
                 listener.onFailure(new RepositoryException(repositoryName, "cannot delete snapshot from a readonly repository"));
                 return;
@@ -1237,8 +1238,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     // This snapshot is not running - delete
                     if (snapshots != null && !snapshots.entries().isEmpty()) {
                         // However other snapshots are running - cannot continue
-                        throw new ConcurrentSnapshotExecutionException(
-                            snapshot, "another snapshot is currently running cannot delete because of [ " + snapshots + "]");
+                        throw new ConcurrentSnapshotExecutionException(snapshot, "another snapshot is currently running cannot delete");
                     }
                     final RepositoriesState repositoriesState = currentState.custom(RepositoriesState.TYPE);
                     final RepositoriesState.State repoState = repositoriesState.state(snapshot.getRepository());
