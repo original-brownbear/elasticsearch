@@ -1119,6 +1119,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
+                // Failures may leave behind a pending repository generation that is cleaned up in a subsequent repo operation
                 assert failure != null || assertRepoNotPending(newState, snapshot.getRepository());
                 final List<ActionListener<SnapshotInfo>> completionListeners = snapshotCompletionListeners.remove(snapshot);
                 if (completionListeners != null) {

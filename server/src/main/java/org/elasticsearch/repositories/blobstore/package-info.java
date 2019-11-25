@@ -123,7 +123,7 @@
  * <h2>Writing Updated RepositoryData to the Repository</h2>
  *
  * <p>Writing an updated {@link org.elasticsearch.repositories.RepositoryData} to a blob store repository is an operation that uses
- * the cluster state to ensure, that a specific {@code index-N} blob is never accidentally overwritten in a master failover scenario.
+ * the cluster state to ensure that a specific {@code index-N} blob is never accidentally overwritten in a master failover scenario.
  * The specific steps to writing a new {@code index-N} blob and thus making changes from a snapshot-create or delete operation visible
  * to read operations on the repository are as follows and all run on the master node:</p>
  *
@@ -194,7 +194,7 @@
  * {@code /indices/${index-snapshot-uuid}/meta-${snapshot-uuid}.dat}</li>
  * <li>Write the {@link org.elasticsearch.snapshots.SnapshotInfo} blob for the given snapshot to the key {@code /snap-${snapshot-uuid}.dat}
  * directly under the repository root.</li>
- * <li>Write an updated {@code RepositoryData} containing the new snapshot.</li>
+ * <li>Write an updated {@code RepositoryData} blob containing the new snapshot.</li>
  * </ol>
  *
  * <h2>Deleting a Snapshot</h2>
