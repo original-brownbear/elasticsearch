@@ -333,48 +333,43 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE);
         final RepositoryCleanupInProgress cleanupInProgress = state.custom(RepositoryCleanupInProgress.TYPE);
         final RepositoriesState repositoriesState = state.custom(RepositoriesState.TYPE);
-
         final String repoName = metadata.name();
-
+        final RepositoriesState.State repoState = repositoriesState == null ? null : repositoriesState.state(repoName);
         long deleteGen = RepositoryData.UNKNOWN_REPO_GEN;
-        if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()
+        if (deletionsInProgress != null
             && deletionsInProgress.getEntries().stream().anyMatch(entry -> entry.getSnapshot().getRepository().equals(repoName))) {
-            assert repositoriesState != null && repositoriesState.state(repoName) != null :
-                "Snapshot delete in progress but repositories state not initialized";
+            assert repoState != null : "Snapshot delete in progress but repositories state not initialized";
             final long generation = deletionsInProgress.getEntries().stream().filter(entry -> entry.getSnapshot().getRepository()
                 .equals(repoName)).findAny()
                 .orElseThrow(() -> new AssertionError("impossible")).getRepositoryStateId();
-            final RepositoriesState.State repoState = repositoriesState.state(repoName);
             deleteGen = generation;
             assert generation <= repoState.generation() :
                 "Generation mismatch between [" + deletionsInProgress + "] and [" + state + "]";
         }
 
-        if (snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty() == false
+        if (snapshotsInProgress != null
             && snapshotsInProgress.entries().stream().anyMatch(entry -> entry.snapshot().getRepository().equals(repoName))) {
-            assert repositoriesState != null && repositoriesState.state(repoName) != null :
+            assert repoState != null :
                 "Snapshot creation [" + snapshotsInProgress + "] in progress but repositories state not initialized";
             final long snapshotGeneration = snapshotsInProgress.entries().stream().filter(entry -> entry.snapshot().getRepository()
                 .equals(repoName)).findAny()
                 .orElseThrow(() -> new AssertionError("impossible")).getRepositoryStateId();
-            final RepositoriesState.State repoState = repositoriesState.state(repoName);
-            assert deleteGen > snapshotGeneration || deleteGen == RepositoryData.UNKNOWN_REPO_GEN : "Running snapshot at generation ["
-                + snapshotGeneration + "] clashes with running delete at generation [" + deleteGen + "]";
+            assert deleteGen > snapshotGeneration || deleteGen == RepositoryData.UNKNOWN_REPO_GEN :
+                "Running snapshot at generation [" + snapshotGeneration + "] clashes with running delete at generation ["
+                    + deleteGen + "]";
             assert snapshotGeneration <= repoState.generation() :
                 "Generation mismatch between [" + snapshotsInProgress + "] and [" + state + "]";
         }
 
-        if (cleanupInProgress != null && cleanupInProgress.hasCleanupInProgress()
-            && cleanupInProgress.entries().stream().anyMatch(entry -> entry.repository().equals(repoName))) {
-            assert repositoriesState != null && repositoriesState.state(repoName) != null :
-                "Snapshot cleanup in progress but repositories state not initialized";
-            final long generation = cleanupInProgress.entries().stream().filter(entry -> entry.repository().equals(repoName)).findAny()
-                .orElseThrow(() -> new AssertionError("impossible")).getRepositoryStateId();
+        if (cleanupInProgress != null && cleanupInProgress.entries().stream().anyMatch(entry -> entry.repository().equals(repoName))) {
+            assert repoState != null : "Snapshot cleanup in progress but repositories state not initialized";
+            final long generation = cleanupInProgress.entries().stream().filter(entry -> entry.repository().equals(repoName))
+                .findAny().orElseThrow(() -> new AssertionError("impossible")).getRepositoryStateId();
             assert deleteGen == RepositoryData.UNKNOWN_REPO_GEN :
                 "Can't have cleanup and deletes running at the same time but saw delete at gen [" + deleteGen
                     + "] and cleanup at gen [" + generation + "]";
-            final RepositoriesState.State repoState = repositoriesState.state(repoName);
-            assert generation <= repoState.generation() : "Generation mismatch between [" + cleanupInProgress + "] and [" + state + "]";
+            assert generation <= repoState.generation()
+                : "Generation mismatch between [" + cleanupInProgress + "] and [" + state + "]";
         }
 
         return true;
