@@ -1150,8 +1150,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     return;
                 }
             }
+        } else {
+            loadConsistentRepositoryData(listener);
         }
-        loadConsistentRepositoryData(listener);
     }
 
     private void loadConsistentRepositoryData(ActionListener<RepositoryData> listener) {
