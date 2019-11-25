@@ -416,33 +416,30 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 public void onFailure(String source, final Exception e) {
                     logger.warn(new ParameterizedMessage("Failed to initialize repository [{}] in cluster state [{}]",
                         metadata.name(), source), e);
-                    final List<ActionListener<Void>> listeners;
-                    synchronized (repoGenMutex) {
-                        listeners = initListeners;
-                        initListeners = null;
-                    }
-                    ActionListener.onFailure(listeners, e);
+                    failInitListeners(e);
                 }
 
                 @Override
                 public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                     final RepositoriesState state = newState.custom(RepositoriesState.TYPE);
                     latestKnownRepoGen.updateAndGet(known -> Math.max(known, state.state(metadata.name()).generation()));
-                    final List<ActionListener<Void>> listeners;
-                    synchronized (repoGenMutex) {
-                        listeners = initListeners;
-                        initListeners = null;
-                    }
-                    ActionListener.onResponse(listeners, null);
+                    ActionListener.onResponse(getAndClearInitListeners(), null);
                 }
-            }), e -> {
-            final List<ActionListener<Void>> listeners;
-            synchronized (repoGenMutex) {
-                listeners = initListeners;
-                initListeners = null;
-            }
-            ActionListener.onFailure(listeners, new RepositoryException(metadata.name(), "Failed to determine repository generation", e));
-        }), this::latestIndexBlobId));
+            }), e -> failInitListeners(
+                new RepositoryException(metadata.name(), "Failed to determine repository generation", e))), this::latestIndexBlobId));
+    }
+
+    private List<ActionListener<Void>> getAndClearInitListeners() {
+        final List<ActionListener<Void>> listeners;
+        synchronized (repoGenMutex) {
+            listeners = initListeners;
+            initListeners = null;
+        }
+        return listeners;
+    }
+
+    private void failInitListeners(final Exception e) {
+        ActionListener.onFailure(getAndClearInitListeners(), e);
     }
 
     public ThreadPool threadPool() {
@@ -553,8 +550,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         } else {
             final long latestKnownGen = latestKnownRepoGen.get();
             if (latestKnownGen > repositoryStateId) {
-                assert false : "Another concurrent operation moved repo generation to [ " + latestKnownGen
-                    + "] but this delete assumed generation [" + repositoryStateId + "]";
                 listener.onFailure(new ConcurrentSnapshotExecutionException(
                     new Snapshot(metadata.name(), snapshotId), "Another concurrent operation moved repo generation to [ " + latestKnownGen
                     + "] but this delete assumed generation [" + repositoryStateId + "]"));
