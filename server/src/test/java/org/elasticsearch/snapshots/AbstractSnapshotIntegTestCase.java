@@ -95,7 +95,9 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
     protected RepositoryData getRepositoryData(Repository repository) {
         ThreadPool threadPool = internalCluster().getInstance(ThreadPool.class, internalCluster().getMasterName());
         final PlainActionFuture<RepositoryData> repositoryData = PlainActionFuture.newFuture();
-        threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> repository.getRepositoryData(repositoryData));
+        threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
+            repository.getRepositoryData(repositoryData);
+        });
         return repositoryData.actionGet();
     }
 
