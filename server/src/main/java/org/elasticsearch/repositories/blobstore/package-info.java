@@ -139,16 +139,16 @@
  * the contents of a {@link org.elasticsearch.repositories.blobstore.BlobStoreRepository} as a read-only url repository.</li>
  * <li>After the write has finished, set the value of {@link org.elasticsearch.repositories.RepositoriesState.State#generation()} to
  * the value used for {@link org.elasticsearch.repositories.RepositoriesState.State#pendingGeneration()} so that the new entry for the
- * state of the repository has {@code generation} and {@code pendingWrite} set to the same value to signalize a clean repository
+ * state of the repository has {@code generation} and {@code pendingGeneration} set to the same value to signalize a clean repository
  * state with no potentially failed writes newer than the last valid {@code index-N} blob in the repository.</li>
  * </ol>
  *
  * <p>If either of the last two steps in the above fails and/or master fails over to a new node at any point, then a subsequent
  * operation trying to write a new {@code index-N} blob will never use the same value of {@code N} used in the the previous step. It will
- * always start over at the first of the above three steps, incrementing the {@code pendingWrite} generation before attempting a write,
- * thus ensuring no overwriting of a {@code index-N} blob ever to occur. The use of the cluster state to track the latest repository
- * generation {@code N} and ensure no overwriting of {@code index-N} blobs to ever occur allows the blob store repository to properly
- * function even on blob stores with neither a consistent list operation nor an atomic "write but not overwrite" operation.</p>
+ * always start over at the first of the above three steps, incrementing the {@code pendingGeneration} generation before attempting
+ * a write, thus ensuring no overwriting of a {@code index-N} blob ever to occur. The use of the cluster state to track the latest
+ * repository generation {@code N} and ensure no overwriting of {@code index-N} blobs to ever occur allows the blob store repository to
+ * properly function even on blob stores with neither a consistent list operation nor an atomic "write but not overwrite" operation.</p>
  *
  * <h2>Creating a Snapshot</h2>
  *
