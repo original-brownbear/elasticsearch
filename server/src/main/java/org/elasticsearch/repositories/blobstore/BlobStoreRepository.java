@@ -306,20 +306,20 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 final long genInCS = repoState.generation();
                 if (repoState.pendingGeneration() > genInCS) {
                     if (latestKnownRepoGen.get() - 1 > genInCS) {
-                        logger.warn("Current known generation [{}] was ahead of generation tracked by CS [{}]",
+                        logger.error("Current known generation [{}] was ahead of generation tracked by CS [{}]",
                             latestKnownRepoGen.get(), repoState.generation());
                         assert false : "Current known generation [" + latestKnownRepoGen.get()
                             + "] was ahead of generation tracked by CS [" + genInCS + "]";
                     }
                     if (latestKnownRepoGen.compareAndSet(RepositoryData.UNKNOWN_REPO_GEN, repoState.generation())) {
-                        logger.debug("Initialized repo state to [{}] during pending operation", repoState.generation());
+                        logger.debug("Initialized repo state to [{}]", repoState.generation());
                     }
                     return;
                 }
                 final long prevGenTracked = latestKnownRepoGen.getAndSet(genInCS);
                 if (genInCS < prevGenTracked) {
                     assert false : "Reverted repo state from gen [" + prevGenTracked + "] to [" + genInCS + "]";
-                    logger.warn("Reverted repo state from gen [{}}] to [{}}]", prevGenTracked, genInCS);
+                    logger.error("Reverted repo state from gen [{}}] to [{}}]", prevGenTracked, genInCS);
                 }
                 if (genInCS > prevGenTracked) {
                     logger.debug("Moved repository generation to [{}]", genInCS);
