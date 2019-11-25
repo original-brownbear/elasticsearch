@@ -393,6 +393,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             return;
         }
         logger.debug("Initializing repository ");
+        final String repoName = metadata.name();
         threadPool.generic().execute(ActionRunnable.supply(ActionListener.wrap(gen ->
             clusterService.submitStateUpdateTask("initialize repository generation", new ClusterStateUpdateTask() {
                 @Override
@@ -400,11 +401,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     final RepositoriesState existing = currentState.custom(RepositoriesState.TYPE);
                     final RepositoriesState updated;
                     if (existing == null) {
-                        updated = RepositoriesState.builder().putState(metadata.name(), gen, gen).build();
+                        updated = RepositoriesState.builder().putState(repoName, gen, gen).build();
                     } else {
-                        final RepositoriesState.State repoState = existing.state(metadata.name());
+                        final RepositoriesState.State repoState = existing.state(repoName);
                         if (repoState == null) {
-                            updated = RepositoriesState.builder().putAll(existing).putState(metadata.name(), gen, gen).build();
+                            updated = RepositoriesState.builder().putAll(existing).putState(repoName, gen, gen).build();
                         } else {
                             return currentState;
                         }
@@ -415,18 +416,18 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 @Override
                 public void onFailure(String source, final Exception e) {
                     logger.warn(new ParameterizedMessage("Failed to initialize repository [{}] in cluster state [{}]",
-                        metadata.name(), source), e);
+                        repoName, source), e);
                     failInitListeners(e);
                 }
 
                 @Override
                 public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                     final RepositoriesState state = newState.custom(RepositoriesState.TYPE);
-                    latestKnownRepoGen.updateAndGet(known -> Math.max(known, state.state(metadata.name()).generation()));
+                    latestKnownRepoGen.updateAndGet(known -> Math.max(known, state.state(repoName).generation()));
                     ActionListener.onResponse(getAndClearInitListeners(), null);
                 }
             }), e -> failInitListeners(
-                new RepositoryException(metadata.name(), "Failed to determine repository generation", e))), this::latestIndexBlobId));
+                new RepositoryException(repoName, "Failed to determine repository generation", e))), this::latestIndexBlobId));
     }
 
     private List<ActionListener<Void>> getAndClearInitListeners() {
