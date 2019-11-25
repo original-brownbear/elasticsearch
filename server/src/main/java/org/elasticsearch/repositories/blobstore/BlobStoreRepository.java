@@ -304,6 +304,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final RepositoriesState.State repoState = repositoriesState.state(metadata.name());
             if (repoState != null) {
                 final long genInCS = repoState.generation();
+                if (genInCS == RepositoryData.CORRUPTED_REPO_GEN) {
+                    latestKnownRepoGen.set(RepositoryData.CORRUPTED_REPO_GEN);
+                    return;
+                }
                 if (repoState.pendingGeneration() > genInCS) {
                     if (latestKnownRepoGen.get() - 1 > genInCS) {
                         logger.error("Current known generation [{}] was ahead of generation tracked by CS [{}]",
@@ -381,6 +385,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     // Listeners to resolve once the repository generation has been successfully initialized in the cluster state
     private List<ActionListener<Void>> initListeners = null;
 
+    /**
+     * Initializes this repositories' generation {@code N} in the cluster state by listing all {@code index-N} under the repository root
+     * and then updating {@link RepositoriesState} accordingly.
+     *
+     * @param listener listener to invoke once repo generation has been initialized in the cluster state
+     */
     private void initializeRepoInClusterState(ActionListener<Void> listener) {
         final boolean initInProgress;
         synchronized (repoGenInitMutex) {
@@ -1232,7 +1242,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         + "] as corrupted but its state concurrently changed to [" + repoState + "]");
                 }
                 final RepositoriesState updated = RepositoriesState.builder().putAll(state)
-                    .putState(metadata.name(), corruptedGeneration, repoState.pendingGeneration()).build();
+                    .putState(metadata.name(), RepositoryData.CORRUPTED_REPO_GEN, repoState.pendingGeneration()).build();
                 return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updated).build();
             }
 

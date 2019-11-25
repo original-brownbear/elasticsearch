@@ -1515,65 +1515,6 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
                 .addSnapshots("test-snap-1").get().getSnapshots("test-repo"));
     }
 
-    public void testConcurrentlyChangeRepositoryContents() throws Exception {
-        Client client = client();
-
-        Path repo = randomRepoPath();
-        logger.info("-->  creating repository at {}", repo.toAbsolutePath());
-        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
-            .setType("fs").setSettings(Settings.builder()
-                .put("location", repo)
-                .put("compress", false)
-                .put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES)));
-
-        createIndex("test-idx-1", "test-idx-2");
-        logger.info("--> indexing some data");
-        indexRandom(true,
-            client().prepareIndex("test-idx-1").setSource("foo", "bar"),
-            client().prepareIndex("test-idx-2").setSource("foo", "bar"));
-
-        logger.info("--> creating snapshot");
-        CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-1")
-            .setWaitForCompletion(true).setIndices("test-idx-*").get();
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
-            equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
-
-        logger.info("--> move index-N blob to next generation");
-        final RepositoryData repositoryData =
-            getRepositoryData(internalCluster().getMasterNodeInstance(RepositoriesService.class).repository("test-repo"));
-        Files.move(repo.resolve("index-" + repositoryData.getGenId()), repo.resolve("index-" + (repositoryData.getGenId() + 1)));
-
-        logger.info("--> try to delete snapshot");
-        final RepositoryException repositoryException1 = expectThrows(RepositoryException.class,
-            () -> client.admin().cluster().prepareDeleteSnapshot("test-repo", "test-snap-1").execute().actionGet());
-        assertThat(repositoryException1.getMessage(),
-            containsString("Could not read repository data because the contents of the repository do not match with its expected state."));
-
-        logger.info("--> try to create snapshot");
-        final RepositoryException repositoryException2 = expectThrows(RepositoryException.class,
-            () -> client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-1").execute().actionGet());
-        assertThat(repositoryException2.getMessage(),
-            containsString("Could not read repository data because the contents of the repository do not match with its expected state."));
-
-        logger.info("--> remove repository");
-        assertAcked(client.admin().cluster().prepareDeleteRepository("test-repo"));
-
-        logger.info("--> recreate repository");
-        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
-            .setType("fs").setSettings(Settings.builder()
-                .put("location", repo)
-                .put("compress", false)
-                .put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES)));
-
-        logger.info("--> delete snapshot");
-        client.admin().cluster().prepareDeleteSnapshot("test-repo", "test-snap-1").get();
-
-        logger.info("--> make sure snapshot doesn't exist");
-        expectThrows(SnapshotMissingException.class, () -> client.admin().cluster().prepareGetSnapshots("test-repo")
-            .addSnapshots("test-snap-1").get().getSnapshots("test-repo"));
-    }
-
     public void testDeleteSnapshotWithCorruptedSnapshotFile() throws Exception {
         Client client = client();
 
