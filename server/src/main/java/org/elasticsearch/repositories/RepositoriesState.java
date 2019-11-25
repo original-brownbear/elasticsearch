@@ -118,12 +118,13 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
         private final long generation;
 
-        private final long pendingWrite;
+        private final long pendingGeneration;
 
-        private State(long generation, long pendingWrite) {
-            assert generation <= pendingWrite : "Pending generation [" + pendingWrite + "] smaller than generation [" + generation + "]";
+        private State(long generation, long pendingGeneration) {
+            assert generation <= pendingGeneration :
+                "Pending generation [" + pendingGeneration + "] smaller than generation [" + generation + "]";
             this.generation = generation;
-            this.pendingWrite = pendingWrite;
+            this.pendingGeneration = pendingGeneration;
         }
 
         private State(StreamInput in) throws IOException {
@@ -144,14 +145,14 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
          *
          * @return latest repository generation that a write was attempted for
          */
-        public long pendingWrite() {
-            return pendingWrite;
+        public long pendingGeneration() {
+            return pendingGeneration;
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeLong(generation);
-            out.writeLong(pendingWrite);
+            out.writeLong(pendingGeneration);
         }
 
         @Override
@@ -161,7 +162,7 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
 
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return builder.startObject().field("generation", generation).field("pending", pendingWrite).endObject();
+            return builder.startObject().field("generation", generation).field("pending", pendingGeneration).endObject();
         }
 
         @Override
@@ -178,12 +179,12 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
                 return false;
             }
             final RepositoriesState.State that = (RepositoriesState.State) other;
-            return this.generation == that.generation && this.pendingWrite == that.pendingWrite;
+            return this.generation == that.generation && this.pendingGeneration == that.pendingGeneration;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(generation, pendingWrite);
+            return Objects.hash(generation, pendingGeneration);
         }
     }
 

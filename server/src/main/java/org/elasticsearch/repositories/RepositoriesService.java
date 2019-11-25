@@ -220,7 +220,8 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                                 if (existingStates != null) {
                                     final RepositoriesState.State repoState = existingStates.state(repositoryMetaData.name());
                                     if (repoState != null) {
-                                        updatedStates.putState(repositoryMetaData.name(), repoState.generation(), repoState.pendingWrite());
+                                        updatedStates.putState(
+                                            repositoryMetaData.name(), repoState.generation(), repoState.pendingGeneration());
                                     }
                                 }
                                 repositoriesMetaData.add(repositoryMetaData);

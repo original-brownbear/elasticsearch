@@ -304,7 +304,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final RepositoriesState.State repoState = repositoriesState.state(metadata.name());
             if (repoState != null) {
                 final long genInCS = repoState.generation();
-                if (repoState.pendingWrite() > genInCS) {
+                if (repoState.pendingGeneration() > genInCS) {
                     if (latestKnownRepoGen.get() - 1 > genInCS) {
                         logger.warn("Current known generation [{}] was ahead of generation tracked by CS [{}]",
                             latestKnownRepoGen.get(), repoState.generation());
@@ -1241,7 +1241,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         + "] as corrupted but its state concurrently changed to [" + repoState + "]");
                 }
                 final RepositoriesState updated = RepositoriesState.builder().putAll(state)
-                    .putState(metadata.name(), corruptedGeneration, repoState.pendingWrite()).build();
+                    .putState(metadata.name(), corruptedGeneration, repoState.pendingGeneration()).build();
                 return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updated).build();
             }
 
@@ -1297,7 +1297,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             public ClusterState execute(ClusterState currentState) {
                 final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
                 final RepositoriesState.State repoState = state.state(metadata.name());
-                final boolean wasPending = repoState.pendingWrite() != repoState.generation();
+                final boolean wasPending = repoState.pendingGeneration() != repoState.generation();
                 if (wasPending) {
                     logger.warn("Trying to write new repository data of generation [{}] over unfinished write, repo is in state [{}]",
                         expectedGen + 1, repoState);
@@ -1313,7 +1313,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
                 final RepositoriesState updated =
                     RepositoriesState.builder().putAll(state).putState(
-                        metadata.name(), repoState.generation(), repoState.pendingWrite() + 1).build();
+                        metadata.name(), repoState.generation(), repoState.pendingGeneration() + 1).build();
                 return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updated).build();
             }
 
@@ -1363,7 +1363,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 public ClusterState execute(ClusterState currentState) {
                     final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
                     final RepositoriesState.State repoState = state.state(metadata.name());
-                    final boolean wasPending = repoState.pendingWrite() != repoState.generation();
+                    final boolean wasPending = repoState.pendingGeneration() != repoState.generation();
                     final long prevGeneration = repoState.generation();
                     if (prevGeneration != expectedGen) {
                         throw new IllegalStateException("Tried to update repo generation to [" + newGen
@@ -1411,7 +1411,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         final long knownGeneration = latestKnownRepoGen.get();
         assert knownGeneration == repoState.generation() : "Mismatch in assumed generation [" + knownGeneration
             + "] and generation in CS [" + repoState.generation() + "]";
-        assert repoState.pendingWrite() == repoState.generation() :
+        assert repoState.pendingGeneration() == repoState.generation() :
             "State after new generation write must not be pending but was [" + repoState + "]";
         return true;
     }

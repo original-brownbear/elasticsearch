@@ -130,7 +130,7 @@
  * <ol>
  * <li>Write an updated value of {@link org.elasticsearch.repositories.RepositoriesState.State} for the repository that has the same
  * {@link org.elasticsearch.repositories.RepositoriesState.State#generation()} as the existing entry and has a value of
- * {@link org.elasticsearch.repositories.RepositoriesState.State#pendingWrite()} one greater than the existing entry.</li>
+ * {@link org.elasticsearch.repositories.RepositoriesState.State#pendingGeneration()} one greater than the existing entry.</li>
  * <li>On the same master node, once the cluster state has been updated in the first step, write the new {@code index-N} blob and
  * afterwards update the contents of the {@code index.latest} blob. Note that updating the index.latest blob is done on a best effort
  * basis and that there is a theoretical possibility for a stuck master-node to overwrite the contents of a {@code index.latest}
@@ -138,7 +138,7 @@
  * {@code index.latest} are not used during normal operation of the repository and must only be correct for purposes of mounting
  * the contents of a {@link org.elasticsearch.repositories.blobstore.BlobStoreRepository} as a read-only url repository.</li>
  * <li>After the write has finished, set the value of {@link org.elasticsearch.repositories.RepositoriesState.State#generation()} to
- * the value used for {@link org.elasticsearch.repositories.RepositoriesState.State#pendingWrite()} so that the new entry for the
+ * the value used for {@link org.elasticsearch.repositories.RepositoriesState.State#pendingGeneration()} so that the new entry for the
  * state of the repository has {@code generation} and {@code pendingWrite} set to the same value to signalize a clean repository
  * state with no potentially failed writes newer than the last valid {@code index-N} blob in the repository.</li>
  * </ol>
