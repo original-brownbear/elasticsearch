@@ -136,8 +136,8 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
             (BlobStoreRepository) repositoriesService.repository(repositoryName);
         final List<SnapshotId> originalSnapshots = Arrays.asList(snapshotId1, snapshotId2);
 
-        List<SnapshotId> snapshotIds = ESBlobStoreRepositoryIntegTestCase.getRepositoryData(repository).getSnapshotIds()
-            .stream().sorted((s1, s2) -> s1.getName().compareTo(s2.getName())).collect(Collectors.toList());
+        List<SnapshotId> snapshotIds = ESBlobStoreRepositoryIntegTestCase.getRepositoryData(repository).getSnapshotIds().stream()
+            .sorted((s1, s2) -> s1.getName().compareTo(s2.getName())).collect(Collectors.toList());
         assertThat(snapshotIds, equalTo(originalSnapshots));
     }
 
