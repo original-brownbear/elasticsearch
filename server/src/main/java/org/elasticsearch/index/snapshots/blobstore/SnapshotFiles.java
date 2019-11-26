@@ -18,8 +18,6 @@
  */
 package org.elasticsearch.index.snapshots.blobstore;
 
-import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot.FileInfo;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

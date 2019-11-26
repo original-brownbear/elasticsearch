@@ -78,6 +78,7 @@ import org.elasticsearch.index.snapshots.IndexShardSnapshotFailedException;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshots;
+import org.elasticsearch.index.snapshots.blobstore.FileInfo;
 import org.elasticsearch.index.snapshots.blobstore.RateLimitingInputStream;
 import org.elasticsearch.index.snapshots.blobstore.SlicedInputStream;
 import org.elasticsearch.index.snapshots.blobstore.SnapshotFiles;
@@ -120,7 +121,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot.FileInfo.canonicalName;
+import static org.elasticsearch.index.snapshots.blobstore.FileInfo.canonicalName;
 
 /**
  * BlobStore - based implementation of Snapshot Repository
@@ -1137,8 +1138,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     "Duplicate snapshot name [" + snapshotId.getName() + "] detected, aborting");
             }
 
-            final List<BlobStoreIndexShardSnapshot.FileInfo> indexCommitPointFiles = new ArrayList<>();
-            final BlockingQueue<BlobStoreIndexShardSnapshot.FileInfo> filesToSnapshot = new LinkedBlockingQueue<>();
+            final List<FileInfo> indexCommitPointFiles = new ArrayList<>();
+            final BlockingQueue<FileInfo> filesToSnapshot = new LinkedBlockingQueue<>();
             store.incRef();
             final Collection<String> fileNames;
             final Store.MetadataSnapshot metadataFromStore;
@@ -1167,10 +1168,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
                 logger.trace("[{}] [{}] Processing [{}]", shardId, snapshotId, fileName);
                 final StoreFileMetaData md = metadataFromStore.get(fileName);
-                BlobStoreIndexShardSnapshot.FileInfo existingFileInfo = null;
-                List<BlobStoreIndexShardSnapshot.FileInfo> filesInfo = snapshots.findPhysicalIndexFiles(fileName);
+                FileInfo existingFileInfo = null;
+                List<FileInfo> filesInfo = snapshots.findPhysicalIndexFiles(fileName);
                 if (filesInfo != null) {
-                    for (BlobStoreIndexShardSnapshot.FileInfo fileInfo : filesInfo) {
+                    for (FileInfo fileInfo : filesInfo) {
                         if (fileInfo.isSame(md)) {
                             // a commit point file with the same name, size and checksum was already copied to repository
                             // we will reuse it for this snapshot
@@ -1187,8 +1188,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     indexIncrementalFileCount++;
                     indexIncrementalSize += md.length();
                     // create a new FileInfo
-                    BlobStoreIndexShardSnapshot.FileInfo snapshotFileInfo =
-                        new BlobStoreIndexShardSnapshot.FileInfo(DATA_BLOB_PREFIX + UUIDs.randomBase64UUID(), md, chunkSize());
+                    FileInfo snapshotFileInfo =
+                        new FileInfo(DATA_BLOB_PREFIX + UUIDs.randomBase64UUID(), md, chunkSize());
                     indexCommitPointFiles.add(snapshotFileInfo);
                     filesToSnapshot.add(snapshotFileInfo);
                 } else {
@@ -1224,7 +1225,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
                 // build a new BlobStoreIndexShardSnapshot, that includes this one and all the saved ones
                 List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
-                newSnapshotsList.add(new SnapshotFiles(snapshot.snapshot(), snapshot.indexFiles()));
+                newSnapshotsList.add(new SnapshotFiles(snapshot.snapshot(), indexCommitPointFiles));
                 for (SnapshotFiles point : snapshots) {
                     newSnapshotsList.add(point);
                 }
@@ -1270,7 +1271,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final ActionListener<Void> filesListener = fileQueueListener(filesToSnapshot, workers, allFilesUploadedListener);
             for (int i = 0; i < workers; ++i) {
                 executor.execute(ActionRunnable.run(filesListener, () -> {
-                    BlobStoreIndexShardSnapshot.FileInfo snapshotFileInfo = filesToSnapshot.poll(0L, TimeUnit.MILLISECONDS);
+                    FileInfo snapshotFileInfo = filesToSnapshot.poll(0L, TimeUnit.MILLISECONDS);
                     if (snapshotFileInfo != null) {
                         store.incRef();
                         try {
@@ -1297,20 +1298,24 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             (l, e) -> l.onFailure(new IndexShardRestoreFailedException(shardId, "failed to restore snapshot [" + snapshotId + "]", e)));
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
         final BlobContainer container = shardContainer(indexId, snapshotShardId);
-        executor.execute(ActionRunnable.wrap(restoreListener, l -> {
-            final BlobStoreIndexShardSnapshot snapshot = loadShardSnapshot(container, snapshotId);
-            final SnapshotFiles snapshotFiles = new SnapshotFiles(snapshot.snapshot(), snapshot.indexFiles());
+        executor.execute(ActionRunnable.wrap(restoreListener, l -> getRepositoryData(ActionListener.wrap(repositoryData -> {
+            final BlobStoreIndexShardSnapshots snapshots = buildBlobStoreIndexShardSnapshots(
+                Collections.emptySet(), shardContainer(indexId, snapshotShardId),
+                repositoryData.shardGenerations().getShardGen(indexId, shardId.getId())).v1();
+            final SnapshotFiles snapshotFiles = snapshots.snapshots().stream()
+                .filter(files -> snapshotId.getName().equals(files.snapshot())).findFirst()
+                .orElseThrow(() -> new SnapshotMissingException(metadata.name(), snapshotId, null));
             new FileRestoreContext(metadata.name(), shardId, snapshotId, recoveryState) {
                 @Override
-                protected void restoreFiles(List<BlobStoreIndexShardSnapshot.FileInfo> filesToRecover, Store store,
-                                            ActionListener<Void> listener) {
+                protected void restoreFiles(List<FileInfo> filesToRecover, Store store,
+                    ActionListener<Void> listener) {
                     if (filesToRecover.isEmpty()) {
                         listener.onResponse(null);
                     } else {
                         // Start as many workers as fit into the snapshot pool at once at the most
                         final int workers =
                             Math.min(threadPool.info(ThreadPool.Names.SNAPSHOT).getMax(), snapshotFiles.indexFiles().size());
-                        final BlockingQueue<BlobStoreIndexShardSnapshot.FileInfo> files = new LinkedBlockingQueue<>(filesToRecover);
+                        final BlockingQueue<FileInfo> files = new LinkedBlockingQueue<>(filesToRecover);
                         final ActionListener<Void> allFilesListener =
                             fileQueueListener(files, workers, ActionListener.map(listener, v -> null));
                         // restore the files from the snapshot to the Lucene store
@@ -1318,7 +1323,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             executor.execute(ActionRunnable.run(allFilesListener, () -> {
                                 store.incRef();
                                 try {
-                                    BlobStoreIndexShardSnapshot.FileInfo fileToRecover;
+                                    FileInfo fileToRecover;
                                     while ((fileToRecover = files.poll(0L, TimeUnit.MILLISECONDS)) != null) {
                                         restoreFile(fileToRecover, store);
                                     }
@@ -1330,7 +1335,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     }
                 }
 
-                private void restoreFile(BlobStoreIndexShardSnapshot.FileInfo fileInfo, Store store) throws IOException {
+                private void restoreFile(FileInfo fileInfo, Store store) throws IOException {
                     boolean success = false;
 
                     try (InputStream stream = maybeRateLimit(new SlicedInputStream(fileInfo.numberOfParts()) {
@@ -1367,10 +1372,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     }
                 }
             }.restore(snapshotFiles, store, l);
-        }));
+        }, l::onFailure))));
     }
 
-    private static ActionListener<Void> fileQueueListener(BlockingQueue<BlobStoreIndexShardSnapshot.FileInfo> files, int workers,
+    private static ActionListener<Void> fileQueueListener(BlockingQueue<FileInfo> files, int workers,
                                                           ActionListener<Collection<Void>> listener) {
         return ActionListener.delegateResponse(new GroupedActionListener<>(listener, workers), (l, e) -> {
             files.clear(); // Stop uploading the remaining files if we run into any exception
@@ -1559,7 +1564,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      * Snapshot individual file
      * @param fileInfo file to be snapshotted
      */
-    private void snapshotFile(BlobStoreIndexShardSnapshot.FileInfo fileInfo, IndexId indexId, ShardId shardId, SnapshotId snapshotId,
+    private void snapshotFile(FileInfo fileInfo, IndexId indexId, ShardId shardId, SnapshotId snapshotId,
                               IndexShardSnapshotStatus snapshotStatus, Store store) throws IOException {
         final BlobContainer shardContainer = shardContainer(indexId, shardId);
         final String file = fileInfo.physicalName();

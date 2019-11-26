@@ -26,7 +26,7 @@ import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.snapshots.IndexShardRestoreFailedException;
-import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot;
+import org.elasticsearch.index.snapshots.blobstore.FileInfo;
 import org.elasticsearch.index.snapshots.blobstore.SnapshotFiles;
 import org.elasticsearch.index.store.Store;
 import org.elasticsearch.index.store.StoreFileMetaData;
@@ -94,10 +94,10 @@ public abstract class FileRestoreContext {
                     shardId, snapshotId), e);
                 recoveryTargetMetadata = Store.MetadataSnapshot.EMPTY;
             }
-            final List<BlobStoreIndexShardSnapshot.FileInfo> filesToRecover = new ArrayList<>();
+            final List<FileInfo> filesToRecover = new ArrayList<>();
             final Map<String, StoreFileMetaData> snapshotMetaData = new HashMap<>();
-            final Map<String, BlobStoreIndexShardSnapshot.FileInfo> fileInfos = new HashMap<>();
-            for (final BlobStoreIndexShardSnapshot.FileInfo fileInfo : snapshotFiles.indexFiles()) {
+            final Map<String, FileInfo> fileInfos = new HashMap<>();
+            for (final FileInfo fileInfo : snapshotFiles.indexFiles()) {
                 snapshotMetaData.put(fileInfo.metadata().name(), fileInfo.metadata());
                 fileInfos.put(fileInfo.metadata().name(), fileInfo);
             }
@@ -111,7 +111,7 @@ public abstract class FileRestoreContext {
 
             final Store.RecoveryDiff diff = sourceMetaData.recoveryDiff(recoveryTargetMetadata);
             for (StoreFileMetaData md : diff.identical) {
-                BlobStoreIndexShardSnapshot.FileInfo fileInfo = fileInfos.get(md.name());
+                FileInfo fileInfo = fileInfos.get(md.name());
                 recoveryState.getIndex().addFileDetail(fileInfo.physicalName(), fileInfo.length(), true);
                 if (logger.isTraceEnabled()) {
                     logger.trace("[{}] [{}] not_recovering file [{}] from [{}], exists in local store and is same", shardId, snapshotId,
@@ -120,7 +120,7 @@ public abstract class FileRestoreContext {
             }
 
             for (StoreFileMetaData md : concat(diff)) {
-                BlobStoreIndexShardSnapshot.FileInfo fileInfo = fileInfos.get(md.name());
+                FileInfo fileInfo = fileInfos.get(md.name());
                 filesToRecover.add(fileInfo);
                 recoveryState.getIndex().addFileDetail(fileInfo.physicalName(), fileInfo.length(), false);
                 if (logger.isTraceEnabled()) {
@@ -137,7 +137,7 @@ public abstract class FileRestoreContext {
                 // list of all existing store files
                 final List<String> deleteIfExistFiles = Arrays.asList(store.directory().listAll());
 
-                for (final BlobStoreIndexShardSnapshot.FileInfo fileToRecover : filesToRecover) {
+                for (final FileInfo fileToRecover : filesToRecover) {
                     // if a file with a same physical name already exist in the store we need to delete it
                     // before restoring it from the snapshot. We could be lenient and try to reuse the existing
                     // store files (and compare their names/length/checksum again with the snapshot files) but to
@@ -198,12 +198,12 @@ public abstract class FileRestoreContext {
     }
 
     /**
-     * Restores given list of {@link BlobStoreIndexShardSnapshot.FileInfo} to the given {@link Store}.
+     * Restores given list of {@link FileInfo} to the given {@link Store}.
      *
      * @param filesToRecover List of files to restore
      * @param store          Store to restore into
      */
-    protected abstract void restoreFiles(List<BlobStoreIndexShardSnapshot.FileInfo> filesToRecover, Store store,
+    protected abstract void restoreFiles(List<FileInfo> filesToRecover, Store store,
                                          ActionListener<Void> listener);
 
     @SuppressWarnings("unchecked")
