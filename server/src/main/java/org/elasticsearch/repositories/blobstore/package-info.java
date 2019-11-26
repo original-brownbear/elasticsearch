@@ -96,7 +96,7 @@
  * <ol>
  * <li>The blobstore repository stores the {@code RepositoryData} in blobs named with incrementing suffix {@code N} at {@code /index-N}
  * directly under the repository's root.</li>
- * <li>For each {@link org.elasticsearch.repositories.blobstore.BlobStoreRepository} that is not mounted in read-only mode, an entry
+ * <li>For each {@link org.elasticsearch.repositories.blobstore.BlobStoreRepository} (that is not mounted in read-only mode) an entry
  * of type {@link org.elasticsearch.repositories.RepositoriesState.State} exists in the cluster state. It tracks the current valid
  * generation {@code N} as well as the latest generation that a write was attempted for.</li>
  * <li>The blobstore also stores the most recent {@code N} as a 64bit long in the blob {@code /index.latest} directly under the
@@ -130,25 +130,26 @@
  * <ol>
  * <li>Write an updated value of {@link org.elasticsearch.repositories.RepositoriesState.State} for the repository that has the same
  * {@link org.elasticsearch.repositories.RepositoriesState.State#generation()} as the existing entry and has a value of
- * {@link org.elasticsearch.repositories.RepositoriesState.State#pendingGeneration()} one greater than the existing entry.</li>
- * <li>On the same master node, once the cluster state has been updated in the first step, write the new {@code index-N} blob and
- * afterwards update the contents of the {@code index.latest} blob. Note that updating the index.latest blob is done on a best effort
- * basis and that there is a theoretical possibility for a stuck master-node to overwrite the contents of a {@code index.latest}
- * blob after a newer {@code index-N} has been written by another master node. This is acceptable since the contents of
- * {@code index.latest} are not used during normal operation of the repository and must only be correct for purposes of mounting
- * the contents of a {@link org.elasticsearch.repositories.blobstore.BlobStoreRepository} as a read-only url repository.</li>
- * <li>After the write has finished, set the value of {@link org.elasticsearch.repositories.RepositoriesState.State#generation()} to
- * the value used for {@link org.elasticsearch.repositories.RepositoriesState.State#pendingGeneration()} so that the new entry for the
- * state of the repository has {@code generation} and {@code pendingGeneration} set to the same value to signalize a clean repository
- * state with no potentially failed writes newer than the last valid {@code index-N} blob in the repository.</li>
+ * {@link org.elasticsearch.repositories.RepositoriesState.State#pendingGeneration()} one greater than the {@code pendingGeneration} of the
+ * existing entry.</li>
+ * <li>On the same master node, after the cluster state has been updated in the first step, write the new {@code index-N} blob and
+ * also update the contents of the {@code index.latest} blob. Note that updating the index.latest blob is done on a best effort
+ * basis and that there is a chance for a stuck master-node to overwrite the contents of the {@code index.latest} blob after a newer
+ * {@code index-N} has been written by another master node. This is acceptable since the contents of {@code index.latest} are not used
+ * during normal operation of the repository and must only be correct for purposes of mounting the contents of a
+ * {@link org.elasticsearch.repositories.blobstore.BlobStoreRepository} as a read-only url repository.</li>
+ * <li>After the write has finished, set the value of {@code RepositoriesState.State#generation} to the value used for
+ * {@code RepositoriesState.State#pendingGeneration} so that the new entry for the state of the repository has {@code generation} and
+ * {@code pendingGeneration} set to the same value to signalize a clean repository state with no potentially failed writes newer than the
+ * last valid {@code index-N} blob in the repository.</li>
  * </ol>
  *
- * <p>If either of the last two steps in the above fails and/or master fails over to a new node at any point, then a subsequent
- * operation trying to write a new {@code index-N} blob will never use the same value of {@code N} used in the the previous step. It will
- * always start over at the first of the above three steps, incrementing the {@code pendingGeneration} generation before attempting
- * a write, thus ensuring no overwriting of a {@code index-N} blob ever to occur. The use of the cluster state to track the latest
- * repository generation {@code N} and ensure no overwriting of {@code index-N} blobs to ever occur allows the blob store repository to
- * properly function even on blob stores with neither a consistent list operation nor an atomic "write but not overwrite" operation.</p>
+ * <p>If either of the last two steps in the above fails or master fails over to a new node at any point, then a subsequent operation
+ * trying to write a new {@code index-N} blob will never use the same value of {@code N} used by a previous attempt. It will always start
+ * over at the first of the above three steps, incrementing the {@code pendingGeneration} generation before attempting a write, thus
+ * ensuring no overwriting of a {@code index-N} blob ever to occur. The use of the cluster state to track the latest repository generation
+ * {@code N} and ensuring no overwriting of {@code index-N} blobs to ever occur allows the blob store repository to properly function even
+ * on blob stores with neither a consistent list operation nor an atomic "write but not overwrite" operation.</p>
  *
  * <h2>Creating a Snapshot</h2>
  *

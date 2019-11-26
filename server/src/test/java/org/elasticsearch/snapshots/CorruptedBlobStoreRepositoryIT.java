@@ -40,8 +40,9 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
         Client client = client();
 
         Path repo = randomRepoPath();
+        final String repoName = "test-repo";
         logger.info("-->  creating repository at {}", repo.toAbsolutePath());
-        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
+        assertAcked(client.admin().cluster().preparePutRepository(repoName)
             .setType("fs").setSettings(Settings.builder()
                 .put("location", repo)
                 .put("compress", false)
@@ -53,8 +54,10 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
             client().prepareIndex("test-idx-1").setSource("foo", "bar"),
             client().prepareIndex("test-idx-2").setSource("foo", "bar"));
 
+        final String snapshot = "test-snap";
+
         logger.info("--> creating snapshot");
-        CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-1")
+        CreateSnapshotResponse createSnapshotResponse = client.admin().cluster().prepareCreateSnapshot(repoName, snapshot)
             .setWaitForCompletion(true).setIndices("test-idx-*").get();
         assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), greaterThan(0));
         assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
@@ -62,39 +65,38 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
 
         logger.info("--> move index-N blob to next generation");
         final RepositoryData repositoryData =
-            getRepositoryData(internalCluster().getMasterNodeInstance(RepositoriesService.class).repository("test-repo"));
+            getRepositoryData(internalCluster().getMasterNodeInstance(RepositoriesService.class).repository(repoName));
         Files.move(repo.resolve("index-" + repositoryData.getGenId()), repo.resolve("index-" + (repositoryData.getGenId() + 1)));
 
-        assertRepositoryBlocked(client, "test-repo", "test-snap-1");
+        assertRepositoryBlocked(client, repoName, snapshot);
 
         if (randomBoolean()) {
             logger.info("--> move index-N blob back to initial generation");
             Files.move(repo.resolve("index-" + (repositoryData.getGenId() + 1)), repo.resolve("index-" + repositoryData.getGenId()));
 
             logger.info("--> verify repository remains blocked");
-            assertRepositoryBlocked(client, "test-repo", "test-snap-1");
+            assertRepositoryBlocked(client, repoName, snapshot);
         }
 
         logger.info("--> remove repository");
-        assertAcked(client.admin().cluster().prepareDeleteRepository("test-repo"));
+        assertAcked(client.admin().cluster().prepareDeleteRepository(repoName));
 
         logger.info("--> recreate repository");
-        assertAcked(client.admin().cluster().preparePutRepository("test-repo")
+        assertAcked(client.admin().cluster().preparePutRepository(repoName)
             .setType("fs").setSettings(Settings.builder()
                 .put("location", repo)
                 .put("compress", false)
                 .put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES)));
 
         logger.info("--> delete snapshot");
-        client.admin().cluster().prepareDeleteSnapshot("test-repo", "test-snap-1").get();
+        client.admin().cluster().prepareDeleteSnapshot(repoName, snapshot).get();
 
         logger.info("--> make sure snapshot doesn't exist");
-        expectThrows(SnapshotMissingException.class, () -> client.admin().cluster().prepareGetSnapshots("test-repo")
-            .addSnapshots("test-snap-1").get().getSnapshots("test-repo"));
+        expectThrows(SnapshotMissingException.class, () -> client.admin().cluster().prepareGetSnapshots(repoName)
+            .addSnapshots(snapshot).get().getSnapshots(repoName));
     }
 
     private void assertRepositoryBlocked(Client client, String repo, String existingSnapshot) {
-
         logger.info("--> try to delete snapshot");
         final RepositoryException repositoryException3 = expectThrows(RepositoryException.class,
             () -> client.admin().cluster().prepareDeleteSnapshot(repo, existingSnapshot).execute().actionGet());
