@@ -1143,12 +1143,13 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * If the snapshot is still running cancels the snapshot first and then deletes it from the repository.
      *
      * @param repositoryName  repositoryName
-     * @param snapshotName    snapshotName
+     * @param snapshotNames   snapshotNames
      * @param listener        listener
      */
-    public void deleteSnapshot(final String repositoryName, final String snapshotName, final ActionListener<Void> listener,
+    public void deleteSnapshot(final String repositoryName, final String[] snapshotNames, final ActionListener<Void> listener,
                                final boolean immediatePriority) {
         // First, look for the snapshot in the repository
+        final String snapshotName = snapshotNames[0];
         final Repository repository = repositoriesService.repository(repositoryName);
         repository.getRepositoryData(ActionListener.wrap(repositoryData -> {
             Optional<SnapshotId> matchedEntry = repositoryData.getSnapshotIds()
@@ -1302,7 +1303,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             logger.debug("deleted snapshot completed - deleting files");
                             threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
                                     try {
-                                        deleteSnapshot(snapshot.getRepository(), snapshot.getSnapshotId().getName(), listener, true);
+                                        deleteSnapshot(snapshot.getRepository(),
+                                            new String[] {snapshot.getSnapshotId().getName()}, listener, true);
                                     } catch (Exception ex) {
                                         logger.warn(() -> new ParameterizedMessage("[{}] failed to delete snapshot", snapshot), ex);
                                     }
@@ -1313,7 +1315,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             logger.warn("deleted snapshot failed - deleting files", e);
                             threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
                                 try {
-                                    deleteSnapshot(snapshot.getRepository(), snapshot.getSnapshotId().getName(), listener, true);
+                                    deleteSnapshot(snapshot.getRepository(),
+                                        new String[]{snapshot.getSnapshotId().getName()}, listener, true);
                                 } catch (SnapshotMissingException smex) {
                                     logger.info(() -> new ParameterizedMessage(
                                         "Tried deleting in-progress snapshot [{}], but it could not be found after failing to abort.",

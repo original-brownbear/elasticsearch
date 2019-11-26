@@ -520,7 +520,7 @@ public class Requests {
      * @param repository repository name
      * @return delete snapshot request
      */
-    public static DeleteSnapshotRequest deleteSnapshotRequest(String repository, String snapshot) {
+    public static DeleteSnapshotRequest deleteSnapshotRequest(String repository, String[] snapshot) {
         return new DeleteSnapshotRequest(repository, snapshot);
     }
 

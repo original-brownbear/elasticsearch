@@ -19,6 +19,7 @@
 
 package org.elasticsearch.action.admin.cluster.snapshots.delete;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -37,9 +38,11 @@ import static org.elasticsearch.action.ValidateActions.addValidationError;
  */
 public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotRequest> {
 
+    public static Version MULTI_DELETE_VERSION = Version.V_8_0_0;
+
     private String repository;
 
-    private String snapshot;
+    private String[] snapshots;
 
     /**
      * Constructs a new delete snapshots request
@@ -51,11 +54,11 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
      * Constructs a new delete snapshots request with repository and snapshot name
      *
      * @param repository repository name
-     * @param snapshot   snapshot name
+     * @param snapshots  snapshot names
      */
-    public DeleteSnapshotRequest(String repository, String snapshot) {
+    public DeleteSnapshotRequest(String repository, String... snapshots) {
         this.repository = repository;
-        this.snapshot = snapshot;
+        this.snapshots = snapshots;
     }
 
     /**
@@ -70,14 +73,27 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
     public DeleteSnapshotRequest(StreamInput in) throws IOException {
         super(in);
         repository = in.readString();
-        snapshot = in.readString();
+        if (in.getVersion().onOrAfter(MULTI_DELETE_VERSION)) {
+            snapshots = in.readStringArray();
+        } else {
+            snapshots = new String[]{in.readString()};
+        }
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeString(repository);
-        out.writeString(snapshot);
+        if (out.getVersion().onOrAfter(MULTI_DELETE_VERSION)) {
+            out.writeStringArray(snapshots);
+        } else {
+            if (snapshots.length == 1) {
+                out.writeString(snapshots[0]);
+            } else {
+                throw new IllegalArgumentException(
+                    "Deleting multiple snapshots at once is not supported in versions prior to " + MULTI_DELETE_VERSION);
+            }
+        }
     }
 
     @Override
@@ -86,7 +102,7 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
         if (repository == null) {
             validationException = addValidationError("repository is missing", validationException);
         }
-        if (snapshot == null) {
+        if (snapshots == null || snapshots.length == 0) {
             validationException = addValidationError("snapshot is missing", validationException);
         }
         return validationException;
@@ -108,12 +124,12 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
     }
 
     /**
-     * Returns repository name
+     * Returns snapshot names
      *
-     * @return repository name
+     * @return snapshot name
      */
-    public String snapshot() {
-        return this.snapshot;
+    public String[] snapshot() {
+        return this.snapshots;
     }
 
     /**
@@ -121,8 +137,8 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
      *
      * @return this request
      */
-    public DeleteSnapshotRequest snapshot(String snapshot) {
-        this.snapshot = snapshot;
+    public DeleteSnapshotRequest snapshot(String... snapshots) {
+        this.snapshots = snapshots;
         return this;
     }
 }
