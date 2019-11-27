@@ -120,6 +120,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -826,21 +827,20 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 throw new RepositoryException(metadata.name(), "cannot run cleanup on readonly repository");
             }
             Map<String, BlobMetaData> rootBlobs = blobContainer().listBlobs();
-            getRepositoryData(ActionListener.wrap(repositoryData -> {
-                final Map<String, BlobContainer> foundIndices = blobStore().blobContainer(indicesPath()).children();
-                final Set<String> survivingIndexIds =
-                    repositoryData.getIndices().values().stream().map(IndexId::getId).collect(Collectors.toSet());
-                final List<String> staleRootBlobs = staleRootBlobs(repositoryData, rootBlobs.keySet());
-                if (survivingIndexIds.equals(foundIndices.keySet()) && staleRootBlobs.isEmpty()) {
-                    // Nothing to clean up we return
-                    listener.onResponse(new RepositoryCleanupResult(DeleteResult.ZERO));
-                } else {
-                    // write new index-N blob to ensure concurrent operations will fail
-                    writeIndexGen(repositoryData, repositoryStateId, writeShardGens, ActionListener.wrap(
-                        v -> cleanupStaleBlobs(foundIndices, rootBlobs, repositoryData,
-                            ActionListener.map(listener, RepositoryCleanupResult::new)), listener::onFailure));
-                }
-            }, listener::onFailure));
+            final RepositoryData repositoryData = safeRepositoryData(repositoryStateId);
+            final Map<String, BlobContainer> foundIndices = blobStore().blobContainer(indicesPath()).children();
+            final Set<String> survivingIndexIds =
+                repositoryData.getIndices().values().stream().map(IndexId::getId).collect(Collectors.toSet());
+            final List<String> staleRootBlobs = staleRootBlobs(repositoryData, rootBlobs.keySet());
+            if (survivingIndexIds.equals(foundIndices.keySet()) && staleRootBlobs.isEmpty()) {
+                // Nothing to clean up we return
+                listener.onResponse(new RepositoryCleanupResult(DeleteResult.ZERO));
+            } else {
+                // write new index-N blob to ensure concurrent operations will fail
+                writeIndexGen(repositoryData, repositoryStateId, writeShardGens,
+                    ActionListener.wrap(v -> cleanupStaleBlobs(foundIndices, rootBlobs, repositoryData,
+                        ActionListener.map(listener, RepositoryCleanupResult::new)), listener::onFailure));
+            }
         } catch (Exception e) {
             listener.onFailure(e);
         }
@@ -950,14 +950,13 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 getRepositoryData(ActionListener.wrap(existingRepositoryData -> {
                     final RepositoryData updatedRepositoryData =
                         existingRepositoryData.addSnapshot(snapshotId, snapshotInfo.state(), shardGenerations);
-                    writeIndexGen(updatedRepositoryData, repositoryStateId, writeShardGens, ActionListener.wrap(v ->
-                        threadPool.generic().execute(ActionRunnable.wrap(listener, l -> {
-                            if (writeShardGens) {
-                                cleanupOldShardGens(existingRepositoryData, updatedRepositoryData);
-                            }
-                            l.onResponse(snapshotInfo);
-                        })), onUpdateFailure));
-                }, listener::onFailure));
+                    writeIndexGen(updatedRepositoryData, repositoryStateId, writeShardGens, ActionListener.wrap(v -> {
+                        if (writeShardGens) {
+                            cleanupOldShardGens(existingRepositoryData, updatedRepositoryData);
+                        }
+                        listener.onResponse(snapshotInfo);
+                    }, onUpdateFailure));
+                }, onUpdateFailure));
             }, onUpdateFailure), 2 + indices.size());
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
 
@@ -1168,14 +1167,37 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             if (generation == RepositoryData.CORRUPTED_REPO_GEN) {
                 listener.onFailure(corruptedStateException(null));
             } else {
-                initializeRepoInClusterState(ActionListener.wrap(v -> loadRepositoryData(listener), listener::onFailure));
+                final ClusterState state = clusterService.state();
+                if (state.nodes().isLocalNodeElectedMaster()) {
+                    initializeRepoInClusterState(ActionListener.wrap(v -> loadRepositoryData(listener), listener::onFailure));
+                } else {
+                    // Rare corner case on a node that isn't the master:
+                    // If the repository was created on the cluster state applier thread but no subsequent cluster state update happened
+                    // the cluster state will have never been applied to this instance and latestKnownRepoGen not initialized
+                    final long repoGenInState = Optional.ofNullable(state.<RepositoriesState>custom(RepositoriesState.TYPE))
+                        .map(data -> data.state(metadata.name()))
+                        .map(RepositoriesState.State::generation)
+                        .orElse(RepositoryData.UNKNOWN_REPO_GEN);
+                    final long gen = latestKnownRepoGen.updateAndGet(known -> {
+                        if (known == RepositoryData.CORRUPTED_REPO_GEN) {
+                            return RepositoryData.CORRUPTED_REPO_GEN;
+                        }
+                        return Math.max(known, repoGenInState);
+                    });
+                    if (gen >= RepositoryData.EMPTY_REPO_GEN) {
+                        loadRepositoryData(listener);
+                    } else {
+                        listener.onFailure(new RepositoryException(metadata.name(),
+                            "Tried to load repository data before master initialized the repository in the cluster state"));
+                    }
+                }
             }
         } else {
             loadRepositoryData(listener);
         }
     }
 
-    private void loadRepositoryData(final ActionListener<RepositoryData> listener) {
+    private void loadRepositoryData(ActionListener<RepositoryData> listener) {
         threadPool.generic().execute(
             ActionRunnable.wrap(listener, l -> {
                 while (true) {
@@ -1275,6 +1297,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      * Second, the updated {@link RepositoryData} is written to generation {@code N + 1}.
      * Lastly, the {@link RepositoriesState.State} entry for this repository is updated to the new generation {@code N + 1} and the pending
      * flag set back to {@code false}.
+     *
      * @param repositoryData RepositoryData to write
      * @param expectedGen    expected repository generation at the start of the operation
      * @param writeShardGens whether to write {@link ShardGenerations} to the new {@link RepositoryData} blob

@@ -82,15 +82,9 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         for (Map.Entry<String, State> stringStateEntry : states.entrySet()) {
-            builder.field(stringStateEntry.getKey());
-            stringStateEntry.getValue().toXContent(builder, params);
+            builder.field(stringStateEntry.getKey(), stringStateEntry.getValue());
         }
         return builder;
-    }
-
-    @Override
-    public boolean isFragment() {
-        return false;
     }
 
     public static Builder builder() {
@@ -112,6 +106,11 @@ public final class RepositoriesState extends AbstractNamedDiffable<ClusterState.
     @Override
     public int hashCode() {
         return states.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return Strings.toString(this);
     }
 
     public static final class State implements Writeable, ToXContent {
