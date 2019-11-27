@@ -66,7 +66,6 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.FutureUtils;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.core.internal.io.IOUtils;
@@ -3356,9 +3355,10 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         logger.info("--> snapshot with potential I/O failures");
         try {
             CreateSnapshotResponse createSnapshotResponse =
-                FutureUtils.get(client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap")
+                client.admin().cluster().prepareCreateSnapshot("test-repo", "test-snap")
                     .setWaitForCompletion(true)
-                    .setIndices("test-idx").execute());
+                    .setIndices("test-idx")
+                    .get();
             if (createSnapshotResponse.getSnapshotInfo().totalShards() != createSnapshotResponse.getSnapshotInfo().successfulShards()) {
                 assertThat(getFailureCount("test-repo"), greaterThan(0L));
                 assertThat(createSnapshotResponse.getSnapshotInfo().shardFailures().size(), greaterThan(0));
