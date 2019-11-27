@@ -1407,37 +1407,20 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
                 @Override
                 public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
-                    if (bwcMode) {
-                        latestKnownRepoGen.set(newGen);
-                    }
-                    assert assertCSAfterNewGeneration(newState);
                     threadPool.generic().execute(ActionRunnable.run(l, () -> {
                         // delete all now outdated index files
-                        if (newGen > 0) {
-                            final List<String> oldIndexN = LongStream.range(Math.max(expectedGen, 0), newGen)
-                                .mapToObj(gen -> INDEX_FILE_PREFIX + gen)
-                                .collect(Collectors.toList());
-                            try {
-                                blobContainer().deleteBlobsIgnoringIfNotExists(oldIndexN);
-                            } catch (IOException e) {
-                                logger.warn("Failed to clean up old index blob {}", oldIndexN);
-                            }
+                        final List<String> oldIndexN = LongStream.range(Math.max(expectedGen, 0), newGen)
+                            .mapToObj(gen -> INDEX_FILE_PREFIX + gen)
+                            .collect(Collectors.toList());
+                        try {
+                            blobContainer().deleteBlobsIgnoringIfNotExists(oldIndexN);
+                        } catch (IOException e) {
+                            logger.warn("Failed to clean up old index blob {}", oldIndexN);
                         }
                     }));
                 }
             });
         })), listener::onFailure);
-    }
-
-    private boolean assertCSAfterNewGeneration(ClusterState clusterState) {
-        final RepositoriesState repositoriesState = clusterState.custom(RepositoriesState.TYPE);
-        final RepositoriesState.State repoState = repositoriesState.state(metadata.name());
-        final long knownGeneration = latestKnownRepoGen.get();
-        assert knownGeneration == repoState.generation() : "Mismatch in assumed generation [" + knownGeneration
-            + "] and generation in CS [" + repoState.generation() + "]";
-        assert repoState.pendingGeneration() == repoState.generation() :
-            "State after new generation write must not be pending but was [" + repoState + "]";
-        return true;
     }
 
     /**
