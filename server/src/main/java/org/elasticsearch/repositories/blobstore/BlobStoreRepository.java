@@ -1316,29 +1316,27 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
 
         // Step 1: Set repository generation state to pending == true.
-        final StepListener<Void> setPendingStep = new StepListener<>();
+        final StepListener<Long> setPendingStep = new StepListener<>();
         clusterService.submitStateUpdateTask("set pending repository generation", new ClusterStateUpdateTask() {
+
+            private long newGen;
+
             @Override
             public ClusterState execute(ClusterState currentState) {
                 final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
                 final RepositoriesState.State repoState = state.state(metadata.name());
-                final boolean wasPending = repoState.pendingGeneration() != repoState.generation();
-                if (wasPending) {
+                if (repoState.pendingGeneration() != repoState.generation()) {
                     logger.warn("Trying to write new repository data of generation [{}] over unfinished write, repo is in state [{}]",
-                        expectedGen + 1, repoState);
+                        repoState.pendingGeneration(), repoState);
                 }
                 if (expectedGen != repoState.generation()) {
                     throw new IllegalStateException(
                         "Expected generation [" + expectedGen + "] does not match generation tracked in [" + repoState + "]");
                 }
-                if (wasPending) {
-                    // State is ready for a write to the repository. We got here because of a master-failover and go ahead and rerun the
-                    // write to the repository.
-                    return currentState;
-                }
+                newGen = repoState.pendingGeneration() + 1;
                 final RepositoriesState updated =
                     RepositoriesState.builder().putAll(state).putState(
-                        metadata.name(), repoState.generation(), repoState.pendingGeneration() + 1).build();
+                        metadata.name(), repoState.generation(), newGen).build();
                 return ClusterState.builder(currentState).putCustom(RepositoriesState.TYPE, updated).build();
             }
 
@@ -1349,16 +1347,16 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
-                setPendingStep.onResponse(null);
+                setPendingStep.onResponse(newGen);
             }
         });
 
         // Step 2: Write new index-N blob to repository and update index.latest
-        setPendingStep.whenComplete(v -> threadPool().generic().execute(ActionRunnable.wrap(listener, l -> {
-            final long newGen = currentGen + 1;
+        setPendingStep.whenComplete(newGen -> threadPool().generic().execute(ActionRunnable.wrap(listener, l -> {
             if (latestKnownRepoGen.get() >= newGen) {
                 throw new IllegalArgumentException(
-                    "Tried writing generation [" + newGen + "] but repository is at least at generation [" + newGen + "] already");
+                    "Tried writing generation [" + newGen + "] but repository is at least at generation [" + latestKnownRepoGen.get()
+                        + "] already");
             }
             // write the index file
             final String indexBlob = INDEX_FILE_PREFIX + Long.toString(newGen);
@@ -1388,13 +1386,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 public ClusterState execute(ClusterState currentState) {
                     final RepositoriesState state = currentState.custom(RepositoriesState.TYPE);
                     final RepositoriesState.State repoState = state.state(metadata.name());
-                    final boolean wasPending = repoState.pendingGeneration() != repoState.generation();
                     final long prevGeneration = repoState.generation();
                     if (prevGeneration != expectedGen) {
                         throw new IllegalStateException("Tried to update repo generation to [" + newGen
                             + "] but saw unexpected generation in state [" + repoState + "]");
                     }
-                    if (wasPending == false) {
+                    if (repoState.pendingGeneration() == prevGeneration) {
                         throw new IllegalStateException(
                             "Tried to update non-pending repo state [" + repoState + "] after write to generation [" + newGen + "]");
                     }
