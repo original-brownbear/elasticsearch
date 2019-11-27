@@ -129,6 +129,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot.FileInfo.canonicalName;
@@ -1414,13 +1415,15 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     }
                     assert assertCSAfterNewGeneration(newState);
                     threadPool.generic().execute(ActionRunnable.run(l, () -> {
-                        // delete the N-2 index file if it exists, keep the previous one around as a backup
-                        if (newGen - 2 >= 0) {
-                            final String oldSnapshotIndexFile = INDEX_FILE_PREFIX + Long.toString(newGen - 2);
+                        // delete all now outdated index files
+                        if (newGen > 0) {
+                            final List<String> oldIndexN = LongStream.range(Math.max(expectedGen, 0), newGen)
+                                .mapToObj(gen -> INDEX_FILE_PREFIX + gen)
+                                .collect(Collectors.toList());
                             try {
-                                blobContainer().deleteBlobIgnoringIfNotExists(oldSnapshotIndexFile);
+                                blobContainer().deleteBlobsIgnoringIfNotExists(oldIndexN);
                             } catch (IOException e) {
-                                logger.warn("Failed to clean up old index blob [{}]", oldSnapshotIndexFile);
+                                logger.warn("Failed to clean up old index blob {}", oldIndexN);
                             }
                         }
                     }));
