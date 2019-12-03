@@ -72,12 +72,14 @@ import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.RepositoryMissingException;
+import org.elasticsearch.repositories.RepositoryOperation;
 import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1342,44 +1344,32 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      */
     public static boolean isRepositoryInUse(ClusterState clusterState, String repository) {
         SnapshotsInProgress snapshots = clusterState.custom(SnapshotsInProgress.TYPE);
-        if (snapshots != null) {
-            for (SnapshotsInProgress.Entry snapshot : snapshots.entries()) {
-                if (repository.equals(snapshot.snapshot().getRepository())) {
-                    return true;
-                }
-            }
+        if (snapshots != null && isRepositoryInUse(repository, snapshots.entries())) {
+            return true;
         }
         SnapshotDeletionsInProgress deletionsInProgress = clusterState.custom(SnapshotDeletionsInProgress.TYPE);
-        if (deletionsInProgress != null) {
-            for (SnapshotDeletionsInProgress.Entry entry : deletionsInProgress.getEntries()) {
-                if (entry.getSnapshot().getRepository().equals(repository)) {
-                    return true;
-                }
-            }
+        if (deletionsInProgress != null && isRepositoryInUse(repository, deletionsInProgress.getEntries())) {
+            return true;
         }
         final RepositoryCleanupInProgress repositoryCleanupInProgress = clusterState.custom(RepositoryCleanupInProgress.TYPE);
-        if (repositoryCleanupInProgress != null) {
-            for (RepositoryCleanupInProgress.Entry entry : repositoryCleanupInProgress.entries()) {
-                if (entry.repository().equals(repository)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return repositoryCleanupInProgress != null && isRepositoryInUse(repository, repositoryCleanupInProgress.entries());
+    }
+
+    private static boolean isRepositoryInUse(String repoName, Collection<? extends RepositoryOperation> operations) {
+        return operations.stream().anyMatch(e -> e.repository().equals(repoName));
     }
 
     /**
-     * Deletes snapshot from repository
+     * Deletes snapshots from repository
      *
-     * @param snapshot   snapshot
+     * @param deletion   snapshot deletion
      * @param listener   listener
-     * @param repositoryStateId the unique id representing the state of the repository at the time the deletion began
-     * @param version minimum ES version the repository should be readable by
+     * @param version    minimum ES version the repository should be readable by
      */
-    private void deleteSnapshotFromRepository(Snapshot snapshot, @Nullable ActionListener<Void> listener, long repositoryStateId,
+    private void deleteSnapshotFromRepository(SnapshotDeletionsInProgress.Entry deletion, @Nullable ActionListener<Void> listener,
                                               Version version) {
         threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(ActionRunnable.wrap(listener, l -> {
-            Repository repository = repositoriesService.repository(snapshot.getRepository());
+            Repository repository = repositoriesService.repository(deletion.repository());
             repository.deleteSnapshot(snapshot.getSnapshotId(), repositoryStateId, version.onOrAfter(SHARD_GEN_IN_REPO_DATA_VERSION),
                 ActionListener.wrap(v -> {
                         logger.info("snapshot [{}] deleted", snapshot);

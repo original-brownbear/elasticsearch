@@ -28,17 +28,21 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.repositories.RepositoryOperation;
 import org.elasticsearch.snapshots.Snapshot;
+import org.elasticsearch.snapshots.SnapshotId;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * A class that represents the snapshot deletions that are in progress in the cluster.
  */
 public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> implements Custom {
+
+    public static final Version MULTI_DELETES_VERSION = Version.V_8_0_0;
 
     public static final String TYPE = "snapshot_deletions";
 
@@ -139,8 +143,8 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
         for (Entry entry : entries) {
             builder.startObject();
             {
-                builder.field("repository", entry.snapshot.getRepository());
-                builder.field("snapshot", entry.snapshot.getSnapshotId().getName());
+                builder.field("repository", entry.repository());
+                builder.field("snapshots", entry.getSnapshots().stream().map(SnapshotId::getName).collect(Collectors.toList()));
                 builder.humanReadableField("start_time_millis", "start_time", new TimeValue(entry.startTime));
                 builder.field("repository_state_id", entry.repositoryStateId);
             }
@@ -154,7 +158,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     public String toString() {
         StringBuilder builder = new StringBuilder("SnapshotDeletionsInProgress[");
         for (int i = 0; i < entries.size(); i++) {
-            builder.append(entries.get(i).getSnapshot().getSnapshotId().getName());
+            builder.append(entries.get(i).getSnapshots());
             if (i + 1 < entries.size()) {
                 builder.append(",");
             }
@@ -166,18 +170,27 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
      * A class representing a snapshot deletion request entry in the cluster state.
      */
     public static final class Entry implements Writeable, RepositoryOperation {
-        private final Snapshot snapshot;
+        private final List<SnapshotId> snapshots;
+        private final String repository;
         private final long startTime;
         private final long repositoryStateId;
 
-        public Entry(Snapshot snapshot, long startTime, long repositoryStateId) {
-            this.snapshot = snapshot;
+        public Entry(List<SnapshotId> snapshots, String repository, long startTime, long repositoryStateId) {
+            this.snapshots = snapshots;
+            this.repository = repository;
             this.startTime = startTime;
             this.repositoryStateId = repositoryStateId;
         }
 
         public Entry(StreamInput in) throws IOException {
-            this.snapshot = new Snapshot(in);
+            if (in.getVersion().onOrAfter(MULTI_DELETES_VERSION)) {
+                this.snapshots = in.readList(SnapshotId::new);
+                this.repository = in.readString();
+            } else {
+                final Snapshot snapshot = new Snapshot(in);
+                this.snapshots = Collections.singletonList(snapshot.getSnapshotId());
+                this.repository = snapshot.getRepository();
+            }
             this.startTime = in.readVLong();
             this.repositoryStateId = in.readLong();
         }
@@ -185,8 +198,8 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
         /**
          * The snapshot to delete.
          */
-        public Snapshot getSnapshot() {
-            return snapshot;
+        public List<SnapshotId> getSnapshots() {
+            return snapshots;
         }
 
         /**
@@ -205,26 +218,35 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
                 return false;
             }
             Entry that = (Entry) o;
-            return snapshot.equals(that.snapshot)
+            return snapshots.equals(that.snapshots)
                        && startTime == that.startTime
                        && repositoryStateId == that.repositoryStateId;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(snapshot, startTime, repositoryStateId);
+            return Objects.hash(snapshots, startTime, repositoryStateId);
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            snapshot.writeTo(out);
+            if (out.getVersion().onOrAfter(MULTI_DELETES_VERSION)) {
+                out.writeList(snapshots);
+                out.writeString(repository);
+            } else {
+                if (snapshots.size() != 1) {
+                    throw new IllegalArgumentException("Can't write snapshot delete operation [" + snapshots
+                        + "] that covers multiple snapshots to version [" + out.getVersion() + "]");
+                }
+                snapshots.get(0).writeTo(out);
+            }
             out.writeVLong(startTime);
             out.writeLong(repositoryStateId);
         }
 
         @Override
         public String repository() {
-            return snapshot.getRepository();
+            return repository;
         }
 
         @Override
