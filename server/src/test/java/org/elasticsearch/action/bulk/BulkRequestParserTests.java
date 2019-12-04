@@ -30,39 +30,36 @@ public class BulkRequestParserTests extends ESTestCase {
 
     public void testIndexRequest() throws IOException {
         BytesArray request = new BytesArray("{ \"index\":{ \"_id\": \"bar\" } }\n{}\n");
-        BulkRequestParser parser = new BulkRequestParser(randomBoolean());
         final AtomicBoolean parsed = new AtomicBoolean();
-        parser.parse(request, "foo", null, null, null, false, XContentType.JSON,
+        BulkRequestParser.parse(request, "foo", null, null, null, false, XContentType.JSON,
             (indexRequest, type) -> {
                     assertFalse(parsed.get());
                     assertEquals("foo", indexRequest.index());
                     assertEquals("bar", indexRequest.id());
                     parsed.set(true);
                 },
-                req -> fail(), req -> fail());
+                req -> fail(), req -> fail(), randomBoolean());
         assertTrue(parsed.get());
     }
 
     public void testDeleteRequest() throws IOException {
         BytesArray request = new BytesArray("{ \"delete\":{ \"_id\": \"bar\" } }\n");
-        BulkRequestParser parser = new BulkRequestParser(randomBoolean());
         final AtomicBoolean parsed = new AtomicBoolean();
-        parser.parse(request, "foo", null, null, null, false, XContentType.JSON,
+        BulkRequestParser.parse(request, "foo", null, null, null, false, XContentType.JSON,
             (req, type) -> fail(), req -> fail(),
                 deleteRequest -> {
                     assertFalse(parsed.get());
                     assertEquals("foo", deleteRequest.index());
                     assertEquals("bar", deleteRequest.id());
                     parsed.set(true);
-                });
+                }, randomBoolean());
         assertTrue(parsed.get());
     }
 
     public void testUpdateRequest() throws IOException {
         BytesArray request = new BytesArray("{ \"update\":{ \"_id\": \"bar\" } }\n{}\n");
-        BulkRequestParser parser = new BulkRequestParser(randomBoolean());
         final AtomicBoolean parsed = new AtomicBoolean();
-        parser.parse(request, "foo", null, null, null, false, XContentType.JSON,
+        BulkRequestParser.parse(request, "foo", null, null, null, false, XContentType.JSON,
             (req, type) -> fail(),
                 updateRequest -> {
                     assertFalse(parsed.get());
@@ -70,34 +67,31 @@ public class BulkRequestParserTests extends ESTestCase {
                     assertEquals("bar", updateRequest.id());
                     parsed.set(true);
                 },
-                req -> fail());
+                req -> fail(), randomBoolean());
         assertTrue(parsed.get());
     }
 
     public void testBarfOnLackOfTrailingNewline() throws IOException {
         BytesArray request = new BytesArray("{ \"index\":{ \"_id\": \"bar\" } }\n{}");
-        BulkRequestParser parser = new BulkRequestParser(randomBoolean());
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-                () -> parser.parse(request, "foo", null, null, null, false, XContentType.JSON,
-                    (req, type) -> fail(), req -> fail(), req -> fail()));
+                () -> BulkRequestParser.parse(request, "foo", null, null, null, false, XContentType.JSON,
+                    (req, type) -> fail(), req -> fail(), req -> fail(), randomBoolean()));
         assertEquals("The bulk request must be terminated by a newline [\\n]", e.getMessage());
     }
 
     public void testFailOnExplicitIndex() throws IOException {
         BytesArray request = new BytesArray("{ \"index\":{ \"_index\": \"foo\", \"_id\": \"bar\" } }\n{}\n");
-        BulkRequestParser parser = new BulkRequestParser(randomBoolean());
 
         IllegalArgumentException ex = expectThrows(IllegalArgumentException.class,
-                () -> parser.parse(request, null, null, null, null, false, XContentType.JSON,
-                    (req, type) -> fail(), req -> fail(), req -> fail()));
+                () -> BulkRequestParser.parse(request, null, null, null, null, false, XContentType.JSON,
+                    (req, type) -> fail(), req -> fail(), req -> fail(), randomBoolean()));
         assertEquals("explicit index in bulk is not allowed", ex.getMessage());
     }
 
     public void testTypesStillParsedForBulkMonitoring() throws IOException {
         BytesArray request = new BytesArray("{ \"index\":{ \"_type\": \"quux\", \"_id\": \"bar\" } }\n{}\n");
-        BulkRequestParser parser = new BulkRequestParser(false);
         final AtomicBoolean parsed = new AtomicBoolean();
-        parser.parse(request, "foo", null, null, null, false, XContentType.JSON,
+        BulkRequestParser.parse(request, "foo", null, null, null, false, XContentType.JSON,
             (indexRequest, type) -> {
                     assertFalse(parsed.get());
                     assertEquals("foo", indexRequest.index());
@@ -105,7 +99,7 @@ public class BulkRequestParserTests extends ESTestCase {
                     assertEquals("quux", type);
                     parsed.set(true);
                 },
-                req -> fail(), req -> fail());
+                req -> fail(), req -> fail(), false);
         assertTrue(parsed.get());
     }
 

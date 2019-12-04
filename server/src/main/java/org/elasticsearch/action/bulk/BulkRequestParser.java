@@ -60,17 +60,6 @@ public final class BulkRequestParser {
     private static final ParseField IF_SEQ_NO = new ParseField("if_seq_no");
     private static final ParseField IF_PRIMARY_TERM = new ParseField("if_primary_term");
 
-    // TODO: Remove this parameter once the BulkMonitoring endpoint has been removed
-    private final boolean errorOnType;
-
-    /**
-     * Create a new parser.
-     * @param errorOnType whether to allow _type information in the index line; used by BulkMonitoring
-     */
-    public BulkRequestParser(boolean errorOnType) {
-        this.errorOnType = errorOnType;
-    }
-
     private static int findNextMarker(byte marker, int from, BytesReference data) {
         final int res = data.indexOf(marker, from);
         if (res != -1) {
@@ -102,15 +91,18 @@ public final class BulkRequestParser {
      * Parse the provided {@code data} assuming the provided default values. Index requests
      * will be passed to the {@code indexRequestConsumer}, update requests to the
      * {@code updateRequestConsumer} and delete requests to the {@code deleteRequestConsumer}.
+     *
+     * @param errorOnType // TODO: Remove this parameter once the BulkMonitoring endpoint has been removed
      */
-    public void parse(
+    public static void parse(
             BytesReference data, @Nullable String defaultIndex,
             @Nullable String defaultRouting, @Nullable FetchSourceContext defaultFetchSourceContext,
             @Nullable String defaultPipeline, boolean allowExplicitIndex,
             XContentType xContentType,
             BiConsumer<IndexRequest, String> indexRequestConsumer,
             Consumer<UpdateRequest> updateRequestConsumer,
-            Consumer<DeleteRequest> deleteRequestConsumer) throws IOException {
+            Consumer<DeleteRequest> deleteRequestConsumer,
+            boolean errorOnType) throws IOException {
         XContent xContent = xContentType.xContent();
         int line = 0;
         int from = 0;

@@ -248,8 +248,8 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
                            XContentType xContentType) throws IOException {
         String routing = valueOrDefault(defaultRouting, globalRouting);
         String pipeline = valueOrDefault(defaultPipeline, globalPipeline);
-        new BulkRequestParser(true).parse(data, defaultIndex, routing, defaultFetchSourceContext, pipeline,
-                allowExplicitIndex, xContentType, (indexRequest, type) -> internalAdd(indexRequest), this::internalAdd, this::add);
+        BulkRequestParser.parse(data, defaultIndex, routing, defaultFetchSourceContext, pipeline,
+                allowExplicitIndex, xContentType, (indexRequest, type) -> internalAdd(indexRequest), this::internalAdd, this::add, true);
         return this;
     }
 
