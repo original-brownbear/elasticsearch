@@ -22,7 +22,9 @@ package org.elasticsearch.cluster;
 import com.carrotsearch.hppc.ObjectContainer;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
+import org.apache.lucene.index.IndexOptions;
 import org.elasticsearch.Version;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
 import org.elasticsearch.cluster.ClusterState.Custom;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
@@ -97,6 +99,9 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         @Nullable private final Map<String, Object> userMetadata;
         @Nullable private final String failure;
 
+        @Nullable private final String[] indicesRequested;
+        @Nullable private final IndexOptions indexOptions;
+
         public Entry(Snapshot snapshot, boolean includeGlobalState, boolean partial, State state, List<IndexId> indices,
                      long startTime, long repositoryStateId, ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards,
                      String failure, Map<String, Object> userMetadata, boolean useShardGenerations) {
@@ -118,6 +123,19 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this.failure = failure;
             this.userMetadata = userMetadata;
             this.useShardGenerations = useShardGenerations;
+            this.indicesRequested = null;
+            this.indexOptions = null;
+            assert queuedStateConsistent(indexOptions, indicesRequested, state);
+        }
+
+        private static boolean queuedStateConsistent(IndexOptions indexOptions, String[] indices, State state) {
+            if (state != State.INIT) {
+                assert indexOptions == null && indices == null : "state was [" + state + "] but saw non-null request params ["
+                    + Strings.arrayToCommaDelimitedString(indices) + "][" + indexOptions + "]";
+            } else {
+                // TODO: assert that we either had indexIds or request params
+            }
+            return true;
         }
 
         private static boolean assertShardsConsistent(State state, List<IndexId> indices,
