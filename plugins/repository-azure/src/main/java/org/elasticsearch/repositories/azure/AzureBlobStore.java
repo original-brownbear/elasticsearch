@@ -20,24 +20,14 @@
 package org.elasticsearch.repositories.azure;
 
 import com.microsoft.azure.storage.LocationMode;
-import com.microsoft.azure.storage.StorageException;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.blobstore.BlobContainer;
-import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
-import org.elasticsearch.common.blobstore.DeleteResult;
 import org.elasticsearch.repositories.azure.AzureRepository.Repository;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 
@@ -46,8 +36,8 @@ public class AzureBlobStore implements BlobStore {
     private final AzureStorageService service;
     private final ThreadPool threadPool;
 
-    private final String clientName;
-    private final String container;
+    final String clientName;
+    final String container;
     private final LocationMode locationMode;
 
     public AzureBlobStore(RepositoryMetaData metadata, AzureStorageService service, ThreadPool threadPool) {
@@ -72,10 +62,10 @@ public class AzureBlobStore implements BlobStore {
     }
 
     /**
-     * Gets the configured {@link LocationMode} for the Azure storage requests.
+     * Returns {@code true} iff {@link LocationMode} for the Azure storage requests is {@link LocationMode#SECONDARY_ONLY}.
      */
-    public LocationMode getLocationMode() {
-        return locationMode;
+    public boolean locationModeSecondaryOnly() {
+        return locationMode == LocationMode.SECONDARY_ONLY;
     }
 
     @Override
@@ -85,37 +75,5 @@ public class AzureBlobStore implements BlobStore {
 
     @Override
     public void close() {
-    }
-
-    public boolean blobExists(String blob) throws URISyntaxException, StorageException, IOException {
-        return service.blobExists(clientName, container, blob);
-    }
-
-    public void deleteBlob(String blob) throws URISyntaxException, StorageException, IOException {
-        service.deleteBlob(clientName, container, blob);
-    }
-
-    public DeleteResult deleteBlobDirectory(String path, Executor executor)
-            throws URISyntaxException, StorageException, IOException {
-        return service.deleteBlobDirectory(clientName, container, path, executor);
-    }
-
-    public InputStream getInputStream(String blob) throws URISyntaxException, StorageException, IOException {
-        return service.getInputStream(clientName, container, blob);
-    }
-
-    public Map<String, BlobMetaData> listBlobsByPrefix(String keyPath, String prefix)
-        throws URISyntaxException, StorageException, IOException {
-        return service.listBlobsByPrefix(clientName, container, keyPath, prefix);
-    }
-
-    public Map<String, BlobContainer> children(BlobPath path) throws URISyntaxException, StorageException, IOException {
-        return Collections.unmodifiableMap(service.children(clientName, container, path).stream().collect(
-            Collectors.toMap(Function.identity(), name -> new AzureBlobContainer(path.add(name), this, threadPool))));
-    }
-
-    public void writeBlob(String blobName, InputStream inputStream, long blobSize, boolean failIfAlreadyExists)
-        throws URISyntaxException, StorageException, IOException {
-        service.writeBlob(this.clientName, container, blobName, inputStream, blobSize, failIfAlreadyExists);
     }
 }

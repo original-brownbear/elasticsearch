@@ -33,14 +33,11 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.elasticsearch.repositories.azure.AzureStorageService.blobNameFromUri;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
@@ -326,17 +323,6 @@ public class AzureStorageServiceTests extends ESTestCase {
 
         final SettingsException e = expectThrows(SettingsException.class, () -> storageServiceWithSettingsValidation(settings));
         assertEquals("Azure proxy host is unknown.", e.getMessage());
-    }
-
-    public void testBlobNameFromUri() throws URISyntaxException {
-        String name = blobNameFromUri(new URI("https://myservice.azure.net/container/path/to/myfile"));
-        assertThat(name, is("path/to/myfile"));
-        name = blobNameFromUri(new URI("http://myservice.azure.net/container/path/to/myfile"));
-        assertThat(name, is("path/to/myfile"));
-        name = blobNameFromUri(new URI("http://127.0.0.1/container/path/to/myfile"));
-        assertThat(name, is("path/to/myfile"));
-        name = blobNameFromUri(new URI("https://127.0.0.1/container/path/to/myfile"));
-        assertThat(name, is("path/to/myfile"));
     }
 
     private static MockSecureSettings buildSecureSettings() {
