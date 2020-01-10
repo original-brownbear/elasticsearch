@@ -181,14 +181,14 @@ public class RestoreService implements ClusterStateApplier {
             repository.getRepositoryData(repositoryDataListener);
             repositoryDataListener.whenComplete(repositoryData -> {
                 final String snapshotName = request.snapshot();
-                final Optional<SnapshotId> matchingSnapshotId = repositoryData.getSnapshotIds().stream()
-                    .filter(s -> snapshotName.equals(s.getName())).findFirst();
-                if (matchingSnapshotId.isPresent() == false) {
+                final Optional<SnapshotInfo> matchingSnapshotInfo = repositoryData.getSnapshotInfos().stream()
+                    .filter(s -> snapshotName.equals(s.snapshotId().getName())).findFirst();
+                if (matchingSnapshotInfo.isPresent() == false) {
                     throw new SnapshotRestoreException(repositoryName, snapshotName, "snapshot does not exist");
                 }
 
-                final SnapshotId snapshotId = matchingSnapshotId.get();
-                final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotId);
+                final SnapshotInfo snapshotInfo = matchingSnapshotInfo.get();
+                final SnapshotId snapshotId = snapshotInfo.snapshotId();
                 final Snapshot snapshot = new Snapshot(repositoryName, snapshotId);
 
                 // Make sure that we can restore from this snapshot

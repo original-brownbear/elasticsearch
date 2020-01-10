@@ -164,8 +164,8 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
                                                  Map<String, SnapshotId> allSnapshotIds, List<SnapshotInfo> currentSnapshots,
                                                  @Nullable RepositoryData repositoryData) {
         if (repositoryData != null) {
-            for (SnapshotId snapshotId : repositoryData.getSnapshotIds()) {
-                allSnapshotIds.put(snapshotId.getName(), snapshotId);
+            for (SnapshotInfo info : repositoryData.getSnapshotInfos()) {
+                allSnapshotIds.put(info.snapshotId().getName(), info.snapshotId());
             }
         }
 

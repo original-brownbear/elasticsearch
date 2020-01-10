@@ -259,7 +259,7 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
         final Repository repository = internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repoName);
         final RepositoryData repositoryData = getRepositoryData(repository);
 
-        final SnapshotId snapshotToCorrupt = randomFrom(repositoryData.getSnapshotIds());
+        final SnapshotId snapshotToCorrupt = randomFrom(repositoryData.getSnapshotInfos()).snapshotId();
         logger.info("--> delete root level snapshot metadata blob for snapshot [{}]", snapshotToCorrupt);
         Files.delete(repo.resolve(String.format(Locale.ROOT, BlobStoreRepository.SNAPSHOT_NAME_FORMAT, snapshotToCorrupt.getUUID())));
 

@@ -24,10 +24,12 @@ import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.snapshots.SnapshotId;
+import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.snapshots.SnapshotsService;
 
@@ -68,8 +70,8 @@ public final class RepositoryData {
     /**
      * An instance initialized for an empty repository.
      */
-    public static final RepositoryData EMPTY = new RepositoryData(EMPTY_REPO_GEN,
-        Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), ShardGenerations.EMPTY);
+    public static final RepositoryData EMPTY =
+        new RepositoryData(EMPTY_REPO_GEN, Collections.emptyMap(), Collections.emptyMap(), ShardGenerations.EMPTY);
 
     /**
      * The generational id of the index file from which the repository data was read.
@@ -78,11 +80,8 @@ public final class RepositoryData {
     /**
      * The ids of the snapshots in the repository.
      */
-    private final Map<String, SnapshotId> snapshotIds;
-    /**
-     * The states of each snapshot in the repository.
-     */
-    private final Map<String, SnapshotState> snapshotStates;
+    private final Map<String, SnapshotInfo> snapshotInfos;
+
     /**
      * The indices found in the repository across all snapshots, as a name to {@link IndexId} mapping
      */
@@ -97,11 +96,10 @@ public final class RepositoryData {
      */
     private final ShardGenerations shardGenerations;
 
-    public RepositoryData(long genId, Map<String, SnapshotId> snapshotIds, Map<String, SnapshotState> snapshotStates,
-                          Map<IndexId, Set<SnapshotId>> indexSnapshots, ShardGenerations shardGenerations) {
+    public RepositoryData(long genId, Map<String, SnapshotInfo> snapshotInfos, Map<IndexId, Set<SnapshotId>> indexSnapshots,
+                          ShardGenerations shardGenerations) {
         this.genId = genId;
-        this.snapshotIds = Collections.unmodifiableMap(snapshotIds);
-        this.snapshotStates = Collections.unmodifiableMap(snapshotStates);
+        this.snapshotInfos = Collections.unmodifiableMap(snapshotInfos);
         this.indices = Collections.unmodifiableMap(indexSnapshots.keySet().stream()
             .collect(Collectors.toMap(IndexId::getName, Function.identity())));
         this.indexSnapshots = Collections.unmodifiableMap(indexSnapshots);
@@ -111,7 +109,7 @@ public final class RepositoryData {
     }
 
     protected RepositoryData copy() {
-        return new RepositoryData(genId, snapshotIds, snapshotStates, indexSnapshots, shardGenerations);
+        return new RepositoryData(genId, snapshotInfos, indexSnapshots, shardGenerations);
     }
 
     public ShardGenerations shardGenerations() {
@@ -128,8 +126,8 @@ public final class RepositoryData {
     /**
      * Returns an unmodifiable collection of the snapshot ids.
      */
-    public Collection<SnapshotId> getSnapshotIds() {
-        return Collections.unmodifiableCollection(snapshotIds.values());
+    public Collection<SnapshotInfo> getSnapshotInfos() {
+        return Collections.unmodifiableCollection(snapshotInfos.values());
     }
 
     /**
@@ -138,7 +136,7 @@ public final class RepositoryData {
      */
     @Nullable
     public SnapshotState getSnapshotState(final SnapshotId snapshotId) {
-        return snapshotStates.get(snapshotId.getUUID());
+        return snapshotInfos.get(snapshotId.getUUID()).state();
     }
 
     /**
@@ -166,29 +164,24 @@ public final class RepositoryData {
      * Add a snapshot and its indices to the repository; returns a new instance.  If the snapshot
      * already exists in the repository data, this method throws an IllegalArgumentException.
      *
-     * @param snapshotId       Id of the new snapshot
-     * @param snapshotState    State of the new snapshot
+     * @param snapshotInfo     SnapshotInfo of new snapshot
      * @param shardGenerations Updated shard generations in the new snapshot. For each index contained in the snapshot an array of new
      *                         generations indexed by the shard id they correspond to must be supplied.
      */
-    public RepositoryData addSnapshot(final SnapshotId snapshotId,
-                                      final SnapshotState snapshotState,
-                                      final ShardGenerations shardGenerations) {
-        if (snapshotIds.containsKey(snapshotId.getUUID())) {
+    public RepositoryData addSnapshot(final SnapshotInfo snapshotInfo, final ShardGenerations shardGenerations) {
+        if (snapshotInfos.containsKey(snapshotInfo.snapshotId().getUUID())) {
             // if the snapshot id already exists in the repository data, it means an old master
             // that is blocked from the cluster is trying to finalize a snapshot concurrently with
             // the new master, so we make the operation idempotent
             return this;
         }
-        Map<String, SnapshotId> snapshots = new HashMap<>(snapshotIds);
-        snapshots.put(snapshotId.getUUID(), snapshotId);
-        Map<String, SnapshotState> newSnapshotStates = new HashMap<>(snapshotStates);
-        newSnapshotStates.put(snapshotId.getUUID(), snapshotState);
+        Map<String, SnapshotInfo> snapshots = new HashMap<>(snapshotInfos);
+        snapshots.put(snapshotInfo.snapshotId().getUUID(), snapshotInfo);
         Map<IndexId, Set<SnapshotId>> allIndexSnapshots = new HashMap<>(indexSnapshots);
         for (final IndexId indexId : shardGenerations.indices()) {
-            allIndexSnapshots.computeIfAbsent(indexId, k -> new LinkedHashSet<>()).add(snapshotId);
+            allIndexSnapshots.computeIfAbsent(indexId, k -> new LinkedHashSet<>()).add(snapshotInfo.snapshotId());
         }
-        return new RepositoryData(genId, snapshots, newSnapshotStates, allIndexSnapshots,
+        return new RepositoryData(genId, snapshots, allIndexSnapshots,
             ShardGenerations.builder().putAll(this.shardGenerations).putAll(shardGenerations).build());
     }
 
@@ -202,7 +195,7 @@ public final class RepositoryData {
         if (newGeneration == genId) {
             return this;
         }
-        return new RepositoryData(newGeneration, this.snapshotIds, this.snapshotStates, this.indexSnapshots, this.shardGenerations);
+        return new RepositoryData(newGeneration, this.snapshotInfos, this.indexSnapshots, this.shardGenerations);
     }
 
     /**
@@ -214,14 +207,12 @@ public final class RepositoryData {
      *                                changed shard indexed by its shardId
      */
     public RepositoryData removeSnapshot(final SnapshotId snapshotId, final ShardGenerations updatedShardGenerations) {
-        Map<String, SnapshotId> newSnapshotIds = snapshotIds.values().stream()
-            .filter(id -> !snapshotId.equals(id))
-            .collect(Collectors.toMap(SnapshotId::getUUID, Function.identity()));
-        if (newSnapshotIds.size() == snapshotIds.size()) {
+        Map<String, SnapshotInfo> newSnapshotIds = snapshotInfos.values().stream()
+            .filter(id -> !snapshotId.equals(id.snapshotId()))
+            .collect(Collectors.toMap(snapshotInfo -> snapshotInfo.snapshotId().getUUID(), Function.identity()));
+        if (newSnapshotIds.size() == snapshotInfos.size()) {
             throw new ResourceNotFoundException("Attempting to remove non-existent snapshot [{}] from repository data", snapshotId);
         }
-        Map<String, SnapshotState> newSnapshotStates = new HashMap<>(snapshotStates);
-        newSnapshotStates.remove(snapshotId.getUUID());
         Map<IndexId, Set<SnapshotId>> indexSnapshots = new HashMap<>();
         for (final IndexId indexId : indices.values()) {
             Set<SnapshotId> set;
@@ -240,11 +231,8 @@ public final class RepositoryData {
             }
             indexSnapshots.put(indexId, set);
         }
-
-        return new RepositoryData(genId, newSnapshotIds, newSnapshotStates, indexSnapshots,
-            ShardGenerations.builder().putAll(shardGenerations).putAll(updatedShardGenerations)
-                .retainIndicesAndPruneDeletes(indexSnapshots.keySet()).build()
-        );
+        return new RepositoryData(genId, newSnapshotIds, indexSnapshots, ShardGenerations.builder().putAll(shardGenerations)
+            .putAll(updatedShardGenerations).retainIndicesAndPruneDeletes(indexSnapshots.keySet()).build());
     }
 
     /**
@@ -267,8 +255,7 @@ public final class RepositoryData {
             return false;
         }
         RepositoryData that = (RepositoryData) obj;
-        return snapshotIds.equals(that.snapshotIds)
-                   && snapshotStates.equals(that.snapshotStates)
+        return snapshotInfos.equals(that.snapshotInfos)
                    && indices.equals(that.indices)
                    && indexSnapshots.equals(that.indexSnapshots)
                    && shardGenerations.equals(that.shardGenerations);
@@ -276,7 +263,7 @@ public final class RepositoryData {
 
     @Override
     public int hashCode() {
-        return Objects.hash(snapshotIds, snapshotStates, indices, indexSnapshots, shardGenerations);
+        return Objects.hash(snapshotInfos, indices, indexSnapshots, shardGenerations);
     }
 
     /**
@@ -332,13 +319,9 @@ public final class RepositoryData {
         builder.startObject();
         // write the snapshots list
         builder.startArray(SNAPSHOTS);
-        for (final SnapshotId snapshot : getSnapshotIds()) {
+        for (final SnapshotInfo snapshot : getSnapshotInfos()) {
             builder.startObject();
-            builder.field(NAME, snapshot.getName());
-            builder.field(UUID, snapshot.getUUID());
-            if (snapshotStates.containsKey(snapshot.getUUID())) {
-                builder.field(STATE, snapshotStates.get(snapshot.getUUID()).value());
-            }
+            snapshot.toXContentInternal(builder, ToXContent.EMPTY_PARAMS);
             builder.endObject();
         }
         builder.endArray();
@@ -378,8 +361,7 @@ public final class RepositoryData {
      * Reads an instance of {@link RepositoryData} from x-content, loading the snapshots and indices metadata.
      */
     public static RepositoryData snapshotsFromXContent(final XContentParser parser, long genId) throws IOException {
-        final Map<String, SnapshotId> snapshots = new HashMap<>();
-        final Map<String, SnapshotState> snapshotStates = new HashMap<>();
+        final Map<String, SnapshotInfo> snapshots = new HashMap<>();
         final Map<IndexId, Set<SnapshotId>> indexSnapshots = new HashMap<>();
         final ShardGenerations.Builder shardGenerations = ShardGenerations.builder();
 
@@ -389,25 +371,10 @@ public final class RepositoryData {
                 if (SNAPSHOTS.equals(field)) {
                     if (parser.nextToken() == XContentParser.Token.START_ARRAY) {
                         while (parser.nextToken() != XContentParser.Token.END_ARRAY) {
-                            String name = null;
-                            String uuid = null;
-                            SnapshotState state = null;
-                            while (parser.nextToken() != XContentParser.Token.END_OBJECT) {
-                                String currentFieldName = parser.currentName();
-                                parser.nextToken();
-                                if (NAME.equals(currentFieldName)) {
-                                    name = parser.text();
-                                } else if (UUID.equals(currentFieldName)) {
-                                    uuid = parser.text();
-                                } else if (STATE.equals(currentFieldName)) {
-                                    state = SnapshotState.fromValue(parser.numberValue().byteValue());
-                                }
-                            }
-                            final SnapshotId snapshotId = new SnapshotId(name, uuid);
-                            if (state != null) {
-                                snapshotStates.put(uuid, state);
-                            }
-                            snapshots.put(snapshotId.getUUID(), snapshotId);
+                            parser.nextToken();
+                            final SnapshotInfo info = SnapshotInfo.fromXContentInternal(parser);
+                            parser.nextToken();
+                            snapshots.put(info.snapshotId().getUUID(), info);
                         }
                     } else {
                         throw new ElasticsearchParseException("expected array for [" + field + "]");
@@ -451,9 +418,9 @@ public final class RepositoryData {
                                         uuid = parser.text();
                                     }
 
-                                    SnapshotId snapshotId = snapshots.get(uuid);
-                                    if (snapshotId != null) {
-                                        snapshotIds.add(snapshotId);
+                                    SnapshotInfo info = snapshots.get(uuid);
+                                    if (info != null) {
+                                        snapshotIds.add(info.snapshotId());
                                     } else {
                                         // A snapshotted index references a snapshot which does not exist in
                                         // the list of snapshots. This can happen when multiple clusters in
@@ -490,7 +457,7 @@ public final class RepositoryData {
         } else {
             throw new ElasticsearchParseException("start object expected");
         }
-        return new RepositoryData(genId, snapshots, snapshotStates, indexSnapshots, shardGenerations.build());
+        return new RepositoryData(genId, snapshots, indexSnapshots, shardGenerations.build());
     }
 
 }

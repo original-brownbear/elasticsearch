@@ -181,7 +181,8 @@ public final class BlobStoreTestUtil {
 
     private static void assertSnapshotUUIDs(BlobStoreRepository repository, RepositoryData repositoryData) throws IOException {
         final BlobContainer repoRoot = repository.blobContainer();
-        final Collection<SnapshotId> snapshotIds = repositoryData.getSnapshotIds();
+        final Collection<SnapshotId> snapshotIds =
+            repositoryData.getSnapshotInfos().stream().map(SnapshotInfo::snapshotId).collect(Collectors.toList());
         final List<String> expectedSnapshotUUIDs = snapshotIds.stream().map(SnapshotId::getUUID).collect(Collectors.toList());
         for (String prefix : new String[]{"snap-", "meta-"}) {
                 final Collection<String> foundSnapshotUUIDs = repoRoot.listBlobs().keySet().stream().filter(p -> p.startsWith(prefix))

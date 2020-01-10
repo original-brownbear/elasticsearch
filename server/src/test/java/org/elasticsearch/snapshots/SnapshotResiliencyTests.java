@@ -328,10 +328,10 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
-        assertThat(snapshotIds, hasSize(1));
+        Collection<SnapshotInfo> snapshotInfos = getRepositoryData(repository).getSnapshotInfos();
+        assertThat(snapshotInfos, hasSize(1));
 
-        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+        final SnapshotInfo snapshotInfo = snapshotInfos.iterator().next();
         assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
         assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
         assertEquals(shards, snapshotInfo.successfulShards());
@@ -389,8 +389,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = randomMaster.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = randomMaster.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
-        assertThat(snapshotIds, hasSize(1));
+        assertThat(getRepositoryData(repository).getSnapshotInfos(), hasSize(1));
     }
 
     public void testConcurrentSnapshotCreateAndDelete() {
@@ -428,10 +427,10 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
-        assertThat(snapshotIds, hasSize(1));
+        Collection<SnapshotInfo> snapshotInfos = getRepositoryData(repository).getSnapshotInfos();
+        assertThat(snapshotInfos, hasSize(1));
 
-        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+        final SnapshotInfo snapshotInfo = snapshotInfos.iterator().next();
         assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
         assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
         assertEquals(shards, snapshotInfo.successfulShards());
@@ -493,12 +492,11 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
+        Collection<SnapshotInfo> snapshotInfos = getRepositoryData(repository).getSnapshotInfos();
         // We end up with two snapshots no matter if the delete worked out or not
-        assertThat(snapshotIds, hasSize(2));
+        assertThat(snapshotInfos, hasSize(2));
 
-        for (SnapshotId snapshotId : snapshotIds) {
-            final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotId);
+        for (SnapshotInfo snapshotInfo : snapshotInfos) {
             assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
             assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
             assertEquals(shards, snapshotInfo.successfulShards());
@@ -562,10 +560,10 @@ public class SnapshotResiliencyTests extends ESTestCase {
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
         final RepositoryData repositoryData = getRepositoryData(repository);
-        Collection<SnapshotId> snapshotIds = repositoryData.getSnapshotIds();
-        assertThat(snapshotIds, hasSize(1));
+        Collection<SnapshotInfo> snapshotInfos = repositoryData.getSnapshotInfos();
+        assertThat(snapshotInfos, hasSize(1));
 
-        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+        final SnapshotInfo snapshotInfo = snapshotInfos.iterator().next();
         assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
         if (partialSnapshot) {
             // Single shard for each index so we either get all indices or all except for the deleted index
@@ -657,8 +655,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
             .clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertThat(finalSnapshotsInProgress.entries(), empty());
         final Repository repository = testClusterNodes.randomMasterNodeSafe().repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
-        assertThat(snapshotIds, either(hasSize(1)).or(hasSize(0)));
+        Collection<SnapshotInfo> snapshotInfos = getRepositoryData(repository).getSnapshotInfos();
+        assertThat(snapshotInfos, either(hasSize(1)).or(hasSize(0)));
     }
 
     public void testSuccessfulSnapshotWithConcurrentDynamicMappingUpdates() {
@@ -728,10 +726,10 @@ public class SnapshotResiliencyTests extends ESTestCase {
         SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
         assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
         final Repository repository = masterNode.repositoriesService.repository(repoName);
-        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
-        assertThat(snapshotIds, hasSize(1));
+        Collection<SnapshotInfo> snapshotInfos = getRepositoryData(repository).getSnapshotInfos();
+        assertThat(snapshotInfos, hasSize(1));
 
-        final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotIds.iterator().next());
+        final SnapshotInfo snapshotInfo = snapshotInfos.iterator().next();
         assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
         assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
         assertEquals(shards, snapshotInfo.successfulShards());

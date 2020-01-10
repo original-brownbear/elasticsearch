@@ -355,7 +355,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     }
 
     public boolean hasOldVersionSnapshots(String repositoryName, RepositoryData repositoryData, @Nullable SnapshotId excluded) {
-        final Collection<SnapshotId> snapshotIds = repositoryData.getSnapshotIds();
+        final Collection<SnapshotId> snapshotIds =
+            repositoryData.getSnapshotInfos().stream().map(SnapshotInfo::snapshotId).collect(Collectors.toList());
         final boolean hasOldFormatSnapshots;
         if (snapshotIds.isEmpty()) {
             hasOldFormatSnapshots = false;
@@ -453,7 +454,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 repository.getRepositoryData(repositoryDataListener);
                 repositoryDataListener.whenComplete(repositoryData -> {
                     // check if the snapshot name already exists in the repository
-                    if (repositoryData.getSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName))) {
+                    if (repositoryData.getSnapshotInfos().stream().anyMatch(s -> s.snapshotId().getName().equals(snapshotName))) {
                         throw new InvalidSnapshotNameException(
                             repository.getMetadata().name(), snapshotName, "snapshot with the same name already exists");
                     }
@@ -1201,9 +1202,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         // First, look for the snapshot in the repository
         final Repository repository = repositoriesService.repository(repositoryName);
         repository.getRepositoryData(ActionListener.wrap(repositoryData -> {
-            Optional<SnapshotId> matchedEntry = repositoryData.getSnapshotIds()
+            Optional<SnapshotId> matchedEntry = repositoryData.getSnapshotInfos()
                 .stream()
-                .filter(s -> s.getName().equals(snapshotName))
+                .filter(s -> s.snapshotId().getName().equals(snapshotName))
+                .map(SnapshotInfo::snapshotId)
                 .findFirst();
             // if nothing found by the same name, then look in the cluster state for current in progress snapshots
             long repoGenId = repositoryData.getGenId();

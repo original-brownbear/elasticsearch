@@ -88,8 +88,8 @@ public abstract class RestoreOnlyRepository extends AbstractLifecycleComponent i
     @Override
     public void getRepositoryData(ActionListener<RepositoryData> listener) {
         final IndexId indexId = new IndexId(indexName, "blah");
-        listener.onResponse(new RepositoryData(EMPTY_REPO_GEN, Collections.emptyMap(), Collections.emptyMap(),
-            Collections.singletonMap(indexId, emptySet()), ShardGenerations.EMPTY));
+        listener.onResponse(new RepositoryData(
+            EMPTY_REPO_GEN, Collections.emptyMap(), Collections.singletonMap(indexId, emptySet()), ShardGenerations.EMPTY));
     }
 
     @Override

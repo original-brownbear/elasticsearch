@@ -212,8 +212,9 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
         final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
         snapshotsService.getRepositoryData(repositoryName, repositoryDataListener);
         repositoryDataListener.whenComplete(repositoryData -> {
-            final Map<String, SnapshotId> matchedSnapshotIds = repositoryData.getSnapshotIds().stream()
-                .filter(s -> requestedSnapshotNames.contains(s.getName()))
+            final Map<String, SnapshotId> matchedSnapshotIds = repositoryData.getSnapshotInfos().stream()
+                .filter(s -> requestedSnapshotNames.contains(s.snapshotId().getName()))
+                .map(SnapshotInfo::snapshotId)
                 .collect(Collectors.toMap(SnapshotId::getName, Function.identity()));
             for (final String snapshotName : request.snapshots()) {
                 if (currentSnapshotNames.contains(snapshotName)) {
