@@ -469,6 +469,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public void deleteSnapshot(SnapshotId snapshotId, long repositoryStateId, boolean writeShardGens, ActionListener<Void> listener) {
+        assert repositoryStateId > RepositoryData.EMPTY_REPO_GEN :
+            "Assumed a non-empty repository generation but received [" + repositoryStateId + "]";
         if (isReadOnly()) {
             listener.onFailure(new RepositoryException(metadata.name(), "cannot delete snapshot from a readonly repository"));
         } else {
@@ -862,6 +864,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                  final Map<String, Object> userMetadata,
                                  boolean writeShardGens,
                                  final ActionListener<SnapshotInfo> listener) {
+
+        assert repositoryStateId > RepositoryData.UNKNOWN_REPO_GEN :
+            "Assumed a known repository generation but received [" + repositoryStateId + "]";
 
         final Collection<IndexId> indices = shardGenerations.indices();
         // Once we are done writing the updated index-N blob we remove the now unreferenced index-${uuid} blobs in each shard
