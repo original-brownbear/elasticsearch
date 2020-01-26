@@ -101,7 +101,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                                    final ClusterState state,
                                    final ActionListener<SnapshotsStatusResponse> listener) throws Exception {
         List<SnapshotsInProgress.Entry> currentSnapshots =
-            snapshotsService.currentSnapshots(request.repository(), Arrays.asList(request.snapshots()));
+            SnapshotsService.currentSnapshots(state, request.repository(), Arrays.asList(request.snapshots()));
         if (currentSnapshots.isEmpty()) {
             buildResponse(request, currentSnapshots, null, listener);
             return;
@@ -128,7 +128,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                 ActionListener.wrap(nodeSnapshotStatuses -> threadPool.generic().execute(
                     ActionRunnable.wrap(listener,
                         l -> buildResponse(
-                            request, snapshotsService.currentSnapshots(request.repository(), Arrays.asList(request.snapshots())),
+                            request, SnapshotsService.currentSnapshots(state, request.repository(), Arrays.asList(request.snapshots())),
                             nodeSnapshotStatuses, l))
                 ), listener::onFailure));
         } else {
@@ -206,7 +206,8 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
         }
     }
 
-    private void loadRepositoryData(SnapshotsStatusRequest request, List<SnapshotStatus> builder, Set<String> currentSnapshotNames,
+    private void loadRepositoryData(SnapshotsStatusRequest request, ClusterState clusterState,
+                                    List<SnapshotStatus> builder, Set<String> currentSnapshotNames,
                                     String repositoryName, ActionListener<SnapshotsStatusResponse> listener) {
         final Set<String> requestedSnapshotNames = Sets.newHashSet(request.snapshots());
         final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
@@ -232,7 +233,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                         throw new SnapshotMissingException(repositoryName, snapshotName);
                     }
                 }
-                SnapshotInfo snapshotInfo = snapshotsService.snapshot(repositoryName, snapshotId);
+                SnapshotInfo snapshotInfo = snapshotsService.snapshot(clusterState, repositoryName, snapshotId);
                 List<SnapshotIndexShardStatus> shardStatusBuilder = new ArrayList<>();
                 if (snapshotInfo.state().completed()) {
                     Map<ShardId, IndexShardSnapshotStatus> shardStatuses =

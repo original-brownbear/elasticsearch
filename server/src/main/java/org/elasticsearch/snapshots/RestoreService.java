@@ -227,9 +227,10 @@ public class RestoreService implements ClusterStateApplier {
                         // Check if the snapshot to restore is currently being deleted
                         SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
                         if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
+                            final SnapshotDeletionsInProgress.Entry entry = deletionsInProgress.getEntries().get(0);
                             throw new ConcurrentSnapshotExecutionException(snapshot,
                                 "cannot restore a snapshot while a snapshot deletion is in-progress [" +
-                                    deletionsInProgress.getEntries().get(0).getSnapshot() + "]");
+                                    entry.repository() + "][" + entry.snapshotName() + "]");
                         }
 
                         // Updating cluster state
