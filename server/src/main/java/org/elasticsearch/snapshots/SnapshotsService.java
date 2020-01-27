@@ -839,8 +839,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
             assert deletionsInProgress.getEntries().size() == 1 : "only one in-progress deletion allowed per cluster";
             SnapshotDeletionsInProgress.Entry entry = deletionsInProgress.getEntries().get(0);
-            deleteSnapshotFromRepository(entry.getSnapshot(), null, entry.repositoryStateId(),
-                state.nodes().getMinNodeVersion());
+            assert entry.snapshotUUIDs() != null && entry.snapshotUUIDs().size() == 1;
+            deleteSnapshotFromRepository(
+                new Snapshot(entry.repository(), new SnapshotId(entry.snapshotNamePattern(), entry.snapshotUUIDs().get(0))), null,
+                entry.repositoryStateId(), state.nodes().getMinNodeVersion());
         }
     }
 
@@ -1230,15 +1232,32 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                final boolean immediatePriority) {
         // First, look for the snapshot in the repository
         final Repository repository = repositoriesService.repository(repositoryName);
-        repository.getRepositoryData(ActionListener.wrap(repositoryData -> {
-            final Optional<SnapshotId> matchedEntry = repositoryData.getSnapshotIds()
-                .stream()
-                .filter(s -> s.getName().equals(snapshotName))
-                .findFirst();
-            // if nothing found by the same name, then look in the cluster state for current in progress snapshots
-            long repoGenId = repositoryData.getGenId();
+        final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
+        final boolean oldStyleDelete =
+            clusterService.state().nodes().getMinNodeVersion().before(SnapshotDeletionsInProgress.DELETE_INIT_VERSION);
+        if (oldStyleDelete) {
+            repository.getRepositoryData(repositoryDataListener);
+        } else {
+            repositoryDataListener.onResponse(null);
+        }
+        repositoryDataListener.whenComplete(repositoryData -> {
+            final Optional<SnapshotId> matchedEntry;
+            final long repoGenId;
+            if (oldStyleDelete) {
+                matchedEntry = repositoryData.getSnapshotIds()
+                    .stream()
+                    .filter(s -> s.getName().equals(snapshotName))
+                    .findFirst();
+                // if nothing found by the same name, then look in the cluster state for current in progress snapshots
+                repoGenId = repositoryData.getGenId();
+            } else {
+                matchedEntry = Optional.empty();
+                repoGenId = RepositoryData.UNKNOWN_REPO_GEN;
+            }
             if (matchedEntry.isPresent() == false) {
                 clusterService.submitStateUpdateTask("before delete snapshot", new ClusterStateUpdateTask() {
+
+                    private SnapshotDeletionsInProgress.Entry deleteFromRepo;
 
                     private Snapshot abortedDuringInit;
 
@@ -1265,15 +1284,20 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                     listener, entry.repositoryStateId() + 1L, immediatePriority);
                             }
                         } else {
-                            final RepositoriesMetaData repositoriesMetaData = currentState.metaData().custom(RepositoriesMetaData.TYPE);
-                            final RepositoryMetaData repoMeta = repositoriesMetaData.repository(repositoryName);
-                            if (repositoryData.getGenId() < repoMeta.generation()) {
-                                // Retry repository was concurrently modified
-                                // TODO: this is stupid, we should first check for in-progress snapshots and only if none are found create
-                                //       deletion entry and check the repo ...
-                                deleteSnapshot(repositoryName, snapshotName, listener, immediatePriority);
+                            if (oldStyleDelete) {
+                                final RepositoriesMetaData repositoriesMetaData = currentState.metaData().custom(RepositoriesMetaData.TYPE);
+                                final RepositoryMetaData repoMeta = repositoriesMetaData.repository(repositoryName);
+                                if (repositoryData.getGenId() < repoMeta.generation()) {
+                                    // Retry repository was concurrently modified
+                                    // TODO: this is stupid, we should first check for in-progress snapshots and only if none
+                                    //       are found create deletion entry and check the repo ...
+                                    deleteSnapshot(repositoryName, snapshotName, listener, immediatePriority);
+                                } else {
+                                    throw new SnapshotMissingException(repositoryName, snapshotName);
+                                }
                             } else {
-                                throw new SnapshotMissingException(repositoryName, snapshotName);
+                                deleteFromRepo = new SnapshotDeletionsInProgress.Entry(
+                                    repositoryName, snapshotName, threadPool.absoluteTimeInMillis());
                             }
                         }
                         return currentState;
@@ -1289,13 +1313,19 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         if (abortedDuringInit != null) {
                             addListener(abortedDuringInit,
                                 ActionListener.wrap(snapshotInfo -> listener.onResponse(null), listener::onFailure));
+                        } else if (deleteFromRepo != null) {
+                            beginDeleteSnapshot(deleteFromRepo);
                         }
                     }
                 });
             } else {
                 deleteSnapshot(new Snapshot(repositoryName, matchedEntry.get()), listener, repoGenId, immediatePriority);
             }
-        }, listener::onFailure));
+        }, listener::onFailure);
+    }
+
+    private void beginDeleteSnapshot(SnapshotDeletionsInProgress.Entry entry) {
+
     }
 
     /**

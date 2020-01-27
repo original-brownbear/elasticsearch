@@ -21,13 +21,17 @@ package org.elasticsearch.cluster;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState.Custom;
+import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryOperation;
 import org.elasticsearch.snapshots.Snapshot;
+import org.elasticsearch.snapshots.SnapshotId;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -142,7 +146,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
             builder.startObject();
             {
                 builder.field("repository", entry.repository());
-                builder.field("snapshot", entry.snapshotName());
+                builder.field("snapshot", entry.snapshotNamePattern());
                 builder.humanReadableField("start_time_millis", "start_time", new TimeValue(entry.startTime));
                 builder.field("repository_state_id", entry.repositoryStateId);
             }
@@ -156,7 +160,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     public String toString() {
         StringBuilder builder = new StringBuilder("SnapshotDeletionsInProgress[");
         for (int i = 0; i < entries.size(); i++) {
-            builder.append(entries.get(i).snapshotName());
+            builder.append(entries.get(i).snapshotNamePattern());
             if (i + 1 < entries.size()) {
                 builder.append(",");
             }
@@ -171,17 +175,26 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
 
         private final String repository;
 
-        private final String snapshotName;
+        private final String snapshotNamePattern;
 
-        private final List<String> snapshotUUID;
+        @Nullable
+        private final List<String> snapshotUUIDs;
 
         private final long startTime;
         private final long repositoryStateId;
 
+        public Entry(String repository, String snapshotNamePattern, long startTime) {
+            this.repository = repository;
+            this.snapshotNamePattern = snapshotNamePattern;
+            this.snapshotUUIDs = null;
+            this.startTime = startTime;
+            this.repositoryStateId = RepositoryData.UNKNOWN_REPO_GEN;
+        }
+
         public Entry(Snapshot snapshot, long startTime, long repositoryStateId) {
             this.repository = snapshot.getRepository();
-            this.snapshotName = snapshot.getSnapshotId().getName();
-            this.snapshotUUID = Collections.singletonList(snapshot.getSnapshotId().getUUID());
+            this.snapshotNamePattern = snapshot.getSnapshotId().getName();
+            this.snapshotUUIDs = Collections.singletonList(snapshot.getSnapshotId().getUUID());
             this.startTime = startTime;
             this.repositoryStateId = repositoryStateId;
         }
@@ -190,31 +203,29 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
             if (in.getVersion().before(DELETE_INIT_VERSION)) {
                 final Snapshot snapshot = new Snapshot(in);
                 this.repository = snapshot.getRepository();
-                this.snapshotName = snapshot.getSnapshotId().getName();
-                this.snapshotUUID = Collections.singletonList(snapshot.getSnapshotId().getUUID());
+                this.snapshotNamePattern = snapshot.getSnapshotId().getName();
+                this.snapshotUUIDs = Collections.singletonList(snapshot.getSnapshotId().getUUID());
             } else {
                 this.repository = in.readString();
-                this.snapshotName = in.readString();
+                this.snapshotNamePattern = in.readString();
                 final String[] snapshotUUIDs = in.readOptionalStringArray();
                 if (snapshotUUIDs == null) {
-                    snapshotUUID = null;
+                    this.snapshotUUIDs = null;
                 } else {
-                    this.snapshotUUID = List.of(snapshotUUIDs);
+                    this.snapshotUUIDs = List.of(snapshotUUIDs);
                 }
             }
             this.startTime = in.readVLong();
             this.repositoryStateId = in.readLong();
         }
 
-        public String snapshotName() {
-            return snapshotName;
+        public String snapshotNamePattern() {
+            return snapshotNamePattern;
         }
 
-        /**
-         * The snapshot to delete.
-         */
-        public Snapshot getSnapshot() {
-            return snapshot;
+        @Nullable
+        public List<String> snapshotUUIDs() {
+            return snapshotUUIDs;
         }
 
         /**
@@ -233,19 +244,28 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
                 return false;
             }
             Entry that = (Entry) o;
-            return snapshot.equals(that.snapshot)
+            return snapshotNamePattern.equals(that.snapshotNamePattern)
                        && startTime == that.startTime
-                       && repositoryStateId == that.repositoryStateId;
+                       && repositoryStateId == that.repositoryStateId
+                       && Objects.equals(snapshotUUIDs, that.snapshotUUIDs);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(snapshot, startTime, repositoryStateId);
+            return Objects.hash(snapshotNamePattern, snapshotUUIDs, repository, startTime, repositoryStateId);
         }
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            snapshot.writeTo(out);
+            if (out.getVersion().before(DELETE_INIT_VERSION)) {
+                assert snapshotUUIDs != null && snapshotUUIDs.size() == 1 :
+                    "Can only write a single uuid to delete to [" + out.getVersion() + "] but saw UUIDs " + snapshotUUIDs;
+                new Snapshot(repository, new SnapshotId(snapshotNamePattern, snapshotUUIDs.get(0))).writeTo(out);
+            } else {
+                out.writeString(repository);
+                out.writeString(snapshotNamePattern);
+                out.writeOptionalStringArray(snapshotUUIDs.toArray(Strings.EMPTY_ARRAY));
+            }
             out.writeVLong(startTime);
             out.writeLong(repositoryStateId);
         }
