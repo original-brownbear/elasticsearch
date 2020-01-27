@@ -1489,7 +1489,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         SnapshotDeletionsInProgress deletionsInProgress = clusterState.custom(SnapshotDeletionsInProgress.TYPE);
         if (deletionsInProgress != null) {
             for (SnapshotDeletionsInProgress.Entry entry : deletionsInProgress.getEntries()) {
-                if (entry.getSnapshot().getRepository().equals(repository)) {
+                if (entry.repository().equals(repository)) {
                     return true;
                 }
             }
