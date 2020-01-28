@@ -37,7 +37,6 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.RestUtils;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -70,7 +69,9 @@ public class GoogleCloudStorageHttpHandler implements HttpHandler {
 
     private static final Logger logger = LogManager.getLogger(GoogleCloudStorageHttpHandler.class);
 
-    private final ConcurrentMap<String, BytesReference> blobs;
+    private static final Pattern RANGE_MATCHER = Pattern.compile("bytes=([0-9]*)-([0-9]*)");
+
+    private final ConcurrentMap<String, BytesArray> blobs;
     private final String bucket;
 
     public GoogleCloudStorageHttpHandler(final String bucket) {
@@ -98,7 +99,7 @@ public class GoogleCloudStorageHttpHandler implements HttpHandler {
                 final Set<String> prefixes = new HashSet<>();
                 final List<String> listOfBlobs = new ArrayList<>();
 
-                for (final Map.Entry<String, BytesReference> blob : blobs.entrySet()) {
+                for (final Map.Entry<String, BytesArray> blob : blobs.entrySet()) {
                     final String blobName = blob.getKey();
                     if (prefix.isEmpty() || blobName.startsWith(prefix)) {
                         int delimiterPos = (delimiter != null) ? blobName.substring(prefix.length()).indexOf(delimiter) : -1;
@@ -137,15 +138,15 @@ public class GoogleCloudStorageHttpHandler implements HttpHandler {
                 BytesReference blob = blobs.get(exchange.getRequestURI().getPath().replace("/download/storage/v1/b/" + bucket + "/o/", ""));
                 if (blob != null) {
                     final String range = exchange.getRequestHeaders().getFirst("Range");
-                    Matcher matcher = Pattern.compile("bytes=([0-9]*)-([0-9]*)").matcher(range);
+                    Matcher matcher = RANGE_MATCHER.matcher(range);
                     if (matcher.find() == false) {
                         throw new AssertionError("Range bytes header does not match expected format: " + range);
                     }
 
-                    byte[] response = Integer.parseInt(matcher.group(1)) == 0 ? BytesReference.toBytes(blob) : new byte[0];
+                    BytesReference response = Integer.parseInt(matcher.group(1)) == 0 ? blob : BytesArray.EMPTY;
                     exchange.getResponseHeaders().add("Content-Type", "application/octet-stream");
-                    exchange.sendResponseHeaders(RestStatus.OK.getStatus(), response.length);
-                    exchange.getResponseBody().write(response);
+                    exchange.sendResponseHeaders(RestStatus.OK.getStatus(), response.length());
+                    response.writeTo(exchange.getResponseBody());
                 } else {
                     exchange.sendResponseHeaders(RestStatus.NOT_FOUND.getStatus(), -1);
                 }
@@ -212,27 +213,19 @@ public class GoogleCloudStorageHttpHandler implements HttpHandler {
                     exchange.sendResponseHeaders(RestStatus.NOT_FOUND.getStatus(), -1);
                     return;
                 }
-                byte[] blob = BytesReference.toBytes(blobs.get(blobName));
+                final BytesArray bytesArray = blobs.get(blobName);
+                assert bytesArray.offset() == 0 : "Expected offset to always be 0 but was [" + bytesArray.offset() + "]";
+                byte[] blob = bytesArray.array();
                 final String range = exchange.getRequestHeaders().getFirst("Content-Range");
                 final Integer limit = getContentRangeLimit(range);
                 final int start = getContentRangeStart(range);
                 final int end = getContentRangeEnd(range);
 
-                final ByteArrayOutputStream out = new ByteArrayOutputStream() {
-                    @Override
-                    public byte[] toByteArray() {
-                        return buf;
-                    }
-                };
-                long bytesRead = Streams.copy(wrappedRequest, out, new byte[128]);
                 int length = Math.max(end + 1, limit != null ? limit : 0);
-                if ((int) bytesRead > length) {
-                    throw new AssertionError("Requesting more bytes than available for blob");
-                }
                 if (length > blob.length) {
                     blob = ArrayUtil.growExact(blob, length);
                 }
-                System.arraycopy(out.toByteArray(), 0, blob, start, Math.toIntExact(bytesRead));
+                Streams.readFully(wrappedRequest, blob, start, blob.length - start);
                 blobs.put(blobName, new BytesArray(blob));
 
                 if (limit == null) {
@@ -255,7 +248,7 @@ public class GoogleCloudStorageHttpHandler implements HttpHandler {
         }
     }
 
-    public Map<String, BytesReference> blobs() {
+    public Map<String, BytesArray> blobs() {
         return blobs;
     }
 
