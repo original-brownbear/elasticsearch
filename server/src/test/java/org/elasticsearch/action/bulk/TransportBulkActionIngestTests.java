@@ -43,6 +43,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.io.stream.StringDeserializationCache;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -140,7 +141,7 @@ public class TransportBulkActionIngestTests extends ESTestCase {
                 new AutoCreateIndex(
                     SETTINGS, new ClusterSettings(SETTINGS, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
                     new IndexNameExpressionResolver()
-                )
+                ), StringDeserializationCache.DUMMY
             );
         }
         @Override
@@ -165,7 +166,7 @@ public class TransportBulkActionIngestTests extends ESTestCase {
 
         TestSingleItemBulkWriteAction(TestTransportBulkAction bulkAction) {
             super(IndexAction.NAME, TransportBulkActionIngestTests.this.transportService,
-                    new ActionFilters(Collections.emptySet()), IndexRequest::new, bulkAction);
+                    new ActionFilters(Collections.emptySet()), in -> new IndexRequest(in, StringDeserializationCache.DUMMY), bulkAction);
         }
     }
 

@@ -35,6 +35,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.StringDeserializationCache;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
@@ -78,12 +79,12 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
 
     public BulkRequest() {}
 
-    public BulkRequest(StreamInput in) throws IOException {
+    public BulkRequest(StreamInput in, StringDeserializationCache cache) throws IOException {
         super(in);
         waitForActiveShards = ActiveShardCount.readFrom(in);
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
-            requests.add(DocWriteRequest.readDocumentRequest(in));
+            requests.add(DocWriteRequest.readDocumentRequest(in, cache));
         }
         refreshPolicy = RefreshPolicy.readFrom(in);
         timeout = in.readTimeValue();

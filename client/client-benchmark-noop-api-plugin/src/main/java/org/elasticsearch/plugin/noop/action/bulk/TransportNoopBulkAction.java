@@ -28,6 +28,7 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.StringDeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportService;
@@ -38,7 +39,7 @@ public class TransportNoopBulkAction extends HandledTransportAction<BulkRequest,
 
     @Inject
     public TransportNoopBulkAction(TransportService transportService, ActionFilters actionFilters) {
-        super(NoopBulkAction.NAME, transportService, actionFilters, BulkRequest::new);
+        super(NoopBulkAction.NAME, transportService, actionFilters, in -> new BulkRequest(in, StringDeserializationCache.DUMMY));
     }
 
     @Override

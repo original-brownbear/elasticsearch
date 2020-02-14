@@ -23,6 +23,7 @@ import org.elasticsearch.action.bulk.TransportBulkAction;
 import org.elasticsearch.action.bulk.TransportSingleItemBulkWriteAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.StringDeserializationCache;
 import org.elasticsearch.transport.TransportService;
 
 /**
@@ -42,6 +43,7 @@ public class TransportIndexAction extends TransportSingleItemBulkWriteAction<Ind
 
     @Inject
     public TransportIndexAction(ActionFilters actionFilters, TransportService transportService, TransportBulkAction bulkAction) {
-        super(IndexAction.NAME, transportService, actionFilters, IndexRequest::new, bulkAction);
+        super(IndexAction.NAME, transportService, actionFilters, in -> new IndexRequest(in, StringDeserializationCache.DUMMY),
+            bulkAction);
     }
 }

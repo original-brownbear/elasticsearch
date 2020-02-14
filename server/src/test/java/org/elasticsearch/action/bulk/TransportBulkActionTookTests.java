@@ -34,6 +34,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.io.stream.StringDeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -219,15 +220,16 @@ public class TransportBulkActionTookTests extends ESTestCase {
                 AutoCreateIndex autoCreateIndex,
                 LongSupplier relativeTimeProvider) {
             super(
-                    threadPool,
-                    transportService,
-                    clusterService,
-                    null,
-                    client,
-                    actionFilters,
-                    indexNameExpressionResolver,
-                    autoCreateIndex,
-                    relativeTimeProvider);
+                threadPool,
+                transportService,
+                clusterService,
+                null,
+                client,
+                actionFilters,
+                indexNameExpressionResolver,
+                autoCreateIndex,
+                relativeTimeProvider,
+                StringDeserializationCache.DUMMY);
         }
 
         @Override

@@ -406,6 +406,16 @@ public abstract class StreamInput extends InputStream {
     private CharsRef largeSpare;
 
     public String readString() throws IOException {
+        return readCharsRef().toString();
+    }
+
+    public String readCachedString(StringDeserializationCache cache) throws IOException {
+        final CharsRef ref = readCharsRef();
+        final String cached = cache.get(ref);
+        return cached == null ? ref.toString() : cached;
+    }
+
+    private CharsRef readCharsRef() throws IOException {
         final int charCount = readArraySize();
         final CharsRef charsRef;
         if (charCount > SMALL_STRING_LIMIT) {
@@ -527,7 +537,7 @@ public abstract class StreamInput extends InputStream {
                 }
             }
         }
-        return charsRef.toString();
+        return charsRef;
     }
 
     private static void throwOnBrokenChar(int c) throws IOException {

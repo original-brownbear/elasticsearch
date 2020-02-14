@@ -23,6 +23,7 @@ import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.StringDeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ public class BulkItemRequest implements Writeable {
 
     BulkItemRequest(StreamInput in) throws IOException {
         id = in.readVInt();
-        request = DocWriteRequest.readDocumentRequest(in);
+        request = DocWriteRequest.readDocumentRequest(in, StringDeserializationCache.DUMMY);
         if (in.readBoolean()) {
             primaryResponse = new BulkItemResponse(in);
         }

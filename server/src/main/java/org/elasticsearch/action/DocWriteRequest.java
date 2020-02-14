@@ -24,6 +24,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.StringDeserializationCache;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.index.VersionType;
 
@@ -196,11 +197,11 @@ public interface DocWriteRequest<T> extends IndicesRequest {
     }
 
     /** read a document write (index/delete/update) request */
-    static DocWriteRequest<?> readDocumentRequest(StreamInput in) throws IOException {
+    static DocWriteRequest<?> readDocumentRequest(StreamInput in, StringDeserializationCache cache) throws IOException {
         byte type = in.readByte();
         DocWriteRequest<?> docWriteRequest;
         if (type == 0) {
-            docWriteRequest = new IndexRequest(in);
+            docWriteRequest = new IndexRequest(in, cache);
         } else if (type == 1) {
             docWriteRequest = new DeleteRequest(in);
         } else if (type == 2) {
