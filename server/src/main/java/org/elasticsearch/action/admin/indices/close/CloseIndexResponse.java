@@ -26,6 +26,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -111,7 +112,7 @@ public class CloseIndexResponse extends ShardsAcknowledgedResponse {
         }
 
         IndexResult(final StreamInput in) throws IOException {
-            this.index = new Index(in);
+            this.index = new Index(in, DeserializationCache.DUMMY);
             this.exception = in.readException();
             this.shards = in.readOptionalArray(ShardResult::new, ShardResult[]::new);
         }

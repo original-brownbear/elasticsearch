@@ -22,6 +22,7 @@ package org.elasticsearch.action.admin.cluster.shards;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -40,7 +41,7 @@ public class ClusterSearchShardsGroup implements Writeable, ToXContentObject {
     }
 
     ClusterSearchShardsGroup(StreamInput in) throws IOException {
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         shards = new ShardRouting[in.readVInt()];
         for (int i = 0; i < shards.length; i++) {
             shards[i] = new ShardRouting(shardId, in);

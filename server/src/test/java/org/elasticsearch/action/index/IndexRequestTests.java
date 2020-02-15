@@ -26,7 +26,7 @@ import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StringDeserializationCache;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
@@ -162,7 +162,7 @@ public class IndexRequestTests extends ESTestCase {
         BytesStreamOutput out = new BytesStreamOutput();
         indexRequest.writeTo(out);
         StreamInput in = StreamInput.wrap(out.bytes().toBytesRef().bytes);
-        IndexRequest serialized = new IndexRequest(in, StringDeserializationCache.DUMMY);
+        IndexRequest serialized = new IndexRequest(in, DeserializationCache.DUMMY);
         assertEquals(XContentType.JSON, serialized.getContentType());
         assertEquals(new BytesArray("{}"), serialized.source());
     }
@@ -176,7 +176,7 @@ public class IndexRequestTests extends ESTestCase {
         try (BytesStreamOutput out = new BytesStreamOutput()) {
             request.writeTo(out);
             try (StreamInput in = out.bytes().streamInput()) {
-                IndexRequest serialized = new IndexRequest(in, StringDeserializationCache.DUMMY);
+                IndexRequest serialized = new IndexRequest(in, DeserializationCache.DUMMY);
                 assertNull(serialized.getContentType());
                 assertEquals("index", serialized.index());
             }

@@ -38,6 +38,7 @@ import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ReplicationGroup;
@@ -116,7 +117,8 @@ public class TransportVerifyShardBeforeCloseActionTests extends ESTestCase {
         transportService.start();
         transportService.acceptIncomingRequests();
 
-        ShardStateAction shardStateAction = new ShardStateAction(clusterService, transportService, null, null, threadPool);
+        ShardStateAction shardStateAction = new ShardStateAction(
+            clusterService, transportService, null, null, threadPool, DeserializationCache.DUMMY);
         action = new TransportVerifyShardBeforeCloseAction(Settings.EMPTY, transportService, clusterService, mock(IndicesService.class),
             mock(ThreadPool.class), shardStateAction, mock(ActionFilters.class));
     }

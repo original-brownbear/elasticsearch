@@ -21,6 +21,7 @@ package org.elasticsearch.cluster.coordination;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.transport.TransportRequest;
 
 import java.io.IOException;
@@ -30,7 +31,7 @@ public class ValidateJoinRequest extends TransportRequest {
 
     public ValidateJoinRequest(StreamInput in) throws IOException {
         super(in);
-        this.state = ClusterState.readFrom(in, null);
+        this.state = ClusterState.readFrom(in, null, DeserializationCache.DUMMY);
     }
 
     public ValidateJoinRequest(ClusterState state) {

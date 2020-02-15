@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.routing.allocation.RoutingExplanations;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -40,7 +41,7 @@ public class ClusterRerouteResponse extends AcknowledgedResponse implements ToXC
 
     ClusterRerouteResponse(StreamInput in) throws IOException {
         super(in);
-        state = ClusterState.readFrom(in, null);
+        state = ClusterState.readFrom(in, null, DeserializationCache.DUMMY);
         explanations = RoutingExplanations.readFrom(in);
     }
 

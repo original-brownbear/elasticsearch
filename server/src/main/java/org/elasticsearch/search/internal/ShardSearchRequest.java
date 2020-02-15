@@ -37,6 +37,7 @@ import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -149,7 +150,7 @@ public class ShardSearchRequest extends TransportRequest implements IndicesReque
 
     public ShardSearchRequest(StreamInput in) throws IOException {
         super(in);
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         searchType = SearchType.fromId(in.readByte());
         numberOfShards = in.readVInt();
         scroll = in.readOptionalWriteable(Scroll::new);

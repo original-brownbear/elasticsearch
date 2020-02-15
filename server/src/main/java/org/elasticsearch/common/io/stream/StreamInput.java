@@ -361,6 +361,14 @@ public abstract class StreamInput extends InputStream {
     }
 
     @Nullable
+    public String readOptionalCachedString(DeserializationCache cache) throws IOException {
+        if (readBoolean()) {
+            return readCachedString(cache);
+        }
+        return null;
+    }
+
+    @Nullable
     public SecureString readOptionalSecureString() throws IOException {
         SecureString value = null;
         BytesReference bytesRef = readOptionalBytesReference();
@@ -409,7 +417,7 @@ public abstract class StreamInput extends InputStream {
         return readCharsRef().toString();
     }
 
-    public String readCachedString(StringDeserializationCache cache) throws IOException {
+    public String readCachedString(DeserializationCache cache) throws IOException {
         final CharsRef ref = readCharsRef();
         final String cached = cache.get(ref);
         return cached == null ? ref.toString() : cached;

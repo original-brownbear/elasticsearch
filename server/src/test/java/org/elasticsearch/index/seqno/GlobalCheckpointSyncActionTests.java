@@ -21,6 +21,7 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.index.Index;
@@ -60,7 +61,8 @@ public class GlobalCheckpointSyncActionTests extends ESTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR,  boundAddress -> clusterService.localNode(), null, Collections.emptySet());
         transportService.start();
         transportService.acceptIncomingRequests();
-        shardStateAction = new ShardStateAction(clusterService, transportService, null, null, threadPool);
+        shardStateAction = new ShardStateAction(
+            clusterService, transportService, null, null, threadPool, DeserializationCache.DUMMY);
     }
 
     public void tearDown() throws Exception {
@@ -109,7 +111,8 @@ public class GlobalCheckpointSyncActionTests extends ESTestCase {
             indicesService,
             threadPool,
             shardStateAction,
-            new ActionFilters(Collections.emptySet()));
+            new ActionFilters(Collections.emptySet()),
+            DeserializationCache.DUMMY);
         final GlobalCheckpointSyncAction.Request primaryRequest = new GlobalCheckpointSyncAction.Request(indexShard.shardId());
         if (randomBoolean()) {
             action.shardOperationOnPrimary(primaryRequest, indexShard, ActionTestUtils.assertNoFailureListener(r -> {}));

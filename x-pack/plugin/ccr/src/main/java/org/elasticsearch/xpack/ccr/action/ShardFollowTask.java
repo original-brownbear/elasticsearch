@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.ccr.action;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -92,8 +93,8 @@ public class ShardFollowTask extends ImmutableFollowParameters implements Persis
 
     public static ShardFollowTask readFrom(StreamInput in) throws IOException {
         String remoteCluster = in.readString();
-        ShardId followShardId = new ShardId(in);
-        ShardId leaderShardId = new ShardId(in);
+        ShardId followShardId = new ShardId(in, DeserializationCache.DUMMY);
+        ShardId leaderShardId = new ShardId(in, DeserializationCache.DUMMY);
         return new ShardFollowTask(remoteCluster, followShardId, leaderShardId, in);
     }
 

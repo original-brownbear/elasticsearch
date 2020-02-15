@@ -26,6 +26,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.unit.ByteSizeValue;
 
 import java.io.IOException;
@@ -40,10 +41,10 @@ public class ClusterStateResponse extends ActionResponse {
     private ClusterState clusterState;
     private boolean waitForTimedOut = false;
 
-    public ClusterStateResponse(StreamInput in) throws IOException {
+    public ClusterStateResponse(StreamInput in, DeserializationCache deserializationCache) throws IOException {
         super(in);
         clusterName = new ClusterName(in);
-        clusterState = in.readOptionalWriteable(innerIn -> ClusterState.readFrom(innerIn, null));
+        clusterState = in.readOptionalWriteable(innerIn -> ClusterState.readFrom(innerIn, null, deserializationCache));
         if (in.getVersion().before(Version.V_7_0_0)) {
             new ByteSizeValue(in);
         }

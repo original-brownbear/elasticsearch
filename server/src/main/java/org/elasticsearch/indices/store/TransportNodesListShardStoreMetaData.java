@@ -38,6 +38,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -189,7 +190,7 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
         }
 
         public StoreFilesMetaData(StreamInput in) throws IOException {
-            this.shardId = new ShardId(in);
+            this.shardId = new ShardId(in, DeserializationCache.DUMMY);
             this.metadataSnapshot = new Store.MetadataSnapshot(in);
             if (in.getVersion().onOrAfter(Version.V_7_5_0)) {
                 this.peerRecoveryRetentionLeases = in.readList(RetentionLease::new);
@@ -267,7 +268,7 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
 
         public Request(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
             if (in.getVersion().onOrAfter(Version.V_7_6_0)) {
                 customDataPath = in.readString();
             } else {
@@ -335,7 +336,7 @@ public class TransportNodesListShardStoreMetaData extends TransportNodesAction<T
 
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
             if (in.getVersion().onOrAfter(Version.V_7_6_0)) {
                 customDataPath = in.readString();
             } else {

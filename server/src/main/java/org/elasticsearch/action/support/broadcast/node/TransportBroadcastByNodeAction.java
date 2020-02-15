@@ -40,6 +40,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardsIterator;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -455,7 +456,7 @@ public abstract class TransportBroadcastByNodeAction<Request extends BroadcastRe
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
             indicesLevelRequest = readRequestFrom(in);
-            shards = in.readList(ShardRouting::new);
+            shards = in.readList(i -> new ShardRouting(i, DeserializationCache.DUMMY));
             nodeId = in.readString();
         }
 

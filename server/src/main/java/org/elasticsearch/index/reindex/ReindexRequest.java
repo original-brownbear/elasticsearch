@@ -28,7 +28,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.io.stream.StringDeserializationCache;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ObjectParser;
@@ -83,7 +83,7 @@ public class ReindexRequest extends AbstractBulkIndexByScrollRequest<ReindexRequ
         this.destination = destination;
     }
 
-    private static final StringDeserializationCache DUMMY = new StringDeserializationCache();
+    private static final DeserializationCache DUMMY = new DeserializationCache();
 
     public ReindexRequest(StreamInput in) throws IOException {
         super(in);

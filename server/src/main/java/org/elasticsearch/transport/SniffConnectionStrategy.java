@@ -37,6 +37,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
@@ -328,7 +329,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
 
         @Override
         public ClusterStateResponse read(StreamInput in) throws IOException {
-            return new ClusterStateResponse(in);
+            return new ClusterStateResponse(in, DeserializationCache.DUMMY);
         }
 
         @Override

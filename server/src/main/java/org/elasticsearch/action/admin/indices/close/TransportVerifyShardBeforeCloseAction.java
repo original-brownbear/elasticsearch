@@ -36,6 +36,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.IndexShard;
@@ -151,7 +152,7 @@ public class TransportVerifyShardBeforeCloseAction extends TransportReplicationA
         private final boolean phase1;
 
         ShardRequest(StreamInput in) throws IOException {
-            super(in);
+            super(in, DeserializationCache.DUMMY);
             clusterBlock = new ClusterBlock(in);
             if (in.getVersion().onOrAfter(Version.V_7_3_0)) {
                 phase1 = in.readBoolean();

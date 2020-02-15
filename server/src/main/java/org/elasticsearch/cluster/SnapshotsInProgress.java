@@ -29,6 +29,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -524,7 +525,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> builder = ImmutableOpenMap.builder();
             int shards = in.readVInt();
             for (int j = 0; j < shards; j++) {
-                ShardId shardId = new ShardId(in);
+                ShardId shardId = new ShardId(in, DeserializationCache.DUMMY);
                 builder.put(shardId, new ShardSnapshotStatus(in));
             }
             long repositoryStateId = in.readLong();

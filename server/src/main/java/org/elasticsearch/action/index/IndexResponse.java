@@ -22,6 +22,7 @@ package org.elasticsearch.action.index;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.rest.RestStatus;
@@ -38,8 +39,8 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpect
  */
 public class IndexResponse extends DocWriteResponse {
 
-    public IndexResponse(StreamInput in) throws IOException {
-        super(in);
+    public IndexResponse(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        super(in, deserializationCache);
     }
 
     public IndexResponse(ShardId shardId, String id, long seqNo, long primaryTerm, long version, boolean created) {

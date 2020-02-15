@@ -26,6 +26,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
@@ -47,7 +48,7 @@ public class SnapshotShardFailure extends ShardOperationFailedException {
 
     SnapshotShardFailure(StreamInput in) throws IOException {
         nodeId = in.readOptionalString();
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         super.shardId = shardId.getId();
         index = shardId.getIndexName();
         reason = in.readString();

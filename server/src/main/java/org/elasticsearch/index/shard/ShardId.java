@@ -22,6 +22,7 @@ package org.elasticsearch.index.shard;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -48,8 +49,8 @@ public class ShardId implements Comparable<ShardId>, ToXContentFragment, Writeab
         this(new Index(index, indexUUID), shardId);
     }
 
-    public ShardId(StreamInput in) throws IOException {
-        index = new Index(in);
+    public ShardId(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        index = new Index(in, deserializationCache);
         shardId = in.readVInt();
         hashCode = computeHashCode();
     }

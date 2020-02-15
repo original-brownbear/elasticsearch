@@ -36,7 +36,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.io.stream.StringDeserializationCache;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -115,8 +115,8 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
     private long ifSeqNo = UNASSIGNED_SEQ_NO;
     private long ifPrimaryTerm = UNASSIGNED_PRIMARY_TERM;
 
-    public IndexRequest(StreamInput in, StringDeserializationCache stringDeserializationCache) throws IOException {
-        super(in);
+    public IndexRequest(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        super(in, deserializationCache);
         if (in.getVersion().before(Version.V_8_0_0)) {
             String type = in.readOptionalString();
             assert MapperService.SINGLE_MAPPING_NAME.equals(type) : "Expected [_doc] but received [" + type + "]";
@@ -127,9 +127,9 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
         opType = OpType.fromId(in.readByte());
         version = in.readLong();
         versionType = VersionType.fromValue(in.readByte());
-        pipeline = in.readOptionalString();
+        pipeline = in.readOptionalCachedString(deserializationCache);
         if (in.getVersion().onOrAfter(Version.V_7_5_0)) {
-            finalPipeline = in.readOptionalString();
+            finalPipeline = in.readOptionalCachedString(deserializationCache);
         }
         if (in.getVersion().onOrAfter(Version.V_7_5_0)) {
             isPipelineResolved = in.readBoolean();

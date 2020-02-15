@@ -27,6 +27,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
@@ -51,7 +52,7 @@ public abstract class SingleShardRequest<Request extends SingleShardRequest<Requ
     public SingleShardRequest(StreamInput in) throws IOException {
         super(in);
         if (in.readBoolean()) {
-            internalShardId = new ShardId(in);
+            internalShardId = new ShardId(in, DeserializationCache.DUMMY);
         }
         index = in.readOptionalString();
         // no need to pass threading over the network, they are always false when coming throw a thread pool

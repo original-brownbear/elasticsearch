@@ -25,6 +25,7 @@ import org.elasticsearch.cluster.NamedDiff;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
@@ -387,7 +388,7 @@ public final class IndexGraveyard implements MetaData.Custom {
 
         // create from stream
         private Tombstone(StreamInput in) throws IOException {
-            index = new Index(in);
+            index = new Index(in, DeserializationCache.DUMMY);
             deleteDateInMillis = in.readLong();
         }
 

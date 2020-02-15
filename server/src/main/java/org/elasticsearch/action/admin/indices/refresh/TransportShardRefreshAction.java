@@ -29,6 +29,7 @@ import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
@@ -47,9 +48,10 @@ public class TransportShardRefreshAction
     @Inject
     public TransportShardRefreshAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                        IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
-                                       ActionFilters actionFilters) {
+                                       ActionFilters actionFilters, DeserializationCache deserializationCache) {
         super(settings, NAME, transportService, clusterService, indicesService, threadPool, shardStateAction, actionFilters,
-                BasicReplicationRequest::new, BasicReplicationRequest::new, ThreadPool.Names.REFRESH);
+            in -> new BasicReplicationRequest(in, deserializationCache),
+            in -> new BasicReplicationRequest(in, deserializationCache), ThreadPool.Names.REFRESH);
     }
 
     @Override

@@ -24,6 +24,7 @@ import org.elasticsearch.action.support.WriteResponse;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
@@ -33,12 +34,12 @@ public class BulkShardResponse extends ReplicationResponse implements WriteRespo
     private final ShardId shardId;
     private final BulkItemResponse[] responses;
 
-    BulkShardResponse(StreamInput in) throws IOException {
+    BulkShardResponse(StreamInput in, DeserializationCache deserializationCache) throws IOException {
         super(in);
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, deserializationCache);
         responses = new BulkItemResponse[in.readVInt()];
         for (int i = 0; i < responses.length; i++) {
-            responses[i] = new BulkItemResponse(in);
+            responses[i] = new BulkItemResponse(in, deserializationCache);
         }
     }
 

@@ -30,6 +30,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardId;
@@ -90,7 +91,7 @@ public class TransportShardFlushAction
         private PreShardSyncedFlushRequest(StreamInput in) throws IOException {
             super(in);
             assert in.getVersion().before(Version.V_8_0_0) : "received pre_sync request from a new node";
-            this.shardId = new ShardId(in);
+            this.shardId = new ShardId(in, DeserializationCache.DUMMY);
         }
 
         @Override

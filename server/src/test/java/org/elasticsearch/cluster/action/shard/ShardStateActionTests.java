@@ -40,6 +40,7 @@ import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.shard.ShardId;
@@ -92,7 +93,8 @@ public class ShardStateActionTests extends ESTestCase {
     private static class TestShardStateAction extends ShardStateAction {
         TestShardStateAction(ClusterService clusterService, TransportService transportService,
                              AllocationService allocationService, RerouteService rerouteService) {
-            super(clusterService, transportService, allocationService, rerouteService, THREAD_POOL);
+            super(clusterService, transportService, allocationService, rerouteService, THREAD_POOL,
+                DeserializationCache.DUMMY);
         }
 
         private Runnable onBeforeWaitForNewMasterAndRetry;
@@ -516,7 +518,7 @@ public class ShardStateActionTests extends ESTestCase {
         final Version version = randomFrom(randomCompatibleVersion(random(), Version.CURRENT));
         try (StreamInput in = serialize(new StartedShardEntry(shardId, allocationId, primaryTerm, message), version).streamInput()) {
             in.setVersion(version);
-            final StartedShardEntry deserialized = new StartedShardEntry(in);
+            final StartedShardEntry deserialized = new StartedShardEntry(in, DeserializationCache.DUMMY);
             assertThat(deserialized.shardId, equalTo(shardId));
             assertThat(deserialized.allocationId, equalTo(allocationId));
             assertThat(deserialized.primaryTerm, equalTo(primaryTerm));

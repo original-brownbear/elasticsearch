@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ToXContentObject;
@@ -57,9 +58,9 @@ public class Index implements Writeable, ToXContentObject {
     /**
      * Read from a stream.
      */
-    public Index(StreamInput in) throws IOException {
-        this.name = in.readString();
-        this.uuid = in.readString();
+    public Index(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        this.name = in.readCachedString(deserializationCache);
+        this.uuid = in.readCachedString(deserializationCache);
     }
 
     public String getName() {

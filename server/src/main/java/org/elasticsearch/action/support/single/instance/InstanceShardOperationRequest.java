@@ -26,6 +26,7 @@ import org.elasticsearch.action.ValidateActions;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
 
@@ -52,7 +53,7 @@ public abstract class InstanceShardOperationRequest<Request extends InstanceShar
         super(in);
         index = in.readString();
         if (in.readBoolean()) {
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
         } else {
             shardId = null;
         }

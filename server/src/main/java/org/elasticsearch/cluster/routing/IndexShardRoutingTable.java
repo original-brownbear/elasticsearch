@@ -24,6 +24,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
@@ -623,7 +624,7 @@ public class IndexShardRoutingTable implements Iterable<ShardRouting> {
         }
 
         public static IndexShardRoutingTable readFrom(StreamInput in) throws IOException {
-            Index index = new Index(in);
+            Index index = new Index(in, DeserializationCache.DUMMY);
             return readFromThin(in, index);
         }
 

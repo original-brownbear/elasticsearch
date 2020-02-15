@@ -23,6 +23,7 @@ import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.replication.ReplicationRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class ShardFlushRequest extends ReplicationRequest<ShardFlushRequest> {
     }
 
     public ShardFlushRequest(StreamInput in) throws IOException {
-        super(in);
+        super(in, DeserializationCache.DUMMY);
         request = new FlushRequest(in);
     }
 

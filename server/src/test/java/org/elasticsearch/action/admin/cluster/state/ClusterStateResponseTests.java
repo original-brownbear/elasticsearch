@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.test.AbstractWireSerializingTestCase;
 
@@ -46,7 +47,7 @@ public class ClusterStateResponseTests extends AbstractWireSerializingTestCase<C
 
     @Override
     protected Writeable.Reader<ClusterStateResponse> instanceReader() {
-        return ClusterStateResponse::new;
+        return in -> new ClusterStateResponse(in, DeserializationCache.DUMMY);
     }
 
     @Override

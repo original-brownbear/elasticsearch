@@ -38,6 +38,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.NodeEnvironment;
@@ -168,7 +169,7 @@ public class TransportNodesListGatewayStartedShards extends
 
         public Request(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
             if (in.getVersion().onOrAfter(Version.V_7_6_0)) {
                 customDataPath = in.readString();
             } else {
@@ -237,7 +238,7 @@ public class TransportNodesListGatewayStartedShards extends
 
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
             if (in.getVersion().onOrAfter(Version.V_7_6_0)) {
                 customDataPath = in.readString();
             } else {

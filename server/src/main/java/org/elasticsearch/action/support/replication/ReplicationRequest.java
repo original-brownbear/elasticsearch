@@ -29,6 +29,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.tasks.Task;
@@ -66,16 +67,16 @@ public abstract class ReplicationRequest<Request extends ReplicationRequest<Requ
 
     private long routedBasedOnClusterVersion = 0;
 
-    public ReplicationRequest(StreamInput in) throws IOException {
+    public ReplicationRequest(StreamInput in, DeserializationCache deserializationCache) throws IOException {
         super(in);
         if (in.readBoolean()) {
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, deserializationCache);
         } else {
             shardId = null;
         }
         waitForActiveShards = ActiveShardCount.readFrom(in);
         timeout = in.readTimeValue();
-        index = in.readString();
+        index = in.readCachedString(deserializationCache);
         routedBasedOnClusterVersion = in.readVLong();
     }
 

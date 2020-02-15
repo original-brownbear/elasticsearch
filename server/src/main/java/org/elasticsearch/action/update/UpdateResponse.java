@@ -22,6 +22,7 @@ package org.elasticsearch.action.update;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.get.GetResult;
@@ -39,7 +40,7 @@ public class UpdateResponse extends DocWriteResponse {
     private GetResult getResult;
 
     public UpdateResponse(StreamInput in) throws IOException {
-        super(in);
+        super(in, DeserializationCache.DUMMY);
         if (in.readBoolean()) {
             getResult = new GetResult(in);
         }

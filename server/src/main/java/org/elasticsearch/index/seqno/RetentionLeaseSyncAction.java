@@ -38,6 +38,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.gateway.WriteStateException;
 import org.elasticsearch.index.shard.IndexShard;
@@ -77,7 +78,8 @@ public class RetentionLeaseSyncAction extends
             final IndicesService indicesService,
             final ThreadPool threadPool,
             final ShardStateAction shardStateAction,
-            final ActionFilters actionFilters) {
+            final ActionFilters actionFilters,
+            final DeserializationCache deserializationCache) {
         super(
                 settings,
                 ACTION_NAME,
@@ -87,8 +89,8 @@ public class RetentionLeaseSyncAction extends
                 threadPool,
                 shardStateAction,
                 actionFilters,
-                RetentionLeaseSyncAction.Request::new,
-                RetentionLeaseSyncAction.Request::new,
+                in -> new RetentionLeaseSyncAction.Request(in, deserializationCache),
+                in -> new RetentionLeaseSyncAction.Request(in, deserializationCache),
                 ThreadPool.Names.MANAGEMENT, false);
     }
 
@@ -171,8 +173,8 @@ public class RetentionLeaseSyncAction extends
             return retentionLeases;
         }
 
-        public Request(StreamInput in) throws IOException {
-            super(in);
+        public Request(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+            super(in, deserializationCache);
             retentionLeases = new RetentionLeases(in);
         }
 

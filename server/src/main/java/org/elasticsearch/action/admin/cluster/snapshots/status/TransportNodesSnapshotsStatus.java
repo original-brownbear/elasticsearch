@@ -34,6 +34,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
 import org.elasticsearch.snapshots.Snapshot;
@@ -200,7 +201,7 @@ public class TransportNodesSnapshotsStatus extends TransportNodesAction<Transpor
                 int numberOfShards = in.readVInt();
                 Map<ShardId, SnapshotIndexShardStatus> shardMapBuilder = new HashMap<>(numberOfShards);
                 for (int j = 0; j < numberOfShards; j++) {
-                    ShardId shardId =  new ShardId(in);
+                    ShardId shardId =  new ShardId(in, DeserializationCache.DUMMY);
                     SnapshotIndexShardStatus status = new SnapshotIndexShardStatus(in);
                     shardMapBuilder.put(shardId, status);
                 }

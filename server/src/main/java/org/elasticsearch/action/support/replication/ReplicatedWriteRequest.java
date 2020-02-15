@@ -26,6 +26,7 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
@@ -40,8 +41,8 @@ public abstract class ReplicatedWriteRequest<R extends ReplicatedWriteRequest<R>
     /**
      * Constructor for deserialization.
      */
-    public ReplicatedWriteRequest(StreamInput in) throws IOException {
-        super(in);
+    public ReplicatedWriteRequest(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        super(in, deserializationCache);
         refreshPolicy = RefreshPolicy.readFrom(in);
     }
 

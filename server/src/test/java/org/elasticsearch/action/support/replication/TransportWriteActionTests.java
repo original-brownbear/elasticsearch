@@ -38,6 +38,7 @@ import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.TestShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.Index;
@@ -266,7 +267,8 @@ public class TransportWriteActionTests extends ESTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR, x -> clusterService.localNode(), null, Collections.emptySet());
         transportService.start();
         transportService.acceptIncomingRequests();
-        ShardStateAction shardStateAction = new ShardStateAction(clusterService, transportService, null, null, threadPool);
+        ShardStateAction shardStateAction =
+            new ShardStateAction(clusterService, transportService, null, null, threadPool, DeserializationCache.DUMMY);
         TestAction action = new TestAction(Settings.EMPTY, "internal:testAction", transportService,
                 clusterService, shardStateAction, threadPool);
         final String index = "test";
@@ -480,7 +482,7 @@ public class TransportWriteActionTests extends ESTestCase {
 
     private static class TestRequest extends ReplicatedWriteRequest<TestRequest> {
         TestRequest(StreamInput in) throws IOException {
-            super(in);
+            super(in, DeserializationCache.DUMMY);
         }
 
         TestRequest() {

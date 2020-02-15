@@ -20,6 +20,7 @@
 package org.elasticsearch.action.support.replication;
 
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
@@ -38,8 +39,8 @@ public class BasicReplicationRequest extends ReplicationRequest<BasicReplication
         super(shardId);
     }
 
-    public BasicReplicationRequest(StreamInput in) throws IOException {
-        super(in);
+    public BasicReplicationRequest(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        super(in, deserializationCache);
     }
 
     @Override

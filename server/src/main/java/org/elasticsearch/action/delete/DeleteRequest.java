@@ -28,6 +28,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.mapper.MapperService;
@@ -63,8 +64,8 @@ public class DeleteRequest extends ReplicatedWriteRequest<DeleteRequest>
     private long ifSeqNo = UNASSIGNED_SEQ_NO;
     private long ifPrimaryTerm = UNASSIGNED_PRIMARY_TERM;
 
-    public DeleteRequest(StreamInput in) throws IOException {
-        super(in);
+    public DeleteRequest(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        super(in, deserializationCache);
         if (in.getVersion().before(Version.V_8_0_0)) {
             String type = in.readString();
             assert MapperService.SINGLE_MAPPING_NAME.equals(type) : "Expected [_doc] but received [" + type + "]";

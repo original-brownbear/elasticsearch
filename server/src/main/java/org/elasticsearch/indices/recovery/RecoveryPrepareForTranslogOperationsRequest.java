@@ -22,6 +22,7 @@ package org.elasticsearch.indices.recovery;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.transport.TransportRequest;
 
@@ -42,7 +43,7 @@ class RecoveryPrepareForTranslogOperationsRequest extends TransportRequest {
     RecoveryPrepareForTranslogOperationsRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         totalTranslogOps = in.readVInt();
         if (in.getVersion().before(Version.V_7_4_0)) {
             in.readBoolean(); // was fileBasedRecovery

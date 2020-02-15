@@ -37,6 +37,7 @@ import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.tasks.Task;
@@ -66,7 +67,7 @@ public class TransportClusterStateAction extends TransportMasterNodeReadAction<C
 
     @Override
     protected ClusterStateResponse read(StreamInput in) throws IOException {
-        return new ClusterStateResponse(in);
+        return new ClusterStateResponse(in, DeserializationCache.DUMMY);
     }
 
     @Override

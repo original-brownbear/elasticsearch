@@ -36,6 +36,7 @@ import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.collect.ImmutableOpenIntMap;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 
@@ -292,8 +293,8 @@ public class IndexRoutingTable extends AbstractDiffable<IndexRoutingTable> imple
         return result;
     }
 
-    public static IndexRoutingTable readFrom(StreamInput in) throws IOException {
-        Index index = new Index(in);
+    public static IndexRoutingTable readFrom(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        Index index = new Index(in, deserializationCache);
         Builder builder = new Builder(index);
 
         int size = in.readVInt();
@@ -304,8 +305,9 @@ public class IndexRoutingTable extends AbstractDiffable<IndexRoutingTable> imple
         return builder.build();
     }
 
-    public static Diff<IndexRoutingTable> readDiffFrom(StreamInput in) throws IOException {
-        return readDiffFrom(IndexRoutingTable::readFrom, in);
+    public static Diff<IndexRoutingTable> readDiffFrom(StreamInput in,
+                                                       DeserializationCache deserializationCache) throws IOException {
+        return readDiffFrom(i -> IndexRoutingTable.readFrom(i, deserializationCache), in);
     }
 
     @Override

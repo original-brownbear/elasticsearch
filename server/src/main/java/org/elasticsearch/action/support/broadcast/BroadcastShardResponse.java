@@ -21,6 +21,7 @@ package org.elasticsearch.action.support.broadcast;
 
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.transport.TransportResponse;
 
@@ -32,7 +33,7 @@ public abstract class BroadcastShardResponse extends TransportResponse {
 
     protected BroadcastShardResponse(StreamInput in) throws IOException {
         super(in);
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
     }
 
     protected BroadcastShardResponse(ShardId shardId) {

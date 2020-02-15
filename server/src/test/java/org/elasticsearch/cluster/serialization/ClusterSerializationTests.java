@@ -43,6 +43,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.snapshots.Snapshot;
@@ -106,7 +107,7 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
         BytesStreamOutput outStream = new BytesStreamOutput();
         source.writeTo(outStream);
         StreamInput inStream = outStream.bytes().streamInput();
-        RoutingTable target = RoutingTable.readFrom(inStream);
+        RoutingTable target = RoutingTable.readFrom(inStream, DeserializationCache.DUMMY);
 
         assertThat(target.toString(), equalTo(source.toString()));
     }
@@ -147,7 +148,8 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
         StreamInput inStream = outStream.bytes().streamInput();
         inStream = new NamedWriteableAwareStreamInput(inStream, new NamedWriteableRegistry(ClusterModule.getNamedWriteables()));
         inStream.setVersion(version);
-        Diff<ClusterState> serializedDiffs = ClusterState.readDiffFrom(inStream, clusterState.nodes().getLocalNode());
+        Diff<ClusterState> serializedDiffs = ClusterState.readDiffFrom(inStream, clusterState.nodes().getLocalNode(),
+            DeserializationCache.DUMMY);
         ClusterState stateAfterDiffs = serializedDiffs.apply(ClusterState.EMPTY_STATE);
         assertThat(stateAfterDiffs.custom(RestoreInProgress.TYPE), includeRestore ? notNullValue() : nullValue());
         assertThat(stateAfterDiffs.custom(SnapshotDeletionsInProgress.TYPE), notNullValue());
@@ -160,7 +162,7 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
         inStream = outStream.bytes().streamInput();
         inStream = new NamedWriteableAwareStreamInput(inStream, new NamedWriteableRegistry(ClusterModule.getNamedWriteables()));
         inStream.setVersion(version);
-        serializedDiffs = ClusterState.readDiffFrom(inStream, clusterState.nodes().getLocalNode());
+        serializedDiffs = ClusterState.readDiffFrom(inStream, clusterState.nodes().getLocalNode(), DeserializationCache.DUMMY);
         stateAfterDiffs = serializedDiffs.apply(stateAfterDiffs);
         assertThat(stateAfterDiffs.custom(RestoreInProgress.TYPE), includeRestore ? notNullValue() : nullValue());
         assertThat(stateAfterDiffs.custom(SnapshotDeletionsInProgress.TYPE), notNullValue());
@@ -172,7 +174,7 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
         diff.writeTo(outStream);
         StreamInput inStream = new NamedWriteableAwareStreamInput(outStream.bytes().streamInput(),
             new NamedWriteableRegistry(ClusterModule.getNamedWriteables()));
-        diff = ClusterState.readDiffFrom(inStream, newNode("node-name"));
+        diff = ClusterState.readDiffFrom(inStream, newNode("node-name"), DeserializationCache.DUMMY);
         return diff.apply(original);
     }
 
@@ -192,7 +194,7 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
         clusterState1.writeTo(outStream);
         StreamInput inStream = new NamedWriteableAwareStreamInput(outStream.bytes().streamInput(),
             new NamedWriteableRegistry(ClusterModule.getNamedWriteables()));
-        ClusterState serializedClusterState1 = ClusterState.readFrom(inStream, newNode("node4"));
+        ClusterState serializedClusterState1 = ClusterState.readFrom(inStream, newNode("node4"), DeserializationCache.DUMMY);
 
         // Create a new, albeit equal, IndexMetadata object
         ClusterState clusterState2 = ClusterState.builder(clusterState1).incrementVersion()
@@ -334,7 +336,8 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
 
         inStream = new NamedWriteableAwareStreamInput(inStream, new NamedWriteableRegistry(entries));
         inStream.setVersion(version);
-        Diff<ClusterState> serializedDiffs = ClusterState.readDiffFrom(inStream, clusterState.nodes().getLocalNode());
+        Diff<ClusterState> serializedDiffs =
+            ClusterState.readDiffFrom(inStream, clusterState.nodes().getLocalNode(), DeserializationCache.DUMMY);
         ClusterState stateAfterDiffs = serializedDiffs.apply(ClusterState.EMPTY_STATE);
 
         // Current version - Both the customs are non null
@@ -350,7 +353,8 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
 
         inStream = new NamedWriteableAwareStreamInput(inStream, new NamedWriteableRegistry(entries));
         inStream.setVersion(version);
-        serializedDiffs = ClusterState.readDiffFrom(inStream, clusterState.nodes().getLocalNode());
+        serializedDiffs =
+            ClusterState.readDiffFrom(inStream, clusterState.nodes().getLocalNode(), DeserializationCache.DUMMY);
         stateAfterDiffs = serializedDiffs.apply(ClusterState.EMPTY_STATE);
 
         // Old version - TestCustomOne is null and TestCustomTwo is not null

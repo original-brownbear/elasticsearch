@@ -29,6 +29,7 @@ import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardId;
@@ -60,7 +61,8 @@ public class GlobalCheckpointSyncAction extends TransportReplicationAction<
             final IndicesService indicesService,
             final ThreadPool threadPool,
             final ShardStateAction shardStateAction,
-            final ActionFilters actionFilters) {
+            final ActionFilters actionFilters,
+            final DeserializationCache deserializationCache) {
         super(
                 settings,
                 ACTION_NAME,
@@ -70,8 +72,8 @@ public class GlobalCheckpointSyncAction extends TransportReplicationAction<
                 threadPool,
                 shardStateAction,
                 actionFilters,
-                Request::new,
-                Request::new,
+                in -> new Request(in, deserializationCache),
+                in -> new Request(in, deserializationCache),
                 ThreadPool.Names.MANAGEMENT);
     }
 
@@ -104,8 +106,8 @@ public class GlobalCheckpointSyncAction extends TransportReplicationAction<
 
     public static final class Request extends ReplicationRequest<Request> {
 
-        private Request(StreamInput in) throws IOException {
-            super(in);
+        private Request(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+            super(in, deserializationCache);
         }
 
         public Request(final ShardId shardId) {

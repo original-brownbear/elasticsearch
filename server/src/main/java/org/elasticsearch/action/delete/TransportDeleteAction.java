@@ -23,6 +23,7 @@ import org.elasticsearch.action.bulk.TransportBulkAction;
 import org.elasticsearch.action.bulk.TransportSingleItemBulkWriteAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.transport.TransportService;
 
 /**
@@ -35,6 +36,7 @@ public class TransportDeleteAction extends TransportSingleItemBulkWriteAction<De
 
     @Inject
     public TransportDeleteAction(TransportService transportService, ActionFilters actionFilters, TransportBulkAction bulkAction) {
-        super(DeleteAction.NAME, transportService, actionFilters, DeleteRequest::new, bulkAction);
+        super(DeleteAction.NAME, transportService, actionFilters,
+            in -> new DeleteRequest(in, DeserializationCache.DUMMY), bulkAction);
     }
 }

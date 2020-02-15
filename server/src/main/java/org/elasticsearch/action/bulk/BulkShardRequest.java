@@ -23,6 +23,7 @@ import org.elasticsearch.action.support.replication.ReplicatedWriteRequest;
 import org.elasticsearch.action.support.replication.ReplicationRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
@@ -33,12 +34,12 @@ public class BulkShardRequest extends ReplicatedWriteRequest<BulkShardRequest> {
 
     private BulkItemRequest[] items;
 
-    public BulkShardRequest(StreamInput in) throws IOException {
-        super(in);
+    public BulkShardRequest(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        super(in, deserializationCache);
         items = new BulkItemRequest[in.readVInt()];
         for (int i = 0; i < items.length; i++) {
             if (in.readBoolean()) {
-                items[i] = new BulkItemRequest(in);
+                items[i] = new BulkItemRequest(in, deserializationCache);
             }
         }
     }

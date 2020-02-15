@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.AllocationDecision;
 import org.elasticsearch.cluster.routing.allocation.ShardAllocationDecision;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -64,7 +65,7 @@ public final class ClusterAllocationExplanation implements ToXContentObject, Wri
     }
 
     public ClusterAllocationExplanation(StreamInput in) throws IOException {
-        this.shardRouting = new ShardRouting(in);
+        this.shardRouting = new ShardRouting(in, DeserializationCache.DUMMY);
         this.currentNode = in.readOptionalWriteable(DiscoveryNode::new);
         this.relocationTargetNode = in.readOptionalWriteable(DiscoveryNode::new);
         this.clusterInfo = in.readOptionalWriteable(ClusterInfo::new);

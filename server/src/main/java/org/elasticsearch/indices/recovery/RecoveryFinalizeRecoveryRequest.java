@@ -22,6 +22,7 @@ package org.elasticsearch.indices.recovery;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.seqno.SequenceNumbers;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.transport.TransportRequest;
@@ -38,7 +39,7 @@ final class RecoveryFinalizeRecoveryRequest extends TransportRequest {
     RecoveryFinalizeRecoveryRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         globalCheckpoint = in.readZLong();
         if (in.getVersion().onOrAfter(Version.V_7_4_0)) {
             trimAboveSeqNo = in.readZLong();

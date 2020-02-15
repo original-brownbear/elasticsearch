@@ -25,6 +25,7 @@ import org.elasticsearch.cluster.routing.allocation.allocator.BalancedShardsAllo
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -279,7 +280,11 @@ public final class ShardRouting implements Writeable, ToXContentObject {
     }
 
     public ShardRouting(StreamInput in) throws IOException {
-        this(new ShardId(in), in);
+        this(new ShardId(in, DeserializationCache.DUMMY), in);
+    }
+
+    public ShardRouting(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        this(new ShardId(in, deserializationCache), in);
     }
 
     /**

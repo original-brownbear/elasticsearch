@@ -20,6 +20,7 @@
 package org.elasticsearch.action.index;
 
 import org.elasticsearch.action.ActionType;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 
 public class IndexAction extends ActionType<IndexResponse> {
 
@@ -27,6 +28,6 @@ public class IndexAction extends ActionType<IndexResponse> {
     public static final String NAME = "indices:data/write/index";
 
     private IndexAction() {
-        super(NAME, IndexResponse::new);
+        super(NAME, in -> new IndexResponse(in, DeserializationCache.DUMMY));
     }
 }

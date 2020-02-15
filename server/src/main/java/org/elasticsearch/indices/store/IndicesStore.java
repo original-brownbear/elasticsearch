@@ -39,6 +39,7 @@ import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
@@ -398,7 +399,7 @@ public class IndicesStore implements ClusterStateListener, Closeable {
             super(in);
             clusterName = new ClusterName(in);
             indexUUID = in.readString();
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
             timeout = new TimeValue(in.readLong(), TimeUnit.MILLISECONDS);
         }
 

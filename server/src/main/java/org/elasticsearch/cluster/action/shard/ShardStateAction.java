@@ -47,6 +47,7 @@ import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.node.NodeClosedException;
@@ -89,12 +90,14 @@ public class ShardStateAction {
 
     @Inject
     public ShardStateAction(ClusterService clusterService, TransportService transportService,
-                            AllocationService allocationService, RerouteService rerouteService, ThreadPool threadPool) {
+                            AllocationService allocationService, RerouteService rerouteService, ThreadPool threadPool,
+                            DeserializationCache deserializationCache) {
         this.transportService = transportService;
         this.clusterService = clusterService;
         this.threadPool = threadPool;
 
-        transportService.registerRequestHandler(SHARD_STARTED_ACTION_NAME, ThreadPool.Names.SAME, StartedShardEntry::new,
+        transportService.registerRequestHandler(SHARD_STARTED_ACTION_NAME, ThreadPool.Names.SAME,
+            in -> new StartedShardEntry(in, deserializationCache),
             new ShardStartedTransportHandler(clusterService,
                 new ShardStartedClusterStateTaskExecutor(allocationService, rerouteService, logger),
                 logger));
@@ -400,7 +403,7 @@ public class ShardStateAction {
 
         FailedShardEntry(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
             allocationId = in.readString();
             primaryTerm = in.readVLong();
             message = in.readString();
@@ -609,9 +612,9 @@ public class ShardStateAction {
         final long primaryTerm;
         final String message;
 
-        StartedShardEntry(StreamInput in) throws IOException {
+        StartedShardEntry(StreamInput in, DeserializationCache deserializationCache) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, deserializationCache);
             allocationId = in.readString();
             primaryTerm = in.readVLong();
             this.message = in.readString();

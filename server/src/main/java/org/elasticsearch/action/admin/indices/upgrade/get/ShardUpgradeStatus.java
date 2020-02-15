@@ -21,6 +21,7 @@ package org.elasticsearch.action.admin.indices.upgrade.get;
 
 import org.elasticsearch.action.support.broadcast.BroadcastShardResponse;
 import org.elasticsearch.cluster.routing.ShardRouting;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
@@ -38,7 +39,7 @@ public class ShardUpgradeStatus extends BroadcastShardResponse {
 
     public ShardUpgradeStatus(StreamInput in) throws IOException {
         super(in);
-        shardRouting = new ShardRouting(in);
+        shardRouting = new ShardRouting(in, DeserializationCache.DUMMY);
         totalBytes = in.readLong();
         toUpgradeBytes = in.readLong();
         toUpgradeBytesAncient = in.readLong();

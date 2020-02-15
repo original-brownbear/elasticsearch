@@ -21,6 +21,7 @@ package org.elasticsearch.action.resync;
 import org.elasticsearch.action.support.replication.ReplicatedWriteRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.translog.Translog;
 
@@ -38,7 +39,7 @@ public final class ResyncReplicationRequest extends ReplicatedWriteRequest<Resyn
     private final long maxSeenAutoIdTimestampOnPrimary;
 
     ResyncReplicationRequest(StreamInput in) throws IOException {
-        super(in);
+        super(in, DeserializationCache.DUMMY);
         trimAboveSeqNo = in.readZLong();
         maxSeenAutoIdTimestampOnPrimary = in.readZLong();
         operations = in.readArray(Translog.Operation::readOperation, Translog.Operation[]::new);

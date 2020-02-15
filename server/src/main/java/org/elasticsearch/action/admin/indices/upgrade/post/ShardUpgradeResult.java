@@ -22,6 +22,7 @@ package org.elasticsearch.action.admin.indices.upgrade.post;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.shard.ShardId;
 
@@ -46,7 +47,7 @@ class ShardUpgradeResult implements Writeable {
     }
 
     ShardUpgradeResult(StreamInput in) throws IOException {
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         primary = in.readBoolean();
         upgradeVersion = Version.readVersion(in);
         try {

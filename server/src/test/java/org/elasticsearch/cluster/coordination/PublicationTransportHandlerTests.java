@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.coordination.CoordinationMetaData.VotingConfigu
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
@@ -53,7 +54,7 @@ public class PublicationTransportHandlerTests extends ESTestCase {
             x -> localNode,
             clusterSettings, Collections.emptySet());
         final PublicationTransportHandler handler = new PublicationTransportHandler(transportService,
-            writableRegistry(), pu -> null, (pu, l) -> {});
+            writableRegistry(), pu -> null, (pu, l) -> {}, DeserializationCache.DUMMY);
         transportService.start();
         transportService.acceptIncomingRequests();
 

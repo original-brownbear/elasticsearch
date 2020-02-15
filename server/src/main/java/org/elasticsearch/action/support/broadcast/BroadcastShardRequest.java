@@ -24,6 +24,7 @@ import org.elasticsearch.action.OriginalIndices;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.transport.TransportRequest;
 
@@ -39,7 +40,7 @@ public abstract class BroadcastShardRequest extends TransportRequest implements 
 
     public BroadcastShardRequest(StreamInput in) throws IOException {
         super(in);
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         originalIndices = OriginalIndices.readOriginalIndices(in);
     }
 

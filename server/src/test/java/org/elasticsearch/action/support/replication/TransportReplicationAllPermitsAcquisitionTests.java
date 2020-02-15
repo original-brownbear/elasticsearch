@@ -42,6 +42,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -215,7 +216,8 @@ public class TransportReplicationAllPermitsAcquisitionTests extends IndexShardTe
             bta -> node1, null, emptySet());
         transportService.start();
         transportService.acceptIncomingRequests();
-        shardStateAction = new ShardStateAction(clusterService, transportService, null, null, threadPool);
+        shardStateAction =
+            new ShardStateAction(clusterService, transportService, null, null, threadPool, DeserializationCache.DUMMY);
     }
 
     @Override
@@ -559,7 +561,7 @@ public class TransportReplicationAllPermitsAcquisitionTests extends IndexShardTe
 
     static class Request extends ReplicationRequest<Request> {
         Request(StreamInput in) throws IOException {
-            super(in);
+            super(in, DeserializationCache.DUMMY);
         }
 
         Request(ShardId shardId) {

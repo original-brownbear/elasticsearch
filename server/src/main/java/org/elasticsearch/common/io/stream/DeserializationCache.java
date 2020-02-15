@@ -22,15 +22,16 @@ package org.elasticsearch.common.io.stream;
 import org.apache.lucene.util.CharsRef;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class StringDeserializationCache {
+public final class DeserializationCache {
 
-    public static final StringDeserializationCache DUMMY = new StringDeserializationCache();
+    public static final DeserializationCache DUMMY = new DeserializationCache();
 
-    private volatile Map<CharsRef, String> cache;
+    private volatile Map<CharsRef, String> cache = Collections.emptyMap();
 
     private final Map<CharsRef, Integer> refCounts = new HashMap<>();
 
@@ -66,6 +67,7 @@ public final class StringDeserializationCache {
             for (String s : value) {
                 final CharsRef ref = new CharsRef(s);
                 if (refCounts.compute(ref, (r, c) -> {
+                    assert c != null && c > 0;
                     if (c == 1) {
                         return null;
                     }

@@ -21,6 +21,7 @@ package org.elasticsearch.action.admin.indices.stats;
 
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.shard.ShardId;
 
@@ -35,7 +36,7 @@ public class IndexShardStats implements Iterable<ShardStats>, Writeable {
     private ShardStats[] shards;
 
     public IndexShardStats(StreamInput in) throws IOException {
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         int shardSize = in.readVInt();
         shards = new ShardStats[shardSize];
         for (int i = 0; i < shardSize; i++) {

@@ -20,6 +20,7 @@
 package org.elasticsearch.action.bulk;
 
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.TimeValue;
@@ -58,11 +59,11 @@ public class BulkResponse extends ActionResponse implements Iterable<BulkItemRes
 
     BulkResponse() {}
 
-    public BulkResponse(StreamInput in) throws IOException {
+    public BulkResponse(StreamInput in, DeserializationCache deserializationCache) throws IOException {
         super(in);
         responses = new BulkItemResponse[in.readVInt()];
         for (int i = 0; i < responses.length; i++) {
-            responses[i] = new BulkItemResponse(in);
+            responses[i] = new BulkItemResponse(in, deserializationCache);
         }
         tookInMillis = in.readVLong();
         ingestTookInMillis = in.readZLong();

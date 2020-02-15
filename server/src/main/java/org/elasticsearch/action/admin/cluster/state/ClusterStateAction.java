@@ -20,6 +20,7 @@
 package org.elasticsearch.action.admin.cluster.state;
 
 import org.elasticsearch.action.ActionType;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 
 public class ClusterStateAction extends ActionType<ClusterStateResponse> {
 
@@ -27,6 +28,6 @@ public class ClusterStateAction extends ActionType<ClusterStateResponse> {
     public static final String NAME = "cluster:monitor/state";
 
     private ClusterStateAction() {
-        super(NAME, ClusterStateResponse::new);
+        super(NAME, in -> new ClusterStateResponse(in, DeserializationCache.DUMMY));
     }
 }

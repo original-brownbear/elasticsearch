@@ -56,6 +56,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Setting;
@@ -220,6 +221,7 @@ public class IndicesService extends AbstractLifecycleComponent
     private final Map<String, IndexStorePlugin.DirectoryFactory> directoryFactories;
     final AbstractRefCounted indicesRefCount; // pkg-private for testing
     private final CountDownLatch closeLatch = new CountDownLatch(1);
+    private final DeserializationCache deserializationCache;
     private volatile boolean idFieldDataEnabled;
     private volatile boolean allowExpensiveQueries;
 
@@ -241,10 +243,12 @@ public class IndicesService extends AbstractLifecycleComponent
                           IndexScopedSettings indexScopedSettings, CircuitBreakerService circuitBreakerService, BigArrays bigArrays,
                           ScriptService scriptService, ClusterService clusterService, Client client, MetaStateService metaStateService,
                           Collection<Function<IndexSettings, Optional<EngineFactory>>> engineFactoryProviders,
-                          Map<String, IndexStorePlugin.DirectoryFactory> directoryFactories) {
+                          Map<String, IndexStorePlugin.DirectoryFactory> directoryFactories,
+                          DeserializationCache deserializationCache) {
         this.settings = settings;
         this.threadPool = threadPool;
         this.pluginsService = pluginsService;
+        this.deserializationCache = deserializationCache;
         this.nodeEnv = nodeEnv;
         this.xContentRegistry = xContentRegistry;
         this.shardsClosedTimeout = settings.getAsTime(INDICES_SHARDS_CLOSED_TIMEOUT, new TimeValue(1, TimeUnit.DAYS));
@@ -565,6 +569,7 @@ public class IndicesService extends AbstractLifecycleComponent
                 }
             }
             success = true;
+            deserializationCache.cache(index.getName(), index.getUUID());
             return indexService;
         } finally {
             if (success == false) {
@@ -750,6 +755,7 @@ public class IndicesService extends AbstractLifecycleComponent
                 // now we are done - try to wipe data on disk if possible
                 deleteIndexStore(extraInfo, indexService.index(), indexSettings);
             }
+            deserializationCache.remove(index.getName(), index.getUUID());
         } catch (Exception e) {
             logger.warn(() -> new ParameterizedMessage("failed to remove index {} ([{}][{}])", index, reason, extraInfo), e);
         }

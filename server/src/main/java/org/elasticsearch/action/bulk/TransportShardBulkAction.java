@@ -51,6 +51,7 @@ import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -82,21 +83,27 @@ import java.util.function.LongSupplier;
 public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequest, BulkShardRequest, BulkShardResponse> {
 
     public static final String ACTION_NAME = BulkAction.NAME + "[s]";
-    public static final ActionType<BulkShardResponse> TYPE = new ActionType<>(ACTION_NAME, BulkShardResponse::new);
+    public static final ActionType<BulkShardResponse> TYPE =
+        new ActionType<>(ACTION_NAME, in -> new BulkShardResponse(in, DeserializationCache.DUMMY));
 
     private static final Logger logger = LogManager.getLogger(TransportShardBulkAction.class);
 
     private final UpdateHelper updateHelper;
     private final MappingUpdatedAction mappingUpdatedAction;
 
+    private final DeserializationCache deserializationCache;
+
     @Inject
     public TransportShardBulkAction(Settings settings, TransportService transportService, ClusterService clusterService,
                                     IndicesService indicesService, ThreadPool threadPool, ShardStateAction shardStateAction,
-                                    MappingUpdatedAction mappingUpdatedAction, UpdateHelper updateHelper, ActionFilters actionFilters) {
+                                    MappingUpdatedAction mappingUpdatedAction, UpdateHelper updateHelper, ActionFilters actionFilters,
+                                    DeserializationCache deserializationCache) {
         super(settings, ACTION_NAME, transportService, clusterService, indicesService, threadPool, shardStateAction, actionFilters,
-            BulkShardRequest::new, BulkShardRequest::new, ThreadPool.Names.WRITE, false);
+            in -> new BulkShardRequest(in, deserializationCache),
+            in -> new BulkShardRequest(in, deserializationCache), ThreadPool.Names.WRITE, false);
         this.updateHelper = updateHelper;
         this.mappingUpdatedAction = mappingUpdatedAction;
+        this.deserializationCache = deserializationCache;
     }
 
     @Override
@@ -106,7 +113,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
 
     @Override
     protected BulkShardResponse newResponseInstance(StreamInput in) throws IOException {
-        return new BulkShardResponse(in);
+        return new BulkShardResponse(in, deserializationCache);
     }
 
     @Override

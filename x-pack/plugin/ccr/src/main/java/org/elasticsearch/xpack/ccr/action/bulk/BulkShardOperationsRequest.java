@@ -6,6 +6,7 @@
 package org.elasticsearch.xpack.ccr.action.bulk;
 
 import org.elasticsearch.action.support.replication.ReplicatedWriteRequest;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.shard.ShardId;
@@ -20,8 +21,8 @@ public final class BulkShardOperationsRequest extends ReplicatedWriteRequest<Bul
     private final List<Translog.Operation> operations;
     private final long maxSeqNoOfUpdatesOrDeletes;
 
-    public BulkShardOperationsRequest(StreamInput in) throws IOException {
-        super(in);
+    public BulkShardOperationsRequest(StreamInput in, DeserializationCache deserializationCache) throws IOException {
+        super(in, deserializationCache);
         historyUUID = in.readString();
         maxSeqNoOfUpdatesOrDeletes = in.readZLong();
         operations = in.readList(Translog.Operation::readOperation);

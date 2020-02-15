@@ -50,6 +50,7 @@ import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.core.internal.io.IOUtils;
@@ -405,7 +406,7 @@ public class SnapshotShardsService extends AbstractLifecycleComponent implements
         public UpdateIndexShardSnapshotStatusRequest(StreamInput in) throws IOException {
             super(in);
             snapshot = new Snapshot(in);
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
             status = new ShardSnapshotStatus(in);
         }
 

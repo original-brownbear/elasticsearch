@@ -38,6 +38,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.BytesTransportRequest;
@@ -85,10 +86,14 @@ public class PublicationTransportHandler {
     private final TransportRequestOptions stateRequestOptions = TransportRequestOptions.builder()
         .withType(TransportRequestOptions.Type.STATE).build();
 
+    private final DeserializationCache deserializationCache;
+
     public PublicationTransportHandler(TransportService transportService, NamedWriteableRegistry namedWriteableRegistry,
                                        Function<PublishRequest, PublishWithJoinResponse> handlePublishRequest,
-                                       BiConsumer<ApplyCommitRequest, ActionListener<Void>> handleApplyCommit) {
+                                       BiConsumer<ApplyCommitRequest, ActionListener<Void>> handleApplyCommit,
+                                       DeserializationCache deserializationCache) {
         this.transportService = transportService;
+        this.deserializationCache = deserializationCache;
         this.namedWriteableRegistry = namedWriteableRegistry;
         this.handlePublishRequest = handlePublishRequest;
 
@@ -350,7 +355,7 @@ public class PublicationTransportHandler {
             if (in.readBoolean()) {
                 final ClusterState incomingState;
                 try {
-                    incomingState = ClusterState.readFrom(in, transportService.getLocalNode());
+                    incomingState = ClusterState.readFrom(in, transportService.getLocalNode(), deserializationCache);
                 } catch (Exception e){
                     logger.warn("unexpected error while deserializing an incoming cluster state", e);
                     throw e;
@@ -370,7 +375,8 @@ public class PublicationTransportHandler {
                 } else {
                     ClusterState incomingState;
                     try {
-                        Diff<ClusterState> diff = ClusterState.readDiffFrom(in, lastSeen.nodes().getLocalNode());
+                        Diff<ClusterState> diff =
+                            ClusterState.readDiffFrom(in, lastSeen.nodes().getLocalNode(), deserializationCache);
                         incomingState = diff.apply(lastSeen); // might throw IncompatibleClusterStateVersionException
                     } catch (IncompatibleClusterStateVersionException e) {
                         incompatibleClusterStateDiffReceivedCount.incrementAndGet();

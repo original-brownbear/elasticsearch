@@ -52,6 +52,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.VersionedNamedWriteable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
@@ -700,7 +701,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
          */
         public static ClusterState fromBytes(byte[] data, DiscoveryNode localNode, NamedWriteableRegistry registry) throws IOException {
             StreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(data), registry);
-            return readFrom(in, localNode);
+            return readFrom(in, localNode, DeserializationCache.DUMMY);
 
         }
     }
@@ -710,17 +711,19 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         return new ClusterStateDiff(previousState, this);
     }
 
-    public static Diff<ClusterState> readDiffFrom(StreamInput in, DiscoveryNode localNode) throws IOException {
-        return new ClusterStateDiff(in, localNode);
+    public static Diff<ClusterState> readDiffFrom(StreamInput in, DiscoveryNode localNode,
+                                                  DeserializationCache deserializationCache) throws IOException {
+        return new ClusterStateDiff(in, localNode, deserializationCache);
     }
 
-    public static ClusterState readFrom(StreamInput in, DiscoveryNode localNode) throws IOException {
+    public static ClusterState readFrom(StreamInput in, DiscoveryNode localNode, DeserializationCache
+        deserializationCache) throws IOException {
         ClusterName clusterName = new ClusterName(in);
         Builder builder = new Builder(clusterName);
         builder.version = in.readLong();
         builder.uuid = in.readString();
         builder.metaData = MetaData.readFrom(in);
-        builder.routingTable = RoutingTable.readFrom(in);
+        builder.routingTable = RoutingTable.readFrom(in, deserializationCache);
         builder.nodes = DiscoveryNodes.readFrom(in, localNode);
         builder.blocks = new ClusterBlocks(in);
         int customSize = in.readVInt();
@@ -793,12 +796,13 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             customs = DiffableUtils.diff(before.customs, after.customs, DiffableUtils.getStringKeySerializer(), CUSTOM_VALUE_SERIALIZER);
         }
 
-        ClusterStateDiff(StreamInput in, DiscoveryNode localNode) throws IOException {
+        ClusterStateDiff(StreamInput in, DiscoveryNode localNode,
+                         DeserializationCache deserializationCache) throws IOException {
             clusterName = new ClusterName(in);
             fromUuid = in.readString();
             toUuid = in.readString();
             toVersion = in.readLong();
-            routingTable = RoutingTable.readDiffFrom(in);
+            routingTable = RoutingTable.readDiffFrom(in, deserializationCache);
             nodes = DiscoveryNodes.readDiffFrom(in, localNode);
             metaData = MetaData.readDiffFrom(in);
             blocks = ClusterBlocks.readDiffFrom(in);

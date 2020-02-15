@@ -20,6 +20,7 @@
 package org.elasticsearch.action.admin.indices.segments;
 
 import org.elasticsearch.cluster.routing.ShardRouting;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -43,7 +44,7 @@ public class ShardSegments implements Writeable, Iterable<Segment> {
     }
 
     ShardSegments(StreamInput in) throws IOException {
-        shardRouting = new ShardRouting(in);
+        shardRouting = new ShardRouting(in, DeserializationCache.DUMMY);
         int size = in.readVInt();
         if (size == 0) {
             segments = Collections.emptyList();

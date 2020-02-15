@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -228,7 +229,7 @@ public class ReplicationResponse extends ActionResponse {
             private boolean primary;
 
             public Failure(StreamInput in) throws IOException {
-                shardId = new ShardId(in);
+                shardId = new ShardId(in, DeserializationCache.DUMMY);
                 super.shardId = shardId.getId();
                 index = shardId.getIndexName();
                 nodeId = in.readOptionalString();

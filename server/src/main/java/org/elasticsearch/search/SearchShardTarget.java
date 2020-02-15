@@ -23,6 +23,7 @@ import org.elasticsearch.action.OriginalIndices;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.shard.ShardId;
@@ -49,7 +50,7 @@ public final class SearchShardTarget implements Writeable, Comparable<SearchShar
         } else {
             nodeId = null;
         }
-        shardId = new ShardId(in);
+        shardId = new ShardId(in, DeserializationCache.DUMMY);
         this.originalIndices = null;
         clusterAlias = in.readOptionalString();
     }

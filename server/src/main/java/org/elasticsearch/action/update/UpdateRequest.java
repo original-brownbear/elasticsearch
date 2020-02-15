@@ -32,7 +32,7 @@ import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.io.stream.StringDeserializationCache;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -142,11 +142,11 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         retryOnConflict = in.readVInt();
         refreshPolicy = RefreshPolicy.readFrom(in);
         if (in.readBoolean()) {
-            doc = new IndexRequest(in, StringDeserializationCache.DUMMY);
+            doc = new IndexRequest(in, DeserializationCache.DUMMY);
         }
         fetchSourceContext = in.readOptionalWriteable(FetchSourceContext::new);
         if (in.readBoolean()) {
-            upsertRequest = new IndexRequest(in, StringDeserializationCache.DUMMY);
+            upsertRequest = new IndexRequest(in, DeserializationCache.DUMMY);
         }
         docAsUpsert = in.readBoolean();
         ifSeqNo = in.readZLong();

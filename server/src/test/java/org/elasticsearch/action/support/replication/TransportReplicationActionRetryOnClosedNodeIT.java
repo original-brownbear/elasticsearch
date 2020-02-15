@@ -30,6 +30,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.shard.IndexShard;
@@ -76,7 +77,7 @@ public class TransportReplicationActionRetryOnClosedNodeIT extends ESIntegTestCa
         }
 
         public Request(StreamInput in) throws IOException {
-            super(in);
+            super(in, DeserializationCache.DUMMY);
         }
 
         @Override

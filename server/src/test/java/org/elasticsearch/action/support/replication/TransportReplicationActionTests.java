@@ -54,6 +54,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
@@ -177,7 +178,8 @@ public class TransportReplicationActionTests extends ESTestCase {
             TransportService.NOOP_TRANSPORT_INTERCEPTOR, x -> clusterService.localNode(), null, Collections.emptySet());
         transportService.start();
         transportService.acceptIncomingRequests();
-        shardStateAction = new ShardStateAction(clusterService, transportService, null, null, threadPool);
+        shardStateAction =
+            new ShardStateAction(clusterService, transportService, null, null, threadPool, DeserializationCache.DUMMY);
         action = new TestAction(Settings.EMPTY, "internal:testAction", transportService, clusterService, shardStateAction, threadPool);
     }
 
@@ -1212,7 +1214,7 @@ public class TransportReplicationActionTests extends ESTestCase {
         AtomicBoolean isRetrySet = new AtomicBoolean(false);
 
         Request(StreamInput in) throws IOException {
-            super(in);
+            super(in, DeserializationCache.DUMMY);
         }
 
         Request(@Nullable ShardId shardId) {

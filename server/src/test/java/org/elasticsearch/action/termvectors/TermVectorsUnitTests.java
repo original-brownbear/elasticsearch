@@ -42,6 +42,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -283,7 +284,7 @@ public class TermVectorsUnitTests extends ESTestCase {
             InputStreamStreamInput esBuffer = new InputStreamStreamInput(esInBuffer);
             TaskId.readFromStream(esBuffer);
             if (esBuffer.readBoolean()) {
-                new ShardId(esBuffer);
+                new ShardId(esBuffer, DeserializationCache.DUMMY);
             }
             esBuffer.readOptionalString();
             assertThat(esBuffer.readString(), equalTo("_doc"));

@@ -24,6 +24,7 @@ import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.action.support.replication.TransportReplicationAction;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.gateway.WriteStateException;
@@ -71,7 +72,8 @@ public class RetentionLeaseBackgroundSyncActionTests extends ESTestCase {
                 Collections.emptySet());
         transportService.start();
         transportService.acceptIncomingRequests();
-        shardStateAction = new ShardStateAction(clusterService, transportService, null, null, threadPool);
+        shardStateAction =
+            new ShardStateAction(clusterService, transportService, null, null, threadPool, DeserializationCache.DUMMY);
     }
 
     @Override
@@ -105,7 +107,8 @@ public class RetentionLeaseBackgroundSyncActionTests extends ESTestCase {
                 indicesService,
                 threadPool,
                 shardStateAction,
-                new ActionFilters(Collections.emptySet()));
+                new ActionFilters(Collections.emptySet()),
+                DeserializationCache.DUMMY);
         final RetentionLeases retentionLeases = mock(RetentionLeases.class);
         final RetentionLeaseBackgroundSyncAction.Request request =
                 new RetentionLeaseBackgroundSyncAction.Request(indexShard.shardId(), retentionLeases);
@@ -142,7 +145,8 @@ public class RetentionLeaseBackgroundSyncActionTests extends ESTestCase {
                 indicesService,
                 threadPool,
                 shardStateAction,
-                new ActionFilters(Collections.emptySet()));
+                new ActionFilters(Collections.emptySet()),
+                DeserializationCache.DUMMY);
         final RetentionLeases retentionLeases = mock(RetentionLeases.class);
         final RetentionLeaseBackgroundSyncAction.Request request =
                 new RetentionLeaseBackgroundSyncAction.Request(indexShard.shardId(), retentionLeases);
@@ -179,7 +183,8 @@ public class RetentionLeaseBackgroundSyncActionTests extends ESTestCase {
                 indicesService,
                 threadPool,
                 shardStateAction,
-                new ActionFilters(Collections.emptySet()));
+                new ActionFilters(Collections.emptySet()),
+                DeserializationCache.DUMMY);
 
         assertNull(action.indexBlockLevel());
     }

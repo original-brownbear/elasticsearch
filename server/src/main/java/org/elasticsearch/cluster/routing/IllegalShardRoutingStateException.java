@@ -19,6 +19,7 @@
 
 package org.elasticsearch.cluster.routing;
 
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
@@ -42,7 +43,7 @@ public class IllegalShardRoutingStateException extends RoutingException {
 
     public IllegalShardRoutingStateException(StreamInput in) throws IOException {
         super(in);
-        shard = new ShardRouting(in);
+        shard = new ShardRouting(in, DeserializationCache.DUMMY);
     }
 
     @Override

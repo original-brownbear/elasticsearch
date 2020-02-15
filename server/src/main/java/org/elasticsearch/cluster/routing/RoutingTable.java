@@ -32,6 +32,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -329,16 +330,17 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
         return new RoutingTableDiff(previousState, this);
     }
 
-    public static Diff<RoutingTable> readDiffFrom(StreamInput in) throws IOException {
-        return new RoutingTableDiff(in);
+    public static Diff<RoutingTable> readDiffFrom(StreamInput in,
+                                                  DeserializationCache deserializationCache) throws IOException {
+        return new RoutingTableDiff(in, deserializationCache);
     }
 
-    public static RoutingTable readFrom(StreamInput in) throws IOException {
+    public static RoutingTable readFrom(StreamInput in, DeserializationCache deserializationCache) throws IOException {
         Builder builder = new Builder();
         builder.version = in.readLong();
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
-            IndexRoutingTable index = IndexRoutingTable.readFrom(in);
+            IndexRoutingTable index = IndexRoutingTable.readFrom(in, deserializationCache);
             builder.add(index);
         }
 
@@ -365,10 +367,12 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
             indicesRouting = DiffableUtils.diff(before.indicesRouting, after.indicesRouting, DiffableUtils.getStringKeySerializer());
         }
 
-        RoutingTableDiff(StreamInput in) throws IOException {
+        RoutingTableDiff(StreamInput in, DeserializationCache deserializationCache) throws IOException {
             version = in.readLong();
-            indicesRouting = DiffableUtils.readImmutableOpenMapDiff(in, DiffableUtils.getStringKeySerializer(), IndexRoutingTable::readFrom,
-                IndexRoutingTable::readDiffFrom);
+            indicesRouting = DiffableUtils.readImmutableOpenMapDiff(in,
+                DiffableUtils.getStringKeySerializer(),
+                i -> IndexRoutingTable.readFrom(i, deserializationCache),
+                i -> IndexRoutingTable.readDiffFrom(i, deserializationCache));
         }
 
         @Override

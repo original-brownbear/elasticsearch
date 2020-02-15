@@ -20,6 +20,7 @@ package org.elasticsearch.plugin.noop.action.bulk;
 
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 
 public class NoopBulkAction extends ActionType<BulkResponse> {
     public static final String NAME = "mock:data/write/bulk";
@@ -27,6 +28,6 @@ public class NoopBulkAction extends ActionType<BulkResponse> {
     public static final NoopBulkAction INSTANCE = new NoopBulkAction();
 
     private NoopBulkAction() {
-        super(NAME, BulkResponse::new);
+        super(NAME, i -> new BulkResponse(i, DeserializationCache.DUMMY));
     }
 }

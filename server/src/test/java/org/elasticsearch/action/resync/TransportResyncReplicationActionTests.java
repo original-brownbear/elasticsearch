@@ -31,6 +31,7 @@ import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.network.NetworkService;
@@ -108,7 +109,8 @@ public class TransportResyncReplicationActionTests extends ESTestCase {
                     NOOP_TRANSPORT_INTERCEPTOR, x -> clusterService.localNode(), null, Collections.emptySet());
                 transportService.start();
                 transportService.acceptIncomingRequests();
-                final ShardStateAction shardStateAction = new ShardStateAction(clusterService, transportService, null, null, threadPool);
+                final ShardStateAction shardStateAction =
+                    new ShardStateAction(clusterService, transportService, null, null, threadPool, DeserializationCache.DUMMY);
 
                 final IndexMetaData indexMetaData = clusterService.state().metaData().index(indexName);
                 final Index index = indexMetaData.getIndex();

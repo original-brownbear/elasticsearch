@@ -26,6 +26,7 @@ import org.elasticsearch.action.support.ContextPreservingActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -133,7 +134,7 @@ final class RemoteClusterConnection implements Closeable {
 
                         @Override
                         public ClusterStateResponse read(StreamInput in) throws IOException {
-                            return new ClusterStateResponse(in);
+                            return new ClusterStateResponse(in, DeserializationCache.DUMMY);
                         }
 
                         @Override

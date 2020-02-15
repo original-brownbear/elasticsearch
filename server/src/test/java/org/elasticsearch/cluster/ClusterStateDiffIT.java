@@ -48,6 +48,7 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.gateway.GatewayService;
@@ -135,7 +136,8 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
                 Diff<ClusterState> diff;
                 try (StreamInput input = StreamInput.wrap(diffBytes)) {
                     StreamInput namedInput = new NamedWriteableAwareStreamInput(input, namedWriteableRegistry);
-                    diff = ClusterState.readDiffFrom(namedInput, previousClusterStateFromDiffs.nodes().getLocalNode());
+                    diff = ClusterState.readDiffFrom(
+                        namedInput, previousClusterStateFromDiffs.nodes().getLocalNode(), DeserializationCache.DUMMY);
                     clusterStateFromDiffs = diff.apply(previousClusterStateFromDiffs);
                 }
             }

@@ -30,6 +30,7 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -359,13 +360,13 @@ public class BulkItemResponse implements Writeable, StatusToXContentObject {
 
     BulkItemResponse() {}
 
-    BulkItemResponse(StreamInput in) throws IOException {
+    BulkItemResponse(StreamInput in, DeserializationCache deserializationCache) throws IOException {
         id = in.readVInt();
         opType = OpType.fromId(in.readByte());
 
         byte type = in.readByte();
         if (type == 0) {
-            response = new IndexResponse(in);
+            response = new IndexResponse(in, deserializationCache);
         } else if (type == 1) {
             response = new DeleteResponse(in);
         } else if (type == 3) { // make 3 instead of 2, because 2 is already in use for 'no responses'

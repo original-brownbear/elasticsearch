@@ -21,6 +21,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.routing.ShardsIterator;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -84,7 +85,7 @@ public class ShardChangesAction extends ActionType<ShardChangesAction.Response> 
             super(in);
             fromSeqNo = in.readVLong();
             maxOperationCount = in.readVInt();
-            shardId = new ShardId(in);
+            shardId = new ShardId(in, DeserializationCache.DUMMY);
             expectedHistoryUUID = in.readString();
             pollTimeout = in.readTimeValue();
             maxBatchSize = new ByteSizeValue(in);
