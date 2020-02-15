@@ -209,11 +209,11 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
      * @throws IOException if there is an error while reading from the stream
      */
     public DiscoveryNode(StreamInput in) throws IOException {
-        this.nodeName = in.readString().intern();
-        this.nodeId = in.readString().intern();
-        this.ephemeralId = in.readString().intern();
-        this.hostName = in.readString().intern();
-        this.hostAddress = in.readString().intern();
+        this.nodeName = in.readCachedString();
+        this.nodeId = in.readCachedString();
+        this.ephemeralId = in.readCachedString();
+        this.hostName = in.readCachedString();
+        this.hostAddress = in.readCachedString();
         this.address = new TransportAddress(in);
         int size = in.readVInt();
         this.attributes = new HashMap<>(size);

@@ -1463,7 +1463,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 coordinator.start();
                 masterService.start();
                 clusterService.getClusterApplierService().setNodeConnectionsService(
-                    new NodeConnectionsService(clusterService.getSettings(), threadPool, transportService));
+                    new NodeConnectionsService(clusterService.getSettings(), threadPool, transportService, namedWriteableRegistry));
                 clusterService.getClusterApplierService().start();
                 indicesService.start();
                 indicesClusterStateService.start();

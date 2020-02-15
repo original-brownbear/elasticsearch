@@ -361,6 +361,14 @@ public abstract class StreamInput extends InputStream {
     }
 
     @Nullable
+    public String readOptionalCachedString() throws IOException {
+        if (readBoolean()) {
+            return readCachedString();
+        }
+        return null;
+    }
+
+    @Nullable
     public SecureString readOptionalSecureString() throws IOException {
         SecureString value = null;
         BytesReference bytesRef = readOptionalBytesReference();
@@ -406,6 +414,14 @@ public abstract class StreamInput extends InputStream {
     private CharsRef largeSpare;
 
     public String readString() throws IOException {
+        return readCharsRef().toString();
+    }
+
+    public String readCachedString() throws IOException {
+        throw new UnsupportedOperationException("Can't do a cached read on a plain stream input");
+    }
+
+    protected final CharsRef readCharsRef() throws IOException {
         final int charCount = readArraySize();
         final CharsRef charsRef;
         if (charCount > SMALL_STRING_LIMIT) {
@@ -527,7 +543,7 @@ public abstract class StreamInput extends InputStream {
                 }
             }
         }
-        return charsRef.toString();
+        return charsRef;
     }
 
     private static void throwOnBrokenChar(int c) throws IOException {

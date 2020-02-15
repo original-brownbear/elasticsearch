@@ -19,6 +19,8 @@
 
 package org.elasticsearch.common.io.stream;
 
+import org.elasticsearch.transport.DeserializationCache;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -60,6 +62,8 @@ public class NamedWriteableRegistry {
      */
     private final Map<Class<?>, Map<String, Writeable.Reader<?>>> registry;
 
+    private final DeserializationCache deserializationCache = new DeserializationCache();
+
     /**
      * Constructs a new registry from the given entries.
      */
@@ -96,6 +100,10 @@ public class NamedWriteableRegistry {
         registry.put(currentCategory, Collections.unmodifiableMap(readers));
 
         this.registry = Collections.unmodifiableMap(registry);
+    }
+
+    public DeserializationCache deserializationCache() {
+        return deserializationCache;
     }
 
     /**

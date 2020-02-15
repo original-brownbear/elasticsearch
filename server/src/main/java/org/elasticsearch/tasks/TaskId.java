@@ -78,7 +78,7 @@ public final class TaskId implements Writeable {
      * {@linkplain StreamInput} so we can return the {@link #EMPTY_TASK_ID} without allocating.
      */
     public static TaskId readFromStream(StreamInput in) throws IOException {
-        String nodeId = in.readString();
+        String nodeId = in.readCachedString();
         if (nodeId.isEmpty()) {
             /*
              * The only TaskId allowed to have the empty string as its nodeId is the EMPTY_TASK_ID and there is only ever one of it and it

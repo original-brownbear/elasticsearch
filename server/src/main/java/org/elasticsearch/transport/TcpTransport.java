@@ -125,12 +125,14 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
     private final TransportKeepAlive keepAlive;
     private final OutboundHandler outboundHandler;
     private final InboundHandler inboundHandler;
+    private final NamedWriteableRegistry writeableRegistry;
 
     public TcpTransport(Settings settings, Version version, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                         CircuitBreakerService circuitBreakerService, NamedWriteableRegistry namedWriteableRegistry,
                         NetworkService networkService) {
         this.settings = settings;
         this.profileSettings = getProfileSettings(settings);
+        this.writeableRegistry = namedWriteableRegistry;
         this.threadPool = threadPool;
         this.pageCacheRecycler = pageCacheRecycler;
         this.networkService = networkService;
@@ -168,6 +170,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
     @Override
     public synchronized <Request extends TransportRequest> void registerRequestHandler(RequestHandlerRegistry<Request> reg) {
         inboundHandler.registerRequestHandler(reg);
+        writeableRegistry.deserializationCache().cache(reg.getAction());
     }
 
     public final class NodeChannels extends CloseableConnection {

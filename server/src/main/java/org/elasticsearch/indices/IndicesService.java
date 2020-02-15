@@ -565,6 +565,7 @@ public class IndicesService extends AbstractLifecycleComponent
                 }
             }
             success = true;
+            namedWriteableRegistry.deserializationCache().cache(index.getName(), index.getUUID());
             return indexService;
         } finally {
             if (success == false) {
@@ -750,6 +751,7 @@ public class IndicesService extends AbstractLifecycleComponent
                 // now we are done - try to wipe data on disk if possible
                 deleteIndexStore(extraInfo, indexService.index(), indexSettings);
             }
+            namedWriteableRegistry.deserializationCache().remove(index.getName(), index.getUUID());
         } catch (Exception e) {
             logger.warn(() -> new ParameterizedMessage("failed to remove index {} ([{}][{}])", index, reason, extraInfo), e);
         }

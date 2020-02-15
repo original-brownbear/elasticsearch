@@ -19,6 +19,8 @@
 
 package org.elasticsearch.common.io.stream;
 
+import org.apache.lucene.util.CharsRef;
+
 import java.io.IOException;
 
 /**
@@ -37,6 +39,13 @@ public class NamedWriteableAwareStreamInput extends FilterStreamInput {
     public <C extends NamedWriteable> C readNamedWriteable(Class<C> categoryClass) throws IOException {
         String name = readString();
         return readNamedWriteable(categoryClass, name);
+    }
+
+    @Override
+    public String readCachedString() throws IOException {
+        final CharsRef ref = readCharsRef();
+        final String cached = namedWriteableRegistry.deserializationCache().get(ref);
+        return cached == null ? ref.toString() : cached;
     }
 
     @Override

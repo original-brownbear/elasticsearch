@@ -33,11 +33,13 @@ import org.elasticsearch.cluster.service.ClusterApplier;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.DeserializationCache;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.ArrayList;
@@ -84,13 +86,15 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
     // contains an entry for every node in the latest cluster state, as well as for nodes from which we are in the process of
     // disconnecting
     private final Map<DiscoveryNode, ConnectionTarget> targetsByNode = new HashMap<>();
-
+    private final DeserializationCache deserializationCache;
     private final TimeValue reconnectInterval;
     private volatile ConnectionChecker connectionChecker;
 
     @Inject
-    public NodeConnectionsService(Settings settings, ThreadPool threadPool, TransportService transportService) {
+    public NodeConnectionsService(Settings settings, ThreadPool threadPool, TransportService transportService,
+                                  NamedWriteableRegistry namedWriteableRegistry) {
         this.threadPool = threadPool;
+        this.deserializationCache = namedWriteableRegistry.deserializationCache();
         this.transportService = transportService;
         this.reconnectInterval = NodeConnectionsService.CLUSTER_NODE_RECONNECT_INTERVAL_SETTING.get(settings);
     }
@@ -118,6 +122,8 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
                     // new node, set up target and listener
                     connectionTarget = new ConnectionTarget(discoveryNode);
                     targetsByNode.put(discoveryNode, connectionTarget);
+                    deserializationCache.cache(discoveryNode.getName(), discoveryNode.getId(), discoveryNode.getEphemeralId(),
+                        discoveryNode.getHostName(), discoveryNode.getHostAddress());
                     isNewNode = true;
                 } else {
                     // existing node, but maybe we're disconnecting from it, in which case it was recently removed from the cluster
@@ -455,6 +461,8 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
 
                     if (completedActivityType.equals(ActivityType.DISCONNECTING)) {
                         final ConnectionTarget removedTarget = targetsByNode.remove(discoveryNode);
+                        deserializationCache.remove(discoveryNode.getName(), discoveryNode.getId(), discoveryNode.getEphemeralId(),
+                            discoveryNode.getHostName(), discoveryNode.getHostAddress());
                         assert removedTarget == this : removedTarget + " vs " + this;
                     }
                 } else {

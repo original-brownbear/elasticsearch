@@ -118,7 +118,8 @@ public abstract class InboundMessage extends NetworkMessage implements Closeable
         }
 
         private StreamInput namedWriteableStream(StreamInput delegate, Version remoteVersion) {
-            NamedWriteableAwareStreamInput streamInput = new NamedWriteableAwareStreamInput(delegate, namedWriteableRegistry);
+            NamedWriteableAwareStreamInput streamInput =
+                new NamedWriteableAwareStreamInput(delegate, namedWriteableRegistry);
             streamInput.setVersion(remoteVersion);
             return streamInput;
         }

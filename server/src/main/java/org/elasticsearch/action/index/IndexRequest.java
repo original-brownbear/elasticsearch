@@ -121,14 +121,14 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
             assert MapperService.SINGLE_MAPPING_NAME.equals(type) : "Expected [_doc] but received [" + type + "]";
         }
         id = in.readOptionalString();
-        routing = in.readOptionalString();
+        routing = in.readOptionalCachedString();
         source = in.readBytesReference();
         opType = OpType.fromId(in.readByte());
         version = in.readLong();
         versionType = VersionType.fromValue(in.readByte());
-        pipeline = in.readOptionalString();
+        pipeline = in.readOptionalCachedString();
         if (in.getVersion().onOrAfter(Version.V_7_5_0)) {
-            finalPipeline = in.readOptionalString();
+            finalPipeline = in.readOptionalCachedString();
         }
         if (in.getVersion().onOrAfter(Version.V_7_5_0)) {
             isPipelineResolved = in.readBoolean();
