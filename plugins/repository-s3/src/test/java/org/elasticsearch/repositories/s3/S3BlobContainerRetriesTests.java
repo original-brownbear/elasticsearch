@@ -18,9 +18,6 @@
  */
 package org.elasticsearch.repositories.s3;
 
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.s3.internal.MD5DigestCalculatingInputStream;
-import com.amazonaws.util.Base16;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.http.ConnectionClosedException;
@@ -47,6 +44,9 @@ import org.elasticsearch.mocksocket.MockHttpServer;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.After;
 import org.junit.Before;
+import software.amazon.awssdk.core.checksums.Md5Checksum;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.utils.internal.Base16;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -343,13 +343,14 @@ public class S3BlobContainerRetriesTests extends ESTestCase {
                 && exchange.getRequestURI().getQuery().contains("uploadId=TEST")
                 && exchange.getRequestURI().getQuery().contains("partNumber=")) {
                 // upload part request
-                MD5DigestCalculatingInputStream md5 = new MD5DigestCalculatingInputStream(exchange.getRequestBody());
-                BytesReference bytes = Streams.readFully(md5);
+                Md5Checksum md5 = new Md5Checksum();
+                BytesReference bytes = Streams.readFully(exchange.getRequestBody());
+                md5.update(BytesReference.toBytes(bytes));
                 assertThat((long) bytes.length(), anyOf(equalTo(lastPartSize), equalTo(bufferSize.getBytes())));
                 assertThat(contentLength, anyOf(equalTo(lastPartSize), equalTo(bufferSize.getBytes())));
 
                 if (countDownUploads.decrementAndGet() % 2 == 0) {
-                    exchange.getResponseHeaders().add("ETag", Base16.encodeAsString(md5.getMd5Digest()));
+                    exchange.getResponseHeaders().add("ETag", Base16.encodeAsString(md5.getChecksumBytes()));
                     exchange.sendResponseHeaders(HttpStatus.SC_OK, -1);
                     exchange.close();
                     return;

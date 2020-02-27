@@ -18,11 +18,11 @@
  */
 package org.elasticsearch.repositories.s3;
 
-import com.amazonaws.auth.AWSCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
 
 import java.util.Objects;
 
-class S3BasicCredentials implements AWSCredentials {
+class S3BasicCredentials implements AwsCredentials {
 
     private final String accessKey;
 
@@ -31,16 +31,6 @@ class S3BasicCredentials implements AWSCredentials {
     S3BasicCredentials(String accessKey, String secretKey) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
-    }
-
-    @Override
-    public final String getAWSAccessKeyId() {
-        return accessKey;
-    }
-
-    @Override
-    public final String getAWSSecretKey() {
-        return secretKey;
     }
 
     @Override
@@ -58,5 +48,15 @@ class S3BasicCredentials implements AWSCredentials {
     @Override
     public int hashCode() {
         return Objects.hash(accessKey, secretKey);
+    }
+
+    @Override
+    public String accessKeyId() {
+        return accessKey;
+    }
+
+    @Override
+    public String secretAccessKey() {
+        return secretKey;
     }
 }

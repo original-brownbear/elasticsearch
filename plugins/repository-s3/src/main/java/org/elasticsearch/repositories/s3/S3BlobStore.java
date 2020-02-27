@@ -19,16 +19,15 @@
 
 package org.elasticsearch.repositories.s3;
 
-import com.amazonaws.services.s3.model.CannedAccessControlList;
-import com.amazonaws.services.s3.model.StorageClass;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.blobstore.BlobStoreException;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.StorageClass;
 
-import java.io.IOException;
 import java.util.Locale;
 
 class S3BlobStore implements BlobStore {
@@ -41,7 +40,7 @@ class S3BlobStore implements BlobStore {
 
     private final boolean serverSideEncryption;
 
-    private final CannedAccessControlList cannedACL;
+    private final ObjectCannedACL cannedACL;
 
     private final StorageClass storageClass;
 
@@ -90,11 +89,11 @@ class S3BlobStore implements BlobStore {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         this.service.close();
     }
 
-    public CannedAccessControlList getCannedACL() {
+    public ObjectCannedACL getCannedACL() {
         return cannedACL;
     }
 
@@ -104,12 +103,12 @@ class S3BlobStore implements BlobStore {
 
     public static StorageClass initStorageClass(String storageClass) {
         if ((storageClass == null) || storageClass.equals("")) {
-            return StorageClass.Standard;
+            return StorageClass.STANDARD;
         }
 
         try {
             final StorageClass _storageClass = StorageClass.fromValue(storageClass.toUpperCase(Locale.ENGLISH));
-            if (_storageClass.equals(StorageClass.Glacier)) {
+            if (_storageClass.equals(StorageClass.GLACIER)) {
                 throw new BlobStoreException("Glacier storage class is not supported");
             }
 
@@ -122,12 +121,12 @@ class S3BlobStore implements BlobStore {
     /**
      * Constructs canned acl from string
      */
-    public static CannedAccessControlList initCannedACL(String cannedACL) {
+    public static ObjectCannedACL initCannedACL(String cannedACL) {
         if ((cannedACL == null) || cannedACL.equals("")) {
-            return CannedAccessControlList.Private;
+            return ObjectCannedACL.PRIVATE;
         }
 
-        for (final CannedAccessControlList cur : CannedAccessControlList.values()) {
+        for (final ObjectCannedACL cur : ObjectCannedACL.values()) {
             if (cur.toString().equalsIgnoreCase(cannedACL)) {
                 return cur;
             }

@@ -19,24 +19,39 @@
 
 package org.elasticsearch.repositories.s3;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.http.IdleConnectionReaper;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.internal.Constants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.ContainerCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.signer.Aws4Signer;
+import software.amazon.awssdk.auth.signer.AwsS3V4Signer;
+import software.amazon.awssdk.auth.signer.internal.AbstractAwsSigner;
+import software.amazon.awssdk.auth.signer.internal.Aws4SignerUtils;
+import software.amazon.awssdk.auth.signer.internal.BaseAws4Signer;
+import software.amazon.awssdk.auth.signer.internal.SignerConstant;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption;
+import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
+import software.amazon.awssdk.core.interceptor.ExecutionAttributes;
+import software.amazon.awssdk.core.signer.Signer;
+import software.amazon.awssdk.http.Protocol;
+import software.amazon.awssdk.http.SdkHttpFullRequest;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
 
 import java.io.Closeable;
+import java.net.URI;
 import java.util.Map;
 
 import static java.util.Collections.emptyMap;
@@ -136,12 +151,15 @@ class S3Service implements Closeable {
     }
 
     // proxy for testing
-    AmazonS3 buildClient(final S3ClientSettings clientSettings) {
-        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard();
-        builder.withCredentials(buildCredentials(logger, clientSettings));
-        builder.withClientConfiguration(buildConfiguration(clientSettings));
+    S3AsyncClient buildClient(final S3ClientSettings clientSettings) {
+        final S3AsyncClientBuilder builder = S3AsyncClient.builder();
+        final AwsCredentialsProvider credentials = buildCredentials(logger, clientSettings);
+        builder.credentialsProvider(credentials);
+        S3Configuration.Builder s3confBuilder = S3Configuration.builder();
 
-        final String endpoint = Strings.hasLength(clientSettings.endpoint) ? clientSettings.endpoint : Constants.S3_HOSTNAME;
+        builder.asyncConfiguration(buildConfiguration(clientSettings));
+
+        final String endpoint = Strings.hasLength(clientSettings.endpoint) ? clientSettings.endpoint : "s3.amazonaws.com";
         final String region = Strings.hasLength(clientSettings.region) ? clientSettings.region : null;
         logger.debug("using endpoint [{}] and region [{}]", endpoint, region);
 
@@ -153,52 +171,55 @@ class S3Service implements Closeable {
         //
         // We do this because directly constructing the client is deprecated (was already deprecated in 1.1.223 too)
         // so this change removes that usage of a deprecated API.
-        builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, region));
+        builder.endpointOverride(URI.create(endpoint));
+        if (region != null) {
+            builder.region(Region.of(region));
+        } else {
+            builder.region(Region.US_EAST_1);
+        }
         if (clientSettings.pathStyleAccess) {
-            builder.enablePathStyleAccess();
+            s3confBuilder.pathStyleAccessEnabled(true);
         }
         if (clientSettings.disableChunkedEncoding) {
-            builder.disableChunkedEncoding();
+            s3confBuilder.chunkedEncodingEnabled(false);
         }
+        builder.serviceConfiguration(s3confBuilder.build());
+        builder.httpClient(NettyNioAsyncHttpClient.builder().protocol(Protocol.HTTP1_1).build());
         return builder.build();
     }
 
     // pkg private for tests
-    static ClientConfiguration buildConfiguration(S3ClientSettings clientSettings) {
-        final ClientConfiguration clientConfiguration = new ClientConfiguration();
+    static ClientAsyncConfiguration buildConfiguration(S3ClientSettings clientSettings) {
+        final ClientAsyncConfiguration.Builder clientConfiguration = ClientAsyncConfiguration.builder();
         // the response metadata cache is only there for diagnostics purposes,
         // but can force objects from every response to the old generation.
-        clientConfiguration.setResponseMetadataCacheSize(0);
-        clientConfiguration.setProtocol(clientSettings.protocol);
+        //clientConfiguration.setResponseMetadataCacheSize(0);
+        //clientConfiguration.setProtocol(clientSettings.protocol);
 
         if (Strings.hasText(clientSettings.proxyHost)) {
             // TODO: remove this leniency, these settings should exist together and be validated
-            clientConfiguration.setProxyHost(clientSettings.proxyHost);
-            clientConfiguration.setProxyPort(clientSettings.proxyPort);
-            clientConfiguration.setProxyUsername(clientSettings.proxyUsername);
-            clientConfiguration.setProxyPassword(clientSettings.proxyPassword);
+            //clientConfiguration.setProxyHost(clientSettings.proxyHost);
+            //clientConfiguration.setProxyPort(clientSettings.proxyPort);
+            //clientConfiguration.setProxyUsername(clientSettings.proxyUsername);
+            //clientConfiguration.setProxyPassword(clientSettings.proxyPassword);
         }
 
-        if (Strings.hasLength(clientSettings.signerOverride)) {
-            clientConfiguration.setSignerOverride(clientSettings.signerOverride);
-        }
+        //clientConfiguration.setMaxErrorRetry(clientSettings.maxRetries);
+        //clientConfiguration.setUseThrottleRetries(clientSettings.throttleRetries);
+        //clientConfiguration.setSocketTimeout(clientSettings.readTimeoutMillis);
 
-        clientConfiguration.setMaxErrorRetry(clientSettings.maxRetries);
-        clientConfiguration.setUseThrottleRetries(clientSettings.throttleRetries);
-        clientConfiguration.setSocketTimeout(clientSettings.readTimeoutMillis);
-
-        return clientConfiguration;
+        return clientConfiguration.build();
     }
 
     // pkg private for tests
-    static AWSCredentialsProvider buildCredentials(Logger logger, S3ClientSettings clientSettings) {
-        final S3BasicCredentials credentials = clientSettings.credentials;
+    static AwsCredentialsProvider buildCredentials(Logger logger, S3ClientSettings clientSettings) {
+        final AwsCredentials credentials = clientSettings.credentials;
         if (credentials == null) {
             logger.debug("Using instance profile credentials");
             return new PrivilegedInstanceProfileCredentialsProvider();
         } else {
             logger.debug("Using basic key/secret credentials");
-            return new AWSStaticCredentialsProvider(credentials);
+            return StaticCredentialsProvider.create(credentials);
         }
     }
 
@@ -209,27 +230,19 @@ class S3Service implements Closeable {
         }
         // clear previously cached clients, they will be build lazily
         clientsCache = emptyMap();
-        // shutdown IdleConnectionReaper background thread
-        // it will be restarted on new client usage
-        IdleConnectionReaper.shutdown();
     }
 
-    static class PrivilegedInstanceProfileCredentialsProvider implements AWSCredentialsProvider {
-        private final AWSCredentialsProvider credentials;
+    static class PrivilegedInstanceProfileCredentialsProvider implements AwsCredentialsProvider {
+        private final AwsCredentialsProvider credentials;
 
         private PrivilegedInstanceProfileCredentialsProvider() {
             // InstanceProfileCredentialsProvider as last item of chain
-            this.credentials = new EC2ContainerCredentialsProviderWrapper();
+            this.credentials = ContainerCredentialsProvider.builder().build();
         }
 
         @Override
-        public AWSCredentials getCredentials() {
-            return SocketAccess.doPrivileged(credentials::getCredentials);
-        }
-
-        @Override
-        public void refresh() {
-            SocketAccess.doPrivilegedVoid(credentials::refresh);
+        public AwsCredentials resolveCredentials() {
+            return credentials.resolveCredentials();
         }
     }
 

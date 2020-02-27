@@ -18,15 +18,17 @@
  */
 package org.elasticsearch.repositories.s3;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.S3Object;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.Version;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.async.AsyncResponseTransformer;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,9 +37,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Wrapper around an S3 object that will retry the {@link GetObjectRequest} if the download fails part-way through, resuming from where
- * the failure occurred. This should be handled by the SDK but it isn't today. This should be revisited in the future (e.g. before removing
- * the {@link Version#V_7_0_0} version constant) and removed when the SDK handles retries itself.
+ * Wrapper around an S3 object that will retry the {@link software.amazon.awssdk.services.s3.model.GetObjectRequest} if the download
+ * fails part-way through, resuming from where the failure occurred. This should be handled by the SDK but it isn't today.
+ * This should be revisited in the future (e.g. before removing the {@link Version#V_7_0_0} version constant) and removed when the SDK
+ * handles retries itself.
  *
  * See https://github.com/aws/aws-sdk-java/issues/856 for the related SDK issue
  */
@@ -66,19 +69,18 @@ class S3RetryingInputStream extends InputStream {
 
     private InputStream openStream() throws IOException {
         try (AmazonS3Reference clientReference = blobStore.clientReference()) {
-            final GetObjectRequest getObjectRequest = new GetObjectRequest(blobStore.bucket(), blobKey);
+            final GetObjectRequest.Builder getObjectRequest = GetObjectRequest.builder().bucket(blobStore.bucket()).key(blobKey);
             if (currentOffset > 0) {
-                getObjectRequest.setRange(currentOffset);
+                getObjectRequest.range(Long.toString(currentOffset));
             }
-            final S3Object s3Object = SocketAccess.doPrivileged(() -> clientReference.client().getObject(getObjectRequest));
-            return s3Object.getObjectContent();
-        } catch (final AmazonClientException e) {
-            if (e instanceof AmazonS3Exception) {
-                if (404 == ((AmazonS3Exception) e).getStatusCode()) {
-                    throw addSuppressedExceptions(new NoSuchFileException("Blob object [" + blobKey + "] not found: " + e.getMessage()));
-                }
+            final ResponseBytes<GetObjectResponse> s3Object = SocketAccess.doPrivileged(
+                () -> clientReference.client().getObject(getObjectRequest.build(), AsyncResponseTransformer.toBytes())).get();
+            return s3Object.asInputStream();
+        } catch (final Exception e) {
+            if (e.getCause() instanceof S3Exception && ((S3Exception) e.getCause()).statusCode() == 404) {
+                throw addSuppressedExceptions(new NoSuchFileException("Blob object [" + blobKey + "] not found: " + e.getMessage()));
             }
-            throw addSuppressedExceptions(e);
+            throw addSuppressedExceptions(new RuntimeException(e));
         }
     }
 

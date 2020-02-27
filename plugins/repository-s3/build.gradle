@@ -34,13 +34,34 @@ versions << [
 ]
 
 dependencies {
-  compile "com.amazonaws:aws-java-sdk-s3:${versions.aws}"
-  compile "com.amazonaws:aws-java-sdk-core:${versions.aws}"
-  compile "com.amazonaws:jmespath-java:${versions.aws}"
-  compile "org.apache.httpcomponents:httpclient:${versions.httpclient}"
-  compile "org.apache.httpcomponents:httpcore:${versions.httpcore}"
+  compile "software.amazon.awssdk:s3:2.10.71"
+  compile "software.amazon.awssdk:sdk-core:2.10.71"
+  compile "software.amazon.awssdk:aws-core:2.10.71"
+  compile "software.amazon.awssdk:annotations:2.10.71"
+  compile "software.amazon.awssdk:utils:2.10.71"
+  compile "software.amazon.awssdk:auth:2.10.71"
+  compile "software.amazon.awssdk:profiles:2.10.71"
+  compile "software.amazon.awssdk:protocol-core:2.10.71"
+  compile "software.amazon.awssdk:protocols:2.10.71"
+  compile 'software.amazon.awssdk:aws-xml-protocol:2.10.71'
+  compile "software.amazon.awssdk:iam:2.10.71"
+  compile "software.amazon.awssdk:regions:2.10.71"
+  compile "software.amazon.awssdk:ec2:2.10.71"
+  compile 'software.amazon.awssdk:netty-nio-client:2.10.71'
+  compile "software.amazon.awssdk:http-client-spi:2.10.71"
+  compile 'software.amazon.awssdk:aws-query-protocol:2.10.71'
+  compile 'org.reactivestreams:reactive-streams:1.0.3'
+  compile "io.netty:netty-buffer:${versions.netty}"
+  compile "io.netty:netty-codec:${versions.netty}"
+  compile "io.netty:netty-codec-http:${versions.netty}"
+  compile "io.netty:netty-codec-http2:${versions.netty}"
+  compile "io.netty:netty-common:${versions.netty}"
+  compile "io.netty:netty-handler:${versions.netty}"
+  compile "io.netty:netty-resolver:${versions.netty}"
+  compile "io.netty:netty-transport:${versions.netty}"
   compile "commons-logging:commons-logging:${versions.commonslogging}"
   compile "org.apache.logging.log4j:log4j-1.2-api:${versions.log4j}"
+  compile 'org.slf4j:slf4j-api:1.7.30'
   compile "commons-codec:commons-codec:${versions.commonscodec}"
   compile "com.fasterxml.jackson.core:jackson-core:${versions.jackson}"
   compile "com.fasterxml.jackson.core:jackson-databind:${versions.jacksondatabind}"

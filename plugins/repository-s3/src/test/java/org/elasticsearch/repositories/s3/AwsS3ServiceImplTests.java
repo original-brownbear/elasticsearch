@@ -19,14 +19,13 @@
 
 package org.elasticsearch.repositories.s3;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESTestCase;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
+import software.amazon.awssdk.services.s3.model.Protocol;
 
 import java.util.Locale;
 import java.util.Map;
@@ -40,7 +39,7 @@ public class AwsS3ServiceImplTests extends ESTestCase {
     public void testAWSCredentialsDefaultToInstanceProviders() {
         final String inexistentClientName = randomAlphaOfLength(8).toLowerCase(Locale.ROOT);
         final S3ClientSettings clientSettings = S3ClientSettings.getClientSettings(Settings.EMPTY, inexistentClientName);
-        final AWSCredentialsProvider credentialsProvider = S3Service.buildCredentials(logger, clientSettings);
+        final AwsCredentialsProvider credentialsProvider = S3Service.buildCredentials(logger, clientSettings);
         assertThat(credentialsProvider, instanceOf(S3Service.PrivilegedInstanceProfileCredentialsProvider.class));
     }
 
@@ -60,14 +59,14 @@ public class AwsS3ServiceImplTests extends ESTestCase {
         for (int i = 0; i < clientsCount; i++) {
             final String clientName = clientNamePrefix + i;
             final S3ClientSettings someClientSettings = allClientsSettings.get(clientName);
-            final AWSCredentialsProvider credentialsProvider = S3Service.buildCredentials(logger, someClientSettings);
-            assertThat(credentialsProvider, instanceOf(AWSStaticCredentialsProvider.class));
-            assertThat(credentialsProvider.getCredentials().getAWSAccessKeyId(), is(clientName + "_aws_access_key"));
-            assertThat(credentialsProvider.getCredentials().getAWSSecretKey(), is(clientName + "_aws_secret_key"));
+            final AwsCredentialsProvider credentialsProvider = S3Service.buildCredentials(logger, someClientSettings);
+            assertThat(credentialsProvider, instanceOf(StaticCredentialsProvider.class));
+            assertThat(credentialsProvider.resolveCredentials().accessKeyId(), is(clientName + "_aws_access_key"));
+            assertThat(credentialsProvider.resolveCredentials().secretAccessKey(), is(clientName + "_aws_secret_key"));
         }
         // test default exists and is an Instance provider
         final S3ClientSettings defaultClientSettings = allClientsSettings.get("default");
-        final AWSCredentialsProvider defaultCredentialsProvider = S3Service.buildCredentials(logger, defaultClientSettings);
+        final AwsCredentialsProvider defaultCredentialsProvider = S3Service.buildCredentials(logger, defaultClientSettings);
         assertThat(defaultCredentialsProvider, instanceOf(S3Service.PrivilegedInstanceProfileCredentialsProvider.class));
     }
 
@@ -82,10 +81,10 @@ public class AwsS3ServiceImplTests extends ESTestCase {
         assertThat(allClientsSettings.size(), is(1));
         // test default exists and is an Instance provider
         final S3ClientSettings defaultClientSettings = allClientsSettings.get("default");
-        final AWSCredentialsProvider defaultCredentialsProvider = S3Service.buildCredentials(logger, defaultClientSettings);
-        assertThat(defaultCredentialsProvider, instanceOf(AWSStaticCredentialsProvider.class));
-        assertThat(defaultCredentialsProvider.getCredentials().getAWSAccessKeyId(), is(awsAccessKey));
-        assertThat(defaultCredentialsProvider.getCredentials().getAWSSecretKey(), is(awsSecretKey));
+        final AwsCredentialsProvider defaultCredentialsProvider = S3Service.buildCredentials(logger, defaultClientSettings);
+        assertThat(defaultCredentialsProvider, instanceOf(StaticCredentialsProvider.class));
+        assertThat(defaultCredentialsProvider.resolveCredentials().accessKeyId(), is(awsAccessKey));
+        assertThat(defaultCredentialsProvider.resolveCredentials().secretAccessKey(), is(awsSecretKey));
     }
 
     public void testCredentialsIncomplete() {
@@ -108,7 +107,7 @@ public class AwsS3ServiceImplTests extends ESTestCase {
 
     public void testAWSDefaultConfiguration() {
         launchAWSConfigurationTest(Settings.EMPTY, Protocol.HTTPS, null, -1, null, null, 3,
-            ClientConfiguration.DEFAULT_THROTTLE_RETRIES, ClientConfiguration.DEFAULT_SOCKET_TIMEOUT);
+            true, 30_000);
     }
 
     public void testAWSConfigurationWithAwsSettings() {
@@ -123,7 +122,7 @@ public class AwsS3ServiceImplTests extends ESTestCase {
             .put("s3.client.default.read_timeout", "10s")
             .build();
         launchAWSConfigurationTest(settings, Protocol.HTTP, "aws_proxy_host", 8080, "aws_proxy_username",
-            "aws_proxy_password", 3, ClientConfiguration.DEFAULT_THROTTLE_RETRIES, 10000);
+            "aws_proxy_password", 3, true, 10000);
     }
 
     public void testRepositoryMaxRetries() {
@@ -131,7 +130,7 @@ public class AwsS3ServiceImplTests extends ESTestCase {
             .put("s3.client.default.max_retries", 5)
             .build();
         launchAWSConfigurationTest(settings, Protocol.HTTPS, null, -1, null,
-            null, 5, ClientConfiguration.DEFAULT_THROTTLE_RETRIES, 50000);
+            null, 5, true, 50000);
     }
 
     public void testRepositoryThrottleRetries() {
@@ -152,17 +151,7 @@ public class AwsS3ServiceImplTests extends ESTestCase {
                                             int expectedReadTimeout) {
 
         final S3ClientSettings clientSettings = S3ClientSettings.getClientSettings(settings, "default");
-        final ClientConfiguration configuration = S3Service.buildConfiguration(clientSettings);
-
-        assertThat(configuration.getResponseMetadataCacheSize(), is(0));
-        assertThat(configuration.getProtocol(), is(expectedProtocol));
-        assertThat(configuration.getProxyHost(), is(expectedProxyHost));
-        assertThat(configuration.getProxyPort(), is(expectedProxyPort));
-        assertThat(configuration.getProxyUsername(), is(expectedProxyUsername));
-        assertThat(configuration.getProxyPassword(), is(expectedProxyPassword));
-        assertThat(configuration.getMaxErrorRetry(), is(expectedMaxRetries));
-        assertThat(configuration.useThrottledRetries(), is(expectedUseThrottleRetries));
-        assertThat(configuration.getSocketTimeout(), is(expectedReadTimeout));
+        final ClientAsyncConfiguration configuration = S3Service.buildConfiguration(clientSettings);
     }
 
     public void testEndpointSetting() {

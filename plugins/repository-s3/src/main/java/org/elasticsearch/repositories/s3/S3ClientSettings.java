@@ -19,8 +19,6 @@
 
 package org.elasticsearch.repositories.s3;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.Protocol;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.common.settings.SecureSetting;
 import org.elasticsearch.common.settings.SecureString;
@@ -28,6 +26,10 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.services.s3.model.Protocol;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -86,15 +88,15 @@ final class S3ClientSettings {
 
     /** The socket timeout for connecting to s3. */
     static final Setting.AffixSetting<TimeValue> READ_TIMEOUT_SETTING = Setting.affixKeySetting(PREFIX, "read_timeout",
-        key -> Setting.timeSetting(key, TimeValue.timeValueMillis(ClientConfiguration.DEFAULT_SOCKET_TIMEOUT), Property.NodeScope));
+        key -> Setting.timeSetting(key, TimeValue.timeValueSeconds(30), Property.NodeScope));
 
     /** The number of retries to use when an s3 request fails. */
     static final Setting.AffixSetting<Integer> MAX_RETRIES_SETTING = Setting.affixKeySetting(PREFIX, "max_retries",
-        key -> Setting.intSetting(key, ClientConfiguration.DEFAULT_RETRY_POLICY.getMaxErrorRetry(), 0, Property.NodeScope));
+        key -> Setting.intSetting(key, 5, 0, Property.NodeScope));
 
     /** Whether retries should be throttled (ie use backoff). */
     static final Setting.AffixSetting<Boolean> USE_THROTTLE_RETRIES_SETTING = Setting.affixKeySetting(PREFIX, "use_throttle_retries",
-        key -> Setting.boolSetting(key, ClientConfiguration.DEFAULT_THROTTLE_RETRIES, Property.NodeScope));
+        key -> Setting.boolSetting(key, true, Property.NodeScope));
 
     /** Whether the s3 client should use path style access. */
     static final Setting.AffixSetting<Boolean> USE_PATH_STYLE_ACCESS = Setting.affixKeySetting(PREFIX, "path_style_access",
@@ -113,7 +115,7 @@ final class S3ClientSettings {
         key -> new Setting<>(key, "", Function.identity(), Property.NodeScope));
 
     /** Credentials to authenticate with s3. */
-    final S3BasicCredentials credentials;
+    final AwsCredentials credentials;
 
     /** The s3 endpoint the client should talk to, or empty string to use the default. */
     final String endpoint;
@@ -156,7 +158,7 @@ final class S3ClientSettings {
     /** Signer override to use or empty string to use default. */
     final String signerOverride;
 
-    private S3ClientSettings(S3BasicCredentials credentials, String endpoint, Protocol protocol,
+    private S3ClientSettings(AwsCredentials credentials, String endpoint, Protocol protocol,
                              String proxyHost, int proxyPort, String proxyUsername, String proxyPassword,
                              int readTimeoutMillis, int maxRetries, boolean throttleRetries,
                              boolean pathStyleAccess, boolean disableChunkedEncoding, String region, String signerOverride) {
@@ -245,16 +247,16 @@ final class S3ClientSettings {
         return Collections.unmodifiableMap(clients);
     }
 
-    private static S3BasicCredentials loadCredentials(Settings settings, String clientName) {
+    private static AwsCredentials loadCredentials(Settings settings, String clientName) {
         try (SecureString accessKey = getConfigValue(settings, clientName, ACCESS_KEY_SETTING);
              SecureString secretKey = getConfigValue(settings, clientName, SECRET_KEY_SETTING);
              SecureString sessionToken = getConfigValue(settings, clientName, SESSION_TOKEN_SETTING)) {
             if (accessKey.length() != 0) {
                 if (secretKey.length() != 0) {
                     if (sessionToken.length() != 0) {
-                        return new S3BasicSessionCredentials(accessKey.toString(), secretKey.toString(), sessionToken.toString());
+                        return AwsSessionCredentials.create(accessKey.toString(), secretKey.toString(), sessionToken.toString());
                     } else {
-                        return new S3BasicCredentials(accessKey.toString(), secretKey.toString());
+                        return AwsBasicCredentials.create(accessKey.toString(), secretKey.toString());
                     }
                 } else {
                     throw new IllegalArgumentException("Missing secret key for s3 client [" + clientName + "]");
