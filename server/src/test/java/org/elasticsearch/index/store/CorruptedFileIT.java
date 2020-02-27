@@ -440,7 +440,6 @@ public class CorruptedFileIT extends ESIntegTestCase {
                         request = new RecoveryFileChunkRequest(req.recoveryId(), req.shardId(), req.metadata(), req.position(),
                             array, req.lastChunk(), req.totalTranslogOps(), req.sourceThrottleTimeInNanos());
                     } else {
-                        assert req.content().toBytesRef().bytes == req.content().toBytesRef().bytes : "no internal reference!!";
                         final byte[] array = req.content().toBytesRef().bytes;
                         int i = randomIntBetween(0, req.content().length() - 1);
                         array[i] = (byte) ~array[i]; // flip one byte in the content

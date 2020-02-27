@@ -42,16 +42,17 @@ import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.StopWatch;
-import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.FileBackedBytesReference;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.lucene.store.InputStreamIndexInput;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.CancellableThreads;
+import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
+import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.RecoveryEngineException;
@@ -73,12 +74,16 @@ import org.elasticsearch.transport.Transports;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -846,19 +851,30 @@ public class RecoverySourceHandler {
         final MultiFileTransfer<FileChunk> multiFileSender =
             new MultiFileTransfer<>(logger, threadPool.getThreadContext(), listener, maxConcurrentFileChunks, Arrays.asList(files)) {
 
-                final byte[] buffer = new byte[chunkSizeInBytes];
-                InputStreamIndexInput currentInput = null;
+                private final Set<IndexInput> inputs = Collections.synchronizedSet(Collections.newSetFromMap(new IdentityHashMap<>()));
+                IndexInput currentInput = null;
+                RefCounted currentRef;
                 long offset = 0;
 
                 @Override
                 protected void onNewFile(StoreFileMetaData md) throws IOException {
                     offset = 0;
-                    IOUtils.close(currentInput, () -> currentInput = null);
-                    final IndexInput indexInput = store.directory().openInput(md.name(), IOContext.READONCE);
-                    currentInput = new InputStreamIndexInput(indexInput, md.length()) {
+                    IOUtils.close(() -> {
+                        if (currentRef != null) {
+                            currentRef.decRef();
+                        }
+                    });
+                    currentInput = store.directory().openInput(md.name(), IOContext.READONCE);
+                    inputs.add(currentInput);
+                    final IndexInput toClose = currentInput;
+                    currentRef = new AbstractRefCounted(md.name()) {
                         @Override
-                        public void close() throws IOException {
-                            IOUtils.close(indexInput, super::close); // InputStreamIndexInput's close is a noop
+                        protected void closeInternal() {
+                            try {
+                                toClose.close();
+                            } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
                         }
                     };
                 }
@@ -867,12 +883,11 @@ public class RecoverySourceHandler {
                 protected FileChunk nextChunkRequest(StoreFileMetaData md) throws IOException {
                     assert Transports.assertNotTransportThread("read file chunk");
                     cancellableThreads.checkForCancel();
-                    final int bytesRead = currentInput.read(buffer);
-                    if (bytesRead == -1) {
-                        throw new CorruptIndexException("file truncated; length=" + md.length() + " offset=" + offset, md.name());
-                    }
+                    final int bytesRead = Math.min(Math.toIntExact(md.length() - offset), chunkSizeInBytes);
                     final boolean lastChunk = offset + bytesRead == md.length();
-                    final FileChunk chunk = new FileChunk(md, new BytesArray(buffer, 0, bytesRead), offset, lastChunk);
+                    currentInput.seek(offset);
+                    final FileChunk chunk =
+                        new FileChunk(md, new FileBackedBytesReference(currentInput.clone(), offset, bytesRead), offset, lastChunk);
                     offset += bytesRead;
                     return chunk;
                 }
@@ -880,8 +895,11 @@ public class RecoverySourceHandler {
                 @Override
                 protected void executeChunkRequest(FileChunk request, ActionListener<Void> listener) {
                     cancellableThreads.checkForCancel();
+                    final RefCounted ref = currentRef;
+                    ref.incRef();
                     recoveryTarget.writeFileChunk(
-                        request.md, request.position, request.content, request.lastChunk, translogOps.getAsInt(), listener);
+                        request.md, request.position, request.content, request.lastChunk, translogOps.getAsInt(),
+                        ActionListener.runBefore(listener, ref::decRef));
                 }
 
                 @Override
