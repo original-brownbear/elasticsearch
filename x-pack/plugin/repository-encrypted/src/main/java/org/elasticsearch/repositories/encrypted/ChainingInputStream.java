@@ -5,13 +5,16 @@
  */
 package org.elasticsearch.repositories.encrypted;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.core.internal.io.IOUtils;
 
 /**
  * A {@code ChainingInputStream} concatenates multiple component input streams into a
@@ -71,6 +74,74 @@ public abstract class ChainingInputStream extends InputStream {
      * {@code available} and {@code reset} calls will throw {@code IOException}s
      */
     private boolean closed;
+
+    /**
+     * Returns a new {@link ChainingInputStream} that concatenates the bytes to be read from the first
+     * input stream with the bytes from the second input stream. The stream arguments must support
+     * the {@code mark} and {@code reset} operations; otherwise use {@link SequenceInputStream}.
+     *
+     * @param first the input stream supplying the first bytes of the returned {@link ChainingInputStream}
+     * @param second the input stream supplying the bytes after the {@code first} input stream has been exhausted
+     */
+    public static InputStream chain(InputStream first, InputStream second) {
+        if (false == Objects.requireNonNull(first).markSupported()) {
+            throw new IllegalArgumentException("The first component input stream does not support mark");
+        }
+        if (false == Objects.requireNonNull(second).markSupported()) {
+            throw new IllegalArgumentException("The second component input stream does not support mark");
+        }
+        final InputStream firstComponent = new FilterInputStream(first) {
+            @Override
+            public void close() {
+                // silence close
+                // "first" can be reused, and the {@code ChainingInputStream} eagerly closes components after every use
+                // "first" is closed when the returned {@code ChainingInputStream} is closed
+            }
+        };
+        final InputStream secondComponent = new FilterInputStream(second) {
+            @Override
+            public void close() {
+                // silence close
+                // "second" can be reused, and the {@code ChainingInputStream} eagerly closes components after every use
+                // "second" is closed when the returned {@code ChainingInputStream} is closed
+            }
+        };
+        // be sure to remember the start of components because they might be reused
+        firstComponent.mark(Integer.MAX_VALUE);
+        secondComponent.mark(Integer.MAX_VALUE);
+
+        return new ChainingInputStream() {
+
+            @Override
+            InputStream nextComponent(InputStream currentComponentIn) throws IOException {
+                if (currentComponentIn == null) {
+                    // when returning the next component, start from its beginning
+                    firstComponent.reset();
+                    return firstComponent;
+                } else if (currentComponentIn == firstComponent) {
+                    // when returning the next component, start from its beginning
+                    secondComponent.reset();
+                    return secondComponent;
+                } else if (currentComponentIn == secondComponent) {
+                    return null;
+                } else {
+                    throw new IllegalStateException("Unexpected component input stream");
+                }
+            }
+
+            @Override
+            public void close() throws IOException {
+                Exception superException = null;
+                try {
+                    super.close();
+                } catch (Exception e) {
+                    superException = e;
+                } finally {
+                    IOUtils.close(superException, first, second);
+                }
+            }
+        };
+    }
 
     /**
      * This method is responsible for generating the component input streams.
