@@ -510,6 +510,14 @@ public class XPackLicenseState {
         return isAllowedByLicense(OperationMode.STANDARD);
     }
 
+    /**
+     * Determines if creating an encrypted snapshot is allowed. Note that restoring an encrypted snapshot is not conditioned upon the
+     * license operation mode (i.e. it's free for all).
+     */
+    public boolean isEncryptedSnapshotAllowed() {
+        return isAllowedByLicense(OperationMode.PLATINUM);
+    }
+
     public boolean isMonitoringAllowed() {
         return allowForAllLicenses();
     }
