@@ -161,12 +161,11 @@ public final class EncryptedRepository extends BlobStoreRepository {
                                  Version repositoryMetaVersion, ActionListener<SnapshotInfo> listener) {
         try {
             validateRepositoryKEKId(userMetadata);
-            // remove the repository key id from the snapshot metadata after all repository password verifications have completed,
-            // so that the id is not displayed in the API response to the user
+            // remove the repository key id from the snapshot metadata so that the id is not displayed in the API response to the user
             userMetadata = new HashMap<>(userMetadata);
             userMetadata.remove(KEK_ID_USER_METADATA_KEY);
-        } catch (Exception passValidationException) {
-            listener.onFailure(passValidationException);
+        } catch (RepositoryException KEKValidationException) {
+            listener.onFailure(KEKValidationException);
             return;
         }
         super.finalizeSnapshot(snapshotId, shardGenerations, startTime, failure, totalShards, shardFailures, repositoryStateId,
@@ -179,8 +178,8 @@ public final class EncryptedRepository extends BlobStoreRepository {
                               Map<String, Object> userMetadata, ActionListener<String> listener) {
         try {
             validateRepositoryKEKId(userMetadata);
-        } catch (Exception passValidationException) {
-            listener.onFailure(passValidationException);
+        } catch (RepositoryException KEKValidationException) {
+            listener.onFailure(KEKValidationException);
             return;
         }
         super.snapshotShard(store, mapperService, snapshotId, indexId, snapshotIndexCommit, snapshotStatus, repositoryMetaVersion,
