@@ -11,9 +11,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.IndexCommit;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRunnable;
-import org.elasticsearch.action.StepListener;
-import org.elasticsearch.action.support.GroupedActionListener;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -23,7 +20,6 @@ import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.blobstore.DeleteResult;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.index.mapper.MapperService;
@@ -32,27 +28,23 @@ import org.elasticsearch.index.store.Store;
 import org.elasticsearch.license.LicenseUtils;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.repositories.IndexId;
-import org.elasticsearch.repositories.RepositoryCleanupResult;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotShardFailure;
-import org.elasticsearch.threadpool.ThreadPool;
 
 import javax.crypto.AEADBadTagException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -61,8 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 public final class EncryptedRepository extends BlobStoreRepository {
@@ -71,49 +61,41 @@ public final class EncryptedRepository extends BlobStoreRepository {
     static final int GCM_TAG_LENGTH_IN_BYTES = 16;
     static final int GCM_IV_LENGTH_IN_BYTES = 12;
     static final int AES_BLOCK_LENGTH_IN_BYTES = 128;
-    // changing the following constants implies breaking compatibility with previous versions of encrypted snapshots
-    // in this case the {@link #CURRENT_ENCRYPTION_VERSION_NUMBER} MUST be incremented
+    // the following constants require careful thought before changing because they will break backwards compatibility
     static final String DATA_ENCRYPTION_SCHEME = "AES/GCM/NoPadding";
-    static final int DATA_KEY_LENGTH_IN_BITS = 256;
+    static final int DATA_KEY_LENGTH_IN_BYTES = 32;
     static final long PACKET_START_COUNTER = Long.MIN_VALUE;
     static final int MAX_PACKET_LENGTH_IN_BYTES = 8 << 20; // 8MB
-    // this can be changed freely (can be made a repository parameter) without adjusting
-    // the {@link #CURRENT_ENCRYPTION_VERSION_NUMBER}, as long as it stays under the value
-    // of {@link #MAX_PACKET_LENGTH_IN_BYTES}
+    // this should be smaller than {@code #MAX_PACKET_LENGTH_IN_BYTES} and it's what {@code EncryptionPacketsInputStream} uses
+    // during encryption and what {@code DecryptionPacketsInputStream} expects during decryption (it is not configurable)
     static final int PACKET_LENGTH_IN_BYTES = 64 * (1 << 10); // 64KB
-    static final String SALTED_PASSWORD_HASH_ALGO = "PBKDF2WithHmacSHA512";
-    static final int SALTED_PASSWORD_HASH_ITER_COUNT = 10000;
-    static final int SALTED_PASSWORD_HASH_KEY_LENGTH_IN_BITS = 512;
-    static final int PASSWORD_HASH_SALT_LENGTH_IN_BYES = 16;
-    static final String RAND_ALGO = "SHA1PRNG";
-    static final String DEK_CIPHER_ALGO = "AES";
-
+    // The "ID" of any KEK is the key-wrap ciphertext of this fixed 32 byte wide array.
+    // Key wrapping encryption is deterministic (same plaintext generates the same ciphertext)
+    // and the probability that two different keys map the same plaintext to the same ciphertext is very small
+    // (2^-256, much lower than the UUID collision of 2^-128), assuming AES is indistinguishable from a pseudorandom permutation
+    // a collision does not break security but it may corrupt the repository
+    private static final byte[] KEY_ID_PLAINTEXT = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+            21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+    // the path of the blob container holding all the DEKs
+    // this is relative to the root base path holding the encrypted blobs (i.e. the repository root base path)
+    private static final String DEK_ROOT_CONTAINER = "encryption-metadata";
+    // the following constants can be changed freely
+    private static final String RAND_ALGO = "SHA1PRNG";
     // each snapshot metadata contains the salted password hash of the master node that started the snapshot operation
     // this hash is then verified on each data node before the actual shard files snapshot, as well as on the
     // master node that finalizes the snapshot (could be a different master node, if a master failover
     // has occurred in the mean time)
-    private static final String PASSWORD_HASH_RESERVED_USER_METADATA_KEY = EncryptedRepository.class.getName() + ".saltedPasswordHash";
-    // The encryption scheme version number to which the current implementation conforms to.
-    // The version number MUST be incremented whenever the format of the metadata, or
-    // the way the metadata is used for the actual decryption are changed.
-    // Incrementing the version number signals that previous implementations cannot make sense
-    // of the new scheme, so they will fail all operations on the repository.
-    private static final int CURRENT_ENCRYPTION_VERSION_NUMBER = 2; // nobody trusts v1 of anything
-    // the path of the blob container holding all the DEKs
-    // this is relative to the root path holding the encrypted blobs (i.e. the repository root path)
-    private static final String DEK_ROOT_CONTAINER = "encryption-metadata-v" + CURRENT_ENCRYPTION_VERSION_NUMBER;
-    private static final String CURRENT_KEK_BLOB = "current-KEK-salt.info";
+    private static final String KEK_ID_USER_METADATA_KEY = EncryptedRepository.class.getName() + ".repositoryKEKId";
 
-    // this is the repository instance to which all blob reads and writes are forwarded to
+    // this is the repository instance to which all blob reads and writes are forwarded to (it stores both the encrypted blobs, as well
+    // as the associated encrypted DEKs)
     private final BlobStoreRepository delegatedRepository;
-    // every data blob is encrypted with its randomly generated AES key (this is the "Data Encryption Key")
-    private final Supplier<SecretKey> dataEncryptionKeySupplier;
+    // every data blob is encrypted with its randomly generated AES key (DEK)
+    private final Supplier<SecretKey> DEKSupplier;
+    // license is checked before every snapshot operations
     private final Supplier<XPackLicenseState> licenseStateSupplier;
-    // the salted hash of this repository's password on the local node. The password is fixed for the lifetime of the repository.
-    private final String repositoryPasswordSaltedHash;
-    // this is used to check that the salted hash of the repository password on the node that started the snapshot matches up with the
-    // repository password on the local node
-    private final HashVerifier passwordHashVerifier;
+    private final SecretKey repositoryKEK;
+    private final String repositoryKEKId;
 
     /**
      * Returns the byte length (i.e. the storage size) of an encrypted blob, given the length of the blob's plaintext contents.
@@ -127,18 +109,18 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
     protected EncryptedRepository(RepositoryMetaData metadata, NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
                                   BlobStoreRepository delegatedRepository, Supplier<XPackLicenseState> licenseStateSupplier,
-                                  SecretKey repositoryKEK) throws NoSuchAlgorithmException {
+                                  SecretKey repositoryKEK) throws GeneralSecurityException {
         super(metadata, namedXContentRegistry, clusterService, BlobPath.cleanPath());
         this.delegatedRepository = delegatedRepository;
-        KeyGenerator dataEncryptionKeyGenerator = KeyGenerator.getInstance(DEK_CIPHER_ALGO);
-        dataEncryptionKeyGenerator.init(DATA_KEY_LENGTH_IN_BITS, SecureRandom.getInstance(RAND_ALGO));
-        this.dataEncryptionKeySupplier = () -> dataEncryptionKeyGenerator.generateKey();
+        KeyGenerator dataEncryptionKeyGenerator = KeyGenerator.getInstance(DATA_ENCRYPTION_SCHEME.split("/")[0]);
+        dataEncryptionKeyGenerator.init(DATA_KEY_LENGTH_IN_BYTES * Byte.SIZE, SecureRandom.getInstance(RAND_ALGO));
+        this.DEKSupplier = () -> dataEncryptionKeyGenerator.generateKey();
         this.licenseStateSupplier = licenseStateSupplier;
-        // the salted password hash for this encrypted repository password, on the local node (this is constant)
-        this.repositoryPasswordSaltedHash = computeSaltedPBKDF2Hash(SecureRandom.getInstance(RAND_ALGO),
-                password);
-        // used to verify that the salted password hash in the snapshot metadata matches up with the repository password on the local node
-        this.passwordHashVerifier = new HashVerifier(password);
+        this.repositoryKEK = repositoryKEK;
+        this.repositoryKEKId = computeKeyId(repositoryKEK);
+        if (isReadOnly() != delegatedRepository.isReadOnly()) {
+            throw new IllegalStateException("The encrypted repository must be read-only iff the delegate repository is read-only");
+        }
     }
 
     /**
@@ -165,10 +147,10 @@ public final class EncryptedRepository extends BlobStoreRepository {
         if (userMetadata != null) {
             snapshotUserMetadata.putAll(userMetadata);
         }
-        // pin down the salted hash of the repository password
+        // set out the ID of the repository key
         // this is then checked before every snapshot operation (i.e. {@link #snapshotShard} and {@link #finalizeSnapshot})
-        // to assure that all participating nodes in the snapshot have the same repository password set
-        snapshotUserMetadata.put(PASSWORD_HASH_RESERVED_USER_METADATA_KEY, this.repositoryPasswordSaltedHash);
+        // to assure that all participating nodes in the snapshot operation are using the same key
+        snapshotUserMetadata.put(KEK_ID_USER_METADATA_KEY, repositoryKEKId);
         return snapshotUserMetadata;
     }
 
@@ -178,11 +160,11 @@ public final class EncryptedRepository extends BlobStoreRepository {
                                  boolean includeGlobalState, MetaData clusterMetaData, Map<String, Object> userMetadata,
                                  Version repositoryMetaVersion, ActionListener<SnapshotInfo> listener) {
         try {
-            validateRepositoryPasswordHash(userMetadata);
-            // remove the repository password hash from the snapshot metadata, after all repository password verifications
-            // have completed, so that the hash is not displayed in the API response to the user
+            validateRepositoryKEKId(userMetadata);
+            // remove the repository key id from the snapshot metadata after all repository password verifications have completed,
+            // so that the id is not displayed in the API response to the user
             userMetadata = new HashMap<>(userMetadata);
-            userMetadata.remove(PASSWORD_HASH_RESERVED_USER_METADATA_KEY);
+            userMetadata.remove(KEK_ID_USER_METADATA_KEY);
         } catch (Exception passValidationException) {
             listener.onFailure(passValidationException);
             return;
@@ -196,7 +178,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
                               IndexCommit snapshotIndexCommit, IndexShardSnapshotStatus snapshotStatus, Version repositoryMetaVersion,
                               Map<String, Object> userMetadata, ActionListener<String> listener) {
         try {
-            validateRepositoryPasswordHash(userMetadata);
+            validateRepositoryKEKId(userMetadata);
         } catch (Exception passValidationException) {
             listener.onFailure(passValidationException);
             return;
@@ -206,59 +188,8 @@ public final class EncryptedRepository extends BlobStoreRepository {
     }
 
     @Override
-    public void cleanup(long repositoryStateId, Version repositoryMetaVersion, ActionListener<RepositoryCleanupResult> listener) {
-        if (isReadOnly()) {
-            listener.onFailure(new RepositoryException(metadata.name(), "cannot run cleanup on readonly repository"));
-            return;
-        }
-        final StepListener<RepositoryCleanupResult> baseCleanupStep = new StepListener<>();
-        final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
-
-        super.cleanup(repositoryStateId, repositoryMetaVersion, baseCleanupStep);
-
-        baseCleanupStep.whenComplete(baseCleanupResult -> {
-            final GroupedActionListener<DeleteResult> groupedListener = new GroupedActionListener<>(ActionListener.wrap(deleteResults -> {
-                DeleteResult deleteResult = new DeleteResult(baseCleanupResult.blobs(), baseCleanupResult.bytes());
-                for (DeleteResult result : deleteResults) {
-                    deleteResult = deleteResult.add(result);
-                }
-                listener.onResponse(new RepositoryCleanupResult(deleteResult));
-            }, listener::onFailure), 2);
-
-            // clean unreferenced metadata blobs on the root blob container
-            executor.execute(ActionRunnable.supply(groupedListener, () -> {
-                EncryptedBlobContainer encryptedBlobContainer = (EncryptedBlobContainer) blobContainer();
-                return cleanUnreferencedEncryptionMetadata(encryptedBlobContainer);
-            }));
-
-            // clean indices blob containers
-            executor.execute(ActionRunnable.supply(groupedListener, () -> {
-                EncryptedBlobContainer indicesBlobContainer = (EncryptedBlobContainer) blobStore().blobContainer(indicesPath());
-                Map<String, BlobContainer> metadataIndices = indicesBlobContainer.encryptionMetadataBlobContainer.children();
-                Map<String, BlobContainer> dataIndices = indicesBlobContainer.delegatedBlobContainer.children();
-                DeleteResult deleteResult = DeleteResult.ZERO;
-                for (Map.Entry<String, BlobContainer> metadataIndexContainer : metadataIndices.entrySet()) {
-                    if (false == dataIndices.containsKey(metadataIndexContainer.getKey())) {
-                        // the index metadata blob container exists but the encrypted data blob container does not
-                        Long indexGeneration = findFirstGeneration(metadataIndexContainer.getValue());
-                        if (indexGeneration != null && indexGeneration < latestKnownRepoGen.get()) {
-                            logger.debug("[{}] Found stale metadata index container [{}]. Cleaning it up", metadata.name(),
-                                    metadataIndexContainer.getValue().path());
-                            deleteResult = deleteResult.add(metadataIndexContainer.getValue().delete());
-                            logger.debug("[{}] Cleaned up stale metadata index container [{}]", metadata.name(),
-                                    metadataIndexContainer.getValue().path());
-                        }
-                    }
-                }
-                return deleteResult;
-            }));
-
-        }, listener::onFailure);
-    }
-
-    @Override
     protected BlobStore createBlobStore() {
-        return new EncryptedBlobStore(delegatedRepository, dataEncryptionKeySupplier, metadataEncryption,
+        return new EncryptedBlobStore(delegatedRepository, DEKSupplier, metadataEncryption,
                 encryptionNonceSupplier, metadataIdentifierSupplier);
     }
 
@@ -279,69 +210,6 @@ public final class EncryptedRepository extends BlobStoreRepository {
         super.doClose();
         this.delegatedRepository.close();
     }
-
-    private DeleteResult cleanUnreferencedEncryptionMetadata(EncryptedBlobContainer blobContainer) throws IOException {
-        Map<String, BlobMetaData> allMetadataBlobs = blobContainer.encryptionMetadataBlobContainer.listBlobs();
-        Map<String, BlobMetaData> allDataBlobs = blobContainer.delegatedBlobContainer.listBlobs();
-        // map from the data blob name to all the associated metadata
-        Map<String, List<Tuple<MetadataIdentifier, String>>> metaDataByBlobName = new HashMap<>();
-        List<String> metadataBlobsToDelete = new ArrayList<>();
-        for (String metadataBlobName : allMetadataBlobs.keySet()) {
-            final Tuple<String, MetadataIdentifier> blobNameAndMetaId;
-            try {
-                blobNameAndMetaId = MetadataIdentifier.parseFromMetadataBlobName(metadataBlobName);
-            } catch (IllegalArgumentException e) {
-                // ignore invalid metadata blob names, which most likely have been created externally
-                logger.warn("Unrecognized blob name for metadata [" + metadataBlobName + "]", e);
-                continue;
-            }
-            if (false == allDataBlobs.containsKey(blobNameAndMetaId.v1()) &&
-                    blobNameAndMetaId.v2().repositoryGeneration < latestKnownRepoGen.get()) {
-                // the data blob for this metadata blob is not going to appear, the repo moved to a new generation, which means that a
-                // "parent" blob of it appeared
-                metadataBlobsToDelete.add(blobNameAndMetaId.v1());
-            }
-            // group metadata blobs by their associated blob name
-            metaDataByBlobName.computeIfAbsent(blobNameAndMetaId.v1(), k -> new ArrayList<>(1))
-                    .add(new Tuple<>(blobNameAndMetaId.v2(), metadataBlobName));
-        }
-        metaDataByBlobName.entrySet().forEach(entry -> {
-            if (entry.getValue().size() > 1) {
-                // if there are multiple versions of the metadata, then remove ones created in olden repository generations
-                // since overwrites cannot happen across repository generations
-                long maxRepositoryGeneration =
-                        entry.getValue().stream().map(meta -> meta.v1().repositoryGeneration).max(Long::compare).get();
-                entry.getValue().forEach(meta -> {
-                    if (meta.v1().repositoryGeneration < maxRepositoryGeneration) {
-                        metadataBlobsToDelete.add(meta.v2());
-                    }
-                });
-            }
-        });
-        logger.info("[{}] Found unreferenced metadata blobs {} at path {}. Cleaning them up", metadata.name(), metadataBlobsToDelete,
-                blobContainer.encryptionMetadataBlobContainer.path());
-        blobContainer().deleteBlobsIgnoringIfNotExists(metadataBlobsToDelete);
-        return new DeleteResult(metadataBlobsToDelete.size(),
-                metadataBlobsToDelete.stream().mapToLong(name -> allMetadataBlobs.get(name).length()).sum());
-    }
-
-    // aux "ugly" function which infers the repository generation under which an index blob container has been created
-    private Long findFirstGeneration(BlobContainer metadataBlobContainer) throws IOException {
-        for (String metaBlobName : metadataBlobContainer.listBlobs().keySet()) {
-            try {
-                return MetadataIdentifier.parseFromMetadataBlobName(metaBlobName).v2().repositoryGeneration;
-            } catch (IllegalArgumentException e) {
-                // ignored, let's find another meta blob name we can parse
-            }
-        }
-        for (BlobContainer child : metadataBlobContainer.children().values()) {
-            Long generation = findFirstGeneration(child);
-            if (generation != null) {
-                return generation;
-            }
-        }
-        return null;
-    };
 
     private static class EncryptedBlobStore implements BlobStore {
 
@@ -644,91 +512,36 @@ public final class EncryptedRepository extends BlobStoreRepository {
         }
     }
 
-    private static String computeSaltedPBKDF2Hash(SecureRandom secureRandom, char[] password) {
-        byte[] salt = new byte[PASSWORD_HASH_SALT_LENGTH_IN_BYES];
-        secureRandom.nextBytes(salt);
-        return computeSaltedPBKDF2Hash(salt, password);
-    }
-
-    private static String computeSaltedPBKDF2Hash(byte[] salt, char[] password) {
-        final PBEKeySpec spec = new PBEKeySpec(password, salt, SALTED_PASSWORD_HASH_ITER_COUNT, SALTED_PASSWORD_HASH_KEY_LENGTH_IN_BITS);
-        final byte[] hash;
-        try {
-            SecretKeyFactory pbkdf2KeyFactory = SecretKeyFactory.getInstance(SALTED_PASSWORD_HASH_ALGO);
-            hash = pbkdf2KeyFactory.generateSecret(spec).getEncoded();
-        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
-            throw new RuntimeException("Unexpected exception when computing the hash of the repository password", e);
-        }
-        return new String(Base64.getUrlEncoder().withoutPadding().encode(salt), StandardCharsets.UTF_8) + ":" +
-                new String(Base64.getUrlEncoder().withoutPadding().encode(hash), StandardCharsets.UTF_8);
+    private static String computeKeyId(SecretKey secretKey) throws GeneralSecurityException {
+        return new String(Base64.getUrlEncoder().withoutPadding().encode(EncryptedRepositoryPlugin.wrapAESKey(secretKey,
+                new SecretKeySpec(KEY_ID_PLAINTEXT,"AES"))), StandardCharsets.UTF_8);
     }
 
     /**
      * Called before the shard snapshot and finalize operations, on the data and master nodes. This validates that the repository
-     * password hash of the master node that started the snapshot operation matches with the repository password on the data nodes.
+     * key on the master node that started the snapshot operation is the same with the repository key on the current node.
      *
-     * @param snapshotUserMetadata the snapshot metadata to verify
-     * @throws RepositoryException if the repository password on the local node mismatches or cannot be verified from the
-     * master's password hash from {@code snapshotUserMetadata}
+     * @param snapshotUserMetadata the snapshot metadata containing the repository key id to verify
+     * @throws RepositoryException if the repository key id on the local node mismatches or cannot be verified from the
+     * master's, as seen in the {@code snapshotUserMetadata}
      */
-    private void validateRepositoryPasswordHash(Map<String, Object> snapshotUserMetadata) throws RepositoryException {
+    private void validateRepositoryKEKId(Map<String, Object> snapshotUserMetadata) throws RepositoryException {
         if (snapshotUserMetadata == null) {
             throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
                     new IllegalStateException("Null snapshot metadata"));
         }
-        final Object repositoryPasswordHash = snapshotUserMetadata.get(PASSWORD_HASH_RESERVED_USER_METADATA_KEY);
-        if (repositoryPasswordHash == null || (false == repositoryPasswordHash instanceof String)) {
+        final Object masterKEKId = snapshotUserMetadata.get(KEK_ID_USER_METADATA_KEY);
+        if (false == masterKEKId instanceof String) {
             throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                    new IllegalStateException("Snapshot metadata does not contain the repository password hash as a String"));
+                    new IllegalStateException("Snapshot metadata does not contain the repository key id as a String"));
         }
-        if (false == passwordHashVerifier.verify((String) repositoryPasswordHash)) {
+        if (false == repositoryKEKId.equals(masterKEKId)) {
             throw new RepositoryException(metadata.name(),
-                    "Repository password mismatch. The local node's value of the keystore secure setting [" +
-                            EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.getConcreteSettingForNamespace(metadata.name()).getKey() +
-                            "] is different from the elected master node, which started the snapshot operation");
+                    "Repository key id mismatch. The local node's repository key, the keystore secure setting [" +
+                            EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.getConcreteSettingForNamespace(
+                                    EncryptedRepositoryPlugin.KEK_NAME_SETTING.get(metadata.settings())).getKey() +
+                            "], is different compared to the elected master node's, which started the snapshot operation");
         }
     }
 
-    /**
-     * This is used to verify that salted hashes match up with the {@code password} from the constructor argument.
-     * This also caches the last successfully verified hash, so that repeated checks for the same hash turn into a simple {@code String
-     * #equals}.
-     */
-    private static class HashVerifier {
-        // the password to which the salted hashes must match up with
-        private final char[] password;
-        // the last successfully matched salted hash
-        private final AtomicReference<String> lastVerifiedHash;
-
-        HashVerifier(char[] password) {
-            this.password = password;
-            this.lastVerifiedHash = new AtomicReference<>(null);
-        }
-
-        boolean verify(String saltedHash) {
-            Objects.requireNonNull(saltedHash);
-            // first check if this exact hash has been checked before
-            if (saltedHash.equals(lastVerifiedHash.get())) {
-                logger.debug("The repository salted password hash [" + saltedHash + "] is locally cached as VALID");
-                return true;
-            }
-            String[] parts = saltedHash.split(":");
-            // the hash has an invalid format
-            if (parts == null || parts.length != 2) {
-                logger.error("Unrecognized format for the repository password hash [" + saltedHash + "]");
-                return false;
-            }
-            String salt = parts[0];
-            logger.debug("Computing repository password hash");
-            String computedHash = computeSaltedPBKDF2Hash(Base64.getUrlDecoder().decode(salt.getBytes(StandardCharsets.UTF_8)), password);
-            if (false == computedHash.equals(saltedHash)) {
-                return false;
-            }
-            // remember last successfully verified hash
-            lastVerifiedHash.set(computedHash);
-            logger.debug("Repository password hash [" + saltedHash + "] validated successfully and is now locally cached");
-            return true;
-        }
-
-    }
 }

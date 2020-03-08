@@ -24,11 +24,17 @@ import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.xpack.core.XPackPlugin;
 
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,9 +49,34 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
     static final Setting.AffixSetting<InputStream> KEY_ENCRYPTION_KEY_SETTING = Setting.affixKeySetting("repository.encrypted.",
             "key", key -> SecureSetting.secureFile(key, null));
     static final Setting<String> DELEGATE_TYPE_SETTING = Setting.simpleString("delegate_type", "");
-    static final Setting<String> KEK_NAME_SETTING = Setting.simpleString("key_name", "");
+    protected static final Setting<String> KEK_NAME_SETTING = Setting.simpleString("key_name", "");
     static final String KEK_CIPHER_ALGO = "AES";
     static final int KEK_LENGTH_IN_BYTES = 32; // 256-bit AES symmetric key
+
+    public static byte[] wrapAESKey(SecretKey wrappingKey, Key toWrapKey) throws NoSuchPaddingException, NoSuchAlgorithmException,
+            InvalidKeyException, IllegalBlockSizeException {
+        if (false == "AES".equals(wrappingKey.getAlgorithm())) {
+            throw new IllegalArgumentException("wrappingKey argument is not an AES Key");
+        }
+        if (false == "AES".equals(toWrapKey.getAlgorithm())) {
+            throw new IllegalArgumentException("toWrapKey argument is not an AES Key");
+        }
+        Cipher c = Cipher.getInstance("AESWrap");
+        c.init(Cipher.WRAP_MODE, wrappingKey);
+        return c.wrap(toWrapKey);
+    }
+
+    public static SecretKey unwrapAESKey(SecretKey wrappingKey, byte[] wrappedKey) throws NoSuchPaddingException,
+            NoSuchAlgorithmException,
+            InvalidKeyException {
+        if (false == "AES".equals(wrappingKey.getAlgorithm())) {
+            throw new IllegalArgumentException("wrappingKey argument is not an AES Key");
+        }
+        Cipher c = Cipher.getInstance("AESWrap");
+        c.init(Cipher.UNWRAP_MODE, wrappingKey);
+        Key unwrappedKey = c.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
+        return new SecretKeySpec(unwrappedKey.getEncoded(), "AES"); // make sure unwrapped key is "AES"
+    }
 
     // "protected" because it is overloaded for tests
     protected XPackLicenseState getLicenseState() { return XPackPlugin.getSharedLicenseState(); }

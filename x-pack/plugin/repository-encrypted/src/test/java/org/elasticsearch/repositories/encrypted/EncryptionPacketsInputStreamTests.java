@@ -110,10 +110,10 @@ public class EncryptionPacketsInputStreamTests extends ESTestCase {
 
     public void testPacketSizeMultipleOfAESBlockSize() throws Exception {
         int packetSize = 1 + Randomness.get().nextInt(8);
-        testEncryptPacketWise(1 + Randomness.get().nextInt(packetSize * EncryptedRepository.AES_BLOCK_SIZE_IN_BYTES),
-                packetSize * EncryptedRepository.AES_BLOCK_SIZE_IN_BYTES, new DefaultBufferedReadAllStrategy());
-        testEncryptPacketWise(packetSize * EncryptedRepository.AES_BLOCK_SIZE_IN_BYTES + Randomness.get().nextInt(8192),
-                packetSize * EncryptedRepository.AES_BLOCK_SIZE_IN_BYTES, new DefaultBufferedReadAllStrategy());
+        testEncryptPacketWise(1 + Randomness.get().nextInt(packetSize * EncryptedRepository.AES_BLOCK_LENGTH_IN_BYTES),
+                packetSize * EncryptedRepository.AES_BLOCK_LENGTH_IN_BYTES, new DefaultBufferedReadAllStrategy());
+        testEncryptPacketWise(packetSize * EncryptedRepository.AES_BLOCK_LENGTH_IN_BYTES + Randomness.get().nextInt(8192),
+                packetSize * EncryptedRepository.AES_BLOCK_LENGTH_IN_BYTES, new DefaultBufferedReadAllStrategy());
     }
 
     public void testMarkAndResetPacketBoundaryNoMock() throws Exception {
@@ -394,7 +394,7 @@ public class EncryptionPacketsInputStreamTests extends ESTestCase {
                 GCMParameterSpec gcmParameterSpec = new GCMParameterSpec(EncryptedRepository.GCM_TAG_LENGTH_IN_BYTES * Byte.SIZE,
                         Arrays.copyOfRange(ciphertextArray, ciphertextOffset,
                                 ciphertextOffset + EncryptedRepository.GCM_IV_LENGTH_IN_BYTES));
-                Cipher packetCipher = Cipher.getInstance(EncryptedRepository.GCM_ENCRYPTION_SCHEME);
+                Cipher packetCipher = Cipher.getInstance(EncryptedRepository.DATA_ENCRYPTION_SCHEME);
                 packetCipher.init(Cipher.DECRYPT_MODE, secretKey, gcmParameterSpec);
                 try (InputStream packetDecryptionInputStream = new CipherInputStream(new ByteArrayInputStream(ciphertextArray,
                         ciphertextOffset + EncryptedRepository.GCM_IV_LENGTH_IN_BYTES,
