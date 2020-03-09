@@ -33,9 +33,9 @@ import static org.elasticsearch.repositories.encrypted.EncryptedRepository.GCM_T
  * {@link EncryptionPacketsInputStream} generates. No decrypted bytes are returned before
  * they are authenticated.
  * <p>
- * The same parameters, namely {@code secretKey}, {@code nonce} and {@code packetLength},
- * that have been used during encryption must also be used for decryption, otherwise
- * decryption will fail.
+ * The same parameters, namely {@code secretKey} and {@code packetLength},
+ * which have been used during encryption, must also be used for decryption,
+ * otherwise decryption will fail.
  * <p>
  * This implementation buffers the encrypted packet in memory. The maximum packet size it can
  * accommodate is {@link EncryptedRepository#MAX_PACKET_LENGTH_IN_BYTES}.
@@ -53,7 +53,6 @@ public final class DecryptionPacketsInputStream extends ChainingInputStream {
 
     private final InputStream source;
     private final SecretKey secretKey;
-    private final int nonce;
     private final int packetLength;
     private final byte[] packetBuffer;
 
@@ -79,10 +78,9 @@ public final class DecryptionPacketsInputStream extends ChainingInputStream {
         return decryptedSize;
     }
 
-    public DecryptionPacketsInputStream(InputStream source, SecretKey secretKey, int nonce, int packetLength) {
+    public DecryptionPacketsInputStream(InputStream source, SecretKey secretKey, int packetLength) {
         this.source = Objects.requireNonNull(source);
         this.secretKey = Objects.requireNonNull(secretKey);
-        this.nonce = nonce;
         if (packetLength <= 0 || packetLength >= EncryptedRepository.MAX_PACKET_LENGTH_IN_BYTES) {
             throw new IllegalArgumentException("Invalid packet length [" + packetLength + "]");
         }
@@ -145,11 +143,7 @@ public final class DecryptionPacketsInputStream extends ChainingInputStream {
         }
         // extract the nonce and the counter from the packet IV
         ByteBuffer ivBuffer = ByteBuffer.wrap(packetBuffer, 0, GCM_IV_LENGTH_IN_BYTES).order(ByteOrder.LITTLE_ENDIAN);
-        int packetIvNonce = ivBuffer.getInt(0);
         long packetIvCounter = ivBuffer.getLong(Integer.BYTES);
-        if (packetIvNonce != nonce) {
-            throw new IOException("Packet nonce mismatch. Expecting [" + nonce + "], but got [" + packetIvNonce + "].");
-        }
         if (packetIvCounter != counter) {
             throw new IOException("Packet counter mismatch. Expecting [" + counter + "], but got [" + packetIvCounter + "].");
         }

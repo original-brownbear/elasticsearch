@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The list of paths where a blob can reside.  The contents of the paths are dependent upon the implementation of {@link BlobContainer}.
@@ -62,6 +63,12 @@ public class BlobPath implements Iterable<String> {
         return new BlobPath(Collections.unmodifiableList(paths));
     }
 
+    public BlobPath append(BlobPath otherPath) {
+        List<String> paths = new ArrayList<>(this.paths);
+        paths.addAll(otherPath.paths);
+        return new BlobPath(Collections.unmodifiableList(paths));
+    }
+
     public String buildAsString() {
         String p = String.join(SEPARATOR, paths);
         if (p.isEmpty() || p.endsWith(SEPARATOR)) {
@@ -91,5 +98,18 @@ public class BlobPath implements Iterable<String> {
             sb.append('[').append(path).append(']');
         }
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BlobPath other = (BlobPath) o;
+        return Objects.equals(paths, other.paths);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(paths);
     }
 }
