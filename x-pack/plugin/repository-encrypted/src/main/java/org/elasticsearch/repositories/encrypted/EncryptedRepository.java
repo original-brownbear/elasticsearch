@@ -39,9 +39,7 @@ import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotShardFailure;
 
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
@@ -49,8 +47,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashMap;
@@ -68,7 +64,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
     static final int AES_BLOCK_LENGTH_IN_BYTES = 128;
     // the following constants require careful thought before changing because they will break backwards compatibility
     static final String DATA_ENCRYPTION_SCHEME = "AES/GCM/NoPadding";
-    static final int DATA_KEY_LENGTH_IN_BYTES = 32;
+    static final int DATA_KEY_LENGTH_IN_BYTES = 32; // 256-bit AES key
     static final int ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES = DATA_KEY_LENGTH_IN_BYTES + 8; // https://www.ietf.org/rfc/rfc3394.txt section 2.2
     static final long PACKET_START_COUNTER = Long.MIN_VALUE;
     static final int MAX_PACKET_LENGTH_IN_BYTES = 8 << 20; // 8MB
@@ -95,6 +91,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
     // master node that finalizes the snapshot (could be a different master node, if a master failover
     // has occurred in the mean time)
     private static final String KEK_ID_USER_METADATA_KEY = EncryptedRepository.class.getName() + ".repositoryKEKId";
+    private static final int DEK_CACHE_WEIGHT = 2048;
 
     // this is the repository instance to which all blob reads and writes are forwarded to (it stores both the encrypted blobs, as well
     // as the associated encrypted DEKs)
@@ -120,15 +117,18 @@ public final class EncryptedRepository extends BlobStoreRepository {
     protected EncryptedRepository(RepositoryMetaData metadata, NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
                                   BlobStoreRepository delegatedRepository, Supplier<XPackLicenseState> licenseStateSupplier,
                                   SecretKey repositoryKEK) throws GeneralSecurityException {
-        super(metadata, namedXContentRegistry, clusterService, BlobPath.cleanPath());
+        super(metadata, namedXContentRegistry, clusterService, BlobPath.cleanPath() /* the encrypted repository uses a hardcoded empty
+        base blob path but the base path setting is honored for the delegated repository */);
         this.delegatedRepository = delegatedRepository;
+        // DEKs are generated randomly
         KeyGenerator dataEncryptionKeyGenerator = KeyGenerator.getInstance(DATA_ENCRYPTION_SCHEME.split("/")[0]);
         dataEncryptionKeyGenerator.init(DATA_KEY_LENGTH_IN_BYTES * Byte.SIZE, SecureRandom.getInstance(RAND_ALGO));
         this.DEKSupplier = () -> dataEncryptionKeyGenerator.generateKey();
         this.licenseStateSupplier = licenseStateSupplier;
         this.repositoryKEK = repositoryKEK;
         this.repositoryKEKId = computeKEKId(repositoryKEK);
-        this.DEKCache = CacheBuilder.<String, SecretKey>builder().setMaximumWeight(1000).build();
+        // stores decrypted DEKs; DEKs are reused to encrypt/decrypt multiple independent blobs
+        this.DEKCache = CacheBuilder.<String, SecretKey>builder().setMaximumWeight(DEK_CACHE_WEIGHT).build();
         if (isReadOnly() != delegatedRepository.isReadOnly()) {
             throw new IllegalStateException("The encrypted repository must be read-only iff the delegate repository is read-only");
         }
@@ -400,11 +400,12 @@ public final class EncryptedRepository extends BlobStoreRepository {
         @Override
         public void writeBlob(String blobName, InputStream inputStream, long blobSize, boolean failIfAlreadyExists) throws IOException {
             // reuse, but possibly generate and store a new DEK
-            UseOnceDEK nonceAndDEK = nonceAndDEKSupplier.get();
-            byte[] DEKIdBytes = Base64.getUrlDecoder().decode(nonceAndDEK.DEKId.getBytes(StandardCharsets.UTF_8));
-            assert DEKIdBytes.length == DEK_ID_LENGTH_IN_BYTES;
-            final long encryptedBlobSize = (long) DEKIdBytes.length +
-                    EncryptionPacketsInputStream.getEncryptionLength(blobSize, PACKET_LENGTH_IN_BYTES);
+            final UseOnceDEK nonceAndDEK = nonceAndDEKSupplier.get();
+            final byte[] DEKIdBytes = Base64.getUrlDecoder().decode(nonceAndDEK.DEKId.getBytes(StandardCharsets.UTF_8));
+            if (DEKIdBytes.length != DEK_ID_LENGTH_IN_BYTES) {
+                throw new IllegalStateException("Unexpected DEK Id length [" + DEKIdBytes.length + "]");
+            }
+            final long encryptedBlobSize = getEncryptedBlobByteLength(blobSize);
             try (InputStream encryptedInputStream = ChainingInputStream.chain(new ByteArrayInputStream(DEKIdBytes),
                     new EncryptionPacketsInputStream(inputStream, nonceAndDEK.DEK, nonceAndDEK.nonce, PACKET_LENGTH_IN_BYTES))) {
                 delegatedBlobContainer.writeBlob(blobName, encryptedInputStream, encryptedBlobSize, failIfAlreadyExists);
@@ -457,6 +458,12 @@ public final class EncryptedRepository extends BlobStoreRepository {
         }
     }
 
+    /**
+     * The ID of the repository key (KEK) is the ciphertext of a known plaintext, using the AES Wrap algorithm.
+     * AES Wrap algorithm is deterministic, i.e. encryption using the same key, of the same plaintext, generates the same ciphertext.
+     * Moreover, the ciphertext reveals no information on the key, and the probability of collision of ciphertexts given different
+     * keys is statistically negligible.
+     */
     private static String computeKEKId(SecretKey repositoryKEK) throws GeneralSecurityException {
         return new String(Base64.getUrlEncoder().withoutPadding().encode(EncryptedRepositoryPlugin.wrapAESKey(repositoryKEK,
                 new SecretKeySpec(KEK_ID_PLAINTEXT,"AES"))), StandardCharsets.UTF_8);
