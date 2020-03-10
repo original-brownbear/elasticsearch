@@ -91,6 +91,19 @@ public class BlobPath implements Iterable<String> {
         }
     }
 
+    public boolean isEmpty() {
+        return paths.isEmpty();
+    }
+
+    @Nullable
+    public String getRootPath() {
+        if (isEmpty()) {
+            return null;
+        } else {
+            return paths.get(0);
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

@@ -14,16 +14,17 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.CheckedFunction;
+import org.elasticsearch.common.CheckedSupplier;
+import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.blobstore.DeleteResult;
 import org.elasticsearch.common.blobstore.support.AbstractBlobContainer;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.cache.Cache;
 import org.elasticsearch.common.cache.CacheBuilder;
-import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
@@ -38,8 +39,9 @@ import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotShardFailure;
 
-import javax.crypto.AEADBadTagException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
@@ -47,16 +49,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 public final class EncryptedRepository extends BlobStoreRepository {
@@ -79,7 +80,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
     // and the probability that two different keys map the same plaintext to the same ciphertext is very small
     // (2^-256, much lower than the UUID collision of 2^-128), assuming AES is indistinguishable from a pseudorandom permutation
     // a collision does not break security but it may corrupt the repository
-    private static final byte[] KEY_ID_PLAINTEXT = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    private static final byte[] KEK_ID_PLAINTEXT = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
             21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
     // the path of the blob container holding all the DEKs
     // this is relative to the root base path holding the encrypted blobs (i.e. the repository root base path)
@@ -112,8 +113,8 @@ public final class EncryptedRepository extends BlobStoreRepository {
      * @see EncryptionPacketsInputStream#getEncryptionLength(long, int)
      */
     public static long getEncryptedBlobByteLength(long plaintextBlobByteLength) {
-        return 16L /* UUID byte length */ + EncryptionPacketsInputStream.getEncryptionLength(plaintextBlobByteLength,
-                PACKET_LENGTH_IN_BYTES);
+        return (long) DEK_ID_LENGTH_IN_BYTES /* UUID byte length */
+                + EncryptionPacketsInputStream.getEncryptionLength(plaintextBlobByteLength, PACKET_LENGTH_IN_BYTES);
     }
 
     protected EncryptedRepository(RepositoryMetaData metadata, NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
@@ -126,7 +127,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
         this.DEKSupplier = () -> dataEncryptionKeyGenerator.generateKey();
         this.licenseStateSupplier = licenseStateSupplier;
         this.repositoryKEK = repositoryKEK;
-        this.repositoryKEKId = computeKeyId(repositoryKEK);
+        this.repositoryKEKId = computeKEKId(repositoryKEK);
         this.DEKCache = CacheBuilder.<String, SecretKey>builder().setMaximumWeight(1000).build();
         if (isReadOnly() != delegatedRepository.isReadOnly()) {
             throw new IllegalStateException("The encrypted repository must be read-only iff the delegate repository is read-only");
@@ -198,7 +199,8 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
     @Override
     protected BlobStore createBlobStore() {
-        return new EncryptedBlobStore(delegatedRepository, DEKSupplier, repositoryKEK, repositoryKEKId, DEKCache);
+        return new EncryptedBlobStore(() -> delegatedRepository.blobStore(), delegatedRepository.basePath(), repositoryKEK,
+                repositoryKEKId, DEKSupplier, DEKCache);
     }
 
     @Override
@@ -220,68 +222,28 @@ public final class EncryptedRepository extends BlobStoreRepository {
     }
 
     private static class EncryptedBlobStore implements BlobStore {
-
-        private final BlobStore delegatedBlobStore;
+        private final Supplier<BlobStore> delegatedBlobStoreSupplier;
         private final BlobPath delegatedBasePath;
-        private final Supplier<SecretKey> DEKSupplier;
+        private final BlobPath DEKBasePath;
         private final SecretKey repositoryKEK;
-        private final String repositoryKEKId;
+        private final Supplier<SecretKey> DEKSupplier;
         private final Cache<String, SecretKey> DEKCache;
-        EncryptedBlobStore(BlobStoreRepository delegatedBlobStoreRepository,
-                           Supplier<SecretKey> DEKSupplier,
+
+        EncryptedBlobStore(Supplier<BlobStore> delegatedBlobStoreSupplier,
+                           BlobPath delegatedBasePath,
                            SecretKey repositoryKEK,
                            String repositoryKEKId,
+                           Supplier<SecretKey> DEKSupplier,
                            Cache<String, SecretKey> DEKCache) {
-            this.delegatedBlobStore = delegatedBlobStoreRepository.blobStore();
-            this.delegatedBasePath = delegatedBlobStoreRepository.basePath();
-            this.DEKSupplier = DEKSupplier;
-            this.repositoryKEK = repositoryKEK;
-            this.repositoryKEKId = repositoryKEKId;
-            this.DEKCache = DEKCache;
-        }
-
-        @Override
-        public void close() throws IOException {
-            delegatedBlobStore.close();
-        }
-
-        @Override
-        public BlobContainer blobContainer(BlobPath path) {
-            return new EncryptedBlobContainer(delegatedBlobStore, delegatedBasePath, path, DEKSupplier, repositoryKEK, repositoryKEKId,
-                    DEKCache);
-        }
-    }
-
-    private static class EncryptedBlobContainer extends AbstractBlobContainer {
-
-        private final BlobStore delegatedBlobStore;
-        private final BlobPath delegatedBasePath;
-        private final Supplier<SecretKey> DEKSupplier;
-        private final BlobContainer delegatedBlobContainer;
-        private final BlobContainer DEKBlobContainer;
-        private final SecretKey repositoryKEK;
-        private final String repositoryKEKId;
-        private final Cache<String, SecretKey> DEKCache;
-
-        EncryptedBlobContainer(BlobStore delegatedBlobStore,
-                               BlobPath delegatedBasePath,
-                               BlobPath path, // this contains the {@code EncryptedRepository#basePath} but that is empty
-                               Supplier<SecretKey> DEKSupplier,
-                               SecretKey repositoryKEK,
-                               String repositoryKEKId,
-                               Cache<String, SecretKey> DEKCache) {
-            super(path);
-            this.delegatedBlobStore = delegatedBlobStore;
+            this.delegatedBlobStoreSupplier = delegatedBlobStoreSupplier;
             this.delegatedBasePath = delegatedBasePath;
-            this.DEKSupplier = DEKSupplier;
-            this.delegatedBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.append(path));
-            this.DEKBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.add(DEK_ROOT_CONTAINER).add(repositoryKEKId));
+            this.DEKBasePath = delegatedBasePath.add(DEK_ROOT_CONTAINER).add(repositoryKEKId);
             this.repositoryKEK = repositoryKEK;
-            this.repositoryKEKId = repositoryKEKId;
+            this.DEKSupplier = DEKSupplier;
             this.DEKCache = DEKCache;
         }
 
-        private SecretKey loadDEK(String DEKId) throws IOException, GeneralSecurityException {
+        private SecretKey loadDEK(String DEKId, BlobContainer DEKBlobContainer) throws IOException {
             final byte[] encryptedDEKBytes = new byte[ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES];
             try (InputStream encryptedDEKInputStream = DEKBlobContainer.readBlob(DEKId)) {
                 int bytesRead = encryptedDEKInputStream.readNBytes(encryptedDEKBytes, 0, ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES);
@@ -292,14 +254,87 @@ public final class EncryptedRepository extends BlobStoreRepository {
                     throw new IllegalArgumentException("Encrypted DEK with id [" + DEKId + "] is larger than expected");
                 }
             }
-            return EncryptedRepositoryPlugin.unwrapAESKey(repositoryKEK, encryptedDEKBytes);
+            try {
+                return EncryptedRepositoryPlugin.unwrapAESKey(repositoryKEK, encryptedDEKBytes);
+            } catch (GeneralSecurityException e) {
+                throw new IOException("Failure to AES unwrap the DEK", e);
+            }
         }
 
-        private void storeDEK(String DEKId, SecretKey DEK) throws IOException, GeneralSecurityException{
-            final byte[] encryptedDEKBytes = EncryptedRepositoryPlugin.wrapAESKey(repositoryKEK, DEK);
+        private void storeDEK(String DEKId, SecretKey DEK, BlobContainer DEKBlobContainer) throws IOException {
+            final byte[] encryptedDEKBytes;
+            try {
+                encryptedDEKBytes = EncryptedRepositoryPlugin.wrapAESKey(repositoryKEK, DEK);
+            } catch (GeneralSecurityException e) {
+                throw new IOException("Failure to AES wrap the DEK", e);
+            }
             try (InputStream encryptedDEKInputStream = new ByteArrayInputStream(encryptedDEKBytes)) {
                 DEKBlobContainer.writeBlobAtomic(DEKId, encryptedDEKInputStream, encryptedDEKBytes.length, true);
             }
+        }
+
+        private CheckedSupplier<UseOnceDEK, IOException> createNonceAndDEKSupplier(Supplier<SecretKey> DEKSupplier,
+                                                                                   BlobContainer DEKBlobContainer) {
+            final UseOnceDEK expiredDEK = new UseOnceDEK(null, null, Integer.MAX_VALUE);
+            final AtomicReference<UseOnceDEK> nonceAndDEKGenerator = new AtomicReference<>(expiredDEK);
+            final Object lock = new Object();
+            return () -> {
+                while (true) {
+                    final UseOnceDEK nonceAndDEK = nonceAndDEKGenerator.getAndUpdate(prev -> prev.nonce < Integer.MAX_VALUE ?
+                            new UseOnceDEK(prev.DEK, prev.DEKId, prev.nonce + 1) : expiredDEK);
+                    if (nonceAndDEK.nonce < Integer.MAX_VALUE) {
+                        return nonceAndDEK;
+                    } else {
+                        synchronized (lock) {
+                            if (nonceAndDEKGenerator.get().nonce == Integer.MAX_VALUE) {
+                                final SecretKey newDEK = DEKSupplier.get();
+                                final String newDEKId = UUIDs.randomBase64UUID();
+                                assert newDEKId.length() == DEK_ID_LENGTH_IN_CHARS;
+                                storeDEK(newDEKId, newDEK, DEKBlobContainer);
+                                nonceAndDEKGenerator.set(new UseOnceDEK(newDEK, newDEKId, Integer.MIN_VALUE));
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        @Override
+        public BlobContainer blobContainer(BlobPath path) {
+            BlobContainer delegatedBlobContainer = delegatedBlobStoreSupplier.get().blobContainer(delegatedBasePath.append(path));
+            BlobContainer DEKBlobContainer = delegatedBlobStoreSupplier.get().blobContainer(DEKBasePath);
+            return new EncryptedBlobContainer(path, delegatedBlobContainer, createNonceAndDEKSupplier(DEKSupplier, DEKBlobContainer),
+                    DEKId -> {
+                        try {
+                            return DEKCache.computeIfAbsent(DEKId, ignored -> loadDEK(DEKId, DEKBlobContainer));
+                        } catch (ExecutionException e) {
+                            throw new IOException("Failure to retrieve DEK for id [" + DEKId + "]", e);
+                        }
+                    });
+        }
+
+        @Override
+        public void close() {
+        }
+    }
+
+    private static class EncryptedBlobContainer extends AbstractBlobContainer {
+
+        private final BlobContainer delegatedBlobContainer;
+        private final CheckedSupplier<UseOnceDEK, IOException> nonceAndDEKSupplier;
+        private final CheckedFunction<String, SecretKey, IOException> getDEKById;
+
+        EncryptedBlobContainer(BlobPath path, // this contains the {@code EncryptedRepository#basePath} but that is empty
+                               BlobContainer delegatedBlobContainer,
+                               CheckedSupplier<UseOnceDEK, IOException> nonceAndDEKSupplier,
+                               CheckedFunction<String, SecretKey, IOException> getDEKById) {
+            super(path);
+            if (DEK_ROOT_CONTAINER.equals(path.getRootPath())) {
+                throw new IllegalArgumentException("Cannot descend into the DEK blob container");
+            }
+            this.delegatedBlobContainer = delegatedBlobContainer;
+            this.nonceAndDEKSupplier = nonceAndDEKSupplier;
+            this.getDEKById = getDEKById;
         }
 
         /**
@@ -330,12 +365,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
                     throw new IllegalArgumentException("The encrypted blob is too small [" + bytesRead + "]");
                 }
                 final String DEKId = new String(Base64.getUrlEncoder().withoutPadding().encode(DEKIdBytes), StandardCharsets.UTF_8);
-                final SecretKey DEK;
-                try {
-                    DEK = DEKCache.computeIfAbsent(DEKId, ignored -> loadDEK(DEKId));
-                } catch (ExecutionException e) {
-                    throw new IOException("Failed to load DEK", e);
-                }
+                final SecretKey DEK = getDEKById.apply(DEKId);
                 // read and decrypt the data blob
                 return new DecryptionPacketsInputStream(encryptedDataInputStream, DEK, PACKET_LENGTH_IN_BYTES);
             } catch (IOException e) {
@@ -352,50 +382,31 @@ public final class EncryptedRepository extends BlobStoreRepository {
          * Reads the blob content from the input stream and writes it to the container in a new blob with the given name.
          * If {@code failIfAlreadyExists} is {@code true} and a blob with the same name already exists, the write operation will fail;
          * otherwise, if {@code failIfAlreadyExists} is {@code false} the blob is overwritten.
-         * The contents are encrypted in a streaming fashion. The encryption key is randomly generated for each blob.
-         * The encryption key is separately stored in a metadata blob, which is encrypted with another key derived from the repository
-         * password. The metadata blob is stored first, before the encrypted data blob, so as to ensure that no encrypted data blobs
-         * are left without the associated metadata, in any failure scenario.
+         * The contents are encrypted in a streaming fashion. The DEK (encryption key) is randomly generated and reused for encrypting
+         * subsequent blobs such that the same IV is not reused together with the same key.
+         * The DEK encryption key is separately stored in a different blob, which is encrypted with the repository key.
          *
          * @param   blobName
          *          The name of the blob to write the contents of the input stream to.
          * @param   inputStream
          *          The input stream from which to retrieve the bytes to write to the blob.
          * @param   blobSize
-         *          The size of the blob to be written, in bytes.  It is implementation dependent whether
-         *          this value is used in writing the blob to the repository.
+         *          The size of the blob to be written, in bytes. The actual number of bytes written to the storage service is larger
+         *          because of encryption and authentication overhead. It is implementation dependent whether this value is used
+         *          in writing the blob to the repository.
          * @param   failIfAlreadyExists
          *          whether to throw a FileAlreadyExistsException if the given blob already exists
          */
         @Override
         public void writeBlob(String blobName, InputStream inputStream, long blobSize, boolean failIfAlreadyExists) throws IOException {
-            final SecretKey dataEncryptionKey = DEKSupplier.get();
-            final int nonce = encryptionNonceSupplier.get();
-            // this is the metadata required to decrypt back the (soon to be) encrypted blob
-            final BlobEncryptionMetadata metadata = new BlobEncryptionMetadata(nonce, PACKET_LENGTH_IN_BYTES, dataEncryptionKey);
-            // encrypt the metadata
-            final byte[] encryptedMetadata;
-            try {
-                encryptedMetadata = BlobEncryptionMetadata.serializeMetadata(metadata, metadataEncryption::encrypt);
-            } catch (IOException e) {
-                throw new IOException("Failure to encrypt metadata for blob [" + blobName + "]", e);
-            }
-            // the metadata identifier is a sufficiently long random byte array so as to make it practically unique
-            // the goal is to avoid overwriting metadata blobs even if the encrypted data blobs are overwritten
-            final MetadataIdentifier metadataIdentifier = metadataIdentifierSupplier.get();
-            final String metadataBlobName = MetadataIdentifier.formMetadataBlobName(blobName, metadataIdentifier);
-            // first write the encrypted metadata to a UNIQUE blob name
-            try (ByteArrayInputStream encryptedMetadataInputStream = new ByteArrayInputStream(encryptedMetadata)) {
-                DEKBlobContainer.writeBlob(metadataBlobName, encryptedMetadataInputStream, encryptedMetadata.length, true
-                        /* fail in the exceptional case of metadata blob name conflict */);
-            }
-            // afterwards write the encrypted data blob
-            // prepended to the encrypted data blob is the unique identifier (fixed length) of the metadata blob
-            final long encryptedBlobSize = (long) MetadataIdentifier.byteLength() +
+            // reuse, but possibly generate and store a new DEK
+            UseOnceDEK nonceAndDEK = nonceAndDEKSupplier.get();
+            byte[] DEKIdBytes = Base64.getUrlDecoder().decode(nonceAndDEK.DEKId.getBytes(StandardCharsets.UTF_8));
+            assert DEKIdBytes.length == DEK_ID_LENGTH_IN_BYTES;
+            final long encryptedBlobSize = (long) DEKIdBytes.length +
                     EncryptionPacketsInputStream.getEncryptionLength(blobSize, PACKET_LENGTH_IN_BYTES);
-            try (InputStream encryptedInputStream =
-                         ChainingInputStream.chain(new ByteArrayInputStream(metadataIdentifier.asByteArray()),
-                                 new EncryptionPacketsInputStream(inputStream, dataEncryptionKey, nonce, PACKET_LENGTH_IN_BYTES))) {
+            try (InputStream encryptedInputStream = ChainingInputStream.chain(new ByteArrayInputStream(DEKIdBytes),
+                    new EncryptionPacketsInputStream(inputStream, nonceAndDEK.DEK, nonceAndDEK.nonce, PACKET_LENGTH_IN_BYTES))) {
                 delegatedBlobContainer.writeBlob(blobName, encryptedInputStream, encryptedBlobSize, failIfAlreadyExists);
             }
         }
@@ -410,121 +421,45 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
         @Override
         public DeleteResult delete() throws IOException {
-            // first delete the encrypted data blob
-            DeleteResult deleteResult = delegatedBlobContainer.delete();
-            // then delete metadata
-            try {
-                deleteResult = deleteResult.add(DEKBlobContainer.delete());
-            } catch (IOException e) {
-                // the encryption metadata blob container might not exist at all
-                logger.warn("Failure to delete metadata blob container " + DEKBlobContainer.path(), e);
-            }
-            return deleteResult;
+            return delegatedBlobContainer.delete();
         }
 
         @Override
         public void deleteBlobsIgnoringIfNotExists(List<String> blobNames) throws IOException {
-            Objects.requireNonNull(blobNames);
-
-            // find all the blob names that must be deleted
-            Set<String> blobNamesSet = new HashSet<>(blobNames);
-            Set<String> blobNamesToDelete = new HashSet<>();
-            for (String existingBlobName : delegatedBlobContainer.listBlobs().keySet()) {
-                if (blobNamesSet.contains(existingBlobName)) {
-                    blobNamesToDelete.add(existingBlobName);
-                }
-            }
-
-            // find all the metadata blob names that must be deleted
-            Map<String, List<String>> blobNamesToMetadataNamesToDelete = new HashMap<>(blobNamesToDelete.size());
-            Set<String> allMetadataBlobNames = new HashSet<>();
-            try {
-                allMetadataBlobNames = DEKBlobContainer.listBlobs().keySet();
-            } catch (IOException e) {
-                // the metadata blob container might not even exist
-                // the encrypted data is the "anchor" for encrypted blobs, if those are removed, the encrypted blob as a whole is
-                // considered removed, even if, technically, the metadata is still lingering (it should later be removed by cleanup)
-                // therefore this tolerates metadata delete failures, when data deletes are successful
-                logger.warn("Failure to list blobs of metadata blob container " + DEKBlobContainer.path(), e);
-            }
-            for (String metadataBlobName : allMetadataBlobNames) {
-                final String blobNameForMetadata;
-                try {
-                    blobNameForMetadata = MetadataIdentifier.parseFromMetadataBlobName(metadataBlobName).v1();
-                } catch (IllegalArgumentException e) {
-                    // ignore invalid metadata blob names, which most likely have been created externally
-                    continue;
-                }
-                // group metadata blob names to their associated blob name
-                if (blobNamesToDelete.contains(blobNameForMetadata)) {
-                    blobNamesToMetadataNamesToDelete.computeIfAbsent(blobNameForMetadata, k -> new ArrayList<>(1))
-                            .add(metadataBlobName);
-                }
-            }
-            // Metadata deletes when there are multiple for the same blob is un-safe, so don't try it now.
-            // It is unsafe because metadata "appears" before the data and there could be an overwrite in progress for which only
-            // the metadata, but not the encrypted data, shows up.
-            List<String> metadataBlobNamesToDelete = new ArrayList<>(blobNamesToMetadataNamesToDelete.size());
-            blobNamesToMetadataNamesToDelete.entrySet().forEach(entry -> {
-                if (entry.getValue().size() == 1) {
-                    metadataBlobNamesToDelete.add(entry.getValue().get(0));
-                }
-                // technically, duplicate metadata written during olden repository generations could be removed here as well,
-                // but this code should not be aware of what a repository generation is, so let the metadata linger, it will
-                // be garbage collected by cleanup
-            });
-
-            // then delete the encrypted data blobs
-            delegatedBlobContainer.deleteBlobsIgnoringIfNotExists(new ArrayList<>(blobNamesToDelete));
-
-            // lastly delete metadata blobs
-            try {
-                DEKBlobContainer.deleteBlobsIgnoringIfNotExists(metadataBlobNamesToDelete);
-            } catch (IOException e) {
-                logger.warn("Failure to delete metadata blobs " + metadataBlobNamesToDelete + " from blob container "
-                        + DEKBlobContainer.path(), e);
-            }
+            delegatedBlobContainer.deleteBlobsIgnoringIfNotExists(blobNames);
         }
 
         @Override
         public Map<String, BlobMetaData> listBlobs() throws IOException {
-            // The encrypted data blobs "anchor" the metadata-data blob pair, i.e. the encrypted blob "exists" if only the data exists.
-            // In all circumstances, barring an "external" access to the repository, the metadata associated to the data must exist.
             return delegatedBlobContainer.listBlobs();
         }
 
         @Override
         public Map<String, BlobMetaData> listBlobsByPrefix(String blobNamePrefix) throws IOException {
-            // The encrypted data blobs "anchor" the metadata-data blob pair, i.e. the encrypted blob "exists" if only the data exists.
-            // In all circumstances, barring an "external" access to the repository, the metadata associated to the data must exist.
             return delegatedBlobContainer.listBlobsByPrefix(blobNamePrefix);
         }
 
         @Override
         public Map<String, BlobContainer> children() throws IOException {
-            // the encrypted data blob container is the source-of-truth for child container operations
-            // the metadata blob container mirrors its structure, but in some failure cases it might contain
-            // additional orphaned metadata blobs
-            Map<String, BlobContainer> childEncryptedBlobContainers = delegatedBlobContainer.children();
-            Map<String, BlobContainer> result = new HashMap<>(childEncryptedBlobContainers.size());
-            for (Map.Entry<String, BlobContainer> encryptedBlobContainer : childEncryptedBlobContainers.entrySet()) {
-                if (encryptedBlobContainer.getValue().path().equals(DEKBlobContainer.path())) {
-                    // do not descend recursively into the metadata blob container itself
+            final Map<String, BlobContainer> childEncryptedBlobContainers = delegatedBlobContainer.children();
+            final Map<String, BlobContainer> resultBuilder = new HashMap<>(childEncryptedBlobContainers.size());
+            for (Map.Entry<String, BlobContainer> childBlobContainer : childEncryptedBlobContainers.entrySet()) {
+                if (childBlobContainer.getKey().equals(DEK_ROOT_CONTAINER) && path().isEmpty()) {
+                    // do not descend into the DEK blob container
                     continue;
                 }
                 // get an encrypted blob container for each child
                 // Note that the encryption metadata blob container might be missing
-                result.put(encryptedBlobContainer.getKey(), new EncryptedBlobContainer(delegatedBlobStore, delegatedBasePath,
-                        path.add(encryptedBlobContainer.getKey()), DEKSupplier, metadataEncryption,
-                        encryptionNonceSupplier, metadataIdentifierSupplier));
+                resultBuilder.put(childBlobContainer.getKey(), new EncryptedBlobContainer(path().add(childBlobContainer.getKey()),
+                        childBlobContainer.getValue(), nonceAndDEKSupplier, getDEKById));
             }
-            return result;
+            return Map.copyOf(resultBuilder);
         }
     }
 
-    private static String computeKeyId(SecretKey secretKey) throws GeneralSecurityException {
-        return new String(Base64.getUrlEncoder().withoutPadding().encode(EncryptedRepositoryPlugin.wrapAESKey(secretKey,
-                new SecretKeySpec(KEY_ID_PLAINTEXT,"AES"))), StandardCharsets.UTF_8);
+    private static String computeKEKId(SecretKey repositoryKEK) throws GeneralSecurityException {
+        return new String(Base64.getUrlEncoder().withoutPadding().encode(EncryptedRepositoryPlugin.wrapAESKey(repositoryKEK,
+                new SecretKeySpec(KEK_ID_PLAINTEXT,"AES"))), StandardCharsets.UTF_8);
     }
 
     /**
@@ -551,6 +486,18 @@ public final class EncryptedRepository extends BlobStoreRepository {
                             EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.getConcreteSettingForNamespace(
                                     EncryptedRepositoryPlugin.KEK_NAME_SETTING.get(metadata.settings())).getKey() +
                             "], is different compared to the elected master node's, which started the snapshot operation");
+        }
+    }
+
+    private static class UseOnceDEK {
+        final SecretKey DEK;
+        final String DEKId;
+        final Integer nonce;
+
+        UseOnceDEK(SecretKey DEK, String DEKId, Integer nonce) {
+            this.DEK = DEK;
+            this.DEKId = DEKId;
+            this.nonce = nonce;
         }
     }
 
