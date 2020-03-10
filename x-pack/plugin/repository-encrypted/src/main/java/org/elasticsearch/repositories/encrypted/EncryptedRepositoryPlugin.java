@@ -49,7 +49,7 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
     static final Setting.AffixSetting<InputStream> KEY_ENCRYPTION_KEY_SETTING = Setting.affixKeySetting("repository.encrypted.",
             "key", key -> SecureSetting.secureFile(key, null));
     static final Setting<String> DELEGATE_TYPE_SETTING = Setting.simpleString("delegate_type", "");
-    protected static final Setting<String> KEK_NAME_SETTING = Setting.simpleString("key_name", "");
+    static final Setting<String> KEK_NAME_SETTING = Setting.simpleString("key_name", "");
     static final String KEK_CIPHER_ALGO = "AES";
     static final int KEK_LENGTH_IN_BYTES = 32; // 256-bit AES symmetric key
 
@@ -137,8 +137,8 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
                     throw new IllegalArgumentException("Repository setting [" + DELEGATE_TYPE_SETTING.getKey() + "] must be set");
                 }
                 if (REPOSITORY_TYPE_NAME.equals(delegateType)) {
-                    throw new IllegalArgumentException("Cannot encrypt an already encrypted repository. [" + DELEGATE_TYPE_SETTING.getKey() +
-                            "] must not be equal to [" + REPOSITORY_TYPE_NAME + "]");
+                    throw new IllegalArgumentException("Cannot encrypt an already encrypted repository. [" +
+                            DELEGATE_TYPE_SETTING.getKey() + "] must not be equal to [" + REPOSITORY_TYPE_NAME + "]");
                 }
                 final Repository.Factory factory = typeLookup.apply(delegateType);
                 if (null == factory) {

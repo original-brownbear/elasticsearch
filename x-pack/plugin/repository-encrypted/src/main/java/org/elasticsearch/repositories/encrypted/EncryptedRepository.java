@@ -81,7 +81,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
     // the path of the blob container holding all the DEKs
     // this is relative to the root base path holding the encrypted blobs (i.e. the repository root base path)
     private static final String DEK_ROOT_CONTAINER = ".encryption-metadata";
-    private static final int DEK_ID_LENGTH_IN_BYTES = 16; // {@code org.elasticsearch.common.UUIDS} length
+    static final int DEK_ID_LENGTH_IN_BYTES = 16; // {@code org.elasticsearch.common.UUIDS} length
     private static final int DEK_ID_LENGTH_IN_CHARS = 22; // Base64 encoding without padding
 
     // the following constants can be changed freely
@@ -199,7 +199,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
     @Override
     protected BlobStore createBlobStore() {
-        return new EncryptedBlobStore(() -> delegatedRepository.blobStore(), delegatedRepository.basePath(), repositoryKEK,
+        return new EncryptedBlobStore(delegatedRepository.blobStore(), delegatedRepository.basePath(), repositoryKEK,
                 repositoryKEKId, DEKSupplier, DEKCache);
     }
 
@@ -222,20 +222,20 @@ public final class EncryptedRepository extends BlobStoreRepository {
     }
 
     private static class EncryptedBlobStore implements BlobStore {
-        private final Supplier<BlobStore> delegatedBlobStoreSupplier;
+        private final BlobStore delegatedBlobStore;
         private final BlobPath delegatedBasePath;
         private final BlobPath DEKBasePath;
         private final SecretKey repositoryKEK;
         private final Supplier<SecretKey> DEKSupplier;
         private final Cache<String, SecretKey> DEKCache;
 
-        EncryptedBlobStore(Supplier<BlobStore> delegatedBlobStoreSupplier,
+        EncryptedBlobStore(BlobStore delegatedBlobStore,
                            BlobPath delegatedBasePath,
                            SecretKey repositoryKEK,
                            String repositoryKEKId,
                            Supplier<SecretKey> DEKSupplier,
                            Cache<String, SecretKey> DEKCache) {
-            this.delegatedBlobStoreSupplier = delegatedBlobStoreSupplier;
+            this.delegatedBlobStore = delegatedBlobStore;
             this.delegatedBasePath = delegatedBasePath;
             this.DEKBasePath = delegatedBasePath.add(DEK_ROOT_CONTAINER).add(repositoryKEKId);
             this.repositoryKEK = repositoryKEK;
@@ -301,8 +301,8 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
         @Override
         public BlobContainer blobContainer(BlobPath path) {
-            BlobContainer delegatedBlobContainer = delegatedBlobStoreSupplier.get().blobContainer(delegatedBasePath.append(path));
-            BlobContainer DEKBlobContainer = delegatedBlobStoreSupplier.get().blobContainer(DEKBasePath);
+            BlobContainer delegatedBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.append(path));
+            BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(DEKBasePath);
             return new EncryptedBlobContainer(path, delegatedBlobContainer, createNonceAndDEKSupplier(DEKSupplier, DEKBlobContainer),
                     DEKId -> {
                         try {
@@ -315,6 +315,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
         @Override
         public void close() {
+            // do NOT close delegatedBlobStore; it will be closed when the inner delegatedRepository is closed
         }
     }
 
