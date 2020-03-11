@@ -8,6 +8,7 @@ package org.elasticsearch.repositories.encrypted;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.index.IndexCommit;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
@@ -222,12 +223,16 @@ public final class EncryptedRepository extends BlobStoreRepository {
     }
 
     private static class EncryptedBlobStore implements BlobStore {
+
+        private static final UseOnceDEK EXPIRED_DEK = new UseOnceDEK(null, null, Integer.MAX_VALUE);
+
         private final BlobStore delegatedBlobStore;
         private final BlobPath delegatedBasePath;
         private final BlobPath DEKBasePath;
         private final SecretKey repositoryKEK;
         private final Supplier<SecretKey> DEKSupplier;
         private final Cache<String, SecretKey> DEKCache;
+        private final AtomicReference<UseOnceDEK> DEKCurrentlyInUse;
 
         EncryptedBlobStore(BlobStore delegatedBlobStore,
                            BlobPath delegatedBasePath,
@@ -241,6 +246,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
             this.repositoryKEK = repositoryKEK;
             this.DEKSupplier = DEKSupplier;
             this.DEKCache = DEKCache;
+            this.DEKCurrentlyInUse = new AtomicReference<>(EXPIRED_DEK);
         }
 
         private SecretKey loadDEK(String DEKId, BlobContainer DEKBlobContainer) throws IOException {
@@ -274,24 +280,30 @@ public final class EncryptedRepository extends BlobStoreRepository {
         }
 
         private CheckedSupplier<UseOnceDEK, IOException> createNonceAndDEKSupplier(Supplier<SecretKey> DEKSupplier,
+                                                                                   AtomicReference<UseOnceDEK> DEKCurrentlyInUse,
                                                                                    BlobContainer DEKBlobContainer) {
-            final UseOnceDEK expiredDEK = new UseOnceDEK(null, null, Integer.MAX_VALUE);
-            final AtomicReference<UseOnceDEK> nonceAndDEKGenerator = new AtomicReference<>(expiredDEK);
-            final Object lock = new Object();
             return () -> {
                 while (true) {
-                    final UseOnceDEK nonceAndDEK = nonceAndDEKGenerator.getAndUpdate(prev -> prev.nonce < Integer.MAX_VALUE ?
-                            new UseOnceDEK(prev.DEK, prev.DEKId, prev.nonce + 1) : expiredDEK);
+                    final UseOnceDEK nonceAndDEK = DEKCurrentlyInUse.getAndUpdate(prev -> prev.nonce < Integer.MAX_VALUE ?
+                            new UseOnceDEK(prev.DEK, prev.DEKId, prev.nonce + 1) : EXPIRED_DEK);
                     if (nonceAndDEK.nonce < Integer.MAX_VALUE) {
+                        logger.trace(() -> new ParameterizedMessage("DEK with id [{}] reused with nonce [{}]", nonceAndDEK.DEKId,
+                                nonceAndDEK.nonce));
                         return nonceAndDEK;
                     } else {
-                        synchronized (lock) {
-                            if (nonceAndDEKGenerator.get().nonce == Integer.MAX_VALUE) {
+                        logger.trace(() -> new ParameterizedMessage("Regenerating a new DEK to replace id [{}]", nonceAndDEK.DEKId));
+                        synchronized (this) {
+                            if (DEKCurrentlyInUse.get().nonce == Integer.MAX_VALUE) {
                                 final SecretKey newDEK = DEKSupplier.get();
                                 final String newDEKId = UUIDs.randomBase64UUID();
-                                assert newDEKId.length() == DEK_ID_LENGTH_IN_CHARS;
+                                if (newDEKId.length() != DEK_ID_LENGTH_IN_CHARS) {
+                                    throw new IllegalStateException("");
+                                }
+                                logger.debug(() -> new ParameterizedMessage("A new DEK with id [{}] has been generated", newDEKId));
                                 storeDEK(newDEKId, newDEK, DEKBlobContainer);
-                                nonceAndDEKGenerator.set(new UseOnceDEK(newDEK, newDEKId, Integer.MIN_VALUE));
+                                logger.debug(() -> new ParameterizedMessage("DEK with id [{}] has been stored under [{}]", newDEKId,
+                                        DEKBlobContainer.path()));
+                                DEKCurrentlyInUse.set(new UseOnceDEK(newDEK, newDEKId, Integer.MIN_VALUE));
                             }
                         }
                     }
@@ -303,7 +315,8 @@ public final class EncryptedRepository extends BlobStoreRepository {
         public BlobContainer blobContainer(BlobPath path) {
             BlobContainer delegatedBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.append(path));
             BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(DEKBasePath);
-            return new EncryptedBlobContainer(path, delegatedBlobContainer, createNonceAndDEKSupplier(DEKSupplier, DEKBlobContainer),
+            return new EncryptedBlobContainer(path, delegatedBlobContainer,
+                    createNonceAndDEKSupplier(DEKSupplier, DEKCurrentlyInUse, DEKBlobContainer),
                     DEKId -> {
                         try {
                             return DEKCache.computeIfAbsent(DEKId, ignored -> loadDEK(DEKId, DEKBlobContainer));

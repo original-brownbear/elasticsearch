@@ -108,7 +108,7 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
                 encodedKEKBytes = KEKInputStream.readAllBytes();
                 if (encodedKEKBytes.length != KEK_LENGTH_IN_BYTES) {
                     throw new IllegalArgumentException("Expected a 32 bytes (256 bit) wide AES key, but key ["
-                            + KEKName + "] is [" + encodedKEKBytes.length + "] bytes wide");
+                            + KEKSetting.getKey() + "] is [" + encodedKEKBytes.length + "] bytes wide");
                 }
                 KEK = new SecretKeySpec(encodedKEKBytes, 0, KEK_LENGTH_IN_BYTES, KEK_CIPHER_ALGO);
             } catch (IOException e) {
