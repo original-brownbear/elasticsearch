@@ -104,6 +104,33 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
         return settings.build();
     }
 
+    public void testRepositoryVerificationFailsForMissingKEK() throws Exception {
+        String repositoryName = randomRepositoryName();
+        MockSecureSettings secureSettings = new MockSecureSettings();
+        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), null);
+        Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
+        // start new node with missing repository KEK
+        int nodesCount = cluster().size();
+        String newNode = internalCluster().startNode(settingsOfNewNode);
+        ensureStableCluster(nodesCount + 1);
+        // repository create fails verification
+        expectThrows(RepositoryVerificationException.class,
+                () -> client().admin().cluster().preparePutRepository(repositoryName)
+                        .setType(repositoryType())
+                        .setVerify(true)
+                        .setSettings(repositorySettings(repositoryName)).get());
+        // test verify call fails
+        expectThrows(RepositoryVerificationException.class,
+                () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
+        // stop the node with the missing KEK
+        internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
+        ensureStableCluster(nodesCount);
+        // repository verification now succeeds
+        VerifyRepositoryResponse verifyRepositoryResponse = client().admin().cluster().prepareVerifyRepository(repositoryName).get();
+        assertThat(verifyRepositoryResponse.getNodes().size(), equalTo(cluster().size()));
+    }
+
     public void testRepositoryVerificationFailsForDifferentKEK() throws Exception {
         String repositoryName = randomRepositoryName();
         // generate a different repository KEK
@@ -126,10 +153,10 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
         // test verify call fails
         expectThrows(RepositoryVerificationException.class,
                 () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
-        // stop the node with the wrong DEK
+        // stop the node with the wrong KEK
         internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
         ensureStableCluster(nodesCount);
-        // start another node with a correct DEK
+        // start another node with a correct KEK
         byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
         byte[] repositoryKEK = new byte[32];
         System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);

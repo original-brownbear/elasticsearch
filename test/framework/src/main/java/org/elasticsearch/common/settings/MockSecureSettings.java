@@ -75,7 +75,11 @@ public class MockSecureSettings implements SecureSettings {
     @Override
     public InputStream getFile(String setting) {
         ensureOpen();
-        return new ByteArrayInputStream(files.get(setting));
+        final byte[] f = files.get(setting);
+        if (f == null) {
+            return null;
+        }
+        return new ByteArrayInputStream(f);
     }
 
     @Override
@@ -85,16 +89,26 @@ public class MockSecureSettings implements SecureSettings {
 
     public void setString(String setting, String value) {
         ensureOpen();
-        secureStrings.put(setting, value);
-        sha256Digests.put(setting, MessageDigests.sha256().digest(value.getBytes(StandardCharsets.UTF_8)));
-        settingNames.add(setting);
+        if (value != null) {
+            secureStrings.put(setting, value);
+            sha256Digests.put(setting, MessageDigests.sha256().digest(value.getBytes(StandardCharsets.UTF_8)));
+            settingNames.add(setting);
+        } else {
+            secureStrings.put(setting, null);
+            sha256Digests.put(setting, null);
+        }
     }
 
     public void setFile(String setting, byte[] value) {
         ensureOpen();
-        files.put(setting, value);
-        sha256Digests.put(setting, MessageDigests.sha256().digest(value));
-        settingNames.add(setting);
+        if (value != null) {
+            files.put(setting, value);
+            sha256Digests.put(setting, MessageDigests.sha256().digest(value));
+            settingNames.add(setting);
+        } else {
+            files.put(setting, null);
+            sha256Digests.put(setting, null);
+        }
     }
 
     public void merge(MockSecureSettings secureSettings) {
@@ -114,6 +128,7 @@ public class MockSecureSettings implements SecureSettings {
         secureStrings.putAll(secureSettings.secureStrings);
         sha256Digests.putAll(secureSettings.sha256Digests);
         files.putAll(secureSettings.files);
+        settingNames.removeIf(settingName -> sha256Digests.containsKey(settingName) && sha256Digests.get(settingName) == null);
     }
 
     @Override
