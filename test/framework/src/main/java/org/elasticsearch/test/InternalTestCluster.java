@@ -417,13 +417,24 @@ public final class InternalTestCluster extends TestCluster {
                         + "' as a node setting set '" + ClusterName.CLUSTER_NAME_SETTING.getKey() + "': ["
                         + settings.get(ClusterName.CLUSTER_NAME_SETTING.getKey()) + "]");
             }
-            builder.put(settings);
+            putAndMergeSecureSettings(builder, settings);
         }
         if (others != null) {
-            builder.put(others);
+            putAndMergeSecureSettings(builder, others);
         }
         builder.put(ClusterName.CLUSTER_NAME_SETTING.getKey(), clusterName);
         return builder.build();
+    }
+
+    private void putAndMergeSecureSettings(Settings.Builder settingsBuilder, Settings others) {
+        Settings.Builder othersBuilder = Settings.builder().put(others);
+        if (settingsBuilder.getSecureSettings() instanceof MockSecureSettings
+                && othersBuilder.getSecureSettings() instanceof MockSecureSettings) {
+            MockSecureSettings secureSettings = (MockSecureSettings) settingsBuilder.getSecureSettings();
+            secureSettings.merge((MockSecureSettings) othersBuilder.getSecureSettings(), true);
+        } else {
+            settingsBuilder.put(others);
+        }
     }
 
     public Collection<Class<? extends Plugin>> getPlugins() {

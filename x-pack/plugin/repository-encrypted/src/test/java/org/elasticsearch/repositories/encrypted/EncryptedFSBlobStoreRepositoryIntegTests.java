@@ -5,9 +5,8 @@
  */
 package org.elasticsearch.repositories.encrypted;
 
-import org.elasticsearch.action.admin.cluster.repositories.get.GetRepositoriesResponse;
 import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
-import org.elasticsearch.client.Response;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -19,6 +18,7 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.repositories.blobstore.ESBlobStoreRepositoryIntegTestCase;
 import org.elasticsearch.repositories.fs.FsRepository;
+import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.InternalTestCluster;
 import org.junit.BeforeClass;
 
@@ -28,6 +28,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
+import static org.hamcrest.Matchers.equalTo;
 
 public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreRepositoryIntegTestCase {
 
@@ -101,54 +105,106 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
     }
 
     public void testRepositoryVerificationFailsForDifferentKEK() throws Exception {
-        final boolean restoreFillInSecureSettings = fillInSecureSettings.get();
-        String newNode = null;
-        try {
-            // do not use the default secure settings because the newly started node must use different ones
-            fillInSecureSettings.set(false);
-            String repositoryName = randomRepositoryName();
-            // generate a different repository KEK
-            byte[] repositoryKEKOnNewNode = randomByteArrayOfLength(32);
-            repositoryKEKOnNewNode[0] = 0; // be absolutely sure the KEK is different
-            MockSecureSettings secureSettings = new MockSecureSettings();
-            secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEKOnNewNode);
-            Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
-            // start new node with different repository KEK
-            int nodesCount = cluster().size();
-            newNode = internalCluster().startNode(settingsOfNewNode);
-            ensureStableCluster(nodesCount + 1);
-            // repository create fails verification
-            expectThrows(RepositoryVerificationException.class,
-                    () -> client().admin().cluster().preparePutRepository(repositoryName)
-                    .setType(repositoryType())
-                    .setVerify(true)
-                    .setSettings(repositorySettings(repositoryName)).get());
-            // test verify call fails
-            expectThrows(RepositoryVerificationException.class,
-                    () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
-            // stop the node with the wrong DEK
-            internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
-            ensureStableCluster(nodesCount);
-            // start another node with a correct DEK
-            byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
-            byte[] repositoryKEK = new byte[32];
-            System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);
-            secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEK);
-            settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
-            newNode = internalCluster().startNode(settingsOfNewNode);
-            ensureStableCluster(nodesCount + 1);
-            // repository verification now succeeds
-            VerifyRepositoryResponse verifyRepositoryResponse = client().admin().cluster().prepareVerifyRepository(repositoryName).get();
-            String finalNewNode = newNode;
-            assertTrue(verifyRepositoryResponse.getNodes().stream().anyMatch(node -> node.getName().equals(finalNewNode)));
-        } finally {
-            fillInSecureSettings.set(restoreFillInSecureSettings);
-            if (newNode != null) {
-                internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
-            }
-        }
+        String repositoryName = randomRepositoryName();
+        // generate a different repository KEK
+        byte[] repositoryKEKOnNewNode = randomByteArrayOfLength(32);
+        repositoryKEKOnNewNode[0] = 0; // be absolutely sure the KEK is different
+        MockSecureSettings secureSettings = new MockSecureSettings();
+        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEKOnNewNode);
+        Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
+        // start new node with different repository KEK
+        int nodesCount = cluster().size();
+        String newNode = internalCluster().startNode(settingsOfNewNode);
+        ensureStableCluster(nodesCount + 1);
+        // repository create fails verification
+        expectThrows(RepositoryVerificationException.class,
+                () -> client().admin().cluster().preparePutRepository(repositoryName)
+                        .setType(repositoryType())
+                        .setVerify(true)
+                        .setSettings(repositorySettings(repositoryName)).get());
+        // test verify call fails
+        expectThrows(RepositoryVerificationException.class,
+                () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
+        // stop the node with the wrong DEK
+        internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
+        ensureStableCluster(nodesCount);
+        // start another node with a correct DEK
+        byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
+        byte[] repositoryKEK = new byte[32];
+        System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);
+        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEK);
+        settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
+        newNode = internalCluster().startNode(settingsOfNewNode);
+        ensureStableCluster(nodesCount + 1);
+        // repository verification now succeeds
+        VerifyRepositoryResponse verifyRepositoryResponse = client().admin().cluster().prepareVerifyRepository(repositoryName).get();
+        String finalNewNode = newNode;
+        assertTrue(verifyRepositoryResponse.getNodes().stream().anyMatch(node -> node.getName().equals(finalNewNode)));
+    }
+
+    public void testSnapshotFailsForDifferentKEK() throws Exception {
+        String repoBeforeNewNode = randomRepositoryName();
+        // create repository before adding the new node
+        createRepository(repoBeforeNewNode, repositorySettings(repoBeforeNewNode), true);
+        String repoAfterNewNode = randomRepositoryName();
+        // generate a different repository KEK
+        byte[] repositoryKEKOnNewNode = randomByteArrayOfLength(32);
+        repositoryKEKOnNewNode[0] = 0; // be absolutely sure the KEK is different
+        MockSecureSettings secureSettings = new MockSecureSettings();
+        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+                getConcreteSettingForNamespace(repoAfterNewNode).getKey(), repositoryKEKOnNewNode);
+        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+                getConcreteSettingForNamespace(repoBeforeNewNode).getKey(), repositoryKEKOnNewNode);
+        Settings settingsOfNewNode = Settings.builder().put("node.attr.repoKEK", "wrong").setSecureSettings(secureSettings).build();
+        // start a new node with different repository KEKs
+        int nodesCount = cluster().size();
+        String newNode = internalCluster().startNode(settingsOfNewNode);
+        ensureStableCluster(nodesCount + 1);
+        // create repository without verification, when a node contains a wrong KEK
+        createRepository(repoAfterNewNode, repositorySettings(repoAfterNewNode), false);
+
+        // create an index with the shard on the node with the wrong KEK
+        final String indexName = randomName();
+        int docCounts = iterations(10, 100);
+        final Settings indexSettings = Settings.builder()
+                .put(indexSettings())
+                .put("index.routing.allocation.include._name", newNode)
+                .put(SETTING_NUMBER_OF_SHARDS, 1)
+                .build();
+        logger.info("-->  create random index {} with {} records", indexName, docCounts);
+        createIndex(indexName, indexSettings);
+        addRandomDocuments(indexName, docCounts);
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), docCounts);
+
+        // empty snapshot completes successfully for both repos because it does not involve any data
+        final String snapshotName = randomName();
+        logger.info("-->  create snapshot {}:{}", repoBeforeNewNode, snapshotName);
+        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoBeforeNewNode,
+                snapshotName).setIndices(indexName + "other*").setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
+                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
+        logger.info("-->  create snapshot {}:{}", repoAfterNewNode, snapshotName);
+        createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoAfterNewNode,
+                snapshotName).setIndices(indexName + "other*").setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
+                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
+
+        // snapshot is PARTIAL because it includes shards on nodes with a different repository KEK
+        final String snapshotName2 = snapshotName + "2";
+        CreateSnapshotResponse incompleteSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoBeforeNewNode,
+                snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
+        assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
+        assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
+                .allMatch(shardFailure -> shardFailure.reason().contains("Repository key id mismatch")));
+        incompleteSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoAfterNewNode,
+                snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
+        assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
+        assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
+                .allMatch(shardFailure -> shardFailure.reason().contains("Repository key id mismatch")));
     }
 
 }

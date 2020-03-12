@@ -97,11 +97,17 @@ public class MockSecureSettings implements SecureSettings {
         settingNames.add(setting);
     }
 
-    /** Merge the given secure settings into this one. */
     public void merge(MockSecureSettings secureSettings) {
-        for (String setting : secureSettings.getSettingNames()) {
-            if (settingNames.contains(setting)) {
-                throw new IllegalArgumentException("Cannot overwrite existing secure setting " + setting);
+        merge(secureSettings, false);
+    }
+
+    /** Merge the given secure settings into this one. */
+    public void merge(MockSecureSettings secureSettings, boolean permitOverride) {
+        if (false == permitOverride) {
+            for (String setting : secureSettings.getSettingNames()) {
+                if (settingNames.contains(setting)) {
+                    throw new IllegalArgumentException("Cannot overwrite existing secure setting " + setting);
+                }
             }
         }
         settingNames.addAll(secureSettings.settingNames);
