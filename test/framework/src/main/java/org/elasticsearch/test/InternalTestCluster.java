@@ -935,13 +935,11 @@ public final class InternalTestCluster extends TestCluster {
             }
             // use a new seed to make sure we generate a fresh new node id if the data folder has been wiped
             final long newIdSeed = NodeEnvironment.NODE_ID_SEED_SETTING.get(node.settings()) + 1;
-            Settings finalSettings = Settings.builder()
-                    .put(originalNodeSettings)
-                    .put(newSettings)
-                    .put(NodeEnvironment.NODE_ID_SEED_SETTING.getKey(), newIdSeed)
-                    .build();
+            Settings.Builder finalSettings = Settings.builder().put(originalNodeSettings);
+            putAndMergeSecureSettings(finalSettings, newSettings);
+            finalSettings.put(NodeEnvironment.NODE_ID_SEED_SETTING.getKey(), newIdSeed);
             Collection<Class<? extends Plugin>> plugins = node.getClasspathPlugins();
-            node = new MockNode(finalSettings, plugins);
+            node = new MockNode(finalSettings.build(), plugins);
             node.injector().getInstance(TransportService.class).addLifecycleListener(new LifecycleListener() {
                 @Override
                 public void afterStart() {

@@ -15,6 +15,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseService;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.repositories.blobstore.ESBlobStoreRepositoryIntegTestCase;
 import org.elasticsearch.repositories.fs.FsRepository;
@@ -26,7 +27,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
@@ -127,8 +130,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
         internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
         ensureStableCluster(nodesCount);
         // repository verification now succeeds
-        VerifyRepositoryResponse verifyRepositoryResponse = client().admin().cluster().prepareVerifyRepository(repositoryName).get();
-        assertThat(verifyRepositoryResponse.getNodes().size(), equalTo(cluster().size()));
+        client().admin().cluster().prepareVerifyRepository(repositoryName).get();
     }
 
     public void testRepositoryVerificationFailsForDifferentKEK() throws Exception {
@@ -234,4 +236,38 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
                 .allMatch(shardFailure -> shardFailure.reason().contains("Repository key id mismatch")));
     }
 
+    public void testWrongKEKOnMasterNode() throws Exception {
+        final String repositoryName = randomRepositoryName();
+        createRepository(repositoryName);
+        final String snapshotName = randomName();
+        logger.info("-->  create empty snapshot {}:{}", repositoryName, snapshotName);
+        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
+                snapshotName).setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
+                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
+        // restart master nodes until the current master node has the wrong KEK
+        Set<String> nodesWithWrongKEK = new HashSet<>();
+        do {
+            String masterNodeName = internalCluster().getMasterName();
+            logger.info("-->  restart master node {}", masterNodeName);
+            internalCluster().restartNode(masterNodeName, new InternalTestCluster.RestartCallback() {
+                @Override
+                public Settings onNodeStopped(String nodeName) throws Exception {
+                    Settings.Builder newSettings = Settings.builder().put(super.onNodeStopped(nodeName));
+                    byte[] repositoryKEKRestart = randomByteArrayOfLength(32);
+                    repositoryKEKRestart[0] = 0; // be absolutely sure the KEK is different
+                    MockSecureSettings secureSettings = new MockSecureSettings();
+                    secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+                            getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEKRestart);
+                    newSettings.setSecureSettings(secureSettings);
+                    return newSettings.build();
+                }
+            });
+            nodesWithWrongKEK.add(masterNodeName);
+        } while (false == nodesWithWrongKEK.contains(internalCluster().getMasterName()));
+        RepositoryException e = expectThrows(RepositoryException.class, () ->
+                client().admin().cluster().prepareCreateSnapshot(repositoryName, randomName()).setWaitForCompletion(true).get());
+        e.getDetailedMessage();
+    }
 }
