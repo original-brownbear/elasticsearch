@@ -246,6 +246,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
     }
 
     public void testWrongKEKOnMasterNode() throws Exception {
+        final int noNodes = internalCluster().size();
         final String repositoryName = randomRepositoryName();
         final Settings repositorySettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repositoryName)).build();
         createRepository(repositoryName, repositorySettings, randomBoolean());
@@ -275,6 +276,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
                 }
             });
             nodesWithWrongKEK.add(masterNodeName);
+            ensureStableCluster(noNodes);
         } while (false == nodesWithWrongKEK.contains(internalCluster().getMasterName()));
         // maybe recreate the repository
         if (randomBoolean()) {
@@ -283,7 +285,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
         }
         // all repository operations return "repository key is incorrect", but the repository does not move to the corrupted state
         final BlobStoreRepository blobStoreRepository =
-                (BlobStoreRepository) internalCluster().getMasterNodeInstance(RepositoriesService.class).repository(repositoryName);
+                (BlobStoreRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repositoryName);
         RepositoryException e = expectThrows(RepositoryException.class, () -> PlainActionFuture.<RepositoryData, Exception>get(
                 f -> blobStoreRepository.threadPool().generic().execute(ActionRunnable.wrap(f, blobStoreRepository::getRepositoryData))));
         assertThat(e.getCause().getMessage(), containsString("repository key is incorrect"));
@@ -320,8 +322,9 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
                 }
             });
             nodesWithWrongKEK.remove(masterNodeName);
+            ensureStableCluster(noNodes);
         } while (nodesWithWrongKEK.contains(internalCluster().getMasterName()));
-        // dasd
+        // ensure get snapshot works
         getSnapshotResponse = client().admin().cluster().prepareGetSnapshots(repositoryName).get();
         assertThat(getSnapshotResponse.getFailedResponses().keySet(), empty());
         assertThat(getSnapshotResponse.getSuccessfulResponses().keySet(), contains(repositoryName));
