@@ -287,7 +287,9 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
     }
 
     public void testSnapshotAndRestore() throws Exception {
-        final String repoName = createRepository(randomRepositoryName());
+        final String repoName = randomRepositoryName();
+        final Settings repoSettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repoName)).build();
+        createRepository(repoName, repoSettings, randomBoolean());
         int indexCount = randomIntBetween(1, 5);
         int[] docCounts = new int[indexCount];
         String[] indexNames = generateRandomNames(indexCount);
@@ -333,6 +335,11 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
             ensureGreen();
             logger.info("-->  close indices {}", closeIndices);
             assertAcked(client().admin().indices().prepareClose(closeIndices.toArray(new String[closeIndices.size()])));
+        }
+
+        if (randomBoolean()) {
+            deleteRepository(repoName);
+            createRepository(repoName, repoSettings, randomBoolean());
         }
 
         logger.info("--> restore all indices from the snapshot");
