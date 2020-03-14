@@ -5,8 +5,11 @@
  */
 package org.elasticsearch.repositories.encrypted;
 
+import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -15,8 +18,11 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseService;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.repositories.RepositoriesService;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.RepositoryVerificationException;
+import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.repositories.blobstore.ESBlobStoreRepositoryIntegTestCase;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.snapshots.SnapshotState;
@@ -34,6 +40,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
 public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreRepositoryIntegTestCase {
@@ -238,7 +247,8 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
 
     public void testWrongKEKOnMasterNode() throws Exception {
         final String repositoryName = randomRepositoryName();
-        createRepository(repositoryName);
+        final Settings repositorySettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repositoryName)).build();
+        createRepository(repositoryName, repositorySettings, randomBoolean());
         final String snapshotName = randomName();
         logger.info("-->  create empty snapshot {}:{}", repositoryName, snapshotName);
         CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
@@ -266,8 +276,54 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
             });
             nodesWithWrongKEK.add(masterNodeName);
         } while (false == nodesWithWrongKEK.contains(internalCluster().getMasterName()));
-        RepositoryException e = expectThrows(RepositoryException.class, () ->
-                client().admin().cluster().prepareCreateSnapshot(repositoryName, randomName()).setWaitForCompletion(true).get());
-        e.getDetailedMessage();
+        // maybe recreate the repository
+        if (randomBoolean()) {
+            deleteRepository(repositoryName);
+            createRepository(repositoryName, repositorySettings, false);
+        }
+        // all repository operations return "repository key is incorrect", but the repository does not move to the corrupted state
+        final BlobStoreRepository blobStoreRepository =
+                (BlobStoreRepository) internalCluster().getMasterNodeInstance(RepositoriesService.class).repository(repositoryName);
+        RepositoryException e = expectThrows(RepositoryException.class, () -> PlainActionFuture.<RepositoryData, Exception>get(
+                f -> blobStoreRepository.threadPool().generic().execute(ActionRunnable.wrap(f, blobStoreRepository::getRepositoryData))));
+        assertThat(e.getCause().getMessage(), containsString("repository key is incorrect"));
+        e = expectThrows(RepositoryException.class, () ->
+                client().admin().cluster().prepareCreateSnapshot(repositoryName, snapshotName + "2").setWaitForCompletion(true).get());
+        assertThat(e.getCause().getMessage(), containsString("repository key is incorrect"));
+        GetSnapshotsResponse getSnapshotResponse = client().admin().cluster().prepareGetSnapshots(repositoryName).get();
+        assertThat(getSnapshotResponse.getSuccessfulResponses().keySet(), empty());
+        assertThat(getSnapshotResponse.getFailedResponses().keySet(), contains(repositoryName));
+        assertThat(getSnapshotResponse.getFailedResponses().get(repositoryName).getCause().getMessage(),
+                containsString("repository key is incorrect"));
+        e = expectThrows(RepositoryException.class, () ->
+                client().admin().cluster().prepareRestoreSnapshot(repositoryName, snapshotName).setWaitForCompletion(true).get());
+        assertThat(e.getCause().getMessage(), containsString("repository key is incorrect"));
+        e = expectThrows(RepositoryException.class, () ->
+                client().admin().cluster().prepareDeleteSnapshot(repositoryName, snapshotName).get());
+        assertThat(e.getCause().getMessage(), containsString("repository key is incorrect"));
+        // restart nodes back, so that the master node has the correct repository key again
+        do {
+            String masterNodeName = internalCluster().getMasterName();
+            logger.info("-->  restart master node {}", masterNodeName);
+            internalCluster().restartNode(masterNodeName, new InternalTestCluster.RestartCallback() {
+                @Override
+                public Settings onNodeStopped(String nodeName) throws Exception {
+                    Settings.Builder newSettings = Settings.builder().put(super.onNodeStopped(nodeName));
+                    byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
+                    byte[] repositoryKEK = new byte[32];
+                    System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);
+                    MockSecureSettings secureSettings = new MockSecureSettings();
+                    secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+                            getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEK);
+                    newSettings.setSecureSettings(secureSettings);
+                    return newSettings.build();
+                }
+            });
+            nodesWithWrongKEK.remove(masterNodeName);
+        } while (nodesWithWrongKEK.contains(internalCluster().getMasterName()));
+        // dasd
+        getSnapshotResponse = client().admin().cluster().prepareGetSnapshots(repositoryName).get();
+        assertThat(getSnapshotResponse.getFailedResponses().keySet(), empty());
+        assertThat(getSnapshotResponse.getSuccessfulResponses().keySet(), contains(repositoryName));
     }
 }

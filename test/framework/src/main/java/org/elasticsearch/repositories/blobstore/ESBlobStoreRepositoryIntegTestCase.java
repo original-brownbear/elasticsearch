@@ -40,6 +40,7 @@ import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.RepositoryData;
+import org.elasticsearch.repositories.RepositoryMissingException;
 import org.elasticsearch.snapshots.SnapshotMissingException;
 import org.elasticsearch.snapshots.SnapshotRestoreException;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -59,6 +60,7 @@ import java.util.Set;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
@@ -102,6 +104,19 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
             assertThat(repositories.repository(name).isReadOnly(), is(false));
             BlobStore blobStore = ((BlobStoreRepository) repositories.repository(name)).getBlobStore();
             assertThat("blob store has to be lazy initialized", blobStore, verify ? is(notNullValue()) : is(nullValue()));
+        });
+
+        return name;
+    }
+
+    protected final String deleteRepository(final String name) {
+        logger.debug("-->  deleting repository [name: {}]", name);
+        assertAcked(client().admin().cluster().prepareDeleteRepository(name));
+
+        internalCluster().getDataOrMasterNodeInstances(RepositoriesService.class).forEach(repositories -> {
+            RepositoryMissingException e = expectThrows(RepositoryMissingException.class, () -> repositories.repository(name));
+            assertThat(e.getMessage(), containsString("missing"));
+            assertThat(e.getMessage(), containsString(name));
         });
 
         return name;

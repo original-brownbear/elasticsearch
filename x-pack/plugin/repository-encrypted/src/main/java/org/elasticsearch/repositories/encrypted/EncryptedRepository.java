@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.index.IndexCommit;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.metadata.MetaData;
@@ -17,7 +18,6 @@ import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.CheckedSupplier;
-import org.elasticsearch.common.Numbers;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetaData;
@@ -25,11 +25,8 @@ import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.blobstore.DeleteResult;
 import org.elasticsearch.common.blobstore.support.AbstractBlobContainer;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.cache.Cache;
 import org.elasticsearch.common.cache.CacheBuilder;
-import org.elasticsearch.common.io.Streams;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
@@ -51,6 +48,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -265,16 +263,21 @@ public final class EncryptedRepository extends BlobStoreRepository {
             try (InputStream encryptedDEKInputStream = DEKBlobContainer.readBlob(DEKId)) {
                 int bytesRead = encryptedDEKInputStream.readNBytes(encryptedDEKBytes, 0, ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES);
                 if (bytesRead != ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES) {
-                    throw new IllegalArgumentException("Encrypted DEK with id [" + DEKId + "] has unexpected length [" + bytesRead + "]");
+                    throw new ElasticsearchException("Encrypted DEK [" + DEKId + "] has unexpected length [" + bytesRead + "]");
                 }
                 if (encryptedDEKInputStream.read() != -1) {
-                    throw new IllegalArgumentException("Encrypted DEK with id [" + DEKId + "] is larger than expected");
+                    throw new ElasticsearchException("Encrypted DEK [" + DEKId + "] is larger than expected");
                 }
+            } catch (NoSuchFileException e) {
+                // do NOT throw IOException when the DEK does not exist, as this is a decryption problem, and IOExceptions
+                // can move the repository in the corrupted state
+                throw new ElasticsearchException("Failure to read and decrypt DEK [" + DEKId + "] from " + DEKBlobContainer.path() +
+                        ". Most likely the repository key is incorrect, as previous snapshots have used a different key.", e);
             }
             try {
                 return EncryptedRepositoryPlugin.unwrapAESKey(repositoryKEK, encryptedDEKBytes);
             } catch (GeneralSecurityException e) {
-                throw new IOException("Failure to AES unwrap the DEK", e);
+                throw new ElasticsearchException("Failure to AES wrap the DEK", e);
             }
         }
 
@@ -283,7 +286,9 @@ public final class EncryptedRepository extends BlobStoreRepository {
             try {
                 encryptedDEKBytes = EncryptedRepositoryPlugin.wrapAESKey(repositoryKEK, DEK);
             } catch (GeneralSecurityException e) {
-                throw new IOException("Failure to AES wrap the DEK", e);
+                // throw unchecked ElasticsearchException; IOExceptions are interpreted differently and can move the repository in the
+                // corrupted state
+                throw new ElasticsearchException("Failure to AES wrap the DEK with id [" + DEKId + "]", e);
             }
             try (InputStream encryptedDEKInputStream = new ByteArrayInputStream(encryptedDEKBytes)) {
                 DEKBlobContainer.writeBlobAtomic(DEKId, encryptedDEKInputStream, encryptedDEKBytes.length, true);
@@ -332,7 +337,14 @@ public final class EncryptedRepository extends BlobStoreRepository {
                         try {
                             return DEKCache.computeIfAbsent(DEKId, ignored -> loadDEK(DEKId, DEKBlobContainer));
                         } catch (ExecutionException e) {
-                            throw new IOException("Failure to retrieve DEK for id [" + DEKId + "]", e);
+                            // some exception types are to be expected
+                            if (e.getCause() instanceof IOException) {
+                                throw (IOException) e.getCause();
+                            } else if (e.getCause() instanceof ElasticsearchException) {
+                                throw (ElasticsearchException) e.getCause();
+                            } else {
+                                throw new ElasticsearchException("Unexpected exception retrieving DEK for id [" + DEKId + "]", e);
+                            }
                         }
                     });
         }
@@ -349,7 +361,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
         private final CheckedSupplier<UseOnceDEK, IOException> nonceAndDEKSupplier;
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
-        EncryptedBlobContainer(BlobPath path, // this contains the {@code EncryptedRepository#basePath} but that is empty
+        EncryptedBlobContainer(BlobPath path, // this path contains the {@code EncryptedRepository#basePath} which, importantly, is empty
                                BlobContainer delegatedBlobContainer,
                                CheckedSupplier<UseOnceDEK, IOException> nonceAndDEKSupplier,
                                CheckedFunction<String, SecretKey, IOException> getDEKById) {
@@ -387,13 +399,14 @@ public final class EncryptedRepository extends BlobStoreRepository {
                 final byte[] DEKIdBytes = new byte[DEK_ID_LENGTH_IN_BYTES];
                 int bytesRead = encryptedDataInputStream.readNBytes(DEKIdBytes, 0, DEK_ID_LENGTH_IN_BYTES);
                 if (bytesRead != DEK_ID_LENGTH_IN_BYTES) {
-                    throw new IllegalArgumentException("The encrypted blob is too small [" + bytesRead + "]");
+                    throw new ElasticsearchException("The encrypted blob [" + blobName + "] is too small [" + bytesRead + "]");
                 }
                 final String DEKId = new String(Base64.getUrlEncoder().withoutPadding().encode(DEKIdBytes), StandardCharsets.UTF_8);
+                // might open a connection to read and decrypt the DEK, but most likely it will be served from cache
                 final SecretKey DEK = getDEKById.apply(DEKId);
-                // read and decrypt the data blob
+                // read and decrypt the rest of the blob
                 return new DecryptionPacketsInputStream(encryptedDataInputStream, DEK, PACKET_LENGTH_IN_BYTES);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 try {
                     encryptedDataInputStream.close();
                 } catch (IOException closeEx) {
