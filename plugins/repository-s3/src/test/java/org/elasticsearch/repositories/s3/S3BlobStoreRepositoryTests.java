@@ -92,13 +92,16 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
 
     @Override
     protected Settings repositorySettings() {
-        return Settings.builder()
+        Settings.Builder settingsBuilder = Settings.builder()
             .put(super.repositorySettings())
             .put(S3Repository.BUCKET_SETTING.getKey(), "bucket")
             .put(S3Repository.CLIENT_NAME.getKey(), "test")
             // Don't cache repository data because some tests manually modify the repository data
-            .put(BlobStoreRepository.CACHE_REPOSITORY_DATA.getKey(), false)
-            .build();
+            .put(BlobStoreRepository.CACHE_REPOSITORY_DATA.getKey(), false);
+        if (randomBoolean()) {
+            settingsBuilder.put(S3Repository.BASE_PATH_SETTING.getKey(), randomFrom("test", "test/1"));
+        }
+        return settingsBuilder.build();
     }
 
     @Override

@@ -64,6 +64,7 @@ import static org.elasticsearch.repositories.gcs.GoogleCloudStorageClientSetting
 import static org.elasticsearch.repositories.gcs.GoogleCloudStorageClientSettings.TOKEN_URI_SETTING;
 import static org.elasticsearch.repositories.gcs.GoogleCloudStorageRepository.BUCKET;
 import static org.elasticsearch.repositories.gcs.GoogleCloudStorageRepository.CLIENT_NAME;
+import static org.elasticsearch.repositories.gcs.GoogleCloudStorageRepository.BASE_PATH;
 
 @SuppressForbidden(reason = "this test uses a HttpServer to emulate a Google Cloud Storage endpoint")
 @LuceneTestCase.AwaitsFix(bugUrl = "https://github.com/elastic/elasticsearch/issues/52906")
@@ -76,11 +77,14 @@ public class GoogleCloudStorageBlobStoreRepositoryTests extends ESMockAPIBasedRe
 
     @Override
     protected Settings repositorySettings() {
-        return Settings.builder()
+        Settings.Builder settingsBuilder = Settings.builder()
             .put(super.repositorySettings())
             .put(BUCKET.getKey(), "bucket")
-            .put(CLIENT_NAME.getKey(), "test")
-            .build();
+            .put(CLIENT_NAME.getKey(), "test");
+        if (randomBoolean()) {
+            settingsBuilder.put(BASE_PATH.getKey(), randomFrom("test", "test/1"));
+        }
+        return settingsBuilder.build();
     }
 
     @Override

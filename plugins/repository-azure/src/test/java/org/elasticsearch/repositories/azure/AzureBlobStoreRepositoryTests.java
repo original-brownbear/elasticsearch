@@ -50,11 +50,14 @@ public class AzureBlobStoreRepositoryTests extends ESMockAPIBasedRepositoryInteg
 
     @Override
     protected Settings repositorySettings() {
-        return Settings.builder()
+        Settings.Builder settingsBuilder = Settings.builder()
             .put(super.repositorySettings())
             .put(AzureRepository.Repository.CONTAINER_SETTING.getKey(), "container")
-            .put(AzureStorageSettings.ACCOUNT_SETTING.getKey(), "test")
-            .build();
+            .put(AzureStorageSettings.ACCOUNT_SETTING.getKey(), "test");
+        if (randomBoolean()) {
+            settingsBuilder.put(AzureRepository.Repository.BASE_PATH_SETTING.getKey(), randomFrom("test", "test/1"));
+        }
+        return settingsBuilder.build();
     }
 
     @Override
