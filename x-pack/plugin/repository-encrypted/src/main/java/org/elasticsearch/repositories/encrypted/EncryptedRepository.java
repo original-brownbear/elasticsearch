@@ -313,7 +313,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
                                 final SecretKey newDEK = DEKSupplier.get();
                                 final String newDEKId = UUIDs.randomBase64UUID();
                                 if (newDEKId.length() != DEK_ID_LENGTH_IN_CHARS) {
-                                    throw new IllegalStateException("");
+                                    throw new IllegalStateException("Unexpected DEK Id length");
                                 }
                                 logger.debug(() -> new ParameterizedMessage("A new DEK with id [{}] has been generated", newDEKId));
                                 storeDEK(newDEKId, newDEK, DEKBlobContainer);
@@ -343,7 +343,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
                             } else if (e.getCause() instanceof ElasticsearchException) {
                                 throw (ElasticsearchException) e.getCause();
                             } else {
-                                throw new ElasticsearchException("Unexpected exception retrieving DEK for id [" + DEKId + "]", e);
+                                throw new ElasticsearchException("Unexpected exception retrieving DEK [" + DEKId + "]", e);
                             }
                         }
                     });
