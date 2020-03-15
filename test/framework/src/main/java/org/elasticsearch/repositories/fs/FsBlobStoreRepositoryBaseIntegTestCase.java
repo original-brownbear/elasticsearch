@@ -21,6 +21,7 @@ package org.elasticsearch.repositories.fs;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobPath;
+import org.elasticsearch.common.blobstore.BlobStore;
 import org.elasticsearch.common.blobstore.fs.FsBlobStore;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.settings.Settings;
@@ -40,7 +41,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcke
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.hamcrest.Matchers.instanceOf;
 
-public class FsBlobStoreRepositoryIT extends ESBlobStoreRepositoryIntegTestCase {
+public class FsBlobStoreRepositoryBaseIntegTestCase extends ESBlobStoreRepositoryIntegTestCase {
 
     @Override
     protected String repositoryType() {
@@ -60,15 +61,14 @@ public class FsBlobStoreRepositoryIT extends ESBlobStoreRepositoryIntegTestCase 
     }
 
     public void testMissingDirectoriesNotCreatedInReadonlyRepository() throws IOException, InterruptedException {
-        final String repoName = randomName();
+        final String repoName = randomRepositoryName();
         final Path repoPath = randomRepoPath();
-
-        logger.info("--> creating repository {} at {}", repoName, repoPath);
-
-        assertAcked(client().admin().cluster().preparePutRepository(repoName).setType("fs").setSettings(Settings.builder()
-            .put("location", repoPath)
-            .put("compress", randomBoolean())
-            .put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES)));
+        final Settings repoSettings = Settings.builder()
+                .put(repositorySettings())
+                .put(repositorySettings(repoName))
+                .put("location", repoPath)
+                .build();
+        createRepository(repoName, repoSettings, randomBoolean());
 
         final String indexName = randomName();
         int docCount = iterations(10, 1000);
@@ -92,8 +92,7 @@ public class FsBlobStoreRepositoryIT extends ESBlobStoreRepositoryIntegTestCase 
         }
         assertFalse(Files.exists(deletedPath));
 
-        assertAcked(client().admin().cluster().preparePutRepository(repoName).setType("fs").setSettings(Settings.builder()
-            .put("location", repoPath).put("readonly", true)));
+        createRepository(repoName, Settings.builder().put(repoSettings).put("readonly", true).build(), randomBoolean());
 
         final ElasticsearchException exception = expectThrows(ElasticsearchException.class, () ->
             client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName).setWaitForCompletion(randomBoolean()).get());
@@ -103,25 +102,34 @@ public class FsBlobStoreRepositoryIT extends ESBlobStoreRepositoryIntegTestCase 
     }
 
     public void testReadOnly() throws Exception {
-        Path tempDir = createTempDir();
-        Path path = tempDir.resolve("bar");
+        final String repoName = randomRepositoryName();
+        final Path repoPath = randomRepoPath();
+        final Settings repoSettings = Settings.builder()
+                .put(repositorySettings())
+                .put(repositorySettings(repoName))
+                .put("location", repoPath)
+                .put("readonly", true)
+                .build();
+        createRepository(repoName, repoSettings, false);
 
-        try (FsBlobStore store = new FsBlobStore(Settings.EMPTY, path, true)) {
-            assertFalse(Files.exists(path));
+        try (BlobStore store = newBlobStore(repoName)) {
+            assertFalse(Files.exists(repoPath));
             BlobPath blobPath = BlobPath.cleanPath().add("foo");
             store.blobContainer(blobPath);
-            Path storePath = store.path();
+            Path storePath = repoPath;
             for (String d : blobPath) {
                 storePath = storePath.resolve(d);
             }
             assertFalse(Files.exists(storePath));
         }
 
-        try (FsBlobStore store = new FsBlobStore(Settings.EMPTY, path, false)) {
-            assertTrue(Files.exists(path));
+        createRepository(repoName, Settings.builder().put(repoSettings).put("readonly", false).build(), false);
+
+        try (BlobStore store = newBlobStore(repoName)) {
+            assertTrue(Files.exists(repoPath));
             BlobPath blobPath = BlobPath.cleanPath().add("foo");
             BlobContainer container = store.blobContainer(blobPath);
-            Path storePath = store.path();
+            Path storePath = repoPath;
             for (String d : blobPath) {
                 storePath = storePath.resolve(d);
             }

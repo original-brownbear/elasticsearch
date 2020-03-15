@@ -101,7 +101,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         internalCluster().getDataOrMasterNodeInstances(RepositoriesService.class).forEach(repositories -> {
             assertThat(repositories.repository(name), notNullValue());
             assertThat(repositories.repository(name), instanceOf(BlobStoreRepository.class));
-            assertThat(repositories.repository(name).isReadOnly(), is(false));
+            assertThat(repositories.repository(name).isReadOnly(), is(settings.getAsBoolean("readonly", false)));
             BlobStore blobStore = ((BlobStoreRepository) repositories.repository(name)).getBlobStore();
             assertThat("blob store has to be lazy initialized", blobStore, verify ? is(notNullValue()) : is(nullValue()));
         });
@@ -280,10 +280,14 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
 
     protected BlobStore newBlobStore() {
         final String repository = createRepository(randomRepositoryName());
+        return newBlobStore(repository);
+    }
+
+    protected BlobStore newBlobStore(String repository) {
         final BlobStoreRepository blobStoreRepository =
-            (BlobStoreRepository) internalCluster().getMasterNodeInstance(RepositoriesService.class).repository(repository);
+                (BlobStoreRepository) internalCluster().getMasterNodeInstance(RepositoriesService.class).repository(repository);
         return PlainActionFuture.get(
-            f -> blobStoreRepository.threadPool().generic().execute(ActionRunnable.supply(f, blobStoreRepository::blobStore)));
+                f -> blobStoreRepository.threadPool().generic().execute(ActionRunnable.supply(f, blobStoreRepository::blobStore)));
     }
 
     public void testSnapshotAndRestore() throws Exception {

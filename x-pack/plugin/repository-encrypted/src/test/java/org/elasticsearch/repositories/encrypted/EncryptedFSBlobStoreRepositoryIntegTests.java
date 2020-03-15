@@ -13,8 +13,6 @@ import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.ByteSizeUnit;
-import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseService;
 import org.elasticsearch.plugins.Plugin;
@@ -23,7 +21,7 @@ import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
-import org.elasticsearch.repositories.blobstore.ESBlobStoreRepositoryIntegTestCase;
+import org.elasticsearch.repositories.fs.FsBlobStoreRepositoryBaseIntegTestCase;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.InternalTestCluster;
@@ -45,7 +43,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
-public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreRepositoryIntegTestCase {
+public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreRepositoryBaseIntegTestCase {
 
     private static int NUMBER_OF_TEST_REPOSITORIES = 32;
     private static List<String> repositoryNames = new ArrayList<>();
@@ -104,16 +102,11 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends ESBlobStoreR
 
     @Override
     protected Settings repositorySettings(String repositoryName) {
-        final Settings.Builder settings = Settings.builder();
-        settings.put(super.repositorySettings());
-        settings.put("location", randomRepoPath());
-        settings.put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), FsRepository.TYPE);
-        settings.put(EncryptedRepositoryPlugin.KEK_NAME_SETTING.getKey(), repositoryName);
-        if (randomBoolean()) {
-            long size = 1 << randomInt(10);
-            settings.put("chunk_size", new ByteSizeValue(size, ByteSizeUnit.KB));
-        }
-        return settings.build();
+        return Settings.builder()
+                .put(super.repositorySettings())
+                .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), FsRepository.TYPE)
+                .put(EncryptedRepositoryPlugin.KEK_NAME_SETTING.getKey(), repositoryName)
+                .build();
     }
 
     public void testRepositoryVerificationFailsForMissingKEK() throws Exception {
