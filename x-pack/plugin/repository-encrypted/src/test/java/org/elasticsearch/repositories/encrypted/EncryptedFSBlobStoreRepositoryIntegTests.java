@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -135,6 +136,52 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         client().admin().cluster().prepareVerifyRepository(repositoryName).get();
     }
 
+    public void testSnapshotFailsForMissingKEK() throws Exception {
+        final String repositoryName = randomRepositoryName();
+        final Settings repositorySettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repositoryName)).build();
+        MockSecureSettings secureSettings = new MockSecureSettings();
+        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), null);
+        Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
+        // start new node with missing repository KEK
+        int nodesCount = internalCluster().size();
+        String newNode = internalCluster().startNode(settingsOfNewNode);
+        ensureStableCluster(nodesCount + 1);
+        logger.debug("-->  creating repository [name: {}, verify: {}, settings: {}]", repositoryName, false, repositorySettings);
+        assertAcked(client().admin().cluster().preparePutRepository(repositoryName)
+                .setType(repositoryType())
+                .setVerify(false)
+                .setSettings(repositorySettings));
+        // create an index with the shard on the node with the wrong KEK
+        final String indexName = randomName();
+        int docCounts = iterations(10, 100);
+        final Settings indexSettings = Settings.builder()
+                .put(indexSettings())
+                .put("index.routing.allocation.include._name", newNode)
+                .put(SETTING_NUMBER_OF_SHARDS, 1)
+                .build();
+        logger.info("-->  create random index {} with {} records", indexName, docCounts);
+        createIndex(indexName, indexSettings);
+        addRandomDocuments(indexName, docCounts);
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), docCounts);
+        // empty snapshot completes successfully because it does not involve data on the node without a repository KEK
+        final String snapshotName = randomName();
+        logger.info("-->  create snapshot {}:{}", repositoryName, snapshotName);
+        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
+                snapshotName).setIndices(indexName + "other*").setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
+                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
+        // snapshot is PARTIAL because it includes shards on nodes with a different repository KEK
+        final String snapshotName2 = snapshotName + "2";
+        CreateSnapshotResponse incompleteSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
+                snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
+        assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
+        // repository is not created on the node without the repository KEK
+        assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
+                .allMatch(shardFailure -> shardFailure.reason().contains("RepositoryMissingException")));
+    }
+
     public void testRepositoryVerificationFailsForDifferentKEK() throws Exception {
         String repositoryName = randomRepositoryName();
         // generate a different repository KEK
@@ -193,7 +240,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         int nodesCount = cluster().size();
         String newNode = internalCluster().startNode(settingsOfNewNode);
         ensureStableCluster(nodesCount + 1);
-        // create repository without verification, when a node contains a wrong KEK
+        // create repository without verification, when a node does not contain the repository KEK
         createRepository(repoAfterNewNode, repositorySettings(repoAfterNewNode), false);
 
         // create an index with the shard on the node with the wrong KEK

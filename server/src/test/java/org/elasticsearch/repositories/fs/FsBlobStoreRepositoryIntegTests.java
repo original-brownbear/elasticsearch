@@ -18,5 +18,5 @@
  */
 package org.elasticsearch.repositories.fs;
 
-public class FsBlobStoreRepositoryIntegTests extends FsBlobStoreRepositoryBaseIntegTestCase {
+public final class FsBlobStoreRepositoryIntegTests extends FsBlobStoreRepositoryBaseIntegTestCase {
 }
