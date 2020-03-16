@@ -5,6 +5,7 @@
  */
 package org.elasticsearch.repositories.encrypted;
 
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
@@ -15,6 +16,7 @@ import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseService;
+import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.RepositoryData;
@@ -43,6 +45,8 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreRepositoryBaseIntegTestCase {
 
@@ -136,7 +140,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         client().admin().cluster().prepareVerifyRepository(repositoryName).get();
     }
 
-    public void testSnapshotFailsForMissingKEK() throws Exception {
+    public void testSnapshotIsPartialForMissingKEK() throws Exception {
         final String repositoryName = randomRepositoryName();
         final Settings repositorySettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repositoryName)).build();
         MockSecureSettings secureSettings = new MockSecureSettings();
@@ -222,7 +226,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         assertTrue(verifyRepositoryResponse.getNodes().stream().anyMatch(node -> node.getName().equals(finalNewNode)));
     }
 
-    public void testSnapshotFailsForDifferentKEK() throws Exception {
+    public void testSnapshotIsPartialForDifferentKEK() throws Exception {
         String repoBeforeNewNode = randomRepositoryName();
         // create repository before adding the new node
         createRepository(repoBeforeNewNode, repositorySettings(repoBeforeNewNode), true);
@@ -283,6 +287,49 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
         assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
                 .allMatch(shardFailure -> shardFailure.reason().contains("Repository key id mismatch")));
+    }
+
+    public void testLicenseComplianceSnapshotAndRestore() throws Exception {
+        String repoName = createRepository(randomRepositoryName());
+        String indexName = randomName();
+        int docCounts = iterations(10, 1000);
+        int noNodes = internalCluster().size();
+        logger.info("-->  create random index {} with {} records", indexName, docCounts);
+        addRandomDocuments(indexName, docCounts);
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), docCounts);
+
+        final String snapshotName = randomName();
+        logger.info("-->  create snapshot {}:{}", repoName, snapshotName);
+        assertSuccessfulSnapshot(client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
+                .setWaitForCompletion(true).setIndices(indexName));
+
+        EncryptedRepository encryptedRepository =
+                (EncryptedRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repoName);
+        encryptedRepository.licenseStateSupplier = () -> {
+            XPackLicenseState mockLicenseState = mock(XPackLicenseState.class);
+            when(mockLicenseState.isEncryptedSnapshotAllowed()).thenReturn(false);
+            return mockLicenseState;
+        };
+
+        // snapshot is not permitted
+        ElasticsearchSecurityException e = expectThrows(ElasticsearchSecurityException.class, () ->
+                client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName + "2").setWaitForCompletion(true).get());
+        assertThat(e.getDetailedMessage(), containsString("current license is non-compliant for [encrypted snapshots]"));
+
+        logger.info("-->  delete index {}", indexName);
+        assertAcked(client().admin().indices().prepareDelete(indexName));
+
+        // but restore is
+        logger.info("--> restore index from the snapshot");
+        assertSuccessfulRestore(client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName).setWaitForCompletion(true));
+
+        ensureGreen();
+
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), docCounts);
+
+        // also delete snapshot is permitted
+        logger.info("-->  delete snapshot {}:{}", repoName, snapshotName);
+        assertAcked(client().admin().cluster().prepareDeleteSnapshot(repoName, snapshotName).get());
     }
 
     public void testWrongKEKOnMasterNode() throws Exception {

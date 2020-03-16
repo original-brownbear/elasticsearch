@@ -101,8 +101,8 @@ public final class EncryptedRepository extends BlobStoreRepository {
     private final BlobStoreRepository delegatedRepository;
     // every data blob is encrypted with its randomly generated AES key (DEK)
     private final Supplier<SecretKey> DEKSupplier;
-    // license is checked before every snapshot operations
-    private final Supplier<XPackLicenseState> licenseStateSupplier;
+    // license is checked before every snapshot operations; protected non-final for tests
+    protected Supplier<XPackLicenseState> licenseStateSupplier;
     private final SecretKey repositoryKEK;
     private final String repositoryKEKId;
     private final Cache<String, SecretKey> DEKCache;

@@ -11,13 +11,13 @@ import org.elasticsearch.xpack.core.LocalStateCompositeXPackPlugin;
 
 import java.nio.file.Path;
 
-public class LocalStateEncryptedRepositoryPlugin extends LocalStateCompositeXPackPlugin {
+public final class LocalStateEncryptedRepositoryPlugin extends LocalStateCompositeXPackPlugin {
 
     final EncryptedRepositoryPlugin encryptedRepositoryPlugin;
 
     public LocalStateEncryptedRepositoryPlugin(final Settings settings, final Path configPath) throws Exception {
         super(settings, configPath);
-        LocalStateEncryptedRepositoryPlugin thisVar = this;
+        final LocalStateEncryptedRepositoryPlugin thisVar = this;
 
         encryptedRepositoryPlugin = new EncryptedRepositoryPlugin() {
             @Override
