@@ -107,14 +107,14 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
             for(Map.Entry<String, HttpHandler> handler : handlers.entrySet()) {
                 httpServer.removeContext(handler.getKey());
                 if (handler.getValue() instanceof BlobStoreHttpHandler) {
-                    blobsOnTearDown((BlobStoreHttpHandler) handler.getValue());
+                    blobsOnTearDown(((BlobStoreHttpHandler) handler.getValue()).blobs());
                 }
             }
         }
     }
 
-    protected void blobsOnTearDown(BlobStoreHttpHandler handler) {
-        List<String> blobs = handler.blobs().keySet().stream().filter(blob -> blob.contains("index") == false).collect(Collectors.toList());
+    protected void blobsOnTearDown(Map<String, BytesReference> blobsMap) {
+        List<String> blobs = blobsMap.keySet().stream().filter(blob -> blob.contains("index") == false).collect(Collectors.toList());
         assertThat("Only index blobs should remain in repository but found " + blobs, blobs, hasSize(0));
     }
 

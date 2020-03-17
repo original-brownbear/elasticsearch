@@ -5,6 +5,7 @@
  */
 package org.elasticsearch.repositories.encrypted;
 
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.License;
@@ -19,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.repositories.encrypted.EncryptedRepository.DEK_ROOT_CONTAINER;
@@ -84,8 +86,8 @@ public final class EncryptedAzureBlobStoreRepositoryIntegTests extends AzureBlob
     }
 
     @Override
-    protected void blobsOnTearDown(BlobStoreHttpHandler handler) {
-        List<String> blobs = handler.blobs().keySet().stream()
+    protected void blobsOnTearDown(Map<String, BytesReference> blobsMap) {
+        List<String> blobs = blobsMap.keySet().stream()
                 .filter(blob -> false == blob.contains("index"))
                 .filter(blob -> false == blob.contains(DEK_ROOT_CONTAINER)) // encryption metadata "leaks"
                 .collect(Collectors.toList());
