@@ -11,7 +11,6 @@ import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyReposito
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.common.blobstore.BlobMetaData;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.License;
@@ -36,9 +35,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
+import static org.elasticsearch.repositories.encrypted.EncryptedRepository.getEncryptedBlobByteLength;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.hamcrest.Matchers.contains;
@@ -52,7 +51,6 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
 
     private static int NUMBER_OF_TEST_REPOSITORIES = 32;
     private static List<String> repositoryNames = new ArrayList<>();
-    private final AtomicBoolean fillInSecureSettings = new AtomicBoolean(true);
 
     @BeforeClass
     private static void preGenerateRepositoryNames() {
@@ -63,13 +61,11 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
 
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
-        Settings.Builder settingsBuilder = Settings.builder()
+        return Settings.builder()
                 .put(super.nodeSettings(nodeOrdinal))
-                .put(LicenseService.SELF_GENERATED_LICENSE_TYPE.getKey(), License.LicenseType.TRIAL.getTypeName());
-        if (fillInSecureSettings.get()) {
-            settingsBuilder.setSecureSettings(nodeSecureSettings());
-        }
-        return settingsBuilder.build();
+                .put(LicenseService.SELF_GENERATED_LICENSE_TYPE.getKey(), License.LicenseType.TRIAL.getTypeName())
+                .setSecureSettings(nodeSecureSettings())
+                .build();
     }
 
     protected MockSecureSettings nodeSecureSettings() {
@@ -90,9 +86,8 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
     }
 
     @Override
-    protected long blobLengthFromStorageLength(BlobMetaData blobMetaData) {
-        return DecryptionPacketsInputStream.getDecryptionLength(blobMetaData.length() -
-                EncryptedRepository.DEK_ID_LENGTH_IN_BYTES, EncryptedRepository.PACKET_LENGTH_IN_BYTES);
+    protected long blobLengthFromContentLength(long contentLength) {
+        return getEncryptedBlobByteLength(contentLength);
     }
 
     @Override

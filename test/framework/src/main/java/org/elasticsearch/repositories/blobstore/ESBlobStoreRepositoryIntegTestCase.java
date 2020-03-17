@@ -192,7 +192,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
                 BlobMetaData blobMetaData = blobs.get(generated.getKey());
                 assertThat(generated.getKey(), blobMetaData, CoreMatchers.notNullValue());
                 assertThat(blobMetaData.name(), CoreMatchers.equalTo(generated.getKey()));
-                assertThat(blobLengthFromStorageLength(blobMetaData), CoreMatchers.equalTo(generated.getValue()));
+                assertThat(blobMetaData.length(), CoreMatchers.equalTo(blobLengthFromContentLength(generated.getValue())));
             }
 
             assertThat(container.listBlobsByPrefix("foo-").size(), CoreMatchers.equalTo(numberOfFooBlobs));
@@ -529,7 +529,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         return randomAlphaOfLength(randomIntBetween(1, 10)).toLowerCase(Locale.ROOT);
     }
 
-    protected long blobLengthFromStorageLength(BlobMetaData blobMetaData) {
-        return blobMetaData.length();
+    protected long blobLengthFromContentLength(long contentLength) {
+        return contentLength;
     }
 }

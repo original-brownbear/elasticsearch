@@ -107,12 +107,15 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
             for(Map.Entry<String, HttpHandler> handler : handlers.entrySet()) {
                 httpServer.removeContext(handler.getKey());
                 if (handler.getValue() instanceof BlobStoreHttpHandler) {
-                    List<String> blobs = ((BlobStoreHttpHandler) handler.getValue()).blobs().keySet().stream()
-                        .filter(blob -> blob.contains("index") == false).collect(Collectors.toList());
-                    assertThat("Only index blobs should remain in repository but found " + blobs, blobs, hasSize(0));
+                    blobsOnTearDown((BlobStoreHttpHandler) handler.getValue());
                 }
             }
         }
+    }
+
+    protected void blobsOnTearDown(BlobStoreHttpHandler handler) {
+        List<String> blobs = handler.blobs().keySet().stream().filter(blob -> blob.contains("index") == false).collect(Collectors.toList());
+        assertThat("Only index blobs should remain in repository but found " + blobs, blobs, hasSize(0));
     }
 
     protected abstract Map<String, HttpHandler> createHttpHandlers();
@@ -123,7 +126,7 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
      * Test the snapshot and restore of an index which has large segments files.
      */
     public final void testSnapshotWithLargeSegmentFiles() throws Exception {
-        final String repository = createRepository(randomName());
+        final String repository = createRepository(randomRepositoryName());
         final String index = "index-no-merges";
         createIndex(index, Settings.builder()
             .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)

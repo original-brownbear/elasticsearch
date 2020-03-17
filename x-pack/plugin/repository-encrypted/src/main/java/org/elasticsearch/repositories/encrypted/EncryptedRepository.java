@@ -83,7 +83,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
             21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
     // the path of the blob container holding all the DEKs
     // this is relative to the root base path holding the encrypted blobs (i.e. the repository root base path)
-    private static final String DEK_ROOT_CONTAINER = ".encryption-metadata";
+    static final String DEK_ROOT_CONTAINER = ".encryption-metadata"; // package private for tests
     static final int DEK_ID_LENGTH_IN_BYTES = 16; // {@code org.elasticsearch.common.UUIDS} length
     private static final int DEK_ID_LENGTH_IN_CHARS = 22; // Base64 encoding without padding
 
