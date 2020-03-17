@@ -145,7 +145,7 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
     }
 
     public void testEnforcedCooldownPeriod() throws IOException {
-        final String repoName = createRepository(randomName(), Settings.builder().put(repositorySettings())
+        final String repoName = createRepository(randomRepositoryName(), Settings.builder().put(repositorySettings())
             .put(S3Repository.COOLDOWN_PERIOD.getKey(), TEST_COOLDOWN_PERIOD).build(), randomBoolean());
 
         final SnapshotId fakeOldSnapshot = client().admin().cluster().prepareCreateSnapshot(repoName, "snapshot-old")

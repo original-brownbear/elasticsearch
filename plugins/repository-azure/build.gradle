@@ -97,3 +97,18 @@ task thirdPartyTest(type: Test) {
 if (azureAccount || azureKey || azureContainer || azureBasePath || azureSasToken) {
   check.dependsOn(thirdPartyTest)
 }
+
+// test jar is exported by the testArtifacts configuration to be used in the encrypted Azure repository test
+configurations {
+  testArtifacts.extendsFrom testRuntime
+}
+
+task testJar(type: Jar) {
+  appendix 'test'
+  from sourceSets.test.output
+}
+
+artifacts {
+  archives jar
+  testArtifacts testJar
+}
