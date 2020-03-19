@@ -1,0 +1,66 @@
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License;
+ * you may not use this file except in compliance with the Elastic License.
+ */
+package org.elasticsearch.repositories.encrypted;
+
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
+
+public final class AESKeyUtils {
+    // The Id of any AES SecretKey is the AES-Wrap-ciphertext of this fixed 32 byte wide array.
+    // Key wrapping encryption is deterministic (same plaintext generates the same ciphertext)
+    // and the probability that two different keys map the same plaintext to the same ciphertext is very small
+    // (2^-256, much lower than the UUID collision of 2^-128), assuming AES is indistinguishable from a pseudorandom permutation.
+    private static final byte[] KEY_ID_PLAINTEXT = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+            21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+
+    public static byte[] wrap(SecretKey wrappingKey, Key keyToWrap) throws NoSuchPaddingException, NoSuchAlgorithmException,
+            InvalidKeyException, IllegalBlockSizeException {
+        if (false == "AES".equals(wrappingKey.getAlgorithm())) {
+            throw new IllegalArgumentException("wrappingKey argument is not an AES Key");
+        }
+        if (false == "AES".equals(keyToWrap.getAlgorithm())) {
+            throw new IllegalArgumentException("toWrapKey argument is not an AES Key");
+        }
+        Cipher c = Cipher.getInstance("AESWrap");
+        c.init(Cipher.WRAP_MODE, wrappingKey);
+        return c.wrap(keyToWrap);
+    }
+
+    public static SecretKey unwrap(SecretKey wrappingKey, byte[] keyToUnwrap) throws NoSuchPaddingException,
+            NoSuchAlgorithmException, InvalidKeyException {
+        if (false == "AES".equals(wrappingKey.getAlgorithm())) {
+            throw new IllegalArgumentException("wrappingKey argument is not an AES Key");
+        }
+        Cipher c = Cipher.getInstance("AESWrap");
+        c.init(Cipher.UNWRAP_MODE, wrappingKey);
+        Key unwrappedKey = c.unwrap(keyToUnwrap, "AES", Cipher.SECRET_KEY);
+        return new SecretKeySpec(unwrappedKey.getEncoded(), "AES"); // make sure unwrapped key is "AES"
+    }
+
+    /**
+     * Computes the ID of the given AES {@code SecretKey}.
+     * The ID can be published as it does not leak any information about the key.
+     * Different {@code SecretKey}s have different IDs with a very high probability.
+     * <p>
+     * The ID is the ciphertext of a known plaintext, using the AES Wrap cipher algorithm.
+     * AES Wrap algorithm is deterministic, i.e. encryption using the same key, of the same plaintext, generates the same ciphertext.
+     * Moreover, the ciphertext reveals no information on the key, and the probability of collision of ciphertexts given different
+     * keys is statistically negligible.
+     */
+    public static String computeId(SecretKey secretAESKey) throws GeneralSecurityException {
+        byte[] ciphertextOfKnownPlaintext = wrap(secretAESKey, new SecretKeySpec(KEY_ID_PLAINTEXT, "AES"));
+        return new String(Base64.getUrlEncoder().withoutPadding().encode(ciphertextOfKnownPlaintext), StandardCharsets.UTF_8);
+    }
+}

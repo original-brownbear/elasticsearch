@@ -27,6 +27,7 @@ import org.elasticsearch.common.blobstore.DeleteResult;
 import org.elasticsearch.common.blobstore.support.AbstractBlobContainer;
 import org.elasticsearch.common.cache.Cache;
 import org.elasticsearch.common.cache.CacheBuilder;
+import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
@@ -43,7 +44,6 @@ import org.elasticsearch.snapshots.SnapshotShardFailure;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -74,13 +74,6 @@ public final class EncryptedRepository extends BlobStoreRepository {
     // this should be smaller than {@code #MAX_PACKET_LENGTH_IN_BYTES} and it's what {@code EncryptionPacketsInputStream} uses
     // during encryption and what {@code DecryptionPacketsInputStream} expects during decryption (it is not configurable)
     static final int PACKET_LENGTH_IN_BYTES = 64 * (1 << 10); // 64KB
-    // The "ID" of any KEK is the key-wrap ciphertext of this fixed 32 byte wide array.
-    // Key wrapping encryption is deterministic (same plaintext generates the same ciphertext)
-    // and the probability that two different keys map the same plaintext to the same ciphertext is very small
-    // (2^-256, much lower than the UUID collision of 2^-128), assuming AES is indistinguishable from a pseudorandom permutation
-    // a collision does not break security but it may corrupt the repository
-    private static final byte[] KEK_ID_PLAINTEXT = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-            21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
     // the path of the blob container holding all the DEKs
     // this is relative to the root base path holding the encrypted blobs (i.e. the repository root base path)
     static final String DEK_ROOT_CONTAINER = ".encryption-metadata"; // package private for tests
@@ -100,7 +93,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
     // as the associated encrypted DEKs)
     private final BlobStoreRepository delegatedRepository;
     // every data blob is encrypted with its randomly generated AES key (DEK)
-    private final Supplier<SecretKey> DEKSupplier;
+    private final Supplier<Tuple<SecretKey, String>> DEKGenerator;
     // license is checked before every snapshot operations; protected non-final for tests
     protected Supplier<XPackLicenseState> licenseStateSupplier;
     private final SecretKey repositoryKEK;
@@ -123,13 +116,10 @@ public final class EncryptedRepository extends BlobStoreRepository {
         super(metadata, namedXContentRegistry, clusterService, BlobPath.cleanPath() /* the encrypted repository uses a hardcoded empty
         base blob path but the base path setting is honored for the delegated repository */);
         this.delegatedRepository = delegatedRepository;
-        // DEKs are generated randomly
-        KeyGenerator dataEncryptionKeyGenerator = KeyGenerator.getInstance(DATA_ENCRYPTION_SCHEME.split("/")[0]);
-        dataEncryptionKeyGenerator.init(DATA_KEY_LENGTH_IN_BYTES * Byte.SIZE, SecureRandom.getInstance(RAND_ALGO));
-        this.DEKSupplier = () -> dataEncryptionKeyGenerator.generateKey();
+        this.DEKGenerator = createDEKGenerator();
         this.licenseStateSupplier = licenseStateSupplier;
         this.repositoryKEK = repositoryKEK;
-        this.repositoryKEKId = computeKEKId(repositoryKEK);
+        this.repositoryKEKId = AESKeyUtils.computeId(repositoryKEK);
         // stores decrypted DEKs; DEKs are reused to encrypt/decrypt multiple independent blobs
         this.DEKCache = CacheBuilder.<String, SecretKey>builder().setMaximumWeight(DEK_CACHE_WEIGHT).build();
         if (isReadOnly() != delegatedRepository.isReadOnly()) {
@@ -202,15 +192,17 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
     @Override
     protected BlobStore createBlobStore() {
-        Supplier<SecretKey> DEKSupplier = this.DEKSupplier;
+        final Supplier<Tuple<SecretKey, String>> DEKGenerator;
         if (isReadOnly()) {
             // make sure that a read-only repository can't encrypt anything
-            DEKSupplier = () -> {
+            DEKGenerator = () -> {
                 throw new IllegalStateException("DEKs are required for encryption but this is a read-only repository");
             };
+        } else {
+            DEKGenerator = this.DEKGenerator;
         }
         return new EncryptedBlobStore(delegatedRepository.blobStore(), delegatedRepository.basePath(), repositoryKEK,
-                repositoryKEKId, DEKSupplier, DEKCache);
+                repositoryKEKId, DEKGenerator, DEKCache);
     }
 
     @Override
@@ -231,36 +223,59 @@ public final class EncryptedRepository extends BlobStoreRepository {
         this.delegatedRepository.close();
     }
 
-    private static class EncryptedBlobStore implements BlobStore {
+    private static Supplier<Tuple<SecretKey, String>> createDEKGenerator() throws GeneralSecurityException {
+        // DEK and DEK Ids are generated randomly
+        final SecureRandom DEKSecureRandom = SecureRandom.getInstance(RAND_ALGO);
+        final SecureRandom DEKIdSecureRandom = SecureRandom.getInstance(RAND_ALGO);
+        final KeyGenerator dataEncryptionKeyGenerator = KeyGenerator.getInstance(DATA_ENCRYPTION_SCHEME.split("/")[0]);
+        dataEncryptionKeyGenerator.init(DATA_KEY_LENGTH_IN_BYTES * Byte.SIZE, DEKSecureRandom);
+        return () -> new Tuple<>(dataEncryptionKeyGenerator.generateKey(), UUIDs.randomBase64UUID(DEKIdSecureRandom));
+    }
 
-        private static final UseOnceDEK EXPIRED_DEK = new UseOnceDEK(null, null, Integer.MAX_VALUE);
-
+    static class EncryptedBlobStore implements BlobStore {
         private final BlobStore delegatedBlobStore;
         private final BlobPath delegatedBasePath;
-        private final BlobPath DEKBasePath;
         private final SecretKey repositoryKEK;
-        private final Supplier<SecretKey> DEKSupplier;
-        private final Cache<String, SecretKey> DEKCache;
-        private final AtomicReference<UseOnceDEK> DEKCurrentlyInUse;
+        private final String repositoryKEKId;
+        private final CheckedSupplier<SingleUseDEK, IOException> singleUseDEKSupplier;
+        private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobStore(BlobStore delegatedBlobStore,
                            BlobPath delegatedBasePath,
                            SecretKey repositoryKEK,
                            String repositoryKEKId,
-                           Supplier<SecretKey> DEKSupplier,
+                           Supplier<Tuple<SecretKey, String>> DEKGenerator,
                            Cache<String, SecretKey> DEKCache) {
             this.delegatedBlobStore = delegatedBlobStore;
             this.delegatedBasePath = delegatedBasePath;
-            this.DEKBasePath = delegatedBasePath.add(DEK_ROOT_CONTAINER).add(repositoryKEKId);
             this.repositoryKEK = repositoryKEK;
-            this.DEKSupplier = DEKSupplier;
-            this.DEKCache = DEKCache;
-            this.DEKCurrentlyInUse = new AtomicReference<>(EXPIRED_DEK);
+            this.repositoryKEKId = repositoryKEKId;
+            this.singleUseDEKSupplier = SingleUseDEK.createSingleUseDEKSupplier(() -> {
+                Tuple<SecretKey, String> newDEK = DEKGenerator.get();
+                // store newly generated DEK before making it available
+                storeDEK(newDEK.v2(), newDEK.v1());
+                return newDEK;
+            });
+            this.getDEKById = DEKId -> {
+                try {
+                    return DEKCache.computeIfAbsent(DEKId, ignored -> loadDEK(DEKId));
+                } catch (ExecutionException e) {
+                    // some exception types are to be expected
+                    if (e.getCause() instanceof IOException) {
+                        throw (IOException) e.getCause();
+                    } else if (e.getCause() instanceof ElasticsearchException) {
+                        throw (ElasticsearchException) e.getCause();
+                    } else {
+                        throw new ElasticsearchException("Unexpected exception retrieving DEK [" + DEKId + "]", e);
+                    }
+                }
+            };
         }
 
-        private SecretKey loadDEK(String DEKId, BlobContainer DEKBlobContainer) throws IOException {
+        private SecretKey loadDEK(String DEKId) throws IOException {
+            final BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.add(DEK_ROOT_CONTAINER).add(DEKId));
             final byte[] encryptedDEKBytes = new byte[ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES];
-            try (InputStream encryptedDEKInputStream = DEKBlobContainer.readBlob(DEKId)) {
+            try (InputStream encryptedDEKInputStream = DEKBlobContainer.readBlob(repositoryKEKId)) {
                 int bytesRead = encryptedDEKInputStream.readNBytes(encryptedDEKBytes, 0, ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES);
                 if (bytesRead != ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES) {
                     throw new ElasticsearchException("Encrypted DEK [" + DEKId + "] has unexpected length [" + bytesRead + "]");
@@ -275,78 +290,31 @@ public final class EncryptedRepository extends BlobStoreRepository {
                         ". Most likely the repository key is incorrect, as previous snapshots have used a different key.", e);
             }
             try {
-                return EncryptedRepositoryPlugin.unwrapAESKey(repositoryKEK, encryptedDEKBytes);
+                return AESKeyUtils.unwrap(repositoryKEK, encryptedDEKBytes);
             } catch (GeneralSecurityException e) {
                 throw new ElasticsearchException("Failure to AES wrap the DEK", e);
             }
         }
 
-        private void storeDEK(String DEKId, SecretKey DEK, BlobContainer DEKBlobContainer) throws IOException {
+        private void storeDEK(String DEKId, SecretKey DEK) throws IOException {
+            final BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.add(DEK_ROOT_CONTAINER).add(DEKId));
             final byte[] encryptedDEKBytes;
             try {
-                encryptedDEKBytes = EncryptedRepositoryPlugin.wrapAESKey(repositoryKEK, DEK);
+                encryptedDEKBytes = AESKeyUtils.wrap(repositoryKEK, DEK);
             } catch (GeneralSecurityException e) {
                 // throw unchecked ElasticsearchException; IOExceptions are interpreted differently and can move the repository in the
                 // corrupted state
                 throw new ElasticsearchException("Failure to AES wrap the DEK with id [" + DEKId + "]", e);
             }
             try (InputStream encryptedDEKInputStream = new ByteArrayInputStream(encryptedDEKBytes)) {
-                DEKBlobContainer.writeBlobAtomic(DEKId, encryptedDEKInputStream, encryptedDEKBytes.length, true);
+                DEKBlobContainer.writeBlobAtomic(repositoryKEKId, encryptedDEKInputStream, encryptedDEKBytes.length, true);
             }
-        }
-
-        private CheckedSupplier<UseOnceDEK, IOException> createNonceAndDEKSupplier(Supplier<SecretKey> DEKSupplier,
-                                                                                   AtomicReference<UseOnceDEK> DEKCurrentlyInUse,
-                                                                                   BlobContainer DEKBlobContainer) {
-            return () -> {
-                while (true) {
-                    final UseOnceDEK nonceAndDEK = DEKCurrentlyInUse.getAndUpdate(prev -> prev.nonce < Integer.MAX_VALUE ?
-                            new UseOnceDEK(prev.DEK, prev.DEKId, prev.nonce + 1) : EXPIRED_DEK);
-                    if (nonceAndDEK.nonce < Integer.MAX_VALUE) {
-                        logger.trace(() -> new ParameterizedMessage("DEK with id [{}] reused with nonce [{}]", nonceAndDEK.DEKId,
-                                nonceAndDEK.nonce));
-                        return nonceAndDEK;
-                    } else {
-                        logger.trace(() -> new ParameterizedMessage("Regenerating a new DEK to replace id [{}]", nonceAndDEK.DEKId));
-                        synchronized (this) {
-                            if (DEKCurrentlyInUse.get().nonce == Integer.MAX_VALUE) {
-                                final SecretKey newDEK = DEKSupplier.get();
-                                final String newDEKId = UUIDs.randomBase64UUID();
-                                if (newDEKId.length() != DEK_ID_LENGTH_IN_CHARS) {
-                                    throw new IllegalStateException("Unexpected DEK Id length");
-                                }
-                                logger.debug(() -> new ParameterizedMessage("A new DEK with id [{}] has been generated", newDEKId));
-                                storeDEK(newDEKId, newDEK, DEKBlobContainer);
-                                logger.debug(() -> new ParameterizedMessage("DEK with id [{}] has been stored under [{}]", newDEKId,
-                                        DEKBlobContainer.path()));
-                                DEKCurrentlyInUse.set(new UseOnceDEK(newDEK, newDEKId, Integer.MIN_VALUE));
-                            }
-                        }
-                    }
-                }
-            };
         }
 
         @Override
         public BlobContainer blobContainer(BlobPath path) {
-            BlobContainer delegatedBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.append(path));
-            BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(DEKBasePath);
-            return new EncryptedBlobContainer(path, delegatedBlobContainer,
-                    createNonceAndDEKSupplier(DEKSupplier, DEKCurrentlyInUse, DEKBlobContainer),
-                    DEKId -> {
-                        try {
-                            return DEKCache.computeIfAbsent(DEKId, ignored -> loadDEK(DEKId, DEKBlobContainer));
-                        } catch (ExecutionException e) {
-                            // some exception types are to be expected
-                            if (e.getCause() instanceof IOException) {
-                                throw (IOException) e.getCause();
-                            } else if (e.getCause() instanceof ElasticsearchException) {
-                                throw (ElasticsearchException) e.getCause();
-                            } else {
-                                throw new ElasticsearchException("Unexpected exception retrieving DEK [" + DEKId + "]", e);
-                            }
-                        }
-                    });
+            final BlobContainer delegatedBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.append(path));
+            return new EncryptedBlobContainer(path, delegatedBlobContainer, singleUseDEKSupplier, getDEKById);
         }
 
         @Override
@@ -358,19 +326,21 @@ public final class EncryptedRepository extends BlobStoreRepository {
     private static class EncryptedBlobContainer extends AbstractBlobContainer {
 
         private final BlobContainer delegatedBlobContainer;
-        private final CheckedSupplier<UseOnceDEK, IOException> nonceAndDEKSupplier;
+        // supplier for the DEK used for encryption (snapshot)
+        private final CheckedSupplier<SingleUseDEK, IOException> singleUseDEKSupplier;
+        // retrieves the DEK required for decryption (restore)
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobContainer(BlobPath path, // this path contains the {@code EncryptedRepository#basePath} which, importantly, is empty
                                BlobContainer delegatedBlobContainer,
-                               CheckedSupplier<UseOnceDEK, IOException> nonceAndDEKSupplier,
+                               CheckedSupplier<SingleUseDEK, IOException> singleUseDEKSupplier,
                                CheckedFunction<String, SecretKey, IOException> getDEKById) {
             super(path);
             if (DEK_ROOT_CONTAINER.equals(path.getRootPath())) {
                 throw new IllegalArgumentException("Cannot descend into the DEK blob container");
             }
             this.delegatedBlobContainer = delegatedBlobContainer;
-            this.nonceAndDEKSupplier = nonceAndDEKSupplier;
+            this.singleUseDEKSupplier = singleUseDEKSupplier;
             this.getDEKById = getDEKById;
         }
 
@@ -438,14 +408,15 @@ public final class EncryptedRepository extends BlobStoreRepository {
         @Override
         public void writeBlob(String blobName, InputStream inputStream, long blobSize, boolean failIfAlreadyExists) throws IOException {
             // reuse, but possibly generate and store a new DEK
-            final UseOnceDEK nonceAndDEK = nonceAndDEKSupplier.get();
-            final byte[] DEKIdBytes = Base64.getUrlDecoder().decode(nonceAndDEK.DEKId.getBytes(StandardCharsets.UTF_8));
+            final SingleUseDEK singleUseNonceAndDEK = singleUseDEKSupplier.get();
+            final byte[] DEKIdBytes = Base64.getUrlDecoder().decode(singleUseNonceAndDEK.DEKId.getBytes(StandardCharsets.UTF_8));
             if (DEKIdBytes.length != DEK_ID_LENGTH_IN_BYTES) {
                 throw new IllegalStateException("Unexpected DEK Id length [" + DEKIdBytes.length + "]");
             }
             final long encryptedBlobSize = getEncryptedBlobByteLength(blobSize);
             try (InputStream encryptedInputStream = ChainingInputStream.chain(new ByteArrayInputStream(DEKIdBytes),
-                    new EncryptionPacketsInputStream(inputStream, nonceAndDEK.DEK, nonceAndDEK.nonce, PACKET_LENGTH_IN_BYTES))) {
+                    new EncryptionPacketsInputStream(inputStream, singleUseNonceAndDEK.DEK,
+                            singleUseNonceAndDEK.nonce, PACKET_LENGTH_IN_BYTES))) {
                 delegatedBlobContainer.writeBlob(blobName, encryptedInputStream, encryptedBlobSize, failIfAlreadyExists);
             }
         }
@@ -490,21 +461,10 @@ public final class EncryptedRepository extends BlobStoreRepository {
                 // get an encrypted blob container for each child
                 // Note that the encryption metadata blob container might be missing
                 resultBuilder.put(childBlobContainer.getKey(), new EncryptedBlobContainer(path().add(childBlobContainer.getKey()),
-                        childBlobContainer.getValue(), nonceAndDEKSupplier, getDEKById));
+                        childBlobContainer.getValue(), singleUseDEKSupplier, getDEKById));
             }
             return Map.copyOf(resultBuilder);
         }
-    }
-
-    /**
-     * The ID of the repository key (KEK) is the ciphertext of a known plaintext, using the AES Wrap algorithm.
-     * AES Wrap algorithm is deterministic, i.e. encryption using the same key, of the same plaintext, generates the same ciphertext.
-     * Moreover, the ciphertext reveals no information on the key, and the probability of collision of ciphertexts given different
-     * keys is statistically negligible.
-     */
-    private static String computeKEKId(SecretKey repositoryKEK) throws GeneralSecurityException {
-        return new String(Base64.getUrlEncoder().withoutPadding().encode(EncryptedRepositoryPlugin.wrapAESKey(repositoryKEK,
-                new SecretKeySpec(KEK_ID_PLAINTEXT,"AES"))), StandardCharsets.UTF_8);
     }
 
     /**
@@ -534,15 +494,46 @@ public final class EncryptedRepository extends BlobStoreRepository {
         }
     }
 
-    private static class UseOnceDEK {
+    private static class SingleUseDEK {
+        private static final SingleUseDEK EXPIRED_DEK = new SingleUseDEK(null, null, Integer.MAX_VALUE);
+
         final SecretKey DEK;
         final String DEKId;
         final Integer nonce;
 
-        UseOnceDEK(SecretKey DEK, String DEKId, Integer nonce) {
+        private SingleUseDEK(SecretKey DEK, String DEKId, Integer nonce) {
             this.DEK = DEK;
             this.DEKId = DEKId;
             this.nonce = nonce;
+        }
+
+        static CheckedSupplier<SingleUseDEK, IOException> createSingleUseDEKSupplier(
+                CheckedSupplier<Tuple<SecretKey, String>, IOException> DEKGenerator) {
+            final AtomicReference<SingleUseDEK> DEKCurrentlyInUse = new AtomicReference<>(EXPIRED_DEK);
+            final Object lock = new Object();
+            return () -> {
+                while (true) {
+                    final SingleUseDEK nonceAndDEK = DEKCurrentlyInUse.getAndUpdate(prev -> prev.nonce < Integer.MAX_VALUE ?
+                            new SingleUseDEK(prev.DEK, prev.DEKId, prev.nonce + 1) : EXPIRED_DEK);
+                    if (nonceAndDEK.nonce < Integer.MAX_VALUE) {
+                        logger.trace(() -> new ParameterizedMessage("DEK with id [{}] reused with nonce [{}]", nonceAndDEK.DEKId,
+                                nonceAndDEK.nonce));
+                        return nonceAndDEK;
+                    } else {
+                        logger.trace(() -> new ParameterizedMessage("Regenerating a new DEK to replace id [{}]", nonceAndDEK.DEKId));
+                        synchronized (lock) {
+                            if (DEKCurrentlyInUse.get().nonce == Integer.MAX_VALUE) {
+                                final Tuple<SecretKey, String> newDEK = DEKGenerator.get();
+                                logger.debug(() -> new ParameterizedMessage("A new DEK with id [{}] has been generated", newDEK.v2()));
+                                if (newDEK.v2().length() != DEK_ID_LENGTH_IN_CHARS) {
+                                    throw new IllegalStateException("Unexpected DEK Id length [" + newDEK.v2().length() + "]");
+                                }
+                                DEKCurrentlyInUse.set(new SingleUseDEK(newDEK.v1(), newDEK.v2(), Integer.MIN_VALUE));
+                            }
+                        }
+                    }
+                }
+            };
         }
     }
 
