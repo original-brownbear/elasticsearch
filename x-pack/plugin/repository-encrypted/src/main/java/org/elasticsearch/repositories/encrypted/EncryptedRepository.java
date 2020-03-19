@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public final class EncryptedRepository extends BlobStoreRepository {
@@ -67,8 +68,6 @@ public final class EncryptedRepository extends BlobStoreRepository {
     static final int AES_BLOCK_LENGTH_IN_BYTES = 128;
     // the following constants require careful thought before changing because they will break backwards compatibility
     static final String DATA_ENCRYPTION_SCHEME = "AES/GCM/NoPadding";
-    static final int DATA_KEY_LENGTH_IN_BYTES = 32; // 256-bit AES key
-    static final int ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES = DATA_KEY_LENGTH_IN_BYTES + 8; // https://www.ietf.org/rfc/rfc3394.txt section 2.2
     static final long PACKET_START_COUNTER = Long.MIN_VALUE;
     static final int MAX_PACKET_LENGTH_IN_BYTES = 8 << 20; // 8MB
     // this should be smaller than {@code #MAX_PACKET_LENGTH_IN_BYTES} and it's what {@code EncryptionPacketsInputStream} uses
@@ -82,11 +81,11 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
     // the following constants can be changed freely
     private static final String RAND_ALGO = "SHA1PRNG";
-    // each snapshot metadata contains the salted password hash of the master node that started the snapshot operation
+    // each snapshot metadata contains an unforgeable identifier of the repository password of the master node that started the snapshot
     // this hash is then verified on each data node before the actual shard files snapshot, as well as on the
-    // master node that finalizes the snapshot (could be a different master node, if a master failover
-    // has occurred in the mean time)
-    private static final String KEK_ID_USER_METADATA_KEY = EncryptedRepository.class.getName() + ".repositoryKEKId";
+    // master node that finalizes the snapshot (could be a different master node, if a master failover occurred during the snapshot)
+    private static final String PASSWORD_ID_USER_METADATA_KEY = EncryptedRepository.class.getName() + ".repositoryPasswordId";
+    private static final String PASSWORD_ID_SALT_USER_METADATA_KEY = EncryptedRepository.class.getName() + ".repositoryPasswordIdSalt";
     private static final int DEK_CACHE_WEIGHT = 2048;
 
     // this is the repository instance to which all blob reads and writes are forwarded to (it stores both the encrypted blobs, as well
@@ -96,8 +95,10 @@ public final class EncryptedRepository extends BlobStoreRepository {
     private final Supplier<Tuple<SecretKey, String>> DEKGenerator;
     // license is checked before every snapshot operations; protected non-final for tests
     protected Supplier<XPackLicenseState> licenseStateSupplier;
-    private final SecretKey repositoryKEK;
-    private final String repositoryKEKId;
+    private final char[] repositoryPassword;
+    private final String localRepositoryPasswordId;
+    private final String localRepositoryPasswordIdSalt;
+    private final AtomicReference<String> validatedRepositoryPasswordId;
     private final Cache<String, SecretKey> DEKCache;
 
     /**
@@ -112,14 +113,17 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
     protected EncryptedRepository(RepositoryMetaData metadata, NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
                                   BlobStoreRepository delegatedRepository, Supplier<XPackLicenseState> licenseStateSupplier,
-                                  SecretKey repositoryKEK) throws GeneralSecurityException {
+                                  char[] repositoryPassword) throws GeneralSecurityException {
         super(metadata, namedXContentRegistry, clusterService, BlobPath.cleanPath() /* the encrypted repository uses a hardcoded empty
         base blob path but the base path setting is honored for the delegated repository */);
         this.delegatedRepository = delegatedRepository;
         this.DEKGenerator = createDEKGenerator();
         this.licenseStateSupplier = licenseStateSupplier;
-        this.repositoryKEK = repositoryKEK;
-        this.repositoryKEKId = AESKeyUtils.computeId(repositoryKEK);
+        this.repositoryPassword = repositoryPassword;
+        this.localRepositoryPasswordIdSalt = UUIDs.randomBase64UUID();
+        this.localRepositoryPasswordId = AESKeyUtils.computeId(AESKeyUtils.generatePasswordBasedKey(repositoryPassword,
+                Base64.getUrlDecoder().decode(this.localRepositoryPasswordIdSalt.getBytes(StandardCharsets.UTF_8))));
+        this.validatedRepositoryPasswordId = new AtomicReference<>(this.localRepositoryPasswordId);
         // stores decrypted DEKs; DEKs are reused to encrypt/decrypt multiple independent blobs
         this.DEKCache = CacheBuilder.<String, SecretKey>builder().setMaximumWeight(DEK_CACHE_WEIGHT).build();
         if (isReadOnly() != delegatedRepository.isReadOnly()) {
@@ -151,10 +155,11 @@ public final class EncryptedRepository extends BlobStoreRepository {
         if (userMetadata != null) {
             snapshotUserMetadata.putAll(userMetadata);
         }
-        // set out the ID of the repository key
+        // set out the ID of the repository secret
         // this is then checked before every snapshot operation (i.e. {@link #snapshotShard} and {@link #finalizeSnapshot})
-        // to assure that all participating nodes in the snapshot operation are using the same key
-        snapshotUserMetadata.put(KEK_ID_USER_METADATA_KEY, repositoryKEKId);
+        // to assure that all participating nodes in the snapshot operation are using the same repository secret
+        snapshotUserMetadata.put(PASSWORD_ID_SALT_USER_METADATA_KEY, localRepositoryPasswordIdSalt);
+        snapshotUserMetadata.put(PASSWORD_ID_USER_METADATA_KEY, localRepositoryPasswordId);
         return snapshotUserMetadata;
     }
 
@@ -164,10 +169,10 @@ public final class EncryptedRepository extends BlobStoreRepository {
                                  boolean includeGlobalState, MetaData clusterMetaData, Map<String, Object> userMetadata,
                                  Version repositoryMetaVersion, ActionListener<SnapshotInfo> listener) {
         try {
-            checkRepositoryKEK(userMetadata);
+            validateLocalRepositorySecret(userMetadata);
             // remove the repository key id from the snapshot metadata so that the id is not displayed in the API response to the user
             userMetadata = new HashMap<>(userMetadata);
-            userMetadata.remove(KEK_ID_USER_METADATA_KEY);
+            userMetadata.remove(PASSWORD_ID_USER_METADATA_KEY);
         } catch (RepositoryException KEKValidationException) {
             listener.onFailure(KEKValidationException);
             return;
@@ -181,7 +186,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
                               IndexCommit snapshotIndexCommit, IndexShardSnapshotStatus snapshotStatus, Version repositoryMetaVersion,
                               Map<String, Object> userMetadata, ActionListener<String> listener) {
         try {
-            checkRepositoryKEK(userMetadata);
+            validateLocalRepositorySecret(userMetadata);
         } catch (RepositoryException KEKValidationException) {
             listener.onFailure(KEKValidationException);
             return;
@@ -201,8 +206,8 @@ public final class EncryptedRepository extends BlobStoreRepository {
         } else {
             DEKGenerator = this.DEKGenerator;
         }
-        return new EncryptedBlobStore(delegatedRepository.blobStore(), delegatedRepository.basePath(), repositoryKEK,
-                repositoryKEKId, DEKGenerator, DEKCache);
+        return new EncryptedBlobStore(delegatedRepository.blobStore(), delegatedRepository.basePath(), repositoryPassword, DEKGenerator,
+                DEKCache);
     }
 
     @Override
@@ -228,28 +233,34 @@ public final class EncryptedRepository extends BlobStoreRepository {
         final SecureRandom DEKSecureRandom = SecureRandom.getInstance(RAND_ALGO);
         final SecureRandom DEKIdSecureRandom = SecureRandom.getInstance(RAND_ALGO);
         final KeyGenerator dataEncryptionKeyGenerator = KeyGenerator.getInstance(DATA_ENCRYPTION_SCHEME.split("/")[0]);
-        dataEncryptionKeyGenerator.init(DATA_KEY_LENGTH_IN_BYTES * Byte.SIZE, DEKSecureRandom);
+        dataEncryptionKeyGenerator.init(AESKeyUtils.KEY_LENGTH_IN_BYTES * Byte.SIZE, DEKSecureRandom);
         return () -> new Tuple<>(dataEncryptionKeyGenerator.generateKey(), UUIDs.randomBase64UUID(DEKIdSecureRandom));
     }
 
     static class EncryptedBlobStore implements BlobStore {
         private final BlobStore delegatedBlobStore;
         private final BlobPath delegatedBasePath;
-        private final SecretKey repositoryKEK;
-        private final String repositoryKEKId;
+        private final Function<String, Tuple<String, SecretKey>> getKEKforDEK;
         private final CheckedSupplier<SingleUseDEK, IOException> singleUseDEKSupplier;
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobStore(BlobStore delegatedBlobStore,
                            BlobPath delegatedBasePath,
-                           SecretKey repositoryKEK,
-                           String repositoryKEKId,
+                           char[] repositoryPassword,
                            Supplier<Tuple<SecretKey, String>> DEKGenerator,
                            Cache<String, SecretKey> DEKCache) {
             this.delegatedBlobStore = delegatedBlobStore;
             this.delegatedBasePath = delegatedBasePath;
-            this.repositoryKEK = repositoryKEK;
-            this.repositoryKEKId = repositoryKEKId;
+            this.getKEKforDEK = DEKId -> {
+                try {
+                    SecretKey KEK = AESKeyUtils.generatePasswordBasedKey(repositoryPassword,
+                            Base64.getUrlDecoder().decode(DEKId.getBytes(StandardCharsets.UTF_8)));
+                    String KEKId = AESKeyUtils.computeId(KEK);
+                    return new Tuple<>(KEKId, KEK);
+                } catch (GeneralSecurityException e) {
+                    throw new ElasticsearchException("Failure to generate KEK to wrap the DEK [" + DEKId + "]", e);
+                }
+            };
             this.singleUseDEKSupplier = SingleUseDEK.createSingleUseDEKSupplier(() -> {
                 Tuple<SecretKey, String> newDEK = DEKGenerator.get();
                 // store newly generated DEK before making it available
@@ -274,10 +285,11 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
         private SecretKey loadDEK(String DEKId) throws IOException {
             final BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.add(DEK_ROOT_CONTAINER).add(DEKId));
-            final byte[] encryptedDEKBytes = new byte[ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES];
-            try (InputStream encryptedDEKInputStream = DEKBlobContainer.readBlob(repositoryKEKId)) {
-                int bytesRead = encryptedDEKInputStream.readNBytes(encryptedDEKBytes, 0, ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES);
-                if (bytesRead != ENCRYPTED_DATA_KEY_LENGTH_IN_BYTES) {
+            final Tuple<String, SecretKey> KEK = getKEKforDEK.apply(DEKId);
+            final byte[] encryptedDEKBytes = new byte[AESKeyUtils.WRAPPED_KEY_LENGTH_IN_BYTES];
+            try (InputStream encryptedDEKInputStream = DEKBlobContainer.readBlob(KEK.v1())) {
+                int bytesRead = encryptedDEKInputStream.readNBytes(encryptedDEKBytes, 0, AESKeyUtils.WRAPPED_KEY_LENGTH_IN_BYTES);
+                if (bytesRead != AESKeyUtils.WRAPPED_KEY_LENGTH_IN_BYTES) {
                     throw new ElasticsearchException("Encrypted DEK [" + DEKId + "] has unexpected length [" + bytesRead + "]");
                 }
                 if (encryptedDEKInputStream.read() != -1) {
@@ -290,7 +302,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
                         ". Most likely the repository key is incorrect, as previous snapshots have used a different key.", e);
             }
             try {
-                return AESKeyUtils.unwrap(repositoryKEK, encryptedDEKBytes);
+                return AESKeyUtils.unwrap(KEK.v2(), encryptedDEKBytes);
             } catch (GeneralSecurityException e) {
                 throw new ElasticsearchException("Failure to AES wrap the DEK", e);
             }
@@ -298,16 +310,17 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
         private void storeDEK(String DEKId, SecretKey DEK) throws IOException {
             final BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.add(DEK_ROOT_CONTAINER).add(DEKId));
+            final Tuple<String, SecretKey> KEK = getKEKforDEK.apply(DEKId);
             final byte[] encryptedDEKBytes;
             try {
-                encryptedDEKBytes = AESKeyUtils.wrap(repositoryKEK, DEK);
+                encryptedDEKBytes = AESKeyUtils.wrap(KEK.v2(), DEK);
             } catch (GeneralSecurityException e) {
                 // throw unchecked ElasticsearchException; IOExceptions are interpreted differently and can move the repository in the
                 // corrupted state
                 throw new ElasticsearchException("Failure to AES wrap the DEK with id [" + DEKId + "]", e);
             }
             try (InputStream encryptedDEKInputStream = new ByteArrayInputStream(encryptedDEKBytes)) {
-                DEKBlobContainer.writeBlobAtomic(repositoryKEKId, encryptedDEKInputStream, encryptedDEKBytes.length, true);
+                DEKBlobContainer.writeBlobAtomic(KEK.v1(), encryptedDEKInputStream, encryptedDEKBytes.length, true);
             }
         }
 
@@ -324,7 +337,6 @@ public final class EncryptedRepository extends BlobStoreRepository {
     }
 
     private static class EncryptedBlobContainer extends AbstractBlobContainer {
-
         private final BlobContainer delegatedBlobContainer;
         // supplier for the DEK used for encryption (snapshot)
         private final CheckedSupplier<SingleUseDEK, IOException> singleUseDEKSupplier;
@@ -469,28 +481,43 @@ public final class EncryptedRepository extends BlobStoreRepository {
 
     /**
      * Called before the shard snapshot and finalize operations, on the data and master nodes. This validates that the repository
-     * key on the master node that started the snapshot operation is the same with the repository key on the current node.
+     * secret on the master node that started the snapshot operation is identical to the repository secret on the local node.
      *
-     * @param snapshotUserMetadata the snapshot metadata containing the repository key id to verify
-     * @throws RepositoryException if the repository key id on the local node mismatches or cannot be verified from the
-     * master's, as seen in the {@code snapshotUserMetadata}
+     * @param snapshotUserMetadata the snapshot metadata containing the repository secret id to verify
+     * @throws RepositoryException if the repository secret id on the local node mismatches the master's
      */
-    private void checkRepositoryKEK(Map<String, Object> snapshotUserMetadata) throws RepositoryException {
+    private void validateLocalRepositorySecret(Map<String, Object> snapshotUserMetadata) throws RepositoryException {
         if (snapshotUserMetadata == null) {
             throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
                     new IllegalStateException("Null snapshot metadata"));
         }
-        final Object masterKEKId = snapshotUserMetadata.get(KEK_ID_USER_METADATA_KEY);
-        if (false == masterKEKId instanceof String) {
+        final Object masterRepositoryPasswordId = snapshotUserMetadata.get(PASSWORD_ID_USER_METADATA_KEY);
+        if (false == masterRepositoryPasswordId instanceof String) {
             throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
                     new IllegalStateException("Snapshot metadata does not contain the repository key id as a String"));
         }
-        if (false == repositoryKEKId.equals(masterKEKId)) {
-            throw new RepositoryException(metadata.name(),
-                    "Repository key id mismatch. The local node's repository key, the keystore secure setting [" +
-                            EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.getConcreteSettingForNamespace(
-                                    EncryptedRepositoryPlugin.KEK_NAME_SETTING.get(metadata.settings())).getKey() +
-                            "], is different compared to the elected master node's, which started the snapshot operation");
+        if (false == validatedRepositoryPasswordId.get().equals(masterRepositoryPasswordId)) {
+            final Object masterRepositoryPasswordIdSalt = snapshotUserMetadata.get(PASSWORD_ID_SALT_USER_METADATA_KEY);
+            if (false == masterRepositoryPasswordIdSalt instanceof String) {
+                throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
+                        new IllegalStateException("Snapshot metadata does not contain the repository key id as a String"));
+            }
+            final String computedRepositoryPasswordId;
+            try {
+                computedRepositoryPasswordId = AESKeyUtils.computeId(AESKeyUtils.generatePasswordBasedKey(repositoryPassword,
+                        Base64.getUrlDecoder().decode(((String) masterRepositoryPasswordIdSalt).getBytes(StandardCharsets.UTF_8))));
+            } catch (Exception e) {
+                throw new RepositoryException(metadata.name(), "Unexpected fatal internal error", e);
+            }
+            if (computedRepositoryPasswordId.equals(masterRepositoryPasswordId)) {
+                this.validatedRepositoryPasswordId.set(computedRepositoryPasswordId);
+            } else {
+                throw new RepositoryException(metadata.name(),
+                        "Repository secret id mismatch. The local node's repository secret, the keystore setting [" +
+                                EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(
+                                        EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.get(metadata.settings())).getKey() +
+                                "], is different compared to the elected master node's which started the snapshot operation");
+            }
         }
     }
 

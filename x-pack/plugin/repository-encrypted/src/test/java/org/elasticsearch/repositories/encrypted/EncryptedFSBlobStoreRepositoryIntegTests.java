@@ -28,7 +28,6 @@ import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.InternalTestCluster;
 import org.junit.BeforeClass;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,11 +70,8 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
     protected MockSecureSettings nodeSecureSettings() {
         MockSecureSettings secureSettings = new MockSecureSettings();
         for (String repositoryName : repositoryNames) {
-            byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
-            byte[] repositoryKEK = new byte[32];
-            System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);
-            secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEK);
+            secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName);
         }
         return secureSettings;
     }
@@ -105,14 +101,14 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         return Settings.builder()
                 .put(super.repositorySettings())
                 .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), FsRepository.TYPE)
-                .put(EncryptedRepositoryPlugin.KEK_NAME_SETTING.getKey(), repositoryName)
+                .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
                 .build();
     }
 
     public void testRepositoryVerificationFailsForMissingKEK() throws Exception {
         String repositoryName = randomRepositoryName();
         MockSecureSettings secureSettings = new MockSecureSettings();
-        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
                 getConcreteSettingForNamespace(repositoryName).getKey(), null);
         Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
         // start new node with missing repository KEK
@@ -139,7 +135,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         final String repositoryName = randomRepositoryName();
         final Settings repositorySettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repositoryName)).build();
         MockSecureSettings secureSettings = new MockSecureSettings();
-        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
+        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
                 getConcreteSettingForNamespace(repositoryName).getKey(), null);
         Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
         // start new node with missing repository KEK
@@ -183,12 +179,10 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
 
     public void testRepositoryVerificationFailsForDifferentKEK() throws Exception {
         String repositoryName = randomRepositoryName();
-        // generate a different repository KEK
-        byte[] repositoryKEKOnNewNode = randomByteArrayOfLength(32);
-        repositoryKEKOnNewNode[0] = 0; // be absolutely sure the KEK is different
+        // put a different repository password
         MockSecureSettings secureSettings = new MockSecureSettings();
-        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEKOnNewNode);
+        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName + "wrong");
         Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
         // start new node with different repository KEK
         int nodesCount = cluster().size();
@@ -206,12 +200,9 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         // stop the node with the wrong KEK
         internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
         ensureStableCluster(nodesCount);
-        // start another node with a correct KEK
-        byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
-        byte[] repositoryKEK = new byte[32];
-        System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);
-        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEK);
+        // start another node with a correct password
+        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName);
         settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
         newNode = internalCluster().startNode(settingsOfNewNode);
         ensureStableCluster(nodesCount + 1);
@@ -226,14 +217,11 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         // create repository before adding the new node
         createRepository(repoBeforeNewNode, repositorySettings(repoBeforeNewNode), true);
         String repoAfterNewNode = randomRepositoryName();
-        // generate a different repository KEK
-        byte[] repositoryKEKOnNewNode = randomByteArrayOfLength(32);
-        repositoryKEKOnNewNode[0] = 0; // be absolutely sure the KEK is different
         MockSecureSettings secureSettings = new MockSecureSettings();
-        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                getConcreteSettingForNamespace(repoAfterNewNode).getKey(), repositoryKEKOnNewNode);
-        secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                getConcreteSettingForNamespace(repoBeforeNewNode).getKey(), repositoryKEKOnNewNode);
+        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repoBeforeNewNode).getKey(), repoBeforeNewNode + "wrong");
+        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repoAfterNewNode).getKey(), repoAfterNewNode + "wrong");
         Settings settingsOfNewNode = Settings.builder().put("node.attr.repoKEK", "wrong").setSecureSettings(secureSettings).build();
         // start a new node with different repository KEKs
         int nodesCount = cluster().size();
@@ -276,12 +264,12 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
                 snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
         assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
         assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
-                .allMatch(shardFailure -> shardFailure.reason().contains("Repository key id mismatch")));
+                .allMatch(shardFailure -> shardFailure.reason().contains("Repository secret id mismatch")));
         incompleteSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoAfterNewNode,
                 snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
         assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
         assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
-                .allMatch(shardFailure -> shardFailure.reason().contains("Repository key id mismatch")));
+                .allMatch(shardFailure -> shardFailure.reason().contains("Repository secret id mismatch")));
     }
 
     public void testLicenseComplianceSnapshotAndRestore() throws Exception {
@@ -348,11 +336,9 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
                 @Override
                 public Settings onNodeStopped(String nodeName) throws Exception {
                     Settings.Builder newSettings = Settings.builder().put(super.onNodeStopped(nodeName));
-                    byte[] repositoryKEKRestart = randomByteArrayOfLength(32);
-                    repositoryKEKRestart[0] = 0; // be absolutely sure the KEK is different
                     MockSecureSettings secureSettings = new MockSecureSettings();
-                    secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                            getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEKRestart);
+                    secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                            getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName + "wrong");
                     newSettings.setSecureSettings(secureSettings);
                     return newSettings.build();
                 }
@@ -393,12 +379,9 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
                 @Override
                 public Settings onNodeStopped(String nodeName) throws Exception {
                     Settings.Builder newSettings = Settings.builder().put(super.onNodeStopped(nodeName));
-                    byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
-                    byte[] repositoryKEK = new byte[32];
-                    System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);
                     MockSecureSettings secureSettings = new MockSecureSettings();
-                    secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                            getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEK);
+                    secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                            getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName);
                     newSettings.setSecureSettings(secureSettings);
                     return newSettings.build();
                 }

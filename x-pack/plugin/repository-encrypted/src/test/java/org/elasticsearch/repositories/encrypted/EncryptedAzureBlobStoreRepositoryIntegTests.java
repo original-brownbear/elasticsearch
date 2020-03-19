@@ -14,7 +14,6 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.azure.AzureBlobStoreRepositoryTests;
 import org.junit.BeforeClass;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,11 +51,8 @@ public final class EncryptedAzureBlobStoreRepositoryIntegTests extends AzureBlob
     protected MockSecureSettings nodeSecureSettings() {
         MockSecureSettings secureSettings = new MockSecureSettings();
         for (String repositoryName : repositoryNames) {
-            byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
-            byte[] repositoryKEK = new byte[32];
-            System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);
-            secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEK);
+            secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName);
         }
         return secureSettings;
     }
@@ -81,7 +77,7 @@ public final class EncryptedAzureBlobStoreRepositoryIntegTests extends AzureBlob
         return Settings.builder()
                 .put(super.repositorySettings())
                 .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), "azure")
-                .put(EncryptedRepositoryPlugin.KEK_NAME_SETTING.getKey(), repositoryName)
+                .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
                 .build();
     }
 

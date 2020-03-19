@@ -14,7 +14,6 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.s3.S3BlobStoreRepositoryTests;
 import org.junit.BeforeClass;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,7 +26,7 @@ import static org.elasticsearch.repositories.encrypted.EncryptedRepository.DEK_R
 import static org.elasticsearch.repositories.encrypted.EncryptedRepository.getEncryptedBlobByteLength;
 import static org.hamcrest.Matchers.hasSize;
 
-public class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreRepositoryTests {
+public final class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreRepositoryTests {
     private static List<String> repositoryNames;
 
     @BeforeClass
@@ -52,11 +51,8 @@ public class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreReposit
     protected MockSecureSettings nodeSecureSettings() {
         MockSecureSettings secureSettings = new MockSecureSettings();
         for (String repositoryName : repositoryNames) {
-            byte[] repositoryNameBytes = repositoryName.getBytes(StandardCharsets.UTF_8);
-            byte[] repositoryKEK = new byte[32];
-            System.arraycopy(repositoryNameBytes, 0, repositoryKEK, 0, repositoryNameBytes.length);
-            secureSettings.setFile(EncryptedRepositoryPlugin.KEY_ENCRYPTION_KEY_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryKEK);
+            secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName);
         }
         return secureSettings;
     }
@@ -81,7 +77,7 @@ public class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreReposit
         return Settings.builder()
                 .put(super.repositorySettings())
                 .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), "s3")
-                .put(EncryptedRepositoryPlugin.KEK_NAME_SETTING.getKey(), repositoryName)
+                .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
                 .build();
     }
 

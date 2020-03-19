@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.metadata.RepositoryMetaData;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.SecureSetting;
+import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
@@ -24,11 +25,6 @@ import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.xpack.core.XPackPlugin;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,12 +35,11 @@ import java.util.function.Function;
 public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugin {
     static final Logger logger = LogManager.getLogger(EncryptedRepositoryPlugin.class);
     static final String REPOSITORY_TYPE_NAME = "encrypted";
-    static final Setting.AffixSetting<InputStream> KEY_ENCRYPTION_KEY_SETTING = Setting.affixKeySetting("repository.encrypted.",
-            "key", key -> SecureSetting.secureFile(key, null));
+    static final List<String> SUPPORTED_ENCRYPTED_TYPE_NAMES = Arrays.asList("fs", "gcs", "azure", "s3");
+    static final Setting.AffixSetting<SecureString> ENCRYPTION_PASSWORD_SETTING = Setting.affixKeySetting("repository.encrypted.",
+            "password", key -> SecureSetting.secureString(key, null));
     static final Setting<String> DELEGATE_TYPE_SETTING = Setting.simpleString("delegate_type", "");
-    static final Setting<String> KEK_NAME_SETTING = Setting.simpleString("key_name", "");
-    static final String KEK_CIPHER_ALGO = "AES";
-    static final int KEK_LENGTH_IN_BYTES = 32; // 256-bit AES symmetric key
+    static final Setting<String> PASSWORD_NAME_SETTING = Setting.simpleString("password_name", "");
 
     // "protected" because it is overloaded for tests
     protected XPackLicenseState getLicenseState() { return XPackPlugin.getSharedLicenseState(); }
@@ -59,37 +54,22 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
 
     @Override
     public List<Setting<?>> getSettings() {
-        return List.of(KEY_ENCRYPTION_KEY_SETTING);
+        return List.of(ENCRYPTION_PASSWORD_SETTING);
     }
 
     @Override
     public Map<String, Repository.Factory> getRepositories(Environment env,
                                                            NamedXContentRegistry registry,
                                                            ClusterService clusterService) {
-        // store all KEKs from the keystore in memory (because the keystore is not readable later on)
-        final Map<String, SecretKey> repositoryKEKMapBuilder = new HashMap<>();
-        for (String KEKName : KEY_ENCRYPTION_KEY_SETTING.getNamespaces(env.settings())) {
-            final Setting<InputStream> KEKSetting = KEY_ENCRYPTION_KEY_SETTING.getConcreteSettingForNamespace(KEKName);
-            final SecretKey KEK;
-            byte[] encodedKEKBytes = null;
-            try (InputStream KEKInputStream = KEKSetting.get(env.settings())) {
-                encodedKEKBytes = KEKInputStream.readAllBytes();
-                if (encodedKEKBytes.length != KEK_LENGTH_IN_BYTES) {
-                    throw new IllegalArgumentException("Expected a 32 bytes (256 bit) wide AES key, but key ["
-                            + KEKSetting.getKey() + "] is [" + encodedKEKBytes.length + "] bytes wide");
-                }
-                KEK = new SecretKeySpec(encodedKEKBytes, 0, KEK_LENGTH_IN_BYTES, KEK_CIPHER_ALGO);
-            } catch (IOException e) {
-                throw new UncheckedIOException("Exception while reading [" + KEKName + "] from the node keystore", e);
-            } finally {
-                if (encodedKEKBytes != null) {
-                    Arrays.fill(encodedKEKBytes, (byte) 0);
-                }
-            }
-            logger.debug(() -> new ParameterizedMessage("Loaded repository AES key [" + KEKName + "] from the node keystore"));
-            repositoryKEKMapBuilder.put(KEKName, KEK);
+        // load all the passwords from the keystore in memory because the keystore is not readable when the repository is created
+        final Map<String, char[]> repositoryPasswordsMapBuilder = new HashMap<>();
+        for (String passwordName : ENCRYPTION_PASSWORD_SETTING.getNamespaces(env.settings())) {
+            Setting<SecureString> passwordSetting = ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(passwordName);
+            SecureString encryptionPassword = passwordSetting.get(env.settings());
+            repositoryPasswordsMapBuilder.put(passwordName, encryptionPassword.getChars());
+            logger.debug(() -> new ParameterizedMessage("Loaded repository password [" + passwordName + "] from the node keystore"));
         }
-        final Map<String, SecretKey> repositoryKEKMap = Map.copyOf(repositoryKEKMapBuilder);
+        final Map<String, char[]> repositoryPasswordsMap = Map.copyOf(repositoryPasswordsMapBuilder);
 
         return Collections.singletonMap(REPOSITORY_TYPE_NAME, new Repository.Factory() {
 
@@ -109,23 +89,23 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
                             DELEGATE_TYPE_SETTING.getKey() + "] must not be equal to [" + REPOSITORY_TYPE_NAME + "]");
                 }
                 final Repository.Factory factory = typeLookup.apply(delegateType);
-                if (null == factory) {
-                    throw new IllegalArgumentException("Unrecognized delegate repository type [" + DELEGATE_TYPE_SETTING.getKey() + "]");
+                if (null == factory || false == SUPPORTED_ENCRYPTED_TYPE_NAMES.contains(delegateType)) {
+                    throw new IllegalArgumentException("Unsupported delegate repository type [" + DELEGATE_TYPE_SETTING.getKey() + "]");
                 }
-                final String repositoryKEKName = KEK_NAME_SETTING.get(metaData.settings());
-                if (Strings.hasLength(repositoryKEKName) == false) {
-                    throw new IllegalArgumentException("Repository setting [" + KEK_NAME_SETTING.getKey() + "] must be set");
+                final String repositoryPasswordName = PASSWORD_NAME_SETTING.get(metaData.settings());
+                if (Strings.hasLength(repositoryPasswordName) == false) {
+                    throw new IllegalArgumentException("Repository setting [" + PASSWORD_NAME_SETTING.getKey() + "] must be set");
                 }
-                final SecretKey repositoryKEK = repositoryKEKMap.get(repositoryKEKName);
-                if (repositoryKEK == null) {
+                final char[] repositoryPassword = repositoryPasswordsMap.get(repositoryPasswordName);
+                if (repositoryPassword == null) {
                     throw new IllegalArgumentException("Secure setting [" +
-                            KEY_ENCRYPTION_KEY_SETTING.getConcreteSettingForNamespace(repositoryKEKName).getKey() + "] must be set");
+                            ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryPasswordName).getKey() + "] must be set");
                 }
                 final Repository delegatedRepository = factory.create(new RepositoryMetaData(metaData.name(), delegateType,
                         metaData.settings()));
                 if (false == (delegatedRepository instanceof BlobStoreRepository)
                         || delegatedRepository instanceof EncryptedRepository) {
-                    throw new IllegalArgumentException("Unsupported delegate type [" + DELEGATE_TYPE_SETTING.getKey() + "]");
+                    throw new IllegalArgumentException("Unsupported delegate repository type [" + DELEGATE_TYPE_SETTING.getKey() + "]");
                 }
                 if (false == getLicenseState().isEncryptedSnapshotAllowed()) {
                     logger.warn("Encrypted snapshots are not allowed for the currently installed license." +
@@ -134,7 +114,7 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
                             LicenseUtils.newComplianceException("encrypted snapshots"));
                 }
                 return new EncryptedRepository(metaData, registry, clusterService, (BlobStoreRepository) delegatedRepository,
-                        () -> getLicenseState(), repositoryKEK);
+                        () -> getLicenseState(), repositoryPassword);
             }
         });
     }

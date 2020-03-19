@@ -9,15 +9,23 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 
 public final class AESKeyUtils {
+    public static final int KEY_LENGTH_IN_BYTES = 32; // 256-bit AES key
+    public static final int WRAPPED_KEY_LENGTH_IN_BYTES = KEY_LENGTH_IN_BYTES + 8; // https://www.ietf.org/rfc/rfc3394.txt section 2.2
+    // parameter for the KDF function, it's a funny and unusual iter count larger than 60k
+    private static final int KDF_ITER = 61616;
+    // the KDF algorithm that generate the symmetric key given the password
+    private static final String KDF_ALGO = "PBKDF2WithHmacSHA512";
     // The Id of any AES SecretKey is the AES-Wrap-ciphertext of this fixed 32 byte wide array.
     // Key wrapping encryption is deterministic (same plaintext generates the same ciphertext)
     // and the probability that two different keys map the same plaintext to the same ciphertext is very small
@@ -43,6 +51,9 @@ public final class AESKeyUtils {
         if (false == "AES".equals(wrappingKey.getAlgorithm())) {
             throw new IllegalArgumentException("wrappingKey argument is not an AES Key");
         }
+        if (keyToUnwrap.length != WRAPPED_KEY_LENGTH_IN_BYTES) {
+            throw new IllegalArgumentException("keyToUnwrap invalid length [" + keyToUnwrap.length + "]");
+        }
         Cipher c = Cipher.getInstance("AESWrap");
         c.init(Cipher.UNWRAP_MODE, wrappingKey);
         Key unwrappedKey = c.unwrap(keyToUnwrap, "AES", Cipher.SECRET_KEY);
@@ -59,8 +70,18 @@ public final class AESKeyUtils {
      * Moreover, the ciphertext reveals no information on the key, and the probability of collision of ciphertexts given different
      * keys is statistically negligible.
      */
-    public static String computeId(SecretKey secretAESKey) throws GeneralSecurityException {
+    public static String computeId(SecretKey secretAESKey) throws IllegalBlockSizeException, InvalidKeyException,
+            NoSuchAlgorithmException, NoSuchPaddingException {
         byte[] ciphertextOfKnownPlaintext = wrap(secretAESKey, new SecretKeySpec(KEY_ID_PLAINTEXT, "AES"));
         return new String(Base64.getUrlEncoder().withoutPadding().encode(ciphertextOfKnownPlaintext), StandardCharsets.UTF_8);
+    }
+
+    public static SecretKey generatePasswordBasedKey(char[] password, byte[] salt) throws NoSuchAlgorithmException,
+            InvalidKeySpecException {
+        PBEKeySpec keySpec = new PBEKeySpec(password, salt, KDF_ITER, KEY_LENGTH_IN_BYTES * Byte.SIZE);
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(KDF_ALGO);
+        SecretKey secretKey = keyFactory.generateSecret(keySpec);
+        SecretKeySpec secret = new SecretKeySpec(secretKey.getEncoded(), "AES");
+        return secret;
     }
 }
