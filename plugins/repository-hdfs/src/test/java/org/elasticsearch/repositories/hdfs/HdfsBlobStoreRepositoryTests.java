@@ -38,7 +38,7 @@ public class HdfsBlobStoreRepositoryTests extends ESBlobStoreRepositoryIntegTest
     }
 
     @Override
-    protected Settings repositorySettings() {
+    protected Settings repositorySettings(String repoName) {
         assumeFalse("https://github.com/elastic/elasticsearch/issues/31498", HdfsRepositoryTests.isJava11());
         return Settings.builder()
             .put("uri", "hdfs:///")

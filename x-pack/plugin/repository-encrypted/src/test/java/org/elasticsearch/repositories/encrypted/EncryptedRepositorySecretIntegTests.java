@@ -6,6 +6,7 @@
 
 package org.elasticsearch.repositories.encrypted;
 
+import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.License;
@@ -22,10 +23,14 @@ import org.elasticsearch.test.InternalTestCluster;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -38,7 +43,6 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
     protected Collection<Class<? extends Plugin>> nodePlugins() {
         return Arrays.asList(LocalStateEncryptedRepositoryPlugin.class);
     }
-
 
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
@@ -131,6 +135,10 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
             // stop the node with the missing password
             internalCluster().stopRandomNode(InternalTestCluster.nameFilter(otherNodeName));
             ensureStableCluster(1);
+            // repository verification now succeeds
+            VerifyRepositoryResponse verifyRepositoryResponse = client().admin().cluster().prepareVerifyRepository(repositoryName).get();
+            List<String> verifiedNodes = verifyRepositoryResponse.getNodes().stream().map(n -> n.getName()).collect(Collectors.toList());
+            assertThat(verifiedNodes, contains(masterNodeName));
         } else {
             // restart the node with the missing password
             internalCluster().restartNode(otherNodeName, new InternalTestCluster.RestartCallback() {
@@ -142,9 +150,73 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
                 }
             });
             ensureStableCluster(2);
+            // repository verification now succeeds
+            VerifyRepositoryResponse verifyRepositoryResponse = client().admin().cluster().prepareVerifyRepository(repositoryName).get();
+            List<String> verifiedNodes = verifyRepositoryResponse.getNodes().stream().map(n -> n.getName()).collect(Collectors.toList());
+            assertThat(verifiedNodes, containsInAnyOrder(masterNodeName, otherNodeName));
         }
+    }
+
+    public void testRepositoryVerificationFailsForDifferentPassword() throws Exception {
+        final String repositoryName = randomName();
+        final String repoPass1 = randomAlphaOfLength(20);
+        final String repoPass2 = randomAlphaOfLength(19);
+        // put a different repository password
+        MockSecureSettings secureSettings1 = new MockSecureSettings();
+        secureSettings1.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), repoPass1);
+        MockSecureSettings secureSettings2 = new MockSecureSettings();
+        secureSettings2.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), repoPass2);
+        logger.info("--> start 2 nodes");
+        internalCluster().setBootstrapMasterNodeIndex(1);
+        final String node1 = internalCluster().startNode(Settings.builder().setSecureSettings(secureSettings1).build());
+        final String node2 = internalCluster().startNode(Settings.builder().setSecureSettings(secureSettings2).build());
+        ensureStableCluster(2);
+        // repository create fails verification
+        Settings repositorySettings = repositorySettings(repositoryName);
+        expectThrows(RepositoryVerificationException.class,
+                () -> client().admin().cluster().preparePutRepository(repositoryName)
+                        .setType(repositoryType())
+                        .setVerify(true)
+                        .setSettings(repositorySettings).get());
+        if (randomBoolean()) {
+            // delete and recreate repo
+            logger.debug("-->  deleting repository [name: {}]", repositoryName);
+            assertAcked(client().admin().cluster().prepareDeleteRepository(repositoryName));
+            assertAcked(client().admin().cluster().preparePutRepository(repositoryName)
+                    .setType(repositoryType())
+                    .setVerify(false)
+                    .setSettings(repositorySettings).get());
+        }
+        // test verify call fails
+        expectThrows(RepositoryVerificationException.class,
+                () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
+        // restart one of the nodes to use the same password
+        if (randomBoolean()) {
+            internalCluster().restartNode(node1, new InternalTestCluster.RestartCallback() {
+                @Override
+                public Settings onNodeStopped(String nodeName) throws Exception {
+                    Settings.Builder newSettings = Settings.builder().put(super.onNodeStopped(nodeName));
+                    newSettings.setSecureSettings(secureSettings2);
+                    return newSettings.build();
+                }
+            });
+        } else {
+            internalCluster().restartNode(node2, new InternalTestCluster.RestartCallback() {
+                @Override
+                public Settings onNodeStopped(String nodeName) throws Exception {
+                    Settings.Builder newSettings = Settings.builder().put(super.onNodeStopped(nodeName));
+                    newSettings.setSecureSettings(secureSettings1);
+                    return newSettings.build();
+                }
+            });
+        }
+        ensureStableCluster(2);
         // repository verification now succeeds
-        client().admin().cluster().prepareVerifyRepository(repositoryName).get();
+        VerifyRepositoryResponse verifyRepositoryResponse = client().admin().cluster().prepareVerifyRepository(repositoryName).get();
+        List<String> verifiedNodes = verifyRepositoryResponse.getNodes().stream().map(n -> n.getName()).collect(Collectors.toList());
+        assertThat(verifiedNodes, containsInAnyOrder(node1, node2));
     }
 
     protected String randomName() {

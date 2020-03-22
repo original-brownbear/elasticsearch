@@ -7,7 +7,6 @@ package org.elasticsearch.repositories.encrypted;
 
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionRunnable;
-import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.support.PlainActionFuture;
@@ -20,7 +19,6 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
-import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.repositories.fs.FsBlobStoreRepositoryBaseIntegTestCase;
 import org.elasticsearch.repositories.fs.FsRepository;
@@ -149,41 +147,6 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
         // repository is not created on the node without the repository KEK
         assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
                 .allMatch(shardFailure -> shardFailure.reason().contains("RepositoryMissingException")));
-    }
-
-    public void testRepositoryVerificationFailsForDifferentKEK() throws Exception {
-        String repositoryName = randomRepositoryName();
-        // put a different repository password
-        MockSecureSettings secureSettings = new MockSecureSettings();
-        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName + "wrong");
-        Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
-        // start new node with different repository KEK
-        int nodesCount = cluster().size();
-        String newNode = internalCluster().startNode(settingsOfNewNode);
-        ensureStableCluster(nodesCount + 1);
-        // repository create fails verification
-        expectThrows(RepositoryVerificationException.class,
-                () -> client().admin().cluster().preparePutRepository(repositoryName)
-                        .setType(repositoryType())
-                        .setVerify(true)
-                        .setSettings(repositorySettings(repositoryName)).get());
-        // test verify call fails
-        expectThrows(RepositoryVerificationException.class,
-                () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
-        // stop the node with the wrong KEK
-        internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
-        ensureStableCluster(nodesCount);
-        // start another node with a correct password
-        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName);
-        settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
-        newNode = internalCluster().startNode(settingsOfNewNode);
-        ensureStableCluster(nodesCount + 1);
-        // repository verification now succeeds
-        VerifyRepositoryResponse verifyRepositoryResponse = client().admin().cluster().prepareVerifyRepository(repositoryName).get();
-        String finalNewNode = newNode;
-        assertTrue(verifyRepositoryResponse.getNodes().stream().anyMatch(node -> node.getName().equals(finalNewNode)));
     }
 
     public void testSnapshotIsPartialForDifferentKEK() throws Exception {
