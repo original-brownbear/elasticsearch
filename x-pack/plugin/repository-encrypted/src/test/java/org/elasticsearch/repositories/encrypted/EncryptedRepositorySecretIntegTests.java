@@ -7,9 +7,13 @@
 package org.elasticsearch.repositories.encrypted;
 
 import org.elasticsearch.ElasticsearchSecurityException;
+import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.License;
@@ -17,6 +21,7 @@ import org.elasticsearch.license.LicenseService;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.RepositoriesService;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.RepositoryMissingException;
 import org.elasticsearch.repositories.RepositoryVerificationException;
@@ -30,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
@@ -38,6 +44,7 @@ import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitC
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
@@ -332,6 +339,156 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
         assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
                 .allMatch(shardFailure -> shardFailure.reason().contains("[" + repositoryName + "] missing")));
+        final Set<String> nodesWithFailures = incompleteSnapshotResponse.getSnapshotInfo().shardFailures()
+                .stream().map(sf -> sf.nodeId()).collect(Collectors.toSet());
+        assertThat(nodesWithFailures.size(), equalTo(1));
+        final ClusterStateResponse clusterState = client().admin().cluster()
+                .prepareState().clear().setNodes(true).get();
+        assertThat(clusterState.getState().nodes().get(nodesWithFailures.iterator().next()).getName(), equalTo(otherNode));
+    }
+
+    public void testSnapshotIsPartialForDifferentPassword() throws Exception {
+        final String repoName = randomName();
+        final Settings repoSettings = repositorySettings(repoName);
+        final String repoPass1 = randomAlphaOfLength(20);
+        final String repoPass2 = randomAlphaOfLength(19);
+        MockSecureSettings secureSettingsMaster = new MockSecureSettings();
+        secureSettingsMaster.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repoName).getKey(), repoPass1);
+        MockSecureSettings secureSettingsOther = new MockSecureSettings();
+        secureSettingsOther.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repoName).getKey(), repoPass2);
+        final boolean putRepoEarly = randomBoolean();
+        logger.info("--> start 2 nodes");
+        internalCluster().setBootstrapMasterNodeIndex(0);
+        final String masterNode = internalCluster().startNode(Settings.builder().setSecureSettings(secureSettingsMaster).build());
+        ensureStableCluster(1);
+        if (putRepoEarly) {
+            createRepository(repoName, repoSettings, true);
+        }
+        final String otherNode = internalCluster().startNode(Settings.builder().setSecureSettings(secureSettingsOther).build());
+        ensureStableCluster(2);
+        if (false == putRepoEarly) {
+            createRepository(repoName, repoSettings, false);
+        }
+
+        // create index with shards on both nodes
+        final String indexName = randomName();
+        final Settings indexSettings = Settings.builder()
+                .put(indexSettings())
+                .put(SETTING_NUMBER_OF_SHARDS, 5)
+                .build();
+        logger.info("-->  create random index {}", indexName);
+        createIndex(indexName, indexSettings);
+        indexRandom(true, client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
+                client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(indexName).setId("3").setSource("field1", "quick"),
+                client().prepareIndex(indexName).setId("4").setSource("field1", "lazy"),
+                client().prepareIndex(indexName).setId("5").setSource("field1", "dog"));
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 5);
+
+        // empty snapshot completes successfully for both repos because it does not involve any data
+        final String snapshotName = randomName();
+        logger.info("-->  create snapshot {}:{}", repoName, snapshotName);
+        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoName,
+                snapshotName).setIndices(indexName + "other*").setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
+                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
+
+        // snapshot is PARTIAL because it includes shards on nodes with a different repository KEK
+        final String snapshotName2 = snapshotName + "2";
+        CreateSnapshotResponse incompleteSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoName,
+                snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
+        assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
+        assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
+                .allMatch(shardFailure -> shardFailure.reason().contains("Repository secret id mismatch")));
+        final Set<String> nodesWithFailures = incompleteSnapshotResponse.getSnapshotInfo().shardFailures()
+                .stream().map(sf -> sf.nodeId()).collect(Collectors.toSet());
+        assertThat(nodesWithFailures.size(), equalTo(1));
+        final ClusterStateResponse clusterState = client().admin().cluster()
+                .prepareState().clear().setNodes(true).get();
+        assertThat(clusterState.getState().nodes().get(nodesWithFailures.iterator().next()).getName(), equalTo(otherNode));
+    }
+
+    public void testWrongRepositoryPassword() throws Exception {
+        final String repositoryName = randomName();
+        final Settings repositorySettings = repositorySettings(repositoryName);
+        final String goodPassword = randomAlphaOfLength(20);
+        final String wrongPassword = randomAlphaOfLength(19);
+        MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
+        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), goodPassword);
+        final boolean putRepoEarly = randomBoolean();
+        logger.info("--> start 2 nodes");
+        internalCluster().setBootstrapMasterNodeIndex(0);
+        final String masterNode = internalCluster().startNode(Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
+        ensureStableCluster(1);
+        if (putRepoEarly) {
+            createRepository(repositoryName, repositorySettings, true);
+        }
+        final String otherNode = internalCluster().startNode(Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
+        ensureStableCluster(2);
+        if (false == putRepoEarly) {
+            createRepository(repositoryName, repositorySettings, true);
+        }
+        // create empty smapshot
+        final String snapshotName = randomName();
+        logger.info("-->  create empty snapshot {}:{}", repositoryName, snapshotName);
+        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
+                snapshotName).setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
+                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
+        // restart master node and fill in a wrong password
+        internalCluster().restartNode(masterNode, new InternalTestCluster.RestartCallback() {
+            @Override
+            public Settings onNodeStopped(String nodeName) throws Exception {
+                secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                        getConcreteSettingForNamespace(repositoryName).getKey(), wrongPassword);
+                return Settings.builder().put(super.onNodeStopped(nodeName)).build();
+            }
+        });
+        ensureStableCluster(2);
+        // maybe recreate the repository
+        if (randomBoolean()) {
+            deleteRepository(repositoryName);
+            createRepository(repositoryName, repositorySettings, false);
+        }
+        // all repository operations return "repository password is incorrect", but the repository does not move to the corrupted state
+        final BlobStoreRepository blobStoreRepository =
+                (BlobStoreRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repositoryName);
+        RepositoryException e = expectThrows(RepositoryException.class, () -> PlainActionFuture.<RepositoryData, Exception>get(
+                f -> blobStoreRepository.threadPool().generic().execute(ActionRunnable.wrap(f, blobStoreRepository::getRepositoryData))));
+        assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
+        e = expectThrows(RepositoryException.class, () ->
+                client().admin().cluster().prepareCreateSnapshot(repositoryName, snapshotName + "2").setWaitForCompletion(true).get());
+        assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
+        GetSnapshotsResponse getSnapshotResponse = client().admin().cluster().prepareGetSnapshots(repositoryName).get();
+        assertThat(getSnapshotResponse.getSuccessfulResponses().keySet(), empty());
+        assertThat(getSnapshotResponse.getFailedResponses().keySet(), contains(repositoryName));
+        assertThat(getSnapshotResponse.getFailedResponses().get(repositoryName).getCause().getMessage(),
+                containsString("repository password is incorrect"));
+        e = expectThrows(RepositoryException.class, () ->
+                client().admin().cluster().prepareRestoreSnapshot(repositoryName, snapshotName).setWaitForCompletion(true).get());
+        assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
+        e = expectThrows(RepositoryException.class, () ->
+                client().admin().cluster().prepareDeleteSnapshot(repositoryName, snapshotName).get());
+        assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
+        // restart master node and fill in a wrong password
+        internalCluster().restartNode(masterNode, new InternalTestCluster.RestartCallback() {
+            @Override
+            public Settings onNodeStopped(String nodeName) throws Exception {
+                secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                        getConcreteSettingForNamespace(repositoryName).getKey(), goodPassword);
+                return Settings.builder().put(super.onNodeStopped(nodeName)).build();
+            }
+        });
+        ensureStableCluster(2);
+        // ensure get snapshot works
+        getSnapshotResponse = client().admin().cluster().prepareGetSnapshots(repositoryName).get();
+        assertThat(getSnapshotResponse.getFailedResponses().keySet(), empty());
+        assertThat(getSnapshotResponse.getSuccessfulResponses().keySet(), contains(repositoryName));
     }
 
     protected String randomName() {
@@ -385,12 +542,12 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         });
     }
 
-    private static void assertSuccessfulRestore(RestoreSnapshotResponse response) {
+    private void assertSuccessfulRestore(RestoreSnapshotResponse response) {
         assertThat(response.getRestoreInfo().successfulShards(), greaterThan(0));
         assertThat(response.getRestoreInfo().successfulShards(), equalTo(response.getRestoreInfo().totalShards()));
     }
 
-    private static void assertSuccessfulSnapshot(CreateSnapshotResponse response) {
+    private void assertSuccessfulSnapshot(CreateSnapshotResponse response) {
         assertThat(response.getSnapshotInfo().successfulShards(), greaterThan(0));
         assertThat(response.getSnapshotInfo().successfulShards(), equalTo(response.getSnapshotInfo().totalShards()));
     }

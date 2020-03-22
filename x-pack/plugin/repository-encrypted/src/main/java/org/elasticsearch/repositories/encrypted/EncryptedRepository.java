@@ -300,7 +300,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
                 // do NOT throw IOException when the DEK does not exist, as this is a decryption problem, and IOExceptions
                 // can move the repository in the corrupted state
                 throw new ElasticsearchException("Failure to read and decrypt DEK [" + DEKId + "] from " + DEKBlobContainer.path() +
-                        ". Most likely the repository key is incorrect, as previous snapshots have used a different key.", e);
+                        ". Most likely the repository password is incorrect, as previous snapshots have used a different key.", e);
             }
             try {
                 return AESKeyUtils.unwrap(KEK.v2(), encryptedDEKBytes);
