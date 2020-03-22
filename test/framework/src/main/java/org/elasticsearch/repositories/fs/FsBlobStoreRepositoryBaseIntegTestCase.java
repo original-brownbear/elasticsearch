@@ -48,9 +48,9 @@ public class FsBlobStoreRepositoryBaseIntegTestCase extends ESBlobStoreRepositor
     }
 
     @Override
-    protected Settings repositorySettings() {
+    protected Settings repositorySettings(String repositoryName) {
         final Settings.Builder settings = Settings.builder();
-        settings.put(super.repositorySettings());
+        settings.put(super.repositorySettings(repositoryName));
         settings.put("location", randomRepoPath());
         if (randomBoolean()) {
             long size = 1 << randomInt(10);
@@ -63,7 +63,6 @@ public class FsBlobStoreRepositoryBaseIntegTestCase extends ESBlobStoreRepositor
         final String repoName = randomRepositoryName();
         final Path repoPath = randomRepoPath();
         final Settings repoSettings = Settings.builder()
-                .put(repositorySettings())
                 .put(repositorySettings(repoName))
                 .put("location", repoPath)
                 .build();
@@ -104,7 +103,6 @@ public class FsBlobStoreRepositoryBaseIntegTestCase extends ESBlobStoreRepositor
         final String repoName = randomRepositoryName();
         final Path repoPath = randomRepoPath();
         final Settings repoSettings = Settings.builder()
-                .put(repositorySettings())
                 .put(repositorySettings(repoName))
                 .put("location", repoPath)
                 .put("readonly", true)

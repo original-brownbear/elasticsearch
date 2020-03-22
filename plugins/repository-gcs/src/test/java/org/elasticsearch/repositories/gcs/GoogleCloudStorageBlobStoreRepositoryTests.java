@@ -74,9 +74,9 @@ public class GoogleCloudStorageBlobStoreRepositoryTests extends ESMockAPIBasedRe
     }
 
     @Override
-    protected Settings repositorySettings() {
+    protected Settings repositorySettings(String repoName) {
         Settings.Builder settingsBuilder = Settings.builder()
-            .put(super.repositorySettings())
+            .put(super.repositorySettings(repoName))
             .put(BUCKET.getKey(), "bucket")
             .put(CLIENT_NAME.getKey(), "test");
         if (randomBoolean()) {

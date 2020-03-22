@@ -76,7 +76,7 @@ public final class EncryptedGCSBlobStoreRepositoryIntegTests extends GoogleCloud
     @Override
     protected Settings repositorySettings(String repositoryName) {
         return Settings.builder()
-                .put(super.repositorySettings())
+                .put(super.repositorySettings(repositoryName))
                 .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), "gcs")
                 .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
                 .build();

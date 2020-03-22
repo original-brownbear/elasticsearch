@@ -75,7 +75,7 @@ public final class EncryptedAzureBlobStoreRepositoryIntegTests extends AzureBlob
     @Override
     protected Settings repositorySettings(String repositoryName) {
         return Settings.builder()
-                .put(super.repositorySettings())
+                .put(super.repositorySettings(repositoryName))
                 .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), "azure")
                 .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
                 .build();

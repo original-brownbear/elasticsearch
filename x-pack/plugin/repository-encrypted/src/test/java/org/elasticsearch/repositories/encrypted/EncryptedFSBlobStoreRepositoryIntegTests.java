@@ -99,41 +99,15 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
     @Override
     protected Settings repositorySettings(String repositoryName) {
         return Settings.builder()
-                .put(super.repositorySettings())
+                .put(super.repositorySettings(repositoryName))
                 .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), FsRepository.TYPE)
                 .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
                 .build();
     }
 
-    public void testRepositoryVerificationFailsForMissingKEK() throws Exception {
-        String repositoryName = randomRepositoryName();
-        MockSecureSettings secureSettings = new MockSecureSettings();
-        secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), null);
-        Settings settingsOfNewNode = Settings.builder().setSecureSettings(secureSettings).build();
-        // start new node with missing repository KEK
-        int nodesCount = cluster().size();
-        String newNode = internalCluster().startNode(settingsOfNewNode);
-        ensureStableCluster(nodesCount + 1);
-        // repository create fails verification
-        expectThrows(RepositoryVerificationException.class,
-                () -> client().admin().cluster().preparePutRepository(repositoryName)
-                        .setType(repositoryType())
-                        .setVerify(true)
-                        .setSettings(repositorySettings(repositoryName)).get());
-        // test verify call fails
-        expectThrows(RepositoryVerificationException.class,
-                () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
-        // stop the node with the missing KEK
-        internalCluster().stopRandomNode(InternalTestCluster.nameFilter(newNode));
-        ensureStableCluster(nodesCount);
-        // repository verification now succeeds
-        client().admin().cluster().prepareVerifyRepository(repositoryName).get();
-    }
-
     public void testSnapshotIsPartialForMissingKEK() throws Exception {
         final String repositoryName = randomRepositoryName();
-        final Settings repositorySettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repositoryName)).build();
+        final Settings repositorySettings = repositorySettings(repositoryName);
         MockSecureSettings secureSettings = new MockSecureSettings();
         secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
                 getConcreteSettingForNamespace(repositoryName).getKey(), null);
@@ -318,7 +292,7 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
     public void testWrongKEKOnMasterNode() throws Exception {
         final int noNodes = internalCluster().size();
         final String repositoryName = randomRepositoryName();
-        final Settings repositorySettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repositoryName)).build();
+        final Settings repositorySettings = repositorySettings(repositoryName);
         createRepository(repositoryName, repositorySettings, randomBoolean());
         final String snapshotName = randomName();
         logger.info("-->  create empty snapshot {}:{}", repositoryName, snapshotName);

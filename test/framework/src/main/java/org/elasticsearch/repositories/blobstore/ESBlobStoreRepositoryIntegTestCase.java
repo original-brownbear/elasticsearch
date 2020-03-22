@@ -79,16 +79,16 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
 
     protected abstract String repositoryType();
 
-    protected Settings repositorySettings() {
+    protected Settings repositorySettings(String repositoryName) {
         return Settings.builder().put("compress", randomBoolean()).build();
     }
 
-    protected Settings repositorySettings(String repositoryName) {
-        return Settings.EMPTY;
+    protected final String createRepository(final String name) {
+        return createRepository(name, true);
     }
 
-    protected final String createRepository(final String name) {
-        return createRepository(name, Settings.builder().put(repositorySettings()).put(repositorySettings(name)).build(), randomBoolean());
+    protected final String createRepository(final String name, final boolean verify) {
+        return createRepository(name, repositorySettings(name), verify);
     }
 
     protected final String createRepository(final String name, final Settings settings, final boolean verify) {
@@ -109,17 +109,14 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
         return name;
     }
 
-    protected final String deleteRepository(final String name) {
+    protected final void deleteRepository(final String name) {
         logger.debug("-->  deleting repository [name: {}]", name);
         assertAcked(client().admin().cluster().prepareDeleteRepository(name));
 
         internalCluster().getDataOrMasterNodeInstances(RepositoriesService.class).forEach(repositories -> {
             RepositoryMissingException e = expectThrows(RepositoryMissingException.class, () -> repositories.repository(name));
-            assertThat(e.getMessage(), containsString("missing"));
             assertThat(e.getMessage(), containsString(name));
         });
-
-        return name;
     }
 
     public void testReadNonExistingPath() throws IOException {
@@ -292,7 +289,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
 
     public void testSnapshotAndRestore() throws Exception {
         final String repoName = randomRepositoryName();
-        final Settings repoSettings = Settings.builder().put(repositorySettings()).put(repositorySettings(repoName)).build();
+        final Settings repoSettings = repositorySettings(repoName);
         createRepository(repoName, repoSettings, randomBoolean());
         int indexCount = randomIntBetween(1, 5);
         int[] docCounts = new int[indexCount];

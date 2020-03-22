@@ -120,6 +120,7 @@ public final class EncryptedRepository extends BlobStoreRepository {
         this.DEKGenerator = createDEKGenerator();
         this.licenseStateSupplier = licenseStateSupplier;
         this.repositoryPassword = repositoryPassword;
+        // the password "id" and validated
         this.localRepositoryPasswordIdSalt = UUIDs.randomBase64UUID();
         this.localRepositoryPasswordId = AESKeyUtils.computeId(AESKeyUtils.generatePasswordBasedKey(repositoryPassword,
                 Base64.getUrlDecoder().decode(this.localRepositoryPasswordIdSalt.getBytes(StandardCharsets.UTF_8))));

@@ -75,7 +75,7 @@ public final class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreR
     @Override
     protected Settings repositorySettings(String repositoryName) {
         return Settings.builder()
-                .put(super.repositorySettings())
+                .put(super.repositorySettings(repositoryName))
                 .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), "s3")
                 .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
                 .build();
