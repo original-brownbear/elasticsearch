@@ -211,23 +211,13 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
                 () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
         // restart one of the nodes to use the same password
         if (randomBoolean()) {
-            internalCluster().restartNode(node1, new InternalTestCluster.RestartCallback() {
-                @Override
-                public Settings onNodeStopped(String nodeName) throws Exception {
-                    Settings.Builder newSettings = Settings.builder().put(super.onNodeStopped(nodeName));
-                    newSettings.setSecureSettings(secureSettings2);
-                    return newSettings.build();
-                }
-            });
+            secureSettings1.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                    getConcreteSettingForNamespace(repositoryName).getKey(), repoPass2);
+            internalCluster().restartNode(node1, new InternalTestCluster.RestartCallback());
         } else {
-            internalCluster().restartNode(node2, new InternalTestCluster.RestartCallback() {
-                @Override
-                public Settings onNodeStopped(String nodeName) throws Exception {
-                    Settings.Builder newSettings = Settings.builder().put(super.onNodeStopped(nodeName));
-                    newSettings.setSecureSettings(secureSettings1);
-                    return newSettings.build();
-                }
-            });
+            secureSettings2.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                    getConcreteSettingForNamespace(repositoryName).getKey(), repoPass1);
+            internalCluster().restartNode(node2, new InternalTestCluster.RestartCallback());
         }
         ensureStableCluster(2);
         // repository verification now succeeds
@@ -441,14 +431,9 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
                 equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
         assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
         // restart master node and fill in a wrong password
-        internalCluster().restartNode(masterNode, new InternalTestCluster.RestartCallback() {
-            @Override
-            public Settings onNodeStopped(String nodeName) throws Exception {
-                secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                        getConcreteSettingForNamespace(repositoryName).getKey(), wrongPassword);
-                return Settings.builder().put(super.onNodeStopped(nodeName)).build();
-            }
-        });
+        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), wrongPassword);
+        internalCluster().restartNode(masterNode, new InternalTestCluster.RestartCallback());
         ensureStableCluster(2);
         // maybe recreate the repository
         if (randomBoolean()) {
@@ -476,14 +461,9 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
                 client().admin().cluster().prepareDeleteSnapshot(repositoryName, snapshotName).get());
         assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
         // restart master node and fill in a wrong password
-        internalCluster().restartNode(masterNode, new InternalTestCluster.RestartCallback() {
-            @Override
-            public Settings onNodeStopped(String nodeName) throws Exception {
-                secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                        getConcreteSettingForNamespace(repositoryName).getKey(), goodPassword);
-                return Settings.builder().put(super.onNodeStopped(nodeName)).build();
-            }
-        });
+        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), goodPassword);
+        internalCluster().restartNode(masterNode, new InternalTestCluster.RestartCallback());
         ensureStableCluster(2);
         // ensure get snapshot works
         getSnapshotResponse = client().admin().cluster().prepareGetSnapshots(repositoryName).get();
@@ -538,7 +518,7 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
 
         internalCluster().getDataOrMasterNodeInstances(RepositoriesService.class).forEach(repositories -> {
             RepositoryMissingException e = expectThrows(RepositoryMissingException.class, () -> repositories.repository(name));
-            assertThat(e.getMessage(), containsString(name));
+            assertThat(e.repository(), equalTo(name));
         });
     }
 

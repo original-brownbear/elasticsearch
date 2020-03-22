@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -36,10 +37,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class MockSecureSettings implements SecureSettings {
 
-    private Map<String, String> secureStrings = new HashMap<>();
-    private Map<String, byte[]> files = new HashMap<>();
-    private Map<String, byte[]> sha256Digests = new HashMap<>();
-    private Set<String> settingNames = new HashSet<>();
+    private Map<String, String> secureStrings = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, byte[]> files = Collections.synchronizedMap(new HashMap<>());
+    private Map<String, byte[]> sha256Digests = Collections.synchronizedMap(new HashMap<>());
+    private Set<String> settingNames = Collections.synchronizedSet(new HashSet<>());
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public MockSecureSettings() {
@@ -75,11 +76,7 @@ public class MockSecureSettings implements SecureSettings {
     @Override
     public InputStream getFile(String setting) {
         ensureOpen();
-        final byte[] f = files.get(setting);
-        if (f == null) {
-            return null;
-        }
-        return new ByteArrayInputStream(f);
+        return new ByteArrayInputStream(files.get(setting));
     }
 
     @Override
@@ -89,46 +86,29 @@ public class MockSecureSettings implements SecureSettings {
 
     public void setString(String setting, String value) {
         ensureOpen();
-        if (value != null) {
-            secureStrings.put(setting, value);
-            sha256Digests.put(setting, MessageDigests.sha256().digest(value.getBytes(StandardCharsets.UTF_8)));
-            settingNames.add(setting);
-        } else {
-            secureStrings.put(setting, null);
-            sha256Digests.put(setting, null);
-        }
+        secureStrings.put(setting, value);
+        sha256Digests.put(setting, MessageDigests.sha256().digest(value.getBytes(StandardCharsets.UTF_8)));
+        settingNames.add(setting);
     }
 
     public void setFile(String setting, byte[] value) {
         ensureOpen();
-        if (value != null) {
-            files.put(setting, value);
-            sha256Digests.put(setting, MessageDigests.sha256().digest(value));
-            settingNames.add(setting);
-        } else {
-            files.put(setting, null);
-            sha256Digests.put(setting, null);
-        }
-    }
-
-    public void merge(MockSecureSettings secureSettings) {
-        merge(secureSettings, false);
+        files.put(setting, value);
+        sha256Digests.put(setting, MessageDigests.sha256().digest(value));
+        settingNames.add(setting);
     }
 
     /** Merge the given secure settings into this one. */
-    public void merge(MockSecureSettings secureSettings, boolean permitOverride) {
-        if (false == permitOverride) {
-            for (String setting : secureSettings.getSettingNames()) {
-                if (settingNames.contains(setting)) {
-                    throw new IllegalArgumentException("Cannot overwrite existing secure setting " + setting);
-                }
+    public void merge(MockSecureSettings secureSettings) {
+        for (String setting : secureSettings.getSettingNames()) {
+            if (settingNames.contains(setting)) {
+                throw new IllegalArgumentException("Cannot overwrite existing secure setting " + setting);
             }
         }
         settingNames.addAll(secureSettings.settingNames);
         secureStrings.putAll(secureSettings.secureStrings);
         sha256Digests.putAll(secureSettings.sha256Digests);
         files.putAll(secureSettings.files);
-        settingNames.removeIf(settingName -> sha256Digests.containsKey(settingName) && sha256Digests.get(settingName) == null);
     }
 
     @Override

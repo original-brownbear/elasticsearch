@@ -417,24 +417,13 @@ public final class InternalTestCluster extends TestCluster {
                         + "' as a node setting set '" + ClusterName.CLUSTER_NAME_SETTING.getKey() + "': ["
                         + settings.get(ClusterName.CLUSTER_NAME_SETTING.getKey()) + "]");
             }
-            putAndMergeSecureSettings(builder, settings);
+            builder.put(settings);
         }
         if (others != null) {
-            putAndMergeSecureSettings(builder, others);
+            builder.put(others);
         }
         builder.put(ClusterName.CLUSTER_NAME_SETTING.getKey(), clusterName);
         return builder.build();
-    }
-
-    private void putAndMergeSecureSettings(Settings.Builder settingsBuilder, Settings others) {
-        Settings.Builder othersBuilder = Settings.builder().put(others);
-        if (settingsBuilder.getSecureSettings() instanceof MockSecureSettings
-                && othersBuilder.getSecureSettings() instanceof MockSecureSettings) {
-            MockSecureSettings secureSettings = (MockSecureSettings) settingsBuilder.getSecureSettings();
-            secureSettings.merge((MockSecureSettings) othersBuilder.getSecureSettings(), true);
-        } else {
-            settingsBuilder.put(others);
-        }
     }
 
     public Collection<Class<? extends Plugin>> getPlugins() {
@@ -935,11 +924,13 @@ public final class InternalTestCluster extends TestCluster {
             }
             // use a new seed to make sure we generate a fresh new node id if the data folder has been wiped
             final long newIdSeed = NodeEnvironment.NODE_ID_SEED_SETTING.get(node.settings()) + 1;
-            Settings.Builder finalSettings = Settings.builder().put(originalNodeSettings);
-            putAndMergeSecureSettings(finalSettings, newSettings);
-            finalSettings.put(NodeEnvironment.NODE_ID_SEED_SETTING.getKey(), newIdSeed);
+            Settings finalSettings = Settings.builder()
+                    .put(originalNodeSettings)
+                    .put(newSettings)
+                    .put(NodeEnvironment.NODE_ID_SEED_SETTING.getKey(), newIdSeed)
+                    .build();
             Collection<Class<? extends Plugin>> plugins = node.getClasspathPlugins();
-            node = new MockNode(finalSettings.build(), plugins);
+            node = new MockNode(finalSettings, plugins);
             node.injector().getInstance(TransportService.class).addLifecycleListener(new LifecycleListener() {
                 @Override
                 public void afterStart() {
