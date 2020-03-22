@@ -6,11 +6,15 @@
 
 package org.elasticsearch.repositories.encrypted;
 
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseService;
+import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.RepositoryException;
@@ -28,13 +32,17 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0, autoManageMasterNodes = false)
 public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
@@ -219,6 +227,64 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         assertThat(verifiedNodes, containsInAnyOrder(node1, node2));
     }
 
+    public void testLicenseComplianceSnapshotAndRestore() throws Exception {
+        final String repositoryName = randomName();
+        MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
+        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), randomAlphaOfLength(20));
+        logger.info("--> start 2 nodes");
+        internalCluster().setBootstrapMasterNodeIndex(1);
+        internalCluster().startNodes(2, Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
+        ensureStableCluster(2);
+
+        logger.info("--> creating repo " + repositoryName);
+        createRepository(repositoryName);
+        final String indexName = randomName();
+        logger.info("-->  create random index {} with {} records", indexName, 3);
+        indexRandom(true, client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
+                client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(indexName).setId("3").setSource("field1", "quick"));
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 3);
+
+        final String snapshotName = randomName();
+        logger.info("-->  create snapshot {}:{}", repositoryName, snapshotName);
+        assertSuccessfulSnapshot(client().admin().cluster()
+                .prepareCreateSnapshot(repositoryName, snapshotName)
+                .setIndices(indexName)
+                .setWaitForCompletion(true)
+                .get());
+
+        // make license not accept encrypted snapshots
+        EncryptedRepository encryptedRepository =
+                (EncryptedRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repositoryName);
+        encryptedRepository.licenseStateSupplier = () -> {
+            XPackLicenseState mockLicenseState = mock(XPackLicenseState.class);
+            when(mockLicenseState.isEncryptedSnapshotAllowed()).thenReturn(false);
+            return mockLicenseState;
+        };
+
+        // now snapshot is not permitted
+        ElasticsearchSecurityException e = expectThrows(ElasticsearchSecurityException.class, () ->
+                client().admin().cluster().prepareCreateSnapshot(repositoryName, snapshotName + "2").setWaitForCompletion(true).get());
+        assertThat(e.getDetailedMessage(), containsString("current license is non-compliant for [encrypted snapshots]"));
+
+        logger.info("-->  delete index {}", indexName);
+        assertAcked(client().admin().indices().prepareDelete(indexName));
+
+        // but restore is permitted
+        logger.info("--> restore index from the snapshot");
+        assertSuccessfulRestore(client().admin().cluster().prepareRestoreSnapshot(repositoryName, snapshotName)
+                .setWaitForCompletion(true).get());
+
+        ensureGreen();
+
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 3);
+
+        // also delete snapshot is permitted
+        logger.info("-->  delete snapshot {}:{}", repositoryName, snapshotName);
+        assertAcked(client().admin().cluster().prepareDeleteSnapshot(repositoryName, snapshotName).get());
+    }
+
     protected String randomName() {
         return randomAlphaOfLength(randomIntBetween(1, 10)).toLowerCase(Locale.ROOT);
     }
@@ -268,5 +334,15 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
             RepositoryMissingException e = expectThrows(RepositoryMissingException.class, () -> repositories.repository(name));
             assertThat(e.getMessage(), containsString(name));
         });
+    }
+
+    private static void assertSuccessfulRestore(RestoreSnapshotResponse response) {
+        assertThat(response.getRestoreInfo().successfulShards(), greaterThan(0));
+        assertThat(response.getRestoreInfo().successfulShards(), equalTo(response.getRestoreInfo().totalShards()));
+    }
+
+    private static void assertSuccessfulSnapshot(CreateSnapshotResponse response) {
+        assertThat(response.getSnapshotInfo().successfulShards(), greaterThan(0));
+        assertThat(response.getSnapshotInfo().successfulShards(), equalTo(response.getSnapshotInfo().totalShards()));
     }
 }

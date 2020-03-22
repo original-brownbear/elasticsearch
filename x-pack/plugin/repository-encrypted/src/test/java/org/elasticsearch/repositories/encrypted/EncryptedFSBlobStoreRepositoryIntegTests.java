@@ -209,49 +209,6 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
                 .allMatch(shardFailure -> shardFailure.reason().contains("Repository secret id mismatch")));
     }
 
-    public void testLicenseComplianceSnapshotAndRestore() throws Exception {
-        String repoName = createRepository(randomRepositoryName());
-        String indexName = randomName();
-        int docCounts = iterations(10, 1000);
-        int noNodes = internalCluster().size();
-        logger.info("-->  create random index {} with {} records", indexName, docCounts);
-        addRandomDocuments(indexName, docCounts);
-        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), docCounts);
-
-        final String snapshotName = randomName();
-        logger.info("-->  create snapshot {}:{}", repoName, snapshotName);
-        assertSuccessfulSnapshot(client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
-                .setWaitForCompletion(true).setIndices(indexName));
-
-        EncryptedRepository encryptedRepository =
-                (EncryptedRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repoName);
-        encryptedRepository.licenseStateSupplier = () -> {
-            XPackLicenseState mockLicenseState = mock(XPackLicenseState.class);
-            when(mockLicenseState.isEncryptedSnapshotAllowed()).thenReturn(false);
-            return mockLicenseState;
-        };
-
-        // snapshot is not permitted
-        ElasticsearchSecurityException e = expectThrows(ElasticsearchSecurityException.class, () ->
-                client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName + "2").setWaitForCompletion(true).get());
-        assertThat(e.getDetailedMessage(), containsString("current license is non-compliant for [encrypted snapshots]"));
-
-        logger.info("-->  delete index {}", indexName);
-        assertAcked(client().admin().indices().prepareDelete(indexName));
-
-        // but restore is
-        logger.info("--> restore index from the snapshot");
-        assertSuccessfulRestore(client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName).setWaitForCompletion(true));
-
-        ensureGreen();
-
-        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), docCounts);
-
-        // also delete snapshot is permitted
-        logger.info("-->  delete snapshot {}:{}", repoName, snapshotName);
-        assertAcked(client().admin().cluster().prepareDeleteSnapshot(repoName, snapshotName).get());
-    }
-
     public void testWrongKEKOnMasterNode() throws Exception {
         final int noNodes = internalCluster().size();
         final String repositoryName = randomRepositoryName();
