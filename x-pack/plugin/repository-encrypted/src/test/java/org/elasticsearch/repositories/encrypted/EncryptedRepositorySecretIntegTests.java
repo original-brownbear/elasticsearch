@@ -22,6 +22,7 @@ import org.elasticsearch.repositories.RepositoryMissingException;
 import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.repositories.fs.FsRepository;
+import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.InternalTestCluster;
 
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
+import static org.elasticsearch.cluster.metadata.IndexMetaData.SETTING_NUMBER_OF_SHARDS;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.hamcrest.Matchers.containsString;
@@ -275,14 +277,61 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         logger.info("--> restore index from the snapshot");
         assertSuccessfulRestore(client().admin().cluster().prepareRestoreSnapshot(repositoryName, snapshotName)
                 .setWaitForCompletion(true).get());
-
         ensureGreen();
-
         assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 3);
-
         // also delete snapshot is permitted
         logger.info("-->  delete snapshot {}:{}", repositoryName, snapshotName);
         assertAcked(client().admin().cluster().prepareDeleteSnapshot(repositoryName, snapshotName).get());
+    }
+
+    public void testSnapshotIsPartialForMissingPassword() throws Exception {
+        final String repositoryName = randomName();
+        final Settings repositorySettings = repositorySettings(repositoryName);
+        MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
+        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repositoryName).getKey(), randomAlphaOfLength(20));
+        logger.info("--> start 2 nodes");
+        internalCluster().setBootstrapMasterNodeIndex(0);
+        // master has the password
+        internalCluster().startNode(Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
+        ensureStableCluster(1);
+        final String otherNode = internalCluster().startNode();
+        ensureStableCluster(2);
+        logger.debug("-->  creating repository [name: {}, verify: {}, settings: {}]", repositoryName, false, repositorySettings);
+        assertAcked(client().admin().cluster().preparePutRepository(repositoryName)
+                .setType(repositoryType())
+                .setVerify(false)
+                .setSettings(repositorySettings));
+        // create an index with the shard on the node without a repository password
+        final String indexName = randomName();
+        final Settings indexSettings = Settings.builder()
+                .put(indexSettings())
+                .put("index.routing.allocation.include._name", otherNode)
+                .put(SETTING_NUMBER_OF_SHARDS, 1)
+                .build();
+        logger.info("-->  create random index {}", indexName);
+        createIndex(indexName, indexSettings);
+        indexRandom(true, client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
+                client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(indexName).setId("3").setSource("field1", "quick"));
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 3);
+
+        // empty snapshot completes successfully because it does not involve data on the node without a repository password
+        final String snapshotName = randomName();
+        logger.info("-->  create snapshot {}:{}", repositoryName, snapshotName);
+        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
+                snapshotName).setIndices(indexName + "other*").setWaitForCompletion(true).get();
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
+                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
+
+        // snapshot is PARTIAL because it includes shards on nodes with a missing repository password
+        final String snapshotName2 = snapshotName + "2";
+        CreateSnapshotResponse incompleteSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
+                snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
+        assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
+        assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
+                .allMatch(shardFailure -> shardFailure.reason().contains("[" + repositoryName + "] missing")));
     }
 
     protected String randomName() {
