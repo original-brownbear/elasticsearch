@@ -60,7 +60,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public final class EncryptedRepository extends BlobStoreRepository {
+// not-final for tests
+public class EncryptedRepository extends BlobStoreRepository {
     static final Logger logger = LogManager.getLogger(EncryptedRepository.class);
     // the following constants are fixed by definition
     static final int GCM_TAG_LENGTH_IN_BYTES = 16;
@@ -171,12 +172,14 @@ public final class EncryptedRepository extends BlobStoreRepository {
                                  Version repositoryMetaVersion, ActionListener<SnapshotInfo> listener) {
         try {
             validateLocalRepositorySecret(userMetadata);
-            // remove the repository key id from the snapshot metadata so that the id is not displayed in the API response to the user
+        } catch (RepositoryException passwordValidationException) {
+            listener.onFailure(passwordValidationException);
+            return;
+        } finally {
+            // remove the repository password id from the snapshot metadata so that the id is not displayed in the API response to the user
             userMetadata = new HashMap<>(userMetadata);
             userMetadata.remove(PASSWORD_ID_USER_METADATA_KEY);
-        } catch (RepositoryException KEKValidationException) {
-            listener.onFailure(KEKValidationException);
-            return;
+            userMetadata.remove(PASSWORD_ID_SALT_USER_METADATA_KEY);
         }
         super.finalizeSnapshot(snapshotId, shardGenerations, startTime, failure, totalShards, shardFailures, repositoryStateId,
                 includeGlobalState, clusterMetaData, userMetadata, repositoryMetaVersion, listener);

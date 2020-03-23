@@ -25,12 +25,14 @@ import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.xpack.core.XPackPlugin;
 
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugin {
     static final Logger logger = LogManager.getLogger(EncryptedRepositoryPlugin.class);
@@ -113,9 +115,17 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
                                     "All the other operations, including restore, work without restrictions.",
                             LicenseUtils.newComplianceException("encrypted snapshots"));
                 }
-                return new EncryptedRepository(metaData, registry, clusterService, (BlobStoreRepository) delegatedRepository,
+                return createEncryptedRepository(metaData, registry, clusterService, (BlobStoreRepository) delegatedRepository,
                         () -> getLicenseState(), repositoryPassword);
             }
         });
+    }
+
+    // protected for tests
+    protected EncryptedRepository createEncryptedRepository(RepositoryMetaData metaData, NamedXContentRegistry registry,
+                                                            ClusterService clusterService, BlobStoreRepository delegatedRepository,
+                                                            Supplier<XPackLicenseState> licenseStateSupplier,
+                                                            char[] repoPassword) throws GeneralSecurityException {
+        return new EncryptedRepository(metaData, registry, clusterService, delegatedRepository, licenseStateSupplier, repoPassword);
     }
 }

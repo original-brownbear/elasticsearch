@@ -14,8 +14,10 @@ import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.support.PlainActionFuture;
+import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseService;
 import org.elasticsearch.license.XPackLicenseState;
@@ -27,6 +29,9 @@ import org.elasticsearch.repositories.RepositoryMissingException;
 import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.repositories.fs.FsRepository;
+import org.elasticsearch.snapshots.Snapshot;
+import org.elasticsearch.snapshots.SnapshotInfo;
+import org.elasticsearch.snapshots.SnapshotMissingException;
 import org.elasticsearch.snapshots.SnapshotState;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.InternalTestCluster;
@@ -475,6 +480,75 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         assertThat(getSnapshotResponse.getSuccessfulResponses().keySet(), contains(repositoryName));
     }
 
+    public void testSnapshotFailsForMasterFailoverWithWrongPassword() throws Exception {
+        final String repoName = randomName();
+        final Settings repoSettings = repositorySettings(repoName);
+        final String goodPass = randomAlphaOfLength(20);
+        final String wrongPass = randomAlphaOfLength(19);
+        MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
+        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repoName).getKey(), goodPass);
+        logger.info("--> start 4 nodes");
+        internalCluster().setBootstrapMasterNodeIndex(0);
+        final String masterNode = internalCluster().startMasterOnlyNode(Settings.builder()
+                .setSecureSettings(secureSettingsWithPassword).build());
+        final String otherNode = internalCluster().startDataOnlyNode(Settings.builder()
+                .setSecureSettings(secureSettingsWithPassword).build());
+        ensureStableCluster(2);
+        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
+                getConcreteSettingForNamespace(repoName).getKey(), wrongPass);
+        internalCluster().startMasterOnlyNodes(2, Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
+        ensureStableCluster(4);
+        assertThat(internalCluster().getMasterName(), equalTo(masterNode));
+
+        logger.debug("-->  creating repository [name: {}, verify: {}, settings: {}]", repoName, false, repoSettings);
+        assertAcked(client().admin().cluster().preparePutRepository(repoName)
+                .setType(repositoryType())
+                .setVerify(false)
+                .setSettings(repoSettings));
+        // create index with just one shard on the "other" data node
+        final String indexName = randomName();
+        final Settings indexSettings = Settings.builder()
+                .put(indexSettings())
+                .put("index.routing.allocation.include._name", otherNode)
+                .put(SETTING_NUMBER_OF_SHARDS, 1)
+                .build();
+        logger.info("-->  create random index {}", indexName);
+        createIndex(indexName, indexSettings);
+        indexRandom(true, client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
+                client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
+                client().prepareIndex(indexName).setId("3").setSource("field1", "quick"),
+                client().prepareIndex(indexName).setId("4").setSource("field1", "lazy"),
+                client().prepareIndex(indexName).setId("5").setSource("field1", "dog"));
+        assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 5);
+
+        // block shard snapshot on the data node
+        final LocalStateEncryptedRepositoryPlugin.TestEncryptedRepository otherNodeEncryptedRepo =
+                (LocalStateEncryptedRepositoryPlugin.TestEncryptedRepository) internalCluster()
+                .getInstance(RepositoriesService.class, otherNode).repository(repoName);
+        otherNodeEncryptedRepo.blockSnapshotShard();
+
+        final String snapshotName = randomName();
+        logger.info("-->  create snapshot {}:{}", repoName, snapshotName);
+        client().admin().cluster()
+                .prepareCreateSnapshot(repoName, snapshotName)
+                .setIndices(indexName)
+                .setWaitForCompletion(false)
+                .get();
+
+        // stop master
+        internalCluster().stopRandomNode(InternalTestCluster.nameFilter(masterNode));
+        ensureStableCluster(3);
+
+        otherNodeEncryptedRepo.unblockSnapshotShard();
+
+        // the failover master has the wrong password, snapshot fails
+        logger.info("--> waiting for completion");
+        expectThrows(SnapshotMissingException.class, () -> {
+            waitForCompletion(repoName, snapshotName, TimeValue.timeValueSeconds(60));
+        });
+    }
+
     protected String randomName() {
         return randomAlphaOfLength(randomIntBetween(1, 10)).toLowerCase(Locale.ROOT);
     }
@@ -534,5 +608,37 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
     private void assertSuccessfulSnapshot(CreateSnapshotResponse response) {
         assertThat(response.getSnapshotInfo().successfulShards(), greaterThan(0));
         assertThat(response.getSnapshotInfo().successfulShards(), equalTo(response.getSnapshotInfo().totalShards()));
+    }
+
+    public SnapshotInfo waitForCompletion(String repository, String snapshotName, TimeValue timeout) throws InterruptedException {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() - start < timeout.millis()) {
+            List<SnapshotInfo> snapshotInfos = client().admin().cluster().prepareGetSnapshots(repository).setSnapshots(snapshotName)
+                    .get().getSnapshots(repository);
+            assertThat(snapshotInfos.size(), equalTo(1));
+            if (snapshotInfos.get(0).state().completed()) {
+                // Make sure that snapshot clean up operations are finished
+                ClusterStateResponse stateResponse = client().admin().cluster().prepareState().get();
+                SnapshotsInProgress snapshotsInProgress = stateResponse.getState().custom(SnapshotsInProgress.TYPE);
+                if (snapshotsInProgress == null) {
+                    return snapshotInfos.get(0);
+                } else {
+                    boolean found = false;
+                    for (SnapshotsInProgress.Entry entry : snapshotsInProgress.entries()) {
+                        final Snapshot curr = entry.snapshot();
+                        if (curr.getRepository().equals(repository) && curr.getSnapshotId().getName().equals(snapshotName)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found == false) {
+                        return snapshotInfos.get(0);
+                    }
+                }
+            }
+            Thread.sleep(100);
+        }
+        fail("Timeout!!!");
+        return null;
     }
 }
