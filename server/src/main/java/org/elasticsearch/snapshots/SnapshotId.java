@@ -33,6 +33,8 @@ import java.util.Objects;
  */
 public final class SnapshotId implements Comparable<SnapshotId>, Writeable, ToXContentObject {
 
+    public static final String UNKNOWN_UUID = "_na";
+
     private static final String NAME = "name";
     private static final String UUID = "uuid";
 
