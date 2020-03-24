@@ -27,6 +27,7 @@ import com.microsoft.azure.storage.OperationContext;
 import com.microsoft.azure.storage.RetryExponentialRetry;
 import com.microsoft.azure.storage.RetryPolicy;
 import com.microsoft.azure.storage.RetryPolicyFactory;
+import com.microsoft.azure.storage.StorageCredentialsSharedAccessSignature;
 import com.microsoft.azure.storage.StorageErrorCodeStrings;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobDeleteBatchOperation;
@@ -41,6 +42,9 @@ import com.microsoft.azure.storage.blob.CloudBlobDirectory;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import com.microsoft.azure.storage.blob.DeleteSnapshotsOption;
 import com.microsoft.azure.storage.blob.ListBlobItem;
+import com.microsoft.azure.storage.blob.SharedAccessBlobPermissions;
+import com.microsoft.azure.storage.blob.SharedAccessBlobPolicy;
+import com.microsoft.azure.storage.file.SharedAccessFilePermissions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -62,14 +66,18 @@ import java.net.URISyntaxException;
 import java.nio.file.FileAlreadyExistsException;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.EnumSet;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
@@ -205,7 +213,18 @@ public class AzureStorageService {
             } while (blobIterator.hasNext() && currentBatchSize < Constants.BATCH_MAX_REQUESTS);
             currentBatchSize = 0;
             try {
-                SocketAccess.doPrivilegedVoidException(() -> blobContainer.getServiceClient().executeBatch(batchDeleteOp));
+                final SharedAccessBlobPolicy policy = new SharedAccessBlobPolicy();
+                Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+                calendar.setTime(new Date());
+                calendar.add(Calendar.SECOND, 1000);
+                policy.setPermissions(EnumSet.allOf(SharedAccessBlobPermissions.class));
+                policy.setSharedAccessExpiryTime(calendar.getTime());
+                final CloudBlobClient sasClient = new CloudBlobClient(
+                    blobContainer.getServiceClient().getStorageUri(), new StorageCredentialsSharedAccessSignature(
+                    blobContainer.generateSharedAccessSignature(policy, null)));
+                SocketAccess.doPrivilegedVoidException(() -> sasClient.executeBatch(batchDeleteOp));
+            } catch (InvalidKeyException e) {
+                throw new RuntimeException(e);
             } catch (BatchException e) {
                 for (StorageException ex : e.getExceptions().values()) {
                     if (ex.getHttpStatusCode() != HttpURLConnection.HTTP_NOT_FOUND) {
