@@ -83,13 +83,6 @@ public class SnapshotDisruptionIT extends ESIntegTestCase {
                 .put("compress", randomBoolean())
                 .put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES)));
 
-        // Writing incompatible snapshot can cause this test to fail due to a race condition in repo initialization
-        // by the current master and the former master. It is not causing any issues in real life scenario, but
-        // might make this test to fail. We are going to complete initialization of the snapshot to prevent this failures.
-        logger.info("-->  initializing the repository");
-        assertEquals(SnapshotState.SUCCESS, client().admin().cluster().prepareCreateSnapshot("test-repo", "test-snap-1")
-            .setWaitForCompletion(true).setIncludeGlobalState(true).setIndices().get().getSnapshotInfo().state());
-
         final String masterNode1 = internalCluster().getMasterName();
         Set<String> otherNodes = new HashSet<>();
         otherNodes.addAll(allMasterEligibleNodes);
@@ -119,9 +112,11 @@ public class SnapshotDisruptionIT extends ESIntegTestCase {
             }
         });
 
+        final String snapshot = "test-snap";
+
         logger.info("--> starting snapshot");
         ActionFuture<CreateSnapshotResponse> future = client(masterNode1).admin().cluster()
-            .prepareCreateSnapshot("test-repo", "test-snap-2").setWaitForCompletion(false).setIndices(idxName).execute();
+            .prepareCreateSnapshot("test-repo", snapshot).setWaitForCompletion(false).setIndices(idxName).execute();
 
         logger.info("--> waiting for disruption to start");
         assertTrue(disruptionStarted.await(1, TimeUnit.MINUTES));
@@ -131,7 +126,7 @@ public class SnapshotDisruptionIT extends ESIntegTestCase {
         logger.info("--> verify that snapshot was successful or no longer exist");
         assertBusy(() -> {
             try {
-                assertSnapshotExists("test-repo", "test-snap-2");
+                assertSnapshotExists("test-repo", snapshot);
             } catch (SnapshotMissingException exception) {
                 logger.info("--> done verifying, snapshot doesn't exist");
             }
