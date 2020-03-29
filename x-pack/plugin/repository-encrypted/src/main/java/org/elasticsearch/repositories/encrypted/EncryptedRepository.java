@@ -271,7 +271,7 @@ public class EncryptedRepository extends BlobStoreRepository {
         private final BlobPath delegatedBasePath;
         private final String repositoryName;
         private final Function<String, Tuple<String, SecretKey>> getKEKforDEK;
-        private final CheckedSupplier<SingleUseDEK, IOException> singleUseDEKSupplier;
+        private final CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier;
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobStore(BlobStore delegatedBlobStore,
@@ -284,7 +284,7 @@ public class EncryptedRepository extends BlobStoreRepository {
             this.delegatedBasePath = delegatedBasePath;
             this.repositoryName = repositoryName;
             this.getKEKforDEK = getKEKforDEK;
-            this.singleUseDEKSupplier = SingleUseDEK.createSingleUseDEKSupplier(() -> {
+            this.singleUseDEKSupplier = SingleUseKey.createSingleUseKeySupplier(() -> {
                 Tuple<String, SecretKey> newDEK = DEKGenerator.get();
                 // store the newly generated DEK before making it available
                 storeDEK(newDEK.v1(), newDEK.v2());
@@ -391,14 +391,14 @@ public class EncryptedRepository extends BlobStoreRepository {
         private final String repositoryName;
         private final BlobContainer delegatedBlobContainer;
         // supplier for the DEK used for encryption (snapshot)
-        private final CheckedSupplier<SingleUseDEK, IOException> singleUseDEKSupplier;
+        private final CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier;
         // retrieves the DEK required for decryption (restore)
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobContainer(BlobPath path, // this path contains the {@code EncryptedRepository#basePath} which, importantly, is empty
                                String repositoryName,
                                BlobContainer delegatedBlobContainer,
-                               CheckedSupplier<SingleUseDEK, IOException> singleUseDEKSupplier,
+                               CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier,
                                CheckedFunction<String, SecretKey, IOException> getDEKById) {
             super(path);
             this.repositoryName = repositoryName;
@@ -475,16 +475,16 @@ public class EncryptedRepository extends BlobStoreRepository {
         @Override
         public void writeBlob(String blobName, InputStream inputStream, long blobSize, boolean failIfAlreadyExists) throws IOException {
             // reuse, but possibly generate and store a new DEK
-            final SingleUseDEK singleUseNonceAndDEK = singleUseDEKSupplier.get();
-            final byte[] DEKIdBytes = singleUseNonceAndDEK.DEKId.getBytes(StandardCharsets.UTF_8);
+            final SingleUseKey singleUseNonceAndDEK = singleUseDEKSupplier.get();
+            final byte[] DEKIdBytes = singleUseNonceAndDEK.getKeyId().getBytes(StandardCharsets.UTF_8);
             if (DEKIdBytes.length != DEK_ID_LENGTH) {
                 throw new RepositoryException(repositoryName, "Unexpected internal error",
                         new IllegalStateException("Unexpected DEK Id length [" + DEKIdBytes.length + "]"));
             }
             final long encryptedBlobSize = getEncryptedBlobByteLength(blobSize);
             try (InputStream encryptedInputStream = ChainingInputStream.chain(new ByteArrayInputStream(DEKIdBytes),
-                    new EncryptionPacketsInputStream(inputStream, singleUseNonceAndDEK.DEK,
-                            singleUseNonceAndDEK.nonce, PACKET_LENGTH_IN_BYTES))) {
+                    new EncryptionPacketsInputStream(inputStream, singleUseNonceAndDEK.getKey(),
+                            singleUseNonceAndDEK.getNonce(), PACKET_LENGTH_IN_BYTES))) {
                 delegatedBlobContainer.writeBlob(blobName, encryptedInputStream, encryptedBlobSize, failIfAlreadyExists);
             }
         }
@@ -574,49 +574,6 @@ public class EncryptedRepository extends BlobStoreRepository {
                                         EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.get(metadata.settings())).getKey() +
                                 "], is different compared to the elected master node's which started the snapshot operation");
             }
-        }
-    }
-
-    private static class SingleUseDEK {
-        private static final SingleUseDEK EXPIRED_DEK = new SingleUseDEK(null, null, Integer.MAX_VALUE);
-
-        final String DEKId;
-        final SecretKey DEK;
-        final Integer nonce;
-
-        private SingleUseDEK(String DEKId, SecretKey DEK, Integer nonce) {
-            this.DEKId = DEKId;
-            this.DEK = DEK;
-            this.nonce = nonce;
-        }
-
-        static CheckedSupplier<SingleUseDEK, IOException> createSingleUseDEKSupplier(
-                CheckedSupplier<Tuple<String, SecretKey>, IOException> DEKGenerator) {
-            final AtomicReference<SingleUseDEK> DEKCurrentlyInUse = new AtomicReference<>(EXPIRED_DEK);
-            final Object lock = new Object();
-            return () -> {
-                while (true) {
-                    final SingleUseDEK nonceAndDEK = DEKCurrentlyInUse.getAndUpdate(prev -> prev.nonce < Integer.MAX_VALUE ?
-                            new SingleUseDEK(prev.DEKId, prev.DEK, prev.nonce + 1) : EXPIRED_DEK);
-                    if (nonceAndDEK.nonce < Integer.MAX_VALUE) {
-                        logger.trace(() -> new ParameterizedMessage("DEK with id [{}] reused with nonce [{}]", nonceAndDEK.DEKId,
-                                nonceAndDEK.nonce));
-                        return nonceAndDEK;
-                    } else {
-                        logger.trace(() -> new ParameterizedMessage("Regenerating a new DEK to replace id [{}]", nonceAndDEK.DEKId));
-                        synchronized (lock) {
-                            if (DEKCurrentlyInUse.get().nonce == Integer.MAX_VALUE) {
-                                final Tuple<String, SecretKey> newDEK = DEKGenerator.get();
-                                logger.debug(() -> new ParameterizedMessage("A new DEK with id [{}] has been generated", newDEK.v1()));
-                                if (newDEK.v1().length() != DEK_ID_LENGTH) {
-                                    throw new IllegalStateException("Unexpected DEK Id length [" + newDEK.v1().length() + "]");
-                                }
-                                DEKCurrentlyInUse.set(new SingleUseDEK(newDEK.v1(), newDEK.v2(), Integer.MIN_VALUE));
-                            }
-                        }
-                    }
-                }
-            };
         }
     }
 
