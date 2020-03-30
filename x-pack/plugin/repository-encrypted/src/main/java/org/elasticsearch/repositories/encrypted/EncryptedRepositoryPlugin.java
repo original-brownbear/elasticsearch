@@ -38,19 +38,26 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
     static final Logger logger = LogManager.getLogger(EncryptedRepositoryPlugin.class);
     static final String REPOSITORY_TYPE_NAME = "encrypted";
     static final List<String> SUPPORTED_ENCRYPTED_TYPE_NAMES = Arrays.asList("fs", "gcs", "azure", "s3");
-    static final Setting.AffixSetting<SecureString> ENCRYPTION_PASSWORD_SETTING = Setting.affixKeySetting("repository.encrypted.",
-            "password", key -> SecureSetting.secureString(key, null));
+    static final Setting.AffixSetting<SecureString> ENCRYPTION_PASSWORD_SETTING = Setting.affixKeySetting(
+        "repository.encrypted.",
+        "password",
+        key -> SecureSetting.secureString(key, null)
+    );
     static final Setting<String> DELEGATE_TYPE_SETTING = Setting.simpleString("delegate_type", "");
     static final Setting<String> PASSWORD_NAME_SETTING = Setting.simpleString("password_name", "");
 
     // "protected" because it is overloaded for tests
-    protected XPackLicenseState getLicenseState() { return XPackPlugin.getSharedLicenseState(); }
+    protected XPackLicenseState getLicenseState() {
+        return XPackPlugin.getSharedLicenseState();
+    }
 
     public EncryptedRepositoryPlugin() {
         if (false == getLicenseState().isEncryptedSnapshotAllowed()) {
-            logger.warn("Snapshotting to an encrypted repository is not permitted for the current license." +
-                            "All the other operations over the encrypted repository, eg. restore, work without restrictions.",
-                    LicenseUtils.newComplianceException("encrypted snapshots"));
+            logger.warn(
+                "Snapshotting to an encrypted repository is not permitted for the current license."
+                    + "All the other operations over the encrypted repository, eg. restore, work without restrictions.",
+                LicenseUtils.newComplianceException("encrypted snapshots")
+            );
         }
     }
 
@@ -60,9 +67,7 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
     }
 
     @Override
-    public Map<String, Repository.Factory> getRepositories(Environment env,
-                                                           NamedXContentRegistry registry,
-                                                           ClusterService clusterService) {
+    public Map<String, Repository.Factory> getRepositories(Environment env, NamedXContentRegistry registry, ClusterService clusterService) {
         // load all the passwords from the keystore in memory because the keystore is not readable when the repository is created
         final Map<String, char[]> repositoryPasswordsMapBuilder = new HashMap<>();
         for (String passwordName : ENCRYPTION_PASSWORD_SETTING.getNamespaces(env.settings())) {
@@ -87,8 +92,13 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
                     throw new IllegalArgumentException("Repository setting [" + DELEGATE_TYPE_SETTING.getKey() + "] must be set");
                 }
                 if (REPOSITORY_TYPE_NAME.equals(delegateType)) {
-                    throw new IllegalArgumentException("Cannot encrypt an already encrypted repository. [" +
-                            DELEGATE_TYPE_SETTING.getKey() + "] must not be equal to [" + REPOSITORY_TYPE_NAME + "]");
+                    throw new IllegalArgumentException(
+                        "Cannot encrypt an already encrypted repository. ["
+                            + DELEGATE_TYPE_SETTING.getKey()
+                            + "] must not be equal to ["
+                            + REPOSITORY_TYPE_NAME
+                            + "]"
+                    );
                 }
                 final Repository.Factory factory = typeLookup.apply(delegateType);
                 if (null == factory || false == SUPPORTED_ENCRYPTED_TYPE_NAMES.contains(delegateType)) {
@@ -100,32 +110,49 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
                 }
                 final char[] repositoryPassword = repositoryPasswordsMap.get(repositoryPasswordName);
                 if (repositoryPassword == null) {
-                    throw new IllegalArgumentException("Secure setting [" +
-                            ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryPasswordName).getKey() + "] must be set");
+                    throw new IllegalArgumentException(
+                        "Secure setting ["
+                            + ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryPasswordName).getKey()
+                            + "] must be set"
+                    );
                 }
-                final Repository delegatedRepository = factory.create(new RepositoryMetaData(metaData.name(), delegateType,
-                        metaData.settings()));
-                if (false == (delegatedRepository instanceof BlobStoreRepository)
-                        || delegatedRepository instanceof EncryptedRepository) {
+                final Repository delegatedRepository = factory.create(
+                    new RepositoryMetaData(metaData.name(), delegateType, metaData.settings())
+                );
+                if (false == (delegatedRepository instanceof BlobStoreRepository) || delegatedRepository instanceof EncryptedRepository) {
                     throw new IllegalArgumentException("Unsupported delegate repository type [" + DELEGATE_TYPE_SETTING.getKey() + "]");
                 }
                 if (false == getLicenseState().isEncryptedSnapshotAllowed()) {
-                    logger.warn("Encrypted snapshots are not allowed for the currently installed license." +
-                                    "Snapshots to the [" + metaData.name() + "] encrypted repository are not permitted." +
-                                    "All the other operations, including restore, work without restrictions.",
-                            LicenseUtils.newComplianceException("encrypted snapshots"));
+                    logger.warn(
+                        "Encrypted snapshots are not allowed for the currently installed license."
+                            + "Snapshots to the ["
+                            + metaData.name()
+                            + "] encrypted repository are not permitted."
+                            + "All the other operations, including restore, work without restrictions.",
+                        LicenseUtils.newComplianceException("encrypted snapshots")
+                    );
                 }
-                return createEncryptedRepository(metaData, registry, clusterService, (BlobStoreRepository) delegatedRepository,
-                        () -> getLicenseState(), repositoryPassword);
+                return createEncryptedRepository(
+                    metaData,
+                    registry,
+                    clusterService,
+                    (BlobStoreRepository) delegatedRepository,
+                    () -> getLicenseState(),
+                    repositoryPassword
+                );
             }
         });
     }
 
     // protected for tests
-    protected EncryptedRepository createEncryptedRepository(RepositoryMetaData metaData, NamedXContentRegistry registry,
-                                                            ClusterService clusterService, BlobStoreRepository delegatedRepository,
-                                                            Supplier<XPackLicenseState> licenseStateSupplier,
-                                                            char[] repoPassword) throws GeneralSecurityException {
+    protected EncryptedRepository createEncryptedRepository(
+        RepositoryMetaData metaData,
+        NamedXContentRegistry registry,
+        ClusterService clusterService,
+        BlobStoreRepository delegatedRepository,
+        Supplier<XPackLicenseState> licenseStateSupplier,
+        char[] repoPassword
+    ) throws GeneralSecurityException {
         return new EncryptedRepository(metaData, registry, clusterService, delegatedRepository, licenseStateSupplier, repoPassword);
     }
 }

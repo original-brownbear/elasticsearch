@@ -45,7 +45,8 @@ public class SingleUseKeyTests extends ESTestCase {
 
     public void testNewKeySupplier() throws Exception {
         CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier = SingleUseKey.createSingleUseKeySupplier(
-                () -> new Tuple<>(testKeyId, testKey));
+            () -> new Tuple<>(testKeyId, testKey)
+        );
         SingleUseKey generatedSingleUseKey = singleUseKeySupplier.get();
         assertThat(generatedSingleUseKey.getKeyId(), equalTo(testKeyId));
         assertThat(generatedSingleUseKey.getNonce(), equalTo(SingleUseKey.MIN_NONCE));
@@ -58,8 +59,10 @@ public class SingleUseKeyTests extends ESTestCase {
         AtomicReference<SingleUseKey> keyCurrentlyInUse = new AtomicReference<>(singleUseKey);
         @SuppressWarnings("unchecked")
         CheckedSupplier<Tuple<String, SecretKey>, IOException> keyGenerator = mock(CheckedSupplier.class);
-        CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier = SingleUseKey.createSingleUseKeySupplier(keyGenerator,
-                keyCurrentlyInUse);
+        CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier = SingleUseKey.createSingleUseKeySupplier(
+            keyGenerator,
+            keyCurrentlyInUse
+        );
         SingleUseKey generatedSingleUseKey = singleUseKeySupplier.get();
         assertThat(generatedSingleUseKey.getKeyId(), equalTo(testKeyId));
         assertThat(generatedSingleUseKey.getNonce(), equalTo(nonce));
@@ -74,11 +77,12 @@ public class SingleUseKeyTests extends ESTestCase {
     public void testConcurrentWrapAround() throws Exception {
         int nThreads = 3;
         TestThreadPool testThreadPool = new TestThreadPool(
-                "SingleUserKeyTests#testConcurrentWrapAround",
-                Settings.builder()
-                        .put("thread_pool." + ThreadPool.Names.GENERIC + ".size", nThreads)
-                        .put("thread_pool." + ThreadPool.Names.GENERIC + ".queue_size", 1)
-                        .build());
+            "SingleUserKeyTests#testConcurrentWrapAround",
+            Settings.builder()
+                .put("thread_pool." + ThreadPool.Names.GENERIC + ".size", nThreads)
+                .put("thread_pool." + ThreadPool.Names.GENERIC + ".queue_size", 1)
+                .build()
+        );
         int nonce = SingleUseKey.MAX_NONCE;
         SingleUseKey singleUseKey = new SingleUseKey(null, null, nonce);
 
@@ -86,8 +90,10 @@ public class SingleUseKeyTests extends ESTestCase {
         @SuppressWarnings("unchecked")
         CheckedSupplier<Tuple<String, SecretKey>, IOException> keyGenerator = mock(CheckedSupplier.class);
         when(keyGenerator.get()).thenReturn(new Tuple<>(testKeyId, testKey));
-        CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier =
-                SingleUseKey.createSingleUseKeySupplier(keyGenerator, keyCurrentlyInUse);
+        CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier = SingleUseKey.createSingleUseKeySupplier(
+            keyGenerator,
+            keyCurrentlyInUse
+        );
         List<SingleUseKey> generatedKeys = new ArrayList<>(nThreads);
         for (int i = 0; i < nThreads; i++) {
             generatedKeys.add(null);
@@ -106,12 +112,16 @@ public class SingleUseKeyTests extends ESTestCase {
         verify(keyGenerator, times(1)).get();
         assertThat(keyCurrentlyInUse.get().getNonce(), equalTo(SingleUseKey.MIN_NONCE + nThreads));
         assertThat(generatedKeys.stream().map(suk -> suk.getKey()).collect(Collectors.toSet()).size(), equalTo(1));
-        assertThat(generatedKeys.stream().map(suk -> suk.getKey().getEncoded()).collect(Collectors.toSet()).iterator().next(),
-                equalTo(testKeyPlaintext));
+        assertThat(
+            generatedKeys.stream().map(suk -> suk.getKey().getEncoded()).collect(Collectors.toSet()).iterator().next(),
+            equalTo(testKeyPlaintext)
+        );
         assertThat(generatedKeys.stream().map(suk -> suk.getKeyId()).collect(Collectors.toSet()).iterator().next(), equalTo(testKeyId));
         assertThat(generatedKeys.stream().map(suk -> suk.getNonce()).collect(Collectors.toSet()).size(), equalTo(nThreads));
-        assertThat(generatedKeys.stream().map(suk -> suk.getNonce()).collect(Collectors.toSet()),
-                contains(SingleUseKey.MIN_NONCE, SingleUseKey.MIN_NONCE + 1, SingleUseKey.MIN_NONCE + 2));
+        assertThat(
+            generatedKeys.stream().map(suk -> suk.getNonce()).collect(Collectors.toSet()),
+            contains(SingleUseKey.MIN_NONCE, SingleUseKey.MIN_NONCE + 1, SingleUseKey.MIN_NONCE + 2)
+        );
     }
 
     public void testNonceWrapAround() throws Exception {
@@ -121,9 +131,10 @@ public class SingleUseKeyTests extends ESTestCase {
         byte[] newTestKeyPlaintext = randomByteArrayOfLength(32);
         SecretKey newTestKey = new SecretKeySpec(newTestKeyPlaintext, "AES");
         String newTestKeyId = randomAlphaOfLengthBetween(2, 32);
-        CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier =
-                SingleUseKey.createSingleUseKeySupplier(() -> new Tuple<>(newTestKeyId, newTestKey),
-                keyCurrentlyInUse);
+        CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier = SingleUseKey.createSingleUseKeySupplier(
+            () -> new Tuple<>(newTestKeyId, newTestKey),
+            keyCurrentlyInUse
+        );
         SingleUseKey generatedSingleUseKey = singleUseKeySupplier.get();
         assertThat(generatedSingleUseKey.getKeyId(), equalTo(newTestKeyId));
         assertThat(generatedSingleUseKey.getNonce(), equalTo(SingleUseKey.MIN_NONCE));
@@ -134,11 +145,10 @@ public class SingleUseKeyTests extends ESTestCase {
         int nonce = SingleUseKey.MAX_NONCE;
         SingleUseKey singleUseKey = new SingleUseKey(null, null, nonce);
         AtomicReference<SingleUseKey> keyCurrentlyInUse = new AtomicReference<>(singleUseKey);
-        CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier =
-                SingleUseKey.createSingleUseKeySupplier(() -> {
-                            throw new IOException("expected exception");
-                        },
-                        keyCurrentlyInUse);
+        CheckedSupplier<SingleUseKey, IOException> singleUseKeySupplier = SingleUseKey.createSingleUseKeySupplier(
+            () -> { throw new IOException("expected exception"); },
+            keyCurrentlyInUse
+        );
         expectThrows(IOException.class, () -> singleUseKeySupplier.get());
     }
 }

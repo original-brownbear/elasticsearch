@@ -109,28 +109,43 @@ public class EncryptedRepository extends BlobStoreRepository {
      */
     public static long getEncryptedBlobByteLength(long plaintextBlobByteLength) {
         return (long) DEK_ID_LENGTH /* UUID byte length */
-                + EncryptionPacketsInputStream.getEncryptionLength(plaintextBlobByteLength, PACKET_LENGTH_IN_BYTES);
+            + EncryptionPacketsInputStream.getEncryptionLength(plaintextBlobByteLength, PACKET_LENGTH_IN_BYTES);
     }
 
-    protected EncryptedRepository(RepositoryMetaData metadata, NamedXContentRegistry namedXContentRegistry, ClusterService clusterService,
-                                  BlobStoreRepository delegatedRepository, Supplier<XPackLicenseState> licenseStateSupplier,
-                                  char[] repositoryPassword) throws GeneralSecurityException {
-        super(metadata, namedXContentRegistry, clusterService, BlobPath.cleanPath() /* the encrypted repository uses a hardcoded empty
-        base blob path but the base path setting is honored for the delegated repository */);
+    protected EncryptedRepository(
+        RepositoryMetaData metadata,
+        NamedXContentRegistry namedXContentRegistry,
+        ClusterService clusterService,
+        BlobStoreRepository delegatedRepository,
+        Supplier<XPackLicenseState> licenseStateSupplier,
+        char[] repositoryPassword
+    )
+        throws GeneralSecurityException {
+        super(
+            metadata,
+            namedXContentRegistry,
+            clusterService,
+            BlobPath.cleanPath() /* the encrypted repository uses a hardcoded empty
+                                 base blob path but the base path setting is honored for the delegated repository */
+        );
         this.delegatedRepository = delegatedRepository;
         this.DEKGenerator = createDEKGenerator();
         this.licenseStateSupplier = licenseStateSupplier;
         this.repositoryPassword = repositoryPassword;
         // the password "id" and validated
         this.localRepositoryPasswordIdSalt = UUIDs.randomBase64UUID();
-        this.localRepositoryPasswordId = AESKeyUtils.computeId(AESKeyUtils.generatePasswordBasedKey(repositoryPassword,
-                localRepositoryPasswordIdSalt.getBytes(StandardCharsets.UTF_8)));
+        this.localRepositoryPasswordId = AESKeyUtils.computeId(
+            AESKeyUtils.generatePasswordBasedKey(repositoryPassword, localRepositoryPasswordIdSalt.getBytes(StandardCharsets.UTF_8))
+        );
         this.validatedRepositoryPasswordId = new AtomicReference<>(this.localRepositoryPasswordId);
         // stores decrypted DEKs; DEKs are reused to encrypt/decrypt multiple independent blobs
         this.DEKCache = CacheBuilder.<String, SecretKey>builder().setMaximumWeight(DEK_CACHE_WEIGHT).build();
         if (isReadOnly() != delegatedRepository.isReadOnly()) {
-            throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                    new IllegalStateException("The encrypted repository must be read-only iff the delegate repository is read-only"));
+            throw new RepositoryException(
+                metadata.name(),
+                "Unexpected fatal internal error",
+                new IllegalStateException("The encrypted repository must be read-only iff the delegate repository is read-only")
+            );
         }
     }
 
@@ -163,16 +178,31 @@ public class EncryptedRepository extends BlobStoreRepository {
         // to assure that all participating nodes in the snapshot operation are using the same repository secret
         snapshotUserMetadata.put(PASSWORD_ID_SALT_USER_METADATA_KEY, localRepositoryPasswordIdSalt);
         snapshotUserMetadata.put(PASSWORD_ID_USER_METADATA_KEY, localRepositoryPasswordId);
-        logger.trace(() -> new ParameterizedMessage("Snapshot metadata for local repository password  [{}] and [{}]",
-                localRepositoryPasswordIdSalt, localRepositoryPasswordId));
+        logger.trace(
+            () -> new ParameterizedMessage(
+                "Snapshot metadata for local repository password  [{}] and [{}]",
+                localRepositoryPasswordIdSalt,
+                localRepositoryPasswordId
+            )
+        );
         return Map.copyOf(snapshotUserMetadata);
     }
 
     @Override
-    public void finalizeSnapshot(SnapshotId snapshotId, ShardGenerations shardGenerations, long startTime, String failure,
-                                 int totalShards, List<SnapshotShardFailure> shardFailures, long repositoryStateId,
-                                 boolean includeGlobalState, MetaData clusterMetaData, Map<String, Object> userMetadata,
-                                 Version repositoryMetaVersion, ActionListener<SnapshotInfo> listener) {
+    public void finalizeSnapshot(
+        SnapshotId snapshotId,
+        ShardGenerations shardGenerations,
+        long startTime,
+        String failure,
+        int totalShards,
+        List<SnapshotShardFailure> shardFailures,
+        long repositoryStateId,
+        boolean includeGlobalState,
+        MetaData clusterMetaData,
+        Map<String, Object> userMetadata,
+        Version repositoryMetaVersion,
+        ActionListener<SnapshotInfo> listener
+    ) {
         try {
             validateLocalRepositorySecret(userMetadata);
         } catch (RepositoryException passwordValidationException) {
@@ -184,22 +214,53 @@ public class EncryptedRepository extends BlobStoreRepository {
             userMetadata.remove(PASSWORD_ID_USER_METADATA_KEY);
             userMetadata.remove(PASSWORD_ID_SALT_USER_METADATA_KEY);
         }
-        super.finalizeSnapshot(snapshotId, shardGenerations, startTime, failure, totalShards, shardFailures, repositoryStateId,
-                includeGlobalState, clusterMetaData, userMetadata, repositoryMetaVersion, listener);
+        super.finalizeSnapshot(
+            snapshotId,
+            shardGenerations,
+            startTime,
+            failure,
+            totalShards,
+            shardFailures,
+            repositoryStateId,
+            includeGlobalState,
+            clusterMetaData,
+            userMetadata,
+            repositoryMetaVersion,
+            listener
+        );
     }
 
     @Override
-    public void snapshotShard(Store store, MapperService mapperService, SnapshotId snapshotId, IndexId indexId,
-                              IndexCommit snapshotIndexCommit, String shardStateIdentifier, IndexShardSnapshotStatus snapshotStatus,
-                              Version repositoryMetaVersion, Map<String, Object> userMetadata, ActionListener<String> listener) {
+    public void snapshotShard(
+        Store store,
+        MapperService mapperService,
+        SnapshotId snapshotId,
+        IndexId indexId,
+        IndexCommit snapshotIndexCommit,
+        String shardStateIdentifier,
+        IndexShardSnapshotStatus snapshotStatus,
+        Version repositoryMetaVersion,
+        Map<String, Object> userMetadata,
+        ActionListener<String> listener
+    ) {
         try {
             validateLocalRepositorySecret(userMetadata);
         } catch (RepositoryException passwordValidationException) {
             listener.onFailure(passwordValidationException);
             return;
         }
-        super.snapshotShard(store, mapperService, snapshotId, indexId, snapshotIndexCommit, shardStateIdentifier, snapshotStatus,
-                repositoryMetaVersion, userMetadata, listener);
+        super.snapshotShard(
+            store,
+            mapperService,
+            snapshotId,
+            indexId,
+            snapshotIndexCommit,
+            shardStateIdentifier,
+            snapshotStatus,
+            repositoryMetaVersion,
+            userMetadata,
+            listener
+        );
     }
 
     @Override
@@ -208,14 +269,23 @@ public class EncryptedRepository extends BlobStoreRepository {
         if (isReadOnly()) {
             // make sure that a read-only repository can't encrypt anything
             DEKGenerator = () -> {
-                throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                        new IllegalStateException("DEKs are required for encryption but this is a read-only repository"));
+                throw new RepositoryException(
+                    metadata.name(),
+                    "Unexpected fatal internal error",
+                    new IllegalStateException("DEKs are required for encryption but this is a read-only repository")
+                );
             };
         } else {
             DEKGenerator = this.DEKGenerator;
         }
-        return new EncryptedBlobStore(delegatedRepository.blobStore(), delegatedRepository.basePath(), metadata.name(),
-                createKEKGenerator(), DEKGenerator, DEKCache);
+        return new EncryptedBlobStore(
+            delegatedRepository.blobStore(),
+            delegatedRepository.basePath(),
+            metadata.name(),
+            createKEKGenerator(),
+            DEKGenerator,
+            DEKCache
+        );
     }
 
     @Override
@@ -257,8 +327,9 @@ public class EncryptedRepository extends BlobStoreRepository {
                 final byte[] KEKsalt = DEKId.getBytes(StandardCharsets.UTF_8);
                 final SecretKey KEK = AESKeyUtils.generatePasswordBasedKey(repositoryPassword, KEKsalt);
                 final String KEKId = AESKeyUtils.computeId(KEK);
-                logger.debug(() -> new ParameterizedMessage("Repository [{}] computed KEK [{}] for DEK [{}]", metadata.name(),
-                        KEKId, DEKId));
+                logger.debug(
+                    () -> new ParameterizedMessage("Repository [{}] computed KEK [{}] for DEK [{}]", metadata.name(), KEKId, DEKId)
+                );
                 return new Tuple<>(KEKId, KEK);
             } catch (GeneralSecurityException e) {
                 throw new RepositoryException(metadata.name(), "Failure to generate KEK to wrap the DEK [" + DEKId + "]", e);
@@ -275,35 +346,51 @@ public class EncryptedRepository extends BlobStoreRepository {
      */
     private void validateLocalRepositorySecret(Map<String, Object> snapshotUserMetadata) throws RepositoryException {
         if (snapshotUserMetadata == null) {
-            throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                    new IllegalStateException("Null snapshot metadata"));
+            throw new RepositoryException(
+                metadata.name(),
+                "Unexpected fatal internal error",
+                new IllegalStateException("Null snapshot metadata")
+            );
         }
         final Object masterRepositoryPasswordId = snapshotUserMetadata.get(PASSWORD_ID_USER_METADATA_KEY);
         if (false == masterRepositoryPasswordId instanceof String) {
-            throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                    new IllegalStateException("Snapshot metadata does not contain the repository password id as a String"));
+            throw new RepositoryException(
+                metadata.name(),
+                "Unexpected fatal internal error",
+                new IllegalStateException("Snapshot metadata does not contain the repository password id as a String")
+            );
         }
         if (false == validatedRepositoryPasswordId.get().equals(masterRepositoryPasswordId)) {
             final Object masterRepositoryPasswordIdSalt = snapshotUserMetadata.get(PASSWORD_ID_SALT_USER_METADATA_KEY);
             if (false == masterRepositoryPasswordIdSalt instanceof String) {
-                throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                        new IllegalStateException("Snapshot metadata does not contain the repository password salt as a String"));
+                throw new RepositoryException(
+                    metadata.name(),
+                    "Unexpected fatal internal error",
+                    new IllegalStateException("Snapshot metadata does not contain the repository password salt as a String")
+                );
             }
             final String computedRepositoryPasswordId;
             try {
-                computedRepositoryPasswordId = AESKeyUtils.computeId(AESKeyUtils.generatePasswordBasedKey(repositoryPassword,
-                        ((String) masterRepositoryPasswordIdSalt).getBytes(StandardCharsets.UTF_8)));
+                computedRepositoryPasswordId = AESKeyUtils.computeId(
+                    AESKeyUtils.generatePasswordBasedKey(
+                        repositoryPassword,
+                        ((String) masterRepositoryPasswordIdSalt).getBytes(StandardCharsets.UTF_8)
+                    )
+                );
             } catch (Exception e) {
                 throw new RepositoryException(metadata.name(), "Unexpected fatal internal error", e);
             }
             if (computedRepositoryPasswordId.equals(masterRepositoryPasswordId)) {
                 this.validatedRepositoryPasswordId.set(computedRepositoryPasswordId);
             } else {
-                throw new RepositoryException(metadata.name(),
-                        "Repository secret id mismatch. The local node's repository secret, the keystore setting [" +
-                                EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(
-                                        EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.get(metadata.settings())).getKey() +
-                                "], is different compared to the elected master node's which started the snapshot operation");
+                throw new RepositoryException(
+                    metadata.name(),
+                    "Repository secret id mismatch. The local node's repository secret, the keystore setting ["
+                        + EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(
+                            EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.get(metadata.settings())
+                        ).getKey()
+                        + "], is different compared to the elected master node's which started the snapshot operation"
+                );
             }
         }
     }
@@ -317,12 +404,14 @@ public class EncryptedRepository extends BlobStoreRepository {
 
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
-        EncryptedBlobStore(BlobStore delegatedBlobStore,
-                           BlobPath delegatedBasePath,
-                           String repositoryName,
-                           Function<String, Tuple<String, SecretKey>> getKEKforDEK,
-                           Supplier<Tuple<String, SecretKey>> DEKGenerator,
-                           Cache<String, SecretKey> DEKCache) {
+        EncryptedBlobStore(
+            BlobStore delegatedBlobStore,
+            BlobPath delegatedBasePath,
+            String repositoryName,
+            Function<String, Tuple<String, SecretKey>> getKEKforDEK,
+            Supplier<Tuple<String, SecretKey>> DEKGenerator,
+            Cache<String, SecretKey> DEKCache
+        ) {
             this.delegatedBlobStore = delegatedBlobStore;
             this.delegatedBasePath = delegatedBasePath;
             this.repositoryName = repositoryName;
@@ -354,18 +443,27 @@ public class EncryptedRepository extends BlobStoreRepository {
 
         private SecretKey loadDEK(String DEKId) throws IOException {
             final BlobPath DEKBlobPath = delegatedBasePath.add(DEK_ROOT_CONTAINER).add(DEKId);
-            logger.debug(() -> new ParameterizedMessage("Repository [{}] loading wrapped DEK [{}] from blob path {}",
-                    repositoryName, DEKId, DEKBlobPath));
+            logger.debug(
+                () -> new ParameterizedMessage(
+                    "Repository [{}] loading wrapped DEK [{}] from blob path {}",
+                    repositoryName,
+                    DEKId,
+                    DEKBlobPath
+                )
+            );
             final BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(DEKBlobPath);
             final Tuple<String, SecretKey> KEK = getKEKforDEK.apply(DEKId);
-            logger.trace(() -> new ParameterizedMessage("Repository [{}] using KEK [{}] to unwrap DEK [{}]",
-                    repositoryName, KEK.v1(), DEKId));
+            logger.trace(
+                () -> new ParameterizedMessage("Repository [{}] using KEK [{}] to unwrap DEK [{}]", repositoryName, KEK.v1(), DEKId)
+            );
             final byte[] encryptedDEKBytes = new byte[AESKeyUtils.WRAPPED_KEY_LENGTH_IN_BYTES];
             try (InputStream encryptedDEKInputStream = DEKBlobContainer.readBlob(KEK.v1())) {
                 final int bytesRead = Streams.readFully(encryptedDEKInputStream, encryptedDEKBytes);
                 if (bytesRead != AESKeyUtils.WRAPPED_KEY_LENGTH_IN_BYTES) {
-                    throw new RepositoryException(repositoryName, "Wrapped DEK [" + DEKId + "] has smaller length [" + bytesRead + "] " +
-                            "than expected");
+                    throw new RepositoryException(
+                        repositoryName,
+                        "Wrapped DEK [" + DEKId + "] has smaller length [" + bytesRead + "] " + "than expected"
+                    );
                 }
                 if (encryptedDEKInputStream.read() != -1) {
                     throw new RepositoryException(repositoryName, "Wrapped DEK [" + DEKId + "] is larger than expected");
@@ -373,50 +471,91 @@ public class EncryptedRepository extends BlobStoreRepository {
             } catch (NoSuchFileException e) {
                 // do NOT throw IOException when the DEK does not exist, as this is a decryption problem, and IOExceptions
                 // can move the repository in the corrupted state
-                throw new ElasticsearchException("Failure to read and decrypt DEK [" + DEKId + "] from " +
-                        DEKBlobContainer.path() + ". Most likely the repository password is incorrect, where previous " +
-                        "snapshots have used a different password.", e);
+                throw new ElasticsearchException(
+                    "Failure to read and decrypt DEK ["
+                        + DEKId
+                        + "] from "
+                        + DEKBlobContainer.path()
+                        + ". Most likely the repository password is incorrect, where previous "
+                        + "snapshots have used a different password.",
+                    e
+                );
             }
-            logger.trace(() -> new ParameterizedMessage("Repository [{}] successfully read DEK [{}] from path {} {}",
-                    repositoryName, DEKId, DEKBlobPath, KEK.v1()));
+            logger.trace(
+                () -> new ParameterizedMessage(
+                    "Repository [{}] successfully read DEK [{}] from path {} {}",
+                    repositoryName,
+                    DEKId,
+                    DEKBlobPath,
+                    KEK.v1()
+                )
+            );
             try {
                 final SecretKey DEK = AESKeyUtils.unwrap(KEK.v2(), encryptedDEKBytes);
-                logger.debug(() -> new ParameterizedMessage("Repository [{}] successfully loaded DEK [{}] from path {} {}",
-                        repositoryName, DEKId, DEKBlobPath, KEK.v1()));
+                logger.debug(
+                    () -> new ParameterizedMessage(
+                        "Repository [{}] successfully loaded DEK [{}] from path {} {}",
+                        repositoryName,
+                        DEKId,
+                        DEKBlobPath,
+                        KEK.v1()
+                    )
+                );
                 return DEK;
             } catch (GeneralSecurityException e) {
-                throw new RepositoryException(repositoryName, "Failure to AES unwrap the DEK [" + DEKId + "]. " +
-                        "Most likely the encryption metadata in the repository has been corrupted", e);
+                throw new RepositoryException(
+                    repositoryName,
+                    "Failure to AES unwrap the DEK ["
+                        + DEKId
+                        + "]. "
+                        + "Most likely the encryption metadata in the repository has been corrupted",
+                    e
+                );
             }
         }
 
         private void storeDEK(String DEKId, SecretKey DEK) throws IOException {
             final BlobPath DEKBlobPath = delegatedBasePath.add(DEK_ROOT_CONTAINER).add(DEKId);
-            logger.debug(() -> new ParameterizedMessage("Repository [{}] storing wrapped DEK [{}] under blob path {}",
-                    repositoryName, DEKId, DEKBlobPath));
+            logger.debug(
+                () -> new ParameterizedMessage(
+                    "Repository [{}] storing wrapped DEK [{}] under blob path {}",
+                    repositoryName,
+                    DEKId,
+                    DEKBlobPath
+                )
+            );
             final BlobContainer DEKBlobContainer = delegatedBlobStore.blobContainer(DEKBlobPath);
             final Tuple<String, SecretKey> KEK = getKEKforDEK.apply(DEKId);
-            logger.trace(() -> new ParameterizedMessage("Repository [{}] using KEK [{}] to wrap DEK [{}]",
-                    repositoryName, KEK.v1(), DEKId));
+            logger.trace(
+                () -> new ParameterizedMessage("Repository [{}] using KEK [{}] to wrap DEK [{}]", repositoryName, KEK.v1(), DEKId)
+            );
             final byte[] encryptedDEKBytes;
             try {
                 encryptedDEKBytes = AESKeyUtils.wrap(KEK.v2(), DEK);
                 if (encryptedDEKBytes.length != AESKeyUtils.WRAPPED_KEY_LENGTH_IN_BYTES) {
-                    throw new RepositoryException(repositoryName, "Wrapped DEK [" + DEKId + "] has unexpected length [" +
-                            encryptedDEKBytes.length + "]");
+                    throw new RepositoryException(
+                        repositoryName,
+                        "Wrapped DEK [" + DEKId + "] has unexpected length [" + encryptedDEKBytes.length + "]"
+                    );
                 }
             } catch (GeneralSecurityException e) {
                 // throw unchecked ElasticsearchException; IOExceptions are interpreted differently and can move the repository in the
                 // corrupted state
                 throw new RepositoryException(repositoryName, "Failure to AES wrap the DEK [" + DEKId + "]", e);
             }
-            logger.trace(() -> new ParameterizedMessage("Repository [{}] successfully wrapped DEK [{}]",
-                    repositoryName, DEKId));
+            logger.trace(() -> new ParameterizedMessage("Repository [{}] successfully wrapped DEK [{}]", repositoryName, DEKId));
             try (InputStream encryptedDEKInputStream = new ByteArrayInputStream(encryptedDEKBytes)) {
                 DEKBlobContainer.writeBlobAtomic(KEK.v1(), encryptedDEKInputStream, encryptedDEKBytes.length, true);
             }
-            logger.debug(() -> new ParameterizedMessage("Repository [{}] successfully stored DEK [{}] under path {} {}",
-                    repositoryName, DEKId, DEKBlobPath, KEK.v1()));
+            logger.debug(
+                () -> new ParameterizedMessage(
+                    "Repository [{}] successfully stored DEK [{}] under path {} {}",
+                    repositoryName,
+                    DEKId,
+                    DEKBlobPath,
+                    KEK.v1()
+                )
+            );
         }
 
         @Override
@@ -424,12 +563,14 @@ public class EncryptedRepository extends BlobStoreRepository {
             final BlobContainer delegatedBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.append(path));
             return new EncryptedBlobContainer(path, repositoryName, delegatedBlobContainer, singleUseDEKSupplier, getDEKById);
         }
+
         @Override
         public void close() {
             // do NOT close delegatedBlobStore; it will be closed when the inner delegatedRepository is closed
         }
 
     }
+
     private static final class EncryptedBlobContainer extends AbstractBlobContainer {
         private final String repositoryName;
         private final BlobContainer delegatedBlobContainer;
@@ -439,16 +580,21 @@ public class EncryptedRepository extends BlobStoreRepository {
 
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
-        EncryptedBlobContainer(BlobPath path, // this path contains the {@code EncryptedRepository#basePath} which, importantly, is empty
-                               String repositoryName,
-                               BlobContainer delegatedBlobContainer,
-                               CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier,
-                               CheckedFunction<String, SecretKey, IOException> getDEKById) {
+        EncryptedBlobContainer(
+            BlobPath path, // this path contains the {@code EncryptedRepository#basePath} which, importantly, is empty
+            String repositoryName,
+            BlobContainer delegatedBlobContainer,
+            CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier,
+            CheckedFunction<String, SecretKey, IOException> getDEKById
+        ) {
             super(path);
             this.repositoryName = repositoryName;
             if (DEK_ROOT_CONTAINER.equals(path.getRootPath())) {
-                throw new RepositoryException(repositoryName, "Unexpected internal error",
-                        new IllegalArgumentException("Cannot descend into the DEK blob container " + path));
+                throw new RepositoryException(
+                    repositoryName,
+                    "Unexpected internal error",
+                    new IllegalArgumentException("Cannot descend into the DEK blob container " + path)
+                );
             }
             this.delegatedBlobContainer = delegatedBlobContainer;
             this.singleUseDEKSupplier = singleUseDEKSupplier;
@@ -522,20 +668,31 @@ public class EncryptedRepository extends BlobStoreRepository {
             final SingleUseKey singleUseNonceAndDEK = singleUseDEKSupplier.get();
             final byte[] DEKIdBytes = singleUseNonceAndDEK.getKeyId().getBytes(StandardCharsets.UTF_8);
             if (DEKIdBytes.length != DEK_ID_LENGTH) {
-                throw new RepositoryException(repositoryName, "Unexpected internal error",
-                        new IllegalStateException("Unexpected DEK Id length [" + DEKIdBytes.length + "]"));
+                throw new RepositoryException(
+                    repositoryName,
+                    "Unexpected internal error",
+                    new IllegalStateException("Unexpected DEK Id length [" + DEKIdBytes.length + "]")
+                );
             }
             final long encryptedBlobSize = getEncryptedBlobByteLength(blobSize);
-            try (InputStream encryptedInputStream = ChainingInputStream.chain(new ByteArrayInputStream(DEKIdBytes),
-                    new EncryptionPacketsInputStream(inputStream, singleUseNonceAndDEK.getKey(),
-                            singleUseNonceAndDEK.getNonce(), PACKET_LENGTH_IN_BYTES))) {
+            try (
+                InputStream encryptedInputStream = ChainingInputStream.chain(
+                    new ByteArrayInputStream(DEKIdBytes),
+                    new EncryptionPacketsInputStream(
+                        inputStream,
+                        singleUseNonceAndDEK.getKey(),
+                        singleUseNonceAndDEK.getNonce(),
+                        PACKET_LENGTH_IN_BYTES
+                    )
+                )
+            ) {
                 delegatedBlobContainer.writeBlob(blobName, encryptedInputStream, encryptedBlobSize, failIfAlreadyExists);
             }
         }
 
         @Override
         public void writeBlobAtomic(String blobName, InputStream inputStream, long blobSize, boolean failIfAlreadyExists)
-                throws IOException {
+            throws IOException {
             // the encrypted repository does not offer an alternative implementation for atomic writes
             // fallback to regular write
             writeBlob(blobName, inputStream, blobSize, failIfAlreadyExists);
@@ -560,6 +717,7 @@ public class EncryptedRepository extends BlobStoreRepository {
         public Map<String, BlobMetaData> listBlobsByPrefix(String blobNamePrefix) throws IOException {
             return delegatedBlobContainer.listBlobsByPrefix(blobNamePrefix);
         }
+
         @Override
         public Map<String, BlobContainer> children() throws IOException {
             final Map<String, BlobContainer> childEncryptedBlobContainers = delegatedBlobContainer.children();
@@ -571,8 +729,16 @@ public class EncryptedRepository extends BlobStoreRepository {
                 }
                 // get an encrypted blob container for each child
                 // Note that the encryption metadata blob container might be missing
-                resultBuilder.put(childBlobContainer.getKey(), new EncryptedBlobContainer(path().add(childBlobContainer.getKey()),
-                        repositoryName, childBlobContainer.getValue(), singleUseDEKSupplier, getDEKById));
+                resultBuilder.put(
+                    childBlobContainer.getKey(),
+                    new EncryptedBlobContainer(
+                        path().add(childBlobContainer.getKey()),
+                        repositoryName,
+                        childBlobContainer.getValue(),
+                        singleUseDEKSupplier,
+                        getDEKById
+                    )
+                );
             }
             return Map.copyOf(resultBuilder);
         }

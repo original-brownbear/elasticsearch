@@ -49,17 +49,19 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
         return Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put(LicenseService.SELF_GENERATED_LICENSE_TYPE.getKey(), License.LicenseType.TRIAL.getTypeName())
-                .setSecureSettings(nodeSecureSettings())
-                .build();
+            .put(super.nodeSettings(nodeOrdinal))
+            .put(LicenseService.SELF_GENERATED_LICENSE_TYPE.getKey(), License.LicenseType.TRIAL.getTypeName())
+            .setSecureSettings(nodeSecureSettings())
+            .build();
     }
 
     protected MockSecureSettings nodeSecureSettings() {
         MockSecureSettings secureSettings = new MockSecureSettings();
         for (String repositoryName : repositoryNames) {
-            secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName);
+            secureSettings.setString(
+                EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+                repositoryName
+            );
         }
         return secureSettings;
     }
@@ -87,10 +89,10 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
     @Override
     protected Settings repositorySettings(String repositoryName) {
         return Settings.builder()
-                .put(super.repositorySettings(repositoryName))
-                .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), FsRepository.TYPE)
-                .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
-                .build();
+            .put(super.repositorySettings(repositoryName))
+            .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), FsRepository.TYPE)
+            .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
+            .build();
     }
 
     public void testTamperedEncryptionMetadata() throws Exception {
@@ -125,14 +127,20 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
                     throw new UncheckedIOException(e);
                 }
             });
-            final BlobStoreRepository blobStoreRepository =
-                    (BlobStoreRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repoName);
-            RepositoryException e = expectThrows(RepositoryException.class,
-                    () -> PlainActionFuture.<RepositoryData, Exception>get(f -> blobStoreRepository.threadPool().generic().execute(
-                            ActionRunnable.wrap(f, blobStoreRepository::getRepositoryData))));
+            final BlobStoreRepository blobStoreRepository = (BlobStoreRepository) internalCluster().getCurrentMasterNodeInstance(
+                RepositoriesService.class
+            ).repository(repoName);
+            RepositoryException e = expectThrows(
+                RepositoryException.class,
+                () -> PlainActionFuture.<RepositoryData, Exception>get(
+                    f -> blobStoreRepository.threadPool().generic().execute(ActionRunnable.wrap(f, blobStoreRepository::getRepositoryData))
+                )
+            );
             assertThat(e.getMessage(), containsString("the encryption metadata in the repository has been corrupted"));
-            e = expectThrows(RepositoryException.class, () ->
-                    client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName).setWaitForCompletion(true).get());
+            e = expectThrows(
+                RepositoryException.class,
+                () -> client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName).setWaitForCompletion(true).get()
+            );
             assertThat(e.getMessage(), containsString("the encryption metadata in the repository has been corrupted"));
         }
     }

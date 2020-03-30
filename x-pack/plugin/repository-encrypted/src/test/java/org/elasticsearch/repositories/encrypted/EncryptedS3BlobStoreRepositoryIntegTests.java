@@ -41,9 +41,9 @@ public final class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreR
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
         Settings.Builder settingsBuilder = Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put(LicenseService.SELF_GENERATED_LICENSE_TYPE.getKey(), License.LicenseType.TRIAL.getTypeName());
-        MockSecureSettings superSecureSettings = (MockSecureSettings)settingsBuilder.getSecureSettings();
+            .put(super.nodeSettings(nodeOrdinal))
+            .put(LicenseService.SELF_GENERATED_LICENSE_TYPE.getKey(), License.LicenseType.TRIAL.getTypeName());
+        MockSecureSettings superSecureSettings = (MockSecureSettings) settingsBuilder.getSecureSettings();
         superSecureSettings.merge(nodeSecureSettings());
         return settingsBuilder.build();
     }
@@ -51,8 +51,10 @@ public final class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreR
     protected MockSecureSettings nodeSecureSettings() {
         MockSecureSettings secureSettings = new MockSecureSettings();
         for (String repositoryName : repositoryNames) {
-            secureSettings.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repositoryName);
+            secureSettings.setString(
+                EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+                repositoryName
+            );
         }
         return secureSettings;
     }
@@ -75,18 +77,19 @@ public final class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreR
     @Override
     protected Settings repositorySettings(String repositoryName) {
         return Settings.builder()
-                .put(super.repositorySettings(repositoryName))
-                .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), "s3")
-                .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
-                .build();
+            .put(super.repositorySettings(repositoryName))
+            .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), "s3")
+            .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
+            .build();
     }
 
     @Override
     protected void blobsOnTearDown(Map<String, BytesReference> blobsMap) {
-        List<String> blobs = blobsMap.keySet().stream()
-                .filter(blob -> false == blob.contains("index"))
-                .filter(blob -> false == blob.contains(DEK_ROOT_CONTAINER)) // encryption metadata "leaks"
-                .collect(Collectors.toList());
+        List<String> blobs = blobsMap.keySet()
+            .stream()
+            .filter(blob -> false == blob.contains("index"))
+            .filter(blob -> false == blob.contains(DEK_ROOT_CONTAINER)) // encryption metadata "leaks"
+            .collect(Collectors.toList());
         assertThat("Only index blobs should remain in repository but found " + blobs, blobs, hasSize(0));
     }
 

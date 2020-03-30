@@ -64,14 +64,18 @@ public class DecryptionPacketsInputStreamTests extends ESTestCase {
         SecretKey decryptSecretKey = generateSecretKey();
         int nonce = Randomness.get().nextInt();
         byte[] encryptedBytes;
-        try (InputStream in = new EncryptionPacketsInputStream(new ByteArrayInputStream(plainBytes, 0, len), encryptSecretKey, nonce,
-                packetLen)) {
+        try (
+            InputStream in = new EncryptionPacketsInputStream(
+                new ByteArrayInputStream(plainBytes, 0, len),
+                encryptSecretKey,
+                nonce,
+                packetLen
+            )
+        ) {
             encryptedBytes = in.readAllBytes();
         }
         try (InputStream in = new DecryptionPacketsInputStream(new ByteArrayInputStream(encryptedBytes), decryptSecretKey, packetLen)) {
-            IOException e = expectThrows(IOException.class, () -> {
-                in.readAllBytes();
-            });
+            IOException e = expectThrows(IOException.class, () -> { in.readAllBytes(); });
             assertThat(e.getMessage(), Matchers.is("Exception during packet decryption"));
         }
     }
@@ -85,20 +89,17 @@ public class DecryptionPacketsInputStreamTests extends ESTestCase {
         SecretKey secretKey = generateSecretKey();
         int nonce = Randomness.get().nextInt();
         byte[] encryptedBytes;
-        try (InputStream in = new EncryptionPacketsInputStream(new ByteArrayInputStream(plainBytes, 0, len), secretKey, nonce,
-                packetLen)) {
+        try (InputStream in = new EncryptionPacketsInputStream(new ByteArrayInputStream(plainBytes, 0, len), secretKey, nonce, packetLen)) {
             encryptedBytes = in.readAllBytes();
         }
-        for (int i = EncryptedRepository.GCM_IV_LENGTH_IN_BYTES; i < EncryptedRepository.GCM_IV_LENGTH_IN_BYTES + len +
-                EncryptedRepository.GCM_TAG_LENGTH_IN_BYTES; i++) {
+        for (int i = EncryptedRepository.GCM_IV_LENGTH_IN_BYTES; i < EncryptedRepository.GCM_IV_LENGTH_IN_BYTES + len
+            + EncryptedRepository.GCM_TAG_LENGTH_IN_BYTES; i++) {
             for (int j = 0; j < 8; j++) {
                 // flip bit
                 encryptedBytes[i] ^= (1 << j);
                 // fail decryption
                 try (InputStream in = new DecryptionPacketsInputStream(new ByteArrayInputStream(encryptedBytes), secretKey, packetLen)) {
-                    IOException e = expectThrows(IOException.class, () -> {
-                        in.readAllBytes();
-                    });
+                    IOException e = expectThrows(IOException.class, () -> { in.readAllBytes(); });
                     assertThat(e.getMessage(), Matchers.is("Exception during packet decryption"));
                 }
                 // flip bit back
@@ -115,8 +116,7 @@ public class DecryptionPacketsInputStreamTests extends ESTestCase {
         SecretKey secretKey = generateSecretKey();
         int nonce = Randomness.get().nextInt();
         byte[] encryptedBytes;
-        try (InputStream in = new EncryptionPacketsInputStream(new ByteArrayInputStream(plainBytes, 0, len), secretKey, nonce,
-                packetLen)) {
+        try (InputStream in = new EncryptionPacketsInputStream(new ByteArrayInputStream(plainBytes, 0, len), secretKey, nonce, packetLen)) {
             encryptedBytes = in.readAllBytes();
         }
         assertThat(encryptedBytes.length, Matchers.is((int) EncryptionPacketsInputStream.getEncryptionLength(len, packetLen)));
@@ -126,11 +126,10 @@ public class DecryptionPacketsInputStreamTests extends ESTestCase {
                 for (int k = 0; k < 8; k++) {
                     // flip bit
                     encryptedBytes[i + j] ^= (1 << k);
-                    try (InputStream in = new DecryptionPacketsInputStream(new ByteArrayInputStream(encryptedBytes), secretKey,
-                            packetLen)) {
-                        IOException e = expectThrows(IOException.class, () -> {
-                            in.readAllBytes();
-                        });
+                    try (
+                        InputStream in = new DecryptionPacketsInputStream(new ByteArrayInputStream(encryptedBytes), secretKey, packetLen)
+                    ) {
+                        IOException e = expectThrows(IOException.class, () -> { in.readAllBytes(); });
                         if (j < Integer.BYTES) {
                             assertThat(e.getMessage(), Matchers.startsWith("Exception during packet decryption"));
                         } else {
@@ -147,19 +146,27 @@ public class DecryptionPacketsInputStreamTests extends ESTestCase {
     private void testEncryptAndDecryptSuccess(byte[] plainBytes, SecretKey secretKey, int nonce, int packetLen) throws Exception {
         for (int len = 0; len <= plainBytes.length; len++) {
             byte[] encryptedBytes;
-            try (InputStream in = new EncryptionPacketsInputStream(new ByteArrayInputStream(plainBytes, 0, len), secretKey, nonce,
-                    packetLen)) {
+            try (
+                InputStream in = new EncryptionPacketsInputStream(new ByteArrayInputStream(plainBytes, 0, len), secretKey, nonce, packetLen)
+            ) {
                 encryptedBytes = in.readAllBytes();
             }
             assertThat((long) encryptedBytes.length, Matchers.is(EncryptionPacketsInputStream.getEncryptionLength(len, packetLen)));
             byte[] decryptedBytes;
-            try (InputStream in = new DecryptionPacketsInputStream(new ReadLessFilterInputStream(new ByteArrayInputStream(encryptedBytes)),
-                    secretKey, packetLen)) {
+            try (
+                InputStream in = new DecryptionPacketsInputStream(
+                    new ReadLessFilterInputStream(new ByteArrayInputStream(encryptedBytes)),
+                    secretKey,
+                    packetLen
+                )
+            ) {
                 decryptedBytes = in.readAllBytes();
             }
             assertThat(decryptedBytes.length, Matchers.is(len));
-            assertThat((long) decryptedBytes.length, Matchers.is(DecryptionPacketsInputStream.getDecryptionLength(encryptedBytes.length,
-                    packetLen)));
+            assertThat(
+                (long) decryptedBytes.length,
+                Matchers.is(DecryptionPacketsInputStream.getDecryptionLength(encryptedBytes.length, packetLen))
+            );
             for (int i = 0; i < len; i++) {
                 assertThat(decryptedBytes[i], Matchers.is(plainBytes[i]));
             }

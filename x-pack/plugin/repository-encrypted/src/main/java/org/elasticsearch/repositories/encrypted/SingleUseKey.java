@@ -15,7 +15,6 @@ import org.elasticsearch.common.collect.Tuple;
 import javax.crypto.SecretKey;
 import java.util.concurrent.atomic.AtomicReference;
 
-
 /**
  * Container class for a {@code SecretKey} with a unique identifier, and a 4-byte wide {@code Integer} nonce, that can be used for a
  * single encryption operation. Use {@link #createSingleUseKeySupplier(CheckedSupplier)} to obtain a {@code Supplier} that returns
@@ -57,26 +56,32 @@ final class SingleUseKey {
      * A new key is generated only when the {@code nonce} space has been exhausted.
      */
     static <T extends Exception> CheckedSupplier<SingleUseKey, T> createSingleUseKeySupplier(
-            CheckedSupplier<Tuple<String, SecretKey>, T> keyGenerator) {
+        CheckedSupplier<Tuple<String, SecretKey>, T> keyGenerator
+    ) {
         final AtomicReference<SingleUseKey> keyCurrentlyInUse = new AtomicReference<>(EXPIRED_KEY);
         return createSingleUseKeySupplier(keyGenerator, keyCurrentlyInUse);
     }
 
     // for tests use only
     static <T extends Exception> CheckedSupplier<SingleUseKey, T> createSingleUseKeySupplier(
-            CheckedSupplier<Tuple<String, SecretKey>, T> keyGenerator, AtomicReference<SingleUseKey> keyCurrentlyInUse) {
+        CheckedSupplier<Tuple<String, SecretKey>, T> keyGenerator,
+        AtomicReference<SingleUseKey> keyCurrentlyInUse
+    ) {
         final Object lock = new Object();
         return () -> {
             for (int attemptNo = 0; attemptNo < MAX_ATTEMPTS; attemptNo++) {
-                final SingleUseKey nonceAndKey = keyCurrentlyInUse.getAndUpdate(prev -> prev.nonce < MAX_NONCE ?
-                        new SingleUseKey(prev.keyId, prev.key, prev.nonce + 1) : EXPIRED_KEY);
+                final SingleUseKey nonceAndKey = keyCurrentlyInUse.getAndUpdate(
+                    prev -> prev.nonce < MAX_NONCE ? new SingleUseKey(prev.keyId, prev.key, prev.nonce + 1) : EXPIRED_KEY
+                );
                 if (nonceAndKey.nonce < MAX_NONCE) {
-                    logger.trace(() -> new ParameterizedMessage("Key with id [{}] reused with nonce [{}]", nonceAndKey.keyId,
-                            nonceAndKey.nonce));
+                    logger.trace(
+                        () -> new ParameterizedMessage("Key with id [{}] reused with nonce [{}]", nonceAndKey.keyId, nonceAndKey.nonce)
+                    );
                     return nonceAndKey;
                 } else {
-                    logger.trace(() -> new ParameterizedMessage("Try to generate a new key to replace the key with id [{}]",
-                            nonceAndKey.keyId));
+                    logger.trace(
+                        () -> new ParameterizedMessage("Try to generate a new key to replace the key with id [{}]", nonceAndKey.keyId)
+                    );
                     synchronized (lock) {
                         if (keyCurrentlyInUse.get().nonce == MAX_NONCE) {
                             final Tuple<String, SecretKey> newKey = keyGenerator.get();

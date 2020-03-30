@@ -72,17 +72,19 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
     @Override
     protected Settings nodeSettings(int nodeOrdinal) {
         return Settings.builder()
-                .put(super.nodeSettings(nodeOrdinal))
-                .put(LicenseService.SELF_GENERATED_LICENSE_TYPE.getKey(), License.LicenseType.TRIAL.getTypeName())
-                .build();
+            .put(super.nodeSettings(nodeOrdinal))
+            .put(LicenseService.SELF_GENERATED_LICENSE_TYPE.getKey(), License.LicenseType.TRIAL.getTypeName())
+            .build();
     }
 
     public void testRepositoryCreationFailsForMissingPassword() throws Exception {
         // if the password is missing on the master node, the repository creation fails
         final String repositoryName = randomName();
         MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), randomAlphaOfLength(20));
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            randomAlphaOfLength(20)
+        );
         logger.info("--> start 3 nodes");
         internalCluster().setBootstrapMasterNodeIndex(0);
         final String masterNodeName = internalCluster().startNode();
@@ -94,11 +96,16 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         assertThat(masterNodeName, equalTo(internalCluster().getMasterName()));
 
         final Settings repositorySettings = repositorySettings(repositoryName);
-        RepositoryException e = expectThrows(RepositoryException.class,
-                () -> client().admin().cluster().preparePutRepository(repositoryName)
-                        .setType(repositoryType())
-                        .setVerify(randomBoolean())
-                        .setSettings(repositorySettings).get());
+        RepositoryException e = expectThrows(
+            RepositoryException.class,
+            () -> client().admin()
+                .cluster()
+                .preparePutRepository(repositoryName)
+                .setType(repositoryType())
+                .setVerify(randomBoolean())
+                .setSettings(repositorySettings)
+                .get()
+        );
         assertThat(e.getMessage(), containsString("failed to create repository"));
         expectThrows(RepositoryMissingException.class, () -> client().admin().cluster().prepareGetRepositories(repositoryName).get());
 
@@ -126,8 +133,10 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         // if the password is missing on any non-master node, the repository verification fails
         final String repositoryName = randomName();
         MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), randomAlphaOfLength(20));
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            randomAlphaOfLength(20)
+        );
         logger.info("--> start 2 nodes");
         internalCluster().setBootstrapMasterNodeIndex(0);
         final String masterNodeName = internalCluster().startNode(Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
@@ -139,23 +148,32 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         assertThat(masterNodeName, equalTo(internalCluster().getMasterName()));
         // repository create fails verification
         final Settings repositorySettings = repositorySettings(repositoryName);
-        expectThrows(RepositoryVerificationException.class,
-                () -> client().admin().cluster().preparePutRepository(repositoryName)
-                        .setType(repositoryType())
-                        .setVerify(true)
-                        .setSettings(repositorySettings).get());
+        expectThrows(
+            RepositoryVerificationException.class,
+            () -> client().admin()
+                .cluster()
+                .preparePutRepository(repositoryName)
+                .setType(repositoryType())
+                .setVerify(true)
+                .setSettings(repositorySettings)
+                .get()
+        );
         if (randomBoolean()) {
             // delete and recreate repo
             logger.debug("-->  deleting repository [name: {}]", repositoryName);
             assertAcked(client().admin().cluster().prepareDeleteRepository(repositoryName));
-            assertAcked(client().admin().cluster().preparePutRepository(repositoryName)
+            assertAcked(
+                client().admin()
+                    .cluster()
+                    .preparePutRepository(repositoryName)
                     .setType(repositoryType())
                     .setVerify(false)
-                    .setSettings(repositorySettings).get());
+                    .setSettings(repositorySettings)
+                    .get()
+            );
         }
         // test verify call fails
-        expectThrows(RepositoryVerificationException.class,
-                () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
+        expectThrows(RepositoryVerificationException.class, () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
         if (randomBoolean()) {
             // stop the node with the missing password
             internalCluster().stopRandomNode(InternalTestCluster.nameFilter(otherNodeName));
@@ -188,11 +206,15 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         final String repoPass2 = randomAlphaOfLength(19);
         // put a different repository password
         MockSecureSettings secureSettings1 = new MockSecureSettings();
-        secureSettings1.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), repoPass1);
+        secureSettings1.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            repoPass1
+        );
         MockSecureSettings secureSettings2 = new MockSecureSettings();
-        secureSettings2.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), repoPass2);
+        secureSettings2.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            repoPass2
+        );
         logger.info("--> start 2 nodes");
         internalCluster().setBootstrapMasterNodeIndex(1);
         final String node1 = internalCluster().startNode(Settings.builder().setSecureSettings(secureSettings1).build());
@@ -200,31 +222,44 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         ensureStableCluster(2);
         // repository create fails verification
         Settings repositorySettings = repositorySettings(repositoryName);
-        expectThrows(RepositoryVerificationException.class,
-                () -> client().admin().cluster().preparePutRepository(repositoryName)
-                        .setType(repositoryType())
-                        .setVerify(true)
-                        .setSettings(repositorySettings).get());
+        expectThrows(
+            RepositoryVerificationException.class,
+            () -> client().admin()
+                .cluster()
+                .preparePutRepository(repositoryName)
+                .setType(repositoryType())
+                .setVerify(true)
+                .setSettings(repositorySettings)
+                .get()
+        );
         if (randomBoolean()) {
             // delete and recreate repo
             logger.debug("-->  deleting repository [name: {}]", repositoryName);
             assertAcked(client().admin().cluster().prepareDeleteRepository(repositoryName));
-            assertAcked(client().admin().cluster().preparePutRepository(repositoryName)
+            assertAcked(
+                client().admin()
+                    .cluster()
+                    .preparePutRepository(repositoryName)
                     .setType(repositoryType())
                     .setVerify(false)
-                    .setSettings(repositorySettings).get());
+                    .setSettings(repositorySettings)
+                    .get()
+            );
         }
         // test verify call fails
-        expectThrows(RepositoryVerificationException.class,
-                () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
+        expectThrows(RepositoryVerificationException.class, () -> client().admin().cluster().prepareVerifyRepository(repositoryName).get());
         // restart one of the nodes to use the same password
         if (randomBoolean()) {
-            secureSettings1.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repoPass2);
+            secureSettings1.setString(
+                EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+                repoPass2
+            );
             internalCluster().restartNode(node1, new InternalTestCluster.RestartCallback());
         } else {
-            secureSettings2.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                    getConcreteSettingForNamespace(repositoryName).getKey(), repoPass1);
+            secureSettings2.setString(
+                EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+                repoPass1
+            );
             internalCluster().restartNode(node2, new InternalTestCluster.RestartCallback());
         }
         ensureStableCluster(2);
@@ -237,8 +272,10 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
     public void testLicenseComplianceSnapshotAndRestore() throws Exception {
         final String repositoryName = randomName();
         MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), randomAlphaOfLength(20));
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            randomAlphaOfLength(20)
+        );
         logger.info("--> start 2 nodes");
         internalCluster().setBootstrapMasterNodeIndex(1);
         internalCluster().startNodes(2, Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
@@ -248,22 +285,29 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         createRepository(repositoryName);
         final String indexName = randomName();
         logger.info("-->  create random index {} with {} records", indexName, 3);
-        indexRandom(true, client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
-                client().prepareIndex(indexName).setId("3").setSource("field1", "quick"));
+        indexRandom(
+            true,
+            client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
+            client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
+            client().prepareIndex(indexName).setId("3").setSource("field1", "quick")
+        );
         assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 3);
 
         final String snapshotName = randomName();
         logger.info("-->  create snapshot {}:{}", repositoryName, snapshotName);
-        assertSuccessfulSnapshot(client().admin().cluster()
+        assertSuccessfulSnapshot(
+            client().admin()
+                .cluster()
                 .prepareCreateSnapshot(repositoryName, snapshotName)
                 .setIndices(indexName)
                 .setWaitForCompletion(true)
-                .get());
+                .get()
+        );
 
         // make license not accept encrypted snapshots
-        EncryptedRepository encryptedRepository =
-                (EncryptedRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repositoryName);
+        EncryptedRepository encryptedRepository = (EncryptedRepository) internalCluster().getCurrentMasterNodeInstance(
+            RepositoriesService.class
+        ).repository(repositoryName);
         encryptedRepository.licenseStateSupplier = () -> {
             XPackLicenseState mockLicenseState = mock(XPackLicenseState.class);
             when(mockLicenseState.isEncryptedSnapshotAllowed()).thenReturn(false);
@@ -271,8 +315,10 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         };
 
         // now snapshot is not permitted
-        ElasticsearchSecurityException e = expectThrows(ElasticsearchSecurityException.class, () ->
-                client().admin().cluster().prepareCreateSnapshot(repositoryName, snapshotName + "2").setWaitForCompletion(true).get());
+        ElasticsearchSecurityException e = expectThrows(
+            ElasticsearchSecurityException.class,
+            () -> client().admin().cluster().prepareCreateSnapshot(repositoryName, snapshotName + "2").setWaitForCompletion(true).get()
+        );
         assertThat(e.getDetailedMessage(), containsString("current license is non-compliant for [encrypted snapshots]"));
 
         logger.info("-->  delete index {}", indexName);
@@ -280,8 +326,9 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
 
         // but restore is permitted
         logger.info("--> restore index from the snapshot");
-        assertSuccessfulRestore(client().admin().cluster().prepareRestoreSnapshot(repositoryName, snapshotName)
-                .setWaitForCompletion(true).get());
+        assertSuccessfulRestore(
+            client().admin().cluster().prepareRestoreSnapshot(repositoryName, snapshotName).setWaitForCompletion(true).get()
+        );
         ensureGreen();
         assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 3);
         // also delete snapshot is permitted
@@ -293,8 +340,10 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         final String repositoryName = randomName();
         final Settings repositorySettings = repositorySettings(repositoryName);
         MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), randomAlphaOfLength(20));
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            randomAlphaOfLength(20)
+        );
         logger.info("--> start 2 nodes");
         internalCluster().setBootstrapMasterNodeIndex(0);
         // master has the password
@@ -303,53 +352,81 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         final String otherNode = internalCluster().startNode();
         ensureStableCluster(2);
         logger.debug("-->  creating repository [name: {}, verify: {}, settings: {}]", repositoryName, false, repositorySettings);
-        assertAcked(client().admin().cluster().preparePutRepository(repositoryName)
+        assertAcked(
+            client().admin()
+                .cluster()
+                .preparePutRepository(repositoryName)
                 .setType(repositoryType())
                 .setVerify(false)
-                .setSettings(repositorySettings));
+                .setSettings(repositorySettings)
+        );
         // create an index with the shard on the node without a repository password
         final String indexName = randomName();
         final Settings indexSettings = Settings.builder()
-                .put(indexSettings())
-                .put("index.routing.allocation.include._name", otherNode)
-                .put(SETTING_NUMBER_OF_SHARDS, 1)
-                .build();
+            .put(indexSettings())
+            .put("index.routing.allocation.include._name", otherNode)
+            .put(SETTING_NUMBER_OF_SHARDS, 1)
+            .build();
         logger.info("-->  create random index {}", indexName);
         createIndex(indexName, indexSettings);
-        indexRandom(true, client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
-                client().prepareIndex(indexName).setId("3").setSource("field1", "quick"));
+        indexRandom(
+            true,
+            client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
+            client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
+            client().prepareIndex(indexName).setId("3").setSource("field1", "quick")
+        );
         assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 3);
 
         // empty snapshot completes successfully because it does not involve data on the node without a repository password
         final String snapshotName = randomName();
         logger.info("-->  create snapshot {}:{}", repositoryName, snapshotName);
-        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
-                snapshotName).setIndices(indexName + "other*").setWaitForCompletion(true).get();
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
-                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        CreateSnapshotResponse createSnapshotResponse = client().admin()
+            .cluster()
+            .prepareCreateSnapshot(repositoryName, snapshotName)
+            .setIndices(indexName + "other*")
+            .setWaitForCompletion(true)
+            .get();
+        assertThat(
+            createSnapshotResponse.getSnapshotInfo().successfulShards(),
+            equalTo(createSnapshotResponse.getSnapshotInfo().totalShards())
+        );
         assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
-        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(),
-                not(hasKey(EncryptedRepository.PASSWORD_ID_USER_METADATA_KEY)));
-        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(),
-                not(hasKey(EncryptedRepository.PASSWORD_ID_SALT_USER_METADATA_KEY)));
+        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(), not(hasKey(EncryptedRepository.PASSWORD_ID_USER_METADATA_KEY)));
+        assertThat(
+            createSnapshotResponse.getSnapshotInfo().userMetadata(),
+            not(hasKey(EncryptedRepository.PASSWORD_ID_SALT_USER_METADATA_KEY))
+        );
 
         // snapshot is PARTIAL because it includes shards on nodes with a missing repository password
         final String snapshotName2 = snapshotName + "2";
-        CreateSnapshotResponse incompleteSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
-                snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
+        CreateSnapshotResponse incompleteSnapshotResponse = client().admin()
+            .cluster()
+            .prepareCreateSnapshot(repositoryName, snapshotName2)
+            .setWaitForCompletion(true)
+            .setIndices(indexName)
+            .get();
         assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
-        assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
-                .allMatch(shardFailure -> shardFailure.reason().contains("[" + repositoryName + "] missing")));
-        assertThat(incompleteSnapshotResponse.getSnapshotInfo().userMetadata(),
-                not(hasKey(EncryptedRepository.PASSWORD_ID_USER_METADATA_KEY)));
-        assertThat(incompleteSnapshotResponse.getSnapshotInfo().userMetadata(),
-                not(hasKey(EncryptedRepository.PASSWORD_ID_SALT_USER_METADATA_KEY)));
-        final Set<String> nodesWithFailures = incompleteSnapshotResponse.getSnapshotInfo().shardFailures()
-                .stream().map(sf -> sf.nodeId()).collect(Collectors.toSet());
+        assertTrue(
+            incompleteSnapshotResponse.getSnapshotInfo()
+                .shardFailures()
+                .stream()
+                .allMatch(shardFailure -> shardFailure.reason().contains("[" + repositoryName + "] missing"))
+        );
+        assertThat(
+            incompleteSnapshotResponse.getSnapshotInfo().userMetadata(),
+            not(hasKey(EncryptedRepository.PASSWORD_ID_USER_METADATA_KEY))
+        );
+        assertThat(
+            incompleteSnapshotResponse.getSnapshotInfo().userMetadata(),
+            not(hasKey(EncryptedRepository.PASSWORD_ID_SALT_USER_METADATA_KEY))
+        );
+        final Set<String> nodesWithFailures = incompleteSnapshotResponse.getSnapshotInfo()
+            .shardFailures()
+            .stream()
+            .map(sf -> sf.nodeId())
+            .collect(Collectors.toSet());
         assertThat(nodesWithFailures.size(), equalTo(1));
-        final ClusterStateResponse clusterState = client().admin().cluster()
-                .prepareState().clear().setNodes(true).get();
+        final ClusterStateResponse clusterState = client().admin().cluster().prepareState().clear().setNodes(true).get();
         assertThat(clusterState.getState().nodes().get(nodesWithFailures.iterator().next()).getName(), equalTo(otherNode));
     }
 
@@ -359,11 +436,15 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         final String repoPass1 = randomAlphaOfLength(20);
         final String repoPass2 = randomAlphaOfLength(19);
         MockSecureSettings secureSettingsMaster = new MockSecureSettings();
-        secureSettingsMaster.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repoName).getKey(), repoPass1);
+        secureSettingsMaster.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repoName).getKey(),
+            repoPass1
+        );
         MockSecureSettings secureSettingsOther = new MockSecureSettings();
-        secureSettingsOther.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repoName).getKey(), repoPass2);
+        secureSettingsOther.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repoName).getKey(),
+            repoPass2
+        );
         final boolean putRepoEarly = randomBoolean();
         logger.info("--> start 2 nodes");
         internalCluster().setBootstrapMasterNodeIndex(0);
@@ -380,44 +461,61 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
 
         // create index with shards on both nodes
         final String indexName = randomName();
-        final Settings indexSettings = Settings.builder()
-                .put(indexSettings())
-                .put(SETTING_NUMBER_OF_SHARDS, 5)
-                .build();
+        final Settings indexSettings = Settings.builder().put(indexSettings()).put(SETTING_NUMBER_OF_SHARDS, 5).build();
         logger.info("-->  create random index {}", indexName);
         createIndex(indexName, indexSettings);
-        indexRandom(true, client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
-                client().prepareIndex(indexName).setId("3").setSource("field1", "quick"),
-                client().prepareIndex(indexName).setId("4").setSource("field1", "lazy"),
-                client().prepareIndex(indexName).setId("5").setSource("field1", "dog"));
+        indexRandom(
+            true,
+            client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
+            client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
+            client().prepareIndex(indexName).setId("3").setSource("field1", "quick"),
+            client().prepareIndex(indexName).setId("4").setSource("field1", "lazy"),
+            client().prepareIndex(indexName).setId("5").setSource("field1", "dog")
+        );
         assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 5);
 
         // empty snapshot completes successfully for both repos because it does not involve any data
         final String snapshotName = randomName();
         logger.info("-->  create snapshot {}:{}", repoName, snapshotName);
-        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoName,
-                snapshotName).setIndices(indexName + "other*").setWaitForCompletion(true).get();
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
-                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        CreateSnapshotResponse createSnapshotResponse = client().admin()
+            .cluster()
+            .prepareCreateSnapshot(repoName, snapshotName)
+            .setIndices(indexName + "other*")
+            .setWaitForCompletion(true)
+            .get();
+        assertThat(
+            createSnapshotResponse.getSnapshotInfo().successfulShards(),
+            equalTo(createSnapshotResponse.getSnapshotInfo().totalShards())
+        );
         assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
-        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(),
-                not(hasKey(EncryptedRepository.PASSWORD_ID_USER_METADATA_KEY)));
-        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(),
-                not(hasKey(EncryptedRepository.PASSWORD_ID_SALT_USER_METADATA_KEY)));
+        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(), not(hasKey(EncryptedRepository.PASSWORD_ID_USER_METADATA_KEY)));
+        assertThat(
+            createSnapshotResponse.getSnapshotInfo().userMetadata(),
+            not(hasKey(EncryptedRepository.PASSWORD_ID_SALT_USER_METADATA_KEY))
+        );
 
         // snapshot is PARTIAL because it includes shards on nodes with a different repository KEK
         final String snapshotName2 = snapshotName + "2";
-        CreateSnapshotResponse incompleteSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repoName,
-                snapshotName2).setWaitForCompletion(true).setIndices(indexName).get();
+        CreateSnapshotResponse incompleteSnapshotResponse = client().admin()
+            .cluster()
+            .prepareCreateSnapshot(repoName, snapshotName2)
+            .setWaitForCompletion(true)
+            .setIndices(indexName)
+            .get();
         assertThat(incompleteSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.PARTIAL));
-        assertTrue(incompleteSnapshotResponse.getSnapshotInfo().shardFailures().stream()
-                .allMatch(shardFailure -> shardFailure.reason().contains("Repository secret id mismatch")));
-        final Set<String> nodesWithFailures = incompleteSnapshotResponse.getSnapshotInfo().shardFailures()
-                .stream().map(sf -> sf.nodeId()).collect(Collectors.toSet());
+        assertTrue(
+            incompleteSnapshotResponse.getSnapshotInfo()
+                .shardFailures()
+                .stream()
+                .allMatch(shardFailure -> shardFailure.reason().contains("Repository secret id mismatch"))
+        );
+        final Set<String> nodesWithFailures = incompleteSnapshotResponse.getSnapshotInfo()
+            .shardFailures()
+            .stream()
+            .map(sf -> sf.nodeId())
+            .collect(Collectors.toSet());
         assertThat(nodesWithFailures.size(), equalTo(1));
-        final ClusterStateResponse clusterState = client().admin().cluster()
-                .prepareState().clear().setNodes(true).get();
+        final ClusterStateResponse clusterState = client().admin().cluster().prepareState().clear().setNodes(true).get();
         assertThat(clusterState.getState().nodes().get(nodesWithFailures.iterator().next()).getName(), equalTo(otherNode));
     }
 
@@ -427,8 +525,10 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         final String goodPassword = randomAlphaOfLength(20);
         final String wrongPassword = randomAlphaOfLength(19);
         MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), goodPassword);
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            goodPassword
+        );
         logger.info("--> start 2 nodes");
         internalCluster().setBootstrapMasterNodeIndex(1);
         internalCluster().startNodes(2, Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
@@ -437,18 +537,26 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         // create empty smapshot
         final String snapshotName = randomName();
         logger.info("-->  create empty snapshot {}:{}", repositoryName, snapshotName);
-        CreateSnapshotResponse createSnapshotResponse = client().admin().cluster().prepareCreateSnapshot(repositoryName,
-                snapshotName).setWaitForCompletion(true).get();
-        assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(),
-                equalTo(createSnapshotResponse.getSnapshotInfo().totalShards()));
+        CreateSnapshotResponse createSnapshotResponse = client().admin()
+            .cluster()
+            .prepareCreateSnapshot(repositoryName, snapshotName)
+            .setWaitForCompletion(true)
+            .get();
+        assertThat(
+            createSnapshotResponse.getSnapshotInfo().successfulShards(),
+            equalTo(createSnapshotResponse.getSnapshotInfo().totalShards())
+        );
         assertThat(createSnapshotResponse.getSnapshotInfo().successfulShards(), equalTo(0));
-        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(),
-                not(hasKey(EncryptedRepository.PASSWORD_ID_USER_METADATA_KEY)));
-        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(),
-                not(hasKey(EncryptedRepository.PASSWORD_ID_SALT_USER_METADATA_KEY)));
+        assertThat(createSnapshotResponse.getSnapshotInfo().userMetadata(), not(hasKey(EncryptedRepository.PASSWORD_ID_USER_METADATA_KEY)));
+        assertThat(
+            createSnapshotResponse.getSnapshotInfo().userMetadata(),
+            not(hasKey(EncryptedRepository.PASSWORD_ID_SALT_USER_METADATA_KEY))
+        );
         // restart master node and fill in a wrong password
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), wrongPassword);
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            wrongPassword
+        );
         Set<String> nodesWithWrongPassword = new HashSet<>();
         do {
             String masterNodeName = internalCluster().getMasterName();
@@ -463,28 +571,43 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
             createRepository(repositoryName, repositorySettings, false);
         }
         // all repository operations return "repository password is incorrect", but the repository does not move to the corrupted state
-        final BlobStoreRepository blobStoreRepository =
-                (BlobStoreRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repositoryName);
-        RepositoryException e = expectThrows(RepositoryException.class, () -> PlainActionFuture.<RepositoryData, Exception>get(
-                f -> blobStoreRepository.threadPool().generic().execute(ActionRunnable.wrap(f, blobStoreRepository::getRepositoryData))));
+        final BlobStoreRepository blobStoreRepository = (BlobStoreRepository) internalCluster().getCurrentMasterNodeInstance(
+            RepositoriesService.class
+        ).repository(repositoryName);
+        RepositoryException e = expectThrows(
+            RepositoryException.class,
+            () -> PlainActionFuture.<RepositoryData, Exception>get(
+                f -> blobStoreRepository.threadPool().generic().execute(ActionRunnable.wrap(f, blobStoreRepository::getRepositoryData))
+            )
+        );
         assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
-        e = expectThrows(RepositoryException.class, () ->
-                client().admin().cluster().prepareCreateSnapshot(repositoryName, snapshotName + "2").setWaitForCompletion(true).get());
+        e = expectThrows(
+            RepositoryException.class,
+            () -> client().admin().cluster().prepareCreateSnapshot(repositoryName, snapshotName + "2").setWaitForCompletion(true).get()
+        );
         assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
         GetSnapshotsResponse getSnapshotResponse = client().admin().cluster().prepareGetSnapshots(repositoryName).get();
         assertThat(getSnapshotResponse.getSuccessfulResponses().keySet(), empty());
         assertThat(getSnapshotResponse.getFailedResponses().keySet(), contains(repositoryName));
-        assertThat(getSnapshotResponse.getFailedResponses().get(repositoryName).getCause().getMessage(),
-                containsString("repository password is incorrect"));
-        e = expectThrows(RepositoryException.class, () ->
-                client().admin().cluster().prepareRestoreSnapshot(repositoryName, snapshotName).setWaitForCompletion(true).get());
+        assertThat(
+            getSnapshotResponse.getFailedResponses().get(repositoryName).getCause().getMessage(),
+            containsString("repository password is incorrect")
+        );
+        e = expectThrows(
+            RepositoryException.class,
+            () -> client().admin().cluster().prepareRestoreSnapshot(repositoryName, snapshotName).setWaitForCompletion(true).get()
+        );
         assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
-        e = expectThrows(RepositoryException.class, () ->
-                client().admin().cluster().prepareDeleteSnapshot(repositoryName, snapshotName).get());
+        e = expectThrows(
+            RepositoryException.class,
+            () -> client().admin().cluster().prepareDeleteSnapshot(repositoryName, snapshotName).get()
+        );
         assertThat(e.getCause().getMessage(), containsString("repository password is incorrect"));
         // restart master node and fill in the good password
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repositoryName).getKey(), goodPassword);
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repositoryName).getKey(),
+            goodPassword
+        );
         do {
             String masterNodeName = internalCluster().getMasterName();
             logger.info("-->  restart master node {}", masterNodeName);
@@ -504,55 +627,61 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         final String goodPass = randomAlphaOfLength(20);
         final String wrongPass = randomAlphaOfLength(19);
         MockSecureSettings secureSettingsWithPassword = new MockSecureSettings();
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repoName).getKey(), goodPass);
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repoName).getKey(),
+            goodPass
+        );
         logger.info("--> start 4 nodes");
         internalCluster().setBootstrapMasterNodeIndex(0);
-        final String masterNode = internalCluster().startMasterOnlyNode(Settings.builder()
-                .setSecureSettings(secureSettingsWithPassword).build());
-        final String otherNode = internalCluster().startDataOnlyNode(Settings.builder()
-                .setSecureSettings(secureSettingsWithPassword).build());
+        final String masterNode = internalCluster().startMasterOnlyNode(
+            Settings.builder().setSecureSettings(secureSettingsWithPassword).build()
+        );
+        final String otherNode = internalCluster().startDataOnlyNode(
+            Settings.builder().setSecureSettings(secureSettingsWithPassword).build()
+        );
         ensureStableCluster(2);
-        secureSettingsWithPassword.setString(EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.
-                getConcreteSettingForNamespace(repoName).getKey(), wrongPass);
+        secureSettingsWithPassword.setString(
+            EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(repoName).getKey(),
+            wrongPass
+        );
         internalCluster().startMasterOnlyNodes(2, Settings.builder().setSecureSettings(secureSettingsWithPassword).build());
         ensureStableCluster(4);
         assertThat(internalCluster().getMasterName(), equalTo(masterNode));
 
         logger.debug("-->  creating repository [name: {}, verify: {}, settings: {}]", repoName, false, repoSettings);
-        assertAcked(client().admin().cluster().preparePutRepository(repoName)
-                .setType(repositoryType())
-                .setVerify(false)
-                .setSettings(repoSettings));
+        assertAcked(
+            client().admin().cluster().preparePutRepository(repoName).setType(repositoryType()).setVerify(false).setSettings(repoSettings)
+        );
         // create index with just one shard on the "other" data node
         final String indexName = randomName();
         final Settings indexSettings = Settings.builder()
-                .put(indexSettings())
-                .put("index.routing.allocation.include._name", otherNode)
-                .put(SETTING_NUMBER_OF_SHARDS, 1)
-                .build();
+            .put(indexSettings())
+            .put("index.routing.allocation.include._name", otherNode)
+            .put(SETTING_NUMBER_OF_SHARDS, 1)
+            .build();
         logger.info("-->  create random index {}", indexName);
         createIndex(indexName, indexSettings);
-        indexRandom(true, client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
-                client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
-                client().prepareIndex(indexName).setId("3").setSource("field1", "quick"),
-                client().prepareIndex(indexName).setId("4").setSource("field1", "lazy"),
-                client().prepareIndex(indexName).setId("5").setSource("field1", "dog"));
+        indexRandom(
+            true,
+            client().prepareIndex(indexName).setId("1").setSource("field1", "the quick brown fox jumps"),
+            client().prepareIndex(indexName).setId("2").setSource("field1", "quick brown"),
+            client().prepareIndex(indexName).setId("3").setSource("field1", "quick"),
+            client().prepareIndex(indexName).setId("4").setSource("field1", "lazy"),
+            client().prepareIndex(indexName).setId("5").setSource("field1", "dog")
+        );
         assertHitCount(client().prepareSearch(indexName).setSize(0).get(), 5);
 
         // block shard snapshot on the data node
         final LocalStateEncryptedRepositoryPlugin.TestEncryptedRepository otherNodeEncryptedRepo =
-                (LocalStateEncryptedRepositoryPlugin.TestEncryptedRepository) internalCluster()
-                .getInstance(RepositoriesService.class, otherNode).repository(repoName);
+            (LocalStateEncryptedRepositoryPlugin.TestEncryptedRepository) internalCluster().getInstance(
+                RepositoriesService.class,
+                otherNode
+            ).repository(repoName);
         otherNodeEncryptedRepo.blockSnapshotShard();
 
         final String snapshotName = randomName();
         logger.info("-->  create snapshot {}:{}", repoName, snapshotName);
-        client().admin().cluster()
-                .prepareCreateSnapshot(repoName, snapshotName)
-                .setIndices(indexName)
-                .setWaitForCompletion(false)
-                .get();
+        client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName).setIndices(indexName).setWaitForCompletion(false).get();
 
         // stop master
         internalCluster().stopRandomNode(InternalTestCluster.nameFilter(masterNode));
@@ -562,9 +691,7 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
 
         // the failover master has the wrong password, snapshot fails
         logger.info("--> waiting for completion");
-        expectThrows(SnapshotMissingException.class, () -> {
-            waitForCompletion(repoName, snapshotName, TimeValue.timeValueSeconds(60));
-        });
+        expectThrows(SnapshotMissingException.class, () -> { waitForCompletion(repoName, snapshotName, TimeValue.timeValueSeconds(60)); });
     }
 
     protected String randomName() {
@@ -577,11 +704,11 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
 
     protected Settings repositorySettings(String repositoryName) {
         return Settings.builder()
-                .put("compress", randomBoolean())
-                .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), FsRepository.TYPE)
-                .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
-                .put("location", randomRepoPath())
-                .build();
+            .put("compress", randomBoolean())
+            .put(EncryptedRepositoryPlugin.DELEGATE_TYPE_SETTING.getKey(), FsRepository.TYPE)
+            .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
+            .put("location", randomRepoPath())
+            .build();
     }
 
     protected String createRepository(final String name) {
@@ -594,10 +721,9 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
 
     protected String createRepository(final String name, final Settings settings, final boolean verify) {
         logger.debug("-->  creating repository [name: {}, verify: {}, settings: {}]", name, verify, settings);
-        assertAcked(client().admin().cluster().preparePutRepository(name)
-                .setType(repositoryType())
-                .setVerify(verify)
-                .setSettings(settings));
+        assertAcked(
+            client().admin().cluster().preparePutRepository(name).setType(repositoryType()).setVerify(verify).setSettings(settings)
+        );
 
         internalCluster().getDataOrMasterNodeInstances(RepositoriesService.class).forEach(repositories -> {
             assertThat(repositories.repository(name), notNullValue());
@@ -633,8 +759,12 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
     public SnapshotInfo waitForCompletion(String repository, String snapshotName, TimeValue timeout) throws InterruptedException {
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < timeout.millis()) {
-            List<SnapshotInfo> snapshotInfos = client().admin().cluster().prepareGetSnapshots(repository).setSnapshots(snapshotName)
-                    .get().getSnapshots(repository);
+            List<SnapshotInfo> snapshotInfos = client().admin()
+                .cluster()
+                .prepareGetSnapshots(repository)
+                .setSnapshots(snapshotName)
+                .get()
+                .getSnapshots(repository);
             assertThat(snapshotInfos.size(), equalTo(1));
             if (snapshotInfos.get(0).state().completed()) {
                 // Make sure that snapshot clean up operations are finished

@@ -10,6 +10,5 @@ import org.elasticsearch.test.ESTestCase;
 
 public class EncryptedRepositoryTests extends ESTestCase {
 
-    public void testTODO() {
-    }
+    public void testTODO() {}
 }

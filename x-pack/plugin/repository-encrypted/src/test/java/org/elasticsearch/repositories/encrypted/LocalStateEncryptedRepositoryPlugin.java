@@ -46,12 +46,22 @@ public final class LocalStateEncryptedRepositoryPlugin extends LocalStateComposi
             }
 
             @Override
-            protected EncryptedRepository createEncryptedRepository(RepositoryMetaData metaData, NamedXContentRegistry registry,
-                                                                    ClusterService clusterService, BlobStoreRepository delegatedRepository,
-                                                                    Supplier<XPackLicenseState> licenseStateSupplier,
-                                                                    char[] repoPassword) throws GeneralSecurityException {
-                return new TestEncryptedRepository(metaData, registry, clusterService, delegatedRepository, licenseStateSupplier,
-                        repoPassword);
+            protected EncryptedRepository createEncryptedRepository(
+                RepositoryMetaData metaData,
+                NamedXContentRegistry registry,
+                ClusterService clusterService,
+                BlobStoreRepository delegatedRepository,
+                Supplier<XPackLicenseState> licenseStateSupplier,
+                char[] repoPassword
+            ) throws GeneralSecurityException {
+                return new TestEncryptedRepository(
+                    metaData,
+                    registry,
+                    clusterService,
+                    delegatedRepository,
+                    licenseStateSupplier,
+                    repoPassword
+                );
             }
         };
         plugins.add(encryptedRepositoryPlugin);
@@ -62,24 +72,48 @@ public final class LocalStateEncryptedRepositoryPlugin extends LocalStateComposi
         private final Condition snapshotShardCondition = snapshotShardLock.newCondition();
         private final AtomicBoolean snapshotShardBlock = new AtomicBoolean(false);
 
-        TestEncryptedRepository(RepositoryMetaData metaData, NamedXContentRegistry registry,
-                                ClusterService clusterService, BlobStoreRepository delegatedRepository,
-                                Supplier<XPackLicenseState> licenseStateSupplier,
-                                char[] repoPassword) throws GeneralSecurityException {
+        TestEncryptedRepository(
+            RepositoryMetaData metaData,
+            NamedXContentRegistry registry,
+            ClusterService clusterService,
+            BlobStoreRepository delegatedRepository,
+            Supplier<XPackLicenseState> licenseStateSupplier,
+            char[] repoPassword
+        )
+            throws GeneralSecurityException {
             super(metaData, registry, clusterService, delegatedRepository, licenseStateSupplier, repoPassword);
         }
 
         @Override
-        public void snapshotShard(Store store, MapperService mapperService, SnapshotId snapshotId, IndexId indexId,
-                                  IndexCommit snapshotIndexCommit, IndexShardSnapshotStatus snapshotStatus, Version repositoryMetaVersion,
-                                  Map<String, Object> userMetadata, ActionListener<String> listener) {
+        public void snapshotShard(
+            Store store,
+            MapperService mapperService,
+            SnapshotId snapshotId,
+            IndexId indexId,
+            IndexCommit snapshotIndexCommit,
+            String shardStateIdentifier,
+            IndexShardSnapshotStatus snapshotStatus,
+            Version repositoryMetaVersion,
+            Map<String, Object> userMetadata,
+            ActionListener<String> listener
+        ) {
             snapshotShardLock.lock();
             try {
                 while (snapshotShardBlock.get()) {
                     snapshotShardCondition.await();
                 }
-                super.snapshotShard(store, mapperService, snapshotId, indexId, snapshotIndexCommit, snapshotStatus,
-                        repositoryMetaVersion, userMetadata, listener);
+                super.snapshotShard(
+                    store,
+                    mapperService,
+                    snapshotId,
+                    indexId,
+                    snapshotIndexCommit,
+                    shardStateIdentifier,
+                    snapshotStatus,
+                    repositoryMetaVersion,
+                    userMetadata,
+                    listener
+                );
             } catch (InterruptedException e) {
                 listener.onFailure(e);
             } finally {

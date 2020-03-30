@@ -30,11 +30,44 @@ public final class AESKeyUtils {
     // Key wrapping encryption is deterministic (same plaintext generates the same ciphertext)
     // and the probability that two different keys map the same plaintext to the same ciphertext is very small
     // (2^-256, much lower than the UUID collision of 2^-128), assuming AES is indistinguishable from a pseudorandom permutation.
-    private static final byte[] KEY_ID_PLAINTEXT = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-            21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+    private static final byte[] KEY_ID_PLAINTEXT = new byte[] {
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31 };
 
-    public static byte[] wrap(SecretKey wrappingKey, SecretKey keyToWrap) throws NoSuchPaddingException, NoSuchAlgorithmException,
-            InvalidKeyException, IllegalBlockSizeException {
+    public static byte[] wrap(SecretKey wrappingKey, SecretKey keyToWrap) throws NoSuchPaddingException,
+        NoSuchAlgorithmException,
+        InvalidKeyException,
+        IllegalBlockSizeException {
         if (false == "AES".equals(wrappingKey.getAlgorithm())) {
             throw new IllegalArgumentException("wrappingKey argument is not an AES Key");
         }
@@ -47,7 +80,8 @@ public final class AESKeyUtils {
     }
 
     public static SecretKey unwrap(SecretKey wrappingKey, byte[] keyToUnwrap) throws NoSuchPaddingException,
-            NoSuchAlgorithmException, InvalidKeyException {
+        NoSuchAlgorithmException,
+        InvalidKeyException {
         if (false == "AES".equals(wrappingKey.getAlgorithm())) {
             throw new IllegalArgumentException("wrappingKey argument is not an AES Key");
         }
@@ -70,14 +104,16 @@ public final class AESKeyUtils {
      * Moreover, the ciphertext reveals no information on the key, and the probability of collision of ciphertexts given different
      * keys is statistically negligible.
      */
-    public static String computeId(SecretKey secretAESKey) throws IllegalBlockSizeException, InvalidKeyException,
-            NoSuchAlgorithmException, NoSuchPaddingException {
+    public static String computeId(SecretKey secretAESKey) throws IllegalBlockSizeException,
+        InvalidKeyException,
+        NoSuchAlgorithmException,
+        NoSuchPaddingException {
         byte[] ciphertextOfKnownPlaintext = wrap(secretAESKey, new SecretKeySpec(KEY_ID_PLAINTEXT, "AES"));
         return new String(Base64.getUrlEncoder().withoutPadding().encode(ciphertextOfKnownPlaintext), StandardCharsets.UTF_8);
     }
 
     public static SecretKey generatePasswordBasedKey(char[] password, byte[] salt) throws NoSuchAlgorithmException,
-            InvalidKeySpecException {
+        InvalidKeySpecException {
         PBEKeySpec keySpec = new PBEKeySpec(password, salt, KDF_ITER, KEY_LENGTH_IN_BYTES * Byte.SIZE);
         SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(KDF_ALGO);
         SecretKey secretKey = keyFactory.generateSecret(keySpec);
