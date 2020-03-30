@@ -266,12 +266,55 @@ public class EncryptedRepository extends BlobStoreRepository {
         };
     }
 
+    /**
+     * Called before the shard snapshot and finalize operations, on the data and master nodes. This validates that the repository
+     * secret on the master node that started the snapshot operation is identical to the repository secret on the local node.
+     *
+     * @param snapshotUserMetadata the snapshot metadata containing the repository secret id to verify
+     * @throws RepositoryException if the repository secret id on the local node mismatches the master's
+     */
+    private void validateLocalRepositorySecret(Map<String, Object> snapshotUserMetadata) throws RepositoryException {
+        if (snapshotUserMetadata == null) {
+            throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
+                    new IllegalStateException("Null snapshot metadata"));
+        }
+        final Object masterRepositoryPasswordId = snapshotUserMetadata.get(PASSWORD_ID_USER_METADATA_KEY);
+        if (false == masterRepositoryPasswordId instanceof String) {
+            throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
+                    new IllegalStateException("Snapshot metadata does not contain the repository password id as a String"));
+        }
+        if (false == validatedRepositoryPasswordId.get().equals(masterRepositoryPasswordId)) {
+            final Object masterRepositoryPasswordIdSalt = snapshotUserMetadata.get(PASSWORD_ID_SALT_USER_METADATA_KEY);
+            if (false == masterRepositoryPasswordIdSalt instanceof String) {
+                throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
+                        new IllegalStateException("Snapshot metadata does not contain the repository password salt as a String"));
+            }
+            final String computedRepositoryPasswordId;
+            try {
+                computedRepositoryPasswordId = AESKeyUtils.computeId(AESKeyUtils.generatePasswordBasedKey(repositoryPassword,
+                        ((String) masterRepositoryPasswordIdSalt).getBytes(StandardCharsets.UTF_8)));
+            } catch (Exception e) {
+                throw new RepositoryException(metadata.name(), "Unexpected fatal internal error", e);
+            }
+            if (computedRepositoryPasswordId.equals(masterRepositoryPasswordId)) {
+                this.validatedRepositoryPasswordId.set(computedRepositoryPasswordId);
+            } else {
+                throw new RepositoryException(metadata.name(),
+                        "Repository secret id mismatch. The local node's repository secret, the keystore setting [" +
+                                EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(
+                                        EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.get(metadata.settings())).getKey() +
+                                "], is different compared to the elected master node's which started the snapshot operation");
+            }
+        }
+    }
+
     private static final class EncryptedBlobStore implements BlobStore {
         private final BlobStore delegatedBlobStore;
         private final BlobPath delegatedBasePath;
         private final String repositoryName;
         private final Function<String, Tuple<String, SecretKey>> getKEKforDEK;
         private final CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier;
+
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobStore(BlobStore delegatedBlobStore,
@@ -342,7 +385,8 @@ public class EncryptedRepository extends BlobStoreRepository {
                         repositoryName, DEKId, DEKBlobPath, KEK.v1()));
                 return DEK;
             } catch (GeneralSecurityException e) {
-                throw new RepositoryException(repositoryName, "Failure to AES wrap the DEK [" + DEKId + "]", e);
+                throw new RepositoryException(repositoryName, "Failure to AES unwrap the DEK [" + DEKId + "]. " +
+                        "Most likely the encryption metadata in the repository has been corrupted", e);
             }
         }
 
@@ -380,19 +424,19 @@ public class EncryptedRepository extends BlobStoreRepository {
             final BlobContainer delegatedBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.append(path));
             return new EncryptedBlobContainer(path, repositoryName, delegatedBlobContainer, singleUseDEKSupplier, getDEKById);
         }
-
         @Override
         public void close() {
             // do NOT close delegatedBlobStore; it will be closed when the inner delegatedRepository is closed
         }
-    }
 
+    }
     private static final class EncryptedBlobContainer extends AbstractBlobContainer {
         private final String repositoryName;
         private final BlobContainer delegatedBlobContainer;
         // supplier for the DEK used for encryption (snapshot)
         private final CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier;
         // retrieves the DEK required for decryption (restore)
+
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobContainer(BlobPath path, // this path contains the {@code EncryptedRepository#basePath} which, importantly, is empty
@@ -516,7 +560,6 @@ public class EncryptedRepository extends BlobStoreRepository {
         public Map<String, BlobMetaData> listBlobsByPrefix(String blobNamePrefix) throws IOException {
             return delegatedBlobContainer.listBlobsByPrefix(blobNamePrefix);
         }
-
         @Override
         public Map<String, BlobContainer> children() throws IOException {
             final Map<String, BlobContainer> childEncryptedBlobContainers = delegatedBlobContainer.children();
@@ -533,48 +576,7 @@ public class EncryptedRepository extends BlobStoreRepository {
             }
             return Map.copyOf(resultBuilder);
         }
-    }
 
-    /**
-     * Called before the shard snapshot and finalize operations, on the data and master nodes. This validates that the repository
-     * secret on the master node that started the snapshot operation is identical to the repository secret on the local node.
-     *
-     * @param snapshotUserMetadata the snapshot metadata containing the repository secret id to verify
-     * @throws RepositoryException if the repository secret id on the local node mismatches the master's
-     */
-    private void validateLocalRepositorySecret(Map<String, Object> snapshotUserMetadata) throws RepositoryException {
-        if (snapshotUserMetadata == null) {
-            throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                    new IllegalStateException("Null snapshot metadata"));
-        }
-        final Object masterRepositoryPasswordId = snapshotUserMetadata.get(PASSWORD_ID_USER_METADATA_KEY);
-        if (false == masterRepositoryPasswordId instanceof String) {
-            throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                    new IllegalStateException("Snapshot metadata does not contain the repository password id as a String"));
-        }
-        if (false == validatedRepositoryPasswordId.get().equals(masterRepositoryPasswordId)) {
-            final Object masterRepositoryPasswordIdSalt = snapshotUserMetadata.get(PASSWORD_ID_SALT_USER_METADATA_KEY);
-            if (false == masterRepositoryPasswordIdSalt instanceof String) {
-                throw new RepositoryException(metadata.name(), "Unexpected fatal internal error",
-                        new IllegalStateException("Snapshot metadata does not contain the repository password salt as a String"));
-            }
-            final String computedRepositoryPasswordId;
-            try {
-                computedRepositoryPasswordId = AESKeyUtils.computeId(AESKeyUtils.generatePasswordBasedKey(repositoryPassword,
-                        ((String) masterRepositoryPasswordIdSalt).getBytes(StandardCharsets.UTF_8)));
-            } catch (Exception e) {
-                throw new RepositoryException(metadata.name(), "Unexpected fatal internal error", e);
-            }
-            if (computedRepositoryPasswordId.equals(masterRepositoryPasswordId)) {
-                this.validatedRepositoryPasswordId.set(computedRepositoryPasswordId);
-            } else {
-                throw new RepositoryException(metadata.name(),
-                        "Repository secret id mismatch. The local node's repository secret, the keystore setting [" +
-                                EncryptedRepositoryPlugin.ENCRYPTION_PASSWORD_SETTING.getConcreteSettingForNamespace(
-                                        EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.get(metadata.settings())).getKey() +
-                                "], is different compared to the elected master node's which started the snapshot operation");
-            }
-        }
     }
 
 }

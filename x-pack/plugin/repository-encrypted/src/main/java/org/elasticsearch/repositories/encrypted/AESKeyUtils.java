@@ -33,7 +33,7 @@ public final class AESKeyUtils {
     private static final byte[] KEY_ID_PLAINTEXT = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
             21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
 
-    public static byte[] wrap(SecretKey wrappingKey, Key keyToWrap) throws NoSuchPaddingException, NoSuchAlgorithmException,
+    public static byte[] wrap(SecretKey wrappingKey, SecretKey keyToWrap) throws NoSuchPaddingException, NoSuchAlgorithmException,
             InvalidKeyException, IllegalBlockSizeException {
         if (false == "AES".equals(wrappingKey.getAlgorithm())) {
             throw new IllegalArgumentException("wrappingKey argument is not an AES Key");

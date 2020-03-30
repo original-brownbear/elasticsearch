@@ -5,21 +5,34 @@
  */
 package org.elasticsearch.repositories.encrypted;
 
+import org.elasticsearch.action.ActionRunnable;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.settings.MockSecureSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseService;
 import org.elasticsearch.plugins.Plugin;
+import org.elasticsearch.repositories.RepositoriesService;
+import org.elasticsearch.repositories.RepositoryData;
+import org.elasticsearch.repositories.RepositoryException;
+import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.repositories.fs.FsBlobStoreRepositoryBaseIntegTestCase;
 import org.elasticsearch.repositories.fs.FsRepository;
 import org.junit.BeforeClass;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.elasticsearch.repositories.encrypted.EncryptedRepository.getEncryptedBlobByteLength;
+import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
+import static org.hamcrest.Matchers.containsString;
 
 public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreRepositoryBaseIntegTestCase {
 
@@ -79,4 +92,49 @@ public final class EncryptedFSBlobStoreRepositoryIntegTests extends FsBlobStoreR
                 .put(EncryptedRepositoryPlugin.PASSWORD_NAME_SETTING.getKey(), repositoryName)
                 .build();
     }
+
+    public void testTamperedEncryptionMetadata() throws Exception {
+        final String repoName = randomRepositoryName();
+        final Path repoPath = randomRepoPath();
+        final Settings repoSettings = Settings.builder().put(repositorySettings(repoName)).put("location", repoPath).build();
+        createRepository(repoName, repoSettings, true);
+
+        final String snapshotName = randomName();
+        logger.info("-->  create snapshot {}:{}", repoName, snapshotName);
+        client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName).setWaitForCompletion(true).setIndices("other*").get();
+
+        assertAcked(client().admin().cluster().prepareDeleteRepository(repoName));
+        createRepository(repoName, Settings.builder().put(repoSettings).put("readonly", randomBoolean()).build(), randomBoolean());
+
+        try (Stream<Path> rootContents = Files.list(repoPath.resolve(EncryptedRepository.DEK_ROOT_CONTAINER))) {
+            // tamper all DEKs
+            rootContents.filter(Files::isDirectory).forEach(DEKRootPath -> {
+                try (Stream<Path> contents = Files.list(DEKRootPath)) {
+                    contents.filter(Files::isRegularFile).forEach(DEKPath -> {
+                        try {
+                            byte[] originalDEKBytes = Files.readAllBytes(DEKPath);
+                            // tamper DEK
+                            int tamperPos = randomIntBetween(0, originalDEKBytes.length - 1);
+                            originalDEKBytes[tamperPos] ^= 0xFF;
+                            Files.write(DEKPath, originalDEKBytes);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            final BlobStoreRepository blobStoreRepository =
+                    (BlobStoreRepository) internalCluster().getCurrentMasterNodeInstance(RepositoriesService.class).repository(repoName);
+            RepositoryException e = expectThrows(RepositoryException.class,
+                    () -> PlainActionFuture.<RepositoryData, Exception>get(f -> blobStoreRepository.threadPool().generic().execute(
+                            ActionRunnable.wrap(f, blobStoreRepository::getRepositoryData))));
+            assertThat(e.getMessage(), containsString("the encryption metadata in the repository has been corrupted"));
+            e = expectThrows(RepositoryException.class, () ->
+                    client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName).setWaitForCompletion(true).get());
+            assertThat(e.getMessage(), containsString("the encryption metadata in the repository has been corrupted"));
+        }
+    }
+
 }
