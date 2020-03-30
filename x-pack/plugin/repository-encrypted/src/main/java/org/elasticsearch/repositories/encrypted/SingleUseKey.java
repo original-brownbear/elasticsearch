@@ -29,23 +29,23 @@ final class SingleUseKey {
     private static final int MAX_ATTEMPTS = 9;
     private static final SingleUseKey EXPIRED_KEY = new SingleUseKey(null, null, MAX_NONCE);
 
-    private final String KeyId;
-    private final SecretKey Key;
+    private final String keyId;
+    private final SecretKey key;
     private final Integer nonce;
 
     // for tests use only!
     SingleUseKey(String KeyId, SecretKey Key, Integer nonce) {
-        this.KeyId = KeyId;
-        this.Key = Key;
+        this.keyId = KeyId;
+        this.key = Key;
         this.nonce = nonce;
     }
 
     public String getKeyId() {
-        return KeyId;
+        return keyId;
     }
 
     public SecretKey getKey() {
-        return Key;
+        return key;
     }
 
     public Integer getNonce() {
@@ -69,13 +69,14 @@ final class SingleUseKey {
         return () -> {
             for (int attemptNo = 0; attemptNo < MAX_ATTEMPTS; attemptNo++) {
                 final SingleUseKey nonceAndKey = keyCurrentlyInUse.getAndUpdate(prev -> prev.nonce < MAX_NONCE ?
-                        new SingleUseKey(prev.KeyId, prev.Key, prev.nonce + 1) : EXPIRED_KEY);
+                        new SingleUseKey(prev.keyId, prev.key, prev.nonce + 1) : EXPIRED_KEY);
                 if (nonceAndKey.nonce < MAX_NONCE) {
-                    logger.trace(() -> new ParameterizedMessage("Key with id [{}] reused with nonce [{}]", nonceAndKey.KeyId,
+                    logger.trace(() -> new ParameterizedMessage("Key with id [{}] reused with nonce [{}]", nonceAndKey.keyId,
                             nonceAndKey.nonce));
                     return nonceAndKey;
                 } else {
-                    logger.trace(() -> new ParameterizedMessage("Generating a new key to replace the key with id [{}]", nonceAndKey.KeyId));
+                    logger.trace(() -> new ParameterizedMessage("Try to generate a new key to replace the key with id [{}]",
+                            nonceAndKey.keyId));
                     synchronized (lock) {
                         if (keyCurrentlyInUse.get().nonce == MAX_NONCE) {
                             final Tuple<String, SecretKey> newKey = keyGenerator.get();
