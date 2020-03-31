@@ -574,7 +574,6 @@ public class EncryptedRepository extends BlobStoreRepository {
         // supplier for the DEK used for encryption (snapshot)
         private final CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier;
         // retrieves the DEK required for decryption (restore)
-
         private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobContainer(

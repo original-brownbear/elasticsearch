@@ -522,7 +522,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
     }
 
     protected String randomRepositoryName() {
-        return randomAlphaOfLength(randomIntBetween(1, 10)).toLowerCase(Locale.ROOT);
+        return randomName();
     }
 
     protected long blobLengthFromContentLength(long contentLength) {

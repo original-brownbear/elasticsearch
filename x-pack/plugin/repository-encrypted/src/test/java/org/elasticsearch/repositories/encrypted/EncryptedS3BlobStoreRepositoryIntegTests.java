@@ -84,7 +84,7 @@ public final class EncryptedS3BlobStoreRepositoryIntegTests extends S3BlobStoreR
     }
 
     @Override
-    protected void blobsOnTearDown(Map<String, BytesReference> blobsMap) {
+    protected void assertEmptyRepo(Map<String, BytesReference> blobsMap) {
         List<String> blobs = blobsMap.keySet()
             .stream()
             .filter(blob -> false == blob.contains("index"))
