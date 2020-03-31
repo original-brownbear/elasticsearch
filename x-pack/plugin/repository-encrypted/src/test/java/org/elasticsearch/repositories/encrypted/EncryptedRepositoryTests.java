@@ -58,21 +58,32 @@ public class EncryptedRepositoryTests extends ESTestCase {
     @Before
     public void setUpMocks() throws Exception {
         this.repoPassword = randomAlphaOfLength(20).toCharArray();
-        this.delegatedPath = randomFrom(BlobPath.cleanPath(), BlobPath.cleanPath().add(randomAlphaOfLength(8)),
-                BlobPath.cleanPath().add(randomAlphaOfLength(4)).add(randomAlphaOfLength(4)));
+        this.delegatedPath = randomFrom(
+            BlobPath.cleanPath(),
+            BlobPath.cleanPath().add(randomAlphaOfLength(8)),
+            BlobPath.cleanPath().add(randomAlphaOfLength(4)).add(randomAlphaOfLength(4))
+        );
         this.delegatedBlobStore = mock(BlobStore.class);
         this.delegatedRepository = mock(BlobStoreRepository.class);
         when(delegatedRepository.blobStore()).thenReturn(delegatedBlobStore);
         when(delegatedRepository.basePath()).thenReturn(delegatedPath);
-        this.repositoryMetaData = new RepositoryMetaData(randomAlphaOfLength(4),
-                EncryptedRepositoryPlugin.REPOSITORY_TYPE_NAME,
-                Settings.EMPTY);
+        this.repositoryMetaData = new RepositoryMetaData(
+            randomAlphaOfLength(4),
+            EncryptedRepositoryPlugin.REPOSITORY_TYPE_NAME,
+            Settings.EMPTY
+        );
         ClusterApplierService clusterApplierService = mock(ClusterApplierService.class);
         when(clusterApplierService.threadPool()).thenReturn(mock(ThreadPool.class));
         ClusterService clusterService = mock(ClusterService.class);
         when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
-        this.encryptedRepository = new EncryptedRepository(repositoryMetaData, mock(NamedXContentRegistry.class),
-                clusterService, delegatedRepository, () -> mock(XPackLicenseState.class), repoPassword);
+        this.encryptedRepository = new EncryptedRepository(
+            repositoryMetaData,
+            mock(NamedXContentRegistry.class),
+            clusterService,
+            delegatedRepository,
+            () -> mock(XPackLicenseState.class),
+            repoPassword
+        );
         this.encryptedBlobStore = (EncryptedRepository.EncryptedBlobStore) encryptedRepository.createBlobStore();
         this.blobsMap = new HashMap<>();
         doAnswer(invocationOnMockBlobStore -> {
@@ -139,9 +150,8 @@ public class EncryptedRepositoryTests extends ESTestCase {
             BlobPath blobPath = ((BlobPath) invocationOnMockBlobStore.getArguments()[0]);
             BlobContainer blobContainer = mock(BlobContainer.class);
             // read
-            doAnswer(invocationOnMockBlobContainer -> {
-                throw new IOException("Tested IOException");
-            }).when(blobContainer).readBlob(any(String.class));
+            doAnswer(invocationOnMockBlobContainer -> { throw new IOException("Tested IOException"); }).when(blobContainer)
+                .readBlob(any(String.class));
             return blobContainer;
         }).when(this.delegatedBlobStore).blobContainer(any(BlobPath.class));
         IOException e = expectThrows(IOException.class, () -> encryptedBlobStore.getDEKById("id"));

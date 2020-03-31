@@ -55,7 +55,6 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -327,9 +326,7 @@ public class EncryptedRepository extends BlobStoreRepository {
             final byte[] KEKsalt = DEKId.getBytes(StandardCharsets.UTF_8);
             final SecretKey KEK = AESKeyUtils.generatePasswordBasedKey(repositoryPassword, KEKsalt);
             final String KEKId = AESKeyUtils.computeId(KEK);
-            logger.debug(
-                    () -> new ParameterizedMessage("Repository [{}] computed KEK [{}] for DEK [{}]", metadata.name(), KEKId, DEKId)
-            );
+            logger.debug(() -> new ParameterizedMessage("Repository [{}] computed KEK [{}] for DEK [{}]", metadata.name(), KEKId, DEKId));
             return new Tuple<>(KEKId, KEK);
         } catch (GeneralSecurityException e) {
             throw new RepositoryException(metadata.name(), "Failure to generate KEK to wrap the DEK [" + DEKId + "]", e);
