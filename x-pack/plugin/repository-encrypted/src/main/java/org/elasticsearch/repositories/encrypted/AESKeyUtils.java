@@ -30,39 +30,7 @@ public final class AESKeyUtils {
     // Key wrapping encryption is deterministic (same plaintext generates the same ciphertext)
     // and the probability that two different keys map the same plaintext to the same ciphertext is very small
     // (2^-256, much lower than the UUID collision of 2^-128), assuming AES is indistinguishable from a pseudorandom permutation.
-    private static final byte[] KEY_ID_PLAINTEXT = new byte[] {
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-        28,
-        29,
-        30,
-        31 };
+    private static final byte[] KEY_ID_PLAINTEXT = "wrapping known text forms key id".getBytes(StandardCharsets.UTF_8);
 
     public static byte[] wrap(SecretKey wrappingKey, SecretKey keyToWrap) throws NoSuchPaddingException,
         NoSuchAlgorithmException,

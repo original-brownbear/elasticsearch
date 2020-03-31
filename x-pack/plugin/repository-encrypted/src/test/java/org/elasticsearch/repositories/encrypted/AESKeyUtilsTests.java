@@ -40,40 +40,8 @@ public class AESKeyUtilsTests extends ESTestCase {
     public void testFailedWrapUnwrap() throws Exception {
         byte[] toWrapBytes = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7 };
         SecretKey keyToWrap = new SecretKeySpec(toWrapBytes, "AES");
-        byte[] wrappingBytes = new byte[] {
-            0,
-            1,
-            0,
-            3,
-            0,
-            5,
-            0,
-            7,
-            0,
-            1,
-            0,
-            3,
-            0,
-            5,
-            0,
-            7,
-            0,
-            1,
-            0,
-            3,
-            0,
-            5,
-            0,
-            7,
-            0,
-            1,
-            0,
-            3,
-            0,
-            5,
-            0,
-            7 };
-        SecretKey wrappingKey = new SecretKeySpec(wrappingBytes, "AES");
+        byte[] wrapBytes = new byte[] { 0, 0, 0, 0, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 0, 0, 0, 0 };
+        SecretKey wrappingKey = new SecretKeySpec(wrapBytes, "AES");
         byte[] wrappedKey = AESKeyUtils.wrap(wrappingKey, keyToWrap);
         for (int i = 0; i < wrappedKey.length; i++) {
             wrappedKey[i] ^= 0xFFFFFFFF;

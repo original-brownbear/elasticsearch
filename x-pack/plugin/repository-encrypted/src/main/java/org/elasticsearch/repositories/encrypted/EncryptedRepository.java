@@ -282,7 +282,7 @@ public class EncryptedRepository extends BlobStoreRepository {
             delegatedRepository.blobStore(),
             delegatedRepository.basePath(),
             metadata.name(),
-            createKEKGenerator(),
+            this::generateKEK,
             DEKGenerator,
             DEKCache
         );
@@ -320,21 +320,20 @@ public class EncryptedRepository extends BlobStoreRepository {
         };
     }
 
-    private Function<String, Tuple<String, SecretKey>> createKEKGenerator() {
-        return DEKId -> {
-            try {
-                // we rely on the DEK Id being generated randomly so it can be used as a salt
-                final byte[] KEKsalt = DEKId.getBytes(StandardCharsets.UTF_8);
-                final SecretKey KEK = AESKeyUtils.generatePasswordBasedKey(repositoryPassword, KEKsalt);
-                final String KEKId = AESKeyUtils.computeId(KEK);
-                logger.debug(
+    // pkg-private for tests
+    Tuple<String, SecretKey> generateKEK(String DEKId) {
+        try {
+            // we rely on the DEK Id being generated randomly so it can be used as a salt
+            final byte[] KEKsalt = DEKId.getBytes(StandardCharsets.UTF_8);
+            final SecretKey KEK = AESKeyUtils.generatePasswordBasedKey(repositoryPassword, KEKsalt);
+            final String KEKId = AESKeyUtils.computeId(KEK);
+            logger.debug(
                     () -> new ParameterizedMessage("Repository [{}] computed KEK [{}] for DEK [{}]", metadata.name(), KEKId, DEKId)
-                );
-                return new Tuple<>(KEKId, KEK);
-            } catch (GeneralSecurityException e) {
-                throw new RepositoryException(metadata.name(), "Failure to generate KEK to wrap the DEK [" + DEKId + "]", e);
-            }
-        };
+            );
+            return new Tuple<>(KEKId, KEK);
+        } catch (GeneralSecurityException e) {
+            throw new RepositoryException(metadata.name(), "Failure to generate KEK to wrap the DEK [" + DEKId + "]", e);
+        }
     }
 
     /**
@@ -395,14 +394,14 @@ public class EncryptedRepository extends BlobStoreRepository {
         }
     }
 
-    private static final class EncryptedBlobStore implements BlobStore {
+    // pkg-private for tests
+    static final class EncryptedBlobStore implements BlobStore {
         private final BlobStore delegatedBlobStore;
         private final BlobPath delegatedBasePath;
         private final String repositoryName;
         private final Function<String, Tuple<String, SecretKey>> getKEKforDEK;
+        private final Cache<String, SecretKey> DEKCache;
         private final CheckedSupplier<SingleUseKey, IOException> singleUseDEKSupplier;
-
-        private final CheckedFunction<String, SecretKey, IOException> getDEKById;
 
         EncryptedBlobStore(
             BlobStore delegatedBlobStore,
@@ -416,29 +415,29 @@ public class EncryptedRepository extends BlobStoreRepository {
             this.delegatedBasePath = delegatedBasePath;
             this.repositoryName = repositoryName;
             this.getKEKforDEK = getKEKforDEK;
+            this.DEKCache = DEKCache;
             this.singleUseDEKSupplier = SingleUseKey.createSingleUseKeySupplier(() -> {
                 Tuple<String, SecretKey> newDEK = DEKGenerator.get();
                 // store the newly generated DEK before making it available
                 storeDEK(newDEK.v1(), newDEK.v2());
                 return newDEK;
             });
-            this.getDEKById = DEKId -> {
-                if (Objects.requireNonNull(DEKId).length() != DEK_ID_LENGTH) {
-                    throw new RepositoryException(repositoryName, "Unexpected length for DEK [" + DEKId + "]");
+        }
+
+        // pkg-private for tests
+        SecretKey getDEKById(String DEKId) throws IOException {
+            try {
+                return DEKCache.computeIfAbsent(DEKId, ignored -> loadDEK(DEKId));
+            } catch (ExecutionException e) {
+                // some exception types are to be expected
+                if (e.getCause() instanceof IOException) {
+                    throw (IOException) e.getCause();
+                } else if (e.getCause() instanceof ElasticsearchException) {
+                    throw (ElasticsearchException) e.getCause();
+                } else {
+                    throw new RepositoryException(repositoryName, "Unexpected exception retrieving DEK [" + DEKId + "]", e);
                 }
-                try {
-                    return DEKCache.computeIfAbsent(DEKId, ignored -> loadDEK(DEKId));
-                } catch (ExecutionException e) {
-                    // some exception types are to be expected
-                    if (e.getCause() instanceof IOException) {
-                        throw (IOException) e.getCause();
-                    } else if (e.getCause() instanceof ElasticsearchException) {
-                        throw (ElasticsearchException) e.getCause();
-                    } else {
-                        throw new RepositoryException(repositoryName, "Unexpected exception retrieving DEK [" + DEKId + "]", e);
-                    }
-                }
-            };
+            }
         }
 
         private SecretKey loadDEK(String DEKId) throws IOException {
@@ -514,7 +513,8 @@ public class EncryptedRepository extends BlobStoreRepository {
             }
         }
 
-        private void storeDEK(String DEKId, SecretKey DEK) throws IOException {
+        // pkg-private for tests
+        void storeDEK(String DEKId, SecretKey DEK) throws IOException {
             final BlobPath DEKBlobPath = delegatedBasePath.add(DEK_ROOT_CONTAINER).add(DEKId);
             logger.debug(
                 () -> new ParameterizedMessage(
@@ -561,7 +561,7 @@ public class EncryptedRepository extends BlobStoreRepository {
         @Override
         public BlobContainer blobContainer(BlobPath path) {
             final BlobContainer delegatedBlobContainer = delegatedBlobStore.blobContainer(delegatedBasePath.append(path));
-            return new EncryptedBlobContainer(path, repositoryName, delegatedBlobContainer, singleUseDEKSupplier, getDEKById);
+            return new EncryptedBlobContainer(path, repositoryName, delegatedBlobContainer, singleUseDEKSupplier, this::getDEKById);
         }
 
         @Override
