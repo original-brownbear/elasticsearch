@@ -83,7 +83,7 @@ public abstract class ChainingInputStream extends InputStream {
      * @param first the input stream supplying the first bytes of the returned {@link ChainingInputStream}
      * @param second the input stream supplying the bytes after the {@code first} input stream has been exhausted
      */
-    public static InputStream chain(InputStream first, InputStream second) {
+    public static ChainingInputStream chain(InputStream first, InputStream second) {
         if (false == Objects.requireNonNull(first).markSupported()) {
             throw new IllegalArgumentException("The first component input stream does not support mark");
         }
