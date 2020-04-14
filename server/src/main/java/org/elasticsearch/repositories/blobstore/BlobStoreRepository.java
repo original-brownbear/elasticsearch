@@ -104,6 +104,7 @@ import org.elasticsearch.repositories.RepositoryCleanupResult;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.RepositoryOperation;
+import org.elasticsearch.repositories.RepositoryStats;
 import org.elasticsearch.repositories.RepositoryVerificationException;
 import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.snapshots.ConcurrentSnapshotExecutionException;
@@ -481,6 +482,15 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     @Override
     public RepositoryMetadata getMetadata() {
         return metadata;
+    }
+
+    @Override
+    public RepositoryStats stats() {
+        final BlobStore store = blobStore.get();
+        if (store == null) {
+            return RepositoryStats.EMPTY_STATS;
+        }
+        return new RepositoryStats(store.stats());
     }
 
     @Override
