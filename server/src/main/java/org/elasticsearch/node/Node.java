@@ -140,6 +140,7 @@ import org.elasticsearch.plugins.SearchPlugin;
 import org.elasticsearch.plugins.SystemIndexPlugin;
 import org.elasticsearch.repositories.RepositoriesModule;
 import org.elasticsearch.repositories.RepositoriesService;
+import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.script.ScriptContext;
 import org.elasticsearch.script.ScriptEngine;
@@ -175,6 +176,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -431,12 +433,14 @@ public class Node implements Closeable {
                             .flatMap(m -> m.entrySet().stream())
                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            final Map<String, Collection<SystemIndexDescriptor>> systemIndexDescriptorMap = pluginsService
+            Map<String, Collection<SystemIndexDescriptor>> systemIndexDescriptorMap = pluginsService
                 .filterPlugins(SystemIndexPlugin.class)
                 .stream()
                 .collect(Collectors.toUnmodifiableMap(
                     plugin -> plugin.getClass().getSimpleName(),
                     plugin -> plugin.getSystemIndexDescriptors(settings)));
+            systemIndexDescriptorMap = new HashMap<>(systemIndexDescriptorMap);
+            systemIndexDescriptorMap.put(BlobStoreRepository.class.getSimpleName(), BlobStoreRepository.META_INDEX_DESCRIPTORS);
             SystemIndexDescriptor.checkForOverlappingPatterns(systemIndexDescriptorMap);
 
             final List<SystemIndexDescriptor> systemIndexDescriptors = systemIndexDescriptorMap.values().stream()

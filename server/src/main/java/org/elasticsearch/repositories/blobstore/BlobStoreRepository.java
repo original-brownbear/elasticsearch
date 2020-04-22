@@ -95,6 +95,7 @@ import org.elasticsearch.index.snapshots.blobstore.SlicedInputStream;
 import org.elasticsearch.index.snapshots.blobstore.SnapshotFiles;
 import org.elasticsearch.index.store.Store;
 import org.elasticsearch.index.store.StoreFileMetadata;
+import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.Repository;
@@ -149,6 +150,12 @@ import static org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSna
  * documentation of the package {@link org.elasticsearch.repositories.blobstore}.
  */
 public abstract class BlobStoreRepository extends AbstractLifecycleComponent implements Repository {
+
+    public static final Collection<SystemIndexDescriptor> META_INDEX_DESCRIPTORS =
+            List.of(
+                    new SystemIndexDescriptor(".snapshot-meta", "index to cache snapshot metadata"),
+                    new SystemIndexDescriptor(".snapshot-shard-meta", "index to cache shard snapshot metadata"));
+
     private static final Logger logger = LogManager.getLogger(BlobStoreRepository.class);
 
     protected volatile RepositoryMetadata metadata;
