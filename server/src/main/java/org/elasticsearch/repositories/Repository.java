@@ -27,9 +27,11 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.component.LifecycleComponent;
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
@@ -76,6 +78,20 @@ public interface Repository extends LifecycleComponent {
         }
     }
 
+    abstract class ConsistentRepositoryData implements Releasable {
+
+        /**
+         * Gets a consistent view of the current {@link RepositoryData}. This method is only intended for use on the cluster state update
+         * thread.
+         */
+        public final RepositoryData repositoryData() {
+            assert ClusterService.assertClusterOrMasterStateThread();
+            return doGetRepositoryData();
+        }
+
+        protected abstract RepositoryData doGetRepositoryData();
+    }
+
     /**
      * Returns metadata about this repository.
      */
@@ -112,6 +128,8 @@ public interface Repository extends LifecycleComponent {
      * if there was an error in reading the data.
      */
     void getRepositoryData(ActionListener<RepositoryData> listener);
+
+    void getConsistentRepositoryData(ActionListener<ConsistentRepositoryData> listener);
 
     /**
      * Finalizes snapshotting process
