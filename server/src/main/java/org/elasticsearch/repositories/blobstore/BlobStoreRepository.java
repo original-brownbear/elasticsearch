@@ -1091,70 +1091,78 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     private void doGetRepositoryData(ActionListener<RepositoryData> listener) {
-        if (latestKnownRepoGen.get() == RepositoryData.CORRUPTED_REPO_GEN) {
-            listener.onFailure(corruptedStateException(null));
-            return;
-        }
-        // Retry loading RepositoryData in a loop in case we run into concurrent modifications of the repository.
-        // Keep track of the most recent generation we failed to load so we can break out of the loop if we fail to load the same
-        // generation repeatedly.
-        long lastFailedGeneration = RepositoryData.UNKNOWN_REPO_GEN;
-        while (true) {
-            final long genToLoad;
-            if (bestEffortConsistency) {
-                // We're only using #latestKnownRepoGen as a hint in this mode and listing repo contents as a secondary way of trying
-                // to find a higher generation
-                final long generation;
-                try {
-                    generation = latestIndexBlobId();
-                } catch (IOException ioe) {
-                    listener.onFailure(
-                            new RepositoryException(metadata.name(), "Could not determine repository generation from root blobs", ioe));
+        threadPool.generic().execute(new AbstractRunnable() {
+
+            @Override
+            protected void doRun() throws Exception {
+                if (latestKnownRepoGen.get() == RepositoryData.CORRUPTED_REPO_GEN) {
+                    listener.onFailure(corruptedStateException(null));
                     return;
                 }
-                genToLoad = latestKnownRepoGen.updateAndGet(known -> Math.max(known, generation));
-                if (genToLoad > generation) {
-                    logger.info("Determined repository generation [" + generation
-                            + "] from repository contents but correct generation must be at least [" + genToLoad + "]");
+                // Retry loading RepositoryData in a loop in case we run into concurrent modifications of the repository.
+                // Keep track of the most recent generation we failed to load so we can break out of the loop if we fail to load the same
+                // generation repeatedly.
+                long lastFailedGeneration = RepositoryData.UNKNOWN_REPO_GEN;
+                while (true) {
+                    final long genToLoad;
+                    if (bestEffortConsistency) {
+                        // We're only using #latestKnownRepoGen as a hint in this mode and listing repo contents as a secondary way of trying
+                        // to find a higher generation
+                        final long generation;
+                        try {
+                            generation = latestIndexBlobId();
+                        } catch (IOException ioe) {
+                            listener.onFailure(
+                                    new RepositoryException(metadata.name(), "Could not determine repository generation from root blobs", ioe));
+                            return;
+                        }
+                        genToLoad = latestKnownRepoGen.updateAndGet(known -> Math.max(known, generation));
+                        if (genToLoad > generation) {
+                            logger.info("Determined repository generation [" + generation
+                                    + "] from repository contents but correct generation must be at least [" + genToLoad + "]");
+                        }
+                    } else {
+                        // We only rely on the generation tracked in #latestKnownRepoGen which is exclusively updated from the cluster state
+                        genToLoad = latestKnownRepoGen.get();
+                    }
+                    try {
+                        final Tuple<Long, BytesReference> cached = latestKnownRepositoryData.get();
+                        final RepositoryData loaded;
+                        // Caching is not used with #bestEffortConsistency see docs on #cacheRepositoryData for details
+                        if (bestEffortConsistency == false && cached != null && cached.v1() == genToLoad) {
+                            loaded = repositoryDataFromCachedEntry(cached);
+                        } else {
+                            loaded = getRepositoryData(genToLoad);
+                            cacheRepositoryData(loaded);
+                        }
+                        listener.onResponse(loaded);
+                        return;
+                    } catch (RepositoryException e) {
+                        // If the generation to load changed concurrently and we didn't just try loading the same generation before we retry
+                        if (genToLoad != latestKnownRepoGen.get() && genToLoad != lastFailedGeneration) {
+                            lastFailedGeneration = genToLoad;
+                            logger.warn("Failed to load repository data generation [" + genToLoad +
+                                    "] because a concurrent operation moved the current generation to [" + latestKnownRepoGen.get() + "]", e);
+                            continue;
+                        }
+                        if (bestEffortConsistency == false && ExceptionsHelper.unwrap(e, NoSuchFileException.class) != null) {
+                            // We did not find the expected index-N even though the cluster state continues to point at the missing value
+                            // of N so we mark this repository as corrupted.
+                            markRepoCorrupted(genToLoad, e,
+                                    ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e)), listener::onFailure));
+                        } else {
+                            listener.onFailure(e);
+                        }
+                        return;
+                    }
                 }
-            } else {
-                // We only rely on the generation tracked in #latestKnownRepoGen which is exclusively updated from the cluster state
-                genToLoad = latestKnownRepoGen.get();
             }
-            try {
-                final Tuple<Long, BytesReference> cached = latestKnownRepositoryData.get();
-                final RepositoryData loaded;
-                // Caching is not used with #bestEffortConsistency see docs on #cacheRepositoryData for details
-                if (bestEffortConsistency == false && cached != null && cached.v1() == genToLoad) {
-                    loaded = repositoryDataFromCachedEntry(cached);
-                } else {
-                    loaded = getRepositoryData(genToLoad);
-                    cacheRepositoryData(loaded);
-                }
-                listener.onResponse(loaded);
-                return;
-            } catch (RepositoryException e) {
-                // If the generation to load changed concurrently and we didn't just try loading the same generation before we retry
-                if (genToLoad != latestKnownRepoGen.get() && genToLoad != lastFailedGeneration) {
-                    lastFailedGeneration = genToLoad;
-                    logger.warn("Failed to load repository data generation [" + genToLoad +
-                            "] because a concurrent operation moved the current generation to [" + latestKnownRepoGen.get() + "]", e);
-                    continue;
-                }
-                if (bestEffortConsistency == false && ExceptionsHelper.unwrap(e, NoSuchFileException.class) != null) {
-                    // We did not find the expected index-N even though the cluster state continues to point at the missing value
-                    // of N so we mark this repository as corrupted.
-                    markRepoCorrupted(genToLoad, e,
-                            ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e)), listener::onFailure));
-                } else {
-                    listener.onFailure(e);
-                }
-                return;
-            } catch (Exception e) {
+
+            @Override
+            public void onFailure(Exception e) {
                 listener.onFailure(new RepositoryException(metadata.name(), "Unexpected exception when loading repository data", e));
-                return;
             }
-        }
+        });
     }
 
     /**
