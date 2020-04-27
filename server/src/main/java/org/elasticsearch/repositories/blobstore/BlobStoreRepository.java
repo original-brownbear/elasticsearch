@@ -112,6 +112,7 @@ import org.elasticsearch.snapshots.SnapshotMissingException;
 import org.elasticsearch.snapshots.SnapshotShardFailure;
 import org.elasticsearch.snapshots.SnapshotsService;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportRequestDeduplicator;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -1079,8 +1080,17 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     // Best effort cache of the latest known repository data and its generation, cached serialized as compressed json
     private final AtomicReference<Tuple<Long, BytesReference>> latestKnownRepositoryData = new AtomicReference<>();
 
+    private final TransportRequestDeduplicator<Object, RepositoryData> repositoryDataLoadDeduplicator =
+            new TransportRequestDeduplicator<>();
+
+    private static final Object REPOSITORY_DATA_REQUEST = new Object();
+
     @Override
     public void getRepositoryData(ActionListener<RepositoryData> listener) {
+        repositoryDataLoadDeduplicator.executeOnce(REPOSITORY_DATA_REQUEST, listener, (req, l) -> doGetRepositoryData(l));
+    }
+
+    private void doGetRepositoryData(ActionListener<RepositoryData> listener) {
         if (latestKnownRepoGen.get() == RepositoryData.CORRUPTED_REPO_GEN) {
             listener.onFailure(corruptedStateException(null));
             return;
@@ -1099,13 +1109,13 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     generation = latestIndexBlobId();
                 } catch (IOException ioe) {
                     listener.onFailure(
-                        new RepositoryException(metadata.name(), "Could not determine repository generation from root blobs", ioe));
+                            new RepositoryException(metadata.name(), "Could not determine repository generation from root blobs", ioe));
                     return;
                 }
                 genToLoad = latestKnownRepoGen.updateAndGet(known -> Math.max(known, generation));
                 if (genToLoad > generation) {
                     logger.info("Determined repository generation [" + generation
-                        + "] from repository contents but correct generation must be at least [" + genToLoad + "]");
+                            + "] from repository contents but correct generation must be at least [" + genToLoad + "]");
                 }
             } else {
                 // We only rely on the generation tracked in #latestKnownRepoGen which is exclusively updated from the cluster state
@@ -1128,14 +1138,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 if (genToLoad != latestKnownRepoGen.get() && genToLoad != lastFailedGeneration) {
                     lastFailedGeneration = genToLoad;
                     logger.warn("Failed to load repository data generation [" + genToLoad +
-                        "] because a concurrent operation moved the current generation to [" + latestKnownRepoGen.get() + "]", e);
+                            "] because a concurrent operation moved the current generation to [" + latestKnownRepoGen.get() + "]", e);
                     continue;
                 }
                 if (bestEffortConsistency == false && ExceptionsHelper.unwrap(e, NoSuchFileException.class) != null) {
                     // We did not find the expected index-N even though the cluster state continues to point at the missing value
                     // of N so we mark this repository as corrupted.
                     markRepoCorrupted(genToLoad, e,
-                        ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e)), listener::onFailure));
+                            ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e)), listener::onFailure));
                 } else {
                     listener.onFailure(e);
                 }
