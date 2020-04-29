@@ -507,14 +507,10 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             boolean includeGlobalState = in.readBoolean();
             boolean partial = in.readBoolean();
             State state = State.fromValue(in.readByte());
-            int indices = in.readVInt();
-            List<IndexId> indexBuilder = new ArrayList<>();
-            for (int j = 0; j < indices; j++) {
-                indexBuilder.add(new IndexId(in.readString(), in.readString()));
-            }
+            final List<IndexId> indices = in.readList(IndexId::new);
             long startTime = in.readLong();
-            ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> builder = ImmutableOpenMap.builder();
             int shards = in.readVInt();
+            ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> builder = ImmutableOpenMap.builder(shards);
             for (int j = 0; j < shards; j++) {
                 ShardId shardId = new ShardId(in);
                 builder.put(shardId, new ShardSnapshotStatus(in));
@@ -535,7 +531,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                                    includeGlobalState,
                                    partial,
                                    state,
-                                   Collections.unmodifiableList(indexBuilder),
+                                   Collections.unmodifiableList(indices),
                                    startTime,
                                    repositoryStateId,
                                    builder.build(),
@@ -555,10 +551,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             out.writeBoolean(entry.includeGlobalState());
             out.writeBoolean(entry.partial());
             out.writeByte(entry.state().value());
-            out.writeVInt(entry.indices().size());
-            for (IndexId index : entry.indices()) {
-                index.writeTo(out);
-            }
+            out.writeList(entry.indices);
             out.writeLong(entry.startTime());
             out.writeVInt(entry.shards().size());
             for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardEntry : entry.shards()) {
