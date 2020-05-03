@@ -312,7 +312,7 @@ public class LeaderChecker {
 
         LeaderCheckRequest(final StreamInput in) throws IOException {
             super(in);
-            sender = new DiscoveryNode(in);
+            sender = DiscoveryNode.read(in);
         }
 
         @Override

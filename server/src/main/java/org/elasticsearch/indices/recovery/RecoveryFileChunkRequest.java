@@ -44,7 +44,7 @@ public final class RecoveryFileChunkRequest extends TransportRequest {
     public RecoveryFileChunkRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.read(in);
         String name = in.readString();
         position = in.readVLong();
         long length = in.readVLong();

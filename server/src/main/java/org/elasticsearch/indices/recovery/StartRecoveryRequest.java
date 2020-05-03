@@ -46,10 +46,10 @@ public class StartRecoveryRequest extends TransportRequest {
     public StartRecoveryRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.read(in);
         targetAllocationId = in.readString();
-        sourceNode = new DiscoveryNode(in);
-        targetNode = new DiscoveryNode(in);
+        sourceNode = DiscoveryNode.read(in);
+        targetNode = DiscoveryNode.read(in);
         metadataSnapshot = new Store.MetadataSnapshot(in);
         primaryRelocation = in.readBoolean();
         startingSeqNo = in.readLong();

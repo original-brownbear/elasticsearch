@@ -106,7 +106,7 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
      * connection attempts to _new_ nodes, but not on attempts to re-establish connections to nodes that are already known.
      */
     public void connectToNodes(DiscoveryNodes discoveryNodes, Runnable onCompletion) {
-
+        deserializationCache.add(transportService.getLocalNode());
         if (discoveryNodes.getSize() == 0) {
             onCompletion.run();
             return;
@@ -248,6 +248,7 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
     @Override
     protected void doStop() {
         connectionChecker = null;
+        deserializationCache.remove(transportService.getLocalNode());
     }
 
     @Override

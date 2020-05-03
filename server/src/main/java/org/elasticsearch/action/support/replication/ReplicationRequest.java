@@ -69,7 +69,7 @@ public abstract class ReplicationRequest<Request extends ReplicationRequest<Requ
     public ReplicationRequest(StreamInput in) throws IOException {
         super(in);
         if (in.readBoolean()) {
-            shardId = new ShardId(in);
+            shardId = ShardId.read(in);
         } else {
             shardId = null;
         }

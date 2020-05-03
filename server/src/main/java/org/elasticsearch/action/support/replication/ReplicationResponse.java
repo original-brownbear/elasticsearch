@@ -228,7 +228,7 @@ public class ReplicationResponse extends ActionResponse {
             private boolean primary;
 
             public Failure(StreamInput in) throws IOException {
-                shardId = new ShardId(in);
+                shardId = ShardId.read(in);
                 super.shardId = shardId.getId();
                 index = shardId.getIndexName();
                 nodeId = in.readOptionalString();

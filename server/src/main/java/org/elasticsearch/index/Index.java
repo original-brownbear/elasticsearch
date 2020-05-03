@@ -54,10 +54,14 @@ public class Index implements Writeable, ToXContentObject {
         this.uuid = Objects.requireNonNull(uuid);
     }
 
+    public static Index read(StreamInput in) throws IOException {
+        return in.deduplicate(new Index(in));
+    }
+
     /**
      * Read from a stream.
      */
-    public Index(StreamInput in) throws IOException {
+    private Index(StreamInput in) throws IOException {
         this.name = in.readString();
         this.uuid = in.readString();
     }

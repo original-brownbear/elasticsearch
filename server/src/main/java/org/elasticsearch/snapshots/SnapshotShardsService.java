@@ -434,7 +434,7 @@ public class SnapshotShardsService extends AbstractLifecycleComponent implements
         public UpdateIndexShardSnapshotStatusRequest(StreamInput in) throws IOException {
             super(in);
             snapshot = new Snapshot(in);
-            shardId = new ShardId(in);
+            shardId = ShardId.read(in);
             status = new ShardSnapshotStatus(in);
         }
 

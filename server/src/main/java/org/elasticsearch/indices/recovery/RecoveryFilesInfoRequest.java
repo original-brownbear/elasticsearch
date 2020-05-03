@@ -43,7 +43,7 @@ public class RecoveryFilesInfoRequest extends TransportRequest {
     public RecoveryFilesInfoRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.read(in);
         int size = in.readVInt();
         phase1FileNames = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {

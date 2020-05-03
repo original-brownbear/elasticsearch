@@ -49,7 +49,7 @@ public final class SearchShardTarget implements Writeable, Comparable<SearchShar
         } else {
             nodeId = null;
         }
-        shardId = new ShardId(in);
+        shardId = ShardId.read(in);
         this.originalIndices = null;
         clusterAlias = in.readOptionalString();
     }

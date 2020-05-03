@@ -85,7 +85,7 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
             }
         }
         source = in.readString();
-        concreteIndex = in.readOptionalWriteable(Index::new);
+        concreteIndex = in.readOptionalWriteable(Index::read);
         origin = in.readOptionalString();
     }
 

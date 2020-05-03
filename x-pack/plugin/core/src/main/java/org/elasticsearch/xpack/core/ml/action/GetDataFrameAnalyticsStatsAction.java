@@ -216,7 +216,7 @@ public class GetDataFrameAnalyticsStatsAction extends ActionType<GetDataFrameAna
                 } else {
                     analysisStats = null;
                 }
-                node = in.readOptionalWriteable(DiscoveryNode::new);
+                node = in.readOptionalWriteable(DiscoveryNode::read);
                 assignmentExplanation = in.readOptionalString();
             }
 

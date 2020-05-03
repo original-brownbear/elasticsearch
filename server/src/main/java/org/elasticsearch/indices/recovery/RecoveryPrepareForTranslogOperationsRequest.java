@@ -42,7 +42,7 @@ class RecoveryPrepareForTranslogOperationsRequest extends TransportRequest {
     RecoveryPrepareForTranslogOperationsRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.read(in);
         totalTranslogOps = in.readVInt();
         if (in.getVersion().before(Version.V_7_4_0)) {
             in.readBoolean(); // was fileBasedRecovery

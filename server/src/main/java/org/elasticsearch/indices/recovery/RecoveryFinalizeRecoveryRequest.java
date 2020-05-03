@@ -38,7 +38,7 @@ final class RecoveryFinalizeRecoveryRequest extends TransportRequest {
     RecoveryFinalizeRecoveryRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.read(in);
         globalCheckpoint = in.readZLong();
         if (in.getVersion().onOrAfter(Version.V_7_4_0)) {
             trimAboveSeqNo = in.readZLong();

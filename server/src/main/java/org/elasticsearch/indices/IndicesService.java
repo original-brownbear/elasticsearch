@@ -35,6 +35,7 @@ import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags.Flag;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
+import org.elasticsearch.common.io.stream.DeserializationCache;
 import org.elasticsearch.index.bulk.stats.BulkStats;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
@@ -574,6 +575,11 @@ public class IndicesService extends AbstractLifecycleComponent
                 }
             }
             success = true;
+            DeserializationCache deserializationCache = namedWriteableRegistry.deserializationCache();
+            deserializationCache.add(index);
+            for (int i = 0; i < indexMetadata.getNumberOfShards(); i++) {
+                deserializationCache.add(new ShardId(index, i));
+            }
             return indexService;
         } finally {
             if (success == false) {
@@ -780,8 +786,12 @@ public class IndicesService extends AbstractLifecycleComponent
                 logger.debug("[{}] closing ... (reason [{}])", indexName, reason);
                 Map<String, IndexService> newIndices = new HashMap<>(indices);
                 indexService = newIndices.remove(index.getUUID());
+                DeserializationCache deserializationCache = namedWriteableRegistry.deserializationCache();
+                deserializationCache.remove(index);
                 assert indexService != null : "IndexService is null for index: " + index;
-                indices = unmodifiableMap(newIndices);
+                for (int i = 0; i < indexService.getMetadata().getNumberOfShards(); i++) {
+                    deserializationCache.add(new ShardId(index, i));
+                }                indices = unmodifiableMap(newIndices);
                 listener = indexService.getIndexEventListener();
             }
 

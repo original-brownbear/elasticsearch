@@ -52,7 +52,7 @@ public abstract class InstanceShardOperationRequest<Request extends InstanceShar
         super(in);
         index = in.readString();
         if (in.readBoolean()) {
-            shardId = new ShardId(in);
+            shardId = ShardId.read(in);
         } else {
             shardId = null;
         }

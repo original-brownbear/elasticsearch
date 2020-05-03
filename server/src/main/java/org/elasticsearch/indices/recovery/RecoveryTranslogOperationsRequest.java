@@ -100,7 +100,7 @@ public class RecoveryTranslogOperationsRequest extends TransportRequest {
     RecoveryTranslogOperationsRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.read(in);
         operations = Translog.readOperations(in, "recovery");
         totalTranslogOps = in.readVInt();
         maxSeenAutoIdTimestampOnPrimary = in.readZLong();

@@ -135,7 +135,7 @@ public class RecoveryState implements ToXContentFragment, Writeable {
     public RecoveryState(StreamInput in) throws IOException {
         timer = new Timer(in);
         stage = Stage.fromId(in.readByte());
-        shardId = new ShardId(in);
+        shardId = ShardId.read(in);
         recoverySource = RecoverySource.readFrom(in);
         targetNode = DiscoveryNode.read(in);
         sourceNode = in.readOptionalWriteable(DiscoveryNode::read);
