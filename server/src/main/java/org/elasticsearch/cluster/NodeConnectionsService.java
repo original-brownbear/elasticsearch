@@ -33,6 +33,8 @@ import org.elasticsearch.cluster.service.ClusterApplier;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.io.stream.DeserializationCache;
+import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
@@ -88,11 +90,15 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
     private final TimeValue reconnectInterval;
     private volatile ConnectionChecker connectionChecker;
 
+    private final DeserializationCache deserializationCache;
+
     @Inject
-    public NodeConnectionsService(Settings settings, ThreadPool threadPool, TransportService transportService) {
+    public NodeConnectionsService(Settings settings, ThreadPool threadPool, TransportService transportService,
+                                  NamedWriteableRegistry namedWriteableRegistry) {
         this.threadPool = threadPool;
         this.transportService = transportService;
         this.reconnectInterval = NodeConnectionsService.CLUSTER_NODE_RECONNECT_INTERVAL_SETTING.get(settings);
+        this.deserializationCache = namedWriteableRegistry.deserializationCache();
     }
 
     /**
@@ -126,6 +132,7 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
                 }
 
                 if (isNewNode) {
+                    deserializationCache.add(discoveryNode);
                     runnables.add(connectionTarget.connect(listener));
                 } else {
                     // known node, try and ensure it's connected but do not wait
@@ -150,6 +157,7 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
             }
 
             for (final DiscoveryNode discoveryNode : nodesToDisconnect) {
+                deserializationCache.remove(discoveryNode);
                 runnables.add(targetsByNode.get(discoveryNode).disconnect());
             }
         }

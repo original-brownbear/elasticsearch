@@ -60,6 +60,8 @@ public class NamedWriteableRegistry {
      */
     private final Map<Class<?>, Map<String, Writeable.Reader<?>>> registry;
 
+    private final DeserializationCache deserializationCache = new DeserializationCache();
+
     /**
      * Constructs a new registry from the given entries.
      */
@@ -113,5 +115,9 @@ public class NamedWriteableRegistry {
             throw new IllegalArgumentException("Unknown NamedWriteable [" + categoryClass.getName() + "][" + name + "]");
         }
         return reader;
+    }
+
+    public DeserializationCache deserializationCache() {
+        return deserializationCache;
     }
 }

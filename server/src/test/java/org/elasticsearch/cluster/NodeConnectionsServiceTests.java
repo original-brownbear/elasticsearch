@@ -98,7 +98,8 @@ public class NodeConnectionsServiceTests extends ESTestCase {
     }
 
     public void testConnectAndDisconnect() throws Exception {
-        final NodeConnectionsService service = new NodeConnectionsService(Settings.EMPTY, threadPool, transportService);
+        final NodeConnectionsService service =
+                new NodeConnectionsService(Settings.EMPTY, threadPool, transportService, writableRegistry());
 
         final AtomicBoolean stopReconnecting = new AtomicBoolean();
         final Thread reconnectionThread = new Thread(() -> {
@@ -177,8 +178,8 @@ public class NodeConnectionsServiceTests extends ESTestCase {
         transportService.start();
         transportService.acceptIncomingRequests();
 
-        final NodeConnectionsService service
-            = new NodeConnectionsService(settings.build(), deterministicTaskQueue.getThreadPool(), transportService);
+        final NodeConnectionsService service = new NodeConnectionsService(settings.build(), deterministicTaskQueue.getThreadPool(),
+                transportService, writableRegistry());
         service.start();
 
         final List<DiscoveryNode> allNodes = generateNodes();
@@ -223,7 +224,8 @@ public class NodeConnectionsServiceTests extends ESTestCase {
     }
 
     public void testOnlyBlocksOnConnectionsToNewNodes() throws Exception {
-        final NodeConnectionsService service = new NodeConnectionsService(Settings.EMPTY, threadPool, transportService);
+        final NodeConnectionsService service =
+                new NodeConnectionsService(Settings.EMPTY, threadPool, transportService, writableRegistry());
 
         // connect to one node
         final DiscoveryNode node0 = new DiscoveryNode("node0", buildNewFakeTransportAddress(), Version.CURRENT);
@@ -314,8 +316,8 @@ public class NodeConnectionsServiceTests extends ESTestCase {
         transportService.start();
         transportService.acceptIncomingRequests();
 
-        final NodeConnectionsService service
-            = new NodeConnectionsService(Settings.EMPTY, deterministicTaskQueue.getThreadPool(), transportService);
+        final NodeConnectionsService service = new NodeConnectionsService(Settings.EMPTY, deterministicTaskQueue.getThreadPool(),
+                transportService, writableRegistry());
         service.start();
 
         final List<DiscoveryNode> allNodes = generateNodes();

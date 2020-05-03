@@ -54,8 +54,8 @@ public class Join implements Writeable {
     }
 
     public Join(StreamInput in) throws IOException {
-        sourceNode = new DiscoveryNode(in);
-        targetNode = new DiscoveryNode(in);
+        sourceNode = DiscoveryNode.read(in);
+        targetNode = DiscoveryNode.read(in);
         term = in.readLong();
         lastAcceptedTerm = in.readLong();
         lastAcceptedVersion = in.readLong();

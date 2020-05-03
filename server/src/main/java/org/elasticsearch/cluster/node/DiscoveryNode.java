@@ -197,6 +197,10 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
         return roleNameToPossibleRoles.values().stream().filter(s -> s.roleSetting().get(settings)).collect(Collectors.toUnmodifiableSet());
     }
 
+    public static DiscoveryNode read(StreamInput in) throws IOException {
+        return in.deduplicate(new DiscoveryNode(in));
+    }
+
     /**
      * Creates a new {@link DiscoveryNode} by reading from the stream provided as argument
      * @param in the stream

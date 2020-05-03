@@ -35,6 +35,7 @@ import org.elasticsearch.cluster.service.ClusterApplier.ClusterApplyListener;
 import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterService;
+import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -131,7 +132,7 @@ public class ClusterServiceUtils {
     }
 
     public static NodeConnectionsService createNoOpNodeConnectionsService() {
-        return new NodeConnectionsService(Settings.EMPTY, null, null) {
+        return new NodeConnectionsService(Settings.EMPTY, null, null, new NamedWriteableRegistry(Collections.emptyList())) {
             @Override
             public void connectToNodes(DiscoveryNodes discoveryNodes, Runnable onCompletion) {
                 // don't do anything

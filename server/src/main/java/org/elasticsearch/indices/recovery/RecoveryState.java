@@ -137,8 +137,8 @@ public class RecoveryState implements ToXContentFragment, Writeable {
         stage = Stage.fromId(in.readByte());
         shardId = new ShardId(in);
         recoverySource = RecoverySource.readFrom(in);
-        targetNode = new DiscoveryNode(in);
-        sourceNode = in.readOptionalWriteable(DiscoveryNode::new);
+        targetNode = DiscoveryNode.read(in);
+        sourceNode = in.readOptionalWriteable(DiscoveryNode::read);
         index = new Index(in);
         translog = new Translog(in);
         verifyIndex = new VerifyIndex(in);

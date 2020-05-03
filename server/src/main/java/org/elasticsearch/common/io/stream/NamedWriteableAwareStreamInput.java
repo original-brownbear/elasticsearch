@@ -57,4 +57,9 @@ public class NamedWriteableAwareStreamInput extends FilterStreamInput {
     public NamedWriteableRegistry namedWriteableRegistry() {
         return namedWriteableRegistry;
     }
+
+    @Override
+    public <T> T deduplicate(T instance) {
+        return namedWriteableRegistry.deserializationCache().deduplicate(instance);
+    }
 }

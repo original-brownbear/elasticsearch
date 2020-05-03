@@ -1411,8 +1411,8 @@ public class SnapshotResiliencyTests extends ESTestCase {
                     new BatchedRerouteService(clusterService, allocationService::reroute),
                     threadPool
                 );
-                nodeConnectionsService =
-                    new NodeConnectionsService(clusterService.getSettings(), threadPool, transportService);
+                nodeConnectionsService = new NodeConnectionsService(clusterService.getSettings(), threadPool, transportService,
+                        namedWriteableRegistry);
                 @SuppressWarnings("rawtypes")
                 Map<ActionType, TransportAction> actions = new HashMap<>();
                 actions.put(GlobalCheckpointSyncAction.TYPE,

@@ -259,6 +259,10 @@ public abstract class StreamInput extends InputStream {
         return (((long) readInt()) << 32) | (readInt() & 0xFFFFFFFFL);
     }
 
+    public <T> T deduplicate(T instance) {
+        return instance;
+    }
+
     /**
      * Reads a long stored in variable-length format. Reads between one and ten bytes. Smaller values take fewer bytes. Negative numbers
      * are encoded in ten bytes so prefer {@link #readLong()} or {@link #readZLong()} for negative numbers.
