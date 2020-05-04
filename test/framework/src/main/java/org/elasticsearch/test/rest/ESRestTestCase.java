@@ -58,6 +58,7 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.seqno.ReplicationTracker;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.snapshots.SnapshotState;
+import org.elasticsearch.snapshots.SnapshotsService;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.rest.yaml.ObjectPath;
 import org.hamcrest.Matchers;
@@ -649,26 +650,30 @@ public abstract class ESRestTestCase extends ESTestCase {
             String repoType = (String) repoSpec.get("type");
             if (false == preserveSnapshotsUponCompletion() && repoType.equals("fs")) {
                 // All other repo types we really don't have a chance of being able to iterate properly, sadly.
-                Request listRequest = new Request("GET", "/_snapshot/" + repoName + "/_all");
-                listRequest.addParameter("ignore_unavailable", "true");
-
-                Map<?, ?> response = entityAsMap(adminClient.performRequest(listRequest));
-                Map<?, ?> oneRepoResponse;
-                if (response.containsKey("responses")) {
-                    oneRepoResponse = ((Map<?,?>)((List<?>) response.get("responses")).get(0));
+                if (minimumNodeVersion().onOrAfter(SnapshotsService.MULTI_DELETE_VERSION)) {
+                    adminClient().performRequest(new Request("DELETE", "/_snapshot/" + repoName + "/*"));
                 } else {
-                    oneRepoResponse = response;
-                }
+                    Request listRequest = new Request("GET", "/_snapshot/" + repoName + "/_all");
+                    listRequest.addParameter("ignore_unavailable", "true");
 
-                List<?> snapshots = (List<?>) oneRepoResponse.get("snapshots");
-                for (Object snapshot : snapshots) {
-                    Map<?, ?> snapshotInfo = (Map<?, ?>) snapshot;
-                    String name = (String) snapshotInfo.get("snapshot");
-                    if (SnapshotState.valueOf((String) snapshotInfo.get("state")).completed() == false) {
-                        inProgressSnapshots.computeIfAbsent(repoName, key -> new ArrayList<>()).add(snapshotInfo);
+                    Map<?, ?> response = entityAsMap(adminClient.performRequest(listRequest));
+                    Map<?, ?> oneRepoResponse;
+                    if (response.containsKey("responses")) {
+                        oneRepoResponse = ((Map<?, ?>) ((List<?>) response.get("responses")).get(0));
+                    } else {
+                        oneRepoResponse = response;
                     }
-                    logger.debug("wiping snapshot [{}/{}]", repoName, name);
-                    adminClient().performRequest(new Request("DELETE", "/_snapshot/" + repoName + "/" + name));
+
+                    List<?> snapshots = (List<?>) oneRepoResponse.get("snapshots");
+                    for (Object snapshot : snapshots) {
+                        Map<?, ?> snapshotInfo = (Map<?, ?>) snapshot;
+                        String name = (String) snapshotInfo.get("snapshot");
+                        if (SnapshotState.valueOf((String) snapshotInfo.get("state")).completed() == false) {
+                            inProgressSnapshots.computeIfAbsent(repoName, key -> new ArrayList<>()).add(snapshotInfo);
+                        }
+                        logger.debug("wiping snapshot [{}/{}]", repoName, name);
+                        adminClient().performRequest(new Request("DELETE", "/_snapshot/" + repoName + "/" + name));
+                    }
                 }
             }
             if (preserveReposUponCompletion() == false) {
