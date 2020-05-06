@@ -43,10 +43,7 @@ import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.repositories.IndexId;
-import org.elasticsearch.repositories.RepositoriesService;
-import org.elasticsearch.repositories.RepositoryData;
-import org.elasticsearch.repositories.ShardGenerations;
+import org.elasticsearch.repositories.*;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.test.InternalTestCluster;
@@ -65,15 +62,12 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.test.ESTestCase.buildNewFakeTransportAddress;
 import static org.elasticsearch.test.ESTestCase.randomIntBetween;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -116,18 +110,22 @@ public final class BlobStoreTestUtil {
         executor.execute(ActionRunnable.supply(listener, () -> {
             try {
                 final BlobContainer blobContainer = repository.blobContainer();
-                final long latestGen;
+                long latestGen;
                 try (DataInputStream inputStream = new DataInputStream(blobContainer.readBlob("index.latest"))) {
                     latestGen = inputStream.readLong();
                 } catch (NoSuchFileException e) {
-                    throw new AssertionError("Could not find index.latest blob for repo [" + repository + "]");
+                    latestGen = RepositoryData.EMPTY_REPO_GEN;
                 }
                 assertIndexGenerations(blobContainer, latestGen);
                 final RepositoryData repositoryData;
-                try (InputStream blob = blobContainer.readBlob("index-" + latestGen);
-                     XContentParser parser = XContentType.JSON.xContent().createParser(NamedXContentRegistry.EMPTY,
-                         LoggingDeprecationHandler.INSTANCE, blob)) {
-                    repositoryData = RepositoryData.snapshotsFromXContent(parser, latestGen);
+                if (latestGen == RepositoryData.EMPTY_REPO_GEN) {
+                    repositoryData = RepositoryData.EMPTY;
+                } else {
+                    try (InputStream blob = blobContainer.readBlob("index-" + latestGen);
+                         XContentParser parser = XContentType.JSON.xContent().createParser(NamedXContentRegistry.EMPTY,
+                                 LoggingDeprecationHandler.INSTANCE, blob)) {
+                        repositoryData = RepositoryData.snapshotsFromXContent(parser, latestGen);
+                    }
                 }
                 assertIndexUUIDs(blobContainer, repositoryData);
                 assertSnapshotUUIDs(repository, repositoryData);
@@ -147,8 +145,12 @@ public final class BlobStoreTestUtil {
         final long[] indexGenerations = repoRoot.listBlobsByPrefix("index-").keySet().stream()
             .map(s -> s.replace("index-", ""))
             .mapToLong(Long::parseLong).sorted().toArray();
-        assertEquals(latestGen, indexGenerations[indexGenerations.length - 1]);
-        assertTrue(indexGenerations.length <= 2);
+        if (latestGen == RepositoryData.EMPTY_REPO_GEN) {
+            assertThat(indexGenerations.length, is(0));
+        } else {
+            assertEquals(latestGen, indexGenerations[indexGenerations.length - 1]);
+            assertTrue(indexGenerations.length <= 2);
+        }
     }
 
     private static void assertShardIndexGenerations(BlobContainer repoRoot, ShardGenerations shardGenerations) throws IOException {

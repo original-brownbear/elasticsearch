@@ -209,7 +209,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         clusterService.state().nodes().getMinNodeVersion(), repositoryData, null);
                 ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards =
                         shards(currentState, indexIds, useShardGenerations(version), repositoryData);
-                SnapshotsInProgress.Entry newEntry = null;
                 if (request.partial() == false) {
                     Tuple<Set<String>, Set<String>> indicesWithMissingShards = indicesWithMissingShards(shards,
                             currentState.metadata());
@@ -227,19 +226,14 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             }
                             failureMessage.append("Indices are closed ");
                         }
-                        // TODO: We should just throw here instead of creating a FAILED and hence useless snapshot in the repository
-                        newEntry = new SnapshotsInProgress.Entry(
-                                new Snapshot(repositoryName, snapshotId), request.includeGlobalState(), false,
-                                State.FAILED, indexIds, threadPool.absoluteTimeInMillis(), repositoryData.getGenId(), shards,
-                                failureMessage.toString(), userMeta, version);
+                        throw new SnapshotException(snapshot, "Failed to start snapshot",
+                                new IllegalArgumentException(failureMessage.toString()));
                     }
                 }
-                if (newEntry == null) {
-                    newEntry = new SnapshotsInProgress.Entry(
-                            new Snapshot(repositoryName, snapshotId), request.includeGlobalState(), request.partial(),
-                            State.STARTED, indexIds, threadPool.absoluteTimeInMillis(), repositoryData.getGenId(), shards,
-                            null, userMeta, version);
-                }
+                SnapshotsInProgress.Entry newEntry = new SnapshotsInProgress.Entry(
+                        new Snapshot(repositoryName, snapshotId), request.includeGlobalState(), request.partial(),
+                        State.STARTED, indexIds, threadPool.absoluteTimeInMillis(), repositoryData.getGenId(), shards,
+                        null, userMeta, version);
                 return ClusterState.builder(currentState).putCustom(SnapshotsInProgress.TYPE,
                         new SnapshotsInProgress(List.of(newEntry))).build();
             }
