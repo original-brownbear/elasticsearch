@@ -1760,18 +1760,16 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     lastSnapshotStatus.getIncrementalSize()
                 );
 
-                logger.trace("[{}] [{}] writing shard snapshot file", shardId, snapshotId);
-                try {
-                    indexShardSnapshotFormat.write(snapshot, shardContainer, snapshotId.getUUID(), false);
-                } catch (IOException e) {
-                    throw new IndexShardSnapshotFailedException(shardId, "Failed to write commit point", e);
+                if (repositoryMetaVersion.before(BlobStoreIndexShardSnapshots.SIMPLE_SHARD_META_VERSION)) {
+                    logger.trace("[{}] [{}] writing shard snapshot file", shardId, snapshotId);
+                    try {
+                        indexShardSnapshotFormat.write(snapshot, shardContainer, snapshotId.getUUID(), false);
+                    } catch (IOException e) {
+                        throw new IndexShardSnapshotFailedException(shardId, "Failed to write commit point", e);
+                    }
                 }
                 // build a new BlobStoreIndexShardSnapshot, that includes this one and all the saved ones
-                List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
-                newSnapshotsList.add(new SnapshotFiles(snapshot.snapshot(), snapshot.indexFiles(), shardStateIdentifier));
-                for (SnapshotFiles point : snapshots) {
-                    newSnapshotsList.add(point);
-                }
+                final SnapshotFiles newSnapshotFiles = new SnapshotFiles(snapshot.snapshot(), snapshot.indexFiles(), shardStateIdentifier);
                 final List<String> blobsToDelete;
                 final String indexGeneration;
                 final boolean writeShardGens = SnapshotsService.useShardGenerations(repositoryMetaVersion);
@@ -1788,7 +1786,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         + "] when deleting index-N blobs " + blobsToDelete;
                 }
                 try {
-                    writeShardIndexBlob(shardContainer, indexGeneration, new BlobStoreIndexShardSnapshots(newSnapshotsList));
+                    writeShardIndexBlob(shardContainer, indexGeneration,
+                            snapshots.withSnapshot(newSnapshotFiles, lastSnapshotStatus.getStartTime(), lastSnapshotStatus.getTotalTime(),
+                                    lastSnapshotStatus.getIncrementalFileCount(), lastSnapshotStatus.getIncrementalSize(),
+                                    lastSnapshotStatus.getIndexVersion()));
                 } catch (IOException e) {
                     throw new IndexShardSnapshotFailedException(shardId,
                         "Failed to finalize snapshot creation [" + snapshotId + "] with shard index ["
@@ -2013,18 +2014,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                                                       BlobStoreIndexShardSnapshots snapshots,
                                                                       String indexGeneration) {
         // Build a list of snapshots that should be preserved
-        List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
         final Set<String> survivingSnapshotNames = survivingSnapshots.stream().map(SnapshotId::getName).collect(Collectors.toSet());
-        for (SnapshotFiles point : snapshots) {
-            if (survivingSnapshotNames.contains(point.snapshot())) {
-                newSnapshotsList.add(point);
-            }
-        }
         try {
-            if (newSnapshotsList.isEmpty()) {
+            if (survivingSnapshotNames.isEmpty()) {
                 return new ShardSnapshotMetaDeleteResult(indexId, snapshotShardId, ShardGenerations.DELETED_SHARD_GEN, blobs);
             } else {
-                final BlobStoreIndexShardSnapshots updatedSnapshots = new BlobStoreIndexShardSnapshots(newSnapshotsList);
+                final BlobStoreIndexShardSnapshots updatedSnapshots = snapshots.forSubset(survivingSnapshotNames);
                 writeShardIndexBlob(shardContainer, indexGeneration, updatedSnapshots);
                 final Set<String> survivingSnapshotUUIDs = survivingSnapshots.stream().map(SnapshotId::getUUID).collect(Collectors.toSet());
                 return new ShardSnapshotMetaDeleteResult(indexId, snapshotShardId, indexGeneration,

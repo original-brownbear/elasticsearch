@@ -20,19 +20,18 @@
 package org.elasticsearch.index.snapshots.blobstore;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.Version;
 import org.elasticsearch.common.ParseField;
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot.FileInfo;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableMap;
 
@@ -44,6 +43,8 @@ import static java.util.Collections.unmodifiableMap;
  */
 public class BlobStoreIndexShardSnapshots implements Iterable<SnapshotFiles>, ToXContentFragment {
 
+    public static final Version SIMPLE_SHARD_META_VERSION = Version.V_8_0_0;
+
     public static final BlobStoreIndexShardSnapshots EMPTY = new BlobStoreIndexShardSnapshots(Collections.emptyList(),
             Map.of(), Map.of(), Map.of(), Map.of(), Map.of());
 
@@ -51,15 +52,15 @@ public class BlobStoreIndexShardSnapshots implements Iterable<SnapshotFiles>, To
     private final Map<String, FileInfo> files;
     private final Map<String, List<FileInfo>> physicalFiles;
 
-    private final Map<String, Long> startTime;
-    private final Map<String, Long> time;
-    private final Map<String, Integer> incrementalFileCount;
-    private final Map<String, Long> incrementalSize;
-    private final Map<String, Long> indexVersion;
+    private final Map<String, Long> startTimes;
+    private final Map<String, Long> times;
+    private final Map<String, Integer> incrementalFileCounts;
+    private final Map<String, Long> incrementalSizes;
+    private final Map<String, Long> indexVersions;
 
-    public BlobStoreIndexShardSnapshots(List<SnapshotFiles> shardSnapshots, Map<String, Long> startTime, Map<String, Long> time,
-                                        Map<String, Integer> incrementalFileCount, Map<String, Long> incrementalSize,
-                                        Map<String, Long> indexVersion) {
+    public BlobStoreIndexShardSnapshots(List<SnapshotFiles> shardSnapshots, Map<String, Long> startTimes, Map<String, Long> times,
+                                        Map<String, Integer> incrementalFileCounts, Map<String, Long> incrementalSizes,
+                                        Map<String, Long> indexVersions) {
         this.shardSnapshots = List.copyOf(shardSnapshots);
         // Map between blob names and file info
         Map<String, FileInfo> newFiles = new HashMap<>();
@@ -85,16 +86,16 @@ public class BlobStoreIndexShardSnapshots implements Iterable<SnapshotFiles>, To
         }
         this.physicalFiles = unmodifiableMap(mapBuilder);
         this.files = unmodifiableMap(newFiles);
-        this.startTime = Map.copyOf(startTime);
-        this.time = Map.copyOf(time);
-        this.incrementalFileCount = Map.copyOf(incrementalFileCount);
-        this.incrementalSize = Map.copyOf(incrementalSize);
-        this.indexVersion = Map.copyOf(indexVersion);
+        this.startTimes = Map.copyOf(startTimes);
+        this.times = Map.copyOf(times);
+        this.incrementalFileCounts = Map.copyOf(incrementalFileCounts);
+        this.incrementalSizes = Map.copyOf(incrementalSizes);
+        this.indexVersions = Map.copyOf(indexVersions);
     }
 
-    private BlobStoreIndexShardSnapshots(Map<String, FileInfo> files, List<SnapshotFiles> shardSnapshots, Map<String, Long> startTime,
-                                         Map<String, Long> time, Map<String, Integer> incrementalFileCount,
-                                         Map<String, Long> incrementalSize, Map<String, Long> indexVersion) {
+    private BlobStoreIndexShardSnapshots(Map<String, FileInfo> files, List<SnapshotFiles> shardSnapshots, Map<String, Long> startTimes,
+                                         Map<String, Long> times, Map<String, Integer> incrementalFileCounts,
+                                         Map<String, Long> incrementalSizes, Map<String, Long> indexVersions) {
         this.shardSnapshots = shardSnapshots;
         this.files = files;
         Map<String, List<FileInfo>> physicalFiles = new HashMap<>();
@@ -108,11 +109,41 @@ public class BlobStoreIndexShardSnapshots implements Iterable<SnapshotFiles>, To
             mapBuilder.put(entry.getKey(), List.copyOf(entry.getValue()));
         }
         this.physicalFiles = unmodifiableMap(mapBuilder);
-        this.startTime = Map.copyOf(startTime);
-        this.time = Map.copyOf(time);
-        this.incrementalFileCount = Map.copyOf(incrementalFileCount);
-        this.incrementalSize = Map.copyOf(incrementalSize);
-        this.indexVersion = Map.copyOf(indexVersion);
+        this.startTimes = Map.copyOf(startTimes);
+        this.times = Map.copyOf(times);
+        this.incrementalFileCounts = Map.copyOf(incrementalFileCounts);
+        this.incrementalSizes = Map.copyOf(incrementalSizes);
+        this.indexVersions = Map.copyOf(indexVersions);
+    }
+
+    public BlobStoreIndexShardSnapshots withSnapshot(SnapshotFiles snapshot, long startTime, long time, int incrementalFileCount,
+                                                     long incrementalFileSize, long indexVersion) {
+        final List<SnapshotFiles> files = new ArrayList<>(this.files.size() + 1);
+        files.addAll(shardSnapshots);
+        files.add(snapshot);
+        final String snapshotName = snapshot.snapshot();
+        return new BlobStoreIndexShardSnapshots(files,
+                Maps.copyMapWithAddedEntry(startTimes, snapshotName, startTime),
+                Maps.copyMapWithAddedEntry(times, snapshotName, time),
+                Maps.copyMapWithAddedEntry(incrementalFileCounts, snapshotName, incrementalFileCount),
+                Maps.copyMapWithAddedEntry(incrementalSizes, snapshotName, incrementalFileSize),
+                Maps.copyMapWithAddedEntry(indexVersions, snapshotName, indexVersion));
+    }
+
+    public BlobStoreIndexShardSnapshots forSubset(Collection<String> snapshotNames) {
+        return new BlobStoreIndexShardSnapshots(
+                shardSnapshots.stream().filter(snapshotFiles -> snapshotNames.contains(snapshotFiles.snapshot()))
+                        .collect(Collectors.toList()),
+                startTimes.entrySet().stream().filter(entry -> snapshotNames.contains(entry.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
+                times.entrySet().stream().filter(entry -> snapshotNames.contains(entry.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
+                incrementalFileCounts.entrySet().stream().filter(entry -> snapshotNames.contains(entry.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
+                incrementalSizes.entrySet().stream().filter(entry -> snapshotNames.contains(entry.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)),
+                indexVersions.entrySet().stream().filter(entry -> snapshotNames.contains(entry.getKey()))
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
     /**
