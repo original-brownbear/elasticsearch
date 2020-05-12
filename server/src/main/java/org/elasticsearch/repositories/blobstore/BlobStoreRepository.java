@@ -566,6 +566,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
     }
 
+    @Override
+    public void estimateIncrementalSize(Collection<SnapshotId> snapshotIds, Version repositoryMetaVersion, ActionListener<Long> listener) {
+
+    }
+
     /**
      * Loads {@link RepositoryData} ensuring that it is consistent with the given {@code rootBlobs} as well of the assumed generation.
      *

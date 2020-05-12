@@ -152,6 +152,17 @@ public interface Repository extends LifecycleComponent {
      */
     void deleteSnapshots(Collection<SnapshotId> snapshotIds, long repositoryStateId, Version repositoryMetaVersion,
                          ActionListener<Void> listener);
+
+    /**
+     * Estimates the incremental byte size of the given snapshot ids in the repository. The incremental size returned by this method
+     * may be interpreted as the number of bytes freed from the underlying storage if the given snapshots were deleted.
+     *
+     * @param snapshotIds           snapshot ids to estimate the incremental size for
+     * @param repositoryMetaVersion version of the updated repository metadata to write
+     * @param listener              completion listener resolved with the estimated byte size of the given snapshots
+     */
+    void estimateIncrementalSize(Collection<SnapshotId> snapshotIds, Version repositoryMetaVersion, ActionListener<Long> listener);
+
     /**
      * Returns snapshot throttle time in nanoseconds
      */
