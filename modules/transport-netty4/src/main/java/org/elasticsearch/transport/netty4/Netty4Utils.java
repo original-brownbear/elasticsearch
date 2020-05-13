@@ -110,8 +110,12 @@ public class Netty4Utils {
         if (readableBytes == 0) {
             return BytesArray.EMPTY;
         } else {
-            final ByteBuffer[] byteBuffers = buffer.nioBuffers();
-            return BytesReference.fromByteBuffers(byteBuffers);
+            if (buffer.hasArray()) {
+                return new BytesArray(buffer.array(), buffer.arrayOffset() + buffer.readerIndex(), readableBytes);
+            } else {
+                final ByteBuffer[] byteBuffers = buffer.nioBuffers();
+                return BytesReference.fromByteBuffers(byteBuffers);
+            }
         }
     }
 }
