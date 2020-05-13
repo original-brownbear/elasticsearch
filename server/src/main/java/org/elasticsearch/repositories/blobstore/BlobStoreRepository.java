@@ -431,7 +431,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     private long bestGeneration(Collection<? extends RepositoryOperation> operations) {
         final String repoName = metadata.name();
-        assert operations.size() <= 1 : "Assumed one or no operations but received " + operations;
         return operations.stream().filter(e -> e.repository().equals(repoName)).mapToLong(RepositoryOperation::repositoryStateId)
             .max().orElse(RepositoryData.EMPTY_REPO_GEN);
     }

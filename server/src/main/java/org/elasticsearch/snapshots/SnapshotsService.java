@@ -114,6 +114,8 @@ import static org.elasticsearch.cluster.SnapshotsInProgress.completed;
  */
 public class SnapshotsService extends AbstractLifecycleComponent implements ClusterStateApplier {
 
+    public static final Version FULL_CONCURRENCY_VERSION = Version.V_8_0_0;
+
     public static final Version SHARD_GEN_IN_REPO_DATA_VERSION = Version.V_7_6_0;
 
     public static final Version OLD_SNAPSHOT_FORMAT = Version.V_7_5_0;
@@ -201,7 +203,14 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public ClusterState execute(ClusterState currentState) {
                 // check if the snapshot name already exists in the repository
-                if (repositoryData.getSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName))) {
+                SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE);
+                final List<SnapshotsInProgress.Entry> runningSnapshots = snapshots == null ? List.of() : snapshots.entries();
+                if (repositoryData.getSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName)) ||
+                        runningSnapshots.stream().anyMatch(s -> {
+                            final Snapshot running = s.snapshot();
+                            return running.getRepository().equals(repositoryName)
+                                    && running.getSnapshotId().getName().equals(snapshotName);
+                        })) {
                     throw new InvalidSnapshotNameException(
                             repository.getMetadata().name(), snapshotName, "snapshot with the same name already exists");
                 }
@@ -216,12 +225,13 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName,
                         "cannot snapshot while a repository cleanup is in-progress in [" + repositoryCleanupInProgress + "]");
                 }
-                SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE);
                 // Fail if there are any concurrently running snapshots. The only exception to this being a snapshot in INIT state from a
                 // previous master that we can simply ignore and remove from the cluster state because we would clean it up from the
                 // cluster state anyway in #applyClusterState.
-                if (snapshots != null && snapshots.entries().stream().anyMatch(entry -> entry.state() != State.INIT)) {
-                    throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName, " a snapshot is already running");
+                if (currentState.nodes().getMinNodeVersion().before(FULL_CONCURRENCY_VERSION)) {
+                    if (snapshots != null && runningSnapshots.stream().anyMatch(entry -> entry.state() != State.INIT)) {
+                        throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName, " a snapshot is already running");
+                    }
                 }
                 // Store newSnapshot here to be processed in clusterStateProcessed
                 List<String> indices = Arrays.asList(indexNameExpressionResolver.concreteIndexNames(currentState,
@@ -263,8 +273,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             State.STARTED, indexIds, threadPool.absoluteTimeInMillis(), repositoryData.getGenId(), shards,
                             null, userMeta, version);
                 }
+                final List<SnapshotsInProgress.Entry> newEntries = new ArrayList<>(runningSnapshots);
+                newEntries.add(newEntry);
                 return ClusterState.builder(currentState).putCustom(SnapshotsInProgress.TYPE,
-                        new SnapshotsInProgress(List.of(newEntry))).build();
+                        new SnapshotsInProgress(List.copyOf(newEntries))).build();
             }
 
             @Override

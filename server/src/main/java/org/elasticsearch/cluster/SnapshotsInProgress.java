@@ -468,8 +468,12 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         this.entries = entries;
     }
 
+    private static boolean assertConsistentEntries(List<Entry> entries) {
+
+    }
+
     public SnapshotsInProgress(Entry... entries) {
-        this.entries = Arrays.asList(entries);
+        this(Arrays.asList(entries));
     }
 
     public List<Entry> entries() {

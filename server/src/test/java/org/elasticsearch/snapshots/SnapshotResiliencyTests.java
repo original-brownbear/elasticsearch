@@ -205,6 +205,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
@@ -996,6 +997,70 @@ public class SnapshotResiliencyTests extends ESTestCase {
         assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
         assertEquals(shards, snapshotInfo.successfulShards());
         assertEquals(0, snapshotInfo.failedShards());
+    }
+
+    public void testRunConcurrentSnapshots() {
+        setupTestCluster(randomFrom(1, 3, 5), randomIntBetween(2, 10));
+
+        final String repoName = "repo";
+        final List<String> snapshotNames = IntStream.range(1, randomIntBetween(2, 4))
+                .mapToObj(i -> "snapshot-" + i).collect(Collectors.toList());
+        final String index = "test";
+        final int shards = randomIntBetween(1, 10);
+        final int documents = randomIntBetween(0, 100);
+
+        final TestClusterNodes.TestClusterNode masterNode =
+                testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
+
+        final StepListener<Collection<CreateSnapshotResponse>> allSnapshotsListener = new StepListener<>();
+        final ActionListener<CreateSnapshotResponse> snapshotListener =
+                new GroupedActionListener<>(allSnapshotsListener, snapshotNames.size());
+        final AtomicBoolean doneIndexing = new AtomicBoolean(false);
+        continueOrDie(createRepoAndIndex(repoName, index, shards), createIndexResponse -> {
+
+            for (String snapshotName : snapshotNames) {
+                scheduleNow(() -> client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
+                        .setWaitForCompletion(true).execute(snapshotListener));
+            }
+
+            if (documents != 0) {
+                final BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+                for (int i = 0; i < documents; ++i) {
+                    bulkRequest.add(new IndexRequest(index).source(Collections.singletonMap("foo", "bar" + i)));
+                }
+                final StepListener<BulkResponse> bulkResponseStepListener = new StepListener<>();
+                client().bulk(bulkRequest, bulkResponseStepListener);
+                continueOrDie(bulkResponseStepListener, bulkResponse -> {
+                    assertFalse("Failures in bulk response: " + bulkResponse.buildFailureMessage(), bulkResponse.hasFailures());
+                    assertEquals(documents, bulkResponse.getItems().length);
+                    doneIndexing.set(true);
+                });
+            }
+        });
+
+        final AtomicBoolean doneSnapshotting = new AtomicBoolean(false);
+        continueOrDie(allSnapshotsListener, createSnapshotResponses -> {
+            for (CreateSnapshotResponse createSnapshotResponse : createSnapshotResponses) {
+                final SnapshotInfo snapshotInfo = createSnapshotResponse.getSnapshotInfo();
+                assertThat(snapshotInfo.state(), is(SnapshotState.SUCCESS));
+            }
+            doneSnapshotting.set(true);
+        });
+
+        runUntil(() -> doneIndexing.get() && doneSnapshotting.get(), TimeUnit.MINUTES.toMillis(5L));
+        SnapshotsInProgress finalSnapshotsInProgress = masterNode.clusterService.state().custom(SnapshotsInProgress.TYPE);
+        assertFalse(finalSnapshotsInProgress.entries().stream().anyMatch(entry -> entry.state().completed() == false));
+        final Repository repository = masterNode.repositoriesService.repository(repoName);
+        Collection<SnapshotId> snapshotIds = getRepositoryData(repository).getSnapshotIds();
+        assertThat(snapshotIds, hasSize(snapshotNames.size()));
+
+        for (SnapshotId snapshotId : snapshotIds) {
+            final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotId);
+            assertEquals(SnapshotState.SUCCESS, snapshotInfo.state());
+            assertThat(snapshotInfo.indices(), containsInAnyOrder(index));
+            assertEquals(shards, snapshotInfo.successfulShards());
+            assertEquals(0, snapshotInfo.failedShards());
+        }
     }
 
     private RepositoryData getRepositoryData(Repository repository) {
