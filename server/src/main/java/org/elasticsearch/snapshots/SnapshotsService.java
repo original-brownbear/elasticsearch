@@ -1283,6 +1283,16 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         ImmutableOpenMap.Builder<ShardId, SnapshotsInProgress.ShardSnapshotStatus> builder = ImmutableOpenMap.builder();
         Metadata metadata = clusterState.metadata();
         final ShardGenerations shardGenerations = repositoryData.shardGenerations();
+        SnapshotsInProgress snapshots = clusterState.custom(SnapshotsInProgress.TYPE);
+        final List<SnapshotsInProgress.Entry> runningSnapshots = snapshots == null ? List.of() : snapshots.entries();
+        final Set<ShardId> inProgressShards = new HashSet<>();
+        for (SnapshotsInProgress.Entry runningSnapshot : runningSnapshots) {
+            for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : runningSnapshot.shards()) {
+                if (shard.value.state() == ShardState.INIT) {
+                    inProgressShards.add(shard.key);
+                }
+            }
+        }
         for (IndexId index : indices) {
             final String indexName = index.getName();
             final boolean isNewIndex = repositoryData.getIndices().containsKey(indexName) == false;
@@ -1316,6 +1326,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         } else if (primary.relocating() || primary.initializing()) {
                             builder.put(shardId, new SnapshotsInProgress.ShardSnapshotStatus(
                                 primary.currentNodeId(), ShardState.WAITING, shardRepoGeneration));
+                        } else if (inProgressShards.contains(shardId)) {
+                            builder.put(shardId, new SnapshotsInProgress.ShardSnapshotStatus(null, ShardState.WAITING, null));
                         } else if (!primary.started()) {
                             builder.put(shardId,
                                 new SnapshotsInProgress.ShardSnapshotStatus(primary.currentNodeId(), ShardState.MISSING,
@@ -1393,20 +1405,34 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             if (snapshots != null) {
                 int changedCount = 0;
                 final List<SnapshotsInProgress.Entry> entries = new ArrayList<>();
+                final Set<ShardId> reusedShardIds = new HashSet<>();
                 for (SnapshotsInProgress.Entry entry : snapshots.entries()) {
                     ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> shards = ImmutableOpenMap.builder();
                     boolean updated = false;
 
                     for (UpdateIndexShardSnapshotStatusRequest updateSnapshotState : tasks) {
+                        final ShardId finishedShardId = updateSnapshotState.shardId();
                         if (entry.snapshot().equals(updateSnapshotState.snapshot())) {
                             logger.trace("[{}] Updating shard [{}] with status [{}]", updateSnapshotState.snapshot(),
-                                updateSnapshotState.shardId(), updateSnapshotState.status().state());
+                                    finishedShardId, updateSnapshotState.status().state());
                             if (updated == false) {
                                 shards.putAll(entry.shards());
                                 updated = true;
                             }
-                            shards.put(updateSnapshotState.shardId(), updateSnapshotState.status());
+                            shards.put(finishedShardId, updateSnapshotState.status());
                             changedCount++;
+                        } else {
+                            if (reusedShardIds.contains(finishedShardId) == false && entry.shards().keys().contains(finishedShardId)) {
+                                if (updated == false) {
+                                    shards.putAll(entry.shards());
+                                    updated = true;
+                                }
+                                // TODO: This is tricky. If the snapshot was successful we can assign the next snapshot for this shard to
+                                //       the same node and keep going. If it failed we technically should check why to see if it's even
+                                //       worth it to continue here.
+                                shards.put(finishedShardId, updateSnapshotState.status());
+                                reusedShardIds.add(finishedShardId);
+                            }
                         }
                     }
 

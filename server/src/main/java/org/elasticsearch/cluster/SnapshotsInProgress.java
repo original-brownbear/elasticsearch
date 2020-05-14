@@ -335,6 +335,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     public static class ShardSnapshotStatus {
         private final ShardState state;
+
+        @Nullable
         private final String nodeId;
 
         @Nullable
@@ -347,11 +349,11 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this(nodeId, ShardState.INIT, generation);
         }
 
-        public ShardSnapshotStatus(String nodeId, ShardState state, String generation) {
+        public ShardSnapshotStatus(@Nullable String nodeId, ShardState state, @Nullable String generation) {
             this(nodeId, state, null, generation);
         }
 
-        public ShardSnapshotStatus(String nodeId, ShardState state, String reason, String generation) {
+        public ShardSnapshotStatus(@Nullable String nodeId, ShardState state, String reason, @Nullable String generation) {
             this.nodeId = nodeId;
             this.state = state;
             this.reason = reason;
@@ -375,10 +377,12 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             return state;
         }
 
+        @Nullable
         public String nodeId() {
             return nodeId;
         }
 
+        @Nullable
         public String generation() {
             return this.generation;
         }
@@ -466,14 +470,24 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     public SnapshotsInProgress(List<Entry> entries) {
         this.entries = entries;
-    }
-
-    private static boolean assertConsistentEntries(List<Entry> entries) {
-
+        assert assertConsistentEntries(entries);
     }
 
     public SnapshotsInProgress(Entry... entries) {
         this(Arrays.asList(entries));
+    }
+
+    private static boolean assertConsistentEntries(List<Entry> entries) {
+        // TODO: No two snapshots can be snapshotting the same shard at the same time
+        final Set<ShardId> startedShardIds = new HashSet<>();
+        for (Entry entry : entries) {
+            for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : entry.shards()) {
+                if (shard.value.state() == ShardState.INIT) {
+                    assert startedShardIds.add(shard.key) : "Found duplicate shard assignments in " + entries;
+                }
+            }
+        }
+        return true;
     }
 
     public List<Entry> entries() {
