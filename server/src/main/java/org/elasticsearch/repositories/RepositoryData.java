@@ -70,7 +70,7 @@ public final class RepositoryData {
      * An instance initialized for an empty repository.
      */
     public static final RepositoryData EMPTY = new RepositoryData(EMPTY_REPO_GEN,
-        Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), ShardGenerations.EMPTY);
+            Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), ShardGenerations.EMPTY);
 
     /**
      * The generational id of the index file from which the repository data was read.
@@ -107,12 +107,12 @@ public final class RepositoryData {
         this.snapshotIds = Collections.unmodifiableMap(snapshotIds);
         this.snapshotStates = Collections.unmodifiableMap(snapshotStates);
         this.indices = Collections.unmodifiableMap(indexSnapshots.keySet().stream()
-            .collect(Collectors.toMap(IndexId::getName, Function.identity())));
+                .collect(Collectors.toMap(IndexId::getName, Function.identity())));
         this.indexSnapshots = Collections.unmodifiableMap(indexSnapshots);
         this.shardGenerations = Objects.requireNonNull(shardGenerations);
         this.snapshotVersions = snapshotVersions;
         assert indices.values().containsAll(shardGenerations.indices()) : "ShardGenerations contained indices "
-            + shardGenerations.indices() + " but snapshots only reference indices " + indices.values();
+                + shardGenerations.indices() + " but snapshots only reference indices " + indices.values();
         assert indexSnapshots.values().stream().noneMatch(snapshotIdList -> Set.copyOf(snapshotIdList).size() != snapshotIdList.size()) :
                 "Found duplicate snapshot ids per index in [" + indexSnapshots + "]";
     }
@@ -123,6 +123,7 @@ public final class RepositoryData {
 
     /**
      * Creates a copy of this instance that contains updated version data.
+     *
      * @param versions map of snapshot versions
      * @return copy with updated version data
      */
@@ -353,14 +354,18 @@ public final class RepositoryData {
      * Resolve the given index names to index ids, creating new index ids for
      * new indices in the repository.
      */
-    public List<IndexId> resolveNewIndices(final List<String> indicesToResolve) {
+    public List<IndexId> resolveNewIndices(final List<String> indicesToResolve, Map<String, IndexId> inFlightIds) {
         List<IndexId> snapshotIndices = new ArrayList<>();
         for (String index : indicesToResolve) {
             final IndexId indexId;
             if (indices.containsKey(index)) {
                 indexId = indices.get(index);
             } else {
-                indexId = new IndexId(index, UUIDs.randomBase64UUID());
+                if (inFlightIds.containsKey(index)) {
+                    indexId = inFlightIds.get(index);
+                } else {
+                    indexId = new IndexId(index, UUIDs.randomBase64UUID());
+                }
             }
             snapshotIndices.add(indexId);
         }

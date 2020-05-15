@@ -243,7 +243,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     request.indicesOptions(), request.indices()));
                 logger.trace("[{}][{}] creating snapshot for indices [{}]", repositoryName, snapshotName, indices);
 
-                final List<IndexId> indexIds = repositoryData.resolveNewIndices(indices);
+                final Map<String, IndexId> inflight = runningSnapshots.stream().flatMap(entry -> entry.indices().stream()).distinct()
+                        .collect(Collectors.toMap(IndexId::getName, Function.identity()));
+                final List<IndexId> indexIds = repositoryData.resolveNewIndices(indices, inflight);
                 final Version version = minCompatibleVersion(
                         clusterService.state().nodes().getMinNodeVersion(), repositoryData, null);
                 ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards =
