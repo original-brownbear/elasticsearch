@@ -96,8 +96,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -692,6 +696,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 .anyMatch(removedNodes.stream().map(DiscoveryNode::getId).collect(Collectors.toSet())::contains);
     }
 
+    private final AtomicBoolean isFinalizing = new AtomicBoolean();
+
+    private final Object finalizationMutex = new Object();
+
+    private final BlockingQueue<SnapshotsInProgress.Entry> snapshotsToFinalize = new LinkedTransferQueue<>();
+
     /**
      * Finalizes the shard in repository and then removes it from cluster state
      * <p>
@@ -710,11 +720,22 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             removeSnapshotFromClusterState(entry.snapshot(), new SnapshotException(snapshot, "Aborted on initialization"));
             return;
         }
+        // TODO: nicer synchronization
+        synchronized (finalizationMutex) {
+            if (isFinalizing.compareAndSet(false, true)) {
+                finalizeSnapshotEntry(entry, metadata, entry.repositoryStateId());
+            } else {
+                snapshotsToFinalize.add(entry);
+            }
+        }
+    }
+
+    private void finalizeSnapshotEntry(SnapshotsInProgress.Entry entry, Metadata metadata, long repositoryGen) {
         threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
             @Override
             protected void doRun() {
-                final Repository repository = repositoriesService.repository(snapshot.getRepository());
                 final String failure = entry.failure();
+                final Snapshot snapshot = entry.snapshot();
                 logger.trace("[{}] finalizing snapshot in repository, state: [{}], failure[{}]", snapshot, entry.state(), failure);
                 ArrayList<SnapshotShardFailure> shardFailures = new ArrayList<>();
                 for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardStatus : entry.shards()) {
@@ -730,14 +751,14 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     }
                 }
                 final ShardGenerations shardGenerations = buildGenerations(entry, metadata);
-                repository.finalizeSnapshot(
+                repositoriesService.repository(snapshot.getRepository()).finalizeSnapshot(
                     snapshot.getSnapshotId(),
                     shardGenerations,
                     entry.startTime(),
                     failure,
                     entry.partial() ? shardGenerations.totalShards() : entry.shards().size(),
                     unmodifiableList(shardFailures),
-                    entry.repositoryStateId(),
+                    repositoryGen,
                     entry.includeGlobalState(),
                     metadataForSnapshot(entry, metadata),
                     entry.userMetadata(),
@@ -755,6 +776,17 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             }
                             endingSnapshots.remove(snapshot);
                             logger.info("snapshot [{}] completed with state [{}]", snapshot, result.v2().state());
+                            synchronized (finalizationMutex) {
+                                final SnapshotsInProgress.Entry nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+                                if (nextFinalization != null) {
+                                    logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
+                                    // TODO: serialize this on the CS thread to not have to get the metadata via the getter
+                                    finalizeSnapshotEntry(nextFinalization, clusterService.state().metadata(), result.v1().getGenId());
+                                } else {
+                                    assert isFinalizing.get();
+                                    isFinalizing.set(false);
+                                }
+                            }
                         }, this::onFailure));
             }
 

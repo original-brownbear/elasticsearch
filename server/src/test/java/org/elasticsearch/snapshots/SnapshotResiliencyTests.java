@@ -1017,12 +1017,10 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 new GroupedActionListener<>(allSnapshotsListener, snapshotNames.size());
         final AtomicBoolean doneIndexing = new AtomicBoolean(false);
         continueOrDie(createRepoAndIndex(repoName, index, shards), createIndexResponse -> {
-
             for (String snapshotName : snapshotNames) {
                 scheduleNow(() -> client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
                         .setWaitForCompletion(true).execute(snapshotListener));
             }
-
             if (documents != 0) {
                 final BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
                 for (int i = 0; i < documents; ++i) {
