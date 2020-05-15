@@ -161,6 +161,11 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this(entry, entry.state, shards, entry.failure);
         }
 
+        public Entry withRepoGen(long newRepoGen) {
+            return new Entry(snapshot, includeGlobalState, partial, state, indices, startTime, newRepoGen, shards, failure,
+                    userMetadata, version);
+        }
+
         @Override
         public String repository() {
             return snapshot.getRepository();

@@ -96,6 +96,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
@@ -1390,15 +1391,23 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             shards.put(finishedShardId, updateSnapshotState.status());
                             changedCount++;
                         } else {
-                            if (reusedShardIds.contains(finishedShardId) == false && entry.shards().keys().contains(finishedShardId)) {
+                            if (entry.state().completed() == false && reusedShardIds.contains(finishedShardId) == false
+                                    && entry.shards().keys().contains(finishedShardId)) {
+                                final ShardSnapshotStatus existingStatus = entry.shards().get(finishedShardId);
+                                if (existingStatus.state() != ShardState.WAITING) {
+                                    continue;
+                                }
                                 if (updated == false) {
                                     shards.putAll(entry.shards());
                                     updated = true;
                                 }
                                 // TODO: This is tricky. If the snapshot was successful we can assign the next snapshot for this shard to
                                 //       the same node and keep going. If it failed we technically should check why to see if it's even
-                                //       worth it to continue here.
-                                shards.put(finishedShardId, updateSnapshotState.status());
+                                //       worth it to continue here. For now we just keep going though.
+                                final ShardSnapshotStatus finishedStatus = updateSnapshotState.status();
+                                logger.trace("Starting [{}] on [{}] with generation [{}]", finishedShardId,
+                                        finishedStatus.nodeId(), finishedStatus.generation());
+                                shards.put(finishedShardId, new ShardSnapshotStatus(finishedStatus.nodeId(), finishedStatus.generation()));
                                 reusedShardIds.add(finishedShardId);
                             }
                         }
