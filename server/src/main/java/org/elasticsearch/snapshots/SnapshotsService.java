@@ -808,6 +808,25 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 } else {
                     logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
                     removeSnapshotFromClusterState(snapshot, e);
+                    synchronized (finalizationMutex) {
+                        final SnapshotsInProgress.Entry nextFinalization;
+                        try {
+                            nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+                        } catch (InterruptedException ie) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(ie);
+                        }
+                        if (nextFinalization != null) {
+                            logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
+                            // TODO: serialize this on the CS thread to not have to get the metadata via the getter
+                            // TODO: This is weird, we basically leaked all the files from the failed finalization here, maybe we should
+                            //       fail all subsequent snapshots also?
+                            finalizeSnapshotEntry(nextFinalization, clusterService.state().metadata(), entry.repositoryStateId());
+                        } else {
+                            assert isFinalizing.get();
+                            isFinalizing.set(false);
+                        }
+                    }
                 }
             }
         });
@@ -1502,7 +1521,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             if (endingSnapshots.contains(request.snapshot()) == false) {
                                 final SnapshotsInProgress snapshotsInProgress = newState.custom(SnapshotsInProgress.TYPE);
                                 final SnapshotsInProgress.Entry updatedEntry = snapshotsInProgress.snapshot(request.snapshot());
-                                if (updatedEntry.state().completed()) {
+                                if (updatedEntry != null && updatedEntry.state().completed()) {
                                     endSnapshot(updatedEntry, newState.metadata());
                                 }
                             }
