@@ -96,7 +96,6 @@ import org.elasticsearch.index.snapshots.blobstore.SlicedInputStream;
 import org.elasticsearch.index.snapshots.blobstore.SnapshotFiles;
 import org.elasticsearch.index.store.Store;
 import org.elasticsearch.index.store.StoreFileMetadata;
-import org.elasticsearch.index.translog.Translog;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.Repository;
@@ -1519,8 +1518,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         }
                         return updateRepositoryGenerations(stateFilter.apply(ClusterState.builder(currentState)
                                 .metadata(Metadata.builder(currentState.getMetadata()).putCustom(RepositoriesMetadata.TYPE,
-                                        currentState.metadata().<RepositoriesMetadata>custom(RepositoriesMetadata.TYPE).withUpdatedGeneration(
-                                                metadata.name(), newGen, newGen))).build()), expectedGen, newGen);
+                                        currentState.metadata().<RepositoriesMetadata>custom(RepositoriesMetadata.TYPE)
+                                                .withUpdatedGeneration(metadata.name(), newGen, newGen))).build()), expectedGen, newGen);
                     }
 
                     @Override
