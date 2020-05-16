@@ -1007,7 +1007,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 .mapToObj(i -> "snapshot-" + i).collect(Collectors.toList());
         final String index = "test";
         final int shards = randomIntBetween(1, 10);
-        final int documents = randomIntBetween(0, 100);
+        final int documents = randomIntBetween(1, 100);
 
         final TestClusterNodes.TestClusterNode masterNode =
                 testClusterNodes.currentMaster(testClusterNodes.nodes.values().iterator().next().clusterService.state());
@@ -1021,19 +1021,17 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 scheduleNow(() -> client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
                         .setWaitForCompletion(true).execute(snapshotListener));
             }
-            if (documents != 0) {
-                final BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-                for (int i = 0; i < documents; ++i) {
-                    bulkRequest.add(new IndexRequest(index).source(Collections.singletonMap("foo", "bar" + i)));
-                }
-                final StepListener<BulkResponse> bulkResponseStepListener = new StepListener<>();
-                client().bulk(bulkRequest, bulkResponseStepListener);
-                continueOrDie(bulkResponseStepListener, bulkResponse -> {
-                    assertFalse("Failures in bulk response: " + bulkResponse.buildFailureMessage(), bulkResponse.hasFailures());
-                    assertEquals(documents, bulkResponse.getItems().length);
-                    doneIndexing.set(true);
-                });
+            final BulkRequest bulkRequest = new BulkRequest().setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+            for (int i = 0; i < documents; ++i) {
+                bulkRequest.add(new IndexRequest(index).source(Collections.singletonMap("foo", "bar" + i)));
             }
+            final StepListener<BulkResponse> bulkResponseStepListener = new StepListener<>();
+            client().bulk(bulkRequest, bulkResponseStepListener);
+            continueOrDie(bulkResponseStepListener, bulkResponse -> {
+                assertFalse("Failures in bulk response: " + bulkResponse.buildFailureMessage(), bulkResponse.hasFailures());
+                assertEquals(documents, bulkResponse.getItems().length);
+                doneIndexing.set(true);
+            });
         });
 
         final AtomicBoolean doneSnapshotting = new AtomicBoolean(false);
