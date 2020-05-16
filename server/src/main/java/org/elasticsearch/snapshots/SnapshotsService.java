@@ -816,7 +816,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
-                            throw new RuntimeException(ie);
+                            isFinalizing.set(false);
+                            return;
                         }
                         if (nextFinalization != null) {
                             logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
