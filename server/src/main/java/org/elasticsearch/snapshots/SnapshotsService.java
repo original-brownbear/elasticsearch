@@ -933,6 +933,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             + "]");
                 }
                 final SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE);
+                // TODO: with concurrent snapshots, this logic needs an update to cleverly remove things from the CS
                 final SnapshotsInProgress.Entry snapshotEntry = findInProgressSnapshot(snapshots, snapshotNames, repositoryName);
                 final List<SnapshotId> snapshotIds = matchingSnapshotIds(
                         snapshotEntry == null ? null : snapshotEntry.snapshot().getSnapshotId(),
@@ -1449,6 +1450,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             shards.put(finishedShardId, updateSnapshotState.status());
                             changedCount++;
                         } else {
+                            // TODO: we can only really do this if both snapshots go to the same repository obviously
                             if (entry.state().completed() == false && reusedShardIds.contains(finishedShardId) == false
                                     && entry.shards().keys().contains(finishedShardId)) {
                                 final ShardSnapshotStatus existingStatus = entry.shards().get(finishedShardId);
