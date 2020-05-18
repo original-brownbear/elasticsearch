@@ -71,7 +71,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.repositories.IndexId;
@@ -724,7 +723,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         if (entry.repositoryStateId() == RepositoryData.UNKNOWN_REPO_GEN) {
             // BwC logic to handle master fail-over from an older version that still used unknown repo generation snapshot entries
             logger.debug("[{}] was aborted before starting", snapshot);
-            removeSnapshotFromClusterState(entry.snapshot(), new SnapshotException(snapshot, "Aborted on initialization"));
+            removeSnapshotFromClusterState(snapshot, new SnapshotException(snapshot, "Aborted on initialization"));
             return;
         }
         // TODO: nicer synchronization
@@ -738,27 +737,25 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     }
 
     private void finalizeSnapshotEntry(SnapshotsInProgress.Entry entry, Metadata metadata, long repositoryGen) {
-        threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
-            @Override
-            protected void doRun() {
-                final String failure = entry.failure();
-                final Snapshot snapshot = entry.snapshot();
-                logger.trace("[{}] finalizing snapshot in repository, state: [{}], failure[{}]", snapshot, entry.state(), failure);
-                ArrayList<SnapshotShardFailure> shardFailures = new ArrayList<>();
-                for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardStatus : entry.shards()) {
-                    ShardId shardId = shardStatus.key;
-                    ShardSnapshotStatus status = shardStatus.value;
-                    final ShardState state = status.state();
-                    if (state.failed()) {
-                        shardFailures.add(new SnapshotShardFailure(status.nodeId(), shardId, status.reason()));
-                    } else if (state.completed() == false) {
-                        shardFailures.add(new SnapshotShardFailure(status.nodeId(), shardId, "skipped"));
-                    } else {
-                        assert state == ShardState.SUCCESS;
-                    }
+        try {
+            final String failure = entry.failure();
+            final Snapshot snapshot = entry.snapshot();
+            logger.trace("[{}] finalizing snapshot in repository, state: [{}], failure[{}]", snapshot, entry.state(), failure);
+            ArrayList<SnapshotShardFailure> shardFailures = new ArrayList<>();
+            for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardStatus : entry.shards()) {
+                ShardId shardId = shardStatus.key;
+                ShardSnapshotStatus status = shardStatus.value;
+                final ShardState state = status.state();
+                if (state.failed()) {
+                    shardFailures.add(new SnapshotShardFailure(status.nodeId(), shardId, status.reason()));
+                } else if (state.completed() == false) {
+                    shardFailures.add(new SnapshotShardFailure(status.nodeId(), shardId, "skipped"));
+                } else {
+                    assert state == ShardState.SUCCESS;
                 }
-                final ShardGenerations shardGenerations = buildGenerations(entry, metadata);
-                repositoriesService.repository(snapshot.getRepository()).finalizeSnapshot(
+            }
+            final ShardGenerations shardGenerations = buildGenerations(entry, metadata);
+            repositoriesService.repository(snapshot.getRepository()).finalizeSnapshot(
                     snapshot.getSnapshotId(),
                     shardGenerations,
                     entry.startTime(),
@@ -770,16 +767,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     metadataForSnapshot(entry, metadata),
                     entry.userMetadata(),
                     entry.version(),
-                        state -> stateWithoutSnapshot(state, snapshot),
-                        ActionListener.wrap(result -> {
-                            final List<ActionListener<Tuple<RepositoryData, SnapshotInfo>>> completionListeners =
-                                    snapshotCompletionListeners.remove(snapshot);
-                            if (completionListeners != null) {
-                                try {
-                                    ActionListener.onResponse(completionListeners, result);
-                                } catch (Exception e) {
-                                    logger.warn("Failed to notify listeners", e);
-                                }
+                    state -> stateWithoutSnapshot(state, snapshot),
+                    ActionListener.wrap(result -> {
+                        final List<ActionListener<Tuple<RepositoryData, SnapshotInfo>>> completionListeners =
+                                snapshotCompletionListeners.remove(snapshot);
+                        if (completionListeners != null) {
+                            try {
+                                ActionListener.onResponse(completionListeners, result);
+                            } catch (Exception e) {
+                                logger.warn("Failed to notify listeners", e);
                             }
                             endingSnapshots.remove(snapshot);
                             logger.info("snapshot [{}] completed with state [{}]", snapshot, result.v2().state());
@@ -794,45 +790,46 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                     isFinalizing.set(false);
                                 }
                             }
-                        }, this::onFailure));
-            }
+                        }
+                    }, e -> handleFinalizationFailure(e, entry)));
+        } catch (Exception e) {
+            handleFinalizationFailure(e, entry);
+        }
+    }
 
-            @Override
-            public void onFailure(final Exception e) {
-                Snapshot snapshot = entry.snapshot();
-                if (ExceptionsHelper.unwrap(e, NotMasterException.class, FailedToCommitClusterStateException.class) != null) {
-                    // Failure due to not being master any more, don't try to remove snapshot from cluster state the next master
-                    // will try ending this snapshot again
-                    logger.debug(() -> new ParameterizedMessage(
-                        "[{}] failed to update cluster state during snapshot finalization", snapshot), e);
-                    failSnapshotCompletionListeners(snapshot,
-                        new SnapshotException(snapshot, "Failed to update cluster state during snapshot finalization", e));
+    private void handleFinalizationFailure(Exception e, SnapshotsInProgress.Entry entry) {
+        Snapshot snapshot = entry.snapshot();
+        if (ExceptionsHelper.unwrap(e, NotMasterException.class, FailedToCommitClusterStateException.class) != null) {
+            // Failure due to not being master any more, don't try to remove snapshot from cluster state the next master
+            // will try ending this snapshot again
+            logger.debug(() -> new ParameterizedMessage(
+                "[{}] failed to update cluster state during snapshot finalization", snapshot), e);
+            failSnapshotCompletionListeners(snapshot,
+                new SnapshotException(snapshot, "Failed to update cluster state during snapshot finalization", e));
+        } else {
+            logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
+            removeSnapshotFromClusterState(snapshot, e);
+            synchronized (finalizationMutex) {
+                final SnapshotsInProgress.Entry nextFinalization;
+                try {
+                    nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    isFinalizing.set(false);
+                    return;
+                }
+                if (nextFinalization != null) {
+                    logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
+                    // TODO: serialize this on the CS thread to not have to get the metadata via the getter
+                    // TODO: This is weird, we basically leaked all the files from the failed finalization here, maybe we should
+                    //       fail all subsequent snapshots also?
+                    finalizeSnapshotEntry(nextFinalization, clusterService.state().metadata(), entry.repositoryStateId());
                 } else {
-                    logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
-                    removeSnapshotFromClusterState(snapshot, e);
-                    synchronized (finalizationMutex) {
-                        final SnapshotsInProgress.Entry nextFinalization;
-                        try {
-                            nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            isFinalizing.set(false);
-                            return;
-                        }
-                        if (nextFinalization != null) {
-                            logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                            // TODO: serialize this on the CS thread to not have to get the metadata via the getter
-                            // TODO: This is weird, we basically leaked all the files from the failed finalization here, maybe we should
-                            //       fail all subsequent snapshots also?
-                            finalizeSnapshotEntry(nextFinalization, clusterService.state().metadata(), entry.repositoryStateId());
-                        } else {
-                            assert isFinalizing.get();
-                            isFinalizing.set(false);
-                        }
-                    }
+                    assert isFinalizing.get();
+                    isFinalizing.set(false);
                 }
             }
-        });
+        }
     }
 
     private static ClusterState stateWithoutSnapshot(ClusterState state, Snapshot snapshot) {
