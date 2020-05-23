@@ -19,6 +19,7 @@
 
 package org.elasticsearch.common.io.stream;
 
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.PagedBytesReference;
 import org.elasticsearch.common.util.BigArrays;
@@ -140,6 +141,11 @@ public class BytesStreamOutput extends BytesStream {
 
     @Override
     public BytesReference bytes() {
+        if (count == 0) {
+            return BytesArray.EMPTY;
+        } else if (bytes.hasArray()) {
+            return new BytesArray(bytes.array(), 0, count);
+        }
         return new PagedBytesReference(bytes, count);
     }
 

@@ -53,4 +53,11 @@ public interface ByteArray extends BigArray {
      */
     void fill(long fromIndex, long toIndex, byte value);
 
+    default boolean hasArray() {
+        return false;
+    }
+
+    default byte[] array() {
+        throw new UnsupportedOperationException();
+    }
 }
