@@ -32,6 +32,7 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.test.ESIntegTestCase;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -79,6 +80,24 @@ public class ForceMergeIT extends ESIntegTestCase {
         final String replicaForceMergeUUID = getForceMergeUUID(replica);
         assertThat(replicaForceMergeUUID, notNullValue());
         assertThat(primaryForceMergeUUID, is(replicaForceMergeUUID));
+    }
+
+
+    public void testSyncRetentionLeasesBeforeForceMerge() throws InterruptedException {
+        internalCluster().ensureAtLeastNumDataNodes(2);
+        final String index = "test-index";
+        createIndex(index, Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
+                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1).build());
+        ensureGreen(index);
+        indexRandom(true, client().prepareIndex(index).setId("doc-1").setSource("foo", "bar"));
+        indexRandom(true, client().prepareIndex(index).setId("doc-2").setSource("foo", "blub"));
+        client().prepareDelete().setIndex(index).setId("doc-2").get();
+        client().admin().indices().prepareForceMerge(index).setMaxNumSegments(1).get();
+        final long sizeBefore = client().admin().indices().prepareStats(index).get().getPrimaries().store.getSizeInBytes();
+        TimeUnit.SECONDS.sleep(35L);
+        client().admin().indices().prepareForceMerge(index).setMaxNumSegments(1).get();
+        final long sizeAfter = client().admin().indices().prepareStats(index).get().getPrimaries().store.getSizeInBytes();
+        assertEquals(sizeBefore, sizeAfter);
     }
 
     private static String getForceMergeUUID(IndexShard indexShard) throws IOException {
