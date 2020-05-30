@@ -93,9 +93,9 @@ public class ForceMergeIT extends ESIntegTestCase {
         indexRandom(true, client().prepareIndex(index).setId("doc-1").setSource("foo", "bar"));
         indexRandom(true, client().prepareIndex(index).setId("doc-2").setSource("foo", "blub"));
         client().prepareDelete().setIndex(index).setId("doc-2").get();
-        client().admin().indices().prepareFlush(index).setForce(true).get();
+        client().admin().indices().prepareFlush(index).setWaitIfOngoing(true).setForce(true).get();
+        TimeUnit.SECONDS.sleep(35L);
         client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
-        //TimeUnit.SECONDS.sleep(35L);
         final ImmutableOpenMap<String, Long> sizeBefore = client().admin().indices().prepareStats(index).setSegments(true)
                 .setIncludeSegmentFileSizes(true).get().getPrimaries().segments.getFileSizes();
         TimeUnit.SECONDS.sleep(35L);
