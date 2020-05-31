@@ -224,6 +224,7 @@ public class IndexingMemoryController implements IndexingOperationListener, Clos
 
     /** called by IndexShard to record estimated bytes written to translog for the operation */
     private void recordOperationBytes(Engine.Operation operation, Engine.Result result) {
+        logger.trace("--> record operation writes");
         if (result.getResultType() == Engine.Result.Type.SUCCESS) {
             statusChecker.bytesWritten(operation.estimatedSizeInBytes());
         }

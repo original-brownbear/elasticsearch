@@ -70,7 +70,7 @@ public class InternalClusterInfoService implements ClusterInfoService, LocalNode
     private static final Logger logger = LogManager.getLogger(InternalClusterInfoService.class);
 
     public static final Setting<TimeValue> INTERNAL_CLUSTER_INFO_UPDATE_INTERVAL_SETTING =
-        Setting.timeSetting("cluster.info.update.interval", TimeValue.timeValueSeconds(30), TimeValue.timeValueSeconds(10),
+        Setting.timeSetting("cluster.info.update.interval", TimeValue.timeValueSeconds(60), TimeValue.timeValueSeconds(10),
             Property.Dynamic, Property.NodeScope);
     public static final Setting<TimeValue> INTERNAL_CLUSTER_INFO_TIMEOUT_SETTING =
         Setting.positiveTimeSetting("cluster.info.update.timeout", TimeValue.timeValueSeconds(15),

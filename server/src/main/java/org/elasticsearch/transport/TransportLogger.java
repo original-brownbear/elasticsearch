@@ -38,7 +38,7 @@ public final class TransportLogger {
         if (logger.isTraceEnabled()) {
             try {
                 String logMessage = format(channel, message, "READ");
-                logger.trace(logMessage);
+                //logger.trace(logMessage);
             } catch (IOException e) {
                 logger.warn("an exception occurred formatting a READ trace message", e);
             }
@@ -49,7 +49,7 @@ public final class TransportLogger {
         if (logger.isTraceEnabled()) {
             try {
                 String logMessage = format(channel, message, "READ");
-                logger.trace(logMessage);
+                //logger.trace(logMessage);
             } catch (IOException e) {
                 logger.warn("an exception occurred formatting a READ trace message", e);
             }
@@ -65,7 +65,7 @@ public final class TransportLogger {
                 }
                 BytesReference withoutHeader = message.slice(HEADER_SIZE, message.length() - HEADER_SIZE);
                 String logMessage = format(channel, withoutHeader, "WRITE");
-                logger.trace(logMessage);
+                //logger.trace(logMessage);
             } catch (IOException e) {
                 logger.warn("an exception occurred formatting a WRITE trace message", e);
             }

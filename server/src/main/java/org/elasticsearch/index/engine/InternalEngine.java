@@ -519,6 +519,7 @@ public class InternalEngine extends Engine {
 
     @Override
     public boolean ensureTranslogSynced(Stream<Translog.Location> locations) throws IOException {
+        logger.trace("--> ensure translog synced");
         final boolean synced = translog.ensureSynced(locations);
         if (synced) {
             revisitIndexDeletionPolicyOnTranslogSynced();
@@ -528,6 +529,7 @@ public class InternalEngine extends Engine {
 
     @Override
     public void syncTranslog() throws IOException {
+        logger.trace("--> sync translog");
         translog.sync();
         revisitIndexDeletionPolicyOnTranslogSynced();
     }
@@ -1029,6 +1031,7 @@ public class InternalEngine extends Engine {
 
     private IndexResult indexIntoLucene(Index index, IndexingStrategy plan)
         throws IOException {
+        logger.trace("--> index into lucene");
         assert index.seqNo() >= 0 : "ops should have an assigned seq no.; origin: " + index.origin();
         assert plan.versionForIndexing >= 0 : "version must be set. got " + plan.versionForIndexing;
         assert plan.indexIntoLucene || plan.addStaleOpToLucene;
@@ -1351,6 +1354,7 @@ public class InternalEngine extends Engine {
     }
 
     private DeleteResult deleteInLucene(Delete delete, DeletionStrategy plan) throws IOException {
+        logger.trace("--> delete in lucene");
         assert assertMaxSeqNoOfUpdatesIsAdvanced(delete.uid(), delete.seqNo(), false, false);
         try {
             final ParsedDocument tombstone = engineConfig.getTombstoneDocSupplier().newDeleteTombstoneDoc(delete.id());
@@ -1431,6 +1435,7 @@ public class InternalEngine extends Engine {
 
     @Override
     public void maybePruneDeletes() {
+        logger.trace("--> maybe prune deletes");
         // It's expensive to prune because we walk the deletes map acquiring dirtyLock for each uid so we only do it
         // every 1/4 of gcDeletesInMillis:
         if (engineConfig.isEnableGcDeletes() &&
@@ -1441,6 +1446,7 @@ public class InternalEngine extends Engine {
 
     @Override
     public NoOpResult noOp(final NoOp noOp) throws IOException {
+        logger.trace("--> no op");
         final NoOpResult noOpResult;
         try (ReleasableLock ignored = readLock.acquire()) {
             ensureOpen();
@@ -1457,6 +1463,7 @@ public class InternalEngine extends Engine {
     }
 
     private NoOpResult innerNoOp(final NoOp noOp) throws IOException {
+        logger.trace("--> inner no op");
         assert readLock.isHeldByCurrentThread() || writeLock.isHeldByCurrentThread();
         assert noOp.seqNo() > SequenceNumbers.NO_OPS_PERFORMED;
         final long seqNo = noOp.seqNo();
@@ -1531,6 +1538,7 @@ public class InternalEngine extends Engine {
     }
 
     final boolean refresh(String source, SearcherScope scope, boolean block) throws EngineException {
+        logger.trace("--> refresh");
         // both refresh types will result in an internal refresh but only the external will also
         // pass the new reader reference to the external reader manager.
         final long localCheckpointBeforeRefresh = localCheckpointTracker.getProcessedCheckpoint();
@@ -1716,6 +1724,7 @@ public class InternalEngine extends Engine {
 
     @Override
     public void rollTranslogGeneration() throws EngineException {
+        logger.trace("--> rolling translog generation");
         try (ReleasableLock ignored = readLock.acquire()) {
             ensureOpen();
             translog.rollGeneration();
@@ -1735,6 +1744,7 @@ public class InternalEngine extends Engine {
 
     @Override
     public void trimUnreferencedTranslogFiles() throws EngineException {
+        logger.trace("--> trimming unref translog files");
         try (ReleasableLock lock = readLock.acquire()) {
             ensureOpen();
             translog.trimUnreferencedReaders();
@@ -1758,6 +1768,7 @@ public class InternalEngine extends Engine {
 
     @Override
     public void trimOperationsFromTranslog(long belowTerm, long aboveSeqNo) throws EngineException {
+        logger.trace("--> trimming ops from translog");
         try (ReleasableLock lock = readLock.acquire()) {
             ensureOpen();
             translog.trimOperations(belowTerm, aboveSeqNo);
@@ -1775,6 +1786,7 @@ public class InternalEngine extends Engine {
     }
 
     private void pruneDeletedTombstones() {
+        logger.trace("--> prune deleted tombstones");
         /*
          * We need to deploy two different trimming strategies for GC deletes on primary and replicas. Delete operations on primary
          * are remembered for at least one GC delete cycle and trimmed periodically. This is, at the moment, the best we can do on
@@ -2272,6 +2284,7 @@ public class InternalEngine extends Engine {
      * @param translog the translog
      */
     protected void commitIndexWriter(final IndexWriter writer, final Translog translog) throws IOException {
+        logger.info("--> commit index writer");
         ensureCanFlush();
         try {
             final long localCheckpoint = localCheckpointTracker.getProcessedCheckpoint();

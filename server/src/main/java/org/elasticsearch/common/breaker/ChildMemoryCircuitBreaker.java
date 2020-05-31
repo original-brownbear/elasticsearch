@@ -167,7 +167,7 @@ public class ChildMemoryCircuitBreaker implements CircuitBreaker {
     @Override
     public long addWithoutBreaking(long bytes) {
         long u = used.addAndGet(bytes);
-        logger.trace(() -> new ParameterizedMessage("[{}] Adjusted breaker by [{}] bytes, now [{}]", this.name, bytes, u));
+        //logger.trace(() -> new ParameterizedMessage("[{}] Adjusted breaker by [{}] bytes, now [{}]", this.name, bytes, u));
         assert u >= 0 : "Used bytes: [" + u + "] must be >= 0";
         return u;
     }

@@ -26,13 +26,24 @@ import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.Index;
+import org.elasticsearch.index.IndexService;
+import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.engine.Engine;
+import org.elasticsearch.index.engine.Segment;
 import org.elasticsearch.index.shard.IndexShard;
+import org.elasticsearch.index.store.Store;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
+import org.elasticsearch.test.InternalSettingsPlugin;
+import org.elasticsearch.test.junit.annotations.TestIssueLogging;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.is;
@@ -40,6 +51,11 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
 public class ForceMergeIT extends ESIntegTestCase {
+
+    @Override
+    protected Collection<Class<? extends Plugin>> nodePlugins() {
+        return Collections.singletonList(InternalSettingsPlugin.class);
+    }
 
     public void testForceMergeUUIDConsistent() throws IOException {
         internalCluster().ensureAtLeastNumDataNodes(2);
@@ -83,23 +99,54 @@ public class ForceMergeIT extends ESIntegTestCase {
         assertThat(primaryForceMergeUUID, is(replicaForceMergeUUID));
     }
 
-
-    public void testSyncRetentionLeasesBeforeForceMerge() throws InterruptedException {
+    @TestIssueLogging(issueUrl = "foo", value = "_root:TRACE")
+    public void testSyncRetentionLeasesBeforeForceMerge() throws InterruptedException, IOException {
         internalCluster().ensureAtLeastNumDataNodes(2);
         final String index = "test-index";
         createIndex(index, Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1).build());
+                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
+                .put(IndexService.RETENTION_LEASE_SYNC_INTERVAL_SETTING.getKey(), "60s")
+                .put(IndexService.GLOBAL_CHECKPOINT_SYNC_INTERVAL_SETTING.getKey(), "60s")
+                // TODO: How does setting this break cleaning up all the old data
+                // A: Messes with the logic for refreshing in org.elasticsearch.index.shard.IndexShard.scheduledRefresh
+                .put(IndexSettings.INDEX_REFRESH_INTERVAL_SETTING.getKey(), "1s")
+                .put(IndexSettings.INDEX_SEARCH_IDLE_AFTER.getKey(), TimeValue.timeValueSeconds(10))
+                .build());
         ensureGreen(index);
+        final ClusterState state = clusterService().state();
+        final IndexRoutingTable indexShardRoutingTables = state.routingTable().getIndicesRouting().get(index);
+        final IndexShardRoutingTable shardRouting = indexShardRoutingTables.getShards().get(0);
+        final String primaryNodeId = shardRouting.primaryShard().currentNodeId();
+        final String replicaNodeId = shardRouting.replicaShards().get(0).currentNodeId();
+        final String primaryNodeName = state.nodes().get(primaryNodeId).getName();
+        final String replicaNodeName = state.nodes().get(replicaNodeId).getName();
+        final Index idx = shardRouting.primaryShard().index();
+        final IndexService indexServicePrimary = internalCluster().getInstance(IndicesService.class, primaryNodeName).indexService(idx);
+        final IndexService indexServiceReplica = internalCluster().getInstance(IndicesService.class, replicaNodeName).indexService(idx);
+        final Store.MetadataSnapshot primaryMetaDataEmpty = indexServicePrimary.getShard(0).snapshotStoreMetadata();
         indexRandom(true, client().prepareIndex(index).setId("doc-1").setSource("foo", "bar"));
         indexRandom(true, client().prepareIndex(index).setId("doc-2").setSource("foo", "blub"));
         client().prepareDelete().setIndex(index).setId("doc-2").get();
+        final Store.MetadataSnapshot primaryMetaDataBeforeFlush = indexServicePrimary.getShard(0).snapshotStoreMetadata();
         client().admin().indices().prepareFlush(index).setWaitIfOngoing(true).setForce(true).get();
-        TimeUnit.SECONDS.sleep(35L);
+        final Store.MetadataSnapshot primaryMetaDataAfterFlush = indexServicePrimary.getShard(0).snapshotStoreMetadata();
+        logger.info("--> flushed");
+        //TimeUnit.SECONDS.sleep(15L);
+        logger.info("--> force merge 1");
+        flushAndRefresh(index);
+        final Store.MetadataSnapshot primaryMetaDataAfterWait = indexServicePrimary.getShard(0).snapshotStoreMetadata();
         client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
+        flushAndRefresh(index);
+        final List<Segment> first = indexServicePrimary.getShard(0).segments(true);
+        final Store.MetadataSnapshot primaryMetaDataAfterForceMerge = indexServicePrimary.getShard(0).snapshotStoreMetadata();
         final ImmutableOpenMap<String, Long> sizeBefore = client().admin().indices().prepareStats(index).setSegments(true)
                 .setIncludeSegmentFileSizes(true).get().getPrimaries().segments.getFileSizes();
         TimeUnit.SECONDS.sleep(35L);
+        logger.info("--> force merge 2");
         client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
+        final List<Segment> second = indexServicePrimary.getShard(0).segments(true);
+        flushAndRefresh(index);
+        final Store.MetadataSnapshot primaryMetaDataAfterSecondForceMerge = indexServicePrimary.getShard(0).snapshotStoreMetadata();
         final ImmutableOpenMap<String, Long> sizeAfter = client().admin().indices().prepareStats(index).setSegments(true)
                 .setIncludeSegmentFileSizes(true).get().getPrimaries().segments.getFileSizes();
         assertEquals(sizeBefore, sizeAfter);
