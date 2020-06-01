@@ -142,7 +142,7 @@ public class LeaderChecker {
      * publication targets, and also called if a leader becomes a non-leader.
      */
     void setCurrentNodes(DiscoveryNodes discoveryNodes) {
-        //logger.trace("setCurrentNodes: {}", discoveryNodes);
+        logger.trace("setCurrentNodes: {}", discoveryNodes);
         this.discoveryNodes = discoveryNodes;
     }
 
@@ -156,15 +156,15 @@ public class LeaderChecker {
         assert discoveryNodes != null;
 
         if (discoveryNodes.isLocalNodeElectedMaster() == false) {
-            //logger.debug("rejecting leader check on non-master {}", request);
+            logger.debug("rejecting leader check on non-master {}", request);
             throw new CoordinationStateRejectedException(
                 "rejecting leader check from [" + request.getSender() + "] sent to a node that is no longer the master");
         } else if (discoveryNodes.nodeExists(request.getSender()) == false) {
-            //logger.debug("rejecting leader check from removed node: {}", request);
+            logger.debug("rejecting leader check from removed node: {}", request);
             throw new CoordinationStateRejectedException(
                 "rejecting leader check since [" + request.getSender() + "] has been removed from the cluster");
         } else {
-            //logger.trace("handling {}", request);
+            logger.trace("handling {}", request);
         }
     }
 
@@ -173,7 +173,7 @@ public class LeaderChecker {
         if (checkScheduler != null) {
             checkScheduler.handleDisconnectedNode(discoveryNode);
         } else {
-            //logger.trace("disconnect event ignored for {}, no check scheduler", discoveryNode);
+            logger.trace("disconnect event ignored for {}, no check scheduler", discoveryNode);
         }
     }
 
@@ -190,19 +190,19 @@ public class LeaderChecker {
         @Override
         public void close() {
             if (isClosed.compareAndSet(false, true) == false) {
-                //logger.trace("already closed, doing nothing");
+                logger.trace("already closed, doing nothing");
             } else {
-                //logger.debug("closed");
+                logger.debug("closed");
             }
         }
 
         void handleWakeUp() {
             if (isClosed.get()) {
-                //logger.trace("closed check scheduler woken up, doing nothing");
+                logger.trace("closed check scheduler woken up, doing nothing");
                 return;
             }
 
-            //logger.trace("checking {} with [{}] = {}", leader, LEADER_CHECK_TIMEOUT_SETTING.getKey(), leaderCheckTimeout);
+            logger.trace("checking {} with [{}] = {}", leader, LEADER_CHECK_TIMEOUT_SETTING.getKey(), leaderCheckTimeout);
 
             transportService.sendRequest(leader, LEADER_CHECK_ACTION_NAME, new LeaderCheckRequest(transportService.getLocalNode()),
                 TransportRequestOptions.builder().withTimeout(leaderCheckTimeout).withType(Type.PING).build(),
@@ -281,13 +281,13 @@ public class LeaderChecker {
 
         void handleDisconnectedNode(DiscoveryNode discoveryNode) {
             if (discoveryNode.equals(leader)) {
-                //logger.debug("leader [{}] disconnected", leader);
+                logger.debug("leader [{}] disconnected", leader);
                 leaderFailed(new NodeDisconnectedException(discoveryNode, "disconnected"));
             }
         }
 
         private void scheduleNextWakeUp() {
-            //logger.trace("scheduling next check of {} for [{}] = {}", leader, LEADER_CHECK_INTERVAL_SETTING.getKey(), leaderCheckInterval);
+            logger.trace("scheduling next check of {} for [{}] = {}", leader, LEADER_CHECK_INTERVAL_SETTING.getKey(), leaderCheckInterval);
             transportService.getThreadPool().schedule(new Runnable() {
                 @Override
                 public void run() {

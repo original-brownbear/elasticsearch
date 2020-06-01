@@ -163,7 +163,7 @@ public class FollowersChecker {
         FastResponseState responder = this.fastResponseState;
 
         if (responder.mode == Mode.FOLLOWER && responder.term == request.term) {
-            //logger.trace("responding to {} on fast path", request);
+            logger.trace("responding to {} on fast path", request);
             transportChannel.sendResponse(Empty.INSTANCE);
             return;
         }
@@ -175,7 +175,7 @@ public class FollowersChecker {
         transportService.getThreadPool().generic().execute(new AbstractRunnable() {
             @Override
             protected void doRun() throws IOException {
-                //logger.trace("responding to {} on slow path", request);
+                logger.trace("responding to {} on slow path", request);
                 try {
                     handleRequestAndUpdateState.accept(request);
                 } catch (Exception e) {
@@ -284,7 +284,7 @@ public class FollowersChecker {
             }
 
             final FollowerCheckRequest request = new FollowerCheckRequest(fastResponseState.term, transportService.getLocalNode());
-            //logger.trace("handleWakeUp: checking {} with {}", discoveryNode, request);
+            logger.trace("handleWakeUp: checking {} with {}", discoveryNode, request);
 
             transportService.sendRequest(discoveryNode, FOLLOWER_CHECK_ACTION_NAME, request,
                 TransportRequestOptions.builder().withTimeout(followerCheckTimeout).withType(Type.PING).build(),
@@ -302,14 +302,14 @@ public class FollowersChecker {
                         }
 
                         failureCountSinceLastSuccess = 0;
-                        //logger.trace("{} check successful", FollowerChecker.this);
+                        logger.trace("{} check successful", FollowerChecker.this);
                         scheduleNextWakeUp();
                     }
 
                     @Override
                     public void handleException(TransportException exp) {
                         if (running() == false) {
-                            //logger.debug(new ParameterizedMessage("{} no longer running", FollowerChecker.this), exp);
+                            logger.debug(new ParameterizedMessage("{} no longer running", FollowerChecker.this), exp);
                             return;
                         }
 
