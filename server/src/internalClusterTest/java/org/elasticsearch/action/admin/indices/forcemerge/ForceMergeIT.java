@@ -26,19 +26,15 @@ import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexService;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.Segment;
 import org.elasticsearch.index.shard.IndexShard;
-import org.elasticsearch.index.store.Store;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.InternalSettingsPlugin;
-import org.elasticsearch.test.junit.annotations.TestIssueLogging;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -99,21 +95,15 @@ public class ForceMergeIT extends ESIntegTestCase {
         assertThat(primaryForceMergeUUID, is(replicaForceMergeUUID));
     }
 
-    @TestIssueLogging(issueUrl = "foo", value = "_root:TRACE")
-    public void testSyncRetentionLeasesBeforeForceMerge() throws InterruptedException, IOException {
+    public void testSyncRetentionLeasesBeforeForceMerge() throws Exception {
         internalCluster().ensureAtLeastNumDataNodes(2);
         final String index = "test-index";
         createIndex(index, Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                 .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-                //.put(IndexService.RETENTION_LEASE_SYNC_INTERVAL_SETTING.getKey(), "100ms")
-                //.put(IndexService.GLOBAL_CHECKPOINT_SYNC_INTERVAL_SETTING.getKey(), "100ms")
-                // TODO: How does setting this break cleaning up all the old data
-                // A: Messes with the logic for refreshing in org.elasticsearch.index.shard.IndexShard.scheduledRefresh
-                //.put(IndexSettings.INDEX_REFRESH_INTERVAL_SETTING.getKey(), "1s")
-                //.put(IndexSettings.INDEX_SEARCH_IDLE_AFTER.getKey(), TimeValue.timeValueSeconds(10))
+                .put(IndexService.RETENTION_LEASE_SYNC_INTERVAL_SETTING.getKey(), "5s")
                 .build());
         ensureGreen(index);
-        final long sleep = 5L;
+
         final ClusterState state = clusterService().state();
         final IndexRoutingTable indexShardRoutingTables = state.routingTable().getIndicesRouting().get(index);
         final IndexShardRoutingTable shardRouting = indexShardRoutingTables.getShards().get(0);
@@ -124,41 +114,41 @@ public class ForceMergeIT extends ESIntegTestCase {
         final Index idx = shardRouting.primaryShard().index();
         final IndexService indexServicePrimary = internalCluster().getInstance(IndicesService.class, primaryNodeName).indexService(idx);
         final IndexService indexServiceReplica = internalCluster().getInstance(IndicesService.class, replicaNodeName).indexService(idx);
-        final Store.MetadataSnapshot primaryMetaDataEmpty = indexServicePrimary.getShard(0).snapshotStoreMetadata();
         indexRandom(true, client().prepareIndex(index).setId("doc-1").setSource("foo", "bar"));
         indexRandom(true, client().prepareIndex(index).setId("doc-2").setSource("foo", "blub"));
         client().prepareDelete().setIndex(index).setId("doc-2").get();
-        final Store.MetadataSnapshot primaryMetaDataBeforeFlush = indexServicePrimary.getShard(0).snapshotStoreMetadata();
-        client().admin().indices().prepareFlush(index).setWaitIfOngoing(true).setForce(true).get();
-        final Store.MetadataSnapshot primaryMetaDataAfterFlush = indexServicePrimary.getShard(0).snapshotStoreMetadata();
-        logger.info("--> flushed");
 
-        TimeUnit.SECONDS.sleep(sleep);
+        flush(index);
 
-        logger.info("--> force merge 1");
-        client().admin().indices().prepareFlush(index).setWaitIfOngoing(true).setForce(true).get();
-        final Store.MetadataSnapshot primaryMetaDataAfterWait = indexServicePrimary.getShard(0).snapshotStoreMetadata();
-        client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
-        flushAndRefresh(index);
+        logger.info("--> force merge once");
+        final FlushResponse flushResponse =
+                client().admin().indices().prepareFlush(index).setWaitIfOngoing(true).setForce(true).get();
+        assertThat(flushResponse.getTotalShards(), is(2));
+
+        final ForceMergeResponse response =
+                client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
+        assertThat(response.getTotalShards(), is(2));
+
+        refresh(index);
         client().admin().indices().prepareFlush(index).setWaitIfOngoing(true).setForce(true).get();
         final List<Segment> first = indexServicePrimary.getShard(0).segments(true);
-        final Store.MetadataSnapshot primaryMetaDataAfterForceMerge = indexServicePrimary.getShard(0).snapshotStoreMetadata();
+        final List<Segment> firstR = indexServicePrimary.getShard(0).segments(true);
         final ImmutableOpenMap<String, Long> sizeBefore = client().admin().indices().prepareStats(index).setSegments(true)
                 .setIncludeSegmentFileSizes(true).get().getPrimaries().segments.getFileSizes();
 
-        TimeUnit.SECONDS.sleep(sleep);
+        TimeUnit.SECONDS.sleep(10L);
 
-        logger.info("--> force merge 2");
-        flushAndRefresh(index);
-        client().admin().indices().prepareFlush(index).setWaitIfOngoing(true).setForce(true).get();
+        logger.info("--> force merge again");
         client().admin().indices().prepareForceMerge(index).setFlush(true).setMaxNumSegments(1).get();
         final List<Segment> second = indexServicePrimary.getShard(0).segments(true);
+        final List<Segment> secondR = indexServicePrimary.getShard(0).segments(true);
         flushAndRefresh(index);
-        final Store.MetadataSnapshot primaryMetaDataAfterSecondForceMerge = indexServicePrimary.getShard(0).snapshotStoreMetadata();
         final ImmutableOpenMap<String, Long> sizeAfter = client().admin().indices().prepareStats(index).setSegments(true)
                 .setIncludeSegmentFileSizes(true).get().getPrimaries().segments.getFileSizes();
 
         assertEquals(sizeBefore, sizeAfter);
+        assertEquals(first, second);
+        assertEquals(firstR, secondR);
     }
 
     private static String getForceMergeUUID(IndexShard indexShard) throws IOException {

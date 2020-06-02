@@ -32,7 +32,7 @@ import org.elasticsearch.client.ElasticsearchClient;
 public class ForceMergeRequestBuilder
         extends BroadcastOperationRequestBuilder<ForceMergeRequest, ForceMergeResponse, ForceMergeRequestBuilder> {
 
-    public ForceMergeRequestBuilder(ElasticsearchClient client, ForceMergeAction action) {
+    public ForceMergeRequestBuilder(ElasticsearchClient client, ForceMergeActionV2 action) {
         super(client, action, new ForceMergeRequest());
     }
 

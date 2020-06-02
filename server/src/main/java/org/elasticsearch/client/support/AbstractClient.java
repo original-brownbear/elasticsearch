@@ -166,10 +166,7 @@ import org.elasticsearch.action.admin.indices.flush.FlushAction;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequestBuilder;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeAction;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequestBuilder;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
+import org.elasticsearch.action.admin.indices.forcemerge.*;
 import org.elasticsearch.action.admin.indices.get.GetIndexAction;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequestBuilder;
@@ -1397,17 +1394,17 @@ public abstract class AbstractClient implements Client {
 
         @Override
         public ActionFuture<ForceMergeResponse> forceMerge(final ForceMergeRequest request) {
-            return execute(ForceMergeAction.INSTANCE, request);
+            return execute(ForceMergeActionV2.INSTANCE, request);
         }
 
         @Override
         public void forceMerge(final ForceMergeRequest request, final ActionListener<ForceMergeResponse> listener) {
-            execute(ForceMergeAction.INSTANCE, request, listener);
+            execute(ForceMergeActionV2.INSTANCE, request, listener);
         }
 
         @Override
         public ForceMergeRequestBuilder prepareForceMerge(String... indices) {
-            return new ForceMergeRequestBuilder(this, ForceMergeAction.INSTANCE).setIndices(indices);
+            return new ForceMergeRequestBuilder(this, ForceMergeActionV2.INSTANCE).setIndices(indices);
         }
 
         @Override

@@ -462,7 +462,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                                  final long applyingClusterStateVersion,
                                  final Set<String> inSyncAllocationIds,
                                  final IndexShardRoutingTable routingTable) throws IOException {
-        logger.trace("--> update shard state");
         final ShardRouting currentRouting;
         synchronized (mutex) {
             currentRouting = this.shardRouting;
@@ -1073,7 +1072,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * {@link org.elasticsearch.index.translog.TranslogDeletionPolicy} for details
      */
     public void trimTranslog() {
-        logger.trace("--> trim translog");
         verifyNotClosed();
         final Engine engine = getEngine();
         engine.trimUnreferencedTranslogFiles();
@@ -1083,7 +1081,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * Rolls the tranlog generation and cleans unneeded.
      */
     public void rollTranslogGeneration() {
-        logger.trace("--> roll translog generation");
         final Engine engine = getEngine();
         engine.rollTranslogGeneration();
     }
@@ -1137,7 +1134,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * @param flushFirst <code>true</code> if the index should first be flushed to disk / a low level lucene commit should be executed
      */
     public Engine.IndexCommitRef acquireLastIndexCommit(boolean flushFirst) throws EngineException {
-        logger.trace("--> acq last index commit");
         final IndexShardState state = this.state; // one time volatile read
         // we allow snapshot on closed index shard, since we want to do one after we close the shard and before we close the engine
         if (state == IndexShardState.STARTED || state == IndexShardState.CLOSED) {
@@ -1453,7 +1449,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     }
 
     public void trimOperationOfPreviousPrimaryTerms(long aboveSeqNo) {
-        logger.trace("--> trim ops of previous term");
         getEngine().trimOperationsFromTranslog(getOperationPrimaryTerm(), aboveSeqNo);
     }
 
@@ -1464,7 +1459,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * @see #updateMaxUnsafeAutoIdTimestamp(long)
      */
     public long getMaxSeenAutoIdTimestamp() {
-        logger.trace("--> get max seen auto id timestamp");
         return getEngine().getMaxSeenAutoIdTimestamp();
     }
 
@@ -1478,7 +1472,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * a retry append-only (without timestamp) via recovery, then an original append-only (with timestamp) via replication.
      */
     public void updateMaxUnsafeAutoIdTimestamp(long maxSeenAutoIdTimestampFromPrimary) {
-        logger.trace("--> update max unsafe auto id timestamp");
         getEngine().updateMaxUnsafeAutoIdTimestamp(maxSeenAutoIdTimestampFromPrimary);
     }
 
@@ -1488,7 +1481,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
 
     private Engine.Result applyTranslogOperation(Engine engine, Translog.Operation operation,
                                                  Engine.Operation.Origin origin) throws IOException {
-        logger.trace("--> apply translog op");
         // If a translog op is replayed on the primary (eg. ccr), we need to use external instead of null for its version type.
         final VersionType versionType = (origin == Engine.Operation.Origin.PRIMARY) ? VersionType.EXTERNAL : null;
         final Engine.Result result;
@@ -1720,7 +1712,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     }
 
     private void ensureWriteAllowed(Engine.Operation.Origin origin) throws IllegalIndexShardStateException {
-        logger.trace("--> ensure write allowed");
         IndexShardState state = this.state; // one time volatile read
 
         if (origin.isRecovery()) {
@@ -1802,7 +1793,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * indexing operation, so we can flush the index.
      */
     public void flushOnIdle(long inactiveTimeNS) {
-        logger.info("--> flush on idle");
         Engine engineOrNull = getEngineOrNull();
         if (engineOrNull != null && System.nanoTime() - engineOrNull.getLastWriteNanos() >= inactiveTimeNS) {
             boolean wasActive = active.getAndSet(false);
@@ -2018,7 +2008,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * Called when our shard is using too much heap and should move buffered indexed/deleted documents to disk.
      */
     public void writeIndexingBuffer() {
-        logger.trace("--> write indexing buffer");
         try {
             Engine engine = getEngine();
             engine.writeIndexingBuffer();
@@ -2036,7 +2025,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * @param checkpoint   the local checkpoint for the shard
      */
     public void updateLocalCheckpointForShard(final String allocationId, final long checkpoint) {
-        logger.trace("--> update local checkpoint for shard");
         assert assertPrimaryMode();
         verifyNotClosed();
         replicationTracker.updateLocalCheckpoint(allocationId, checkpoint);
@@ -2072,7 +2060,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     }
 
     private void ensureSoftDeletesEnabled(String feature) {
-        logger.trace("--> ensure soft deletes enabled");
         if (indexSettings.isSoftDeleteEnabled() == false) {
             String message = feature + " requires soft deletes but " + indexSettings.getIndex() + " does not have soft deletes enabled";
             assert false : message;
@@ -3054,13 +3041,11 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * listener handles all exception cases internally.
      */
     public final void sync(Translog.Location location, Consumer<Exception> syncListener) {
-        logger.trace("--> sync 1");
         verifyNotClosed();
         translogSyncProcessor.put(location, syncListener);
     }
 
     public void sync() throws IOException {
-        logger.trace("--> sync 2");
         verifyNotClosed();
         getEngine().syncTranslog();
     }
@@ -3087,7 +3072,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * executed asynchronously on the flush thread pool.
      */
     public void afterWriteOperation() {
-        logger.trace("--> after write operation");
         if (shouldPeriodicallyFlush() || shouldRollTranslogGeneration()) {
             if (flushOrRollRunning.compareAndSet(false, true)) {
                 /*
@@ -3194,7 +3178,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * @return <code>true</code> iff the engine got refreshed otherwise <code>false</code>
      */
     public boolean scheduledRefresh() {
-        logger.trace("scheduled refresh");
         verifyNotClosed();
         boolean listenerNeedsRefresh = refreshListeners.refreshNeeded();
         if (isReadAllowed() && (listenerNeedsRefresh || getEngine().refreshNeeded())) {
@@ -3205,7 +3188,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                 // lets skip this refresh since we are search idle and
                 // don't necessarily need to refresh. the next searcher access will register a refreshListener and that will
                 // cause the next schedule to refresh.
-                logger.trace("--> doing refresh");
                 final Engine engine = getEngine();
                 engine.maybePruneDeletes(); // try to prune the deletes in the engine if we accumulated some
                 setRefreshPending(engine);
