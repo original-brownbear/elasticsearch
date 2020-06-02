@@ -45,7 +45,7 @@ public class TransportForceMergeActionV2 extends TransportAction<ForceMergeReque
     protected void doExecute(Task task, ForceMergeRequest request, ActionListener<ForceMergeResponse> listener) {
         // TODO: Run this on primary
         // TODO: retention lease sync request -> call the below
-        indexServicePrimary.getShard(0).syncRetentionLeases();
+        //indexServicePrimary.getShard(0).syncRetentionLeases();
         transportService.sendChildRequest(transportService.getLocalNode(), ForceMergeAction.NAME, request, task,
                 TransportRequestOptions.EMPTY, new ActionListenerResponseHandler<>(listener, ForceMergeResponse::new));
     }

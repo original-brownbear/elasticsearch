@@ -137,7 +137,7 @@ public class TaskManager implements ClusterStateApplier {
         Objects.requireNonNull(task);
         assert task.getParentTaskId().equals(request.getParentTask()) : "Request [ " + request + "] didn't preserve it parentTaskId";
         if (logger.isTraceEnabled()) {
-            //logger.trace("register {} [{}] [{}] [{}]", task.getId(), type, action, task.getDescription());
+            logger.trace("register {} [{}] [{}] [{}]", task.getId(), type, action, task.getDescription());
         }
 
         if (task instanceof CancellableTask) {
@@ -219,7 +219,7 @@ public class TaskManager implements ClusterStateApplier {
     public void cancel(CancellableTask task, String reason, Runnable listener) {
         CancellableTaskHolder holder = cancellableTasks.get(task.getId());
         if (holder != null) {
-            //logger.trace("cancelling task with id {}", task.getId());
+            logger.trace("cancelling task with id {}", task.getId());
             holder.cancel(reason, listener);
         } else {
             listener.run();
@@ -230,7 +230,7 @@ public class TaskManager implements ClusterStateApplier {
      * Unregister the task
      */
     public Task unregister(Task task) {
-        //logger.trace("unregister task for id: {}", task.getId());
+        logger.trace("unregister task for id: {}", task.getId());
         if (task instanceof CancellableTask) {
             CancellableTaskHolder holder = cancellableTasks.remove(task.getId());
             if (holder != null) {
@@ -251,10 +251,10 @@ public class TaskManager implements ClusterStateApplier {
     public Releasable registerChildNode(long taskId, DiscoveryNode node) {
         final CancellableTaskHolder holder = cancellableTasks.get(taskId);
         if (holder != null) {
-            //logger.trace("register child node [{}] task [{}]", node, taskId);
+            logger.trace("register child node [{}] task [{}]", node, taskId);
             holder.registerChildNode(node);
             return Releasables.releaseOnce(() -> {
-                //logger.trace("unregister child node [{}] task [{}]", node, taskId);
+                logger.trace("unregister child node [{}] task [{}]", node, taskId);
                 holder.unregisterChildNode(node);
             });
         }
