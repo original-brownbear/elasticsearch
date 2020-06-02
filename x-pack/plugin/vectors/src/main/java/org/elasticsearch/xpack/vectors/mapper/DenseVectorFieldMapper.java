@@ -27,12 +27,12 @@ import org.elasticsearch.index.mapper.ParseContext;
 import org.elasticsearch.index.query.QueryShardContext;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
-import org.elasticsearch.search.aggregations.support.ValuesSourceType;
 import org.elasticsearch.xpack.vectors.query.VectorIndexFieldData;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 
 import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
@@ -147,12 +147,7 @@ public class DenseVectorFieldMapper extends FieldMapper implements ArrayValueMap
 
         @Override
         public IndexFieldData.Builder fielddataBuilder(String fullyQualifiedIndexName) {
-            return new VectorIndexFieldData.Builder();
-        }
-
-        @Override
-        public ValuesSourceType getValuesSourceType() {
-            return CoreValuesSourceType.BYTES;
+            return new VectorIndexFieldData.Builder(CoreValuesSourceType.BYTES);
         }
 
         @Override
@@ -227,6 +222,14 @@ public class DenseVectorFieldMapper extends FieldMapper implements ArrayValueMap
     protected void doXContentBody(XContentBuilder builder, boolean includeDefaults, Params params) throws IOException {
         super.doXContentBody(builder, includeDefaults, params);
         builder.field("dims", fieldType().dims());
+    }
+
+    @Override
+    protected void mergeOptions(FieldMapper other, List<String> conflicts) {
+        DenseVectorFieldType otherType = (DenseVectorFieldType) other.fieldType();
+        if (this.fieldType().dims() != otherType.dims()) {
+            conflicts.add("mapper [" + name() + "] has different dims");
+        }
     }
 
     @Override
