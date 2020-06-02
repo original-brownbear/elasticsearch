@@ -675,6 +675,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private final Object finalizationMutex = new Object();
 
+    // TODO: Tuple of Entry + Metadata so we don't have to use CS getter
     private final BlockingQueue<SnapshotsInProgress.Entry> snapshotsToFinalize = new LinkedTransferQueue<>();
 
     /**
@@ -692,7 +693,17 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         if (entry.repositoryStateId() == RepositoryData.UNKNOWN_REPO_GEN) {
             // BwC logic to handle master fail-over from an older version that still used unknown repo generation snapshot entries
             logger.debug("[{}] was aborted before starting", snapshot);
-            removeSnapshotFromClusterState(snapshot, new SnapshotException(snapshot, "Aborted on initialization"));
+            removeSnapshotFromClusterState(snapshot, new SnapshotException(snapshot, "Aborted on initialization"), new ActionListener<>() {
+                @Override
+                public void onResponse(ClusterState state) {
+                    logger.debug("Removed [{}] from cluster state", snapshot);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    logger.debug(() -> new ParameterizedMessage("Failed to remove [{}] from cluster state", snapshot), e);
+                }
+            });
             return;
         }
         // TODO: nicer synchronization
@@ -777,27 +788,25 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 new SnapshotException(snapshot, "Failed to update cluster state during snapshot finalization", e));
         } else {
             logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
-            removeSnapshotFromClusterState(snapshot, e);
-            synchronized (finalizationMutex) {
-                final SnapshotsInProgress.Entry nextFinalization;
-                try {
-                    nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    isFinalizing.set(false);
-                    return;
+            removeSnapshotFromClusterState(snapshot, e, ActionListener.wrap(newState -> {
+                synchronized (finalizationMutex) {
+                    final SnapshotsInProgress.Entry nextFinalization;
+                    try {
+                        nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        isFinalizing.set(false);
+                        return;
+                    }
+                    if (nextFinalization != null) {
+                        logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
+                        finalizeSnapshotEntry(nextFinalization, newState.metadata(), entry.repositoryStateId());
+                    } else {
+                        assert isFinalizing.get();
+                        isFinalizing.set(false);
+                    }
                 }
-                if (nextFinalization != null) {
-                    logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                    // TODO: serialize this on the CS thread to not have to get the metadata via the getter
-                    // TODO: This is weird, we basically leaked all the files from the failed finalization here, maybe we should
-                    //       fail all subsequent snapshots also?
-                    finalizeSnapshotEntry(nextFinalization, clusterService.state().metadata(), entry.repositoryStateId());
-                } else {
-                    assert isFinalizing.get();
-                    isFinalizing.set(false);
-                }
-            }
+            }, ex -> handleFinalizationFailure(ex, entry)));
         }
     }
 
@@ -826,7 +835,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param snapshot   snapshot
      * @param failure    exception if snapshot failed
      */
-    private void removeSnapshotFromClusterState(final Snapshot snapshot, Exception failure) {
+    private void removeSnapshotFromClusterState(Snapshot snapshot, Exception failure, ActionListener<ClusterState> listener) {
         assert failure != null : "Failure must be supplied";
         clusterService.submitStateUpdateTask("remove snapshot metadata", new ClusterStateUpdateTask() {
 
@@ -838,19 +847,23 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public void onFailure(String source, Exception e) {
                 logger.warn(() -> new ParameterizedMessage("[{}] failed to remove snapshot metadata", snapshot), e);
-                failSnapshotCompletionListeners(
-                    snapshot, new SnapshotException(snapshot, "Failed to remove snapshot from cluster state", e));
+                final Exception exception = new SnapshotException(snapshot, "Failed to remove snapshot from cluster state", e);
+                failSnapshotCompletionListeners(snapshot, exception);
+                listener.onFailure(exception);
             }
 
             @Override
             public void onNoLongerMaster(String source) {
-                failSnapshotCompletionListeners(
-                    snapshot, ExceptionsHelper.useOrSuppress(failure, new SnapshotException(snapshot, "no longer master")));
+                final Exception exception = ExceptionsHelper.useOrSuppress(failure, new SnapshotException(snapshot, "no longer master"));
+                failSnapshotCompletionListeners(snapshot, exception);
+                listener.onFailure(exception);
+
             }
 
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                 failSnapshotCompletionListeners(snapshot, failure);
+                listener.onResponse(newState);
             }
         });
     }
