@@ -746,18 +746,18 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             } catch (Exception e) {
                                 logger.warn("Failed to notify listeners", e);
                             }
-                            endingSnapshots.remove(snapshot);
-                            logger.info("snapshot [{}] completed with state [{}]", snapshot, result.v2().state());
-                            synchronized (finalizationMutex) {
-                                final SnapshotsInProgress.Entry nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
-                                if (nextFinalization != null) {
-                                    logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                                    // TODO: serialize this on the CS thread to not have to get the metadata via the getter
-                                    finalizeSnapshotEntry(nextFinalization, clusterService.state().metadata(), result.v1().getGenId());
-                                } else {
-                                    assert isFinalizing.get();
-                                    isFinalizing.set(false);
-                                }
+                        }
+                        endingSnapshots.remove(snapshot);
+                        logger.info("snapshot [{}] completed with state [{}]", snapshot, result.v2().state());
+                        synchronized (finalizationMutex) {
+                            final SnapshotsInProgress.Entry nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+                            if (nextFinalization != null) {
+                                logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
+                                // TODO: serialize this on the CS thread to not have to get the metadata via the getter
+                                finalizeSnapshotEntry(nextFinalization, clusterService.state().metadata(), result.v1().getGenId());
+                            } else {
+                                assert isFinalizing.get();
+                                isFinalizing.set(false);
                             }
                         }
                     }, e -> handleFinalizationFailure(e, entry)));
