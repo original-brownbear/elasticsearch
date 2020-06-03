@@ -675,8 +675,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private final Object finalizationMutex = new Object();
 
-    // TODO: Tuple of Entry + Metadata so we don't have to use CS getter
-    private final BlockingQueue<SnapshotsInProgress.Entry> snapshotsToFinalize = new LinkedTransferQueue<>();
+    private final BlockingQueue<Tuple<SnapshotsInProgress.Entry, Metadata>> snapshotsToFinalize = new LinkedTransferQueue<>();
 
     /**
      * Finalizes the shard in repository and then removes it from cluster state
@@ -695,7 +694,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             logger.debug("[{}] was aborted before starting", snapshot);
             removeSnapshotFromClusterState(snapshot, new SnapshotException(snapshot, "Aborted on initialization"), new ActionListener<>() {
                 @Override
-                public void onResponse(ClusterState state) {
+                public void onResponse(Void aVoid) {
                     logger.debug("Removed [{}] from cluster state", snapshot);
                 }
 
@@ -711,7 +710,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             if (isFinalizing.compareAndSet(false, true)) {
                 finalizeSnapshotEntry(entry, metadata, entry.repositoryStateId());
             } else {
-                snapshotsToFinalize.add(entry);
+                snapshotsToFinalize.add(new Tuple<>(entry, metadata));
             }
         }
     }
@@ -761,11 +760,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         endingSnapshots.remove(snapshot);
                         logger.info("snapshot [{}] completed with state [{}]", snapshot, result.v2().state());
                         synchronized (finalizationMutex) {
-                            final SnapshotsInProgress.Entry nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+                            final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization =
+                                    snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
                             if (nextFinalization != null) {
                                 logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                                // TODO: serialize this on the CS thread to not have to get the metadata via the getter
-                                finalizeSnapshotEntry(nextFinalization, clusterService.state().metadata(), result.v1().getGenId());
+                                finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), result.v1().getGenId());
                             } else {
                                 assert isFinalizing.get();
                                 isFinalizing.set(false);
@@ -788,9 +787,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 new SnapshotException(snapshot, "Failed to update cluster state during snapshot finalization", e));
         } else {
             logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
-            removeSnapshotFromClusterState(snapshot, e, ActionListener.wrap(newState -> {
+            removeSnapshotFromClusterState(snapshot, e, ActionListener.wrap(v -> {
                 synchronized (finalizationMutex) {
-                    final SnapshotsInProgress.Entry nextFinalization;
+                    final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization;
                     try {
                         nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
                     } catch (InterruptedException ie) {
@@ -800,7 +799,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     }
                     if (nextFinalization != null) {
                         logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                        finalizeSnapshotEntry(nextFinalization, newState.metadata(), entry.repositoryStateId());
+                        finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), entry.repositoryStateId());
                     } else {
                         assert isFinalizing.get();
                         isFinalizing.set(false);
@@ -835,7 +834,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param snapshot   snapshot
      * @param failure    exception if snapshot failed
      */
-    private void removeSnapshotFromClusterState(Snapshot snapshot, Exception failure, ActionListener<ClusterState> listener) {
+    private void removeSnapshotFromClusterState(Snapshot snapshot, Exception failure, ActionListener<Void> listener) {
         assert failure != null : "Failure must be supplied";
         clusterService.submitStateUpdateTask("remove snapshot metadata", new ClusterStateUpdateTask() {
 
@@ -863,7 +862,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                 failSnapshotCompletionListeners(snapshot, failure);
-                listener.onResponse(newState);
+                listener.onResponse(null);
             }
         });
     }
