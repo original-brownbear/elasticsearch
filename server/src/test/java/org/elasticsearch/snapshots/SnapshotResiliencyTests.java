@@ -595,11 +595,16 @@ public class SnapshotResiliencyTests extends ESTestCase {
                 createIndexResponse -> client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName)
                         .setWaitForCompletion(true).execute(createSnapshotResponseStepListener));
 
-        final StepListener<CreateSnapshotResponse> createOtherSnapshotResponseStepListener = new StepListener<>();
+        final int inProgressSnapshots = randomIntBetween(1, 5);
+        final StepListener<Collection<CreateSnapshotResponse>> createOtherSnapshotResponseStepListener = new StepListener<>();
+        final ActionListener<CreateSnapshotResponse> createSnapshotListener =
+                new GroupedActionListener<>(createOtherSnapshotResponseStepListener, inProgressSnapshots);
 
-        continueOrDie(createSnapshotResponseStepListener,
-                createSnapshotResponse -> client().admin().cluster().prepareCreateSnapshot(repoName, "snapshot-2")
-                        .execute(createOtherSnapshotResponseStepListener));
+        continueOrDie(createSnapshotResponseStepListener, createSnapshotResponse -> {
+            for (int i = 0; i < inProgressSnapshots; i++) {
+                client().admin().cluster().prepareCreateSnapshot(repoName, "other-" + i).execute(createSnapshotListener);
+            }
+        });
 
         final StepListener<AcknowledgedResponse> deleteSnapshotStepListener = new StepListener<>();
 
