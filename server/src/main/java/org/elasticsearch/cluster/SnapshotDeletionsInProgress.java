@@ -185,8 +185,6 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
             this.repoName = repoName;
             this.startTime = startTime;
             this.repositoryStateId = repositoryStateId;
-            assert repositoryStateId > RepositoryData.EMPTY_REPO_GEN :
-                "Can't delete based on an empty or unknown repository generation but saw [" + repositoryStateId + "]";
         }
 
         public Entry(StreamInput in) throws IOException {
@@ -200,6 +198,10 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
             }
             this.startTime = in.readVLong();
             this.repositoryStateId = in.readLong();
+        }
+
+        public Entry withRepoGen(long repoGen) {
+            return new Entry(snapshots, repository(), startTime, repoGen);
         }
 
         public List<SnapshotId> getSnapshots() {
