@@ -677,7 +677,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private final BlockingQueue<Tuple<SnapshotsInProgress.Entry, Metadata>> snapshotsToFinalize = new LinkedTransferQueue<>();
 
-    private final Collection<SnapshotId> outstandingDeletes = Collections.synchronizedSet(new HashSet<>());
+    private final Collection<SnapshotId> outstandingDeletes = new HashSet<>();
+    private final Collection<ActionListener<Void>> deleteListeners = new HashSet<>();
 
     /**
      * Finalizes the shard in repository and then removes it from cluster state
@@ -772,13 +773,26 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 isFinalizing.set(false);
                                 if (outstandingDeletes.isEmpty() == false) {
                                     final Collection<SnapshotId> snapshotIds;
+                                    final Collection<ActionListener<Void>> listeners;
                                     synchronized (outstandingDeletes) {
                                         snapshotIds = List.copyOf(outstandingDeletes);
                                         outstandingDeletes.clear();
+                                        listeners = List.copyOf(deleteListeners);
+                                        deleteListeners.clear();
                                     }
                                     // TODO: correct compat version
                                     deleteSnapshotsFromRepository(
-                                            snapshot.getRepository(), snapshotIds, null, result.v1().getGenId(), entry.version());
+                                            snapshot.getRepository(), snapshotIds, new ActionListener<>() {
+                                                @Override
+                                                public void onResponse(Void aVoid) {
+                                                    ActionListener.onResponse(listeners, null);
+                                                }
+
+                                                @Override
+                                                public void onFailure(Exception e) {
+                                                    ActionListener.onFailure(listeners, e);
+                                                }
+                                            }, result.v1().getGenId(), entry.version());
                                 }
                             }
                         }
@@ -1144,7 +1158,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
                 final SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE);
                 final SnapshotsInProgress updatedSnapshots;
-                if (currentState.nodes().getMinNodeVersion().onOrAfter(FULL_CONCURRENCY_VERSION)) {
+
+                if (snapshots == null) {
+                    updatedSnapshots = new SnapshotsInProgress();
+                } else if (currentState.nodes().getMinNodeVersion().onOrAfter(FULL_CONCURRENCY_VERSION)) {
                     // TODO: Update all the snapshots to aborted
                     //       Run delete once all shards have stopped snapshotting
                     //          and don't assign new work till delete is through
@@ -1169,7 +1186,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 return existing;
                             }).collect(Collectors.toUnmodifiableList()));
                 } else {
-                    if (snapshots != null && snapshots.entries().isEmpty() == false) {
+                    if (snapshots.entries().isEmpty() == false) {
                         // However other snapshots are running - cannot continue
                         throw new ConcurrentSnapshotExecutionException(
                                 repoName, snapshotIds.toString(), "another snapshot is currently running cannot delete");
@@ -1200,20 +1217,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                 final SnapshotsInProgress snapshotsInProgress = newState.custom(SnapshotsInProgress.TYPE);
-                if (snapshotsInProgress != null && snapshotsInProgress.entries().stream().anyMatch(
-                        entry -> {
-                            if (entry.state().completed()) {
-                                return true;
-                            }
-                            for (ObjectCursor<ShardSnapshotStatus> value : entry.shards().values()) {
-                                if (value.value.state() == ShardState.INIT) {
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }
-                )) {
-                    outstandingDeletes.addAll(snapshotIds);
+                if (snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty() == false) {
+                    // TODO: probably don't need to synchronize here
+                    synchronized (outstandingDeletes) {
+                        outstandingDeletes.addAll(snapshotIds);
+                        deleteListeners.add(listener);
+                    }
                 } else {
                     deleteSnapshotsFromRepository(
                             repoName, snapshotIds, listener, repositoryStateId, newState.nodes().getMinNodeVersion());
