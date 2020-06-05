@@ -778,7 +778,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                                 outstandingDeletes.remove(repository);
                                         final Collection<SnapshotId> snapshotIds = snapshotsAndListeners.v1();
                                         final Collection<ActionListener<Void>> listeners = snapshotsAndListeners.v2();
-
                                         deleteSnapshotsFromRepository(
                                                 repository, snapshotIds, new ActionListener<>() {
                                                     @Override
@@ -790,7 +789,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                                     public void onFailure(Exception e) {
                                                         ActionListener.onFailure(listeners, e);
                                                     }
-                                                }, newGeneration, entry.version());
+                                                }, newGeneration, clusterService.state().nodes().getMinNodeVersion());
                                     }
                                 }
                             }
