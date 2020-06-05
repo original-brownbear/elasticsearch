@@ -677,8 +677,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private final BlockingQueue<Tuple<SnapshotsInProgress.Entry, Metadata>> snapshotsToFinalize = new LinkedTransferQueue<>();
 
-    private final Collection<SnapshotId> outstandingDeletes = new HashSet<>();
-    private final Collection<ActionListener<Void>> deleteListeners = new HashSet<>();
+    private final Map<String, Tuple<Collection<SnapshotId>, Collection<ActionListener<Void>>>> outstandingDeletes = new HashMap<>();
 
     /**
      * Finalizes the shard in repository and then removes it from cluster state
@@ -737,6 +736,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
             }
             final ShardGenerations shardGenerations = buildGenerations(entry, metadata);
+            final String repository = snapshot.getRepository();
             repositoriesService.repository(snapshot.getRepository()).finalizeSnapshot(
                     snapshot.getSnapshotId(),
                     shardGenerations,
@@ -765,34 +765,33 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         synchronized (finalizationMutex) {
                             final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization =
                                     snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+                            final long newGeneration = result.v1().getGenId();
                             if (nextFinalization != null) {
                                 logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                                finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), result.v1().getGenId());
+                                finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), newGeneration);
                             } else {
                                 assert isFinalizing.get();
                                 isFinalizing.set(false);
-                                if (outstandingDeletes.isEmpty() == false) {
-                                    final Collection<SnapshotId> snapshotIds;
-                                    final Collection<ActionListener<Void>> listeners;
-                                    synchronized (outstandingDeletes) {
-                                        snapshotIds = List.copyOf(outstandingDeletes);
-                                        outstandingDeletes.clear();
-                                        listeners = List.copyOf(deleteListeners);
-                                        deleteListeners.clear();
-                                    }
-                                    // TODO: correct compat version
-                                    deleteSnapshotsFromRepository(
-                                            snapshot.getRepository(), snapshotIds, new ActionListener<>() {
-                                                @Override
-                                                public void onResponse(Void aVoid) {
-                                                    ActionListener.onResponse(listeners, null);
-                                                }
+                                synchronized (outstandingDeletes) {
+                                    if (outstandingDeletes.containsKey(repository)) {
+                                        final Tuple<Collection<SnapshotId>, Collection<ActionListener<Void>>> snapshotsAndListeners =
+                                                outstandingDeletes.remove(repository);
+                                        final Collection<SnapshotId> snapshotIds = snapshotsAndListeners.v1();
+                                        final Collection<ActionListener<Void>> listeners = snapshotsAndListeners.v2();
 
-                                                @Override
-                                                public void onFailure(Exception e) {
-                                                    ActionListener.onFailure(listeners, e);
-                                                }
-                                            }, result.v1().getGenId(), entry.version());
+                                        deleteSnapshotsFromRepository(
+                                                repository, snapshotIds, new ActionListener<>() {
+                                                    @Override
+                                                    public void onResponse(Void aVoid) {
+                                                        ActionListener.onResponse(listeners, null);
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(Exception e) {
+                                                        ActionListener.onFailure(listeners, e);
+                                                    }
+                                                }, newGeneration, entry.version());
+                                    }
                                 }
                             }
                         }
@@ -1218,17 +1217,27 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                 final SnapshotsInProgress snapshotsInProgress = newState.custom(SnapshotsInProgress.TYPE);
                 if (snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty() == false) {
-                    // TODO: probably don't need to synchronize here
-                    synchronized (outstandingDeletes) {
-                        outstandingDeletes.addAll(snapshotIds);
-                        deleteListeners.add(listener);
-                    }
+                    addDeleteListener(repoName, snapshotIds, listener);
                 } else {
                     deleteSnapshotsFromRepository(
                             repoName, snapshotIds, listener, repositoryStateId, newState.nodes().getMinNodeVersion());
                 }
             }
         };
+    }
+
+    private void addDeleteListener(String repository, Collection<SnapshotId> snapshotIds, ActionListener<Void> listener) {
+        synchronized (outstandingDeletes) {
+            outstandingDeletes.compute(repository, (k, existing) -> {
+                if (existing == null) {
+                    existing = new Tuple<>(new HashSet<>(), new ArrayList<>());
+                }
+                existing.v1().addAll(snapshotIds);
+                existing.v2().add(listener);
+                return existing;
+            });
+
+        }
     }
 
     /**
@@ -1505,7 +1514,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                     shards.putAll(entry.shards());
                                     updated = true;
                                 }
-                                // TODO: This is tricky. If the snapshot was successful we can assign the next snapshot for this shard to
+                                // TODO: If the snapshot was successful we can assign the next snapshot for this shard to
                                 //       the same node and keep going. If it failed we technically should check why to see if it's even
                                 //       worth it to continue here. For now we just keep going though.
                                 final ShardSnapshotStatus finishedStatus = updateSnapshotState.status();
