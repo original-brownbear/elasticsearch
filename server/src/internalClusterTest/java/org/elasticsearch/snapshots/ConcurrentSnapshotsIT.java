@@ -53,8 +53,9 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         final String dataNode2 = internalCluster().startDataOnlyNode();
         ensureStableCluster(3);
         final String indexFast = "index-fast";
-        // TODO: make sure it goes to data node 2 in a cleaner fashion
-        createIndex(indexFast, Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0).build());
+        createIndex(indexFast, Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0)
+                .put("index.routing.allocation.include._name", dataNode2)
+                .put("index.routing.allocation.exclude._name", dataNode).build());
         ensureGreen(indexFast);
         indexDoc(indexFast, "some_id", "foo", "bar");
 
