@@ -1215,7 +1215,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                 final SnapshotsInProgress snapshotsInProgress = newState.custom(SnapshotsInProgress.TYPE);
-                if (snapshotsInProgress != null && snapshotsInProgress.entries().isEmpty() == false) {
+                if (snapshotsInProgress != null
+                        && snapshotsInProgress.entries().stream().anyMatch(entry -> entry.repository().equals(repoName))) {
                     addDeleteListener(repoName, snapshotIds, listener);
                 } else {
                     deleteSnapshotsFromRepository(
