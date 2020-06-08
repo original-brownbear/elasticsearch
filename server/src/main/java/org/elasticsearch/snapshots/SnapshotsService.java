@@ -709,7 +709,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             });
             return;
         }
-        // TODO: nicer synchronization
         synchronized (finalizationMutex) {
             if (isFinalizing.compareAndSet(false, true)) {
                 finalizeSnapshotEntry(entry, metadata, entry.repositoryStateId());
@@ -764,41 +763,33 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         }
                         endingSnapshots.remove(snapshot);
                         logger.info("snapshot [{}] completed with state [{}]", snapshot, result.v2().state());
-                        synchronized (finalizationMutex) {
-                            final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization =
-                                    snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
-                            final long newGeneration = result.v1().getGenId();
-                            if (nextFinalization != null) {
-                                logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                                finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), newGeneration);
-                            } else {
-                                assert isFinalizing.get();
-                                isFinalizing.set(false);
-                                synchronized (outstandingDeletes) {
-                                    if (outstandingDeletes.containsKey(repository)) {
-                                        final Tuple<Collection<SnapshotId>, Collection<ActionListener<Void>>> snapshotsAndListeners =
-                                                outstandingDeletes.remove(repository);
-                                        final Collection<SnapshotId> snapshotIds = snapshotsAndListeners.v1();
-                                        final Collection<ActionListener<Void>> listeners = snapshotsAndListeners.v2();
-                                        deleteSnapshotsFromRepository(
-                                                repository, snapshotIds, new ActionListener<>() {
-                                                    @Override
-                                                    public void onResponse(Void aVoid) {
-                                                        ActionListener.onResponse(listeners, null);
-                                                    }
-
-                                                    @Override
-                                                    public void onFailure(Exception e) {
-                                                        ActionListener.onFailure(listeners, e);
-                                                    }
-                                                }, newGeneration, clusterService.state().nodes().getMinNodeVersion());
-                                    }
-                                }
-                            }
-                        }
+                        runNextQueuedOperation(result.v1().getGenId(), repository);
                     }, e -> handleFinalizationFailure(e, entry)));
         } catch (Exception e) {
             handleFinalizationFailure(e, entry);
+        }
+    }
+
+    private void runOutstandingDeletes(String repository, long newGeneration) {
+        synchronized (outstandingDeletes) {
+            if (outstandingDeletes.containsKey(repository)) {
+                final Tuple<Collection<SnapshotId>, Collection<ActionListener<Void>>> snapshotsAndListeners =
+                        outstandingDeletes.remove(repository);
+                final Collection<SnapshotId> snapshotIds = snapshotsAndListeners.v1();
+                final Collection<ActionListener<Void>> listeners = snapshotsAndListeners.v2();
+                deleteSnapshotsFromRepository(
+                        repository, snapshotIds, new ActionListener<>() {
+                            @Override
+                            public void onResponse(Void aVoid) {
+                                ActionListener.onResponse(listeners, null);
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                ActionListener.onFailure(listeners, e);
+                            }
+                        }, newGeneration, clusterService.state().nodes().getMinNodeVersion());
+            }
         }
     }
 
@@ -814,24 +805,23 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         } else {
             logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
             removeSnapshotFromClusterState(snapshot, e, ActionListener.wrap(v -> {
-                synchronized (finalizationMutex) {
-                    final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization;
-                    try {
-                        nextFinalization = snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        isFinalizing.set(false);
-                        return;
-                    }
-                    if (nextFinalization != null) {
-                        logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                        finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), entry.repositoryStateId());
-                    } else {
-                        assert isFinalizing.get();
-                        isFinalizing.set(false);
-                    }
-                }
+                runNextQueuedOperation(entry.repositoryStateId(), entry.repository());
             }, ex -> handleFinalizationFailure(ex, entry)));
+        }
+    }
+
+    private void runNextQueuedOperation(long newGeneration, String repository) throws InterruptedException {
+        synchronized (finalizationMutex) {
+            final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization =
+                    snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+            if (nextFinalization != null) {
+                logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
+                finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), newGeneration);
+            } else {
+                assert isFinalizing.get();
+                isFinalizing.set(false);
+                runOutstandingDeletes(repository, newGeneration);
+            }
         }
     }
 
