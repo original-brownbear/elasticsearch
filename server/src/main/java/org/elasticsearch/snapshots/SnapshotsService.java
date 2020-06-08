@@ -772,13 +772,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private void runOutstandingDeletes(String repository, long newGeneration) {
         synchronized (outstandingDeletes) {
-            if (outstandingDeletes.containsKey(repository)) {
-                final Tuple<Collection<SnapshotId>, Collection<ActionListener<Void>>> snapshotsAndListeners =
-                        outstandingDeletes.remove(repository);
-                final Collection<SnapshotId> snapshotIds = snapshotsAndListeners.v1();
+            final Tuple<Collection<SnapshotId>, Collection<ActionListener<Void>>> snapshotsAndListeners =
+                    outstandingDeletes.remove(repository);
+            if (snapshotsAndListeners != null) {
                 final Collection<ActionListener<Void>> listeners = snapshotsAndListeners.v2();
                 deleteSnapshotsFromRepository(
-                        repository, snapshotIds, new ActionListener<>() {
+                        repository, snapshotsAndListeners.v1(), new ActionListener<>() {
                             @Override
                             public void onResponse(Void aVoid) {
                                 ActionListener.onResponse(listeners, null);
@@ -804,9 +803,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 new SnapshotException(snapshot, "Failed to update cluster state during snapshot finalization", e));
         } else {
             logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
-            removeSnapshotFromClusterState(snapshot, e, ActionListener.wrap(v -> {
-                runNextQueuedOperation(entry.repositoryStateId(), entry.repository());
-            }, ex -> handleFinalizationFailure(ex, entry)));
+            removeSnapshotFromClusterState(snapshot, e, ActionListener.wrap(v ->
+                    runNextQueuedOperation(entry.repositoryStateId(), entry.repository()), ex -> handleFinalizationFailure(ex, entry)));
         }
     }
 
