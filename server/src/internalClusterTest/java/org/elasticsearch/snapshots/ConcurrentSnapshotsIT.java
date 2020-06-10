@@ -19,21 +19,33 @@
 package org.elasticsearch.snapshots;
 
 import org.elasticsearch.action.ActionFuture;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.StepListener;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.support.GroupedActionListener;
+import org.elasticsearch.action.support.PlainActionFuture;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
+import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.test.ESIntegTestCase;
 
-import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0)
 public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
 
-    public void testLongRunningSnapshotAllowsConcurrentSnapshot() throws InterruptedException, ExecutionException {
+    public void testLongRunningSnapshotAllowsConcurrentSnapshot() throws Exception {
         internalCluster().startMasterOnlyNode();
         final String dataNode = internalCluster().startDataOnlyNode();
         final String repoName = "test-repo";
@@ -69,5 +81,76 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
 
         final CreateSnapshotResponse slowSnapshotResponse = createSlowFuture.get();
         assertThat(slowSnapshotResponse.getSnapshotInfo().state(), is(SnapshotState.SUCCESS));
+    }
+
+    public void testDeletesAreBatched() throws Exception {
+        internalCluster().startMasterOnlyNode();
+        final String dataNode = internalCluster().startDataOnlyNode();
+        final String repoName = "test-repo";
+        createRepository(repoName, "mock", randomRepoPath());
+
+        createIndex("foo");
+        ensureGreen();
+
+        final int numSnapshots = randomIntBetween(1, 4);
+        final PlainActionFuture<Collection<CreateSnapshotResponse>> allSnapshotsDone = PlainActionFuture.newFuture();
+        final ActionListener<CreateSnapshotResponse> snapshotsListener = new GroupedActionListener<>(allSnapshotsDone, numSnapshots);
+        final Collection<String> snapshotNames = new HashSet<>();
+        for (int i = 0; i < numSnapshots; i++) {
+            final String snapshot = "snap-" + i;
+            snapshotNames.add(snapshot);
+            client().admin().cluster().prepareCreateSnapshot(repoName, snapshot).setWaitForCompletion(true)
+                    .execute(snapshotsListener);
+        }
+        final Collection<CreateSnapshotResponse> snapshotResponses = allSnapshotsDone.get();
+        for (CreateSnapshotResponse snapshotResponse : snapshotResponses) {
+            assertThat(snapshotResponse.getSnapshotInfo().state(), is(SnapshotState.SUCCESS));
+        }
+
+        blockDataNode(repoName, dataNode);
+
+        final String indexSlow = "index-slow";
+        createIndex(indexSlow, Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0).build());
+        ensureGreen(indexSlow);
+        indexDoc(indexSlow, "some_id", "foo", "bar");
+
+        final ActionFuture<CreateSnapshotResponse> createSlowFuture =
+                client().admin().cluster().prepareCreateSnapshot(repoName, "blocked-snapshot").setWaitForCompletion(true).execute();
+        waitForBlock(dataNode, repoName, TimeValue.timeValueSeconds(30L));
+
+        final Collection<StepListener<AcknowledgedResponse>> deleteFutures = new ArrayList<>();
+        while (snapshotNames.isEmpty() == false) {
+            final Collection<String> toDelete = randomSubsetOf(snapshotNames);
+            if (toDelete.isEmpty()) {
+                continue;
+            }
+            snapshotNames.removeAll(toDelete);
+            final StepListener<AcknowledgedResponse> future = new StepListener<>();
+            client().admin().cluster().prepareDeleteSnapshot(repoName, toDelete.toArray(Strings.EMPTY_ARRAY)).execute(future);
+            deleteFutures.add(future);
+        }
+
+        assertThat(createSlowFuture.isDone(), is(false));
+
+        final long repoGenAfterInitialSnapshots = getRepositoryData(repoName).getGenId();
+        assertThat(repoGenAfterInitialSnapshots, is(numSnapshots - 1L));
+        unblockNode(repoName, dataNode);
+
+        final CreateSnapshotResponse slowSnapshotResponse = createSlowFuture.get();
+        assertThat(slowSnapshotResponse.getSnapshotInfo().state(), is(SnapshotState.SUCCESS));
+
+        logger.info("--> waiting for batched deletes to finish");
+        final PlainActionFuture<Collection<AcknowledgedResponse>> allDeletesDone = new PlainActionFuture<>();
+        final ActionListener<AcknowledgedResponse> deletesListener = new GroupedActionListener<>(allDeletesDone, deleteFutures.size());
+        for (StepListener<AcknowledgedResponse> deleteFuture : deleteFutures) {
+            deleteFuture.whenComplete(deletesListener::onResponse, deletesListener::onFailure);
+        }
+        allDeletesDone.get();
+
+        logger.info("--> verifying repository state");
+        final RepositoryData repositoryDataAfterDeletes = getRepositoryData(repoName);
+        // One increment for snapshot, one for all the deletes
+        assertThat(repositoryDataAfterDeletes.getGenId(), is(repoGenAfterInitialSnapshots + 2));
+        assertThat(repositoryDataAfterDeletes.getSnapshotIds(), contains(slowSnapshotResponse.getSnapshotInfo().snapshotId()));
     }
 }

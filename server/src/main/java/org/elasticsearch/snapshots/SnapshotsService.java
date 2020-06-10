@@ -1112,9 +1112,13 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public ClusterState execute(ClusterState currentState) {
                 SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
-                if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
-                    throw new ConcurrentSnapshotExecutionException(new Snapshot(repoName, snapshotIds.get(0)),
-                        "cannot delete - another snapshot is currently being deleted in [" + deletionsInProgress + "]");
+                if (currentState.nodes().getMinNodeVersion().before(FULL_CONCURRENCY_VERSION)) {
+                    if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
+                        throw new ConcurrentSnapshotExecutionException(new Snapshot(repoName, snapshotIds.get(0)),
+                                "cannot delete - another snapshot is currently being deleted in [" + deletionsInProgress + "]");
+                    }
+                } else {
+                    // TODO: batch deletes
                 }
                 final RepositoryCleanupInProgress repositoryCleanupInProgress = currentState.custom(RepositoryCleanupInProgress.TYPE);
                 if (repositoryCleanupInProgress != null && repositoryCleanupInProgress.hasCleanupInProgress()) {
@@ -1308,6 +1312,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 if (deletions != null) {
                     boolean changed = false;
                     if (deletions.hasDeletionsInProgress()) {
+                        // TODO: relax this
                         assert deletions.getEntries().size() == 1 : "should have exactly one deletion in progress";
                         SnapshotDeletionsInProgress.Entry entry = deletions.getEntries().get(0);
                         deletions = deletions.withRemovedEntry(entry);
