@@ -88,18 +88,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedTransferQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -678,7 +677,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private final Object finalizationMutex = new Object();
 
-    private final BlockingQueue<Tuple<SnapshotsInProgress.Entry, Metadata>> snapshotsToFinalize = new LinkedTransferQueue<>();
+    private final Deque<Tuple<SnapshotsInProgress.Entry, Metadata>> snapshotsToFinalize = new LinkedList<>();
 
     private final Map<String, Tuple<Collection<SnapshotId>, Collection<ActionListener<Void>>>> outstandingDeletes = new HashMap<>();
 
@@ -804,15 +803,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 new SnapshotException(snapshot, "Failed to update cluster state during snapshot finalization", e));
         } else {
             logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
-            removeSnapshotFromClusterState(snapshot, e, ActionListener.wrap(v ->
-                    runNextQueuedOperation(entry.repositoryStateId(), entry.repository()), ex -> handleFinalizationFailure(ex, entry)));
+            removeSnapshotFromClusterState(snapshot, e,
+                    ActionListener.wrap(() -> runNextQueuedOperation(entry.repositoryStateId(), entry.repository())
+                    ));
         }
     }
 
-    private void runNextQueuedOperation(long newGeneration, String repository) throws InterruptedException {
+    private void runNextQueuedOperation(long newGeneration, String repository) {
         synchronized (finalizationMutex) {
-            final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization =
-                    snapshotsToFinalize.poll(0L, TimeUnit.MILLISECONDS);
+            final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization = snapshotsToFinalize.pollFirst();
             if (nextFinalization != null) {
                 logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
                 finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), newGeneration);
@@ -871,7 +870,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 final Exception exception = ExceptionsHelper.useOrSuppress(failure, new SnapshotException(snapshot, "no longer master"));
                 failSnapshotCompletionListeners(snapshot, exception);
                 listener.onFailure(exception);
-
             }
 
             @Override
@@ -956,16 +954,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     abortedDuringInit = true;
                 } else if (state == State.STARTED) {
                     // snapshot is started - mark every non completed shard as aborted
-                    final ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> shardsBuilder = ImmutableOpenMap.builder();
-                    for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardEntry : snapshotEntry.shards()) {
-                        ShardSnapshotStatus status = shardEntry.value;
-                        if (status.state().completed() == false) {
-                            status = new ShardSnapshotStatus(
-                                status.nodeId(), ShardState.ABORTED, "aborted by snapshot deletion", status.generation());
-                        }
-                        shardsBuilder.put(shardEntry.key, status);
-                    }
-                    shards = shardsBuilder.build();
+                    shards = abortEntry(snapshotEntry);
                     failure = "Snapshot was aborted by deletion";
                 } else {
                     boolean hasUncompletedShards = false;
@@ -1159,17 +1148,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             .map(existing -> {
                                 // snapshot is started - mark every non completed shard as aborted
                                 if (existing.state() == State.STARTED && snapshotIds.contains(existing.snapshot().getSnapshotId())) {
-                                    final ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> shardsBuilder =
-                                            ImmutableOpenMap.builder();
-                                    for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardEntry : existing.shards()) {
-                                        ShardSnapshotStatus status = shardEntry.value;
-                                        if (status.state().completed() == false) {
-                                            status = new ShardSnapshotStatus(status.nodeId(), ShardState.ABORTED,
-                                                    "aborted by snapshot deletion", status.generation());
-                                        }
-                                        shardsBuilder.put(shardEntry.key, status);
-                                    }
-                                    return new SnapshotsInProgress.Entry(existing, State.ABORTED, shardsBuilder.build(),
+                                    return new SnapshotsInProgress.Entry(existing, State.ABORTED, abortEntry(existing),
                                             "Snapshot was aborted by deletion");
                                 }
                                 return existing;
@@ -1215,6 +1194,20 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
             }
         };
+    }
+
+    private ImmutableOpenMap<ShardId, ShardSnapshotStatus> abortEntry(SnapshotsInProgress.Entry existing) {
+        final ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> shardsBuilder =
+                ImmutableOpenMap.builder();
+        for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardEntry : existing.shards()) {
+            ShardSnapshotStatus status = shardEntry.value;
+            if (status.state().completed() == false) {
+                status = new ShardSnapshotStatus(status.nodeId(), ShardState.ABORTED,
+                        "aborted by snapshot deletion", status.generation());
+            }
+            shardsBuilder.put(shardEntry.key, status);
+        }
+        return shardsBuilder.build();
     }
 
     private void addDeleteListener(String repository, Collection<SnapshotId> snapshotIds, ActionListener<Void> listener) {

@@ -219,7 +219,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -533,31 +532,19 @@ public class SnapshotResiliencyTests extends ESTestCase {
             createSnapshotResponse -> client().admin().cluster().prepareCreateSnapshot(repoName, "snapshot-2")
                 .execute(createOtherSnapshotResponseStepListener));
 
-        final StepListener<Boolean> deleteSnapshotStepListener = new StepListener<>();
+        final StepListener<AcknowledgedResponse> deleteSnapshotStepListener = new StepListener<>();
 
         continueOrDie(createOtherSnapshotResponseStepListener,
-            createSnapshotResponse -> client().admin().cluster().deleteSnapshot(
-                new DeleteSnapshotRequest(repoName, snapshotName), ActionListener.wrap(
-                    resp -> deleteSnapshotStepListener.onResponse(true),
-                    e -> {
-                        final Throwable unwrapped =
-                            ExceptionsHelper.unwrap(e, ConcurrentSnapshotExecutionException.class);
-                        assertThat(unwrapped, instanceOf(ConcurrentSnapshotExecutionException.class));
-                        deleteSnapshotStepListener.onResponse(false);
-                    })));
+            createSnapshotResponse -> client().admin().cluster().prepareDeleteSnapshot(
+                repoName, snapshotName).execute(deleteSnapshotStepListener));
 
         final StepListener<CreateSnapshotResponse> createAnotherSnapshotResponseStepListener = new StepListener<>();
 
         continueOrDie(deleteSnapshotStepListener, deleted -> {
-            if (deleted) {
-                // The delete worked out, creating a third snapshot
-                client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName).setWaitForCompletion(true)
+            client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName).setWaitForCompletion(true)
                     .execute(createAnotherSnapshotResponseStepListener);
-                continueOrDie(createAnotherSnapshotResponseStepListener, createSnapshotResponse ->
+            continueOrDie(createAnotherSnapshotResponseStepListener, createSnapshotResponse ->
                     assertEquals(createSnapshotResponse.getSnapshotInfo().state(), SnapshotState.SUCCESS));
-            } else {
-                createAnotherSnapshotResponseStepListener.onResponse(null);
-            }
         });
 
         deterministicTaskQueue.runAllRunnableTasks();

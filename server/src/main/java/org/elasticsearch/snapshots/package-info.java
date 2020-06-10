@@ -98,5 +98,8 @@
  * <li>After the deletion of the snapshot's data from the repository finishes, the {@code SnapshotsService} will submit a cluster state
  * update to remove the deletion's entry in {@code SnapshotDeletionsInProgress} which concludes the process of deleting a snapshot.</li>
  * </ol>
+ *
+ * <h2>Concurrent Snapshot Operations</h2>
+ * TODO: write proper docs on the exact mechanics and order of operations
  */
 package org.elasticsearch.snapshots;
