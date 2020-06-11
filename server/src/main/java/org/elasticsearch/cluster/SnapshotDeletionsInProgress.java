@@ -175,15 +175,17 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     public static final class Entry implements Writeable, RepositoryOperation {
         private final List<SnapshotId> snapshots;
         private final String repoName;
+        private final State state;
         private final long startTime;
         private final long repositoryStateId;
 
-        public Entry(List<SnapshotId> snapshots, String repoName, long startTime, long repositoryStateId) {
+        public Entry(List<SnapshotId> snapshots, String repoName, long startTime, long repositoryStateId, State state) {
             this.snapshots = snapshots;
             assert snapshots.size() == new HashSet<>(snapshots).size() : "Duplicate snapshot ids in " + snapshots;
             this.repoName = repoName;
             this.startTime = startTime;
             this.repositoryStateId = repositoryStateId;
+            this.state = state;
         }
 
         public Entry(StreamInput in) throws IOException {
@@ -197,10 +199,19 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
             }
             this.startTime = in.readVLong();
             this.repositoryStateId = in.readLong();
+            if (in.getVersion().onOrAfter(SnapshotsService.FULL_CONCURRENCY_VERSION)) {
+                this.state = State.fromValue(in.readByte());
+            } else {
+                this.state = State.META_DATA;
+            }
         }
 
         public Entry withRepoGen(long repoGen) {
-            return new Entry(snapshots, repository(), startTime, repoGen);
+            return new Entry(snapshots, repository(), startTime, repoGen, state);
+        }
+
+        public State state() {
+            return state;
         }
 
         public List<SnapshotId> getSnapshots() {
@@ -226,7 +237,8 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
             return repoName.equals(that.repoName)
                        && snapshots.equals(that.snapshots)
                        && startTime == that.startTime
-                       && repositoryStateId == that.repositoryStateId;
+                       && repositoryStateId == that.repositoryStateId
+                       && state == that.state;
         }
 
         @Override
@@ -246,6 +258,9 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
             }
             out.writeVLong(startTime);
             out.writeLong(repositoryStateId);
+            if (out.getVersion().onOrAfter(SnapshotsService.FULL_CONCURRENCY_VERSION)) {
+                out.writeByte(state.value);
+            }
         }
 
         @Override
@@ -256,6 +271,31 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
         @Override
         public long repositoryStateId() {
             return repositoryStateId;
+        }
+    }
+
+    public enum State {
+        WAITING((byte) 0),
+        META_DATA((byte) 1),
+        CLEANUP((byte) 2);
+
+        private final byte value;
+
+        State(byte value) {
+            this.value = value;
+        }
+
+        public static State fromValue(byte value) {
+            switch (value) {
+                case 0:
+                    return WAITING;
+                case 1:
+                    return META_DATA;
+                case 2:
+                    return CLEANUP;
+                default:
+                    throw new IllegalArgumentException("No snapshot delete state for value [" + value + "]");
+            }
         }
     }
 }
