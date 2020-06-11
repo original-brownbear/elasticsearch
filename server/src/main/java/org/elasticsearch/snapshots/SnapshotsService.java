@@ -121,6 +121,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     public static final Version MULTI_DELETE_VERSION = Version.V_7_8_0;
 
+    public static final Version CONCURRENT_DELETE_VERSION = Version.V_8_0_0;
+
     private static final Logger logger = LogManager.getLogger(SnapshotsService.class);
 
     public static final String UPDATE_SNAPSHOT_STATUS_ACTION_NAME = "internal:cluster/snapshot/update_snapshot_status";
@@ -1023,8 +1025,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         return new ClusterStateUpdateTask(priority) {
             @Override
             public ClusterState execute(ClusterState currentState) {
+                final boolean useConcurrentDeletes = currentState.nodes().getMinNodeVersion().onOrAfter(CONCURRENT_DELETE_VERSION);
                 SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
-                if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
+                if (useConcurrentDeletes == false && deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
                     throw new ConcurrentSnapshotExecutionException(new Snapshot(repoName, snapshotIds.get(0)),
                         "cannot delete - another snapshot is currently being deleted in [" + deletionsInProgress + "]");
                 }
@@ -1048,16 +1051,20 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
                 SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE);
                 if (snapshots != null && snapshots.entries().isEmpty() == false) {
-                    // However other snapshots are running - cannot continue
-                    throw new ConcurrentSnapshotExecutionException(
-                            repoName, snapshotIds.toString(), "another snapshot is currently running cannot delete");
+                    if (useConcurrentDeletes) {
+
+                    } else {
+                        throw new ConcurrentSnapshotExecutionException(
+                                repoName, snapshotIds.toString(), "another snapshot is currently running cannot delete");
+                    }
                 }
                 // add the snapshot deletion to the cluster state
                 SnapshotDeletionsInProgress.Entry entry = new SnapshotDeletionsInProgress.Entry(
                         snapshotIds,
                         repoName,
                         threadPool.absoluteTimeInMillis(),
-                        repositoryStateId
+                        repositoryStateId,
+                        SnapshotDeletionsInProgress.State.META_DATA
                 );
                 if (deletionsInProgress != null) {
                     deletionsInProgress = deletionsInProgress.withAddedEntry(entry);
