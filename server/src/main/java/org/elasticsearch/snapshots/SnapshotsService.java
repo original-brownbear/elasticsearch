@@ -70,7 +70,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.repositories.IndexId;
@@ -486,6 +485,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     private void finalizeSnapshotDeletionFromPreviousMaster(ClusterState state) {
         SnapshotDeletionsInProgress deletionsInProgress = state.custom(SnapshotDeletionsInProgress.TYPE);
         if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
+            // TODO: Fix fail-over handling this assertion does not apply any longer
             assert deletionsInProgress.getEntries().size() == 1 : "only one in-progress deletion allowed per cluster";
             SnapshotDeletionsInProgress.Entry entry = deletionsInProgress.getEntries().get(0);
             deleteSnapshotsFromRepository(entry, null, entry.repositoryStateId(), state.nodes().getMinNodeVersion());
@@ -679,7 +679,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private final Deque<Tuple<SnapshotsInProgress.Entry, Metadata>> snapshotsToFinalize = new LinkedList<>();
 
-    private final Map<String, List<Tuple<SnapshotDeletionsInProgress.Entry, Collection<ActionListener<Void>>>>> outstandingDeletes =
+    private final Deque<SnapshotDeletionsInProgress.Entry> deletionsToRun = new LinkedList<>();
+
+    private final Map<String, List<Tuple<SnapshotDeletionsInProgress.Entry, Collection<ActionListener<Void>>>>> snapshotDeletionListeners =
             new HashMap<>();
 
     /**
@@ -772,17 +774,17 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     }
 
     private void runOutstandingDeletes(String repository, long newGeneration) {
-        synchronized (outstandingDeletes) {
+        synchronized (snapshotDeletionListeners) {
             final List<Tuple<SnapshotDeletionsInProgress.Entry, Collection<ActionListener<Void>>>> snapshotsAndListeners =
-                    outstandingDeletes.get(repository);
+                    snapshotDeletionListeners.get(repository);
             if (snapshotsAndListeners != null) {
                 assert snapshotsAndListeners.isEmpty() == false;
                 final Tuple<SnapshotDeletionsInProgress.Entry, Collection<ActionListener<Void>>> entry = snapshotsAndListeners.get(0);
                 final Collection<ActionListener<Void>> listeners = entry.v2();
                 if (snapshotsAndListeners.size() > 1) {
-                    outstandingDeletes.put(repository, snapshotsAndListeners.subList(1, snapshotsAndListeners.size()));
+                    snapshotDeletionListeners.put(repository, snapshotsAndListeners.subList(1, snapshotsAndListeners.size()));
                 } else {
-                    outstandingDeletes.remove(repository);
+                    snapshotDeletionListeners.remove(repository);
                 }
                 deleteSnapshotsFromRepository(entry.v1(), new ActionListener<>() {
                     @Override
@@ -1180,14 +1182,31 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
                 // add the snapshot deletion to the cluster state
                 // TODO: Forbid any snapshot from starting shard snapshotting while a delete is in state META_DATA
-                newDelete = new SnapshotDeletionsInProgress.Entry(
-                        snapshotIds,
-                        repoName,
-                        threadPool.absoluteTimeInMillis(),
-                        repositoryStateId,
-                        canExecuteDelete(repoName, updatedSnapshots.entries())
-                                ? SnapshotDeletionsInProgress.State.META_DATA : SnapshotDeletionsInProgress.State.WAITING
-                );
+                if (deletionsInProgress != null) {
+                    replacedEntry = deletionsInProgress.getEntries().stream().filter(entry ->
+                            entry.repository().equals(repoName) && entry.state() == SnapshotDeletionsInProgress.State.WAITING)
+                            .findFirst().orElse(null);
+                }
+                if (replacedEntry == null) {
+                    newDelete = new SnapshotDeletionsInProgress.Entry(
+                            snapshotIds,
+                            repoName,
+                            threadPool.absoluteTimeInMillis(),
+                            repositoryStateId,
+                            canExecuteDelete(repoName, updatedSnapshots.entries())
+                                    ? SnapshotDeletionsInProgress.State.META_DATA : SnapshotDeletionsInProgress.State.WAITING
+                    );
+                } else {
+                    final Set<SnapshotId> mergedSnapshotIds = new HashSet<>(snapshotIds);
+                    mergedSnapshotIds.addAll(replacedEntry.getSnapshots());
+                    newDelete = new SnapshotDeletionsInProgress.Entry(
+                            List.copyOf(mergedSnapshotIds),
+                            repoName,
+                            replacedEntry.getStartTime(),
+                            repositoryStateId,
+                            SnapshotDeletionsInProgress.State.WAITING
+                    );
+                }
                 if (deletionsInProgress != null) {
                     deletionsInProgress = deletionsInProgress.withAddedEntry(newDelete);
                 } else {
@@ -1244,8 +1263,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private void addDeleteListener(@Nullable SnapshotDeletionsInProgress.Entry replacedEntry, SnapshotDeletionsInProgress.Entry newEntry,
                                    ActionListener<Void> listener) {
-        synchronized (outstandingDeletes) {
-            outstandingDeletes.compute(newEntry.repository(), (k, existing) -> {
+        synchronized (snapshotDeletionListeners) {
+            snapshotDeletionListeners.compute(newEntry.repository(), (k, existing) -> {
                 final List<Tuple<SnapshotDeletionsInProgress.Entry, Collection<ActionListener<Void>>>> newDeletes = new ArrayList<>();
                 if (existing != null) {
                     for (Tuple<SnapshotDeletionsInProgress.Entry, Collection<ActionListener<Void>>> existingDelete : existing) {
@@ -1329,6 +1348,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                                long repositoryStateId, Version minNodeVersion) {
         Repository repository = repositoriesService.repository(deleteEntry.repository());
         final List<SnapshotId> snapshotIds = deleteEntry.getSnapshots();
+        assert deleteEntry.state() == SnapshotDeletionsInProgress.State.META_DATA : "incorrect state for entry [" + deleteEntry + "]";
         repository.getRepositoryData(ActionListener.wrap(repositoryData -> repository.deleteSnapshots(
                 snapshotIds,
                 repositoryStateId,
