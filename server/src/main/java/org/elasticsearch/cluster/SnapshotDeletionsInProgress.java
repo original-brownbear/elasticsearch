@@ -79,9 +79,13 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
      * the given entry from the invoking instance.
      */
     public SnapshotDeletionsInProgress withRemovedEntry(Entry entry) {
-        List<Entry> entries = new ArrayList<>(getEntries());
-        entries.remove(entry);
-        return new SnapshotDeletionsInProgress(entries);
+        List<Entry> newEntries = new ArrayList<>(entries.size() - 1);
+        for (Entry existing : entries) {
+            if ((existing.repository().equals(entry.repository()) && existing.getSnapshots().equals(entry.getSnapshots())) == false) {
+                newEntries.add(existing);
+            }
+        }
+        return new SnapshotDeletionsInProgress(newEntries);
     }
 
     /**
