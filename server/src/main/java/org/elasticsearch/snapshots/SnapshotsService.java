@@ -1237,7 +1237,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 if (snapshots == null) {
                     updatedSnapshots = new SnapshotsInProgress();
                 } else if (minNodeVersion.onOrAfter(FULL_CONCURRENCY_VERSION)) {
-                    // TODO: exclude non-aborted snapshots from delete on shard-level
                     updatedSnapshots = new SnapshotsInProgress(snapshots.entries().stream()
                             .map(existing -> {
                                 // snapshot is started - mark every non completed shard as aborted
