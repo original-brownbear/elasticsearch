@@ -156,7 +156,6 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertThat(repositoryDataAfterDeletes.getSnapshotIds(), contains(slowSnapshotResponse.getSnapshotInfo().snapshotId()));
     }
 
-
     public void testBlockedRepoDoesNotBlockOtherRepos() throws Exception {
         final String masterNode = internalCluster().startMasterOnlyNode();
         internalCluster().startDataOnlyNode();
@@ -191,5 +190,42 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
                     .setSnapshots(GetSnapshotsRequest.CURRENT_SNAPSHOT).get().getSnapshots(otherRepoName);
             assertThat(currentSnapshots, empty());
         }, 30L, TimeUnit.SECONDS);
+    }
+
+    public void testMultipleReposAreIndependent() throws Exception {
+        internalCluster().startMasterOnlyNode();
+        // We're blocking a some of the snapshot threads when we block the first repo below so we have to make sure we have enough threads
+        // left for the second concurrent snapshot.
+        final String dataNode = internalCluster().startDataOnlyNode(Settings.builder()
+                .put("thread_pool.snapshot.core", 5).put("thread_pool.snapshot.max", 5).build());
+        final String blockedRepoName = "test-repo-blocked";
+        final String otherRepoName = "test-repo";
+        createRepository(blockedRepoName, "mock", randomRepoPath());
+        createRepository(otherRepoName, "fs", randomRepoPath());
+
+        blockDataNode(blockedRepoName, dataNode);
+
+        final String testIndex = "test-index";
+        createIndex(testIndex, Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0).build());
+        ensureGreen(testIndex);
+        indexDoc(testIndex, "some_id", "foo", "bar");
+
+        final ActionFuture<CreateSnapshotResponse> createSlowFuture =
+                client().admin().cluster().prepareCreateSnapshot(blockedRepoName, "blocked-snapshot").setWaitForCompletion(true).execute();
+        waitForBlock(dataNode, blockedRepoName, TimeValue.timeValueSeconds(30L));
+
+        logger.info("--> waiting for concurrent snapshot to finish");
+        {
+            final SnapshotInfo snapshotInfo = client().admin().cluster().prepareCreateSnapshot(otherRepoName, "snapshot")
+                    .setWaitForCompletion(true).get().getSnapshotInfo();
+            assertThat(snapshotInfo.state(), is(SnapshotState.SUCCESS));
+        }
+
+        logger.info("--> unblocking data node");
+        unblockNode(blockedRepoName, dataNode);
+        {
+            final SnapshotInfo snapshotInfo = createSlowFuture.get().getSnapshotInfo();
+            assertThat(snapshotInfo.state(), is(SnapshotState.SUCCESS));
+        }
     }
 }

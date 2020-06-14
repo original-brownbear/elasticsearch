@@ -1615,16 +1615,17 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }, listener::onFailure);
     }
 
-    private static ClusterState updateRepositoryGenerations(ClusterState state, long oldGen, long newGen) {
+    private ClusterState updateRepositoryGenerations(ClusterState state, long oldGen, long newGen) {
         // TODO: cleanups
         final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE);
+        final String repoName = metadata.name();
         final List<SnapshotsInProgress.Entry> snapshotEntries;
         if (snapshotsInProgress == null) {
             snapshotEntries = List.of();
         } else {
             snapshotEntries = new ArrayList<>();
             for (SnapshotsInProgress.Entry entry : snapshotsInProgress.entries()) {
-                if (entry.repositoryStateId() == oldGen) {
+                if (entry.repository().equals(repoName) && entry.repositoryStateId() == oldGen) {
                     snapshotEntries.add(entry.withRepoGen(newGen));
                 } else {
                     snapshotEntries.add(entry);

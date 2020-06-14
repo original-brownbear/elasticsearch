@@ -255,11 +255,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 logger.trace("[{}][{}] creating snapshot for indices [{}]", repositoryName, snapshotName, indices);
 
                 final List<IndexId> indexIds = repositoryData.resolveNewIndices(
-                        indices, runningSnapshots.stream().flatMap(entry -> entry.indices().stream()).distinct().collect(
-                                Collectors.toMap(IndexId::getName, Function.identity())));
+                        indices, runningSnapshots.stream().filter(entry -> entry.repository().equals(repositoryName))
+                                .flatMap(entry -> entry.indices().stream()).distinct()
+                                .collect(Collectors.toMap(IndexId::getName, Function.identity())));
                 final Version version = minCompatibleVersion(currentState.nodes().getMinNodeVersion(), repositoryData, null);
                 ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards =
-                        shards(currentState, indexIds, useShardGenerations(version), repositoryData);
+                        shards(currentState, indexIds, useShardGenerations(version), repositoryData, repositoryName);
                 if (request.partial() == false) {
                     Set<String> missing = new HashSet<>();
                     for (ObjectObjectCursor<ShardId, SnapshotsInProgress.ShardSnapshotStatus> entry : shards) {
@@ -1456,7 +1457,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     private static ImmutableOpenMap<ShardId, SnapshotsInProgress.ShardSnapshotStatus> shards(ClusterState clusterState,
                                                                                              List<IndexId> indices,
                                                                                              boolean useShardGenerations,
-                                                                                             RepositoryData repositoryData) {
+                                                                                             RepositoryData repositoryData,
+                                                                                             String repoName) {
         ImmutableOpenMap.Builder<ShardId, SnapshotsInProgress.ShardSnapshotStatus> builder = ImmutableOpenMap.builder();
         Metadata metadata = clusterState.metadata();
         final ShardGenerations shardGenerations = repositoryData.shardGenerations();
@@ -1464,6 +1466,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         final List<SnapshotsInProgress.Entry> runningSnapshots = snapshots == null ? List.of() : snapshots.entries();
         final Set<ShardId> inProgressShards = new HashSet<>();
         for (SnapshotsInProgress.Entry runningSnapshot : runningSnapshots) {
+            if (runningSnapshot.repository().equals(repoName) == false) {
+                continue;
+            }
             for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : runningSnapshot.shards()) {
                 if (shard.value.state() == ShardState.INIT) {
                     inProgressShards.add(shard.key);
