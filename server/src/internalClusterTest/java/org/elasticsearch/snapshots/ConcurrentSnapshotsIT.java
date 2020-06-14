@@ -22,6 +22,7 @@ import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.StepListener;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
 import org.elasticsearch.action.support.GroupedActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -34,10 +35,13 @@ import org.elasticsearch.test.ESIntegTestCase;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0)
@@ -153,7 +157,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
     }
 
 
-    public void testBlockedRepoDoesNotBlockOtherRepos() throws InterruptedException {
+    public void testBlockedRepoDoesNotBlockOtherRepos() throws Exception {
         final String masterNode = internalCluster().startMasterOnlyNode();
         internalCluster().startDataOnlyNode();
         final String blockedRepoName = "test-repo-blocked";
@@ -181,5 +185,11 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
 
         unblockNode(blockedRepoName, masterNode);
         expectThrows(SnapshotException.class, createSlowFuture::actionGet);
+
+        assertBusy(() -> {
+            final List<SnapshotInfo> currentSnapshots = client().admin().cluster().prepareGetSnapshots(otherRepoName)
+                    .setSnapshots(GetSnapshotsRequest.CURRENT_SNAPSHOT).get().getSnapshots(otherRepoName);
+            assertThat(currentSnapshots, empty());
+        }, 30L, TimeUnit.SECONDS);
     }
 }

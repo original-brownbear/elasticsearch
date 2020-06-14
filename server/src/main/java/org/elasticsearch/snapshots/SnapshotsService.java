@@ -100,7 +100,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -142,11 +141,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     private final Map<Snapshot, List<ActionListener<Tuple<RepositoryData, SnapshotInfo>>>> snapshotCompletionListeners =
         new ConcurrentHashMap<>();
 
-    private final AtomicBoolean isFinalizing = new AtomicBoolean();
+    private final Collection<String> currentlyFinalizing = Collections.synchronizedSet(new HashSet<>());
 
     private final Object finalizationMutex = new Object();
 
-    private final Deque<Tuple<SnapshotsInProgress.Entry, Metadata>> snapshotsToFinalize = new LinkedList<>();
+    private final Map<String, Deque<Tuple<SnapshotsInProgress.Entry, Metadata>>> snapshotsToFinalize = new HashMap<>();
 
     private final Set<String> runningDeletions = Collections.synchronizedSet(new HashSet<>());
 
@@ -725,10 +724,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             return;
         }
         synchronized (finalizationMutex) {
-            if (isFinalizing.compareAndSet(false, true)) {
+            if (currentlyFinalizing.add(entry.repository())) {
                 finalizeSnapshotEntry(entry, metadata, entry.repositoryStateId());
             } else {
-                snapshotsToFinalize.add(new Tuple<>(entry, metadata));
+                snapshotsToFinalize.computeIfAbsent(entry.repository(), k -> new LinkedList<>()).add(new Tuple<>(entry, metadata));
             }
         }
     }
@@ -803,18 +802,22 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private void runNextQueuedOperation(long newGeneration, String repository) {
         synchronized (finalizationMutex) {
-            final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization = snapshotsToFinalize.pollFirst();
-            if (nextFinalization != null) {
-                final SnapshotsInProgress.Entry entry = nextFinalization.v1();
-                if (entry.repository().equals(repository)) {
-                    logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-                    finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), newGeneration);
-                } else {
-                    throw new AssertionError("TODO");
-                }
+            final Deque<Tuple<SnapshotsInProgress.Entry, Metadata>> outstandingForRepo = snapshotsToFinalize.get(repository);
+            final Tuple<SnapshotsInProgress.Entry, Metadata> nextFinalization;
+            if (outstandingForRepo == null) {
+                nextFinalization = null;
             } else {
-                assert isFinalizing.get();
-                isFinalizing.set(false);
+                nextFinalization = outstandingForRepo.pollFirst();
+                if (outstandingForRepo.isEmpty()) {
+                    snapshotsToFinalize.remove(repository);
+                }
+            }
+            if (nextFinalization != null) {
+                logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
+                finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), newGeneration);
+            } else {
+                final boolean removed = currentlyFinalizing.remove(repository);
+                assert removed;
                 if (snapshotDeletionListeners.isEmpty() == false) {
                     clusterService.submitStateUpdateTask("Run ready deletions", new ClusterStateUpdateTask() {
 
