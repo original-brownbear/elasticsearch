@@ -144,14 +144,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private final AtomicBoolean isFinalizing = new AtomicBoolean();
 
-    // TODO: use me?
-    private final AtomicBoolean isDeleting = new AtomicBoolean();
-
     private final Object finalizationMutex = new Object();
 
     private final Deque<Tuple<SnapshotsInProgress.Entry, Metadata>> snapshotsToFinalize = new LinkedList<>();
 
-    // TODO: Don't leak here
     private final Set<String> runningDeletions = Collections.synchronizedSet(new HashSet<>());
 
     private final Map<String, List<ActionListener<RepositoryData>>> snapshotDeletionListeners = new HashMap<>();
@@ -483,6 +479,18 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         + snapshotListenerKeys + " but running snapshots are " + runningSnapshots;
             }
         }
+        final SnapshotDeletionsInProgress snapshotDeletionsInProgress = state.custom(SnapshotDeletionsInProgress.TYPE);
+        if (snapshotDeletionsInProgress != null && snapshotDeletionsInProgress.getEntries().isEmpty() == false) {
+            synchronized (runningDeletions) {
+                final Set<String> runningDeletes = Stream.concat(
+                        snapshotDeletionsInProgress.getEntries().stream().map(SnapshotDeletionsInProgress.Entry::uuid),
+                        runningDeletions.stream())
+                        .collect(Collectors.toSet());
+                final Set<String> deleteListenerKeys = snapshotDeletionListeners.keySet();
+                assert runningDeletes.containsAll(deleteListenerKeys) : "Saw deletions listeners for unknown uuids in "
+                        + deleteListenerKeys + " but running deletes are " + runningDeletes;
+            }
+        }
         return true;
     }
 
@@ -789,8 +797,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         } else {
             logger.warn(() -> new ParameterizedMessage("[{}] failed to finalize snapshot", snapshot), e);
             removeSnapshotFromClusterState(snapshot, e,
-                    ActionListener.wrap(() -> runNextQueuedOperation(entry.repositoryStateId(), entry.repository())
-                    ));
+                    ActionListener.wrap(() -> runNextQueuedOperation(entry.repositoryStateId(), entry.repository())));
         }
     }
 
@@ -1409,18 +1416,28 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         logger.warn("Failed to notify listeners", e);
                     }
                 }
+                runningDeletions.remove(deleteEntry.uuid());
             }
 
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                 final List<ActionListener<RepositoryData>> deleteListeners = snapshotDeletionListeners.remove(deleteEntry.uuid());
                 if (deleteListeners != null) {
-                    try {
-                        ActionListener.onResponse(deleteListeners, null);
-                    } catch (Exception e) {
-                        logger.warn("Failed to notify listeners", e);
+                    if (failure == null) {
+                        try {
+                            ActionListener.onResponse(deleteListeners, null);
+                        } catch (Exception e) {
+                            logger.warn("Failed to notify listeners", e);
+                        }
+                    } else {
+                        try {
+                            ActionListener.onFailure(deleteListeners, failure);
+                        } catch (Exception ex) {
+                            logger.warn("Failed to notify listeners", failure);
+                        }
                     }
                 }
+                runningDeletions.remove(deleteEntry.uuid());
             }
         });
     }

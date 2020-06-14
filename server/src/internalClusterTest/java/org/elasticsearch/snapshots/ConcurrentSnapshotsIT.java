@@ -151,4 +151,35 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertThat(repositoryDataAfterDeletes.getGenId(), is(repoGenAfterInitialSnapshots + 2));
         assertThat(repositoryDataAfterDeletes.getSnapshotIds(), contains(slowSnapshotResponse.getSnapshotInfo().snapshotId()));
     }
+
+
+    public void testBlockedRepoDoesNotBlockOtherRepos() throws InterruptedException {
+        final String masterNode = internalCluster().startMasterOnlyNode();
+        internalCluster().startDataOnlyNode();
+        final String blockedRepoName = "test-repo-blocked";
+        final String otherRepoName = "test-repo";
+        createRepository(blockedRepoName, "mock", randomRepoPath());
+        createRepository(otherRepoName, "fs", randomRepoPath());
+
+        createIndex("foo");
+        ensureGreen();
+
+        blockMasterFromFinalizingSnapshotOnIndexFile(blockedRepoName);
+
+        final String indexSlow = "index-slow";
+        createIndex(indexSlow, Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0).build());
+        ensureGreen(indexSlow);
+        indexDoc(indexSlow, "some_id", "foo", "bar");
+
+        final ActionFuture<CreateSnapshotResponse> createSlowFuture =
+                client().admin().cluster().prepareCreateSnapshot(blockedRepoName, "blocked-snapshot").setWaitForCompletion(true).execute();
+        waitForBlock(masterNode, blockedRepoName, TimeValue.timeValueSeconds(30L));
+
+        client().admin().cluster().prepareCreateSnapshot(otherRepoName, "snapshot")
+                .setIndices("does-not-exist-*")
+                .setWaitForCompletion(false).get();
+
+        unblockNode(blockedRepoName, masterNode);
+        expectThrows(SnapshotException.class, createSlowFuture::actionGet);
+    }
 }
