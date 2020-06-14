@@ -166,6 +166,11 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                     userMetadata, version);
         }
 
+        public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
+            return new Entry(snapshot, includeGlobalState, partial, state, indices, startTime, repositoryStateId, shards, failure,
+                    userMetadata, version);
+        }
+
         @Override
         public String repository() {
             return snapshot.getRepository();
@@ -339,6 +344,10 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     }
 
     public static class ShardSnapshotStatus {
+
+        public static final ShardSnapshotStatus UNASSIGNED_WAITING =
+                new SnapshotsInProgress.ShardSnapshotStatus(null, ShardState.WAITING, null);
+
         private final ShardState state;
 
         @Nullable

@@ -29,19 +29,23 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.UncategorizedExecutionException;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.test.ESIntegTestCase;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0)
@@ -225,6 +229,48 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         unblockNode(blockedRepoName, dataNode);
         {
             final SnapshotInfo snapshotInfo = createSlowFuture.get().getSnapshotInfo();
+            assertThat(snapshotInfo.state(), is(SnapshotState.SUCCESS));
+        }
+    }
+
+    public void testSnapshotRunsAfterInProgressDelete() throws InterruptedException, ExecutionException {
+        final String masterNode = internalCluster().startMasterOnlyNode();
+        internalCluster().startDataOnlyNode();
+        final String repoName = "test-repo";
+        createRepository(repoName, "mock", randomRepoPath());
+
+        createIndex("foo");
+        ensureGreen();
+
+        final String indexSlow = "index-slow";
+        createIndex(indexSlow, Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0).build());
+        ensureGreen(indexSlow);
+        indexDoc(indexSlow, "some_id", "foo", "bar");
+
+        final String firstSnapshot = "first-snapshot";
+        {
+            final SnapshotInfo snapshotInfo = client().admin().cluster().prepareCreateSnapshot(repoName, firstSnapshot)
+                    .setWaitForCompletion(true).get().getSnapshotInfo();
+            assertThat(snapshotInfo.state(), is(SnapshotState.SUCCESS));
+        }
+
+        blockMasterFromFinalizingSnapshotOnIndexFile(repoName);
+
+        final ActionFuture<AcknowledgedResponse> deleteFuture =
+                client().admin().cluster().prepareDeleteSnapshot(repoName, firstSnapshot).execute();
+        waitForBlock(masterNode, repoName, TimeValue.timeValueSeconds(30L));
+
+        final String secondSnapshot = "second-snapshot";
+        final ActionFuture<CreateSnapshotResponse> snapshotFuture =
+                client().admin().cluster().prepareCreateSnapshot(repoName, secondSnapshot).setWaitForCompletion(true).execute();
+
+        logger.info("--> unblocking master node");
+        unblockNode(repoName, masterNode);
+        final UncategorizedExecutionException ex = expectThrows(UncategorizedExecutionException.class, deleteFuture::actionGet);
+        assertThat(ex.getRootCause(), instanceOf(IOException.class));
+
+        {
+            final SnapshotInfo snapshotInfo = snapshotFuture.get().getSnapshotInfo();
             assertThat(snapshotInfo.state(), is(SnapshotState.SUCCESS));
         }
     }
