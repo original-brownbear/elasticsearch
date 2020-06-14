@@ -1172,7 +1172,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public ClusterState execute(ClusterState currentState) {
                 SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
-                if (currentState.nodes().getMinNodeVersion().before(FULL_CONCURRENCY_VERSION)) {
+                final Version minNodeVersion = currentState.nodes().getMinNodeVersion();
+                if (minNodeVersion.before(FULL_CONCURRENCY_VERSION)) {
                     if (deletionsInProgress != null && deletionsInProgress.hasDeletionsInProgress()) {
                         throw new ConcurrentSnapshotExecutionException(new Snapshot(repoName, snapshotIds.get(0)),
                                 "cannot delete - another snapshot is currently being deleted in [" + deletionsInProgress + "]");
@@ -1188,7 +1189,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     // don't allow snapshot deletions while a restore is taking place,
                     // otherwise we could end up deleting a snapshot that is being restored
                     // and the files the restore depends on would all be gone
-
                     for (RestoreInProgress.Entry entry : restoreInProgress) {
                         if (repoName.equals(entry.snapshot().getRepository()) && snapshotIds.contains(entry.snapshot().getSnapshotId())) {
                             throw new ConcurrentSnapshotExecutionException(new Snapshot(repoName, snapshotIds.get(0)),
@@ -1201,7 +1201,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
                 if (snapshots == null) {
                     updatedSnapshots = new SnapshotsInProgress();
-                } else if (currentState.nodes().getMinNodeVersion().onOrAfter(FULL_CONCURRENCY_VERSION)) {
+                } else if (minNodeVersion.onOrAfter(FULL_CONCURRENCY_VERSION)) {
                     // TODO: Update all the snapshots to aborted
                     //       Run delete once all shards have stopped snapshotting
                     //          and don't assign new work till delete is through
@@ -1587,7 +1587,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             if (snapshots != null) {
                 int changedCount = 0;
                 final List<SnapshotsInProgress.Entry> entries = new ArrayList<>();
-                final Set<ShardId> reusedShardIds = new HashSet<>();
+                final Map<String, Set<ShardId>> reusedShardIdsByRepo = new HashMap<>();
                 for (SnapshotsInProgress.Entry entry : snapshots.entries()) {
                     ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> shards = ImmutableOpenMap.builder();
                     boolean updated = false;
@@ -1604,7 +1604,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             shards.put(finishedShardId, updateSnapshotState.status());
                             changedCount++;
                         } else {
-                            // TODO: we can only really do this if both snapshots go to the same repository obviously
+                            final Set<ShardId> reusedShardIds =
+                                    reusedShardIdsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>());
                             if (entry.state().completed() == false && reusedShardIds.contains(finishedShardId) == false
                                     && entry.shards().keys().contains(finishedShardId)) {
                                 final ShardSnapshotStatus existingStatus = entry.shards().get(finishedShardId);
