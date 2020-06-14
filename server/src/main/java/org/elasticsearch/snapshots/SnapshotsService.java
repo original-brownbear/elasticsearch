@@ -829,13 +829,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                     if (se.repository().equals(repo) == false) {
                                         return false;
                                     }
-                                    for (ObjectCursor<ShardSnapshotStatus> value : se.shards().values()) {
-                                        final ShardState shardState = value.value.state();
-                                        if (shardState == ShardState.INIT || shardState == ShardState.ABORTED) {
-                                            return true;
-                                        }
-                                    }
-                                    return false;
+                                    return isDoingWork(se);
                                 })) {
                                     changed = true;
                                     final SnapshotDeletionsInProgress.Entry newEntry = entry.started();
@@ -1277,14 +1271,18 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             if (entry.state().completed()) {
                 return true;
             }
-            for (ObjectCursor<ShardSnapshotStatus> value : entry.shards().values()) {
-                final ShardState shardState = value.value.state();
-                if (shardState == ShardState.INIT || shardState == ShardState.ABORTED) {
-                    return true;
-                }
-            }
-            return false;
+            return isDoingWork(entry);
         });
+    }
+
+    private static boolean isDoingWork(SnapshotsInProgress.Entry entry) {
+        for (ObjectCursor<ShardSnapshotStatus> value : entry.shards().values()) {
+            final ShardState shardState = value.value.state();
+            if (shardState == ShardState.INIT || shardState == ShardState.ABORTED) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ImmutableOpenMap<ShardId, ShardSnapshotStatus> abortEntry(SnapshotsInProgress.Entry existing) {
