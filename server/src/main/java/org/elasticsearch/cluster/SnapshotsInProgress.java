@@ -495,7 +495,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         final Map<String, Set<ShardId>> startedShardsByRepo = new HashMap<>();
         for (Entry entry : entries) {
             for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : entry.shards()) {
-                if (shard.value.state() == ShardState.INIT) {
+                final ShardState shardState = shard.value.state();
+                if (shardState == ShardState.INIT || shardState == ShardState.ABORTED) {
                     assert startedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>()).add(shard.key) :
                             "Found duplicate shard assignments in " + entries;
                 }

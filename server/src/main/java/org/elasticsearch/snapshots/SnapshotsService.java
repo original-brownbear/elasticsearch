@@ -1204,6 +1204,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             private SnapshotDeletionsInProgress.Entry newDelete;
 
+            private final Collection<SnapshotsInProgress.Entry> completedSnapshots = new ArrayList<>();
+
             @Override
             public ClusterState execute(ClusterState currentState) {
                 SnapshotDeletionsInProgress deletionsInProgress = currentState.custom(SnapshotDeletionsInProgress.TYPE);
@@ -1241,8 +1243,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             .map(existing -> {
                                 // snapshot is started - mark every non completed shard as aborted
                                 if (existing.state() == State.STARTED && snapshotIds.contains(existing.snapshot().getSnapshotId())) {
-                                    return new SnapshotsInProgress.Entry(existing, State.ABORTED, abortEntry(existing),
+                                    final ImmutableOpenMap<ShardId, ShardSnapshotStatus> abortedShards = abortEntry(existing);
+                                    final boolean isCompleted = completed(abortedShards.values());
+                                    final SnapshotsInProgress.Entry abortedEntry = new SnapshotsInProgress.Entry(
+                                            existing, isCompleted ? State.SUCCESS : State.ABORTED, abortedShards,
                                             "Snapshot was aborted by deletion");
+                                    if (isCompleted) {
+                                        completedSnapshots.add(abortedEntry);
+                                    }
+                                    return abortedEntry;
                                 }
                                 return existing;
                             }).collect(Collectors.toUnmodifiableList()));
@@ -1302,6 +1311,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 addDeleteListener(newDelete.uuid(), ActionListener.map(listener, r -> null));
                 if (newDelete.state() == SnapshotDeletionsInProgress.State.META_DATA) {
                     deleteSnapshotsFromRepository(newDelete, repositoryStateId, newState.nodes().getMinNodeVersion());
+                } else {
+                    for (SnapshotsInProgress.Entry completedSnapshot : completedSnapshots) {
+                        endSnapshot(completedSnapshot, newState.metadata());
+                    }
                 }
             }
         };
@@ -1332,7 +1345,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardEntry : existing.shards()) {
             ShardSnapshotStatus status = shardEntry.value;
             if (status.state().completed() == false) {
-                status = new ShardSnapshotStatus(status.nodeId(), ShardState.ABORTED,
+                final String nodeId = status.nodeId();
+                status = new ShardSnapshotStatus(nodeId, nodeId == null ? ShardState.FAILED : ShardState.ABORTED,
                         "aborted by snapshot deletion", status.generation());
             }
             shardsBuilder.put(shardEntry.key, status);
@@ -1547,7 +1561,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 continue;
             }
             for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : runningSnapshot.shards()) {
-                if (shard.value.state() == ShardState.INIT) {
+                final ShardState shardState = shard.value.state();
+                if (shardState == ShardState.INIT || shardState == ShardState.ABORTED) {
                     inProgressShards.add(shard.key);
                 }
             }
