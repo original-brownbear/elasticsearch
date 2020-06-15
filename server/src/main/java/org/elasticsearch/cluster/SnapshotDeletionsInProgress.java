@@ -311,8 +311,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
 
     public enum State {
         WAITING((byte) 0),
-        META_DATA((byte) 1),
-        CLEANUP((byte) 2);
+        META_DATA((byte) 1);
 
         private final byte value;
 
@@ -326,8 +325,6 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
                     return WAITING;
                 case 1:
                     return META_DATA;
-                case 2:
-                    return CLEANUP;
                 default:
                     throw new IllegalArgumentException("No snapshot delete state for value [" + value + "]");
             }
