@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.snapshots;
 
+import com.carrotsearch.hppc.cursors.ObjectCursor;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.StepListener;
@@ -29,6 +30,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterStateListener;
 import org.elasticsearch.cluster.SnapshotDeletionsInProgress;
+import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
@@ -308,19 +310,34 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         ensureGreen(secondIndex);
         indexDoc(secondIndex, "some_id", "foo", "bar");
 
-        blockDataNode(repoName, dataNode2);
-
         final String secondSnapshot = "snapshot-two";
         final ActionFuture<CreateSnapshotResponse> secondSnapshotResponse = client().admin().cluster()
-                .prepareCreateSnapshot(repoName, secondSnapshot).setIndices(secondIndex).setWaitForCompletion(true).execute();
+                .prepareCreateSnapshot(repoName, secondSnapshot).setWaitForCompletion(true).execute();
 
-        waitForBlock(dataNode2, repoName, TimeValue.timeValueSeconds(30L));
-
-        final ActionFuture<AcknowledgedResponse> deleteSnapshotsResponse =
-                client().admin().cluster().prepareDeleteSnapshot(repoName, firstSnapshot).execute();
-
-        logger.info("--> wait for delete to be enqueued in cluster state");
         final ClusterService clusterService = internalCluster().getMasterNodeInstance(ClusterService.class);
+
+        logger.info("--> wait for snapshot on second data node to finish");
+        final CountDownLatch shardFinishedLatch = new CountDownLatch(1);
+        clusterService.addListener(new ClusterStateListener() {
+            @Override
+            public void clusterChanged(ClusterChangedEvent event) {
+                final SnapshotsInProgress snapshotsInProgress = event.state().custom(SnapshotsInProgress.TYPE);
+                if (snapshotsInProgress != null && snapshotsInProgress.entries().size() == 2) {
+                    for (SnapshotsInProgress.Entry entry : snapshotsInProgress.entries()) {
+                        if (entry.snapshot().getSnapshotId().getName().equals(secondSnapshot)) {
+                            for (ObjectCursor<SnapshotsInProgress.ShardSnapshotStatus> shard : entry.shards().values()) {
+                                if (shard.value.state().completed()) {
+                                    shardFinishedLatch.countDown();
+                                    clusterService.removeListener(this);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        shardFinishedLatch.await();
+
         final CountDownLatch deleteEnqueuedLatch = new CountDownLatch(1);
         clusterService.addListener(new ClusterStateListener() {
             @Override
@@ -332,6 +349,11 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
                 }
             }
         });
+        logger.info("--> starting delete for first snapshot");
+        final ActionFuture<AcknowledgedResponse> deleteSnapshotsResponse =
+                client().admin().cluster().prepareDeleteSnapshot(repoName, firstSnapshot).execute();
+
+        logger.info("--> wait for delete to be enqueued in cluster state");
         deleteEnqueuedLatch.await();
 
         logger.info("--> start third snapshot");
@@ -342,18 +364,19 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertThat(firstSnapshotResponse.isDone(), is(false));
         assertThat(secondSnapshotResponse.isDone(), is(false));
 
+        logger.info("--> unblocking data node");
         unblockNode(repoName, dataNode);
         assertThat(firstSnapshotResponse.get().getSnapshotInfo().state(), is(SnapshotState.FAILED));
 
-        unblockNode(repoName, dataNode2);
-
         final SnapshotInfo secondSnapshotInfo = secondSnapshotResponse.get().getSnapshotInfo();
         assertThat(secondSnapshotInfo.state(), is(SnapshotState.SUCCESS));
+
         final SnapshotInfo thirdSnapshotInfo = thirdSnapshotResponse.get().getSnapshotInfo();
         assertThat(secondSnapshotInfo.state(), is(SnapshotState.SUCCESS));
 
         assertThat(deleteSnapshotsResponse.get().isAcknowledged(), is(true));
 
+        logger.info("--> verify that the first snapshot is gone");
         assertThat(client().admin().cluster().prepareGetSnapshots(repoName).get().getSnapshots(repoName),
                 containsInAnyOrder(secondSnapshotInfo, thirdSnapshotInfo));
     }
