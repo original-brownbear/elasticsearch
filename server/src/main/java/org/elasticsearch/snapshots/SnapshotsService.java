@@ -27,6 +27,7 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.delete.DeleteSnapshotRequest;
 import org.elasticsearch.action.support.ActionFilters;
@@ -170,7 +171,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      */
     public void executeSnapshot(final CreateSnapshotRequest request, final ActionListener<SnapshotInfo> listener) {
         createSnapshot(request,
-            ActionListener.wrap(snapshot -> addListener(snapshot, ActionListener.map(listener, Tuple::v2)), listener::onFailure));
+                ActionListener.wrap(snapshotAndState -> {
+                    final Snapshot snapshot = snapshotAndState.v1();
+                    if (snapshotAndState.v2()) {
+                        threadPool.generic().execute(ActionRunnable.supply(listener, () ->
+                                repositoriesService.repository(snapshot.getRepository()).getSnapshotInfo(snapshot.getSnapshotId())));
+                    } else {
+                        addListener(snapshot, ActionListener.map(listener, Tuple::v2));
+                    }
+                }, listener::onFailure));
     }
 
     /**
@@ -182,11 +191,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param request  snapshot request
      * @param listener snapshot creation listener
      */
-    public void createSnapshot(final CreateSnapshotRequest request, final ActionListener<Snapshot> listener) {
+    public void createSnapshot(final CreateSnapshotRequest request, final ActionListener<Tuple<Snapshot, Boolean>> listener) {
         final String repositoryName = request.repository();
         final String snapshotName = indexNameExpressionResolver.resolveDateMathExpression(request.snapshot());
         validate(repositoryName, snapshotName);
-        final SnapshotId snapshotId = new SnapshotId(snapshotName, UUIDs.randomBase64UUID()); // new UUID for the snapshot
+        final String snapshotUUID = request.snapshotUUID() == null ? UUIDs.randomBase64UUID() : request.snapshotUUID();
+        final SnapshotId snapshotId = new SnapshotId(snapshotName, snapshotUUID);
         Repository repository = repositoriesService.repository(request.repository());
         if (repository.isReadOnly()) {
             listener.onFailure(
@@ -197,14 +207,25 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         final Map<String, Object> userMeta = repository.adaptUserMetadata(request.userMetadata());
         repository.executeConsistentStateUpdate(repositoryData -> new ClusterStateUpdateTask() {
 
+            private boolean foundExisting = false;
+
+            private boolean alreadyRunning = false;
+
             private SnapshotsInProgress.Entry newEntry;
 
             @Override
             public ClusterState execute(ClusterState currentState) {
                 // check if the snapshot name already exists in the repository
-                if (repositoryData.getSnapshotIds().stream().anyMatch(s -> s.getName().equals(snapshotName))) {
-                    throw new InvalidSnapshotNameException(
-                            repository.getMetadata().name(), snapshotName, "snapshot with the same name already exists");
+                for (SnapshotId snapshotId : repositoryData.getSnapshotIds()) {
+                    if (snapshotId.getName().equals(snapshotName)) {
+                        if (snapshotId.getUUID().equals(snapshotUUID)) {
+                            foundExisting = true;
+                            return currentState;
+                        } else {
+                            throw new InvalidSnapshotNameException(
+                                    repository.getMetadata().name(), snapshotName, "snapshot with the same name already exists");
+                        }
+                    }
                 }
                 validate(repositoryName, snapshotName, currentState);
                 final SnapshotDeletionsInProgress deletionsInProgress =
@@ -223,8 +244,17 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 // Fail if there are any concurrently running snapshots. The only exception to this being a snapshot in INIT state from a
                 // previous master that we can simply ignore and remove from the cluster state because we would clean it up from the
                 // cluster state anyway in #applyClusterState.
-                if (snapshots.entries().stream().anyMatch(entry -> entry.state() != State.INIT)) {
-                    throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName, " a snapshot is already running");
+                // Also if a running snapshot matches the snapshot ID in the request exactly don't fail but simply resolve the listener
+                // as if we had properly started the snapshot.
+                for (SnapshotsInProgress.Entry entry : snapshots.entries()) {
+                    if (entry.state() != State.INIT) {
+                        if (entry.snapshot().equals(snapshot)) {
+                            alreadyRunning = true;
+                            return currentState;
+                        } else {
+                            throw new ConcurrentSnapshotExecutionException(repositoryName, snapshotName, " a snapshot is already running");
+                        }
+                    }
                 }
                 // Store newSnapshot here to be processed in clusterStateProcessed
                 List<String> indices = Arrays.asList(indexNameExpressionResolver.concreteIndexNames(currentState,
@@ -277,12 +307,20 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, final ClusterState newState) {
-                try {
-                    logger.info("snapshot [{}] started", snapshot);
-                    listener.onResponse(snapshot);
-                } finally {
-                    if (newEntry.state().completed() || newEntry.shards().isEmpty()) {
-                        endSnapshot(newEntry, newState.metadata());
+                if (alreadyRunning) {
+                    logger.debug("Duplicate snapshot create request arrived for already running snapshot");
+                    listener.onResponse(Tuple.tuple(snapshot, false));
+                } else if (foundExisting) {
+                    logger.debug("Duplicate snapshot create request arrived for already completed snapshot");
+                    listener.onResponse(Tuple.tuple(snapshot, true));
+                } else {
+                    try {
+                        logger.info("snapshot [{}] started", snapshot);
+                        listener.onResponse(Tuple.tuple(snapshot, false));
+                    } finally {
+                        if (newEntry.state().completed() || newEntry.shards().isEmpty()) {
+                            endSnapshot(newEntry, newState.metadata());
+                        }
                     }
                 }
             }

@@ -21,11 +21,14 @@ package org.elasticsearch.action.admin.cluster.snapshots.create;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchGenerationException;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -64,6 +67,9 @@ import static org.elasticsearch.common.xcontent.support.XContentMapValues.nodeBo
  */
 public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotRequest>
         implements IndicesRequest.Replaceable, ToXContentObject {
+
+    public static final Version SNAPSHOT_UUID_IN_REQUEST_VERSION = Version.V_8_0_0;
+
     public static int MAXIMUM_METADATA_BYTES = 1024; // chosen arbitrarily
 
     private String snapshot;
@@ -84,7 +90,11 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
 
     private Map<String, Object> userMetadata;
 
+    @Nullable
+    private String snapshotUUID;
+
     public CreateSnapshotRequest() {
+        snapshotUUID = UUIDs.randomBase64UUID();
     }
 
     /**
@@ -94,6 +104,7 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
      * @param snapshot   snapshot name
      */
     public CreateSnapshotRequest(String repository, String snapshot) {
+        this();
         this.snapshot = snapshot;
         this.repository = repository;
     }
@@ -109,6 +120,9 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
         waitForCompletion = in.readBoolean();
         partial = in.readBoolean();
         userMetadata = in.readMap();
+        if (in.getVersion().onOrAfter(SNAPSHOT_UUID_IN_REQUEST_VERSION)) {
+            snapshotUUID = in.readOptionalString();
+        }
     }
 
     @Override
@@ -123,6 +137,9 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
         out.writeBoolean(waitForCompletion);
         out.writeBoolean(partial);
         out.writeMap(userMetadata);
+        if (out.getVersion().onOrAfter(SNAPSHOT_UUID_IN_REQUEST_VERSION)) {
+            out.writeOptionalString(snapshotUUID);
+        }
     }
 
     @Override
@@ -189,6 +206,11 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
      */
     public String snapshot() {
         return this.snapshot;
+    }
+
+    @Nullable
+    public String snapshotUUID() {
+        return snapshotUUID;
     }
 
     /**
@@ -496,13 +518,14 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
             Objects.equals(indicesOptions, that.indicesOptions) &&
             Objects.equals(settings, that.settings) &&
             Objects.equals(masterNodeTimeout, that.masterNodeTimeout) &&
-            Objects.equals(userMetadata, that.userMetadata);
+            Objects.equals(userMetadata, that.userMetadata) &&
+            Objects.equals(snapshotUUID, that.snapshotUUID);
     }
 
     @Override
     public int hashCode() {
         int result = Objects.hash(snapshot, repository, indicesOptions, partial, settings, includeGlobalState,
-            waitForCompletion, userMetadata);
+            waitForCompletion, userMetadata, snapshotUUID);
         result = 31 * result + Arrays.hashCode(indices);
         return result;
     }
