@@ -10,6 +10,7 @@ import org.elasticsearch.common.collect.Tuple;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import static org.elasticsearch.common.logging.LoggerMessageFormat.format;
 
@@ -21,27 +22,21 @@ public class SequenceFrame {
     // timestamp compression (whose range is known for the current frame).
     private final List<Sequence> sequences = new LinkedList<>();
 
-    // time frame being/end
-    private long tBegin = Long.MAX_VALUE, tEnd = Long.MIN_VALUE;
-    private long min = tBegin, max = tEnd;
+    private Ordinal start, stop;
 
     public void add(Sequence sequence) {
         sequences.add(sequence);
-        long ts = sequence.currentTimestamp();
-        if (min > ts) {
-            min = ts;
-        }
-        if (max < ts) {
-            max = ts;
-        }
-    }
-
-    public void setTimeFrame(long begin, long end) {
-        if (tBegin > begin) {
-            tBegin = begin;
-        }
-        if (tEnd < end) {
-            tEnd = end;
+        Ordinal ordinal = sequence.ordinal();
+        if (start == null) {
+            start = ordinal;
+            stop = ordinal;
+        } else {
+            if (start.compareTo(ordinal) > 0) {
+                start = ordinal;
+            }
+            if (stop.compareTo(ordinal) < 0) {
+                stop = ordinal;
+            }
         }
     }
 
@@ -49,13 +44,25 @@ public class SequenceFrame {
      * Returns the latest Sequence from the group that has its timestamp
      * less than the given argument alongside its position in the list.
      */
-    public Tuple<Sequence, Integer> before(long timestamp) {
+    public Tuple<Sequence, Integer> before(Ordinal ordinal) {
+        return find(o -> o.compareTo(ordinal) < 0);
+    }
+
+    /**
+     * Returns the first Sequence from the group that has its timestamp
+     * greater than the given argument alongside its position in the list.
+     */
+    public Tuple<Sequence, Integer> after(Ordinal ordinal) {
+        return find(o -> o.compareTo(ordinal) > 0);
+    }
+
+    private Tuple<Sequence, Integer> find(Predicate<Ordinal> predicate) {
         Sequence matchSeq = null;
         int matchPos = -1;
         int position = -1;
         for (Sequence sequence : sequences) {
             position++;
-            if (sequence.currentTimestamp() < timestamp) {
+            if (predicate.test(sequence.ordinal())) {
                 matchSeq = sequence;
                 matchPos = position;
             } else {
@@ -65,35 +72,18 @@ public class SequenceFrame {
         return matchSeq != null ? new Tuple<>(matchSeq, matchPos) : null;
     }
 
-    /**
-     * Returns the first Sequence from the group that has its timestamp
-     * greater than the given argument alongside its position in the list.
-     */
-    public Tuple<Sequence, Integer> after(long timestamp) {
-        Sequence match = null;
-        int position = -1;
-        for (Sequence sequence : sequences) {
-            position++;
-            if (sequence.currentTimestamp() > timestamp) {
-                match = sequence;
-            } else {
-                break;
-            }
-        }
-        return match != null ? new Tuple<>(match, position) : null;
-    }
-
     public boolean isEmpty() {
         return sequences.isEmpty();
     }
 
     public void trim(int position) {
         sequences.subList(0, position).clear();
+
         // update min time
         if (sequences.isEmpty() == false) {
-            min = sequences.get(0).currentTimestamp();
+            start = sequences.get(0).ordinal();
         } else {
-            min = Long.MAX_VALUE;
+            stop = null;
         }
     }
 
@@ -103,6 +93,6 @@ public class SequenceFrame {
 
     @Override
     public String toString() {
-        return format(null, "[{}-{}]({} seqs)", tBegin, tEnd, sequences.size());
+        return format(null, "[{}-{}]({} seqs)", start, stop, sequences.size());
     }
 }
