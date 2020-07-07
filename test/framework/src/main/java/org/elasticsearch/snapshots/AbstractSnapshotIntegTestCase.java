@@ -177,17 +177,10 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
         internalCluster().stopRandomNode(settings -> settings.get("node.name").equals(node));
     }
 
-    public static void waitForBlock(String node, String repository, TimeValue timeout) throws InterruptedException {
-        long start = System.currentTimeMillis();
-        RepositoriesService repositoriesService = internalCluster().getInstance(RepositoriesService.class, node);
-        MockRepository mockRepository = (MockRepository) repositoriesService.repository(repository);
-        while (System.currentTimeMillis() - start < timeout.millis()) {
-            if (mockRepository.blocked()) {
-                return;
-            }
-            Thread.sleep(100);
-        }
-        fail("Timeout waiting for node [" + node + "] to be blocked");
+    public static void waitForBlock(String node, String repository, TimeValue timeout) throws Exception {
+        assertBusy(() -> assertTrue("Timeout waiting for node [" + node + "] to be blocked",
+                ((MockRepository) internalCluster().getInstance(RepositoriesService.class, node).repository(repository)).blocked()),
+                timeout.millis(), TimeUnit.MILLISECONDS);
     }
 
     public SnapshotInfo waitForCompletion(String repository, String snapshotName, TimeValue timeout) throws InterruptedException {
@@ -381,7 +374,7 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
                 state.custom(SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress.EMPTY).hasDeletionsInProgress() == false);
     }
 
-    private void awaitClusterState(String viaNode, Predicate<ClusterState> statePredicate) throws Exception {
+    protected void awaitClusterState(String viaNode, Predicate<ClusterState> statePredicate) throws Exception {
         final ClusterService clusterService = internalCluster().getInstance(ClusterService.class, viaNode);
         final ThreadPool threadPool = internalCluster().getInstance(ThreadPool.class, viaNode);
         final ClusterStateObserver observer = new ClusterStateObserver(clusterService, logger, threadPool.getThreadContext());

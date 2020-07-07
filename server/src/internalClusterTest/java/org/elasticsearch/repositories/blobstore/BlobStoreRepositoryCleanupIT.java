@@ -31,7 +31,6 @@ import org.elasticsearch.test.ESIntegTestCase;
 
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFutureThrows;
 import static org.hamcrest.Matchers.is;
@@ -45,12 +44,7 @@ public class BlobStoreRepositoryCleanupIT extends AbstractSnapshotIntegTestCase 
         logger.info("-->  stopping master node");
         internalCluster().stopCurrentMasterNode();
 
-        logger.info("-->  wait for cleanup to finish and disappear from cluster state");
-        assertBusy(() -> {
-            RepositoryCleanupInProgress cleanupInProgress =
-                client().admin().cluster().prepareState().get().getState().custom(RepositoryCleanupInProgress.TYPE);
-            assertFalse(cleanupInProgress.hasCleanupInProgress());
-        }, 30, TimeUnit.SECONDS);
+        awaitCleanupFinished();
     }
 
     public void testRepeatCleanupsDontRemove() throws Exception {
@@ -67,12 +61,7 @@ public class BlobStoreRepositoryCleanupIT extends AbstractSnapshotIntegTestCase 
         logger.info("-->  unblocking master node");
         unblockNode("test-repo", masterNode);
 
-        logger.info("-->  wait for cleanup to finish and disappear from cluster state");
-        assertBusy(() -> {
-            RepositoryCleanupInProgress cleanupInProgress =
-                client().admin().cluster().prepareState().get().getState().custom(RepositoryCleanupInProgress.TYPE);
-            assertFalse(cleanupInProgress.hasCleanupInProgress());
-        }, 30, TimeUnit.SECONDS);
+        awaitCleanupFinished();
     }
 
     private String startBlockedCleanup(String repoName) throws Exception {
@@ -135,5 +124,11 @@ public class BlobStoreRepositoryCleanupIT extends AbstractSnapshotIntegTestCase 
         client().admin().cluster().prepareCleanupRepository(repoName).get();
 
         BlobStoreTestUtil.assertConsistency(repository, repository.threadPool().generic());
+    }
+
+    private void awaitCleanupFinished() throws Exception {
+        logger.info("-->  wait for cleanup to finish and disappear from cluster state");
+        awaitClusterState(randomFrom(internalCluster().getNodeNames()), clusterState ->
+                clusterState.custom(RepositoryCleanupInProgress.TYPE, RepositoryCleanupInProgress.EMPTY).hasCleanupInProgress() == false);
     }
 }
