@@ -477,8 +477,12 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         return readDiffFrom(Custom.class, TYPE, in);
     }
 
-    public SnapshotsInProgress(StreamInput in) throws IOException {
-        Entry[] entries = new Entry[in.readVInt()];
+    public static SnapshotsInProgress readFrom(StreamInput in) throws IOException {
+        final int size = in.readVInt();
+        if (size == 0) {
+            return EMPTY;
+        }
+        Entry[] entries = new Entry[size];
         for (int i = 0; i < entries.length; i++) {
             Snapshot snapshot = new Snapshot(in);
             boolean includeGlobalState = in.readBoolean();
@@ -504,20 +508,20 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 dataStreams = Collections.emptyList();
             }
             entries[i] = new Entry(snapshot,
-                                   includeGlobalState,
-                                   partial,
-                                   state,
-                                   Collections.unmodifiableList(indexBuilder),
-                                   dataStreams,
-                                   startTime,
-                                   repositoryStateId,
-                                   builder.build(),
-                                   failure,
-                                   userMetadata,
-                                   version
-                );
+                    includeGlobalState,
+                    partial,
+                    state,
+                    Collections.unmodifiableList(indexBuilder),
+                    dataStreams,
+                    startTime,
+                    repositoryStateId,
+                    builder.build(),
+                    failure,
+                    userMetadata,
+                    version
+            );
         }
-        this.entries = Arrays.asList(entries);
+        return SnapshotsInProgress.of(Arrays.asList(entries));
     }
 
     @Override

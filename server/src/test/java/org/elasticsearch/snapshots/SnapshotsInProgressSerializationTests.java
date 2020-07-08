@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.SnapshotsInProgress.Entry;
 import org.elasticsearch.cluster.SnapshotsInProgress.ShardState;
 import org.elasticsearch.cluster.SnapshotsInProgress.State;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.Index;
@@ -44,7 +45,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
 
     @Override
     protected Custom createTestInstance() {
-        int numberOfSnapshots = randomInt(10);
+        int numberOfSnapshots = randomIntBetween(1, 10);
         List<Entry> entries = new ArrayList<>();
         for (int i = 0; i < numberOfSnapshots; i++) {
             entries.add(randomSnapshot());
@@ -85,7 +86,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
 
     @Override
     protected Writeable.Reader<Custom> instanceReader() {
-        return SnapshotsInProgress::new;
+        return SnapshotsInProgress::readFrom;
     }
 
     @Override
@@ -94,7 +95,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
         List<Entry> entries = new ArrayList<>(snapshots.entries());
         if (randomBoolean() && entries.size() > 1) {
             // remove some elements
-            int leaveElements = randomIntBetween(0, entries.size() - 1);
+            int leaveElements = randomIntBetween(1, entries.size() - 1);
             entries = randomSubsetOf(leaveElements, entries.toArray(new Entry[leaveElements]));
         }
         if (randomBoolean()) {
@@ -128,12 +129,18 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
     @Override
     protected Custom mutateInstance(Custom instance) {
         List<Entry> entries = new ArrayList<>(((SnapshotsInProgress) instance).entries());
-        boolean addEntry = entries.isEmpty() ? true : randomBoolean();
+        boolean addEntry = entries.size() == 1 || randomBoolean();
         if (addEntry) {
             entries.add(randomSnapshot());
         } else {
             entries.remove(randomIntBetween(0, entries.size() - 1));
         }
         return SnapshotsInProgress.of(entries);
+    }
+
+    public void testReadEmptyInstanceSingleton() throws Exception {
+        final BytesStreamOutput out = new BytesStreamOutput();
+        SnapshotsInProgress.EMPTY.writeTo(out);
+        assertSame(SnapshotsInProgress.readFrom(out.bytes().streamInput()), SnapshotsInProgress.EMPTY);
     }
 }
