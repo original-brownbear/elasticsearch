@@ -279,7 +279,7 @@ public final class ShardRouting implements Writeable, ToXContentObject {
     }
 
     public ShardRouting(StreamInput in) throws IOException {
-        this(new ShardId(in), in);
+        this(ShardId.readFrom(in), in);
     }
 
     /**

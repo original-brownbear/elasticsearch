@@ -1148,6 +1148,10 @@ public abstract class StreamInput extends InputStream {
         return null;
     }
 
+    public <T> T readCached(Writeable.Reader<T> reader, Class<T> clazz) throws IOException {
+        return reader.read(this);
+    }
+
     /**
      * Reads a list of objects. The list is expected to have been written using {@link StreamOutput#writeList(List)}.
      * If the returned list contains any entries it will be mutable. If it is empty it might be immutable.

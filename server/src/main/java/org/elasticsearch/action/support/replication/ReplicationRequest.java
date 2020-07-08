@@ -76,7 +76,7 @@ public abstract class ReplicationRequest<Request extends ReplicationRequest<Requ
         if (thinRead) {
             this.shardId = shardId;
         } else {
-            this.shardId = in.readOptionalWriteable(ShardId::new);
+            this.shardId = in.readOptionalWriteable(ShardId::readFrom);
        }
         waitForActiveShards = ActiveShardCount.readFrom(in);
         timeout = in.readTimeValue();

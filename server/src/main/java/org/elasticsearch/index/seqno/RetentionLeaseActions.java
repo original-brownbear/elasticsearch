@@ -267,7 +267,7 @@ public class RetentionLeaseActions {
 
         Request(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = ShardId.readFrom(in);
             id = in.readString();
         }
 

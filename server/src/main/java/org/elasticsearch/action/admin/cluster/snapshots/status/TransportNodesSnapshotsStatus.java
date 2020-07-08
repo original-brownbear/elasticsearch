@@ -200,7 +200,7 @@ public class TransportNodesSnapshotsStatus extends TransportNodesAction<Transpor
                 int numberOfShards = in.readVInt();
                 Map<ShardId, SnapshotIndexShardStatus> shardMapBuilder = new HashMap<>(numberOfShards);
                 for (int j = 0; j < numberOfShards; j++) {
-                    ShardId shardId =  new ShardId(in);
+                    ShardId shardId =  ShardId.readFrom(in);
                     SnapshotIndexShardStatus status = new SnapshotIndexShardStatus(in);
                     shardMapBuilder.put(shardId, status);
                 }

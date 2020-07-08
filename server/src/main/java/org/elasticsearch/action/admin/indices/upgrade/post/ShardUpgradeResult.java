@@ -46,7 +46,7 @@ class ShardUpgradeResult implements Writeable {
     }
 
     ShardUpgradeResult(StreamInput in) throws IOException {
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         primary = in.readBoolean();
         upgradeVersion = Version.readVersion(in);
         try {

@@ -168,7 +168,7 @@ public class TransportNodesListGatewayStartedShards extends
 
         public Request(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = ShardId.readFrom(in);
             if (in.getVersion().onOrAfter(Version.V_7_6_0)) {
                 customDataPath = in.readString();
             } else {
@@ -237,7 +237,7 @@ public class TransportNodesListGatewayStartedShards extends
 
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = ShardId.readFrom(in);
             if (in.getVersion().onOrAfter(Version.V_7_6_0)) {
                 customDataPath = in.readString();
             } else {

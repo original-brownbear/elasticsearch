@@ -294,7 +294,7 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
             final int shardIdCount = in.readVInt();
             shardIds = new ObjectHashSet<>(shardIdCount);
             for (int i = 0; i < shardIdCount; i++) {
-                shardIds.add(new ShardId(in));
+                shardIds.add(ShardId.readFrom(in));
             }
         }
 

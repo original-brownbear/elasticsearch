@@ -152,7 +152,7 @@ public abstract class DocWriteResponse extends ReplicationResponse implements Wr
      */
     protected DocWriteResponse(StreamInput in) throws IOException {
         super(in);
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         if (in.getVersion().before(Version.V_8_0_0)) {
             String type = in.readString();
             assert MapperService.SINGLE_MAPPING_NAME.equals(type) : "Expected [_doc] but received [" + type + "]";

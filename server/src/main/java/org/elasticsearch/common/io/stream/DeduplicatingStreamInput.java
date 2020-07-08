@@ -16,39 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-package org.elasticsearch.action.support.broadcast;
-
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.transport.TransportResponse;
+package org.elasticsearch.common.io.stream;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
-public abstract class BroadcastShardResponse extends TransportResponse {
+public class DeduplicatingStreamInput extends FilterStreamInput {
 
-    ShardId shardId;
+    private final Map<Class<?>, Map<?, ?>> seen = new HashMap<>();
 
-    protected BroadcastShardResponse(StreamInput in) throws IOException {
-        super(in);
-        shardId = ShardId.readFrom(in);
-    }
-
-    protected BroadcastShardResponse(ShardId shardId) {
-        this.shardId = shardId;
-    }
-
-    public String getIndex() {
-        return this.shardId.getIndexName();
-    }
-
-    public ShardId getShardId() {
-        return this.shardId;
+    public DeduplicatingStreamInput(StreamInput delegate) {
+        super(delegate);
     }
 
     @Override
-    public void writeTo(StreamOutput out) throws IOException {
-        shardId.writeTo(out);
+    public <T> T readCached(Writeable.Reader<T> reader, Class<T> clazz) throws IOException {
+        return getCache(clazz).computeIfAbsent(reader.read(delegate), Function.identity());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> Map<T, T> getCache(Class<T> clazz) {
+        return (Map<T, T>) seen.computeIfAbsent(clazz, k -> new HashMap<T, T>());
     }
 }

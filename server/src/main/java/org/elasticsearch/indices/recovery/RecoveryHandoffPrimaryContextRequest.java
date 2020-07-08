@@ -42,7 +42,7 @@ class RecoveryHandoffPrimaryContextRequest extends TransportRequest {
     RecoveryHandoffPrimaryContextRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         primaryContext = new ReplicationTracker.PrimaryContext(in);
     }
 

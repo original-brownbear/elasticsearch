@@ -40,7 +40,7 @@ public class UpdateIndexShardSnapshotStatusRequest extends MasterNodeRequest<Upd
     public UpdateIndexShardSnapshotStatusRequest(StreamInput in) throws IOException {
         super(in);
         snapshot = new Snapshot(in);
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         status = new SnapshotsInProgress.ShardSnapshotStatus(in);
     }
 

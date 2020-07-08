@@ -400,7 +400,7 @@ public class ShardStateAction {
 
         FailedShardEntry(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = ShardId.readFrom(in);
             allocationId = in.readString();
             primaryTerm = in.readVLong();
             message = in.readString();
@@ -611,7 +611,7 @@ public class ShardStateAction {
 
         StartedShardEntry(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = ShardId.readFrom(in);
             allocationId = in.readString();
             primaryTerm = in.readVLong();
             this.message = in.readString();

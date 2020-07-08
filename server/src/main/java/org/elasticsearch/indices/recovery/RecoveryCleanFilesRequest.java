@@ -49,7 +49,7 @@ public class RecoveryCleanFilesRequest extends RecoveryTransportRequest {
     RecoveryCleanFilesRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         snapshotFiles = new Store.MetadataSnapshot(in);
         totalTranslogOps = in.readVInt();
         if (in.getVersion().onOrAfter(Version.V_7_2_0)) {

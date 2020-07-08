@@ -99,4 +99,14 @@ public abstract class FilterStreamInput extends StreamInput {
     public NamedWriteableRegistry namedWriteableRegistry() {
         return delegate.namedWriteableRegistry();
     }
+
+    @Override
+    public <C extends NamedWriteable> C readNamedWriteable(Class<C> categoryClass) throws IOException {
+        return delegate.readNamedWriteable(categoryClass);
+    }
+
+    @Override
+    public <C extends NamedWriteable> C readNamedWriteable(Class<C> categoryClass, String name) throws IOException {
+        return delegate.readNamedWriteable(categoryClass, name);
+    }
 }

@@ -489,7 +489,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             int shards = in.readVInt();
             ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> builder = ImmutableOpenMap.builder(shards);
             for (int j = 0; j < shards; j++) {
-                ShardId shardId = new ShardId(in);
+                ShardId shardId = ShardId.readFrom(in);
                 builder.put(shardId, new ShardSnapshotStatus(in));
             }
             long repositoryStateId = in.readLong();

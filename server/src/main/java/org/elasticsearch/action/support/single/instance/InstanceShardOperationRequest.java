@@ -57,7 +57,7 @@ public abstract class InstanceShardOperationRequest<Request extends InstanceShar
         // an older version) and is in the format used by #writeTo.
         if (shardId == null) {
             index = in.readString();
-            this.shardId = in.readOptionalWriteable(ShardId::new);
+            this.shardId = in.readOptionalWriteable(ShardId::readFrom);
         } else {
             // We know a shard id so we read the format given by #writeThin
             this.shardId = shardId;

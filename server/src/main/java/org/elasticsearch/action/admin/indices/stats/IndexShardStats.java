@@ -35,7 +35,7 @@ public class IndexShardStats implements Iterable<ShardStats>, Writeable {
     private ShardStats[] shards;
 
     public IndexShardStats(StreamInput in) throws IOException {
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         int shardSize = in.readVInt();
         shards = new ShardStats[shardSize];
         for (int i = 0; i < shardSize; i++) {
