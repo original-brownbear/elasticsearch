@@ -32,6 +32,11 @@ public class DeduplicatingStreamInput extends NamedWriteableAwareStreamInput {
     }
 
     @Override
+    public String readString() throws IOException {
+        return readCached(in -> super.readString(), String.class);
+    }
+
+    @Override
     public <T> T readCached(Writeable.Reader<T> reader, Class<T> clazz) throws IOException {
         return getCache(clazz).computeIfAbsent(reader.read(this), Function.identity());
     }
