@@ -23,17 +23,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-public class DeduplicatingStreamInput extends FilterStreamInput {
+public class DeduplicatingStreamInput extends NamedWriteableAwareStreamInput {
 
     private final Map<Class<?>, Map<?, ?>> seen = new HashMap<>();
 
-    public DeduplicatingStreamInput(StreamInput delegate) {
-        super(delegate);
+    public DeduplicatingStreamInput(StreamInput delegate, NamedWriteableRegistry namedWriteableRegistry) {
+        super(delegate, namedWriteableRegistry);
     }
 
     @Override
     public <T> T readCached(Writeable.Reader<T> reader, Class<T> clazz) throws IOException {
-        return getCache(clazz).computeIfAbsent(reader.read(delegate), Function.identity());
+        return getCache(clazz).computeIfAbsent(reader.read(this), Function.identity());
     }
 
     @SuppressWarnings("unchecked")

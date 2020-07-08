@@ -620,7 +620,7 @@ public class IndexShardRoutingTable implements Iterable<ShardRouting> {
         }
 
         public static IndexShardRoutingTable readFrom(StreamInput in) throws IOException {
-            Index index = new Index(in);
+            Index index = Index.readFrom(in);
             return readFromThin(in, index);
         }
 

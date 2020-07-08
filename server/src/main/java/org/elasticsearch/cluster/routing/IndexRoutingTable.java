@@ -293,7 +293,7 @@ public class IndexRoutingTable extends AbstractDiffable<IndexRoutingTable> imple
     }
 
     public static IndexRoutingTable readFrom(StreamInput in) throws IOException {
-        Index index = new Index(in);
+        Index index = Index.readFrom(in);
         Builder builder = new Builder(index);
 
         int size = in.readVInt();

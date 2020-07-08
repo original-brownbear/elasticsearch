@@ -53,7 +53,7 @@ public class ShardId implements Comparable<ShardId>, ToXContentFragment, Writeab
     }
 
     private ShardId(StreamInput in) throws IOException {
-        index = new Index(in);
+        index = Index.readFrom(in);
         shardId = in.readVInt();
         hashCode = computeHashCode();
     }

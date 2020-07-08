@@ -387,7 +387,7 @@ public final class IndexGraveyard implements Metadata.Custom {
 
         // create from stream
         private Tombstone(StreamInput in) throws IOException {
-            index = new Index(in);
+            index = Index.readFrom(in);
             deleteDateInMillis = in.readLong();
         }
 
