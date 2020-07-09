@@ -21,11 +21,14 @@ package org.elasticsearch.common.io.stream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 public class DeduplicatingStreamInput extends NamedWriteableAwareStreamInput {
 
     private final Map<Class<?>, Map<?, ?>> seen = new HashMap<>();
+
+    private final Map<Object, AtomicLong> hitCounts = new HashMap<>();
 
     public DeduplicatingStreamInput(StreamInput delegate, NamedWriteableRegistry namedWriteableRegistry) {
         super(delegate, namedWriteableRegistry);
@@ -38,11 +41,21 @@ public class DeduplicatingStreamInput extends NamedWriteableAwareStreamInput {
 
     @Override
     public <T> T readCached(Writeable.Reader<T> reader, Class<T> clazz) throws IOException {
-        return getCache(clazz).computeIfAbsent(reader.read(this), Function.identity());
+        final T read = reader.read(this);
+        final T res = getCache(clazz).computeIfAbsent(read, Function.identity());
+        if (read != res) {
+            hitCounts.computeIfAbsent(res, k -> new AtomicLong()).incrementAndGet();
+        }
+        return res;
     }
 
     @SuppressWarnings("unchecked")
     private <T> Map<T, T> getCache(Class<T> clazz) {
         return (Map<T, T>) seen.computeIfAbsent(clazz, k -> new HashMap<T, T>());
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
     }
 }
