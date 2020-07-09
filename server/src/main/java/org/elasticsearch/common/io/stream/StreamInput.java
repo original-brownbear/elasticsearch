@@ -1227,6 +1227,10 @@ public abstract class StreamInput extends InputStream {
         return builder;
     }
 
+    public <T> T read(Writeable.Reader<T> reader) throws IOException {
+        return reader.read(this);
+    }
+
     /**
      * Reads an enum with type E that was serialized based on the value of its ordinal
      */

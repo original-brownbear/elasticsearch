@@ -99,4 +99,8 @@ public abstract class FilterStreamInput extends StreamInput {
     public NamedWriteableRegistry namedWriteableRegistry() {
         return delegate.namedWriteableRegistry();
     }
+
+    public <T> T read(Writeable.Reader<T> reader) throws IOException {
+        return delegate.read(reader);
+    }
 }
