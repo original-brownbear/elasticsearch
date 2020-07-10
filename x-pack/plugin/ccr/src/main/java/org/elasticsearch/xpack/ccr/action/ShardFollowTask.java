@@ -92,8 +92,8 @@ public class ShardFollowTask extends ImmutableFollowParameters implements Persis
 
     public static ShardFollowTask readFrom(StreamInput in) throws IOException {
         String remoteCluster = in.readString();
-        ShardId followShardId = new ShardId(in);
-        ShardId leaderShardId = new ShardId(in);
+        ShardId followShardId = ShardId.readFrom(in);
+        ShardId leaderShardId = ShardId.readFrom(in);
         return new ShardFollowTask(remoteCluster, followShardId, leaderShardId, in);
     }
 

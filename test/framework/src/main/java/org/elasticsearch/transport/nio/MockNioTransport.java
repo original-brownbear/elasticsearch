@@ -32,6 +32,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.network.NetworkService;
@@ -93,8 +94,9 @@ public class MockNioTransport extends TcpTransport {
 
     public MockNioTransport(Settings settings, Version version, ThreadPool threadPool, NetworkService networkService,
                             PageCacheRecycler pageCacheRecycler, NamedWriteableRegistry namedWriteableRegistry,
-                            CircuitBreakerService circuitBreakerService) {
-        super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService);
+                            CircuitBreakerService circuitBreakerService, ObjectDeduplicatorService deduplicatorService) {
+        super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService,
+                deduplicatorService);
         this.transportThreadWatchdog = new TransportThreadWatchdog(threadPool, settings);
     }
 

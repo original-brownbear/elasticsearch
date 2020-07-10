@@ -32,6 +32,7 @@ import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
@@ -79,7 +80,7 @@ public class InboundHandlerTests extends ESTestCase {
         requestHandlers = new Transport.RequestHandlers();
         responseHandlers = new Transport.ResponseHandlers();
         handler = new InboundHandler(threadPool, outboundHandler, namedWriteableRegistry, handshaker, keepAlive, requestHandlers,
-            responseHandlers);
+            responseHandlers, new ObjectDeduplicatorService(null));
     }
 
     @After

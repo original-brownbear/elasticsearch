@@ -102,7 +102,7 @@ public class AddIndexBlockResponse extends ShardsAcknowledgedResponse {
         }
 
         AddBlockResult(final StreamInput in) throws IOException {
-            this.index = new Index(in);
+            this.index = Index.readFrom(in);
             this.exception = in.readException();
             this.shards = in.readOptionalArray(AddBlockShardResult::new, AddBlockShardResult[]::new);
         }

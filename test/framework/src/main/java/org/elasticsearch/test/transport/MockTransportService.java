@@ -29,6 +29,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
@@ -107,15 +108,16 @@ public final class MockTransportService extends TransportService {
 
     public static MockTransportService createNewService(Settings settings, Version version, ThreadPool threadPool,
                                                         @Nullable ClusterSettings clusterSettings) {
-        MockNioTransport mockTransport = newMockTransport(settings, version, threadPool);
+        MockNioTransport mockTransport = newMockTransport(settings, version, threadPool, new ObjectDeduplicatorService(null));
         return createNewService(settings, mockTransport, version, threadPool, clusterSettings, Collections.emptySet());
     }
 
-    public static MockNioTransport newMockTransport(Settings settings, Version version, ThreadPool threadPool) {
+    public static MockNioTransport newMockTransport(Settings settings, Version version, ThreadPool threadPool,
+                                                    ObjectDeduplicatorService deduplicatorService) {
         settings = Settings.builder().put(TransportSettings.PORT.getKey(), ESTestCase.getPortRange()).put(settings).build();
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(ClusterModule.getNamedWriteables());
         return new MockNioTransport(settings, version, threadPool, new NetworkService(Collections.emptyList()),
-            new MockPageCacheRecycler(settings), namedWriteableRegistry, new NoneCircuitBreakerService());
+            new MockPageCacheRecycler(settings), namedWriteableRegistry, new NoneCircuitBreakerService(), deduplicatorService);
     }
 
     public static MockTransportService createNewService(Settings settings, Transport transport, Version version, ThreadPool threadPool,

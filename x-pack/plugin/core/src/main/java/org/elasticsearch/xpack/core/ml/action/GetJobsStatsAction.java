@@ -181,7 +181,7 @@ public class GetJobsStatsAction extends ActionType<GetJobsStatsAction.Response> 
                 dataCounts = new DataCounts(in);
                 modelSizeStats = in.readOptionalWriteable(ModelSizeStats::new);
                 state = JobState.fromStream(in);
-                node = in.readOptionalWriteable(DiscoveryNode::new);
+                node = in.readOptionalWriteable(DiscoveryNode::readFrom);
                 assignmentExplanation = in.readOptionalString();
                 openTime = in.readOptionalTimeValue();
                 forecastStats = in.readOptionalWriteable(ForecastStats::new);

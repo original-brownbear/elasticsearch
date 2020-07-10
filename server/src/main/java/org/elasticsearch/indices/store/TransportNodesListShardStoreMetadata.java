@@ -189,7 +189,7 @@ public class TransportNodesListShardStoreMetadata extends TransportNodesAction<T
         }
 
         public StoreFilesMetadata(StreamInput in) throws IOException {
-            this.shardId = new ShardId(in);
+            this.shardId = ShardId.readFrom(in);
             this.metadataSnapshot = new Store.MetadataSnapshot(in);
             if (in.getVersion().onOrAfter(Version.V_7_5_0)) {
                 this.peerRecoveryRetentionLeases = in.readList(RetentionLease::new);
@@ -267,7 +267,7 @@ public class TransportNodesListShardStoreMetadata extends TransportNodesAction<T
 
         public Request(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = ShardId.readFrom(in);
             if (in.getVersion().onOrAfter(Version.V_7_6_0)) {
                 customDataPath = in.readString();
             } else {
@@ -335,7 +335,7 @@ public class TransportNodesListShardStoreMetadata extends TransportNodesAction<T
 
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
-            shardId = new ShardId(in);
+            shardId = ShardId.readFrom(in);
             if (in.getVersion().onOrAfter(Version.V_7_6_0)) {
                 customDataPath = in.readString();
             } else {

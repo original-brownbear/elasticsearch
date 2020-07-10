@@ -22,6 +22,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
@@ -278,12 +279,13 @@ public class LocalStateCompositeXPackPlugin extends XPackPlugin implements Scrip
     @Override
     public Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                                                           CircuitBreakerService circuitBreakerService,
-                                                          NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService) {
+                                                          NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService,
+                                                          ObjectDeduplicatorService deduplicatorService) {
         Map<String, Supplier<Transport>> transports = new HashMap<>();
         transports.putAll(super.getTransports(settings, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry,
-            networkService));
+            networkService, deduplicatorService));
         filterPlugins(NetworkPlugin.class).stream().forEach(p -> transports.putAll(p.getTransports(settings, threadPool,
-                pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService)));
+                pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService, deduplicatorService)));
         return transports;
 
 

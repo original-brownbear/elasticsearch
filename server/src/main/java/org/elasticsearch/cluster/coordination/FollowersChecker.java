@@ -423,7 +423,7 @@ public class FollowersChecker {
         public FollowerCheckRequest(final StreamInput in) throws IOException {
             super(in);
             term = in.readLong();
-            sender = new DiscoveryNode(in);
+            sender = DiscoveryNode.readFrom(in);
         }
 
         @Override

@@ -142,7 +142,7 @@ public final class DataStream extends AbstractDiffable<DataStream> implements To
     }
 
     public DataStream(StreamInput in) throws IOException {
-        this(in.readString(), new TimestampField(in), in.readList(Index::new), in.readVLong());
+        this(in.readString(), new TimestampField(in), in.readList(Index::readFrom), in.readVLong());
     }
 
     public static Diff<DataStream> readDiffFrom(StreamInput in) throws IOException {

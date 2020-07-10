@@ -53,7 +53,7 @@ public abstract class BaseNodesRequest<Request extends BaseNodesRequest<Request>
     protected BaseNodesRequest(StreamInput in) throws IOException {
         super(in);
         nodesIds = in.readStringArray();
-        concreteNodes = in.readOptionalArray(DiscoveryNode::new, DiscoveryNode[]::new);
+        concreteNodes = in.readOptionalArray(DiscoveryNode::readFrom, DiscoveryNode[]::new);
         timeout = in.readOptionalTimeValue();
     }
 

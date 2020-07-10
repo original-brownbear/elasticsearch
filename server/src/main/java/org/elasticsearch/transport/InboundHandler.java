@@ -23,8 +23,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.Version;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
+import org.elasticsearch.common.io.stream.DeduplicatingInputStream;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
@@ -45,12 +46,13 @@ public class InboundHandler {
     private final TransportKeepAlive keepAlive;
     private final Transport.ResponseHandlers responseHandlers;
     private final Transport.RequestHandlers requestHandlers;
+    private final ObjectDeduplicatorService objectDeduplicatorService;
 
     private volatile TransportMessageListener messageListener = TransportMessageListener.NOOP_LISTENER;
 
     InboundHandler(ThreadPool threadPool, OutboundHandler outboundHandler, NamedWriteableRegistry namedWriteableRegistry,
                    TransportHandshaker handshaker, TransportKeepAlive keepAlive, Transport.RequestHandlers requestHandlers,
-                   Transport.ResponseHandlers responseHandlers) {
+                   Transport.ResponseHandlers responseHandlers, ObjectDeduplicatorService deduplicatorService) {
         this.threadPool = threadPool;
         this.outboundHandler = outboundHandler;
         this.namedWriteableRegistry = namedWriteableRegistry;
@@ -58,6 +60,7 @@ public class InboundHandler {
         this.keepAlive = keepAlive;
         this.requestHandlers = requestHandlers;
         this.responseHandlers = responseHandlers;
+        this.objectDeduplicatorService = deduplicatorService;
     }
 
     void setMessageListener(TransportMessageListener listener) {
@@ -240,7 +243,7 @@ public class InboundHandler {
     }
 
     private StreamInput namedWriteableStream(StreamInput delegate) {
-        return new NamedWriteableAwareStreamInput(delegate, namedWriteableRegistry);
+        return new DeduplicatingInputStream(delegate, namedWriteableRegistry, objectDeduplicatorService);
     }
 
     static void assertRemoteVersion(StreamInput in, Version version) {

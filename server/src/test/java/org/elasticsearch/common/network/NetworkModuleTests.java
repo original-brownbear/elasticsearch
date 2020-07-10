@@ -21,6 +21,7 @@ package org.elasticsearch.common.network;
 
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.BoundTransportAddress;
@@ -96,7 +97,8 @@ public class NetworkModuleTests extends ESTestCase {
                                                                   PageCacheRecycler pageCacheRecycler,
                                                                   CircuitBreakerService circuitBreakerService,
                                                                   NamedWriteableRegistry namedWriteableRegistry,
-                                                                  NetworkService networkService) {
+                                                                  NetworkService networkService,
+                                                                  ObjectDeduplicatorService deduplicatorService) {
                 return Collections.singletonMap("custom", custom);
             }
         };
@@ -145,7 +147,8 @@ public class NetworkModuleTests extends ESTestCase {
                                                                   PageCacheRecycler pageCacheRecycler,
                                                                   CircuitBreakerService circuitBreakerService,
                                                                   NamedWriteableRegistry namedWriteableRegistry,
-                                                                  NetworkService networkService) {
+                                                                  NetworkService networkService,
+                                                                  ObjectDeduplicatorService deduplicatorService) {
                 return Collections.singletonMap("default_custom", customTransport);
             }
 
@@ -181,7 +184,8 @@ public class NetworkModuleTests extends ESTestCase {
                                                                   PageCacheRecycler pageCacheRecycler,
                                                                   CircuitBreakerService circuitBreakerService,
                                                                   NamedWriteableRegistry namedWriteableRegistry,
-                                                                  NetworkService networkService) {
+                                                                  NetworkService networkService,
+                                                                  ObjectDeduplicatorService deduplicatorService) {
                 return Collections.singletonMap("default_custom", customTransport);
             }
 
@@ -259,6 +263,6 @@ public class NetworkModuleTests extends ESTestCase {
     private NetworkModule newNetworkModule(Settings settings, NetworkPlugin... plugins) {
         return new NetworkModule(settings, Arrays.asList(plugins), threadPool, null, null, null, null,
             xContentRegistry(), null, new NullDispatcher(),
-            new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS));
+            new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS), new ObjectDeduplicatorService(null));
     }
 }

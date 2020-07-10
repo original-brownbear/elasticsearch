@@ -27,6 +27,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.PageCacheRecycler;
@@ -57,7 +58,8 @@ public class EC2RetriesTests extends AbstractEC2MockAPITestCase {
     protected MockTransportService createTransportService() {
         return new MockTransportService(Settings.EMPTY, new MockNioTransport(Settings.EMPTY, Version.CURRENT, threadPool, networkService,
             PageCacheRecycler.NON_RECYCLING_INSTANCE, new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService()), threadPool, TransportService.NOOP_TRANSPORT_INTERCEPTOR, null);
+            new NoneCircuitBreakerService(), new ObjectDeduplicatorService(null)), threadPool,
+                TransportService.NOOP_TRANSPORT_INTERCEPTOR, null);
     }
 
     public void testEC2DiscoveryRetriesOnRateLimiting() throws IOException {

@@ -40,7 +40,7 @@ public class ClusterSearchShardsGroup implements Writeable, ToXContentObject {
     }
 
     ClusterSearchShardsGroup(StreamInput in) throws IOException {
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         shards = new ShardRouting[in.readVInt()];
         for (int i = 0; i < shards.length; i++) {
             shards[i] = new ShardRouting(shardId, in);

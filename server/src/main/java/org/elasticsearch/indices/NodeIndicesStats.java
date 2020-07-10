@@ -67,7 +67,7 @@ public class NodeIndicesStats implements Writeable, ToXContentFragment {
             int entries = in.readVInt();
             statsByShard = new HashMap<>();
             for (int i = 0; i < entries; i++) {
-                Index index = new Index(in);
+                Index index = Index.readFrom(in);
                 int indexShardListSize = in.readVInt();
                 List<IndexShardStats> indexShardStats = new ArrayList<>(indexShardListSize);
                 for (int j = 0; j < indexShardListSize; j++) {

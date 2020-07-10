@@ -445,7 +445,7 @@ public class RestoreInProgress extends AbstractNamedDiffable<Custom> implements 
             ImmutableOpenMap.Builder<ShardId, ShardRestoreStatus> builder = ImmutableOpenMap.builder();
             int shards = in.readVInt();
             for (int j = 0; j < shards; j++) {
-                ShardId shardId = new ShardId(in);
+                ShardId shardId = ShardId.readFrom(in);
                 ShardRestoreStatus shardState = ShardRestoreStatus.readShardRestoreStatus(in);
                 builder.put(shardId, shardState);
             }

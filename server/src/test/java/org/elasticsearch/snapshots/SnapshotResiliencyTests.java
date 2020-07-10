@@ -136,6 +136,7 @@ import org.elasticsearch.cluster.service.MasterService;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
@@ -1658,7 +1659,7 @@ public class SnapshotResiliencyTests extends ESTestCase {
                         .map(n -> n.node.getAddress()).collect(Collectors.toList()),
                     clusterService.getClusterApplierService(), Collections.emptyList(), random(),
                     new BatchedRerouteService(clusterService, allocationService::reroute), ElectionStrategy.DEFAULT_INSTANCE,
-                    () -> new StatusInfo(HEALTHY, "healthy-info"));
+                    () -> new StatusInfo(HEALTHY, "healthy-info"), new ObjectDeduplicatorService(clusterService));
                 masterService.setClusterStatePublisher(coordinator);
                 coordinator.start();
                 clusterService.getClusterApplierService().setNodeConnectionsService(nodeConnectionsService);

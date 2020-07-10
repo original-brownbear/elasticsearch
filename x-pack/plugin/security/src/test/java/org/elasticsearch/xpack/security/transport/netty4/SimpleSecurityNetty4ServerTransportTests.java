@@ -9,6 +9,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -33,7 +34,8 @@ public class SimpleSecurityNetty4ServerTransportTests extends AbstractSimpleSecu
             .put("xpack.security.transport.ssl.enabled", true).build();
         return new SecurityNetty4ServerTransport(settings1, version, threadPool,
             networkService, PageCacheRecycler.NON_RECYCLING_INSTANCE, namedWriteableRegistry,
-            new NoneCircuitBreakerService(), null, createSSLService(settings1), new SharedGroupFactory(settings1)) {
+            new NoneCircuitBreakerService(), null, createSSLService(settings1), new SharedGroupFactory(settings1),
+                new ObjectDeduplicatorService(null)) {
 
             @Override
             public void executeHandshake(DiscoveryNode node, TcpChannel channel, ConnectionProfile profile,

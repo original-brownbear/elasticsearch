@@ -42,7 +42,7 @@ public class StartJoinRequest extends TransportRequest {
 
     public StartJoinRequest(StreamInput input) throws IOException {
         super(input);
-        this.sourceNode = new DiscoveryNode(input);
+        this.sourceNode = DiscoveryNode.readFrom(input);
         this.term = input.readLong();
     }
 

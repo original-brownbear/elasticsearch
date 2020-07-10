@@ -16,6 +16,7 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.PageCacheRecycler;
@@ -63,9 +64,10 @@ public class SecurityNetty4Transport extends Netty4Transport {
             final NamedWriteableRegistry namedWriteableRegistry,
             final CircuitBreakerService circuitBreakerService,
             final SSLService sslService,
-            final SharedGroupFactory sharedGroupFactory) {
+            final SharedGroupFactory sharedGroupFactory,
+            ObjectDeduplicatorService deduplicatorService) {
         super(settings, version, threadPool, networkService, pageCacheRecycler, namedWriteableRegistry, circuitBreakerService,
-            sharedGroupFactory);
+            sharedGroupFactory, deduplicatorService);
         this.exceptionHandler = new SecurityTransportExceptionHandler(logger, lifecycle, (c, e) -> super.onException(c, e));
         this.sslService = sslService;
         this.sslEnabled = XPackSettings.TRANSPORT_SSL_ENABLED.get(settings);

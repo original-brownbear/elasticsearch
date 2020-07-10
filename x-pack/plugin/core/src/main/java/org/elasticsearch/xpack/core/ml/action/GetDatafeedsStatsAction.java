@@ -141,7 +141,7 @@ public class GetDatafeedsStatsAction extends ActionType<GetDatafeedsStatsAction.
             DatafeedStats(StreamInput in) throws IOException {
                 datafeedId = in.readString();
                 datafeedState = DatafeedState.fromStream(in);
-                node = in.readOptionalWriteable(DiscoveryNode::new);
+                node = in.readOptionalWriteable(DiscoveryNode::readFrom);
                 assignmentExplanation = in.readOptionalString();
                 if (in.getVersion().onOrAfter(V_7_4_0)) {
                     timingStats = in.readOptionalWriteable(DatafeedTimingStats::new);

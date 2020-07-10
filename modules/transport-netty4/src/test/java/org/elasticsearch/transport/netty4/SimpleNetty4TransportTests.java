@@ -23,6 +23,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -51,7 +52,7 @@ public class SimpleNetty4TransportTests extends AbstractSimpleTransportTestCase 
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
         return new Netty4Transport(settings, version, threadPool, new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE, namedWriteableRegistry, new NoneCircuitBreakerService(),
-            new SharedGroupFactory(settings)) {
+            new SharedGroupFactory(settings), new ObjectDeduplicatorService(null)) {
 
             @Override
             public void executeHandshake(DiscoveryNode node, TcpChannel channel, ConnectionProfile profile,

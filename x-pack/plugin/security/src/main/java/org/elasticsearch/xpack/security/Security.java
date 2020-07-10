@@ -25,6 +25,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -936,7 +937,8 @@ public class Security extends Plugin implements SystemIndexPlugin, IngestPlugin,
     @Override
     public Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                                                           CircuitBreakerService circuitBreakerService,
-                                                          NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService) {
+                                                          NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService,
+                                                          ObjectDeduplicatorService deduplicatorService) {
         if (enabled == false) { // don't register anything if we are not enabled
             return Collections.emptyMap();
         }
@@ -955,7 +957,8 @@ public class Security extends Plugin implements SystemIndexPlugin, IngestPlugin,
                         circuitBreakerService,
                         ipFilter,
                         getSslService(),
-                        getNettySharedGroupFactory(settings)),
+                        getNettySharedGroupFactory(settings),
+                        deduplicatorService),
                 // security based on NIO
                 SecurityField.NIO,
                 () -> new SecurityNioTransport(settings,
@@ -967,7 +970,8 @@ public class Security extends Plugin implements SystemIndexPlugin, IngestPlugin,
                         circuitBreakerService,
                         ipFilter,
                         getSslService(),
-                        getNioGroupFactory(settings)));
+                        getNioGroupFactory(settings),
+                        deduplicatorService));
     }
 
     @Override

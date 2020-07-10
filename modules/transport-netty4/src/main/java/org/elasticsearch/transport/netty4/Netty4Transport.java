@@ -40,6 +40,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Setting;
@@ -101,8 +102,10 @@ public class Netty4Transport extends TcpTransport {
 
     public Netty4Transport(Settings settings, Version version, ThreadPool threadPool, NetworkService networkService,
                            PageCacheRecycler pageCacheRecycler, NamedWriteableRegistry namedWriteableRegistry,
-                           CircuitBreakerService circuitBreakerService, SharedGroupFactory sharedGroupFactory) {
-        super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService);
+                           CircuitBreakerService circuitBreakerService, SharedGroupFactory sharedGroupFactory,
+                           ObjectDeduplicatorService deduplicatorService) {
+        super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService,
+                deduplicatorService);
         Netty4Utils.setAvailableProcessors(EsExecutors.NODE_PROCESSORS_SETTING.get(settings));
         this.sharedGroupFactory = sharedGroupFactory;
 

@@ -20,6 +20,7 @@ package org.elasticsearch.transport.nio;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.PageCacheRecycler;
@@ -40,9 +41,10 @@ public class MockNioTransportPlugin extends Plugin implements NetworkPlugin {
     @Override
     public Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                                                           CircuitBreakerService circuitBreakerService,
-                                                          NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService) {
+                                                          NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService,
+                                                          ObjectDeduplicatorService deduplicatorService) {
         return Collections.singletonMap(MOCK_NIO_TRANSPORT_NAME,
             () -> new MockNioTransport(settings, Version.CURRENT, threadPool, networkService, pageCacheRecycler,
-                namedWriteableRegistry, circuitBreakerService));
+                namedWriteableRegistry, circuitBreakerService, deduplicatorService));
     }
 }

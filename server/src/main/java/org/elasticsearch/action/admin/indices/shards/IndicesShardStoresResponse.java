@@ -110,7 +110,7 @@ public class IndicesShardStoresResponse extends ActionResponse implements ToXCon
         }
 
         public StoreStatus(StreamInput in) throws IOException {
-            node = new DiscoveryNode(in);
+            node = DiscoveryNode.readFrom(in);
             allocationId = in.readOptionalString();
             allocationStatus = AllocationStatus.readFrom(in);
             if (in.readBoolean()) {

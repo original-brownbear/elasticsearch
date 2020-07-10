@@ -283,7 +283,7 @@ public class TermVectorsUnitTests extends ESTestCase {
             InputStreamStreamInput esBuffer = new InputStreamStreamInput(esInBuffer);
             TaskId.readFromStream(esBuffer);
             if (esBuffer.readBoolean()) {
-                new ShardId(esBuffer);
+                ShardId.readFrom(esBuffer);
             }
             esBuffer.readOptionalString();
             assertThat(esBuffer.readString(), equalTo("_doc"));

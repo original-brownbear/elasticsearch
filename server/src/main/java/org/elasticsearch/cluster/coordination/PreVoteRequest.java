@@ -39,7 +39,7 @@ public class PreVoteRequest extends TransportRequest {
 
     public PreVoteRequest(StreamInput in) throws IOException {
         super(in);
-        sourceNode = new DiscoveryNode(in);
+        sourceNode = DiscoveryNode.readFrom(in);
         currentTerm = in.readLong();
     }
 

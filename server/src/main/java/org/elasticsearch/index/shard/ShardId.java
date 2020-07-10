@@ -48,8 +48,12 @@ public class ShardId implements Comparable<ShardId>, ToXContentFragment, Writeab
         this(new Index(index, indexUUID), shardId);
     }
 
-    public ShardId(StreamInput in) throws IOException {
-        index = new Index(in);
+    public static ShardId readFrom(StreamInput in) throws IOException {
+        return in.read(ShardId::new);
+    }
+
+    private ShardId(StreamInput in) throws IOException {
+        index = Index.readFrom(in);
         shardId = in.readVInt();
         hashCode = computeHashCode();
     }

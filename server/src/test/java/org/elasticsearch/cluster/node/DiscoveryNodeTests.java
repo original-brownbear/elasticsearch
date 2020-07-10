@@ -80,7 +80,7 @@ public class DiscoveryNodeTests extends ESTestCase {
         node.writeTo(streamOutput);
 
         StreamInput in = StreamInput.wrap(streamOutput.bytes().toBytesRef().bytes);
-        DiscoveryNode serialized = new DiscoveryNode(in);
+        DiscoveryNode serialized = DiscoveryNode.readFrom(in);
         assertEquals(transportAddress.address().getHostString(), serialized.getHostName());
         assertEquals(transportAddress.address().getHostString(), serialized.getAddress().address().getHostString());
         assertEquals(transportAddress.getAddress(), serialized.getHostAddress());

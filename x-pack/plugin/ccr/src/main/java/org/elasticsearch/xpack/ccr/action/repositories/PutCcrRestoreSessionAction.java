@@ -98,7 +98,7 @@ public class PutCcrRestoreSessionAction extends ActionType<PutCcrRestoreSessionA
 
         PutCcrRestoreSessionResponse(StreamInput in) throws IOException {
             super(in);
-            node = new DiscoveryNode(in);
+            node = DiscoveryNode.readFrom(in);
             storeFileMetadata = new Store.MetadataSnapshot(in);
             mappingVersion = in.readVLong();
         }

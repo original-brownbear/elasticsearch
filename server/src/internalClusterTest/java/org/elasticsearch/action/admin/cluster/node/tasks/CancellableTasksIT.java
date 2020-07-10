@@ -346,7 +346,7 @@ public class CancellableTasksIT extends ESIntegTestCase {
         TestRequest(StreamInput in) throws IOException {
             super(in);
             this.id = in.readInt();
-            this.node = new DiscoveryNode(in);
+            this.node = DiscoveryNode.readFrom(in);
             this.subRequests = in.readList(TestRequest::new);
         }
 

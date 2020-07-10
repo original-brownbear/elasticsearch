@@ -42,7 +42,7 @@ abstract class TermVersionRequest extends TransportRequest implements Writeable 
 
     TermVersionRequest(StreamInput in) throws IOException {
         super(in);
-        sourceNode = new DiscoveryNode(in);
+        sourceNode = DiscoveryNode.readFrom(in);
         term = in.readLong();
         version = in.readLong();
     }

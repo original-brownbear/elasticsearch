@@ -22,6 +22,7 @@ package org.elasticsearch.transport;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -78,9 +79,11 @@ public class Netty4Plugin extends Plugin implements NetworkPlugin {
     @Override
     public Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                                                           CircuitBreakerService circuitBreakerService,
-                                                          NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService) {
+                                                          NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService,
+                                                          ObjectDeduplicatorService deduplicatorService) {
         return Collections.singletonMap(NETTY_TRANSPORT_NAME, () -> new Netty4Transport(settings, Version.CURRENT, threadPool,
-            networkService, pageCacheRecycler, namedWriteableRegistry, circuitBreakerService, getSharedGroupFactory(settings)));
+            networkService, pageCacheRecycler, namedWriteableRegistry, circuitBreakerService, getSharedGroupFactory(settings),
+            deduplicatorService));
     }
 
     @Override

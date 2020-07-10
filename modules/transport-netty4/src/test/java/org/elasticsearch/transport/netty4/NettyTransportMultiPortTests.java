@@ -21,6 +21,7 @@ package org.elasticsearch.transport.netty4;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.Settings;
@@ -122,7 +123,7 @@ public class NettyTransportMultiPortTests extends ESTestCase {
         PageCacheRecycler recycler = new MockPageCacheRecycler(Settings.EMPTY);
         TcpTransport transport = new Netty4Transport(settings, Version.CURRENT, threadPool, new NetworkService(Collections.emptyList()),
             recycler, new NamedWriteableRegistry(Collections.emptyList()), new NoneCircuitBreakerService(),
-            new SharedGroupFactory(settings));
+            new SharedGroupFactory(settings), new ObjectDeduplicatorService(null));
         transport.start();
 
         assertThat(transport.lifecycleState(), is(Lifecycle.State.STARTED));

@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.network.NetworkService;
@@ -168,7 +169,8 @@ public class SeedHostsResolverTests extends ESTestCase {
             networkService,
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService()) {
+            new NoneCircuitBreakerService(),
+            new ObjectDeduplicatorService(null)) {
 
             @Override
             public BoundTransportAddress boundAddress() {
@@ -211,7 +213,8 @@ public class SeedHostsResolverTests extends ESTestCase {
             networkService,
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService()) {
+            new NoneCircuitBreakerService(),
+            new ObjectDeduplicatorService(null)) {
 
             @Override
             public BoundTransportAddress boundAddress() {
@@ -269,7 +272,8 @@ public class SeedHostsResolverTests extends ESTestCase {
             networkService,
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService()) {
+            new NoneCircuitBreakerService(),
+            new ObjectDeduplicatorService(null)) {
 
             @Override
             public BoundTransportAddress boundAddress() {
@@ -338,7 +342,8 @@ public class SeedHostsResolverTests extends ESTestCase {
             networkService,
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService()) {
+            new NoneCircuitBreakerService(),
+            new ObjectDeduplicatorService(null)) {
 
             @Override
             public BoundTransportAddress boundAddress() {
@@ -391,7 +396,8 @@ public class SeedHostsResolverTests extends ESTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService()) {
+            new NoneCircuitBreakerService(),
+            new ObjectDeduplicatorService(null)) {
             @Override
             public BoundTransportAddress boundAddress() {
                 return new BoundTransportAddress(

@@ -49,6 +49,7 @@ import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -959,7 +960,7 @@ public class AbstractCoordinatorTestCase extends ESTestCase {
                 coordinator = new Coordinator("test_node", settings, clusterSettings, transportService, writableRegistry(),
                     allocationService, masterService, this::getPersistedState,
                     Cluster.this::provideSeedHosts, clusterApplierService, onJoinValidators, Randomness.get(), (s, p, r) -> {},
-                    getElectionStrategy(), nodeHealthService);
+                    getElectionStrategy(), nodeHealthService, new ObjectDeduplicatorService(clusterService));
                 masterService.setClusterStatePublisher(coordinator);
                 final GatewayService gatewayService
                     = new GatewayService(settings, allocationService, clusterService, threadPool, coordinator, null);

@@ -29,6 +29,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.SuppressForbidden;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -72,7 +73,7 @@ public class Ec2DiscoveryTests extends AbstractEC2MockAPITestCase {
     protected MockTransportService createTransportService() {
         final Transport transport = new MockNioTransport(Settings.EMPTY, Version.CURRENT, threadPool,
             new NetworkService(Collections.emptyList()), PageCacheRecycler.NON_RECYCLING_INSTANCE, writableRegistry(),
-            new NoneCircuitBreakerService()) {
+            new NoneCircuitBreakerService(), new ObjectDeduplicatorService(null)) {
             @Override
             public TransportAddress[] addressesFromString(String address) {
                 // we just need to ensure we don't resolve DNS here

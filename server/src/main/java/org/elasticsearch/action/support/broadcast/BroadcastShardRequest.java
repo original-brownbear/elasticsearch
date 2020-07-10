@@ -39,7 +39,7 @@ public abstract class BroadcastShardRequest extends TransportRequest implements 
 
     public BroadcastShardRequest(StreamInput in) throws IOException {
         super(in);
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         originalIndices = OriginalIndices.readOriginalIndices(in);
     }
 

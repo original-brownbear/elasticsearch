@@ -112,7 +112,7 @@ public class CloseIndexResponse extends ShardsAcknowledgedResponse {
         }
 
         IndexResult(final StreamInput in) throws IOException {
-            this.index = new Index(in);
+            this.index = Index.readFrom(in);
             this.exception = in.readException();
             this.shards = in.readOptionalArray(ShardResult::new, ShardResult[]::new);
         }

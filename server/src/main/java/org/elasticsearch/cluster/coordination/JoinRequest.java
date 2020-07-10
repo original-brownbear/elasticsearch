@@ -58,7 +58,7 @@ public class JoinRequest extends TransportRequest {
 
     public JoinRequest(StreamInput in) throws IOException {
         super(in);
-        sourceNode = new DiscoveryNode(in);
+        sourceNode = DiscoveryNode.readFrom(in);
         minimumTerm = in.readLong();
         optionalJoin = Optional.ofNullable(in.readOptionalWriteable(Join::new));
     }

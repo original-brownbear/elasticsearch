@@ -27,6 +27,7 @@ import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.network.NetworkUtils;
@@ -177,7 +178,8 @@ public class TcpTransportTests extends ESTestCase {
         try {
             final TcpTransport tcpTransport = new TcpTransport(settings, Version.CURRENT, testThreadPool,
                 new MockPageCacheRecycler(settings),
-                new NoneCircuitBreakerService(), writableRegistry(), new NetworkService(Collections.emptyList())) {
+                new NoneCircuitBreakerService(), writableRegistry(), new NetworkService(Collections.emptyList()),
+                    new ObjectDeduplicatorService(null)) {
 
                 @Override
                 protected TcpServerChannel bind(String name, InetSocketAddress address) {

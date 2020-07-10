@@ -24,8 +24,10 @@ import org.elasticsearch.cluster.coordination.Coordinator;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.RerouteService;
 import org.elasticsearch.cluster.service.ClusterApplier;
+import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterService;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -87,7 +89,7 @@ public class DiscoveryModuleTests extends ESTestCase {
     private DiscoveryModule newModule(Settings settings, List<DiscoveryPlugin> plugins) {
         return new DiscoveryModule(settings, transportService, namedWriteableRegistry, null, masterService,
             clusterApplier, clusterSettings, plugins, null, createTempDir().toAbsolutePath(), gatewayMetaState,
-            mock(RerouteService.class), null);
+            mock(RerouteService.class), null, new ObjectDeduplicatorService(mock(ClusterService.class)));
     }
 
     public void testDefaults() {

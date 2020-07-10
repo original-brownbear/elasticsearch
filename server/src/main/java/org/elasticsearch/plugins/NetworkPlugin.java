@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -61,7 +62,8 @@ public interface NetworkPlugin {
      */
     default Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                                                            CircuitBreakerService circuitBreakerService,
-                                                           NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService) {
+                                                           NamedWriteableRegistry namedWriteableRegistry, NetworkService networkService,
+                                                           ObjectDeduplicatorService deduplicatorService) {
         return Collections.emptyMap();
     }
 

@@ -206,7 +206,7 @@ public class LocalAllocateDangledIndices {
 
         public AllocateDangledRequest(StreamInput in) throws IOException {
             super(in);
-            fromNode = new DiscoveryNode(in);
+            fromNode = DiscoveryNode.readFrom(in);
             indices = new IndexMetadata[in.readVInt()];
             for (int i = 0; i < indices.length; i++) {
                 indices[i] = IndexMetadata.readFrom(in);

@@ -515,10 +515,12 @@ public class Node implements Closeable {
                 threadPool, pluginsService.filterPlugins(ActionPlugin.class), client, circuitBreakerService, usageService, clusterService);
             modules.add(actionModule);
 
+            final ObjectDeduplicatorService deduplicatorService = new ObjectDeduplicatorService(clusterService);
+
             final RestController restController = actionModule.getRestController();
             final NetworkModule networkModule = new NetworkModule(settings, pluginsService.filterPlugins(NetworkPlugin.class),
                 threadPool, bigArrays, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, xContentRegistry,
-                networkService, restController, clusterService.getClusterSettings());
+                networkService, restController, clusterService.getClusterSettings(), deduplicatorService);
             Collection<UnaryOperator<Map<String, IndexTemplateMetadata>>> indexTemplateMetadataUpgraders =
                 pluginsService.filterPlugins(Plugin.class).stream()
                     .map(Plugin::getIndexTemplateMetadataUpgrader)
@@ -563,7 +565,7 @@ public class Node implements Closeable {
                 networkService, clusterService.getMasterService(), clusterService.getClusterApplierService(),
                 clusterService.getClusterSettings(), pluginsService.filterPlugins(DiscoveryPlugin.class),
                 clusterModule.getAllocationService(), environment.configFile(), gatewayMetaState, rerouteService,
-                fsHealthService);
+                fsHealthService, deduplicatorService);
             this.nodeService = new NodeService(settings, threadPool, monitorService, discoveryModule.getDiscovery(),
                 transportService, indicesService, pluginsService, circuitBreakerService, scriptService,
                 httpServerTransport, ingestService, clusterService, settingsModule.getSettingsFilter(), responseCollectorService,
@@ -646,7 +648,7 @@ public class Node implements Closeable {
                     b.bind(RerouteService.class).toInstance(rerouteService);
                     b.bind(ShardLimitValidator.class).toInstance(shardLimitValidator);
                     b.bind(FsHealthService.class).toInstance(fsHealthService);
-                    b.bind(ObjectDeduplicatorService.class).toInstance(new ObjectDeduplicatorService(clusterService));
+                    b.bind(ObjectDeduplicatorService.class).toInstance(deduplicatorService);
                 }
             );
             injector = modules.createInjector();

@@ -37,6 +37,7 @@ import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
@@ -96,7 +97,7 @@ public class BroadcastReplicationTests extends ESTestCase {
         super.setUp();
         MockNioTransport transport = new MockNioTransport(Settings.EMPTY, Version.CURRENT,
             threadPool, new NetworkService(Collections.emptyList()), PageCacheRecycler.NON_RECYCLING_INSTANCE,
-            new NamedWriteableRegistry(Collections.emptyList()), circuitBreakerService);
+            new NamedWriteableRegistry(Collections.emptyList()), circuitBreakerService, new ObjectDeduplicatorService(clusterService));
         clusterService = createClusterService(threadPool);
         transportService = new TransportService(clusterService.getSettings(), transport, threadPool,
                 TransportService.NOOP_TRANSPORT_INTERCEPTOR, x -> clusterService.localNode(), null, Collections.emptySet());

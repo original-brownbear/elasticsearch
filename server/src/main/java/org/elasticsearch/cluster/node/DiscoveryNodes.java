@@ -551,7 +551,7 @@ public class DiscoveryNodes extends AbstractDiffable<DiscoveryNodes> implements 
         }
         int size = in.readVInt();
         for (int i = 0; i < size; i++) {
-            DiscoveryNode node = new DiscoveryNode(in);
+            DiscoveryNode node = DiscoveryNode.readFrom(in);
             if (localNode != null && node.getId().equals(localNode.getId())) {
                 // reuse the same instance of our address and local node id for faster equality
                 node = localNode;

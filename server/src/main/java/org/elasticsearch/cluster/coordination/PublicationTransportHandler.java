@@ -34,8 +34,9 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.Compressor;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
+import org.elasticsearch.common.io.stream.DeduplicatingInputStream;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.internal.io.IOUtils;
@@ -85,12 +86,16 @@ public class PublicationTransportHandler {
     private final TransportRequestOptions stateRequestOptions = TransportRequestOptions.builder()
         .withType(TransportRequestOptions.Type.STATE).build();
 
+    private final ObjectDeduplicatorService deduplicatorService;
+
     public PublicationTransportHandler(TransportService transportService, NamedWriteableRegistry namedWriteableRegistry,
                                        Function<PublishRequest, PublishWithJoinResponse> handlePublishRequest,
-                                       BiConsumer<ApplyCommitRequest, ActionListener<Void>> handleApplyCommit) {
+                                       BiConsumer<ApplyCommitRequest, ActionListener<Void>> handleApplyCommit,
+                                       ObjectDeduplicatorService deduplicatorService) {
         this.transportService = transportService;
         this.namedWriteableRegistry = namedWriteableRegistry;
         this.handlePublishRequest = handlePublishRequest;
+        this.deduplicatorService = deduplicatorService;
 
         transportService.registerRequestHandler(PUBLISH_STATE_ACTION_NAME, ThreadPool.Names.GENERIC, false, false,
             BytesTransportRequest::new, (request, channel, task) -> channel.sendResponse(handleIncomingPublishRequest(request)));
@@ -138,7 +143,7 @@ public class PublicationTransportHandler {
             if (compressor != null) {
                 in = compressor.streamInput(in);
             }
-            in = new NamedWriteableAwareStreamInput(in, namedWriteableRegistry);
+            in = new DeduplicatingInputStream(in, namedWriteableRegistry, deduplicatorService);
             in.setVersion(request.version());
             // If true we received full cluster state - otherwise diffs
             if (in.readBoolean()) {

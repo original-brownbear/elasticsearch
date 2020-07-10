@@ -65,8 +65,8 @@ public final class ClusterAllocationExplanation implements ToXContentObject, Wri
 
     public ClusterAllocationExplanation(StreamInput in) throws IOException {
         this.shardRouting = new ShardRouting(in);
-        this.currentNode = in.readOptionalWriteable(DiscoveryNode::new);
-        this.relocationTargetNode = in.readOptionalWriteable(DiscoveryNode::new);
+        this.currentNode = in.readOptionalWriteable(DiscoveryNode::readFrom);
+        this.relocationTargetNode = in.readOptionalWriteable(DiscoveryNode::readFrom);
         this.clusterInfo = in.readOptionalWriteable(ClusterInfo::new);
         this.shardAllocationDecision = new ShardAllocationDecision(in);
     }

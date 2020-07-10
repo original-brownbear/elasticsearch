@@ -27,6 +27,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.PageCacheRecycler;
@@ -65,8 +66,10 @@ public class NioTransport extends TcpTransport {
 
     protected NioTransport(Settings settings, Version version, ThreadPool threadPool, NetworkService networkService,
                            PageCacheRecycler pageCacheRecycler, NamedWriteableRegistry namedWriteableRegistry,
-                           CircuitBreakerService circuitBreakerService, NioGroupFactory groupFactory) {
-        super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService);
+                           CircuitBreakerService circuitBreakerService, NioGroupFactory groupFactory,
+                           ObjectDeduplicatorService deduplicatorService) {
+        super(settings, version, threadPool, pageCacheRecycler, circuitBreakerService, namedWriteableRegistry, networkService,
+                deduplicatorService);
         this.pageAllocator = new PageAllocator(pageCacheRecycler);
         this.groupFactory = groupFactory;
     }

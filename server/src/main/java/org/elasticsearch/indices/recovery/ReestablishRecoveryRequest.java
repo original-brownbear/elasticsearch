@@ -38,7 +38,7 @@ public class ReestablishRecoveryRequest extends TransportRequest {
     public ReestablishRecoveryRequest(StreamInput in) throws IOException {
         super(in);
         recoveryId = in.readLong();
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         targetAllocationId = in.readString();
     }
     public ReestablishRecoveryRequest(final long recoveryId, final ShardId shardId, final String targetAllocationId) {

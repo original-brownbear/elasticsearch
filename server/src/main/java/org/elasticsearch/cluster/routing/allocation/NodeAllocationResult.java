@@ -79,7 +79,7 @@ public class NodeAllocationResult implements ToXContentObject, Writeable, Compar
     }
 
     public NodeAllocationResult(StreamInput in) throws IOException {
-        node = new DiscoveryNode(in);
+        node = DiscoveryNode.readFrom(in);
         shardStoreInfo = in.readOptionalWriteable(ShardStoreInfo::new);
         canAllocateDecision = in.readOptionalWriteable(Decision::readFrom);
         nodeDecision = AllocationDecision.readFrom(in);

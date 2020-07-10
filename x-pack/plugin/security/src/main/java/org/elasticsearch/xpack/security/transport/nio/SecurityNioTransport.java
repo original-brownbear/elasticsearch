@@ -11,6 +11,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.PageCacheRecycler;
@@ -74,9 +75,9 @@ public class SecurityNioTransport extends NioTransport {
     public SecurityNioTransport(Settings settings, Version version, ThreadPool threadPool, NetworkService networkService,
                                 PageCacheRecycler pageCacheRecycler, NamedWriteableRegistry namedWriteableRegistry,
                                 CircuitBreakerService circuitBreakerService, @Nullable final IPFilter ipFilter,
-                                SSLService sslService, NioGroupFactory groupFactory) {
+                                SSLService sslService, NioGroupFactory groupFactory, ObjectDeduplicatorService deduplicatorService) {
         super(settings, version, threadPool, networkService, pageCacheRecycler, namedWriteableRegistry, circuitBreakerService,
-            groupFactory);
+            groupFactory, deduplicatorService);
         this.exceptionHandler = new SecurityTransportExceptionHandler(logger, lifecycle, (c, e) -> super.onException(c, e));
         this.ipFilter = ipFilter;
         this.sslService = sslService;

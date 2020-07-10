@@ -394,7 +394,7 @@ public class IndicesStore implements ClusterStateListener, Closeable {
             super(in);
             clusterName = new ClusterName(in);
             indexUUID = in.readString();
-            shardId = new ShardId(in);
+            shardId = ShardId.readFrom(in);
             timeout = new TimeValue(in.readLong(), TimeUnit.MILLISECONDS);
         }
 
@@ -427,7 +427,7 @@ public class IndicesStore implements ClusterStateListener, Closeable {
 
         ShardActiveResponse(StreamInput in) throws IOException {
             shardActive = in.readBoolean();
-            node = new DiscoveryNode(in);
+            node = DiscoveryNode.readFrom(in);
         }
 
         @Override

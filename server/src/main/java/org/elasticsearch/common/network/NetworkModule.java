@@ -29,6 +29,7 @@ import org.elasticsearch.cluster.routing.allocation.command.MoveAllocationComman
 import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
@@ -114,7 +115,8 @@ public final class NetworkModule {
                          NamedWriteableRegistry namedWriteableRegistry,
                          NamedXContentRegistry xContentRegistry,
                          NetworkService networkService, HttpServerTransport.Dispatcher dispatcher,
-                         ClusterSettings clusterSettings) {
+                         ClusterSettings clusterSettings,
+                         ObjectDeduplicatorService deduplicatorService) {
         this.settings = settings;
         for (NetworkPlugin plugin : plugins) {
             Map<String, Supplier<HttpServerTransport>> httpTransportFactory = plugin.getHttpTransports(settings, threadPool, bigArrays,
@@ -123,7 +125,7 @@ public final class NetworkModule {
                 registerHttpTransport(entry.getKey(), entry.getValue());
             }
             Map<String, Supplier<Transport>> transportFactory = plugin.getTransports(settings, threadPool, pageCacheRecycler,
-                circuitBreakerService, namedWriteableRegistry, networkService);
+                circuitBreakerService, namedWriteableRegistry, networkService, deduplicatorService);
             for (Map.Entry<String, Supplier<Transport>> entry : transportFactory.entrySet()) {
                 registerTransport(entry.getKey(), entry.getValue());
             }

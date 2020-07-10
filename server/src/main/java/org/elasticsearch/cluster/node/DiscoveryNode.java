@@ -237,12 +237,16 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
         }
     }
 
+    public static DiscoveryNode readFrom(StreamInput in) throws IOException {
+        return in.read(DiscoveryNode::new);
+    }
+
     /**
      * Creates a new {@link DiscoveryNode} by reading from the stream provided as argument
      * @param in the stream
      * @throws IOException if there is an error while reading from the stream
      */
-    public DiscoveryNode(StreamInput in) throws IOException {
+    private DiscoveryNode(StreamInput in) throws IOException {
         this.nodeName = in.readString().intern();
         this.nodeId = in.readString().intern();
         this.ephemeralId = in.readString().intern();

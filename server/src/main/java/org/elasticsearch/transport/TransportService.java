@@ -474,7 +474,7 @@ public class TransportService extends AbstractLifecycleComponent implements Repo
 
         public HandshakeResponse(StreamInput in) throws IOException {
             super(in);
-            discoveryNode = in.readOptionalWriteable(DiscoveryNode::new);
+            discoveryNode = in.readOptionalWriteable(DiscoveryNode::readFrom);
             clusterName = new ClusterName(in);
             version = Version.readVersion(in);
         }

@@ -156,7 +156,7 @@ public class ShardSearchRequest extends TransportRequest implements IndicesReque
 
     public ShardSearchRequest(StreamInput in) throws IOException {
         super(in);
-        shardId = new ShardId(in);
+        shardId = ShardId.readFrom(in);
         searchType = SearchType.fromId(in.readByte());
         numberOfShards = in.readVInt();
         scroll = in.readOptionalWriteable(Scroll::new);

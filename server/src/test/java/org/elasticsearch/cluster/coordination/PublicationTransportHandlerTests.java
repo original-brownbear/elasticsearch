@@ -26,6 +26,8 @@ import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.cluster.coordination.CoordinationMetadata.VotingConfiguration;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
+import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -39,6 +41,7 @@ import java.util.Collections;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.mockito.Mockito.mock;
 
 public class PublicationTransportHandlerTests extends ESTestCase {
 
@@ -53,7 +56,7 @@ public class PublicationTransportHandlerTests extends ESTestCase {
             x -> localNode,
             clusterSettings, Collections.emptySet());
         final PublicationTransportHandler handler = new PublicationTransportHandler(transportService,
-            writableRegistry(), pu -> null, (pu, l) -> {});
+            writableRegistry(), pu -> null, (pu, l) -> {}, new ObjectDeduplicatorService(mock(ClusterService.class)));
         transportService.start();
         transportService.acceptIncomingRequests();
 

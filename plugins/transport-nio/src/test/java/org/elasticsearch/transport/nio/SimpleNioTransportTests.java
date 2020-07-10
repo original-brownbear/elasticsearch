@@ -23,6 +23,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -52,7 +53,8 @@ public class SimpleNioTransportTests extends AbstractSimpleTransportTestCase {
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
         NetworkService networkService = new NetworkService(Collections.emptyList());
         return new NioTransport(settings, version, threadPool, networkService, new MockPageCacheRecycler(settings),
-            namedWriteableRegistry, new NoneCircuitBreakerService(), new NioGroupFactory(settings, logger)) {
+            namedWriteableRegistry, new NoneCircuitBreakerService(), new NioGroupFactory(settings, logger),
+                new ObjectDeduplicatorService(null)) {
 
             @Override
             public void executeHandshake(DiscoveryNode node, TcpChannel channel, ConnectionProfile profile,

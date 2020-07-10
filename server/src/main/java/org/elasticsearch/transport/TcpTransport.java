@@ -35,6 +35,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.metrics.MeanMetric;
 import org.elasticsearch.common.network.CloseableChannel;
@@ -133,7 +134,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
 
     public TcpTransport(Settings settings, Version version, ThreadPool threadPool, PageCacheRecycler pageCacheRecycler,
                         CircuitBreakerService circuitBreakerService, NamedWriteableRegistry namedWriteableRegistry,
-                        NetworkService networkService) {
+                        NetworkService networkService, ObjectDeduplicatorService deduplicatorService) {
         this.settings = settings;
         this.profileSettings = getProfileSettings(settings);
         this.version = version;
@@ -151,7 +152,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
                 TransportRequestOptions.EMPTY, v, false, true));
         this.keepAlive = new TransportKeepAlive(threadPool, this.outboundHandler::sendBytes);
         this.inboundHandler = new InboundHandler(threadPool, outboundHandler, namedWriteableRegistry, handshaker, keepAlive,
-            requestHandlers, responseHandlers);
+            requestHandlers, responseHandlers, deduplicatorService);
     }
 
     public Version getVersion() {

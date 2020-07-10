@@ -10,6 +10,7 @@ import io.netty.channel.ChannelHandler;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.PageCacheRecycler;
@@ -35,9 +36,10 @@ public class SecurityNetty4ServerTransport extends SecurityNetty4Transport {
             final CircuitBreakerService circuitBreakerService,
             @Nullable final IPFilter authenticator,
             final SSLService sslService,
-            final SharedGroupFactory sharedGroupFactory) {
+            final SharedGroupFactory sharedGroupFactory,
+            ObjectDeduplicatorService deduplicatorService) {
         super(settings, version, threadPool, networkService, pageCacheRecycler, namedWriteableRegistry, circuitBreakerService, sslService,
-            sharedGroupFactory);
+            sharedGroupFactory, deduplicatorService);
         this.authenticator = authenticator;
     }
 

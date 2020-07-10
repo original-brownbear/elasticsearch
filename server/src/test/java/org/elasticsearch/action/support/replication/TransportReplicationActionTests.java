@@ -52,6 +52,7 @@ import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lease.Releasable;
@@ -1119,7 +1120,7 @@ public class TransportReplicationActionTests extends ESTestCase {
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
         final Transport transport = new MockNioTransport(Settings.EMPTY, Version.CURRENT, threadPool,
             new NetworkService(Collections.emptyList()), PageCacheRecycler.NON_RECYCLING_INSTANCE, namedWriteableRegistry,
-            new NoneCircuitBreakerService());
+            new NoneCircuitBreakerService(), new ObjectDeduplicatorService(clusterService));
         transportService = new MockTransportService(Settings.EMPTY, transport, threadPool, TransportService.NOOP_TRANSPORT_INTERCEPTOR,
                 x -> clusterService.localNode(), null, Collections.emptySet());
         transportService.start();

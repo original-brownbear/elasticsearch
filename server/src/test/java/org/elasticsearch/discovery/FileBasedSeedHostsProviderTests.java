@@ -21,6 +21,7 @@ package org.elasticsearch.discovery;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.io.stream.ObjectDeduplicatorService;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.BoundTransportAddress;
@@ -81,7 +82,7 @@ public class FileBasedSeedHostsProviderTests extends ESTestCase {
             new NetworkService(Collections.emptyList()),
             PageCacheRecycler.NON_RECYCLING_INSTANCE,
             new NamedWriteableRegistry(Collections.emptyList()),
-            new NoneCircuitBreakerService()) {
+            new NoneCircuitBreakerService(), new ObjectDeduplicatorService(null)) {
             @Override
             public BoundTransportAddress boundAddress() {
                 return new BoundTransportAddress(
