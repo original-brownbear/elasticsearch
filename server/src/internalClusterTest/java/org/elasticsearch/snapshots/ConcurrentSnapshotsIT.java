@@ -1290,7 +1290,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
     }
 
     private ActionFuture<AcknowledgedResponse> startAndBlockOnDeleteSnapshot(String repoName, String snapshotName)
-            throws InterruptedException {
+            throws Exception {
         final String masterName = internalCluster().getMasterName();
         blockNodeOnAnyFiles(repoName, masterName);
         final ActionFuture<AcknowledgedResponse> fut = startDelete(repoName, snapshotName);
@@ -1299,7 +1299,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
     }
 
     private ActionFuture<CreateSnapshotResponse> startAndBlockFailingFullSnapshot(String blockedRepoName, String snapshotName)
-            throws InterruptedException {
+            throws Exception {
         blockMasterFromFinalizingSnapshotOnIndexFile(blockedRepoName);
         final ActionFuture<CreateSnapshotResponse> fut = startFullSnapshot(blockedRepoName, snapshotName);
         waitForBlock(internalCluster().getMasterName(), blockedRepoName, TimeValue.timeValueSeconds(30L));
@@ -1307,7 +1307,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
     }
 
     private ActionFuture<CreateSnapshotResponse> startFullSnapshotBlockedOnDataNode(String snapshotName, String repoName, String dataNode)
-            throws InterruptedException {
+            throws Exception {
         blockDataNode(repoName, dataNode);
         final ActionFuture<CreateSnapshotResponse> fut = startFullSnapshot(repoName, snapshotName);
         waitForBlock(dataNode, repoName, TimeValue.timeValueSeconds(30L));

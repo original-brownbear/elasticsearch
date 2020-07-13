@@ -184,45 +184,29 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
         internalCluster().stopRandomNode(settings -> settings.get("node.name").equals(node));
     }
 
-    public static void waitForBlock(String node, String repository, TimeValue timeout) throws InterruptedException {
-        long start = System.currentTimeMillis();
-        RepositoriesService repositoriesService = internalCluster().getInstance(RepositoriesService.class, node);
-        MockRepository mockRepository = (MockRepository) repositoriesService.repository(repository);
-        while (System.currentTimeMillis() - start < timeout.millis()) {
-            if (mockRepository.blocked()) {
-                return;
-            }
-            Thread.sleep(100);
-        }
-        fail("Timeout waiting for node [" + node + "] to be blocked");
+    public static void waitForBlock(String node, String repository, TimeValue timeout) throws Exception {
+        MockRepository mockRepository =
+                (MockRepository) internalCluster().getInstance(RepositoriesService.class, node).repository(repository);
+        assertBusy(() ->
+                assertTrue("Node [" + node + "] was not blocked ", mockRepository.blocked()), timeout.millis(), TimeUnit.MILLISECONDS);
     }
 
-    public SnapshotInfo waitForCompletion(String repository, String snapshotName, TimeValue timeout) throws InterruptedException {
-        long start = System.currentTimeMillis();
-        while (System.currentTimeMillis() - start < timeout.millis()) {
+    public static SnapshotInfo waitForCompletion(String repository, String snapshotName, TimeValue timeout) throws Exception {
+        assertBusy(() -> {
             List<SnapshotInfo> snapshotInfos = client().admin().cluster().prepareGetSnapshots(repository).setSnapshots(snapshotName)
-                .get().getSnapshots(repository);
+                    .get().getSnapshots(repository);
             assertThat(snapshotInfos.size(), equalTo(1));
-            if (snapshotInfos.get(0).state().completed()) {
-                // Make sure that snapshot clean up operations are finished
-                ClusterStateResponse stateResponse = client().admin().cluster().prepareState().get();
-                boolean found = false;
-                for (SnapshotsInProgress.Entry entry :
-                    stateResponse.getState().custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries()) {
-                    final Snapshot curr = entry.snapshot();
-                    if (curr.getRepository().equals(repository) && curr.getSnapshotId().getName().equals(snapshotName)) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found == false) {
-                    return snapshotInfos.get(0);
-                }
-            }
-            Thread.sleep(100);
-        }
-        fail("Timeout!!!");
-        return null;
+            assertTrue(snapshotInfos.get(0).state().completed());
+            // Make sure that snapshot clean up operations are finished
+            ClusterStateResponse stateResponse = client().admin().cluster().prepareState().get();
+            assertTrue(stateResponse.getState().custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries()
+                    .stream().noneMatch(entry -> entry.repository().equals(repository)
+                            && entry.snapshot().getSnapshotId().getName().equals(snapshotName)));
+        }, timeout.millis(), TimeUnit.MILLISECONDS);
+        List<SnapshotInfo> snapshotInfos = client().admin().cluster().prepareGetSnapshots(repository).setSnapshots(snapshotName)
+                .get().getSnapshots(repository);
+        assertThat(snapshotInfos.size(), equalTo(1));
+        return snapshotInfos.get(0);
     }
 
     public static String blockMasterFromFinalizingSnapshotOnIndexFile(final String repositoryName) {
