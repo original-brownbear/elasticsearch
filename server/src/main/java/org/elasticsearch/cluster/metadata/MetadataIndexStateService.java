@@ -717,11 +717,6 @@ public class MetadataIndexStateService {
     static Tuple<ClusterState, Collection<IndexResult>> closeRoutingTable(final ClusterState currentState,
                                                                           final Map<Index, ClusterBlock> blockedIndices,
                                                                           final Map<Index, IndexResult> verifyResult) {
-
-        // Remove the index routing table of closed indices if the cluster is in a mixed version
-        // that does not support the replication of closed indices
-        final boolean removeRoutingTable = currentState.nodes().getMinNodeVersion().before(Version.V_7_2_0);
-
         final Metadata.Builder metadata = Metadata.builder(currentState.metadata());
         final ClusterBlocks.Builder blocks = ClusterBlocks.builder().blocks(currentState.blocks());
         final RoutingTable.Builder routingTable = RoutingTable.builder(currentState.routingTable());
@@ -773,17 +768,12 @@ public class MetadataIndexStateService {
                 blocks.removeIndexBlockWithId(index.getName(), INDEX_CLOSED_BLOCK_ID);
                 blocks.addIndexBlock(index.getName(), INDEX_CLOSED_BLOCK);
                 final IndexMetadata.Builder updatedMetadata = IndexMetadata.builder(indexMetadata).state(IndexMetadata.State.CLOSE);
-                if (removeRoutingTable) {
-                    metadata.put(updatedMetadata);
-                    routingTable.remove(index.getName());
-                } else {
-                    metadata.put(updatedMetadata
-                        .settingsVersion(indexMetadata.getSettingsVersion() + 1)
-                        .settings(Settings.builder()
-                            .put(indexMetadata.getSettings())
-                            .put(VERIFIED_BEFORE_CLOSE_SETTING.getKey(), true)));
-                    routingTable.addAsFromOpenToClose(metadata.getSafe(index));
-                }
+                metadata.put(updatedMetadata
+                    .settingsVersion(indexMetadata.getSettingsVersion() + 1)
+                    .settings(Settings.builder()
+                        .put(indexMetadata.getSettings())
+                        .put(VERIFIED_BEFORE_CLOSE_SETTING.getKey(), true)));
+                routingTable.addAsFromOpenToClose(metadata.getSafe(index));
 
                 logger.debug("closing index {} succeeded", index);
                 closedIndices.add(index.getName());
@@ -927,7 +917,6 @@ public class MetadataIndexStateService {
                     logger.debug("verification of shards before blocking {} failed [{}]", index, result);
                     continue;
                 }
-                final IndexMetadata indexMetadata = metadata.getSafe(index);
                 final ClusterBlock tempBlock = blockedIndices.get(index);
                 assert tempBlock != null;
                 assert tempBlock.uuid() != null;

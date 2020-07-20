@@ -22,9 +22,7 @@ import com.carrotsearch.hppc.IntArrayList;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.search.ScoreDoc;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.OriginalIndices;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.search.SearchPhaseResult;
@@ -53,20 +51,17 @@ final class FetchSearchPhase extends SearchPhase {
     private final Logger logger;
     private final SearchPhaseResults<SearchPhaseResult> resultConsumer;
     private final SearchProgressListener progressListener;
-    private final ClusterState clusterState;
 
     FetchSearchPhase(SearchPhaseResults<SearchPhaseResult> resultConsumer,
                      SearchPhaseController searchPhaseController,
-                     SearchPhaseContext context,
-                     ClusterState clusterState) {
-        this(resultConsumer, searchPhaseController, context, clusterState,
+                     SearchPhaseContext context) {
+        this(resultConsumer, searchPhaseController, context,
             (response, scrollId) -> new ExpandSearchPhase(context, response, scrollId));
     }
 
     FetchSearchPhase(SearchPhaseResults<SearchPhaseResult> resultConsumer,
                      SearchPhaseController searchPhaseController,
                      SearchPhaseContext context,
-                     ClusterState clusterState,
                      BiFunction<InternalSearchResponse, String, SearchPhase> nextPhaseFactory) {
         super("fetch");
         if (context.getNumShards() != resultConsumer.getNumShards()) {
@@ -81,7 +76,6 @@ final class FetchSearchPhase extends SearchPhase {
         this.logger = context.getLogger();
         this.resultConsumer = resultConsumer;
         this.progressListener = context.getTask().getProgressListener();
-        this.clusterState = clusterState;
     }
 
     @Override
@@ -108,8 +102,7 @@ final class FetchSearchPhase extends SearchPhase {
         final List<SearchPhaseResult> phaseResults = queryResults.asList();
         final String scrollId;
         if (isScrollSearch) {
-            final boolean includeContextUUID = clusterState.nodes().getMinNodeVersion().onOrAfter(Version.V_7_7_0);
-            scrollId = TransportSearchHelper.buildScrollId(queryResults, includeContextUUID);
+            scrollId = TransportSearchHelper.buildScrollId(queryResults);
         } else {
             scrollId = null;
         }

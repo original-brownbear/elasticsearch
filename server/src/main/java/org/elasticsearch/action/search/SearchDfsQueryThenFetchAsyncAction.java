@@ -68,6 +68,6 @@ final class SearchDfsQueryThenFetchAsyncAction extends AbstractSearchAsyncAction
     @Override
     protected SearchPhase getNextPhase(final SearchPhaseResults<DfsSearchResult> results, final SearchPhaseContext context) {
         return new DfsQueryPhase(results.getAtomicArray(), searchPhaseController, (queryResults) ->
-            new FetchSearchPhase(queryResults, searchPhaseController, context, clusterState()), context);
+            new FetchSearchPhase(queryResults, searchPhaseController, context), context);
     }
 }

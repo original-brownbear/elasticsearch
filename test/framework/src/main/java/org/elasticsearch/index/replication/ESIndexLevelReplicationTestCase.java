@@ -776,7 +776,7 @@ public abstract class ESIndexLevelReplicationTestCase extends IndexShardTestCase
         ActionListener<TransportWriteAction.WritePrimaryResult<BulkShardRequest, BulkShardResponse>> listener) {
         for (BulkItemRequest itemRequest : request.items()) {
             if (itemRequest.request() instanceof IndexRequest) {
-                ((IndexRequest) itemRequest.request()).process(Version.CURRENT, null, index.getName());
+                ((IndexRequest) itemRequest.request()).process(null, index.getName());
             }
         }
         final PlainActionFuture<Releasable> permitAcquiredFuture = new PlainActionFuture<>();

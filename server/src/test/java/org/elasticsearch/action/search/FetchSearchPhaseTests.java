@@ -23,7 +23,6 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.store.MockDirectoryWrapper;
 import org.elasticsearch.action.OriginalIndices;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.lucene.search.TopDocsAndMaxScore;
 import org.elasticsearch.index.shard.ShardId;
@@ -72,7 +71,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
             numHits = 0;
         }
 
-        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext, ClusterState.EMPTY_STATE,
+        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext,
             (searchResponse, scrollId) -> new SearchPhase("test") {
             @Override
             public void run() {
@@ -131,7 +130,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 listener.onResponse(fetchResult);
             }
         };
-        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext, ClusterState.EMPTY_STATE,
+        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext,
             (searchResponse, scrollId) -> new SearchPhase("test") {
                 @Override
                 public void run() {
@@ -191,7 +190,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
 
             }
         };
-        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext, ClusterState.EMPTY_STATE,
+        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext,
             (searchResponse, scrollId) -> new SearchPhase("test") {
                 @Override
                 public void run() {
@@ -244,7 +243,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
             }
         };
         CountDownLatch latch = new CountDownLatch(1);
-        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext, ClusterState.EMPTY_STATE,
+        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext,
             (searchResponse, scrollId) -> new SearchPhase("test") {
                 @Override
                 public void run() {
@@ -315,7 +314,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 listener.onResponse(fetchResult);
             }
         };
-        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext, ClusterState.EMPTY_STATE,
+        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext,
             (searchResponse, scrollId) -> new SearchPhase("test") {
                 @Override
                 public void run() {
@@ -369,7 +368,7 @@ public class FetchSearchPhaseTests extends ESTestCase {
                 listener.onResponse(fetchResult);
             }
         };
-        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext, ClusterState.EMPTY_STATE,
+        FetchSearchPhase phase = new FetchSearchPhase(results, controller, mockSearchPhaseContext,
             (searchResponse, scrollId) -> new SearchPhase("test") {
                 @Override
                 public void run() {

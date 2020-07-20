@@ -39,18 +39,13 @@ final class TransportSearchHelper {
         return new InternalScrollSearchRequest(request, id);
     }
 
-    static String buildScrollId(AtomicArray<? extends SearchPhaseResult> searchPhaseResults,
-                                boolean includeContextUUID) throws IOException {
+    static String buildScrollId(AtomicArray<? extends SearchPhaseResult> searchPhaseResults) throws IOException {
         try (RAMOutputStream out = new RAMOutputStream()) {
-            if (includeContextUUID) {
-                out.writeString(INCLUDE_CONTEXT_UUID);
-            }
+            out.writeString(INCLUDE_CONTEXT_UUID);
             out.writeString(searchPhaseResults.length() == 1 ? ParsedScrollId.QUERY_AND_FETCH_TYPE : ParsedScrollId.QUERY_THEN_FETCH_TYPE);
             out.writeVInt(searchPhaseResults.asList().size());
             for (SearchPhaseResult searchPhaseResult : searchPhaseResults.asList()) {
-                if (includeContextUUID) {
-                    out.writeString(searchPhaseResult.getContextId().getReaderId());
-                }
+                out.writeString(searchPhaseResult.getContextId().getReaderId());
                 out.writeLong(searchPhaseResult.getContextId().getId());
                 SearchShardTarget searchShardTarget = searchPhaseResult.getSearchShardTarget();
                 if (searchShardTarget.getClusterAlias() != null) {

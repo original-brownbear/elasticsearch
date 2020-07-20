@@ -109,7 +109,7 @@ public class KibanaPlugin extends Plugin implements SystemIndexPlugin {
             new KibanaWrappedRestHandler(new RestGetIndicesAction()),
             new KibanaWrappedRestHandler(new RestIndexAction()),
             new KibanaWrappedRestHandler(new CreateHandler()),
-            new KibanaWrappedRestHandler(new AutoIdHandler(nodesInCluster)),
+            new KibanaWrappedRestHandler(new AutoIdHandler()),
             new KibanaWrappedRestHandler(new RestUpdateAction()),
             new KibanaWrappedRestHandler(new RestSearchScrollAction()),
             new KibanaWrappedRestHandler(new RestClearScrollAction())
