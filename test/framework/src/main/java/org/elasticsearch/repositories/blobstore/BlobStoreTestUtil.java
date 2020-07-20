@@ -131,6 +131,9 @@ public final class BlobStoreTestUtil {
         if (err != null) {
             throw new AssertionError(err);
         }
+        final BlobStoreRepair.CheckResult checkResult = PlainActionFuture.get(f -> BlobStoreRepair.check(repository, f));
+        assertThat(checkResult.rootLevelSnapshotIssues(), empty());
+        assertThat(checkResult.shardLevelSnapshotIssues(), empty());
     }
 
     private static void assertIndexGenerations(BlobContainer repoRoot, long latestGen) throws IOException {

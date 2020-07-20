@@ -24,11 +24,15 @@ import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepair;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
+import org.hamcrest.Matchers;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFileExists;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.is;
 
 public class BlobStoreRepairIT extends AbstractSnapshotIntegTestCase {
 
@@ -59,5 +63,14 @@ public class BlobStoreRepairIT extends AbstractSnapshotIntegTestCase {
         final BlobStoreRepository repository = (BlobStoreRepository) internalCluster().getMasterNodeInstance(RepositoriesService.class)
                 .repository(repoName);
         final BlobStoreRepair.CheckResult checkResult = PlainActionFuture.get(f -> BlobStoreRepair.check(repository, f));
+        final List<BlobStoreRepair.ShardLevelSnapshotIssue> shardLevelSnapshotIssues = checkResult.shardLevelSnapshotIssues();
+        assertThat(shardLevelSnapshotIssues, Matchers.hasSize(1));
+        final BlobStoreRepair.ShardLevelSnapshotIssue foundIssue = shardLevelSnapshotIssues.get(0);
+        assertThat(foundIssue, is(BlobStoreRepair.ShardLevelIssueType.MISSING_INDEX_GENERATION));
+
+        final BlobStoreRepair.CheckResult repairResult =
+                PlainActionFuture.get(f -> BlobStoreRepair.executeFixes(repository, checkResult, f));
+        assertThat(repairResult.shardLevelSnapshotIssues(), empty());
+        assertThat(repairResult.rootLevelSnapshotIssues(), empty());
     }
 }

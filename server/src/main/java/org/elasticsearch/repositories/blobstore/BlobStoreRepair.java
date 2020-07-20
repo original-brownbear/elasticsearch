@@ -26,28 +26,32 @@ import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobContainer;
+import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.xcontent.DeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshots;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.snapshots.SnapshotId;
+import org.elasticsearch.snapshots.SnapshotInfo;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-public class BlobStoreRepair {
+public final class BlobStoreRepair {
 
     private static final Logger logger = LogManager.getLogger(BlobStoreRepair.class);
+
+    private static final String MISSING_SHARD_LEVEL_META_GENERATION = "-1";
 
     public static void check(BlobStoreRepository repository, ActionListener<CheckResult> listener) {
         repository.threadPool().generic().execute(ActionRunnable.supply(listener, () -> {
@@ -71,7 +75,6 @@ public class BlobStoreRepair {
                     findSnapshotUUIDsByPrefix(rootContainer, BlobStoreRepository.METADATA_PREFIX);
             final List<RootLevelSnapshotIssue> rootLevelSnapshotIssues = new ArrayList<>();
             final List<ShardLevelSnapshotIssue> shardLevelSnapshotIssues = new ArrayList<>();
-            final Map<String, IndexMetadata> cachedIndexMetadata = new HashMap<>();
             for (SnapshotId snapshotId : snapshotIds) {
                 final String uuid = snapshotId.getUUID();
                 if (snapshotUUIDsFromMetaBlobs.contains(uuid) == false) {
@@ -80,10 +83,47 @@ public class BlobStoreRepair {
                 if (snapshotUUIDsFromSnapBlobs.contains(uuid) == false) {
                     rootLevelSnapshotIssues.add(new RootLevelSnapshotIssue("Missing snap- blob for [" + uuid + "]"));
                 }
-                final Collection<IndexId> indices = repositoryData.getIndices().values();
-
+                final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotId);
+                for (String index : snapshotInfo.indices()) {
+                    final IndexId indexId = repositoryData.resolveIndexId(index);
+                    IndexMetadata indexMetadata =
+                            repository.getSnapshotIndexMetaData(repositoryData, snapshotId, indexId);
+                    final int shards = indexMetadata.getNumberOfShards();
+                    for (int i = 0; i < shards; i++) {
+                        final String shardGeneration = repositoryData.shardGenerations().getShardGen(indexId, i);
+                        final BlobContainer shardContainer = repository.shardContainer(indexId, i);
+                        final Set<String> blobsInShard = shardContainer.listBlobs().keySet();
+                        final Tuple<BlobStoreIndexShardSnapshots, String> shardLevelMeta = repository.buildBlobStoreIndexShardSnapshots(
+                                blobsInShard, shardContainer, shardGeneration);
+                        final String foundGeneration = shardLevelMeta.v2();
+                        if (MISSING_SHARD_LEVEL_META_GENERATION.equals(foundGeneration)) {
+                            logger.debug("Found missing shard level metadata for [{}][{}]", indexId, i);
+                            shardLevelSnapshotIssues.add(
+                                    new ShardLevelSnapshotIssue(ShardLevelIssueType.MISSING_INDEX_GENERATION, indexId, i, snapshotId));
+                        }
+                    }
+                }
             }
             return new CheckResult(generation, shardLevelSnapshotIssues, rootLevelSnapshotIssues);
+        }));
+    }
+
+    public static void executeFixes(BlobStoreRepository repository, CheckResult issues, ActionListener<CheckResult> listener) {
+        repository.threadPool().generic().execute(ActionRunnable.wrap(listener, l -> {
+            logger.info("Repairing the issues for repository [{}][{}]", repository.metadata.name(), issues);
+            for (RootLevelSnapshotIssue rootLevelSnapshotIssue : issues.rootLevelSnapshotIssues()) {
+                logger.info("Could not fix issue [{}]", rootLevelSnapshotIssue);
+            }
+            for (ShardLevelSnapshotIssue shardLevelSnapshotIssue : issues.shardLevelSnapshotIssues()) {
+                switch (shardLevelSnapshotIssue.type) {
+                    case MISSING_INDEX_GENERATION:
+
+                        break;
+                    default:
+                        logger.info("Could not fix issue [{}]", shardLevelSnapshotIssue);
+                }
+            }
+            check(repository, l);
         }));
     }
 
@@ -99,7 +139,7 @@ public class BlobStoreRepair {
                 .mapToLong(Long::parseLong).sorted().toArray();
     }
 
-    public static final class CheckResult {
+    public static final class CheckResult implements ToXContentObject {
 
         private final long repositoryGeneration;
 
@@ -117,9 +157,32 @@ public class BlobStoreRepair {
         public long repositoryGeneration() {
             return repositoryGeneration;
         }
+
+        public List<RootLevelSnapshotIssue> rootLevelSnapshotIssues() {
+            return rootLevelSnapshotIssues;
+        }
+
+        public List<ShardLevelSnapshotIssue> shardLevelSnapshotIssues() {
+            return shardLevelSnapshotIssues;
+        }
+
+        @Override
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+            return builder.startObject()
+                    .startObject("issues")
+                    .field("shards", shardLevelSnapshotIssues)
+                    .field("root", rootLevelSnapshotIssues)
+                    .endObject()
+                    .endObject();
+        }
+
+        @Override
+        public String toString() {
+            return Strings.toString(this);
+        }
     }
 
-    public static final class RootLevelSnapshotIssue implements ToXContent {
+    public static final class RootLevelSnapshotIssue implements ToXContentObject {
 
         private final String description;
 
@@ -132,24 +195,47 @@ public class BlobStoreRepair {
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
             return builder.startObject().field("description", description);
         }
+
+        @Override
+        public String toString() {
+            return Strings.toString(this);
+        }
     }
 
-    public static final class ShardLevelSnapshotIssue implements ToXContent {
+    public static final class ShardLevelSnapshotIssue implements ToXContentObject {
 
-        private final String description;
+        private final ShardLevelIssueType type;
 
-        private ShardLevelSnapshotIssue(String description) {
-            this.description = description;
+        private final IndexId indexId;
+
+        private final int shardId;
+
+        private final SnapshotId snapshotId;
+
+        private ShardLevelSnapshotIssue(ShardLevelIssueType type, IndexId indexId, int shardId, SnapshotId snapshotId) {
+            this.type = type;
+            this.indexId = indexId;
+            this.shardId = shardId;
+            this.snapshotId = snapshotId;
+        }
+
+        @Override
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+            return builder.startObject().field("type", type)
+                    .field("index_id", indexId)
+                    .field("shard_id", shardId)
+                    .field("snapshot", snapshotId)
+                    .endObject();
         }
 
         @Override
         public String toString() {
             return Strings.toString(this);
         }
+    }
 
-        @Override
-        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-            return builder.startObject().field("description", description).endObject();
-        }
+    public enum ShardLevelIssueType {
+        MISSING_INDEX_GENERATION,
+        MISSING_SNAPSHOT_META;
     }
 }
