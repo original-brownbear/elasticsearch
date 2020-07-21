@@ -114,7 +114,7 @@ public final class BlobStoreTestUtil {
                 }
                 assertIndexGenerations(blobContainer, latestGen);
                 final RepositoryData repositoryData;
-                try (InputStream blob = blobContainer.readBlob("index-" + latestGen);
+                try (InputStream blob = blobContainer.readBlob(BlobStoreRepository.INDEX_FILE_PREFIX + latestGen);
                      XContentParser parser = XContentType.JSON.xContent().createParser(NamedXContentRegistry.EMPTY,
                          LoggingDeprecationHandler.INSTANCE, blob)) {
                     repositoryData = RepositoryData.snapshotsFromXContent(parser, latestGen, false);
