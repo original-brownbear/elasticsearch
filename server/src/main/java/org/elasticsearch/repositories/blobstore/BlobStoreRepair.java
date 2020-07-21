@@ -26,32 +26,33 @@ import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobContainer;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.xcontent.DeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshots;
+import org.elasticsearch.index.snapshots.blobstore.SnapshotFiles;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class BlobStoreRepair {
 
     private static final Logger logger = LogManager.getLogger(BlobStoreRepair.class);
-
-    private static final String MISSING_SHARD_LEVEL_META_GENERATION = "-1";
 
     public static void check(BlobStoreRepository repository, ActionListener<CheckResult> listener) {
         repository.threadPool().generic().execute(ActionRunnable.supply(listener, () -> {
@@ -90,16 +91,46 @@ public final class BlobStoreRepair {
                             repository.getSnapshotIndexMetaData(repositoryData, snapshotId, indexId);
                     final int shards = indexMetadata.getNumberOfShards();
                     for (int i = 0; i < shards; i++) {
-                        final String shardGeneration = repositoryData.shardGenerations().getShardGen(indexId, i);
+                        String shardGeneration = repositoryData.shardGenerations().getShardGen(indexId, i);
                         final BlobContainer shardContainer = repository.shardContainer(indexId, i);
                         final Set<String> blobsInShard = shardContainer.listBlobs().keySet();
-                        final Tuple<BlobStoreIndexShardSnapshots, String> shardLevelMeta = repository.buildBlobStoreIndexShardSnapshots(
-                                blobsInShard, shardContainer, shardGeneration);
-                        final String foundGeneration = shardLevelMeta.v2();
-                        if (MISSING_SHARD_LEVEL_META_GENERATION.equals(foundGeneration)) {
+                        if (shardGeneration == null) {
+                            final OptionalLong foundGeneration =
+                                    blobsInShard.stream().filter(blob -> blob.startsWith(BlobStoreRepository.INDEX_FILE_PREFIX))
+                                            .mapToLong(blob -> Long.parseLong(blob.substring(BlobStoreRepository.INDEX_FILE_PREFIX.length())))
+                                            .max();
+                            if (foundGeneration.isPresent()) {
+                                shardGeneration = String.valueOf(foundGeneration.getAsLong());
+                            } else {
+                                logger.debug("Found missing shard level metadata for [{}][{}]", indexId, i);
+                                shardLevelSnapshotIssues.add(
+                                        new ShardLevelSnapshotIssue(ShardLevelIssueType.MISSING_INDEX_GENERATION, indexId, i, snapshotId));
+                                continue;
+                            }
+                        }
+                        final BlobStoreIndexShardSnapshots shardLevelMeta;
+                        try {
+                            shardLevelMeta = BlobStoreRepository.INDEX_SHARD_SNAPSHOTS_FORMAT.read(
+                                    repository.shardContainer(indexId, i), shardGeneration, NamedXContentRegistry.EMPTY);
+                        } catch (FileNotFoundException e) {
                             logger.debug("Found missing shard level metadata for [{}][{}]", indexId, i);
                             shardLevelSnapshotIssues.add(
                                     new ShardLevelSnapshotIssue(ShardLevelIssueType.MISSING_INDEX_GENERATION, indexId, i, snapshotId));
+                            continue;
+                        }
+                        for (SnapshotFiles snapshotFiles : shardLevelMeta) {
+                            for (BlobStoreIndexShardSnapshot.FileInfo indexFile : snapshotFiles.indexFiles()) {
+                                if (indexFile.name().startsWith(BlobStoreRepository.VIRTUAL_DATA_BLOB_PREFIX)) {
+                                    continue;
+                                }
+                                final long parts = indexFile.numberOfParts();
+                                // TODO: check file existence below
+                                if (parts == 1) {
+
+                                } else {
+
+                                }
+                            }
                         }
                     }
                 }

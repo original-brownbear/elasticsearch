@@ -189,7 +189,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      * {@link BlobStoreIndexShardSnapshots}. This is the case for files for which {@link StoreFileMetadata#hashEqualsContents()} is
      * {@code true}.
      */
-    private static final String VIRTUAL_DATA_BLOB_PREFIX = "v__";
+    public static final String VIRTUAL_DATA_BLOB_PREFIX = "v__";
 
     /**
      * When set to true metadata files are stored in compressed format. This setting doesn’t affect index
@@ -2227,9 +2227,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      *                   {@link SnapshotsService#SHARD_GEN_IN_REPO_DATA_VERSION}.
      * @return tuple of BlobStoreIndexShardSnapshots and the last snapshot index generation
      */
-    public Tuple<BlobStoreIndexShardSnapshots, String> buildBlobStoreIndexShardSnapshots(Set<String> blobs,
-                                                                                         BlobContainer shardContainer,
-                                                                                         @Nullable String generation) throws IOException {
+    private Tuple<BlobStoreIndexShardSnapshots, String> buildBlobStoreIndexShardSnapshots(Set<String> blobs,
+                                                                                          BlobContainer shardContainer,
+                                                                                          @Nullable String generation) throws IOException {
         if (generation != null) {
             if (generation.equals(ShardGenerations.NEW_SHARD_GEN)) {
                 return new Tuple<>(BlobStoreIndexShardSnapshots.EMPTY, ShardGenerations.NEW_SHARD_GEN);
