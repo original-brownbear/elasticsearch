@@ -97,7 +97,8 @@ public final class BlobStoreRepair {
                         if (shardGeneration == null) {
                             final OptionalLong foundGeneration =
                                     blobsInShard.stream().filter(blob -> blob.startsWith(BlobStoreRepository.INDEX_FILE_PREFIX))
-                                            .mapToLong(blob -> Long.parseLong(blob.substring(BlobStoreRepository.INDEX_FILE_PREFIX.length())))
+                                            .mapToLong(blob -> Long.parseLong(
+                                                    blob.substring(BlobStoreRepository.INDEX_FILE_PREFIX.length())))
                                             .max();
                             if (foundGeneration.isPresent()) {
                                 shardGeneration = String.valueOf(foundGeneration.getAsLong());
@@ -257,6 +258,10 @@ public final class BlobStoreRepair {
                     .field("shard_id", shardId)
                     .field("snapshot", snapshotId)
                     .endObject();
+        }
+
+        public ShardLevelIssueType type() {
+            return type;
         }
 
         @Override

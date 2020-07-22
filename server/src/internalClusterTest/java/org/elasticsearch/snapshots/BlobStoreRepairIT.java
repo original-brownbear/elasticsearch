@@ -66,7 +66,7 @@ public class BlobStoreRepairIT extends AbstractSnapshotIntegTestCase {
         final List<BlobStoreRepair.ShardLevelSnapshotIssue> shardLevelSnapshotIssues = checkResult.shardLevelSnapshotIssues();
         assertThat(shardLevelSnapshotIssues, Matchers.hasSize(1));
         final BlobStoreRepair.ShardLevelSnapshotIssue foundIssue = shardLevelSnapshotIssues.get(0);
-        assertThat(foundIssue, is(BlobStoreRepair.ShardLevelIssueType.MISSING_INDEX_GENERATION));
+        assertThat(foundIssue.type(), is(BlobStoreRepair.ShardLevelIssueType.MISSING_INDEX_GENERATION));
 
         final BlobStoreRepair.CheckResult repairResult =
                 PlainActionFuture.get(f -> BlobStoreRepair.executeFixes(repository, checkResult, f));
