@@ -21,6 +21,7 @@ package org.elasticsearch.repositories.blobstore;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
@@ -33,6 +34,7 @@ import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
+import org.elasticsearch.gateway.CorruptStateException;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshots;
 import org.elasticsearch.index.snapshots.blobstore.SnapshotFiles;
@@ -53,14 +55,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 public final class BlobStoreRepair {
 
     private static final Logger logger = LogManager.getLogger(BlobStoreRepair.class);
 
-    public static void check(BlobStoreRepository repository, ActionListener<CheckResult> listener) {
-        repository.threadPool().generic().execute(ActionRunnable.supply(listener, () -> {
+    public static void check(BlobStoreRepository repository, ActionListener<CheckResult> listener, Executor executor) {
+        executor.execute(ActionRunnable.supply(listener, () -> {
             final BlobContainer rootContainer = repository.blobContainer();
             final long[] generations = findGenerations(rootContainer);
             if (generations.length == 0) {
@@ -99,6 +102,11 @@ public final class BlobStoreRepair {
                     final int shards = indexMetadata.getNumberOfShards();
                     for (int i = 0; i < shards; i++) {
                         String shardGeneration = repositoryData.shardGenerations().getShardGen(indexId, i);
+                        final int shardNum = i;
+                        if (snapshotInfo.shardFailures().stream().anyMatch(snapshotShardFailure ->
+                                snapshotShardFailure.index().equals(indexId.getName()) && snapshotShardFailure.shardId() == shardNum)) {
+                            continue;
+                        }
                         final BlobContainer shardContainer = repository.shardContainer(indexId, i);
                         final Set<String> blobsInShard = shardContainer.listBlobs().keySet();
                         if (shardGeneration == null) {
@@ -120,8 +128,9 @@ public final class BlobStoreRepair {
                         try {
                             shardLevelMeta = BlobStoreRepository.INDEX_SHARD_SNAPSHOTS_FORMAT.read(
                                     repository.shardContainer(indexId, i), shardGeneration, NamedXContentRegistry.EMPTY);
-                        } catch (FileNotFoundException e) {
-                            logger.debug("Found missing shard level metadata for [{}][{}]", indexId, i);
+                        } catch (FileNotFoundException | CorruptStateException e) {
+                            logger.debug(() -> new ParameterizedMessage(
+                                    "Found missing or corrupted shard level metadata for [{}][{}]", indexId, shardNum), e);
                             shardLevelSnapshotIssues.add(
                                     new ShardLevelSnapshotIssue(ShardLevelIssueType.MISSING_INDEX_GENERATION, indexId, i, snapshotId));
                             continue;
@@ -138,7 +147,11 @@ public final class BlobStoreRepair {
                                         assert false : "not implemented yet";
                                     }
                                 } else {
-                                    assert false : "not implemented yet";
+                                    for (int j = 0; j < indexFile.numberOfParts(); j++) {
+                                        if (blobsInShard.contains(indexFile.partName(j)) == false) {
+                                            assert false : "not implemented yet";
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -147,6 +160,10 @@ public final class BlobStoreRepair {
             }
             return new CheckResult(generation, minVersion, shardLevelSnapshotIssues, rootLevelSnapshotIssues);
         }));
+    }
+
+    public static void check(BlobStoreRepository repository, ActionListener<CheckResult> listener) {
+        check(repository, listener, repository.threadPool().generic());
     }
 
     public static void executeFixes(BlobStoreRepository repository, CheckResult issues, ActionListener<CheckResult> listener) {

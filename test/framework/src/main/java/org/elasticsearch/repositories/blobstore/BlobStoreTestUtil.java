@@ -131,7 +131,7 @@ public final class BlobStoreTestUtil {
         if (err != null) {
             throw new AssertionError(err);
         }
-        final BlobStoreRepair.CheckResult checkResult = PlainActionFuture.get(f -> BlobStoreRepair.check(repository, f));
+        final BlobStoreRepair.CheckResult checkResult = PlainActionFuture.get(f -> BlobStoreRepair.check(repository, f, executor));
         assertThat(checkResult.rootLevelSnapshotIssues(), empty());
         assertThat(checkResult.shardLevelSnapshotIssues(), empty());
     }
