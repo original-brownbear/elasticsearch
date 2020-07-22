@@ -192,7 +192,7 @@ public final class BlobStoreRepair {
                         issues.repositoryGeneration(), false);
             }
             if (shardLevelIndexGensToFix.isEmpty() == false) {
-                final boolean useShardGenerations = SnapshotsService.useShardGenerations(issues.repoMetaVersion);
+                final boolean useShardGenerations = SnapshotsService.useShardGenerations(issues.repoMetaVersion());
                 for (Map.Entry<Tuple<IndexId, Integer>, List<SnapshotId>> tupleListEntry : shardLevelIndexGensToFix.entrySet()) {
                     final IndexId indexId = tupleListEntry.getKey().v1();
                     final int shardId = tupleListEntry.getKey().v2();
