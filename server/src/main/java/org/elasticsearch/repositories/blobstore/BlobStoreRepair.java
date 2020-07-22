@@ -21,11 +21,13 @@ package org.elasticsearch.repositories.blobstore;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobContainer;
+import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.xcontent.DeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContentObject;
@@ -38,6 +40,7 @@ import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
+import org.elasticsearch.snapshots.SnapshotsService;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -45,7 +48,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,13 +65,13 @@ public final class BlobStoreRepair {
             final long[] generations = findGenerations(rootContainer);
             if (generations.length == 0) {
                 logger.info("Did not find any root level repository metadata in [{}]", rootContainer);
-                return new CheckResult(RepositoryData.UNKNOWN_REPO_GEN, Collections.emptyList(), Collections.emptyList());
+                return new CheckResult(RepositoryData.UNKNOWN_REPO_GEN, Version.CURRENT, Collections.emptyList(), Collections.emptyList());
             }
             final long generation = generations[generations.length - 1];
             final RepositoryData repositoryData;
             try (InputStream inputStream = rootContainer.readBlob(BlobStoreRepository.INDEX_FILE_PREFIX + generation)) {
                 repositoryData = RepositoryData.snapshotsFromXContent(JsonXContent.jsonXContent.createParser(
-                        new NamedXContentRegistry(Collections.emptyList()), DeprecationHandler.IGNORE_DEPRECATIONS, inputStream),
+                        NamedXContentRegistry.EMPTY, DeprecationHandler.IGNORE_DEPRECATIONS, inputStream),
                         generation, false);
             }
             final Collection<SnapshotId> snapshotIds = repositoryData.getSnapshotIds();
@@ -76,6 +81,7 @@ public final class BlobStoreRepair {
                     findSnapshotUUIDsByPrefix(rootContainer, BlobStoreRepository.METADATA_PREFIX);
             final List<RootLevelSnapshotIssue> rootLevelSnapshotIssues = new ArrayList<>();
             final List<ShardLevelSnapshotIssue> shardLevelSnapshotIssues = new ArrayList<>();
+            Version minVersion = Version.CURRENT;
             for (SnapshotId snapshotId : snapshotIds) {
                 final String uuid = snapshotId.getUUID();
                 if (snapshotUUIDsFromMetaBlobs.contains(uuid) == false) {
@@ -85,6 +91,7 @@ public final class BlobStoreRepair {
                     rootLevelSnapshotIssues.add(new RootLevelSnapshotIssue("Missing snap- blob for [" + uuid + "]"));
                 }
                 final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotId);
+                minVersion = Version.min(minVersion, snapshotInfo.version());
                 for (String index : snapshotInfo.indices()) {
                     final IndexId indexId = repositoryData.resolveIndexId(index);
                     IndexMetadata indexMetadata =
@@ -127,16 +134,18 @@ public final class BlobStoreRepair {
                                 final long parts = indexFile.numberOfParts();
                                 // TODO: check file existence below
                                 if (parts == 1) {
-
+                                    if (blobsInShard.contains(indexFile.name()) == false) {
+                                        assert false : "not implemented yet";
+                                    }
                                 } else {
-
+                                    assert false : "not implemented yet";
                                 }
                             }
                         }
                     }
                 }
             }
-            return new CheckResult(generation, shardLevelSnapshotIssues, rootLevelSnapshotIssues);
+            return new CheckResult(generation, minVersion, shardLevelSnapshotIssues, rootLevelSnapshotIssues);
         }));
     }
 
@@ -146,13 +155,57 @@ public final class BlobStoreRepair {
             for (RootLevelSnapshotIssue rootLevelSnapshotIssue : issues.rootLevelSnapshotIssues()) {
                 logger.info("Could not fix issue [{}]", rootLevelSnapshotIssue);
             }
+            final Map<Tuple<IndexId, Integer>, List<SnapshotId>> shardLevelIndexGensToFix = new HashMap<>();
             for (ShardLevelSnapshotIssue shardLevelSnapshotIssue : issues.shardLevelSnapshotIssues()) {
                 switch (shardLevelSnapshotIssue.type) {
                     case MISSING_INDEX_GENERATION:
-
+                        shardLevelIndexGensToFix.computeIfAbsent(
+                                Tuple.tuple(shardLevelSnapshotIssue.indexId, shardLevelSnapshotIssue.shardId),
+                                k -> new ArrayList<>()).add(shardLevelSnapshotIssue.snapshotId);
                         break;
                     default:
                         logger.info("Could not fix issue [{}]", shardLevelSnapshotIssue);
+                }
+            }
+            final RepositoryData repositoryData;
+            final BlobContainer rootContainer = repository.blobContainer();
+            try (InputStream inputStream = rootContainer.readBlob(BlobStoreRepository.INDEX_FILE_PREFIX + issues.repositoryGeneration())) {
+                repositoryData = RepositoryData.snapshotsFromXContent(JsonXContent.jsonXContent.createParser(
+                        NamedXContentRegistry.EMPTY, DeprecationHandler.IGNORE_DEPRECATIONS, inputStream),
+                        issues.repositoryGeneration(), false);
+            }
+            if (shardLevelIndexGensToFix.isEmpty() == false) {
+                final boolean useShardGenerations = SnapshotsService.useShardGenerations(issues.repoMetaVersion);
+                for (Map.Entry<Tuple<IndexId, Integer>, List<SnapshotId>> tupleListEntry : shardLevelIndexGensToFix.entrySet()) {
+                    final IndexId indexId = tupleListEntry.getKey().v1();
+                    final int shardId = tupleListEntry.getKey().v2();
+                    final String newGeneration;
+                    if (useShardGenerations) {
+                        // start over at generation 0
+                        // TODO: This is not great on S3 but it seems impossible to guess a safe generation that hasn't been used before?
+                        newGeneration = "0";
+                    } else {
+                        // use expected generation
+                        // TODO: This is not great on S3 but moving to a new generation would require writing out a new index-N which
+                        //  is tricky
+                        newGeneration =
+                                repositoryData.shardGenerations().getShardGen(tupleListEntry.getKey().v1(), tupleListEntry.getKey().v2());
+                    }
+                    final BlobContainer shardContainer = repository.shardContainer(indexId, shardId);
+                    final List<BlobStoreIndexShardSnapshot> snapshotLevelMeta = new ArrayList<>();
+                    for (SnapshotId snapshotId : tupleListEntry.getValue()) {
+                        final BlobStoreIndexShardSnapshot blobStoreIndexShardSnapshot =
+                                BlobStoreRepository.INDEX_SHARD_SNAPSHOT_FORMAT.read(
+                                        shardContainer, snapshotId.getUUID(), NamedXContentRegistry.EMPTY);
+                        snapshotLevelMeta.add(blobStoreIndexShardSnapshot);
+                    }
+                    final BlobStoreIndexShardSnapshots newShardMetaIndex = new BlobStoreIndexShardSnapshots(
+                            snapshotLevelMeta.stream()
+                                    .map(blobStoreIndexShardSnapshot -> new SnapshotFiles(
+                                            blobStoreIndexShardSnapshot.snapshot(), blobStoreIndexShardSnapshot.indexFiles(), null))
+                                    .collect(Collectors.toList()));
+                    BlobStoreRepository.INDEX_SHARD_SNAPSHOTS_FORMAT.write(
+                            newShardMetaIndex, shardContainer, newGeneration, repository.isCompress());
                 }
             }
             check(repository, l);
@@ -175,19 +228,26 @@ public final class BlobStoreRepair {
 
         private final long repositoryGeneration;
 
+        private final Version repoMetaVersion;
+
         private final List<ShardLevelSnapshotIssue> shardLevelSnapshotIssues;
 
         private final List<RootLevelSnapshotIssue> rootLevelSnapshotIssues;
 
-        private CheckResult(long repositoryGeneration, List<ShardLevelSnapshotIssue> shardLevelSnapshotIssues,
+        private CheckResult(long repositoryGeneration, Version repoMetaVersion, List<ShardLevelSnapshotIssue> shardLevelSnapshotIssues,
                             List<RootLevelSnapshotIssue> rootLevelSnapshotIssues) {
             this.repositoryGeneration = repositoryGeneration;
             this.shardLevelSnapshotIssues = shardLevelSnapshotIssues;
             this.rootLevelSnapshotIssues = rootLevelSnapshotIssues;
+            this.repoMetaVersion = repoMetaVersion;
         }
 
         public long repositoryGeneration() {
             return repositoryGeneration;
+        }
+
+        public Version repoMetaVersion() {
+            return repoMetaVersion;
         }
 
         public List<RootLevelSnapshotIssue> rootLevelSnapshotIssues() {
@@ -271,7 +331,17 @@ public final class BlobStoreRepair {
     }
 
     public enum ShardLevelIssueType {
+        /**
+         * Missing {@code index-{generation}} blob containing a {@link BlobStoreIndexShardSnapshots}.
+         */
         MISSING_INDEX_GENERATION,
-        MISSING_SNAPSHOT_META;
+        /**
+         * Missing {@code snap-{uuid}.dat} blob containing a {@link BlobStoreIndexShardSnapshot}.
+         */
+        MISSING_SNAPSHOT_META,
+        /**
+         * Missing segment data blob referenced by an existing snapshot.
+         */
+        MISSING_SEGMENT_DATA_BLOB
     }
 }

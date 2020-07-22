@@ -47,9 +47,16 @@ public class BlobStoreRepairIT extends AbstractSnapshotIntegTestCase {
         createRepository(repoName, "fs", repoPath);
 
         final String indexName = "test-index";
-        createIndex(indexName);
+        createIndexWithRandomDocs(indexName, randomIntBetween(10, 100));
 
         createFullSnapshot(repoName, "snapshot-1");
+
+        final BlobStoreRepository repository = (BlobStoreRepository) internalCluster().getMasterNodeInstance(RepositoriesService.class)
+                .repository(repoName);
+
+        final BlobStoreRepair.CheckResult checkResultClean = PlainActionFuture.get(f -> BlobStoreRepair.check(repository, f));
+        assertThat(checkResultClean.rootLevelSnapshotIssues(), empty());
+        assertThat(checkResultClean.rootLevelSnapshotIssues(), empty());
 
         logger.info("--> delete old version snapshot");
         client().admin().cluster().prepareDeleteSnapshot(repoName, oldVersionSnapshot).get();
@@ -60,8 +67,6 @@ public class BlobStoreRepairIT extends AbstractSnapshotIntegTestCase {
         assertFileExists(initialShardMetaPath);
         Files.delete(initialShardMetaPath);
 
-        final BlobStoreRepository repository = (BlobStoreRepository) internalCluster().getMasterNodeInstance(RepositoriesService.class)
-                .repository(repoName);
         final BlobStoreRepair.CheckResult checkResult = PlainActionFuture.get(f -> BlobStoreRepair.check(repository, f));
         final List<BlobStoreRepair.ShardLevelSnapshotIssue> shardLevelSnapshotIssues = checkResult.shardLevelSnapshotIssues();
         assertThat(shardLevelSnapshotIssues, Matchers.hasSize(1));
