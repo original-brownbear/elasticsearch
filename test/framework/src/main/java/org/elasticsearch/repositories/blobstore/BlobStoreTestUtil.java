@@ -131,13 +131,14 @@ public final class BlobStoreTestUtil {
         if (err != null) {
             throw new AssertionError(err);
         }
-        final BlobStoreRepair.CheckResult checkResult = PlainActionFuture.get(f -> BlobStoreRepair.check(repository, f, executor));
+        final BlobStoreRepositoryRepair.CheckResult checkResult =
+                PlainActionFuture.get(f -> BlobStoreRepositoryRepair.check(repository, f, executor));
         assertThat(checkResult.rootLevelSnapshotIssues(), empty());
         assertThat(checkResult.shardLevelSnapshotIssues(), empty());
     }
 
     private static void assertIndexGenerations(BlobContainer repoRoot, long latestGen) throws IOException {
-        final long[] indexGenerations = BlobStoreRepair.findGenerations(repoRoot);
+        final long[] indexGenerations = BlobStoreRepositoryRepair.findGenerations(repoRoot);
         assertEquals(latestGen, indexGenerations[indexGenerations.length - 1]);
         assertTrue(indexGenerations.length <= 2);
     }
@@ -198,7 +199,7 @@ public final class BlobStoreTestUtil {
         final Collection<SnapshotId> snapshotIds = repositoryData.getSnapshotIds();
         final List<String> expectedSnapshotUUIDs = snapshotIds.stream().map(SnapshotId::getUUID).collect(Collectors.toList());
         for (String prefix : new String[]{BlobStoreRepository.SNAPSHOT_PREFIX, BlobStoreRepository.METADATA_PREFIX}) {
-            assertThat(BlobStoreRepair.findSnapshotUUIDsByPrefix(repoRoot, prefix),
+            assertThat(BlobStoreRepositoryRepair.findSnapshotUUIDsByPrefix(repoRoot, prefix),
                     containsInAnyOrder(expectedSnapshotUUIDs.toArray(Strings.EMPTY_ARRAY)));
         }
 

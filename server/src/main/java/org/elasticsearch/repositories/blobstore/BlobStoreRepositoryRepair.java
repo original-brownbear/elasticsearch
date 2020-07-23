@@ -58,9 +58,9 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
-public final class BlobStoreRepair {
+public final class BlobStoreRepositoryRepair {
 
-    private static final Logger logger = LogManager.getLogger(BlobStoreRepair.class);
+    private static final Logger logger = LogManager.getLogger(BlobStoreRepositoryRepair.class);
 
     public static void check(BlobStoreRepository repository, ActionListener<CheckResult> listener, Executor executor) {
         executor.execute(ActionRunnable.supply(listener, () -> {
