@@ -108,7 +108,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
             // modify some elements
             for (int i = 0; i < entries.size(); i++) {
                 if (randomBoolean()) {
-                    entries.set(i, new Entry(entries.get(i), randomFrom(State.values()), entries.get(i).shards()));
+                    entries.set(i, entries.get(i).withShards(entries.get(i).shards(), randomFrom(State.values())));
                 }
             }
         }

@@ -149,27 +149,6 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             return true;
         }
 
-        public Entry(Snapshot snapshot, boolean includeGlobalState, boolean partial, State state, List<IndexId> indices,
-                     long startTime, long repositoryStateId, ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards,
-                     Map<String, Object> userMetadata, Version version) {
-            this(snapshot, includeGlobalState, partial, state, indices, Collections.emptyList(), startTime, repositoryStateId, shards,
-                null, userMetadata, version);
-        }
-
-        public Entry(Entry entry, State state, ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
-            this(entry.snapshot, entry.includeGlobalState, entry.partial, state, entry.indices, entry.dataStreams, entry.startTime,
-                entry.repositoryStateId, shards, entry.failure, entry.userMetadata, entry.version);
-        }
-
-        public Entry(Entry entry, State state, ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, String failure) {
-            this(entry.snapshot, entry.includeGlobalState, entry.partial, state, entry.indices, entry.dataStreams, entry.startTime,
-                 entry.repositoryStateId, shards, failure, entry.userMetadata, entry.version);
-        }
-
-        public Entry(Entry entry, ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
-            this(entry, entry.state, shards, entry.failure);
-        }
-
         public Entry withRepoGen(long newRepoGen) {
             assert newRepoGen > repositoryStateId : "Updated repository generation [" + newRepoGen
                     + "] must be higher than current generation [" + repositoryStateId + "]";
@@ -177,9 +156,17 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                     userMetadata, version);
         }
 
-        public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
+        public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, State state, String failure) {
             return new Entry(snapshot, includeGlobalState, partial, state, indices, dataStreams, startTime, repositoryStateId, shards,
                     failure, userMetadata, version);
+        }
+
+        public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, State state) {
+            return withShards(shards, state, failure);
+        }
+
+        public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
+            return withShards(shards, state);
         }
 
         @Override

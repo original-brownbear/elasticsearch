@@ -119,6 +119,8 @@ import static org.elasticsearch.cluster.SnapshotsInProgress.completed;
  */
 public class SnapshotsService extends AbstractLifecycleComponent implements ClusterStateApplier {
 
+    public static final Version SNAPSHOT_CLONE_VERSION = Version.V_8_0_0;
+
     public static final Version FULL_CONCURRENCY_VERSION = Version.V_7_9_0;
 
     public static final Version SHARD_GEN_IN_REPO_DATA_VERSION = Version.V_7_6_0;
@@ -614,10 +616,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             final SnapshotsInProgress.Entry updatedSnapshot;
                             changed = true;
                             if (completed(shards.values())) {
-                                updatedSnapshot = new SnapshotsInProgress.Entry(snapshot, State.SUCCESS, shards);
+                                updatedSnapshot = snapshot.withShards(shards, State.SUCCESS);
                                 finishedSnapshots.add(updatedSnapshot);
                             } else {
-                                updatedSnapshot = new SnapshotsInProgress.Entry(snapshot, shards);
+                                updatedSnapshot = snapshot.withShards(shards);
                             }
                             updatedSnapshotEntries.add(updatedSnapshot);
                         } else {
@@ -1226,7 +1228,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             .filter(existing -> abortedDuringInit == false || existing.equals(snapshotEntry) == false)
                             .map(existing -> {
                                 if (existing.equals(snapshotEntry)) {
-                                    return new SnapshotsInProgress.Entry(snapshotEntry, State.ABORTED, shards, failure);
+                                    return snapshotEntry.withShards(shards, State.ABORTED, failure);
                                 }
                                 return existing;
                             }).collect(Collectors.toUnmodifiableList()))).build();
@@ -1388,8 +1390,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 if (existing.state() == State.STARTED && snapshotIds.contains(existing.snapshot().getSnapshotId())) {
                                     final ImmutableOpenMap<ShardId, ShardSnapshotStatus> abortedShards = abortEntry(existing);
                                     final boolean isCompleted = completed(abortedShards.values());
-                                    final SnapshotsInProgress.Entry abortedEntry = new SnapshotsInProgress.Entry(
-                                            existing, isCompleted ? State.SUCCESS : State.ABORTED, abortedShards,
+                                    final SnapshotsInProgress.Entry abortedEntry = existing.withShards(
+                                            abortedShards, isCompleted ? State.SUCCESS : State.ABORTED,
                                             "Snapshot was aborted by deletion");
                                     if (isCompleted) {
                                         completedSnapshots.add(abortedEntry);
@@ -2106,11 +2108,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
                 if (updated) {
                     if (completed(shards.values()) == false) {
-                        entries.add(new SnapshotsInProgress.Entry(entry, shards.build()));
+                        entries.add(entry.withShards(shards.build()));
                     } else {
                         // Snapshot is finished - mark it as done
                         // TODO: Add PARTIAL_SUCCESS status?
-                        SnapshotsInProgress.Entry updatedEntry = new SnapshotsInProgress.Entry(entry, State.SUCCESS, shards.build());
+                        SnapshotsInProgress.Entry updatedEntry = entry.withShards(shards.build(), State.SUCCESS);
                         entries.add(updatedEntry);
                     }
                 } else {
