@@ -616,7 +616,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             final SnapshotsInProgress.Entry updatedSnapshot;
                             changed = true;
                             if (completed(shards.values())) {
-                                updatedSnapshot = snapshot.withShards(shards, State.SUCCESS);
+                                updatedSnapshot = snapshot.completeWithShards(shards);
                                 finishedSnapshots.add(updatedSnapshot);
                             } else {
                                 updatedSnapshot = snapshot.withShards(shards);
@@ -2111,8 +2111,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         entries.add(entry.withShards(shards.build()));
                     } else {
                         // Snapshot is finished - mark it as done
-                        // TODO: Add PARTIAL_SUCCESS status?
-                        SnapshotsInProgress.Entry updatedEntry = entry.withShards(shards.build(), State.SUCCESS);
+                        SnapshotsInProgress.Entry updatedEntry = entry.completeWithShards(shards.build());
                         entries.add(updatedEntry);
                     }
                 } else {

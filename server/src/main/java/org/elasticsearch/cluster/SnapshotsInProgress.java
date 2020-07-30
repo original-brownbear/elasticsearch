@@ -161,12 +161,12 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                     failure, userMetadata, version);
         }
 
-        public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, State state) {
-            return withShards(shards, state, failure);
+        public Entry completeWithShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
+            return withShards(shards, State.SUCCESS, failure);
         }
 
         public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
-            return withShards(shards, state);
+            return withShards(shards, state, failure);
         }
 
         @Override
