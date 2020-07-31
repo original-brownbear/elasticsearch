@@ -109,7 +109,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
             for (int i = 0; i < entries.size(); i++) {
                 if (randomBoolean()) {
                     final Entry entry = entries.get(i);
-                    entries.set(i, entry.withFailure(entry.shards(),
+                    entries.set(i, entry.fail(entry.shards(),
                             SnapshotsInProgress.completed(entry.shards().values()) ?
                                     randomFrom(State.values()) : randomFrom(State.STARTED, State.INIT, State.ABORTED), entry.failure()));
                 }

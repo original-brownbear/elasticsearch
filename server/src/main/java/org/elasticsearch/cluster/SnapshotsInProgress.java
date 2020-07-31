@@ -83,6 +83,18 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         return builder.append("]").toString();
     }
 
+    /**
+     * Creates the initial {@link Entry} when starting a snapshot.
+     */
+    public static Entry startedEntry(Snapshot snapshot, boolean includeGlobalState, boolean partial, List<IndexId> indices,
+                                     List<String> dataStreams, long startTime, long repositoryStateId,
+                                     ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, Map<String, Object> userMetadata,
+                                     Version version) {
+        return new SnapshotsInProgress.Entry(snapshot, includeGlobalState, partial,
+                completed(shards.values()) ? State.SUCCESS : State.STARTED,
+                indices, dataStreams, startTime, repositoryStateId, shards, null, userMetadata, version);
+    }
+
     public static class Entry implements Writeable, ToXContent, RepositoryOperation {
         private final State state;
         private final Snapshot snapshot;
@@ -98,6 +110,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         @Nullable private final Map<String, Object> userMetadata;
         @Nullable private final String failure;
 
+        // visible for testing, use #startedEntry and copy constructors in production code
         public Entry(Snapshot snapshot, boolean includeGlobalState, boolean partial, State state, List<IndexId> indices,
                      List<String> dataStreams, long startTime, long repositoryStateId,
                      ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, String failure, Map<String, Object> userMetadata,
@@ -158,18 +171,34 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                     userMetadata, version);
         }
 
-        public Entry withFailure(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, State state, String failure) {
+        public Entry abort() {
+            final ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> shardsBuilder = ImmutableOpenMap.builder();
+            boolean completed = true;
+            for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardEntry : shards) {
+                ShardSnapshotStatus status = shardEntry.value;
+                if (status.state().completed() == false) {
+                    final String nodeId = status.nodeId();
+                    status = new ShardSnapshotStatus(nodeId, nodeId == null ? ShardState.FAILED : ShardState.ABORTED,
+                            "aborted by snapshot deletion", status.generation());
+                }
+                completed &= status.state().completed();
+                shardsBuilder.put(shardEntry.key, status);
+            }
+            return fail(shardsBuilder.build(), completed ? State.SUCCESS : State.ABORTED, "Snapshot was aborted by deletion");
+        }
+
+        public Entry fail(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, State state, String failure) {
             return new Entry(snapshot, includeGlobalState, partial, state, indices, dataStreams, startTime, repositoryStateId, shards,
                     failure, userMetadata, version);
         }
 
-        public Entry completeWithShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
+        public Entry complete(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
             assert completed(shards.values()) : "Shards " + shards + "were not all in a completed state";
             return new Entry(snapshot, includeGlobalState, partial, State.SUCCESS, indices, dataStreams, startTime, repositoryStateId,
                     shards, failure, userMetadata, version);
         }
 
-        public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
+        public Entry updatedShardStates(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
             return new Entry(snapshot, includeGlobalState, partial, state, indices, dataStreams, startTime, repositoryStateId,
                     shards, failure, userMetadata, version);
         }
