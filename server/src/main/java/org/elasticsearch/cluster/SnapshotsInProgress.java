@@ -146,6 +146,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             shards.keysIt().forEachRemaining(s -> indexNamesInShards.add(s.getIndexName()));
             assert indexNames.equals(indexNamesInShards)
                 : "Indices in shards " + indexNamesInShards + " differ from expected indices " + indexNames + " for state [" + state + "]";
+            assert (state.completed() && completed(shards.values())) || state.completed() == false
+                : "Completed state must imply all shards completed but saw state [" + state + "] and shards " + shards;
             return true;
         }
 
@@ -156,17 +158,20 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                     userMetadata, version);
         }
 
-        public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, State state, String failure) {
+        public Entry withFailure(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, State state, String failure) {
             return new Entry(snapshot, includeGlobalState, partial, state, indices, dataStreams, startTime, repositoryStateId, shards,
                     failure, userMetadata, version);
         }
 
         public Entry completeWithShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
-            return withShards(shards, State.SUCCESS, failure);
+            assert completed(shards.values()) : "Shards " + shards + "were not all in a completed state";
+            return new Entry(snapshot, includeGlobalState, partial, State.SUCCESS, indices, dataStreams, startTime, repositoryStateId,
+                    shards, failure, userMetadata, version);
         }
 
         public Entry withShards(ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards) {
-            return withShards(shards, state, failure);
+            return new Entry(snapshot, includeGlobalState, partial, state, indices, dataStreams, startTime, repositoryStateId,
+                    shards, failure, userMetadata, version);
         }
 
         @Override

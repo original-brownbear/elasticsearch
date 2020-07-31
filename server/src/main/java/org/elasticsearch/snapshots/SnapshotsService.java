@@ -1228,7 +1228,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             .filter(existing -> abortedDuringInit == false || existing.equals(snapshotEntry) == false)
                             .map(existing -> {
                                 if (existing.equals(snapshotEntry)) {
-                                    return snapshotEntry.withShards(shards, State.ABORTED, failure);
+                                    return snapshotEntry.withFailure(shards, State.ABORTED, failure);
                                 }
                                 return existing;
                             }).collect(Collectors.toUnmodifiableList()))).build();
@@ -1390,7 +1390,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 if (existing.state() == State.STARTED && snapshotIds.contains(existing.snapshot().getSnapshotId())) {
                                     final ImmutableOpenMap<ShardId, ShardSnapshotStatus> abortedShards = abortEntry(existing);
                                     final boolean isCompleted = completed(abortedShards.values());
-                                    final SnapshotsInProgress.Entry abortedEntry = existing.withShards(
+                                    final SnapshotsInProgress.Entry abortedEntry = existing.withFailure(
                                             abortedShards, isCompleted ? State.SUCCESS : State.ABORTED,
                                             "Snapshot was aborted by deletion");
                                     if (isCompleted) {

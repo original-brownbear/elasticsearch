@@ -56,7 +56,6 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
         Snapshot snapshot = new Snapshot(randomAlphaOfLength(10), new SnapshotId(randomAlphaOfLength(10), randomAlphaOfLength(10)));
         boolean includeGlobalState = randomBoolean();
         boolean partial = randomBoolean();
-        State state = randomFrom(State.values());
         int numberOfIndices = randomIntBetween(0, 10);
         List<IndexId> indices = new ArrayList<>();
         for (int i = 0; i < numberOfIndices; i++) {
@@ -79,8 +78,9 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
             }
         }
         ImmutableOpenMap<ShardId, SnapshotsInProgress.ShardSnapshotStatus> shards = builder.build();
-        return new Entry(snapshot, includeGlobalState, partial, state, indices, dataStreams, startTime, repositoryStateId, shards,
-            null, SnapshotInfoTests.randomUserMetadata(), VersionUtils.randomVersion(random()));
+        return new Entry(snapshot, includeGlobalState, partial, SnapshotsInProgress.completed(shards.values()) ?
+                randomFrom(State.values()) : randomFrom(State.STARTED, State.INIT, State.ABORTED), indices, dataStreams, startTime,
+                repositoryStateId, shards, null, SnapshotInfoTests.randomUserMetadata(), VersionUtils.randomVersion(random()));
     }
 
     @Override
@@ -109,7 +109,9 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
             for (int i = 0; i < entries.size(); i++) {
                 if (randomBoolean()) {
                     final Entry entry = entries.get(i);
-                    entries.set(i, entry.withShards(entries.get(i).shards(), randomFrom(State.values()), entry.failure()));
+                    entries.set(i, entry.withFailure(entry.shards(),
+                            SnapshotsInProgress.completed(entry.shards().values()) ?
+                                    randomFrom(State.values()) : randomFrom(State.STARTED, State.INIT, State.ABORTED), entry.failure()));
                 }
             }
         }
