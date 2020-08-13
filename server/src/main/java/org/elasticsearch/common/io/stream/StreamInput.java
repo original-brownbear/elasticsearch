@@ -205,8 +205,10 @@ public abstract class StreamInput extends InputStream {
      * Reads four bytes and returns an int.
      */
     public int readInt() throws IOException {
-        return ((readByte() & 0xFF) << 24) | ((readByte() & 0xFF) << 16)
-                | ((readByte() & 0xFF) << 8) | (readByte() & 0xFF);
+        final byte[] buffer = readBuffer.get();
+        readBytes(buffer, 0, 4);
+        return ((buffer[0] & 0xFF) << 24) | ((buffer[1] & 0xFF) << 16)
+                | ((buffer[2] & 0xFF) << 8) | (buffer[3] & 0xFF);
     }
 
     /**
@@ -257,7 +259,10 @@ public abstract class StreamInput extends InputStream {
      * Reads eight bytes and returns a long.
      */
     public long readLong() throws IOException {
-        return (((long) readInt()) << 32) | (readInt() & 0xFFFFFFFFL);
+        final byte[] buffer = readBuffer.get();
+        readBytes(buffer, 0, 8);
+        return (((long) ((buffer[0] << 24) | ((buffer[1] & 0xff) << 16) | ((buffer[2] & 0xff) << 8) | (buffer[3] & 0xff)) << 32)) |
+                (((buffer[4] << 24) | ((buffer[5] & 0xff) << 16) | ((buffer[6] & 0xff) << 8) | (buffer[7] & 0xff)) & 0x0ffffffffL);
     }
 
     /**
@@ -405,8 +410,8 @@ public abstract class StreamInput extends InputStream {
     // Maximum char-count to de-serialize via the thread-local CharsRef buffer
     private static final int SMALL_STRING_LIMIT = 1024;
 
-    // Reusable bytes for deserializing strings
-    private static final ThreadLocal<byte[]> stringReadBuffer = ThreadLocal.withInitial(() -> new byte[1024]);
+    // Reusable bytes for deserializing strings and numbers
+    private static final ThreadLocal<byte[]> readBuffer = ThreadLocal.withInitial(() -> new byte[1024]);
 
     // Thread-local buffer for smaller strings
     private static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
@@ -435,7 +440,7 @@ public abstract class StreamInput extends InputStream {
         int offsetByteArray = 0;
         int sizeByteArray = 0;
         int missingFromPartial = 0;
-        final byte[] byteBuffer = stringReadBuffer.get();
+        final byte[] byteBuffer = readBuffer.get();
         final char[] charBuffer = charsRef.chars;
         for (; charsOffset < charCount; ) {
             final int charsLeft = charCount - charsOffset;

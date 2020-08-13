@@ -19,6 +19,7 @@
 
 package org.elasticsearch.common.compress;
 
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
@@ -28,10 +29,10 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -49,6 +50,9 @@ public class DeflateCompressor implements Compressor {
     // enough so that no stream starting with these bytes could be detected as
     // a XContent
     private static final byte[] HEADER = new byte[]{'D', 'F', 'L', '\0'};
+
+    private static final int HEADER_INT = new BytesArray(HEADER).getInt(0);
+
     // 3 is a good trade-off between speed and compression ratio
     private static final int LEVEL = 3;
     // We use buffering on the input and output of in/def-laters in order to
@@ -60,12 +64,7 @@ public class DeflateCompressor implements Compressor {
         if (bytes.length() < HEADER.length) {
             return false;
         }
-        for (int i = 0; i < HEADER.length; ++i) {
-            if (bytes.get(i) != HEADER[i]) {
-                return false;
-            }
-        }
-        return true;
+        return bytes.getInt(0) == HEADER_INT;
     }
 
     @Override
@@ -75,16 +74,11 @@ public class DeflateCompressor implements Compressor {
 
     @Override
     public StreamInput streamInput(StreamInput in) throws IOException {
-        final byte[] headerBytes = new byte[HEADER.length];
-        int len = 0;
-        while (len < headerBytes.length) {
-            final int read = in.read(headerBytes, len, headerBytes.length - len);
-            if (read == -1) {
-                break;
+        try {
+            if (in.readInt() != HEADER_INT) {
+                throw new IllegalArgumentException("Input stream is not compressed with DEFLATE!");
             }
-            len += read;
-        }
-        if (len != HEADER.length || Arrays.equals(headerBytes, HEADER) == false) {
+        } catch (EOFException e) {
             throw new IllegalArgumentException("Input stream is not compressed with DEFLATE!");
         }
 
