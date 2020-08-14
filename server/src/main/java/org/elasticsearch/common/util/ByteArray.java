@@ -53,4 +53,7 @@ public interface ByteArray extends BigArray {
      */
     void fill(long fromIndex, long toIndex, byte value);
 
+    boolean hasArray();
+
+    byte[] array();
 }

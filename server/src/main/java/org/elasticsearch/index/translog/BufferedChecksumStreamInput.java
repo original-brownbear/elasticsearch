@@ -20,6 +20,7 @@
 package org.elasticsearch.index.translog;
 
 import org.apache.lucene.store.BufferedChecksum;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.io.stream.FilterStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
@@ -83,15 +84,14 @@ public final class BufferedChecksumStreamInput extends FilterStreamInput {
     public int readInt() throws IOException {
         final byte[] buf = buffer.get();
         readBytes(buf, 0, 4);
-        return ((buf[0] & 0xFF) << 24) | ((buf[1] & 0xFF) << 16) | ((buf[2] & 0xFF) << 8) | (buf[3] & 0xFF);
+        return BytesArray.intFromBytes(0, buf);
     }
 
     @Override
     public long readLong() throws IOException {
         final byte[] buf = buffer.get();
         readBytes(buf, 0, 8);
-        return (((long) (((buf[0] & 0xFF) << 24) | ((buf[1] & 0xFF) << 16) | ((buf[2] & 0xFF) << 8) | (buf[3] & 0xFF))) << 32)
-            | ((((buf[4] & 0xFF) << 24) | ((buf[5] & 0xFF) << 16) | ((buf[6] & 0xFF) << 8) | (buf[7] & 0xFF)) & 0xFFFFFFFFL);
+        return BytesArray.longFromBytes(0, buf);
     }
 
     @Override
@@ -103,6 +103,11 @@ public final class BufferedChecksumStreamInput extends FilterStreamInput {
     @Override
     public int read() throws IOException {
         return readByte() & 0xFF;
+    }
+
+    @Override
+    public String readString() throws IOException {
+        return readString0(this);
     }
 
     @Override

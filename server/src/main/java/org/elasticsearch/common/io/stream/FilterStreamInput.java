@@ -61,6 +61,11 @@ public abstract class FilterStreamInput extends StreamInput {
     }
 
     @Override
+    public String readString() throws IOException {
+        return delegate.readString();
+    }
+
+    @Override
     public void reset() throws IOException {
         delegate.reset();
     }

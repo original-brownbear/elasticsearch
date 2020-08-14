@@ -20,7 +20,10 @@
 package org.elasticsearch.common.bytes;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.io.stream.StreamInput;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Objects;
 
 public final class BytesArray extends AbstractBytesReference {
@@ -63,6 +66,11 @@ public final class BytesArray extends AbstractBytesReference {
     }
 
     @Override
+    public int getInt(int index) {
+        return intFromBytes(offset + index, bytes);
+    }
+
+    @Override
     public int length() {
         return length;
     }
@@ -91,4 +99,23 @@ public final class BytesArray extends AbstractBytesReference {
         return bytes.length;
     }
 
+    @Override
+    public StreamInput streamInput() {
+        return new ByteArrayStreamInput(bytes, offset, offset + length);
+    }
+
+    @Override
+    public void writeTo(OutputStream os) throws IOException {
+        os.write(bytes, offset, length);
+    }
+
+    public static int intFromBytes(int off, byte[] bytes) {
+        return (bytes[off] & 0xFF) << 24 | (bytes[off + 1] & 0xFF) << 16 | (bytes[off + 2] & 0xFF) << 8 | bytes[off + 3] & 0xFF;
+    }
+
+    public static long longFromBytes(int off, byte[] bytes) {
+        return (((long) ((bytes[off] << 24) | ((bytes[off + 1] & 0xff) << 16) | ((bytes[off + 2] & 0xff) << 8) | (bytes[off + 3] & 0xff)))
+                << 32) | (((bytes[off + 4] << 24) | ((bytes[off + 5] & 0xff) << 16) | ((bytes[off + 6] & 0xff) << 8)
+                | (bytes[off + 7] & 0xff)) & 0x0ffffffffL);
+    }
 }

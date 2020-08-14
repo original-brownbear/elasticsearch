@@ -34,6 +34,7 @@ import org.elasticsearch.common.CharArrays;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.ByteArrayStreamInput;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.geo.GeoPoint;
@@ -45,7 +46,6 @@ import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.script.JodaCompatibleZonedDateTime;
 import org.joda.time.DateTimeZone;
 
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
@@ -403,30 +403,34 @@ public abstract class StreamInput extends InputStream {
     }
 
     // Maximum char-count to de-serialize via the thread-local CharsRef buffer
-    private static final int SMALL_STRING_LIMIT = 1024;
+    protected static final int SMALL_STRING_LIMIT = 1024;
 
     // Reusable bytes for deserializing strings
     private static final ThreadLocal<byte[]> stringReadBuffer = ThreadLocal.withInitial(() -> new byte[1024]);
 
     // Thread-local buffer for smaller strings
-    private static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
+    protected static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
 
     // Larger buffer used for long strings that can't fit into the thread-local buffer
     // We don't use a CharsRefBuilder since we exactly know the size of the character array up front
     // this prevents calling grow for every character since we don't need this
-    private CharsRef largeSpare;
+    protected CharsRef largeSpare;
 
     public String readString() throws IOException {
-        final int charCount = readArraySize();
+        return readString0(this);
+    }
+
+    protected static String readString0(StreamInput in) throws IOException {
+        final int charCount = in.readArraySize();
         final CharsRef charsRef;
         if (charCount > SMALL_STRING_LIMIT) {
-            if (largeSpare == null) {
-                largeSpare = new CharsRef(ArrayUtil.oversize(charCount, Character.BYTES));
-            } else if (largeSpare.chars.length < charCount) {
+            if (in.largeSpare == null) {
+                in.largeSpare = new CharsRef(ArrayUtil.oversize(charCount, Character.BYTES));
+            } else if (in.largeSpare.chars.length < charCount) {
                 // we don't use ArrayUtils.grow since there is no need to copy the array
-                largeSpare.chars = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
+                in.largeSpare.chars = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
             }
-            charsRef = largeSpare;
+            charsRef = in.largeSpare;
         } else {
             charsRef = smallSpare.get();
         }
@@ -475,7 +479,7 @@ public abstract class StreamInput extends InputStream {
             } else {
                 toRead = minRemainingBytes;
             }
-            readBytes(byteBuffer, sizeByteArray, toRead);
+            in.readBytes(byteBuffer, sizeByteArray, toRead);
             sizeByteArray += toRead;
             // As long as we at least have three bytes buffered we don't need to do any bounds checking when getting the next char since we
             // read 3 bytes per char/iteration at most
@@ -541,7 +545,7 @@ public abstract class StreamInput extends InputStream {
         return charsRef.toString();
     }
 
-    private static void throwOnBrokenChar(int c) throws IOException {
+    protected static void throwOnBrokenChar(int c) throws IOException {
         throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
     }
 
@@ -1280,14 +1284,14 @@ public abstract class StreamInput extends InputStream {
     }
 
     public static StreamInput wrap(byte[] bytes, int offset, int length) {
-        return new InputStreamStreamInput(new ByteArrayInputStream(bytes, offset, length), length);
+        return new ByteArrayStreamInput(bytes, offset, offset + length);
     }
 
     /**
      * Reads a vint via {@link #readVInt()} and applies basic checks to ensure the read array size is sane.
      * This method uses {@link #ensureCanReadBytes(int)} to ensure this stream has enough bytes to read for the read array size.
      */
-    private int readArraySize() throws IOException {
+    protected int readArraySize() throws IOException {
         final int arraySize = readVInt();
         if (arraySize > ArrayUtil.MAX_ARRAY_LENGTH) {
             throw new IllegalStateException("array length must be <= to " + ArrayUtil.MAX_ARRAY_LENGTH  + " but was: " + arraySize);
