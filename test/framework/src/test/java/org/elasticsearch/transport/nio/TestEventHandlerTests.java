@@ -20,7 +20,6 @@
 package org.elasticsearch.transport.nio;
 
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.elasticsearch.common.CheckedRunnable;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
@@ -29,6 +28,7 @@ import org.elasticsearch.nio.SocketChannelContext;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.MockLogAppender;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportThreadWatchdog;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,12 +46,12 @@ public class TestEventHandlerTests extends ESTestCase {
     public void setUp() throws Exception {
         super.setUp();
         appender = new MockLogAppender();
-        Loggers.addAppender(LogManager.getLogger(MockNioTransport.class), appender);
+        Loggers.addAppender(logger, appender);
         appender.start();
     }
 
     public void tearDown() throws Exception {
-        Loggers.removeAppender(LogManager.getLogger(MockNioTransport.class), appender);
+        Loggers.removeAppender(logger, appender);
         appender.stop();
         super.tearDown();
     }
@@ -71,7 +71,7 @@ public class TestEventHandlerTests extends ESTestCase {
         final ThreadPool threadPool = mock(ThreadPool.class);
         doAnswer(i -> timeSupplier.getAsLong()).when(threadPool).relativeTimeInNanos();
         TestEventHandler eventHandler =
-            new TestEventHandler(e -> {}, () -> null, new MockNioTransport.TransportThreadWatchdog(threadPool, Settings.EMPTY));
+            new TestEventHandler(e -> {}, () -> null, new TransportThreadWatchdog(threadPool, Settings.EMPTY, logger));
 
         ServerChannelContext serverChannelContext = mock(ServerChannelContext.class);
         SocketChannelContext socketChannelContext = mock(SocketChannelContext.class);
@@ -97,7 +97,7 @@ public class TestEventHandlerTests extends ESTestCase {
         for (Map.Entry<String, CheckedRunnable<Exception>> entry : tests.entrySet()) {
             String message = "*Slow execution on network thread*";
             MockLogAppender.LoggingExpectation slowExpectation =
-                new MockLogAppender.SeenEventExpectation(entry.getKey(), MockNioTransport.class.getCanonicalName(), Level.WARN, message);
+                new MockLogAppender.SeenEventExpectation(entry.getKey(), getClass().getCanonicalName(), Level.WARN, message);
             appender.addExpectation(slowExpectation);
             entry.getValue().run();
             appender.assertAllExpectationsMatched();

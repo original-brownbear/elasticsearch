@@ -24,6 +24,7 @@ import org.elasticsearch.nio.EventHandler;
 import org.elasticsearch.nio.NioSelector;
 import org.elasticsearch.nio.ServerChannelContext;
 import org.elasticsearch.nio.SocketChannelContext;
+import org.elasticsearch.transport.TransportThreadWatchdog;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -36,10 +37,10 @@ public class TestEventHandler extends EventHandler {
 
     private final Set<SocketChannelContext> hasConnectedMap = Collections.newSetFromMap(new WeakHashMap<>());
     private final Set<SocketChannelContext> hasConnectExceptionMap = Collections.newSetFromMap(new WeakHashMap<>());
-    private final MockNioTransport.TransportThreadWatchdog transportThreadWatchdog;
+    private final TransportThreadWatchdog transportThreadWatchdog;
 
     TestEventHandler(Consumer<Exception> exceptionHandler, Supplier<NioSelector> selectorSupplier,
-                     MockNioTransport.TransportThreadWatchdog transportThreadWatchdog) {
+                     TransportThreadWatchdog transportThreadWatchdog) {
         super(exceptionHandler, selectorSupplier);
         this.transportThreadWatchdog = transportThreadWatchdog;
     }
