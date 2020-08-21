@@ -40,6 +40,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.collect.HppcMaps;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.VersionedNamedWriteable;
@@ -424,7 +425,8 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
         if (fieldPredicate == MapperPlugin.NOOP_FIELD_PREDICATE) {
             return mappingMetadata;
         }
-        Map<String, Object> sourceAsMap = XContentHelper.convertToMap(mappingMetadata.source().compressedReference(), true).v2();
+        final CompressedXContent source = mappingMetadata.source();
+        Map<String, Object> sourceAsMap = XContentHelper.convertToMap(source.compressedReference(), true, source.type()).v2();
         Map<String, Object> mapping;
         if (sourceAsMap.size() == 1 && sourceAsMap.containsKey(mappingMetadata.type())) {
             mapping = (Map<String, Object>) sourceAsMap.get(mappingMetadata.type());

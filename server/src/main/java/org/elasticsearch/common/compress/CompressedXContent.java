@@ -19,16 +19,15 @@
 
 package org.elasticsearch.common.compress;
 
+import org.elasticsearch.Version;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.common.xcontent.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -45,6 +44,8 @@ import java.util.zip.CheckedOutputStream;
  */
 public final class CompressedXContent {
 
+    private static final Version TYPE_SERIALIZED_VERSION = Version.V_8_0_0;
+
     private static int crc32(BytesReference data) {
         CRC32 crc32 = new CRC32();
         try {
@@ -56,13 +57,17 @@ public final class CompressedXContent {
         return (int) crc32.getValue();
     }
 
+    @Nullable
+    private final XContentType type;
+
     private final byte[] bytes;
     private final int crc32;
 
     // Used for serialization
-    private CompressedXContent(byte[] compressed, int crc32) {
+    private CompressedXContent(byte[] compressed, int crc32, XContentType type) {
         this.bytes = compressed;
         this.crc32 = crc32;
+        this.type = type;
         assertConsistent();
     }
 
@@ -79,16 +84,21 @@ public final class CompressedXContent {
             xcontent.toXContent(builder, params);
             builder.endObject();
         }
+        this.type = type;
         this.bytes = BytesReference.toBytes(bStream.bytes());
         this.crc32 = (int) crc32.getValue();
         assertConsistent();
+    }
+
+    public CompressedXContent(BytesReference data) throws IOException {
+        this(data, XContentType.JSON);
     }
 
     /**
      * Create a {@link CompressedXContent} out of a serialized {@link ToXContent}
      * that may already be compressed.
      */
-    public CompressedXContent(BytesReference data) throws IOException {
+    public CompressedXContent(BytesReference data, XContentType type) throws IOException {
         Compressor compressor = CompressorFactory.compressor(data);
         if (compressor != null) {
             // already compressed...
@@ -98,25 +108,44 @@ public final class CompressedXContent {
             this.bytes = BytesReference.toBytes(CompressorFactory.COMPRESSOR.compress(data));
             this.crc32 = crc32(data);
         }
+        this.type = type;
         assertConsistent();
     }
 
     private void assertConsistent() {
         assert CompressorFactory.compressor(new BytesArray(bytes)) != null;
-        assert this.crc32 == crc32(uncompressed());
+        final BytesReference uncompressed = uncompressed();
+        assert this.crc32 == crc32(uncompressed);
+        final XContentType foundType = XContentHelper.xContentType(uncompressed);
+        assert type == null || type == foundType : "Type was given as [" + type + "] but actual content was of type [" + foundType + "]";
     }
 
+    // Deprecated in favor of constructor that includes XContentType
+    @Deprecated
     public CompressedXContent(byte[] data) throws IOException {
-        this(new BytesArray(data));
+        this(data, null);
+    }
+
+    public CompressedXContent(byte[] data, @Nullable XContentType type) throws IOException {
+        this(new BytesArray(data), type);
     }
 
     public CompressedXContent(String str) throws IOException {
-        this(new BytesArray(str.getBytes(StandardCharsets.UTF_8)));
+        this(str, null);
+    }
+
+    public CompressedXContent(String str, XContentType type) throws IOException {
+        this(new BytesArray(str.getBytes(StandardCharsets.UTF_8)), type);
     }
 
     /** Return the compressed bytes. */
     public byte[] compressed() {
         return this.bytes;
+    }
+
+    @Nullable
+    public XContentType type() {
+        return type;
     }
 
     /** Return the compressed bytes as a {@link BytesReference}. */
@@ -139,12 +168,22 @@ public final class CompressedXContent {
 
     public static CompressedXContent readCompressedString(StreamInput in) throws IOException {
         int crc32 = in.readInt();
-        return new CompressedXContent(in.readByteArray(), crc32);
+        final byte[] bytes = in.readByteArray();
+        final XContentType type;
+        if (in.readBoolean()) {
+            type = in.readEnum(XContentType.class);
+        } else {
+            type = null;
+        }
+        return new CompressedXContent(bytes, crc32, type);
     }
 
     public void writeTo(StreamOutput out) throws IOException {
         out.writeInt(crc32);
         out.writeByteArray(bytes);
+        if (out.getVersion().onOrAfter(TYPE_SERIALIZED_VERSION)) {
+            out.writeOptionalWriteable(type == null ? null : o -> o.writeEnum(type));
+        }
     }
 
     @Override

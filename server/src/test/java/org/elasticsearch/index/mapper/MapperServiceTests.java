@@ -27,6 +27,7 @@ import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexSettings;
@@ -101,7 +102,7 @@ public class MapperServiceTests extends ESSingleNodeTestCase {
             mappingBuilder.endObject();
         }
         mappingBuilder.endObject().endObject();
-        return new CompressedXContent(BytesReference.bytes(mappingBuilder));
+        return new CompressedXContent(BytesReference.bytes(mappingBuilder), XContentType.JSON);
     }
 
     public void testMappingDepthExceedsLimit() throws Throwable {
@@ -115,7 +116,7 @@ public class MapperServiceTests extends ESSingleNodeTestCase {
                     .startObject("object1")
                         .field("type", "object")
                     .endObject()
-                .endObject().endObject()));
+                .endObject().endObject()), XContentType.JSON);
 
         IndexService indexService2 = createIndex("test2");
         // no exception

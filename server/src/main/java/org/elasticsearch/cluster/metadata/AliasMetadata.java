@@ -36,6 +36,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -289,7 +290,7 @@ public class AliasMetadata extends AbstractDiffable<AliasMetadata> implements To
             }
             try {
                 XContentBuilder builder = XContentFactory.jsonBuilder().map(filter);
-                this.filter = new CompressedXContent(BytesReference.bytes(builder));
+                this.filter = new CompressedXContent(BytesReference.bytes(builder), XContentType.JSON);
                 return this;
             } catch (IOException e) {
                 throw new ElasticsearchGenerationException("Failed to build json for alias request", e);
@@ -332,10 +333,17 @@ public class AliasMetadata extends AbstractDiffable<AliasMetadata> implements To
             boolean binary = params.paramAsBoolean("binary", false);
 
             if (aliasMetadata.filter() != null) {
+                final CompressedXContent filterSource = aliasMetadata.filter();
                 if (binary) {
-                    builder.field("filter", aliasMetadata.filter.compressed());
+                    builder.startObject("filter_with_type");
+                    final XContentType xContentType = filterSource.type();
+                    if (xContentType != null) {
+                        builder.field("type", xContentType);
+                    }
+                    builder.field("source", filterSource.compressed());
+                    builder.endObject();
                 } else {
-                    builder.field("filter", XContentHelper.convertToMap(aliasMetadata.filter().uncompressed(), true).v2());
+                    builder.field("filter", XContentHelper.convertToMap(filterSource.uncompressed(), true, filterSource.type()).v2());
                 }
             }
             if (aliasMetadata.indexRouting() != null) {
@@ -372,6 +380,20 @@ public class AliasMetadata extends AbstractDiffable<AliasMetadata> implements To
                     if ("filter".equals(currentFieldName)) {
                         Map<String, Object> filter = parser.mapOrdered();
                         builder.filter(filter);
+                    } else if ("filter_with_type".equals(currentFieldName)) {
+                        XContentType type = null;
+                        byte[] bytes = null;
+                        while ((token = parser.nextToken()) != XContentParser.Token.END_OBJECT) {
+                            if (token == XContentParser.Token.VALUE_EMBEDDED_OBJECT) {
+                                assert parser.currentName().equals("source") : "Expected 'source' but saw [" + parser.currentName() + "]";
+                                bytes = parser.binaryValue();
+                            } else if (token == XContentParser.Token.VALUE_STRING) {
+                                assert parser.currentName().equals("type") : "Expected 'type' but saw [" + parser.currentName() + "]";
+                                type = XContentType.valueOf(parser.text());
+                            }
+                        }
+                        assert bytes != null;
+                        builder.filter(new CompressedXContent(bytes, type));
                     } else {
                         parser.skipChildren();
                     }

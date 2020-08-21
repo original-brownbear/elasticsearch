@@ -118,7 +118,8 @@ public abstract class MapperTestCase extends ESTestCase {
      * Merge a new mapping into the one in the provided {@link MapperService}.
      */
     protected final void merge(MapperService mapperService, XContentBuilder mapping) throws IOException {
-        mapperService.merge(null, new CompressedXContent(BytesReference.bytes(mapping)), MergeReason.MAPPING_UPDATE);
+        mapperService.merge(null,
+                new CompressedXContent(BytesReference.bytes(mapping), mapping.contentType()), MergeReason.MAPPING_UPDATE);
     }
 
     protected final XContentBuilder mapping(CheckedConsumer<XContentBuilder, IOException> buildFields) throws IOException {

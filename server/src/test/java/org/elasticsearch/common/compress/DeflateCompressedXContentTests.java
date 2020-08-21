@@ -23,6 +23,7 @@ import org.apache.lucene.util.TestUtil;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Assert;
 
@@ -61,7 +62,7 @@ public class DeflateCompressedXContentTests extends ESTestCase {
             String string = TestUtil.randomUnicodeString(r, 10000);
             // hack to make it detected as YAML
             string = "---\n" + string;
-            CompressedXContent compressedXContent = new CompressedXContent(string);
+            CompressedXContent compressedXContent = new CompressedXContent(string, XContentType.YAML);
             assertThat(compressedXContent.string(), equalTo(string));
         }
     }
@@ -88,10 +89,10 @@ public class DeflateCompressedXContentTests extends ESTestCase {
         // of different size are being used
         assertFalse(b1.equals(b2));
         // we used the compressed representation directly and did not recompress
-        assertArrayEquals(BytesReference.toBytes(b1), new CompressedXContent(b1).compressed());
-        assertArrayEquals(BytesReference.toBytes(b2), new CompressedXContent(b2).compressed());
+        assertArrayEquals(BytesReference.toBytes(b1), new CompressedXContent(b1, XContentType.YAML).compressed());
+        assertArrayEquals(BytesReference.toBytes(b2), new CompressedXContent(b2, XContentType.YAML).compressed());
         // but compressedstring instances are still equal
-        assertEquals(new CompressedXContent(b1), new CompressedXContent(b2));
+        assertEquals(new CompressedXContent(b1, XContentType.YAML), new CompressedXContent(b2, XContentType.YAML));
     }
 
     public void testHashCode() throws IOException {

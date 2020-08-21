@@ -230,7 +230,7 @@ public class DocumentMapperTests extends ESSingleNodeTestCase {
                     .startObject("_source")
                         .field("enabled", false)
                     .endObject()
-                .endObject().endObject()));
+                .endObject().endObject()), XContentType.JSON);
         MapperService mapperService = createIndex("test").mapperService();
         mapperService.merge("type", mapping, reason);
 
@@ -241,7 +241,7 @@ public class DocumentMapperTests extends ESSingleNodeTestCase {
                             .field("type", "text")
                         .endObject()
                     .endObject()
-                .endObject().endObject()));
+                .endObject().endObject()), XContentType.JSON);
         DocumentMapper mapper = mapperService.merge("type", update, reason);
 
         assertNotNull(mapper.mappers().getMapper("foo"));
@@ -254,7 +254,7 @@ public class DocumentMapperTests extends ESSingleNodeTestCase {
                     .startObject("_source")
                         .field("enabled", false)
                     .endObject()
-                .endObject().endObject()));
+                .endObject().endObject()), XContentType.JSON);
         MapperService mapperService = createIndex("test").mapperService();
         mapperService.merge("type", mapping, MergeReason.INDEX_TEMPLATE);
 
@@ -263,7 +263,7 @@ public class DocumentMapperTests extends ESSingleNodeTestCase {
                     .startObject("_source")
                         .field("enabled", true)
                     .endObject()
-                .endObject().endObject()));
+                .endObject().endObject()), XContentType.JSON);
         DocumentMapper mapper = mapperService.merge("type", update, MergeReason.INDEX_TEMPLATE);
         assertTrue(mapper.sourceMapper().enabled());
     }

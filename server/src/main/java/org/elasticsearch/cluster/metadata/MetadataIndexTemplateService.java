@@ -985,7 +985,7 @@ public class MetadataIndexTemplateService {
                 .map(mapping -> {
                     try (XContentBuilder builder = XContentBuilder.builder(XContentType.JSON.xContent())) {
                         builder.value(mapping);
-                        return new CompressedXContent(BytesReference.bytes(builder));
+                        return new CompressedXContent(BytesReference.bytes(builder), XContentType.JSON);
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     }

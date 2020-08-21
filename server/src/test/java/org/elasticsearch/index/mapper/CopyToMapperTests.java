@@ -449,7 +449,8 @@ public class CopyToMapperTests extends ESSingleNodeTestCase {
                 .endObject()
             .endObject();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-                () -> indexService.mapperService().merge("_doc", new CompressedXContent(BytesReference.bytes(rootToNestedMapping)),
+                () -> indexService.mapperService().merge("_doc",
+                        new CompressedXContent(BytesReference.bytes(rootToNestedMapping), XContentType.JSON),
                         MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), Matchers.startsWith("Illegal combination of [copy_to] and [nested] mappings"));
 
@@ -477,7 +478,8 @@ public class CopyToMapperTests extends ESSingleNodeTestCase {
                 .endObject()
             .endObject();
         e = expectThrows(IllegalArgumentException.class,
-                () -> indexService.mapperService().merge("_doc", new CompressedXContent(BytesReference.bytes(nestedToNestedMapping)),
+                () -> indexService.mapperService().merge(
+                        "_doc", new CompressedXContent(BytesReference.bytes(nestedToNestedMapping), XContentType.JSON),
                         MergeReason.MAPPING_UPDATE));
     }
 
@@ -507,7 +509,8 @@ public class CopyToMapperTests extends ESSingleNodeTestCase {
                 .endObject()
             .endObject();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-                () -> indexService.mapperService().merge("_doc", new CompressedXContent(BytesReference.bytes(rootToNestedMapping)),
+                () -> indexService.mapperService().merge("_doc",
+                        new CompressedXContent(BytesReference.bytes(rootToNestedMapping), XContentType.JSON),
                         MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), Matchers.startsWith("Illegal combination of [copy_to] and [nested] mappings"));
     }
@@ -528,7 +531,8 @@ public class CopyToMapperTests extends ESSingleNodeTestCase {
                 .endObject()
             .endObject();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-                () -> indexService.mapperService().merge("_doc", new CompressedXContent(BytesReference.bytes(rootToNestedMapping)),
+                () -> indexService.mapperService().merge("_doc",
+                        new CompressedXContent(BytesReference.bytes(rootToNestedMapping), XContentType.JSON),
                         MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), Matchers.startsWith("Cannot copy to field [target] since it is mapped as an object"));
     }
