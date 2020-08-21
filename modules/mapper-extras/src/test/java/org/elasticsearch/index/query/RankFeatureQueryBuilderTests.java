@@ -23,7 +23,6 @@ import org.apache.lucene.document.FeatureField;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.index.mapper.MapperExtrasPlugin;
 import org.elasticsearch.index.mapper.MapperService;
@@ -45,10 +44,10 @@ public class RankFeatureQueryBuilderTests extends AbstractQueryTestCase<RankFeat
 
     @Override
     protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
-        mapperService.merge("_doc", new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
+        mapperService.merge("_doc", new CompressedXContent(PutMappingRequest.simpleMapping(
             "my_feature_field", "type=rank_feature",
             "my_negative_feature_field", "type=rank_feature,positive_score_impact=false",
-            "my_feature_vector_field", "type=rank_features"))), MapperService.MergeReason.MAPPING_UPDATE);
+            "my_feature_vector_field", "type=rank_features")), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

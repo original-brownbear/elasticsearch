@@ -19,6 +19,8 @@
 
 package org.elasticsearch.common.compress;
 
+import org.elasticsearch.Version;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.Streams;
@@ -28,6 +30,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.IOException;
@@ -45,6 +48,8 @@ import java.util.zip.CheckedOutputStream;
  */
 public final class CompressedXContent {
 
+    private static final Version TYPE_SERIALIZED_VERSION = Version.V_8_0_0;
+
     private static int crc32(BytesReference data) {
         CRC32 crc32 = new CRC32();
         try {
@@ -59,10 +64,14 @@ public final class CompressedXContent {
     private final byte[] bytes;
     private final int crc32;
 
+    @Nullable
+    private final XContentType type;
+
     // Used for serialization
-    private CompressedXContent(byte[] compressed, int crc32) {
+    private CompressedXContent(byte[] compressed, int crc32, @Nullable XContentType type) {
         this.bytes = compressed;
         this.crc32 = crc32;
+        this.type = type;
         assertConsistent();
     }
 
@@ -81,7 +90,12 @@ public final class CompressedXContent {
         }
         this.bytes = BytesReference.toBytes(bStream.bytes());
         this.crc32 = (int) crc32.getValue();
+        this.type = type;
         assertConsistent();
+    }
+
+    public CompressedXContent(XContentBuilder builder) throws IOException {
+        this(BytesReference.bytes(builder), builder.contentType());
     }
 
     /**
@@ -89,15 +103,23 @@ public final class CompressedXContent {
      * that may already be compressed.
      */
     public CompressedXContent(BytesReference data) throws IOException {
+        this(data, null);
+    }
+
+    private CompressedXContent(BytesReference data, @Nullable XContentType type) throws IOException {
+        final BytesReference uncompressed;
         Compressor compressor = CompressorFactory.compressor(data);
         if (compressor != null) {
             // already compressed...
             this.bytes = BytesReference.toBytes(data);
-            this.crc32 = crc32(uncompressed());
+            uncompressed = uncompressed();
+            this.crc32 = crc32(uncompressed);
         } else {
             this.bytes = BytesReference.toBytes(CompressorFactory.COMPRESSOR.compress(data));
+            uncompressed = data;
             this.crc32 = crc32(data);
         }
+        this.type = type == null ? XContentHelper.xContentType(uncompressed) : type;
         assertConsistent();
     }
 
@@ -112,6 +134,14 @@ public final class CompressedXContent {
 
     public CompressedXContent(String str) throws IOException {
         this(new BytesArray(str.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    /**
+     * Returns the {@link XContentType} of this instances contents or {@code null} if unknown.
+     */
+    @Nullable
+    public XContentType type() {
+        return type;
     }
 
     /** Return the compressed bytes. */
@@ -139,12 +169,31 @@ public final class CompressedXContent {
 
     public static CompressedXContent readCompressedString(StreamInput in) throws IOException {
         int crc32 = in.readInt();
-        return new CompressedXContent(in.readByteArray(), crc32);
+        final byte[] bytes = in.readByteArray();
+        final XContentType type;
+        if (in.getVersion().onOrAfter(TYPE_SERIALIZED_VERSION)) {
+            if (in.readBoolean()) {
+                type = in.readEnum(XContentType.class);
+            } else {
+                type = null;
+            }
+        } else {
+            type = null;
+        }
+        return new CompressedXContent(bytes, crc32, type);
     }
 
     public void writeTo(StreamOutput out) throws IOException {
         out.writeInt(crc32);
         out.writeByteArray(bytes);
+        if (out.getVersion().onOrAfter(TYPE_SERIALIZED_VERSION)) {
+            if (type != null) {
+                out.writeBoolean(true);
+                out.writeEnum(type);
+            } else {
+                out.writeBoolean(false);
+            }
+        }
     }
 
     @Override

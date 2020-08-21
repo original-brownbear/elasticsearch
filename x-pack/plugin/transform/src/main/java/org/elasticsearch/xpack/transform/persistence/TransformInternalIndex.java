@@ -16,8 +16,8 @@ import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -87,7 +87,7 @@ public final class TransformInternalIndex {
                     .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                     .put(IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS, "0-1")
             )
-            .putMapping(MapperService.SINGLE_MAPPING_NAME, Strings.toString(mappings()))
+            .putMapping(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mappings()))
             .build();
         return transformTemplate;
     }
@@ -103,7 +103,7 @@ public final class TransformInternalIndex {
                     .put(IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS, "0-1")
                     .put(IndexMetadata.SETTING_INDEX_HIDDEN, true)
             )
-            .putMapping(MapperService.SINGLE_MAPPING_NAME, Strings.toString(auditMappings()))
+            .putMapping(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(auditMappings()))
             .putAlias(AliasMetadata.builder(TransformInternalIndexConstants.AUDIT_INDEX_READ_ALIAS).isHidden(true))
             .build();
         return transformTemplate;

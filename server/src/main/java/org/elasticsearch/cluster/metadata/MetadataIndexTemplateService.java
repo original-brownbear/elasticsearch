@@ -38,7 +38,6 @@ import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.ValidationException;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.HeaderWarning;
@@ -48,7 +47,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParseException;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -816,7 +815,7 @@ public class MetadataIndexTemplateService {
 
         if (request.mappings != null) {
             try {
-                templateBuilder.putMapping(MapperService.SINGLE_MAPPING_NAME, request.mappings);
+                templateBuilder.putMapping(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(request.mappings));
             } catch (Exception e) {
                 throw new MapperParsingException("Failed to parse mapping: {}", e, request.mappings);
             }
@@ -983,9 +982,9 @@ public class MetadataIndexTemplateService {
             Optional.ofNullable(template.getDataStreamTemplate())
                 .map(ComposableIndexTemplate.DataStreamTemplate::getDataStreamMappingSnippet)
                 .map(mapping -> {
-                    try (XContentBuilder builder = XContentBuilder.builder(XContentType.JSON.xContent())) {
-                        builder.value(mapping);
-                        return new CompressedXContent(BytesReference.bytes(builder));
+                    try {
+                        return new CompressedXContent(
+                                (builder, params) -> builder.mapContents(mapping), XContentType.JSON, ToXContent.EMPTY_PARAMS);
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     }

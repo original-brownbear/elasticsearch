@@ -25,7 +25,6 @@ import org.elasticsearch.cluster.AbstractDiffable;
 import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -36,6 +35,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -288,8 +288,8 @@ public class AliasMetadata extends AbstractDiffable<AliasMetadata> implements To
                 return this;
             }
             try {
-                XContentBuilder builder = XContentFactory.jsonBuilder().map(filter);
-                this.filter = new CompressedXContent(BytesReference.bytes(builder));
+                this.filter = new CompressedXContent(
+                        (builder, params) -> builder.mapContents(filter), XContentType.JSON, ToXContent.EMPTY_PARAMS);
                 return this;
             } catch (IOException e) {
                 throw new ElasticsearchGenerationException("Failed to build json for alias request", e);
@@ -335,7 +335,8 @@ public class AliasMetadata extends AbstractDiffable<AliasMetadata> implements To
                 if (binary) {
                     builder.field("filter", aliasMetadata.filter.compressed());
                 } else {
-                    builder.field("filter", XContentHelper.convertToMap(aliasMetadata.filter().uncompressed(), true).v2());
+                    final CompressedXContent source = aliasMetadata.filter();
+                    builder.field("filter", XContentHelper.convertToMap(source.uncompressed(), true, source.type()).v2());
                 }
             }
             if (aliasMetadata.indexRouting() != null) {

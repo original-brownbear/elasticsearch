@@ -391,7 +391,7 @@ public class IndexTemplateMetadata extends AbstractDiffable<IndexTemplateMetadat
 
             CompressedXContent m = indexTemplateMetadata.mappings();
             if (m != null) {
-                Map<String, Object> documentMapping = XContentHelper.convertToMap(m.uncompressed(), true).v2();
+                Map<String, Object> documentMapping = XContentHelper.convertToMap(m.uncompressed(), true, m.type()).v2();
                 if (includeTypeName == false) {
                     documentMapping = reduceMapping(documentMapping);
                 }
@@ -436,7 +436,7 @@ public class IndexTemplateMetadata extends AbstractDiffable<IndexTemplateMetadat
                                 String mappingType = currentFieldName;
                                 Map<String, Object> mappingSource =
                                     MapBuilder.<String, Object>newMapBuilder().put(mappingType, parser.mapOrdered()).map();
-                                builder.putMapping(mappingType, Strings.toString(XContentFactory.jsonBuilder().map(mappingSource)));
+                                builder.putMapping(mappingType, new CompressedXContent(XContentFactory.jsonBuilder().map(mappingSource)));
                             }
                         }
                     } else if ("aliases".equals(currentFieldName)) {
@@ -452,13 +452,7 @@ public class IndexTemplateMetadata extends AbstractDiffable<IndexTemplateMetadat
                             Map<String, Object> mapping = parser.mapOrdered();
                             if (mapping.size() == 1) {
                                 String mappingType = mapping.keySet().iterator().next();
-                                String mappingSource = Strings.toString(XContentFactory.jsonBuilder().map(mapping));
-
-                                if (mappingSource == null) {
-                                    // crap, no mapping source, warn?
-                                } else {
-                                    builder.putMapping(mappingType, mappingSource);
-                                }
+                                builder.putMapping(mappingType, new CompressedXContent(XContentFactory.jsonBuilder().map(mapping)));
                             }
                         }
                     } else if ("index_patterns".equals(currentFieldName)) {
