@@ -133,7 +133,7 @@ public final class CompressedXContent {
     }
 
     public CompressedXContent(String str) throws IOException {
-        this(new BytesArray(str.getBytes(StandardCharsets.UTF_8)));
+        this(new BytesArray(str.getBytes(StandardCharsets.UTF_8)), XContentFactory.xContentType(str));
     }
 
     /**
