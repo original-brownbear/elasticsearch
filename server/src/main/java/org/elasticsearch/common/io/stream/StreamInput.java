@@ -1280,7 +1280,36 @@ public abstract class StreamInput extends InputStream {
     }
 
     public static StreamInput wrap(byte[] bytes, int offset, int length) {
-        return new InputStreamStreamInput(new ByteArrayInputStream(bytes, offset, length), length);
+        return new BufferedStreamInput() {
+
+            private int mark = offset;
+
+            {
+                this.pos = offset;
+                this.limit = offset + length;
+                this.currentBuffer = bytes;
+            }
+
+            @Override
+            protected boolean doBufferAtLeast(int minBufferSize) {
+                return limit - pos >= minBufferSize;
+            }
+
+            @Override
+            protected void doTryBuffer(int size) {
+            }
+
+
+            @Override
+            public void mark(int readlimit) {
+                this.mark = pos;
+            }
+
+            @Override
+            public void reset() {
+                pos = mark;
+            }
+        };
     }
 
     /**

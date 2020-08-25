@@ -97,11 +97,6 @@ public final class BufferedChecksumStreamInput extends FilterStreamInput {
     }
 
     @Override
-    public String readString() throws IOException {
-        return super.readString();
-    }
-
-    @Override
     public BytesReference readBytesReference() throws IOException {
         return super.readBytesReference();
     }
