@@ -20,8 +20,10 @@
 package org.elasticsearch.index.translog;
 
 import org.apache.lucene.store.BufferedChecksum;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.FilterStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.text.Text;
 
 import java.io.IOException;
 import java.util.zip.CRC32;
@@ -95,6 +97,31 @@ public final class BufferedChecksumStreamInput extends FilterStreamInput {
     }
 
     @Override
+    public String readString() throws IOException {
+        return super.readString();
+    }
+
+    @Override
+    public BytesReference readBytesReference() throws IOException {
+        return super.readBytesReference();
+    }
+
+    @Override
+    public long readVLong() throws IOException {
+        return super.readVLong();
+    }
+
+    @Override
+    public int readVInt() throws IOException {
+        return super.readVInt();
+    }
+
+    @Override
+    public long readZLong() throws IOException {
+        return super.readZLong();
+    }
+
+    @Override
     public void reset() throws IOException {
         delegate.reset();
         digest.reset();
@@ -126,6 +153,11 @@ public final class BufferedChecksumStreamInput extends FilterStreamInput {
             skipped += step;
         }
         return skipped;
+    }
+
+    @Override
+    public Text readText() throws IOException {
+        return super.readText();
     }
 
     @Override

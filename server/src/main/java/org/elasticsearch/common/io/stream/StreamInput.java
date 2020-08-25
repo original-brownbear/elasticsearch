@@ -403,18 +403,18 @@ public abstract class StreamInput extends InputStream {
     }
 
     // Maximum char-count to de-serialize via the thread-local CharsRef buffer
-    private static final int SMALL_STRING_LIMIT = 1024;
+    protected static final int SMALL_STRING_LIMIT = 1024;
 
     // Reusable bytes for deserializing strings
     private static final ThreadLocal<byte[]> stringReadBuffer = ThreadLocal.withInitial(() -> new byte[1024]);
 
     // Thread-local buffer for smaller strings
-    private static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
+    protected static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
 
     // Larger buffer used for long strings that can't fit into the thread-local buffer
     // We don't use a CharsRefBuilder since we exactly know the size of the character array up front
     // this prevents calling grow for every character since we don't need this
-    private CharsRef largeSpare;
+    protected CharsRef largeSpare;
 
     public String readString() throws IOException {
         final int charCount = readArraySize();
@@ -541,7 +541,7 @@ public abstract class StreamInput extends InputStream {
         return charsRef.toString();
     }
 
-    private static void throwOnBrokenChar(int c) throws IOException {
+    protected static void throwOnBrokenChar(int c) throws IOException {
         throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
     }
 
@@ -1287,7 +1287,7 @@ public abstract class StreamInput extends InputStream {
      * Reads a vint via {@link #readVInt()} and applies basic checks to ensure the read array size is sane.
      * This method uses {@link #ensureCanReadBytes(int)} to ensure this stream has enough bytes to read for the read array size.
      */
-    private int readArraySize() throws IOException {
+    protected int readArraySize() throws IOException {
         final int arraySize = readVInt();
         if (arraySize > ArrayUtil.MAX_ARRAY_LENGTH) {
             throw new IllegalStateException("array length must be <= to " + ArrayUtil.MAX_ARRAY_LENGTH  + " but was: " + arraySize);

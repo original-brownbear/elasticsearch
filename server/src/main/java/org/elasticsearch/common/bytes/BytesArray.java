@@ -20,6 +20,8 @@
 package org.elasticsearch.common.bytes;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.io.stream.BufferedStreamInput;
+import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.util.Objects;
 
@@ -91,4 +93,37 @@ public final class BytesArray extends AbstractBytesReference {
         return bytes.length;
     }
 
+    @Override
+    public StreamInput streamInput() {
+        return new BufferedStreamInput() {
+
+            private int mark = offset;
+
+            {
+                this.pos = offset;
+                this.limit = offset + length;
+                this.currentBuffer = bytes;
+            }
+
+            @Override
+            protected boolean doBufferAtLeast(int minBufferSize) {
+                return limit - pos >= minBufferSize;
+            }
+
+            @Override
+            protected void doTryBuffer(int size) {
+            }
+
+
+            @Override
+            public void mark(int readlimit) {
+                this.mark = pos;
+            }
+
+            @Override
+            public void reset() {
+                pos = mark;
+            }
+        };
+    }
 }
