@@ -185,4 +185,33 @@ public interface BytesReference extends Comparable<BytesReference>, ToXContentFr
      * @see BytesRefIterator
      */
     BytesRefIterator iterator();
+
+    /**
+     * Returns {@code true} if this instance is backed by a single byte array analogous to {@link ByteBuffer#hasArray()}
+     * to enable accessing the underlying bytes directly via {@link #array()} and {@link #offset()}.
+     *
+     * @return true if this instance is backed by a single byte array
+     */
+    default boolean hasArray() {
+        return false;
+    }
+
+    /**
+     * If this instances is backed by a single byte array returns that array analogous to {@link ByteBuffer#array()}.
+     *
+     * @return byte array offset
+     */
+    default byte[] array() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * If this instances is backed by a single byte array returns the offset in that array at which the backing starts
+     * analogous to {@link ByteBuffer#arrayOffset()}.
+     *
+     * @return byte array offset
+     */
+    default int offset() {
+        throw new UnsupportedOperationException();
+    }
 }

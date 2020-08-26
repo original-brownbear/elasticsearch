@@ -95,10 +95,12 @@ public final class BytesArray extends AbstractBytesReference {
         return new BytesArray(bytes, offset + from, length);
     }
 
+    @Override
     public byte[] array() {
         return bytes;
     }
 
+    @Override
     public int offset() {
         return offset;
     }
@@ -121,5 +123,10 @@ public final class BytesArray extends AbstractBytesReference {
     @Override
     public void writeTo(OutputStream os) throws IOException {
         os.write(bytes, offset, length);
+    }
+
+    @Override
+    public boolean hasArray() {
+        return true;
     }
 }
