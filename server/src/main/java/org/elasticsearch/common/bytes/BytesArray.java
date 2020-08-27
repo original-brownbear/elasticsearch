@@ -20,6 +20,7 @@
 package org.elasticsearch.common.bytes;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.io.stream.BufferedStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.io.IOException;
@@ -115,7 +116,7 @@ public final class BytesArray extends AbstractBytesReference {
 
     @Override
     public StreamInput streamInput() {
-        return StreamInput.wrap(bytes, offset, length);
+        return BufferedStreamInput.wrap(bytes, offset, length);
     }
 
     @Override

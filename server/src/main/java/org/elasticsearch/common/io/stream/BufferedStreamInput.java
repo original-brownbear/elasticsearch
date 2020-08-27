@@ -20,41 +20,138 @@
 package org.elasticsearch.common.io.stream;
 
 import org.apache.lucene.util.ArrayUtil;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.Streams;
+import org.elasticsearch.core.internal.io.IOUtils;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- * TODO: null out inputstream when fully read
- * TODO: make BytesArray stream a special case
- *
- */
 public final class BufferedStreamInput extends StreamInput {
 
+    // TODO: get rid of this and make this two classes
+    private final boolean noClose;
+
+    @Nullable
     private byte[] buf;
 
     protected int count;
 
     protected int pos;
 
-    protected int markpos = -1;
+    protected int markpos;
 
     protected int marklimit;
 
+    @Nullable
     private InputStream in;
 
-    public BufferedStreamInput(byte[] buf, InputStream in) {
+    public static BufferedStreamInput wrap(byte[] buf, InputStream in) throws IOException {
+        final int length = Streams.readFully(in, buf, 0, buf.length);
+        if (length < buf.length) {
+            in.close();
+            return wrap(buf, 0, length);
+        }
+        return new BufferedStreamInput(buf, in, 0, buf.length);
+    }
+
+    public static BufferedStreamInput wrap(byte[] buf, int offset, int length) {
+        return new BufferedStreamInput(buf, null, offset, length);
+    }
+
+    private BufferedStreamInput(byte[] buf, @Nullable InputStream in, int offset, int length) {
         this.buf = buf;
         this.in = in;
+        this.pos = offset;
+        this.count = offset + length;
+        this.markpos = pos;
+        noClose = in == null;
+    }
+
+    @Override
+    public short readShort() throws IOException {
+        if (available() > 1) {
+            final int position = pos;
+            pos += 2;
+            return (short) (((buf[position] & 0xFF) << 8) | (buf[position + 1] & 0xFF));
+        }
+        return super.readShort();
+    }
+
+    @Override
+    public int readInt() throws IOException {
+        if (available() > 3) {
+            final int position = pos;
+            pos += 4;
+            return ((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16)
+                | ((buf[position + 2] & 0xFF) << 8) | (buf[position + 3] & 0xFF);
+        }
+        return super.readInt();
+    }
+
+    @Override
+    public int readVInt() throws IOException {
+        if (available() > 4) {
+            byte b = buf[pos++];
+            int i = b & 0x7F;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7F) << 7;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7F) << 14;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7F) << 21;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            if ((b & 0x80) != 0) {
+                throw new IOException("Invalid vInt ((" + Integer.toHexString(b) + " & 0x7f) << 28) | " + Integer.toHexString(i));
+            }
+            return i | ((b & 0x7F) << 28);
+        }
+        return super.readVInt();
+    }
+
+    @Override
+    public long readLong() throws IOException {
+        if (available() > 7) {
+            final int position = pos;
+            pos += 8;
+            return (((long) (((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16) | ((buf[position + 2] & 0xFF) << 8)
+                | (buf[position + 3] & 0xFF))) << 32)
+                | ((((buf[position + 4] & 0xFF) << 24) | ((buf[position + 5] & 0xFF) << 16) | ((buf[position + 6] & 0xFF) << 8)
+                | (buf[position + 7] & 0xFF)) & 0xFFFFFFFFL);
+        }
+        return super.readLong();
+    }
+
+    @Override
+    public long readVLong() throws IOException {
+        // TODO: fast path impl.
+        return super.readVLong();
+    }
+
+    @Override
+    public long readZLong() throws IOException {
+        // TODO: fast path impl.
+        return super.readZLong();
     }
 
     @Override
     public byte readByte() throws IOException {
-        if (pos >= count) {
+        if (available() < 1) {
             fill();
-            if (pos >= count)
+            if (available() < 1)
                 throw new EOFException();
         }
         return getBufIfOpen()[pos++];
@@ -62,8 +159,9 @@ public final class BufferedStreamInput extends StreamInput {
 
     @Override
     public void readBytes(byte[] b, int offset, int len) throws IOException {
-        if (len < 0)
+        if (len < 0) {
             throw new IndexOutOfBoundsException();
+        }
         final int read = Streams.readFully(this, b, offset, len);
         if (read != len) {
             throw new EOFException();
@@ -85,14 +183,17 @@ public final class BufferedStreamInput extends StreamInput {
      * stream at most once if necessary.
      */
     private int read1(byte[] b, int off, int len) throws IOException {
-        int avail = count - pos;
+        int avail = available();
         if (avail <= 0) {
+            if (in == null) {
+                return -1;
+            }
             /* If the requested length is at least as large as the buffer, and
                if there is no mark/reset activity, do not bother to copy the
                bytes into the local buffer.  In this way buffered streams will
                cascade harmlessly. */
             if (len >= getBufIfOpen().length && markpos < 0) {
-                return getInIfOpen().read(b, off, len);
+                return in.read(b, off, len);
             }
             fill();
             avail = count - pos;
@@ -105,7 +206,7 @@ public final class BufferedStreamInput extends StreamInput {
     }
 
     @Override
-    public synchronized int read(byte b[], int off, int len) throws IOException {
+    public int read(byte b[], int off, int len) throws IOException {
         getBufIfOpen(); // Check for closed stream
         if ((off | len | (off + len) | (b.length - (off + len))) < 0) {
             throw new IndexOutOfBoundsException();
@@ -129,28 +230,30 @@ public final class BufferedStreamInput extends StreamInput {
     }
 
     @Override
-    public int available() throws IOException {
-        int n = count - pos;
-        int avail = getInIfOpen().available();
-        return n > (Integer.MAX_VALUE - avail)
-            ? Integer.MAX_VALUE
-            : n + avail;
+    public int available() {
+        return count - pos;
     }
 
     @Override
     protected void ensureCanReadBytes(int length) throws EOFException {
-        // noop
+        if (in == null && available() < length) {
+            throw new EOFException("tried to read: " + length + " bytes but only " + available() + " remaining");
+        }
     }
 
     @Override
     public void close() throws IOException {
-        buf = null;
+        if (noClose) {
+            return;
+        }
+        try {
+            IOUtils.close(in);
+        } finally {
+            buf = null;
+            in = null;
+        }
     }
 
-    /**
-     * Check to make sure that buffer has not been nulled out due to
-     * close; if not return it;
-     */
     private byte[] getBufIfOpen() throws IOException {
         byte[] buffer = this.buf;
         if (buffer == null)
@@ -158,14 +261,11 @@ public final class BufferedStreamInput extends StreamInput {
         return buffer;
     }
 
-    /**
-     * Fills the buffer with more data, taking into account
-     * shuffling and other tricks for dealing with marks.
-     * Assumes that it is being called by a synchronized method.
-     * This method also assumes that all data has already been read in,
-     * hence pos > count.
-     */
     private void fill() throws IOException {
+        if (in == null) {
+            // nothing to do don't have a stream to read from any longer
+            return;
+        }
         byte[] buffer = getBufIfOpen();
         if (markpos < 0)
             pos = 0;            /* no mark: throw away the buffer */
@@ -179,17 +279,13 @@ public final class BufferedStreamInput extends StreamInput {
                 markpos = -1;   /* buffer got too big, invalidate mark */
                 pos = 0;        /* drop buffer contents */
             } else {            /* grow buffer */
-                int nsz = ArrayUtil.oversize(marklimit, 1);
+                assert noClose == false : "Must not grow immutable buffered bytes";
+                int nsz = ArrayUtil.oversize(pos * 2, 1);
                 if (nsz > marklimit)
                     nsz = marklimit;
                 byte[] nbuf = new byte[nsz];
                 System.arraycopy(buffer, 0, nbuf, 0, pos);
                 if (buf == null) {
-                    // Can't replace buf if there was an async close.
-                    // Note: This would need to be changed if fill()
-                    // is ever made accessible to multiple threads.
-                    // But for now, the only way CAS can fail is via close.
-                    // assert buf == null;
                     throw new IOException("Stream closed");
                 } else {
                     buf = nbuf;
@@ -198,9 +294,59 @@ public final class BufferedStreamInput extends StreamInput {
             }
         }
         count = pos;
-        int n = getInIfOpen().read(buffer, pos, buffer.length - pos);
-        if (n > 0)
+        final int toRead = buffer.length - pos;
+        int n = Streams.readFully(in, buffer, pos, toRead);
+        if (n > 0) {
             count = n + pos;
+        }
+        if (n < toRead) {
+            in.close();
+            in = null;
+        }
+    }
+
+    @Override
+    public long skip(long n) throws IOException {
+        getBufIfOpen(); // Check for closed stream
+        if (n <= 0) {
+            return 0;
+        }
+        long avail = count - pos;
+
+        if (avail <= 0) {
+            // If no mark position set then don't keep in buffer
+            if (markpos < 0)
+                return getInIfOpen().skip(n);
+
+            // Fill in buffer to save bytes for reset
+            fill();
+            avail = count - pos;
+            if (avail <= 0)
+                return 0;
+        }
+
+        long skipped = Math.min(avail, n);
+        pos += skipped;
+        return skipped;
+    }
+
+    @Override
+    public void mark(int readlimit) {
+        marklimit = readlimit;
+        markpos = pos;
+    }
+
+    @Override
+    public void reset() throws IOException {
+        getBufIfOpen(); // Cause exception if closed
+        if (markpos < 0)
+            throw new IOException("Resetting to invalid mark");
+        pos = markpos;
+    }
+
+    @Override
+    public boolean markSupported() {
+        return true;
     }
 
     private InputStream getInIfOpen() throws IOException {

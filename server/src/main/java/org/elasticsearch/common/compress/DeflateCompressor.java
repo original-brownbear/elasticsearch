@@ -21,14 +21,13 @@ package org.elasticsearch.common.compress;
 
 import org.elasticsearch.Assertions;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.BufferedStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lease.Releasable;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -129,7 +128,7 @@ public class DeflateCompressor implements Compressor {
 
     @Override
     public StreamInput threadLocalStreamInput(StreamInput in) throws IOException {
-        return new InputStreamStreamInput(inputStream(in, true));
+        return inputStream(in, true);
     }
 
     /**
@@ -142,7 +141,7 @@ public class DeflateCompressor implements Compressor {
      * @param threadLocal  whether this stream will only be used on the current thread or not
      * @return             decompressing stream
      */
-    public static InputStream inputStream(InputStream in, boolean threadLocal) throws IOException {
+    public static StreamInput inputStream(InputStream in, boolean threadLocal) throws IOException {
         final byte[] headerBytes = new byte[HEADER.length];
         int len = 0;
         while (len < headerBytes.length) {
@@ -172,7 +171,7 @@ public class DeflateCompressor implements Compressor {
             inflater = new Inflater(true);
             releasable = inflater::end;
         }
-        return new BufferedInputStream(new InflaterInputStream(in, inflater, BUFFER_SIZE) {
+        return BufferedStreamInput.wrap(new byte[BUFFER_SIZE], new InflaterInputStream(in, inflater, BUFFER_SIZE) {
             @Override
             public void close() throws IOException {
                 try {
@@ -183,7 +182,7 @@ public class DeflateCompressor implements Compressor {
                     releasable.close();
                 }
             }
-        }, BUFFER_SIZE);
+        });
     }
 
     @Override
