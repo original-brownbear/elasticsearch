@@ -26,6 +26,11 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * TODO: null out inputstream when fully read
+ * TODO: make BytesArray stream a special case
+ *
+ */
 public final class BufferedStreamInput extends StreamInput {
 
     private byte[] buf;
