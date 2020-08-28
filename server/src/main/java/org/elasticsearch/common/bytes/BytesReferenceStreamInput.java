@@ -18,6 +18,7 @@
  */
 package org.elasticsearch.common.bytes;
 
+import org.apache.lucene.util.BitUtil;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -31,16 +32,21 @@ import java.io.IOException;
  * underlying bytes reference.
  */
 final class BytesReferenceStreamInput extends StreamInput {
-    private final BytesRefIterator iterator;
+    private final BytesReference reference;
+
+    private BytesRefIterator iterator;
     private int sliceIndex;
     private BytesRef slice;
     private final int length; // the total size of the stream
     private int offset; // the current position of the stream
 
-    BytesReferenceStreamInput(BytesRefIterator iterator, final int length) throws IOException {
-        this.iterator = iterator;
+    private int mark = 0;
+
+    BytesReferenceStreamInput(BytesReference reference) throws IOException {
+        this.reference = reference;
+        this.iterator = reference.iterator();
         this.slice = iterator.next();
-        this.length = length;
+        this.length = reference.length();
         this.offset = 0;
         this.sliceIndex = 0;
     }
@@ -105,12 +111,174 @@ final class BytesReferenceStreamInput extends StreamInput {
     }
 
     @Override
-    public void close() throws IOException {
+    public short readShort() throws IOException {
+        maybeNextSlice();
+        if ((slice.length - sliceIndex) > 1) {
+            final int position = slice.offset + sliceIndex;
+            offset += 2;
+            sliceIndex += 2;
+            final byte[] buf = slice.bytes;
+            return (short) (((buf[position] & 0xFF) << 8) | (buf[position + 1] & 0xFF));
+        }
+        return super.readShort();
+    }
+
+    @Override
+    public int readInt() throws IOException {
+        maybeNextSlice();
+        if ((slice.length - sliceIndex) > 3) {
+            final int position = slice.offset + sliceIndex;
+            offset += 4;
+            sliceIndex += 4;
+            final byte[] buf = slice.bytes;
+            return ((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16)
+                    | ((buf[position + 2] & 0xFF) << 8) | (buf[position + 3] & 0xFF);
+        }
+        return super.readInt();
+    }
+
+    @Override
+    public int readVInt() throws IOException {
+        maybeNextSlice();
+        if ((slice.length - sliceIndex) > 4) {
+            final byte[] buf = slice.bytes;
+            byte b = buf[getAndIncrementSliceOffset()];
+            int i = b & 0x7F;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7F) << 7;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7F) << 14;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7F) << 21;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            if ((b & 0x80) != 0) {
+                throw new IOException("Invalid vInt ((" + Integer.toHexString(b) + " & 0x7f) << 28) | " + Integer.toHexString(i));
+            }
+            return i | ((b & 0x7F) << 28);
+        }
+        return readVIntSlow(this);
+    }
+
+    private int getAndIncrementSliceOffset() {
+        offset++;
+        return slice.offset + (sliceIndex++);
+    }
+
+    @Override
+    public long readLong() throws IOException {
+        maybeNextSlice();
+        if ((slice.length - sliceIndex) > 7) {
+            final int position = slice.offset + sliceIndex;
+            sliceIndex += 8;
+            offset += 8;
+            final byte[] buf = slice.bytes;
+            return (((long) (((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16) | ((buf[position + 2] & 0xFF) << 8)
+                    | (buf[position + 3] & 0xFF))) << 32)
+                    | ((((buf[position + 4] & 0xFF) << 24) | ((buf[position + 5] & 0xFF) << 16) | ((buf[position + 6] & 0xFF) << 8)
+                    | (buf[position + 7] & 0xFF)) & 0xFFFFFFFFL);
+        }
+        return super.readLong();
+    }
+
+    @Override
+    public long readVLong() throws IOException {
+        maybeNextSlice();
+        if ((slice.length - sliceIndex) > 9) {
+            final byte[] buf = slice.bytes;
+            byte b = buf[getAndIncrementSliceOffset()];
+            long i = b & 0x7FL;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7FL) << 7;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7FL) << 14;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7FL) << 21;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7FL) << 28;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7FL) << 35;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7FL) << 42;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= (b & 0x7FL) << 49;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            i |= ((b & 0x7FL) << 56);
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[getAndIncrementSliceOffset()];
+            if (b != 0 && b != 1) {
+                throw new IOException("Invalid vlong (" + Integer.toHexString(b) + " << 63) | " + Long.toHexString(i));
+            }
+            i |= ((long) b) << 63;
+            return i;
+        }
+        return readVLongSlow(this);
+    }
+
+    @Override
+    public long readZLong() throws IOException {
+        maybeNextSlice();
+        if ((slice.length - sliceIndex) > 9) {
+            final byte[] buf = slice.bytes;
+            long accumulator = 0L;
+            int i = 0;
+            long currentByte;
+            while (((currentByte = buf[getAndIncrementSliceOffset()]) & 0x80L) != 0) {
+                accumulator |= (currentByte & 0x7F) << i;
+                i += 7;
+                if (i > 63) {
+                    throw new IOException("variable-length stream is too long");
+                }
+            }
+            return BitUtil.zigZagDecode(accumulator | (currentByte << i));
+        }
+        return readZLongSlow(this);
+    }
+
+    @Override
+    public void close() {
         // do nothing
     }
 
     @Override
-    public int available() throws IOException {
+    public int available() {
         return length - offset;
     }
 
@@ -138,7 +306,24 @@ final class BytesReferenceStreamInput extends StreamInput {
         return numBytesSkipped;
     }
 
-    int getOffset() {
-        return offset;
+    @Override
+    public void reset() throws IOException {
+        iterator = reference.iterator();
+        slice = iterator.next();
+        offset = 0;
+        sliceIndex = 0;
+        skip(mark);
+    }
+
+    @Override
+    public boolean markSupported() {
+        return true;
+    }
+
+    @Override
+    public void mark(int readLimit) {
+        // readLimit is optional it only guarantees that the stream remembers data upto this limit but it can remember more
+        // which we do in our case
+        this.mark = this.offset;
     }
 }

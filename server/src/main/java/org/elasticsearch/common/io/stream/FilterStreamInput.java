@@ -61,6 +61,21 @@ public abstract class FilterStreamInput extends StreamInput {
     }
 
     @Override
+    public int readVInt() throws IOException {
+        return delegate.readVInt();
+    }
+
+    @Override
+    public long readVLong() throws IOException {
+        return delegate.readVLong();
+    }
+
+    @Override
+    public long readZLong() throws IOException {
+        return delegate.readZLong();
+    }
+
+    @Override
     public void reset() throws IOException {
         delegate.reset();
     }

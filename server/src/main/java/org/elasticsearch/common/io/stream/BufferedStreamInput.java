@@ -20,6 +20,7 @@
 package org.elasticsearch.common.io.stream;
 
 import org.apache.lucene.util.ArrayUtil;
+import org.apache.lucene.util.BitUtil;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.core.internal.io.IOUtils;
@@ -27,6 +28,7 @@ import org.elasticsearch.core.internal.io.IOUtils;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 public abstract class BufferedStreamInput extends StreamInput {
 
@@ -65,11 +67,7 @@ public abstract class BufferedStreamInput extends StreamInput {
             @Override
             public int read(byte b[], int off, int len) throws IOException {
                 getBufIfOpen(); // Check for closed stream
-                if ((off | len | (off + len) | (b.length - (off + len))) < 0) {
-                    throw new IndexOutOfBoundsException();
-                } else if (len == 0) {
-                    return 0;
-                }
+                Objects.checkFromIndexSize(off, len, b.length);
 
                 int n = 0;
                 for (; ; ) {
@@ -243,6 +241,26 @@ public abstract class BufferedStreamInput extends StreamInput {
             }
 
             @Override
+            public int read(byte b[], int off, int len) {
+                Objects.checkFromIndexSize(off, len, b.length);
+
+                if (pos >= count) {
+                    return -1;
+                }
+
+                int avail = count - pos;
+                if (len > avail) {
+                    len = avail;
+                }
+                if (len <= 0) {
+                    return 0;
+                }
+                System.arraycopy(buf, pos, b, off, len);
+                pos += len;
+                return len;
+            }
+
+            @Override
             public byte readByte() throws IOException {
                 if (available() < 1) {
                     throw new EOFException();
@@ -338,7 +356,7 @@ public abstract class BufferedStreamInput extends StreamInput {
             }
             return i | ((b & 0x7F) << 28);
         }
-        return super.readVInt();
+        return readVIntSlow(this);
     }
 
     @Override
@@ -356,14 +374,78 @@ public abstract class BufferedStreamInput extends StreamInput {
 
     @Override
     public long readVLong() throws IOException {
-        // TODO: fast path impl.
-        return super.readVLong();
+        if (available() > 9) {
+            byte b = buf[pos++];
+            long i = b & 0x7FL;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7FL) << 7;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7FL) << 14;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7FL) << 21;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7FL) << 28;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7FL) << 35;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7FL) << 42;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= (b & 0x7FL) << 49;
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            i |= ((b & 0x7FL) << 56);
+            if ((b & 0x80) == 0) {
+                return i;
+            }
+            b = buf[pos++];
+            if (b != 0 && b != 1) {
+                throw new IOException("Invalid vlong (" + Integer.toHexString(b) + " << 63) | " + Long.toHexString(i));
+            }
+            i |= ((long) b) << 63;
+            return i;
+        }
+        return readVLongSlow(this);
     }
 
     @Override
     public long readZLong() throws IOException {
-        // TODO: fast path impl.
-        return super.readZLong();
+        if (available() > 9) {
+            long accumulator = 0L;
+            int i = 0;
+            long currentByte;
+            while (((currentByte = buf[pos++]) & 0x80L) != 0) {
+                accumulator |= (currentByte & 0x7F) << i;
+                i += 7;
+                if (i > 63) {
+                    throw new IOException("variable-length stream is too long");
+                }
+            }
+            return BitUtil.zigZagDecode(accumulator | (currentByte << i));
+        }
+        return readZLongSlow(this);
     }
 
     @Override

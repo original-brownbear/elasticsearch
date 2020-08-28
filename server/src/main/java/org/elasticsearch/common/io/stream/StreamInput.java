@@ -45,7 +45,6 @@ import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.script.JodaCompatibleZonedDateTime;
 import org.joda.time.DateTimeZone;
 
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.FilterInputStream;
@@ -226,27 +225,31 @@ public abstract class StreamInput extends InputStream {
      * using {@link #readInt}
      */
     public int readVInt() throws IOException {
-        byte b = readByte();
+        return readVIntSlow(this);
+    }
+
+    protected static int readVIntSlow(StreamInput input) throws IOException {
+        byte b = input.readByte();
         int i = b & 0x7F;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7F) << 7;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7F) << 14;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7F) << 21;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         if ((b & 0x80) != 0) {
             throw new IOException("Invalid vInt ((" + Integer.toHexString(b) + " & 0x7f) << 28) | " + Integer.toHexString(i));
         }
@@ -265,52 +268,56 @@ public abstract class StreamInput extends InputStream {
      * are encoded in ten bytes so prefer {@link #readLong()} or {@link #readZLong()} for negative numbers.
      */
     public long readVLong() throws IOException {
-        byte b = readByte();
+        return readVLongSlow(this);
+    }
+
+    protected static long readVLongSlow(StreamInput input) throws IOException {
+        byte b = input.readByte();
         long i = b & 0x7FL;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7FL) << 7;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7FL) << 14;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7FL) << 21;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7FL) << 28;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7FL) << 35;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7FL) << 42;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= (b & 0x7FL) << 49;
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         i |= ((b & 0x7FL) << 56);
         if ((b & 0x80) == 0) {
             return i;
         }
-        b = readByte();
+        b = input.readByte();
         if (b != 0 && b != 1) {
             throw new IOException("Invalid vlong (" + Integer.toHexString(b) + " << 63) | " + Long.toHexString(i));
         }
@@ -327,10 +334,14 @@ public abstract class StreamInput extends InputStream {
     }
 
     public long readZLong() throws IOException {
+        return readZLongSlow(this);
+    }
+
+    protected static long readZLongSlow(StreamInput input) throws IOException {
         long accumulator = 0L;
         int i = 0;
         long currentByte;
-        while (((currentByte = readByte()) & 0x80L) != 0) {
+        while (((currentByte = input.readByte()) & 0x80L) != 0) {
             accumulator |= (currentByte & 0x7F) << i;
             i += 7;
             if (i > 63) {
@@ -1280,7 +1291,7 @@ public abstract class StreamInput extends InputStream {
     }
 
     public static StreamInput wrap(byte[] bytes, int offset, int length) {
-        return new InputStreamStreamInput(new ByteArrayInputStream(bytes, offset, length), length);
+        return BufferedStreamInput.wrap(bytes, offset, length);
     }
 
     /**
