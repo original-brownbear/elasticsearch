@@ -115,6 +115,8 @@ public abstract class StreamInput extends InputStream {
 
     private Version version = Version.CURRENT;
 
+    private NamedWriteableRegistry namedWriteableRegistry = null;
+
     /**
      * The version of the node on the other side of this stream.
      */
@@ -1123,12 +1125,17 @@ public abstract class StreamInput extends InputStream {
         return null;
     }
 
+    public StreamInput withNamedWritableRegistry(NamedWriteableRegistry namedWritableRegistry) {
+        this.namedWriteableRegistry = namedWritableRegistry;
+        return this;
+    }
+
     /**
      * Get the registry of named writeables if this stream has one,
      * {@code null} otherwise.
      */
     public NamedWriteableRegistry namedWriteableRegistry() {
-        return null;
+        return namedWriteableRegistry;
     }
 
     /**
@@ -1139,7 +1146,11 @@ public abstract class StreamInput extends InputStream {
      */
     @Nullable
     public <C extends NamedWriteable> C readNamedWriteable(@SuppressWarnings("unused") Class<C> categoryClass) throws IOException {
-        throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        if (namedWriteableRegistry == null) {
+            throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        }
+        String name = readString();
+        return readNamedWriteable(categoryClass, name);
     }
 
     /**
@@ -1155,7 +1166,18 @@ public abstract class StreamInput extends InputStream {
     @Nullable
     public <C extends NamedWriteable> C readNamedWriteable(@SuppressWarnings("unused") Class<C> categoryClass,
                                                            @SuppressWarnings("unused") String name) throws IOException {
-        throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        if (namedWriteableRegistry == null) {
+            throw new UnsupportedOperationException("can't read named writeable from StreamInput");
+        }
+        Writeable.Reader<? extends C> reader = namedWriteableRegistry.getReader(categoryClass, name);
+        C c = reader.read(this);
+        if (c == null) {
+            throw new IOException(
+                    "Writeable.Reader [" + reader + "] returned null which is not allowed and probably means it screwed up the stream.");
+        }
+        assert name.equals(c.getWriteableName()) : c + " claims to have a different name [" + c.getWriteableName()
+                + "] than it was read from [" + name + "].";
+        return c;
     }
 
     /**

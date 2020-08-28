@@ -163,8 +163,7 @@ public abstract class DelayableWriteable<T extends Writeable> implements Writeab
         @Override
         public T expand() {
             try {
-                try (StreamInput in = registry == null ?
-                        serialized.streamInput() : new NamedWriteableAwareStreamInput(serialized.streamInput(), registry)) {
+                try (StreamInput in = serialized.streamInput().withNamedWritableRegistry(registry)) {
                     in.setVersion(serializedAtVersion);
                     return reader.read(in);
                 }
