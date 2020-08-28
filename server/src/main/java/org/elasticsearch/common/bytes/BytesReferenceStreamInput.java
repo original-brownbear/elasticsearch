@@ -38,7 +38,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     private BytesRefIterator iterator;
     private int sliceIndex;
     private BytesRef slice;
-    private int offset; // the current position of the stream
+    private int sliceStartOffset; // the current position of the stream
 
     private int mark = 0;
 
@@ -46,21 +46,26 @@ final class BytesReferenceStreamInput extends StreamInput {
         this.reference = reference;
         this.iterator = reference.iterator();
         this.slice = iterator.next();
-        this.offset = 0;
+        this.sliceStartOffset = 0;
         this.sliceIndex = 0;
     }
 
     @Override
     public byte readByte() throws IOException {
-        if (offset >= reference.length()) {
+        if (offset() >= reference.length()) {
             throw new EOFException();
         }
         maybeNextSlice();
-        return slice.bytes[getAndIncrementSliceOffset()];
+        return slice.bytes[slice.offset + (sliceIndex++)];
+    }
+
+    private int offset() {
+        return sliceStartOffset + sliceIndex;
     }
 
     private void maybeNextSlice() throws IOException {
         while (sliceIndex == slice.length) {
+            sliceStartOffset += sliceIndex;
             slice = iterator.next();
             sliceIndex = 0;
             if (slice == null) {
@@ -72,6 +77,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public void readBytes(byte[] b, int bOffset, int len) throws IOException {
         final int length = reference.length();
+        final int offset = offset();
         if (offset + len > length) {
             throw new IndexOutOfBoundsException(
                     "Cannot read " + len + " bytes from stream with length " + length + " at offset " + offset);
@@ -81,7 +87,7 @@ final class BytesReferenceStreamInput extends StreamInput {
 
     @Override
     public int read() throws IOException {
-        if (offset >= reference.length()) {
+        if (offset() >= reference.length()) {
             return -1;
         }
         return Byte.toUnsignedInt(readByte());
@@ -90,6 +96,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public int read(final byte[] b, final int bOffset, final int len) throws IOException {
         final int length = reference.length();
+        final int offset = offset();
         if (offset >= length) {
             return -1;
         }
@@ -104,7 +111,6 @@ final class BytesReferenceStreamInput extends StreamInput {
             destOffset += currentLen;
             remaining -= currentLen;
             sliceIndex += currentLen;
-            offset += currentLen;
             assert remaining >= 0 : "remaining: " + remaining;
         }
         return numBytesToCopy;
@@ -115,7 +121,6 @@ final class BytesReferenceStreamInput extends StreamInput {
         maybeNextSlice();
         if ((slice.length - sliceIndex) > 1) {
             final int position = slice.offset + sliceIndex;
-            offset += 2;
             sliceIndex += 2;
             final byte[] buf = slice.bytes;
             return (short) (((buf[position] & 0xFF) << 8) | (buf[position + 1] & 0xFF));
@@ -128,7 +133,6 @@ final class BytesReferenceStreamInput extends StreamInput {
         maybeNextSlice();
         if ((slice.length - sliceIndex) > 3) {
             final int position = slice.offset + sliceIndex;
-            offset += 4;
             sliceIndex += 4;
             return BufferedStreamInput.intFromBytes(position, slice.bytes);
         }
@@ -140,27 +144,27 @@ final class BytesReferenceStreamInput extends StreamInput {
         maybeNextSlice();
         if ((slice.length - sliceIndex) > 4) {
             final byte[] buf = slice.bytes;
-            byte b = buf[getAndIncrementSliceOffset()];
+            byte b = buf[slice.offset + (sliceIndex++)];
             int i = b & 0x7F;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7F) << 7;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7F) << 14;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7F) << 21;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             if ((b & 0x80) != 0) {
                 throw new IOException("Invalid vInt ((" + Integer.toHexString(b) + " & 0x7f) << 28) | " + Integer.toHexString(i));
             }
@@ -169,18 +173,12 @@ final class BytesReferenceStreamInput extends StreamInput {
         return readVIntSlow(this);
     }
 
-    private int getAndIncrementSliceOffset() {
-        offset++;
-        return slice.offset + (sliceIndex++);
-    }
-
     @Override
     public long readLong() throws IOException {
         maybeNextSlice();
         if ((slice.length - sliceIndex) > 7) {
             final int position = slice.offset + sliceIndex;
             sliceIndex += 8;
-            offset += 8;
             return BufferedStreamInput.longFromBytes(position, slice.bytes);
         }
         return super.readLong();
@@ -191,52 +189,52 @@ final class BytesReferenceStreamInput extends StreamInput {
         maybeNextSlice();
         if ((slice.length - sliceIndex) > 9) {
             final byte[] buf = slice.bytes;
-            byte b = buf[getAndIncrementSliceOffset()];
+            byte b = buf[slice.offset + (sliceIndex++)];
             long i = b & 0x7FL;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7FL) << 7;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7FL) << 14;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7FL) << 21;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7FL) << 28;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7FL) << 35;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7FL) << 42;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= (b & 0x7FL) << 49;
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             i |= ((b & 0x7FL) << 56);
             if ((b & 0x80) == 0) {
                 return i;
             }
-            b = buf[getAndIncrementSliceOffset()];
+            b = buf[slice.offset + (sliceIndex++)];
             if (b != 0 && b != 1) {
                 throw new IOException("Invalid vlong (" + Integer.toHexString(b) + " << 63) | " + Long.toHexString(i));
             }
@@ -254,7 +252,7 @@ final class BytesReferenceStreamInput extends StreamInput {
             long accumulator = 0L;
             int i = 0;
             long currentByte;
-            while (((currentByte = buf[getAndIncrementSliceOffset()]) & 0x80L) != 0) {
+            while (((currentByte = buf[slice.offset + (sliceIndex++)]) & 0x80L) != 0) {
                 accumulator |= (currentByte & 0x7F) << i;
                 i += 7;
                 if (i > 63) {
@@ -273,12 +271,12 @@ final class BytesReferenceStreamInput extends StreamInput {
 
     @Override
     public int available() {
-        return reference.length() - offset;
+        return reference.length() - offset();
     }
 
     @Override
     protected void ensureCanReadBytes(int bytesToRead) throws EOFException {
-        int bytesAvailable = reference.length() - offset;
+        int bytesAvailable = reference.length() - offset();
         if (bytesAvailable < bytesToRead) {
             throw new EOFException("tried to read: " + bytesToRead + " bytes but only " + bytesAvailable + " remaining");
         }
@@ -287,14 +285,13 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public long skip(long n) throws IOException {
         final int skip = (int) Math.min(Integer.MAX_VALUE, n);
-        final int numBytesSkipped =  Math.min(skip, reference.length() - offset);
+        final int numBytesSkipped =  Math.min(skip, reference.length() - offset());
         int remaining = numBytesSkipped;
         while (remaining > 0) {
             maybeNextSlice();
             int currentLen = Math.min(remaining, slice.length - sliceIndex);
             remaining -= currentLen;
             sliceIndex += currentLen;
-            offset += currentLen;
             assert remaining >= 0 : "remaining: " + remaining;
         }
         return numBytesSkipped;
@@ -304,7 +301,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     public void reset() throws IOException {
         iterator = reference.iterator();
         slice = iterator.next();
-        offset = 0;
+        sliceStartOffset = 0;
         sliceIndex = 0;
         skip(mark);
     }
@@ -318,6 +315,6 @@ final class BytesReferenceStreamInput extends StreamInput {
     public void mark(int readLimit) {
         // readLimit is optional it only guarantees that the stream remembers data upto this limit but it can remember more
         // which we do in our case
-        this.mark = this.offset;
+        this.mark = offset();
     }
 }
