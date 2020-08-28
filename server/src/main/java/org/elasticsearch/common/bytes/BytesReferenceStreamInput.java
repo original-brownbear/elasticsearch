@@ -21,6 +21,7 @@ package org.elasticsearch.common.bytes;
 import org.apache.lucene.util.BitUtil;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
+import org.elasticsearch.common.io.stream.BufferedStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.io.EOFException;
@@ -37,7 +38,6 @@ final class BytesReferenceStreamInput extends StreamInput {
     private BytesRefIterator iterator;
     private int sliceIndex;
     private BytesRef slice;
-    private final int length; // the total size of the stream
     private int offset; // the current position of the stream
 
     private int mark = 0;
@@ -46,20 +46,17 @@ final class BytesReferenceStreamInput extends StreamInput {
         this.reference = reference;
         this.iterator = reference.iterator();
         this.slice = iterator.next();
-        this.length = reference.length();
         this.offset = 0;
         this.sliceIndex = 0;
     }
 
     @Override
     public byte readByte() throws IOException {
-        if (offset >= length) {
+        if (offset >= reference.length()) {
             throw new EOFException();
         }
         maybeNextSlice();
-        byte b = slice.bytes[slice.offset + (sliceIndex++)];
-        offset++;
-        return b;
+        return slice.bytes[getAndIncrementSliceOffset()];
     }
 
     private void maybeNextSlice() throws IOException {
@@ -74,15 +71,17 @@ final class BytesReferenceStreamInput extends StreamInput {
 
     @Override
     public void readBytes(byte[] b, int bOffset, int len) throws IOException {
+        final int length = reference.length();
         if (offset + len > length) {
-            throw new IndexOutOfBoundsException("Cannot read " + len + " bytes from stream with length " + length + " at offset " + offset);
+            throw new IndexOutOfBoundsException(
+                    "Cannot read " + len + " bytes from stream with length " + length + " at offset " + offset);
         }
         read(b, bOffset, len);
     }
 
     @Override
     public int read() throws IOException {
-        if (offset >= length) {
+        if (offset >= reference.length()) {
             return -1;
         }
         return Byte.toUnsignedInt(readByte());
@@ -90,6 +89,7 @@ final class BytesReferenceStreamInput extends StreamInput {
 
     @Override
     public int read(final byte[] b, final int bOffset, final int len) throws IOException {
+        final int length = reference.length();
         if (offset >= length) {
             return -1;
         }
@@ -130,9 +130,7 @@ final class BytesReferenceStreamInput extends StreamInput {
             final int position = slice.offset + sliceIndex;
             offset += 4;
             sliceIndex += 4;
-            final byte[] buf = slice.bytes;
-            return ((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16)
-                    | ((buf[position + 2] & 0xFF) << 8) | (buf[position + 3] & 0xFF);
+            return BufferedStreamInput.intFromBytes(position, slice.bytes);
         }
         return super.readInt();
     }
@@ -183,11 +181,7 @@ final class BytesReferenceStreamInput extends StreamInput {
             final int position = slice.offset + sliceIndex;
             sliceIndex += 8;
             offset += 8;
-            final byte[] buf = slice.bytes;
-            return (((long) (((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16) | ((buf[position + 2] & 0xFF) << 8)
-                    | (buf[position + 3] & 0xFF))) << 32)
-                    | ((((buf[position + 4] & 0xFF) << 24) | ((buf[position + 5] & 0xFF) << 16) | ((buf[position + 6] & 0xFF) << 8)
-                    | (buf[position + 7] & 0xFF)) & 0xFFFFFFFFL);
+            return BufferedStreamInput.longFromBytes(position, slice.bytes);
         }
         return super.readLong();
     }
@@ -279,12 +273,12 @@ final class BytesReferenceStreamInput extends StreamInput {
 
     @Override
     public int available() {
-        return length - offset;
+        return reference.length() - offset;
     }
 
     @Override
     protected void ensureCanReadBytes(int bytesToRead) throws EOFException {
-        int bytesAvailable = length - offset;
+        int bytesAvailable = reference.length() - offset;
         if (bytesAvailable < bytesToRead) {
             throw new EOFException("tried to read: " + bytesToRead + " bytes but only " + bytesAvailable + " remaining");
         }
@@ -293,7 +287,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public long skip(long n) throws IOException {
         final int skip = (int) Math.min(Integer.MAX_VALUE, n);
-        final int numBytesSkipped =  Math.min(skip, length - offset);
+        final int numBytesSkipped =  Math.min(skip, reference.length() - offset);
         int remaining = numBytesSkipped;
         while (remaining > 0) {
             maybeNextSlice();

@@ -321,8 +321,7 @@ public abstract class BufferedStreamInput extends StreamInput {
         if (available() > 3) {
             final int position = pos;
             pos += 4;
-            return ((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16)
-                | ((buf[position + 2] & 0xFF) << 8) | (buf[position + 3] & 0xFF);
+            return intFromBytes(position, buf);
         }
         return super.readInt();
     }
@@ -364,12 +363,21 @@ public abstract class BufferedStreamInput extends StreamInput {
         if (available() > 7) {
             final int position = pos;
             pos += 8;
-            return (((long) (((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16) | ((buf[position + 2] & 0xFF) << 8)
+            return longFromBytes(position, buf);
+        }
+        return super.readLong();
+    }
+
+    public static long longFromBytes(int position, byte[] buf) {
+        return (((long) (((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16) | ((buf[position + 2] & 0xFF) << 8)
                 | (buf[position + 3] & 0xFF))) << 32)
                 | ((((buf[position + 4] & 0xFF) << 24) | ((buf[position + 5] & 0xFF) << 16) | ((buf[position + 6] & 0xFF) << 8)
                 | (buf[position + 7] & 0xFF)) & 0xFFFFFFFFL);
-        }
-        return super.readLong();
+    }
+
+    public static int intFromBytes(int position, byte[] buf) {
+        return ((buf[position] & 0xFF) << 24) | ((buf[position + 1] & 0xFF) << 16)
+                | ((buf[position + 2] & 0xFF) << 8) | (buf[position + 3] & 0xFF);
     }
 
     @Override
