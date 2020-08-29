@@ -120,7 +120,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public short readShort() throws IOException {
         maybeNextSlice();
-        if ((slice.length - sliceIndex) > 1) {
+        if (maySkipBoundsChecks(2)) {
             final int position = slice.offset + sliceIndex;
             sliceIndex += 2;
             final byte[] buf = slice.bytes;
@@ -132,7 +132,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public int readInt() throws IOException {
         maybeNextSlice();
-        if ((slice.length - sliceIndex) > 3) {
+        if (maySkipBoundsChecks(4)) {
             final int position = slice.offset + sliceIndex;
             sliceIndex += 4;
             return BufferedStreamInput.intFromBytes(position, slice.bytes);
@@ -143,7 +143,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public int readVInt() throws IOException {
         maybeNextSlice();
-        if ((slice.length - sliceIndex) > 4) {
+        if (maySkipBoundsChecks(5)) {
             final byte[] buf = slice.bytes;
             byte b = buf[slice.offset + (sliceIndex++)];
             int i = b & 0x7F;
@@ -177,7 +177,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public long readLong() throws IOException {
         maybeNextSlice();
-        if ((slice.length - sliceIndex) > 7) {
+        if (maySkipBoundsChecks(8)) {
             final int position = slice.offset + sliceIndex;
             sliceIndex += 8;
             return BufferedStreamInput.longFromBytes(position, slice.bytes);
@@ -188,7 +188,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public long readVLong() throws IOException {
         maybeNextSlice();
-        if ((slice.length - sliceIndex) > 9) {
+        if (maySkipBoundsChecks(10)) {
             final byte[] buf = slice.bytes;
             byte b = buf[slice.offset + (sliceIndex++)];
             long i = b & 0x7FL;
@@ -248,7 +248,7 @@ final class BytesReferenceStreamInput extends StreamInput {
     @Override
     public long readZLong() throws IOException {
         maybeNextSlice();
-        if ((slice.length - sliceIndex) > 9) {
+        if (maySkipBoundsChecks(10)) {
             final byte[] buf = slice.bytes;
             long accumulator = 0L;
             int i = 0;
@@ -269,12 +269,17 @@ final class BytesReferenceStreamInput extends StreamInput {
     public String readString() throws IOException {
         final int charCount = readArraySize();
         final CharsRef charsRef = charsRef(charCount);
-        if (slice.length - sliceIndex < charCount * 3) {
-            return super.readStringSlow(charsRef);
+        if (maySkipBoundsChecks(charCount * 3)) {
+            sliceIndex = BufferedStreamInput.readCharsUnsafe(slice.bytes, charsRef.chars, slice.offset + sliceIndex, charsRef.length)
+                    - slice.offset;
+        } else {
+            super.readStringSlow(charsRef);
         }
-        sliceIndex = BufferedStreamInput.readCharsUnsafe(slice.bytes, charsRef.chars, slice.offset + sliceIndex, charsRef.length)
-                - slice.offset;
         return charsRef.toString();
+    }
+
+    private boolean maySkipBoundsChecks(int len) {
+        return reference.length() - sliceStartOffset == slice.length || slice.length - sliceIndex >= len;
     }
 
     @Override

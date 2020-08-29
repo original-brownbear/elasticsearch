@@ -96,6 +96,52 @@ public abstract class BufferedStreamInput extends StreamInput {
             }
 
             @Override
+            public short readShort() throws IOException {
+                if (available() > 1) {
+                    final int position = pos;
+                    pos += 2;
+                    return (short) (((buf[position] & 0xFF) << 8) | (buf[position + 1] & 0xFF));
+                }
+                return super.readShort();
+            }
+
+            @Override
+            public int readInt() throws IOException {
+                if (available() > 3) {
+                    final int position = pos;
+                    pos += 4;
+                    return intFromBytes(position, buf);
+                }
+                return super.readInt();
+            }
+
+            @Override
+            public int readVInt() throws IOException {
+                if (available() > 4) {
+                    return readVIntFast();
+                }
+                return readVIntSlow(this);
+            }
+
+            @Override
+            public long readLong() throws IOException {
+                if (available() > 7) {
+                    final int position = pos;
+                    pos += 8;
+                    return longFromBytes(position, buf);
+                }
+                return super.readLong();
+            }
+
+            @Override
+            public long readVLong() throws IOException {
+                if (available() > 9) {
+                    return readVLongFast();
+                }
+                return readVLongSlow(this);
+            }
+
+            @Override
             public void readBytes(byte[] b, int offset, int len) throws IOException {
                 if (offset < 0) {
                     throw new IndexOutOfBoundsException();
@@ -245,9 +291,11 @@ public abstract class BufferedStreamInput extends StreamInput {
                 final int charCount = readArraySize();
                 final CharsRef charsRef = charsRef(charCount);
                 if (available() < charCount * 3) {
-                    return super.readStringSlow(charsRef);
+                    readStringSlow(charsRef);
+                } else {
+                    readStringFast(charsRef);
                 }
-                return readStringFast(charsRef);
+                return charsRef.toString();
             }
         };
     }
@@ -284,10 +332,58 @@ public abstract class BufferedStreamInput extends StreamInput {
 
             @Override
             public byte readByte() throws IOException {
-                if (available() < 1) {
+                if (count - pos < 1) {
                     throw new EOFException();
                 }
                 return buf[pos++];
+            }
+
+            @Override
+            public short readShort() throws IOException {
+                if (count - pos > 1) {
+                    final int position = pos;
+                    pos += 2;
+                    return (short) (((buf[position] & 0xFF) << 8) | (buf[position + 1] & 0xFF));
+                }
+                throw new EOFException();
+            }
+
+            @Override
+            public int readInt() throws IOException {
+                if (count - pos > 3) {
+                    final int position = pos;
+                    pos += 4;
+                    return intFromBytes(position, buf);
+                }
+                throw new EOFException();
+            }
+
+            @Override
+            public int readVInt() throws IOException {
+                final int res = readVIntFast();
+                if (pos > count) {
+                    throw new EOFException();
+                }
+                return res;
+            }
+
+            @Override
+            public long readLong() throws IOException {
+                if (count - pos > 7) {
+                    final int position = pos;
+                    pos += 8;
+                    return longFromBytes(position, buf);
+                }
+                throw new EOFException();
+            }
+
+            @Override
+            public long readVLong() throws IOException {
+                final long res = readVLongFast();
+                if (pos > count) {
+                    throw new EOFException();
+                }
+                return res;
             }
 
             @Override
@@ -314,7 +410,7 @@ public abstract class BufferedStreamInput extends StreamInput {
 
             @Override
             protected void ensureCanReadBytes(int length) throws EOFException {
-                if (available() < length) {
+                if (count - pos < length) {
                     throw new EOFException("tried to read: " + length + " bytes but only " + available() + " remaining");
                 }
             }
@@ -324,21 +420,25 @@ public abstract class BufferedStreamInput extends StreamInput {
                 if (n <= 0) {
                     return 0;
                 }
-                long skipped = Math.min(available(), n);
+                long skipped = Math.min(count - pos, n);
                 pos += skipped;
                 return skipped;
             }
 
             @Override
             public String readString() throws IOException {
-                return readStringFast(charsRef(readArraySize()));
+                final CharsRef charsRef = charsRef(readArraySize());
+                readStringFast(charsRef);
+                if (pos > count) {
+                    throw new EOFException();
+                }
+                return charsRef.toString();
             }
         };
     }
 
-    protected String readStringFast(CharsRef charsRef) throws IOException {
+    protected void readStringFast(CharsRef charsRef) throws IOException {
         pos = BufferedStreamInput.readCharsUnsafe(buf, charsRef.chars, pos, charsRef.length);
-        return charsRef.toString();
     }
 
     public static int readCharsUnsafe(byte[] byteBuffer, char[] charBuffer, int offsetByteArray, int charCount) throws IOException {
@@ -378,66 +478,32 @@ public abstract class BufferedStreamInput extends StreamInput {
         this.markpos = markpos;
     }
 
-    @Override
-    public short readShort() throws IOException {
-        if (available() > 1) {
-            final int position = pos;
-            pos += 2;
-            return (short) (((buf[position] & 0xFF) << 8) | (buf[position + 1] & 0xFF));
+    protected final int readVIntFast() throws IOException {
+        byte b = buf[pos++];
+        int i = b & 0x7F;
+        if ((b & 0x80) == 0) {
+            return i;
         }
-        return super.readShort();
-    }
-
-    @Override
-    public int readInt() throws IOException {
-        if (available() > 3) {
-            final int position = pos;
-            pos += 4;
-            return intFromBytes(position, buf);
+        b = buf[pos++];
+        i |= (b & 0x7F) << 7;
+        if ((b & 0x80) == 0) {
+            return i;
         }
-        return super.readInt();
-    }
-
-    @Override
-    public int readVInt() throws IOException {
-        if (available() > 4) {
-            byte b = buf[pos++];
-            int i = b & 0x7F;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7F) << 7;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7F) << 14;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7F) << 21;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            if ((b & 0x80) != 0) {
-                throw new IOException("Invalid vInt ((" + Integer.toHexString(b) + " & 0x7f) << 28) | " + Integer.toHexString(i));
-            }
-            return i | ((b & 0x7F) << 28);
+        b = buf[pos++];
+        i |= (b & 0x7F) << 14;
+        if ((b & 0x80) == 0) {
+            return i;
         }
-        return readVIntSlow(this);
-    }
-
-    @Override
-    public long readLong() throws IOException {
-        if (available() > 7) {
-            final int position = pos;
-            pos += 8;
-            return longFromBytes(position, buf);
+        b = buf[pos++];
+        i |= (b & 0x7F) << 21;
+        if ((b & 0x80) == 0) {
+            return i;
         }
-        return super.readLong();
+        b = buf[pos++];
+        if ((b & 0x80) != 0) {
+            throw new IOException("Invalid vInt ((" + Integer.toHexString(b) + " & 0x7f) << 28) | " + Integer.toHexString(i));
+        }
+        return i | ((b & 0x7F) << 28);
     }
 
     public static long longFromBytes(int position, byte[] buf) {
@@ -452,62 +518,58 @@ public abstract class BufferedStreamInput extends StreamInput {
                 | ((buf[position + 2] & 0xFF) << 8) | (buf[position + 3] & 0xFF);
     }
 
-    @Override
-    public long readVLong() throws IOException {
-        if (available() > 9) {
-            byte b = buf[pos++];
-            long i = b & 0x7FL;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7FL) << 7;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7FL) << 14;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7FL) << 21;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7FL) << 28;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7FL) << 35;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7FL) << 42;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= (b & 0x7FL) << 49;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            i |= ((b & 0x7FL) << 56);
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = buf[pos++];
-            if (b != 0 && b != 1) {
-                throw new IOException("Invalid vlong (" + Integer.toHexString(b) + " << 63) | " + Long.toHexString(i));
-            }
-            i |= ((long) b) << 63;
+    protected final long readVLongFast() throws IOException {
+        byte b = buf[pos++];
+        long i = b & 0x7FL;
+        if ((b & 0x80) == 0) {
             return i;
         }
-        return readVLongSlow(this);
+        b = buf[pos++];
+        i |= (b & 0x7FL) << 7;
+        if ((b & 0x80) == 0) {
+            return i;
+        }
+        b = buf[pos++];
+        i |= (b & 0x7FL) << 14;
+        if ((b & 0x80) == 0) {
+            return i;
+        }
+        b = buf[pos++];
+        i |= (b & 0x7FL) << 21;
+        if ((b & 0x80) == 0) {
+            return i;
+        }
+        b = buf[pos++];
+        i |= (b & 0x7FL) << 28;
+        if ((b & 0x80) == 0) {
+            return i;
+        }
+        b = buf[pos++];
+        i |= (b & 0x7FL) << 35;
+        if ((b & 0x80) == 0) {
+            return i;
+        }
+        b = buf[pos++];
+        i |= (b & 0x7FL) << 42;
+        if ((b & 0x80) == 0) {
+            return i;
+        }
+        b = buf[pos++];
+        i |= (b & 0x7FL) << 49;
+        if ((b & 0x80) == 0) {
+            return i;
+        }
+        b = buf[pos++];
+        i |= ((b & 0x7FL) << 56);
+        if ((b & 0x80) == 0) {
+            return i;
+        }
+        b = buf[pos++];
+        if (b != 0 && b != 1) {
+            throw new IOException("Invalid vlong (" + Integer.toHexString(b) + " << 63) | " + Long.toHexString(i));
+        }
+        i |= ((long) b) << 63;
+        return i;
     }
 
     @Override

@@ -428,10 +428,16 @@ public abstract class StreamInput extends InputStream {
     private CharsRef largeSpare;
 
     public String readString() throws IOException {
-        return readStringSlow(charsRef(readArraySize()));
+        return readStringSlow();
     }
 
-    protected String readStringSlow(CharsRef charsRef) throws IOException {
+    protected final String readStringSlow() throws IOException {
+        final CharsRef charsRef = charsRef(readArraySize());
+        readStringSlow(charsRef);
+        return charsRef.toString();
+    }
+
+    protected final void readStringSlow(CharsRef charsRef) throws IOException {
         int charsOffset = 0;
         int offsetByteArray = 0;
         int sizeByteArray = 0;
@@ -540,10 +546,9 @@ public abstract class StreamInput extends InputStream {
                 }
             }
         }
-        return charsRef.toString();
     }
 
-    protected CharsRef charsRef(int charCount) {
+    protected final CharsRef charsRef(int charCount) {
         final CharsRef charsRef;
         if (charCount > SMALL_STRING_LIMIT) {
             if (largeSpare == null) {
