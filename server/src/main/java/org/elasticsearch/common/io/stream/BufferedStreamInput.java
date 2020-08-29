@@ -21,6 +21,7 @@ package org.elasticsearch.common.io.stream;
 
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BitUtil;
+import org.apache.lucene.util.CharsRef;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.core.internal.io.IOUtils;
@@ -49,7 +50,7 @@ public abstract class BufferedStreamInput extends StreamInput {
             input.close();
             return wrap(buf, 0, length);
         }
-        return new BufferedStreamInput(buf, 0, buf.length) {
+        return new BufferedStreamInput(buf, 0, buf.length, -1) {
 
             @Nullable
             private InputStream in = input;
@@ -94,6 +95,17 @@ public abstract class BufferedStreamInput extends StreamInput {
                 return getBufIfOpen()[pos++];
             }
 
+            @Override
+            public void readBytes(byte[] b, int offset, int len) throws IOException {
+                if (offset < 0) {
+                    throw new IndexOutOfBoundsException();
+                }
+                final int read = Streams.readFully(this, b, offset, len);
+                if (read != len) {
+                    throw new EOFException();
+                }
+            }
+
             private byte[] getBufIfOpen() throws IOException {
                 byte[] buffer = this.buf;
                 if (buffer == null)
@@ -111,10 +123,10 @@ public abstract class BufferedStreamInput extends StreamInput {
                     if (in == null) {
                         return -1;
                     }
-            /* If the requested length is at least as large as the buffer, and
-               if there is no mark/reset activity, do not bother to copy the
-               bytes into the local buffer.  In this way buffered streams will
-               cascade harmlessly. */
+                    /* If the requested length is at least as large as the buffer, and
+                       if there is no mark/reset activity, do not bother to copy the
+                       bytes into the local buffer.  In this way buffered streams will
+                       cascade harmlessly. */
                     if (len >= getBufIfOpen().length && markpos < 0) {
                         return in.read(b, off, len);
                     }
@@ -227,11 +239,21 @@ public abstract class BufferedStreamInput extends StreamInput {
                 pos += skipped;
                 return skipped;
             }
+
+            @Override
+            public String readString() throws IOException {
+                final int charCount = readArraySize();
+                final CharsRef charsRef = charsRef(charCount);
+                if (available() < charCount * 3) {
+                    return super.readStringSlow(charsRef);
+                }
+                return readStringFast(charsRef);
+            }
         };
     }
 
     public static BufferedStreamInput wrap(byte[] buf, int offset, int length) {
-        return new BufferedStreamInput(buf, offset, length) {
+        return new BufferedStreamInput(buf, offset, length, offset) {
 
             @Override
             public int read() {
@@ -269,6 +291,16 @@ public abstract class BufferedStreamInput extends StreamInput {
             }
 
             @Override
+            public void readBytes(byte[] b, int offset, int len) throws IOException {
+                Objects.checkFromIndexSize(offset, len, b.length);
+                if (count - pos < len) {
+                    throw new EOFException();
+                }
+                System.arraycopy(buf, pos, b, offset, len);
+                pos += len;
+            }
+
+            @Override
             public void close() {
                 // nothing to do
             }
@@ -296,14 +328,54 @@ public abstract class BufferedStreamInput extends StreamInput {
                 pos += skipped;
                 return skipped;
             }
+
+            @Override
+            public String readString() throws IOException {
+                return readStringFast(charsRef(readArraySize()));
+            }
         };
     }
 
-    private BufferedStreamInput(byte[] buf, int offset, int length) {
+    protected String readStringFast(CharsRef charsRef) throws IOException {
+        pos = BufferedStreamInput.readCharsUnsafe(buf, charsRef.chars, pos, charsRef.length);
+        return charsRef.toString();
+    }
+
+    public static int readCharsUnsafe(byte[] byteBuffer, char[] charBuffer, int offsetByteArray, int charCount) throws IOException {
+        int charsOffset = 0;
+        while (charsOffset < charCount) {
+            final int c = byteBuffer[offsetByteArray++] & 0xff;
+            switch (c >> 4) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    charBuffer[charsOffset++] = (char) c;
+                    break;
+                case 12:
+                case 13:
+                    charBuffer[charsOffset++] = (char) ((c & 0x1F) << 6 | byteBuffer[offsetByteArray++] & 0x3F);
+                    break;
+                case 14:
+                    charBuffer[charsOffset++] = (char) ((c & 0x0F) << 12 |
+                            (byteBuffer[offsetByteArray++] & 0x3F) << 6 | (byteBuffer[offsetByteArray++] & 0x3F));
+                    break;
+                default:
+                    throwOnBrokenChar(c);
+            }
+        }
+        return offsetByteArray;
+    }
+
+    private BufferedStreamInput(byte[] buf, int offset, int length, int markpos) {
         this.buf = buf;
         this.pos = offset;
         this.count = offset + length;
-        this.markpos = pos;
+        this.markpos = markpos;
     }
 
     @Override
@@ -454,17 +526,6 @@ public abstract class BufferedStreamInput extends StreamInput {
             return BitUtil.zigZagDecode(accumulator | (currentByte << i));
         }
         return readZLongSlow(this);
-    }
-
-    @Override
-    public void readBytes(byte[] b, int offset, int len) throws IOException {
-        if (len < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        final int read = Streams.readFully(this, b, offset, len);
-        if (read != len) {
-            throw new EOFException();
-        }
     }
 
     @Override

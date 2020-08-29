@@ -21,6 +21,7 @@ package org.elasticsearch.common.bytes;
 import org.apache.lucene.util.BitUtil;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
+import org.apache.lucene.util.CharsRef;
 import org.elasticsearch.common.io.stream.BufferedStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
@@ -262,6 +263,18 @@ final class BytesReferenceStreamInput extends StreamInput {
             return BitUtil.zigZagDecode(accumulator | (currentByte << i));
         }
         return readZLongSlow(this);
+    }
+
+    @Override
+    public String readString() throws IOException {
+        final int charCount = readArraySize();
+        final CharsRef charsRef = charsRef(charCount);
+        if (slice.length - sliceIndex < charCount * 3) {
+            return super.readStringSlow(charsRef);
+        }
+        sliceIndex = BufferedStreamInput.readCharsUnsafe(slice.bytes, charsRef.chars, slice.offset + sliceIndex, charsRef.length)
+                - slice.offset;
+        return charsRef.toString();
     }
 
     @Override

@@ -428,26 +428,17 @@ public abstract class StreamInput extends InputStream {
     private CharsRef largeSpare;
 
     public String readString() throws IOException {
-        final int charCount = readArraySize();
-        final CharsRef charsRef;
-        if (charCount > SMALL_STRING_LIMIT) {
-            if (largeSpare == null) {
-                largeSpare = new CharsRef(ArrayUtil.oversize(charCount, Character.BYTES));
-            } else if (largeSpare.chars.length < charCount) {
-                // we don't use ArrayUtils.grow since there is no need to copy the array
-                largeSpare.chars = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
-            }
-            charsRef = largeSpare;
-        } else {
-            charsRef = smallSpare.get();
-        }
-        charsRef.length = charCount;
+        return readStringSlow(charsRef(readArraySize()));
+    }
+
+    protected String readStringSlow(CharsRef charsRef) throws IOException {
         int charsOffset = 0;
         int offsetByteArray = 0;
         int sizeByteArray = 0;
         int missingFromPartial = 0;
         final byte[] byteBuffer = stringReadBuffer.get();
         final char[] charBuffer = charsRef.chars;
+        int charCount = charsRef.length;
         for (; charsOffset < charCount; ) {
             final int charsLeft = charCount - charsOffset;
             int bufferFree = byteBuffer.length - sizeByteArray;
@@ -509,7 +500,7 @@ public abstract class StreamInput extends InputStream {
                         break;
                     case 14:
                         charBuffer[charsOffset++] = (char) (
-                            (c & 0x0F) << 12 | (byteBuffer[++offsetByteArray] & 0x3F) << 6 | (byteBuffer[++offsetByteArray] & 0x3F));
+                                (c & 0x0F) << 12 | (byteBuffer[++offsetByteArray] & 0x3F) << 6 | (byteBuffer[++offsetByteArray] & 0x3F));
                         break;
                     default:
                         throwOnBrokenChar(c);
@@ -552,7 +543,24 @@ public abstract class StreamInput extends InputStream {
         return charsRef.toString();
     }
 
-    private static void throwOnBrokenChar(int c) throws IOException {
+    protected CharsRef charsRef(int charCount) {
+        final CharsRef charsRef;
+        if (charCount > SMALL_STRING_LIMIT) {
+            if (largeSpare == null) {
+                largeSpare = new CharsRef(ArrayUtil.oversize(charCount, Character.BYTES));
+            } else if (largeSpare.chars.length < charCount) {
+                // we don't use ArrayUtils.grow since there is no need to copy the array
+                largeSpare.chars = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
+            }
+            charsRef = largeSpare;
+        } else {
+            charsRef = smallSpare.get();
+        }
+        charsRef.length = charCount;
+        return charsRef;
+    }
+
+    protected static void throwOnBrokenChar(int c) throws IOException {
         throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
     }
 
@@ -1298,7 +1306,7 @@ public abstract class StreamInput extends InputStream {
      * Reads a vint via {@link #readVInt()} and applies basic checks to ensure the read array size is sane.
      * This method uses {@link #ensureCanReadBytes(int)} to ensure this stream has enough bytes to read for the read array size.
      */
-    private int readArraySize() throws IOException {
+    protected int readArraySize() throws IOException {
         final int arraySize = readVInt();
         if (arraySize > ArrayUtil.MAX_ARRAY_LENGTH) {
             throw new IllegalStateException("array length must be <= to " + ArrayUtil.MAX_ARRAY_LENGTH  + " but was: " + arraySize);
