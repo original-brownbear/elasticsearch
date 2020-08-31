@@ -28,7 +28,7 @@ public class ByteBufferStreamInput extends StreamInput {
     private final ByteBuffer buffer;
 
     public ByteBufferStreamInput(ByteBuffer buffer) {
-        this.buffer = buffer;
+        this.buffer = buffer.mark();
     }
 
     @Override
@@ -41,40 +41,39 @@ public class ByteBufferStreamInput extends StreamInput {
 
     @Override
     public byte readByte() throws IOException {
-        if (!buffer.hasRemaining()) {
-            throw new EOFException();
+        try {
+            return buffer.get();
+        } catch (BufferUnderflowException ex) {
+            throw wrapAsEOF(ex);
         }
-        return buffer.get();
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        if (!buffer.hasRemaining()) {
+        final int remaining = buffer.remaining();
+        if (remaining < 1) {
             return -1;
         }
 
-        len = Math.min(len, buffer.remaining());
+        len = Math.min(len, remaining);
         buffer.get(b, off, len);
         return len;
     }
 
     @Override
-    public long skip(long n) throws IOException {
-        if (n > buffer.remaining()) {
-            int ret = buffer.position();
-            buffer.position(buffer.limit());
-            return ret;
-        }
+    public long skip(long n) {
+        n = Math.min(n, buffer.remaining());
         buffer.position((int) (buffer.position() + n));
         return n;
     }
 
     @Override
     public void readBytes(byte[] b, int offset, int len) throws IOException {
-        if (buffer.remaining() < len) {
-            throw new EOFException();
+        try {
+            buffer.get(b, offset, len);
+        } catch (BufferUnderflowException ex) {
+            throw wrapAsEOF(ex);
         }
-        buffer.get(b, offset, len);
     }
 
     @Override
@@ -82,9 +81,7 @@ public class ByteBufferStreamInput extends StreamInput {
         try {
             return buffer.getShort();
         } catch (BufferUnderflowException ex) {
-            EOFException eofException = new EOFException();
-            eofException.initCause(ex);
-            throw eofException;
+            throw wrapAsEOF(ex);
         }
     }
 
@@ -93,9 +90,7 @@ public class ByteBufferStreamInput extends StreamInput {
         try {
             return buffer.getInt();
         } catch (BufferUnderflowException ex) {
-            EOFException eofException = new EOFException();
-            eofException.initCause(ex);
-            throw eofException;
+            throw wrapAsEOF(ex);
         }
     }
 
@@ -104,18 +99,14 @@ public class ByteBufferStreamInput extends StreamInput {
         try {
             return buffer.getLong();
         } catch (BufferUnderflowException ex) {
-            EOFException eofException = new EOFException();
-            eofException.initCause(ex);
-            throw eofException;
+            throw wrapAsEOF(ex);
         }
     }
 
-    public void position(int newPosition) throws IOException {
-        buffer.position(newPosition);
-    }
-
-    public int position() throws IOException {
-        return buffer.position();
+    private static EOFException wrapAsEOF(BufferUnderflowException ex) {
+        EOFException eofException = new EOFException();
+        eofException.initCause(ex);
+        return eofException;
     }
 
     @Override
