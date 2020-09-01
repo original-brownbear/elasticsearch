@@ -131,14 +131,14 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this.version = version;
         }
 
-        private Entry(StreamInput in) throws IOException {
+        private Entry(StreamInput in, WritableDeduplicator deduplicator) throws IOException {
             snapshot = new Snapshot(in);
             includeGlobalState = in.readBoolean();
             partial = in.readBoolean();
             state = State.fromValue(in.readByte());
-            indices = in.readList(IndexId::new);
+            indices = in.readList(deduplicator.reader(IndexId::new));
             startTime = in.readLong();
-            shards = in.readImmutableMap(ShardId::new, ShardSnapshotStatus::new);
+            shards = in.readImmutableMap(deduplicator.reader(ShardId::new), deduplicator.reader(ShardSnapshotStatus::new));
             repositoryStateId = in.readLong();
             failure = in.readOptionalString();
             userMetadata = in.readMap();
@@ -447,7 +447,9 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         }
 
         public ShardSnapshotStatus(StreamInput in) throws IOException {
-            nodeId = in.readOptionalString();
+            final String node = in.readOptionalString();
+            // we intern the node id when reading DiscoveryNode so we can intern it here as well at no extra cost
+            nodeId = node == null ? null : node.intern();
             state = ShardState.fromValue(in.readByte());
             generation = in.readOptionalString();
             reason = in.readOptionalString();
@@ -610,7 +612,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     }
 
     public SnapshotsInProgress(StreamInput in) throws IOException {
-        this.entries = in.readList(SnapshotsInProgress.Entry::new);
+        final WritableDeduplicator deduplicator = new WritableDeduplicator();
+        this.entries = in.readList(input -> new SnapshotsInProgress.Entry(input, deduplicator));
     }
 
     @Override
