@@ -26,16 +26,7 @@ import com.microsoft.azure.storage.RequestCompletedEvent;
 import com.microsoft.azure.storage.StorageErrorCodeStrings;
 import com.microsoft.azure.storage.StorageEvent;
 import com.microsoft.azure.storage.StorageException;
-import com.microsoft.azure.storage.blob.BlobInputStream;
-import com.microsoft.azure.storage.blob.BlobListingDetails;
-import com.microsoft.azure.storage.blob.BlobProperties;
-import com.microsoft.azure.storage.blob.CloudBlob;
-import com.microsoft.azure.storage.blob.CloudBlobClient;
-import com.microsoft.azure.storage.blob.CloudBlobContainer;
-import com.microsoft.azure.storage.blob.CloudBlobDirectory;
-import com.microsoft.azure.storage.blob.CloudBlockBlob;
-import com.microsoft.azure.storage.blob.DeleteSnapshotsOption;
-import com.microsoft.azure.storage.blob.ListBlobItem;
+import com.microsoft.azure.storage.blob.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -245,9 +236,11 @@ public class AzureBlobStore implements BlobStore {
         final OperationContext context = hookMetricCollector(client.v2().get(), getMetricsCollector);
         final CloudBlockBlob blockBlobReference = client.v1().getContainerReference(container).getBlockBlobReference(blob);
         blockBlobReference.setStreamMinimumReadSizeInBytes(16 * 1024 * 1024);
+        final BlobRequestOptions options = new BlobRequestOptions();
+        options.setDisableContentMD5Validation(true);
         logger.trace(() -> new ParameterizedMessage("reading container [{}], blob [{}]", container, blob));
         final BlobInputStream is = SocketAccess.doPrivilegedException(() ->
-            blockBlobReference.openInputStream(position, length, null, null, context));
+            blockBlobReference.openInputStream(position, length, null, options, context));
         return giveSocketPermissionsToStream(is);
     }
 
