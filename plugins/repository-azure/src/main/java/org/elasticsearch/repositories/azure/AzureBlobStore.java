@@ -244,6 +244,7 @@ public class AzureBlobStore implements BlobStore {
         final Tuple<CloudBlobClient, Supplier<OperationContext>> client = client();
         final OperationContext context = hookMetricCollector(client.v2().get(), getMetricsCollector);
         final CloudBlockBlob blockBlobReference = client.v1().getContainerReference(container).getBlockBlobReference(blob);
+        blockBlobReference.setStreamMinimumReadSizeInBytes(16 * 1024 * 1024);
         logger.trace(() -> new ParameterizedMessage("reading container [{}], blob [{}]", container, blob));
         final BlobInputStream is = SocketAccess.doPrivilegedException(() ->
             blockBlobReference.openInputStream(position, length, null, null, context));
