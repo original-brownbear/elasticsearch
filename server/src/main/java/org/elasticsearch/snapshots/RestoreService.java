@@ -118,7 +118,7 @@ import static org.elasticsearch.snapshots.SnapshotUtils.filterIndices;
  * method, which detects that shard should be restored from snapshot rather than recovered from gateway by looking
  * at the {@link ShardRouting#recoverySource()} property.
  * <p>
- * At the end of the successful restore process {@code RestoreService} calls {@link #cleanupRestoreState(ClusterChangedEvent)},
+ * At the end of the successful restore process {@code RestoreService} calls {@link #CLEAN_RESTORE_STATE_TASK_EXECUTOR},
  * which removes {@link RestoreInProgress} when all shards are completed. In case of
  * restore failure a normal recovery fail-over process kicks in.
  */
@@ -817,20 +817,6 @@ public class RestoreService implements ClusterStateApplier {
 
     }
 
-    private void cleanupRestoreState(ClusterChangedEvent event) {
-        for (RestoreInProgress.Entry entry : event.state().custom(RestoreInProgress.TYPE, RestoreInProgress.EMPTY)) {
-            if (entry.state().completed()) {
-                assert completed(entry.shards()) : "state says completed but restore entries are not";
-                clusterService.submitStateUpdateTask(
-                    "clean up snapshot restore state",
-                    new CleanRestoreStateTaskExecutor.Task(entry.uuid()),
-                    ClusterStateTaskConfig.build(Priority.URGENT),
-                    cleanRestoreStateTaskExecutor,
-                    cleanRestoreStateTaskExecutor);
-            }
-        }
-    }
-
     private static RestoreInProgress.State overallState(RestoreInProgress.State nonCompletedState,
                                                         ImmutableOpenMap<ShardId, RestoreInProgress.ShardRestoreStatus> shards) {
         boolean hasFailed = false;
@@ -942,13 +928,72 @@ public class RestoreService implements ClusterStateApplier {
         return indices;
     }
 
+    private static final class Task {
+
+        final String uuid;
+
+        Task(String uuid) {
+            this.uuid = uuid;
+        }
+
+        @Override
+        public String toString() {
+            return "clean restore state for restore " + uuid;
+        }
+    }
+
+    private static final ClusterStateTaskExecutor<Task> CLEAN_RESTORE_STATE_TASK_EXECUTOR = (currentState, tasks) -> {
+        final ClusterStateTaskExecutor.ClusterTasksResult.Builder<Task> resultBuilder =
+                ClusterStateTaskExecutor.ClusterTasksResult.<Task>builder().successes(tasks);
+        Set<String> completedRestores = tasks.stream().map(e -> e.uuid).collect(Collectors.toSet());
+        RestoreInProgress.Builder restoreInProgressBuilder = new RestoreInProgress.Builder();
+        boolean changed = false;
+        for (RestoreInProgress.Entry entry : currentState.custom(RestoreInProgress.TYPE, RestoreInProgress.EMPTY)) {
+            if (completedRestores.contains(entry.uuid())) {
+                changed = true;
+            } else {
+                restoreInProgressBuilder.add(entry);
+            }
+        }
+        if (changed == false) {
+            return resultBuilder.build(currentState);
+        }
+        ImmutableOpenMap.Builder<String, ClusterState.Custom> builder = ImmutableOpenMap.builder(currentState.getCustoms());
+        builder.put(RestoreInProgress.TYPE, restoreInProgressBuilder.build());
+        ImmutableOpenMap<String, ClusterState.Custom> customs = builder.build();
+        return resultBuilder.build(ClusterState.builder(currentState).customs(customs).build());
+    };
+
+    private static final ClusterStateTaskListener CLEAN_RESTORE_TASK_LISTENER = new ClusterStateTaskListener() {
+        @Override
+        public void onFailure(final String source, final Exception e) {
+            logger.error(() -> new ParameterizedMessage("unexpected failure during [{}]", source), e);
+        }
+
+        @Override
+        public void onNoLongerMaster(String source) {
+            logger.debug("no longer master while processing restore state update [{}]", source);
+        }
+    };
+
     @Override
     public void applyClusterState(ClusterChangedEvent event) {
         try {
             if (event.localNodeMaster()) {
-                cleanupRestoreState(event);
+                for (RestoreInProgress.Entry entry : event.state().custom(RestoreInProgress.TYPE, RestoreInProgress.EMPTY)) {
+                    if (entry.state().completed()) {
+                        assert completed(entry.shards()) : "state says completed but restore entries are not";
+                        clusterService.submitStateUpdateTask(
+                                "clean up snapshot restore state",
+                                new Task(entry.uuid()),
+                                ClusterStateTaskConfig.build(Priority.URGENT),
+                                CLEAN_RESTORE_STATE_TASK_EXECUTOR,
+                                CLEAN_RESTORE_TASK_LISTENER);
+                    }
+                }
             }
         } catch (Exception t) {
+            assert false : new AssertionError("should never throw", t);
             logger.warn("Failed to update restore state ", t);
         }
     }
