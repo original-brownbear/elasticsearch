@@ -42,6 +42,7 @@ public class RepositoryBwCIT extends AbstractSnapshotIntegTestCase {
         final RestoreInfo restoreInfo = client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName)
                 .setRestoreGlobalState(false).setWaitForCompletion(true).get().getRestoreInfo();
         assertEquals(0, restoreInfo.failedShards());
+        assertDocCount("test-index", 1);
     }
 
     private static void extractArchivedRepoToPath(String name, Path path) throws IOException {
