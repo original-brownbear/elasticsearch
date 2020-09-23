@@ -19,10 +19,13 @@
 package org.elasticsearch.snapshots;
 
 import org.apache.lucene.util.TestUtil;
+import org.elasticsearch.repositories.RepositoryData;
+import org.hamcrest.Matchers;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.Collection;
 
 public class RepositoryBwCIT extends AbstractSnapshotIntegTestCase {
 
@@ -31,6 +34,14 @@ public class RepositoryBwCIT extends AbstractSnapshotIntegTestCase {
         final String repoName = "test-repo";
         createRepository(repoName, "fs", repoPath);
         extractArchivedRepoToPath("6.8", repoPath);
+        final RepositoryData repositoryData = getRepositoryData(repoName);
+        final Collection<SnapshotId> existingSnapshots = repositoryData.getSnapshotIds();
+        assertThat(existingSnapshots, Matchers.hasSize(1));
+
+        final String snapshotName = existingSnapshots.iterator().next().getName();
+        final RestoreInfo restoreInfo = client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName)
+                .setRestoreGlobalState(false).setWaitForCompletion(true).get().getRestoreInfo();
+        assertEquals(0, restoreInfo.failedShards());
     }
 
     private static void extractArchivedRepoToPath(String name, Path path) throws IOException {
