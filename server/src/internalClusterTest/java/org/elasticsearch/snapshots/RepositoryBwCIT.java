@@ -45,6 +45,22 @@ public class RepositoryBwCIT extends AbstractSnapshotIntegTestCase {
         assertDocCount("test-index", 1);
     }
 
+    public void testRestore60Snapshot() throws Exception {
+        final Path repoPath = randomRepoPath();
+        final String repoName = "test-repo";
+        createRepository(repoName, "fs", repoPath);
+        extractArchivedRepoToPath("6.0", repoPath);
+        final RepositoryData repositoryData = getRepositoryData(repoName);
+        final Collection<SnapshotId> existingSnapshots = repositoryData.getSnapshotIds();
+        assertThat(existingSnapshots, Matchers.hasSize(1));
+
+        final String snapshotName = existingSnapshots.iterator().next().getName();
+        final RestoreInfo restoreInfo = client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName)
+                .setRestoreGlobalState(false).setWaitForCompletion(true).get().getRestoreInfo();
+        assertEquals(0, restoreInfo.failedShards());
+        assertDocCount("test-index", 1);
+    }
+
     private static void extractArchivedRepoToPath(String name, Path path) throws IOException {
         try (InputStream in = RepositoryBwCIT.class.getResourceAsStream(name + "-repository.zip")) {
             TestUtil.unzip(in, path);
