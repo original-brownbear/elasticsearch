@@ -19,37 +19,32 @@
 package org.elasticsearch.snapshots;
 
 import org.apache.lucene.util.TestUtil;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.repositories.RepositoryData;
+import org.elasticsearch.search.SearchHit;
 import org.hamcrest.Matchers;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Map;
 
 public class RepositoryBwCIT extends AbstractSnapshotIntegTestCase {
 
     public void testRestore68Snapshot() throws Exception {
-        final Path repoPath = randomRepoPath();
-        final String repoName = "test-repo";
-        createRepository(repoName, "fs", repoPath);
-        extractArchivedRepoToPath("6.8", repoPath);
-        final RepositoryData repositoryData = getRepositoryData(repoName);
-        final Collection<SnapshotId> existingSnapshots = repositoryData.getSnapshotIds();
-        assertThat(existingSnapshots, Matchers.hasSize(1));
-
-        final String snapshotName = existingSnapshots.iterator().next().getName();
-        final RestoreInfo restoreInfo = client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName)
-                .setRestoreGlobalState(false).setWaitForCompletion(true).get().getRestoreInfo();
-        assertEquals(0, restoreInfo.failedShards());
-        assertDocCount("test-index", 1);
+        testOldVersionRepo("6.8");
     }
 
     public void testRestore60Snapshot() throws Exception {
+        testOldVersionRepo("6.0");
+    }
+
+    private void testOldVersionRepo(String version) throws IOException {
         final Path repoPath = randomRepoPath();
         final String repoName = "test-repo";
         createRepository(repoName, "fs", repoPath);
-        extractArchivedRepoToPath("6.0", repoPath);
+        extractArchivedRepoToPath(version, repoPath);
         final RepositoryData repositoryData = getRepositoryData(repoName);
         final Collection<SnapshotId> existingSnapshots = repositoryData.getSnapshotIds();
         assertThat(existingSnapshots, Matchers.hasSize(1));
@@ -58,7 +53,13 @@ public class RepositoryBwCIT extends AbstractSnapshotIntegTestCase {
         final RestoreInfo restoreInfo = client().admin().cluster().prepareRestoreSnapshot(repoName, snapshotName)
                 .setRestoreGlobalState(false).setWaitForCompletion(true).get().getRestoreInfo();
         assertEquals(0, restoreInfo.failedShards());
-        assertDocCount("test-index", 1);
+        final String indexName = "test-index";
+        assertDocCount(indexName, 1);
+        final SearchResponse searchResponse = client().prepareSearch(indexName).get();
+        final SearchHit hit = searchResponse.getHits().getAt(0);
+
+        assertEquals(hit.getSourceAsMap(), Map.of("post_date", "2009-11-15T14:12:12",
+                "message", "trying out Elasticsearch", "user", "kimchy"));
     }
 
     private static void extractArchivedRepoToPath(String name, Path path) throws IOException {
