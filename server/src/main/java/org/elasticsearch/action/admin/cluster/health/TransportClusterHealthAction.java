@@ -180,8 +180,10 @@ public class TransportClusterHealthAction extends TransportMasterNodeReadAction<
 
         final Predicate<ClusterState> validationPredicate = newState -> validateRequest(request, newState, waitCount);
         if (validationPredicate.test(currentState)) {
+            logger.debug("--> did not have to wait for new state for [{}]", request);
             listener.onResponse(getResponse(request, currentState, waitCount, TimeoutState.OK));
         } else {
+            logger.debug("--> waiting for for new state for [{}]", request);
             final ClusterStateObserver observer
                 = new ClusterStateObserver(currentState, clusterService, null, logger, threadPool.getThreadContext());
             final ClusterStateObserver.Listener stateListener = new ClusterStateObserver.Listener() {
