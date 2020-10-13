@@ -9,6 +9,7 @@ import com.carrotsearch.hppc.cursors.ObjectCursor;
 import org.apache.lucene.index.IndexFileNames;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.ResourceNotFoundException;
+import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.status.SnapshotStatus;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
@@ -18,6 +19,8 @@ import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.action.index.IndexRequestBuilder;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -27,7 +30,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.util.concurrent.AtomicArray;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.Index;
@@ -62,7 +64,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -658,43 +659,28 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
     }
 
     private void assertTotalHits(String indexName, TotalHits originalAllHits, TotalHits originalBarHits) throws Exception {
-        final Thread[] threads = new Thread[between(1, 5)];
-        final AtomicArray<TotalHits> allHits = new AtomicArray<>(threads.length);
-        final AtomicArray<TotalHits> barHits = new AtomicArray<>(threads.length);
+        ensureGreen(indexName);
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        for (int i = 0; i < threads.length; i++) {
-            int t = i;
-            threads[i] = new Thread(() -> {
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                allHits.set(t, client().prepareSearch(indexName).setTrackTotalHits(true).get().getHits().getTotalHits());
-                barHits.set(
-                    t,
-                    client().prepareSearch(indexName)
-                        .setTrackTotalHits(true)
-                        .setQuery(matchQuery("foo", "bar"))
-                        .get()
-                        .getHits()
-                        .getTotalHits()
-                );
-            });
-            threads[i].start();
+        final int searches = between(1, 5);
+        final SearchRequestBuilder[] searchAllRequestBuilders = new SearchRequestBuilder[searches];
+        final SearchRequestBuilder[] searchBarRequestBuilders = new SearchRequestBuilder[searches];
+        for (int i = 0; i < searches; i++) {
+            searchAllRequestBuilders[i] = client().prepareSearch(indexName).setTrackTotalHits(true);
+            searchBarRequestBuilders[i] = client().prepareSearch(indexName).setTrackTotalHits(true).setQuery(matchQuery("foo", "bar"));
         }
 
-        ensureGreen(indexName);
-        latch.countDown();
+        final List<ActionFuture<SearchResponse>> searchAllFutures = new ArrayList<>(searches);
+        final List<ActionFuture<SearchResponse>> searchBarFutures = new ArrayList<>(searches);
+        for (int i = 0; i < searches; i++) {
+            searchAllFutures.add(searchAllRequestBuilders[i].execute());
+            searchBarFutures.add(searchBarRequestBuilders[i].execute());
+        }
 
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].join();
+        for (int i = 0; i < searches; i++) {
+            final TotalHits allTotalHits = searchAllFutures.get(i).get().getHits().getTotalHits();
+            final TotalHits barTotalHits = searchBarFutures.get(i).get().getHits().getTotalHits();
 
-            final TotalHits allTotalHits = allHits.get(i);
-            final TotalHits barTotalHits = barHits.get(i);
-
-            logger.info("--> thread #{} has [{}] hits in total, of which [{}] match the query", i, allTotalHits, barTotalHits);
+            logger.info("--> searcher #{} has [{}] hits in total, of which [{}] match the query", i, allTotalHits, barTotalHits);
             assertThat(allTotalHits, equalTo(originalAllHits));
             assertThat(barTotalHits, equalTo(originalBarHits));
         }
