@@ -376,7 +376,7 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                 // cache file was evicted during the range fetching, read bytes directly from blob container
                 final long length = b.remaining();
                 final byte[] copyBuffer = new byte[toIntBytes(Math.min(COPY_BUFFER_SIZE, length))];
-                logger.trace(
+                logger.debug(
                     () -> new ParameterizedMessage(
                         "direct reading of range [{}-{}] for cache file [{}]",
                         position,

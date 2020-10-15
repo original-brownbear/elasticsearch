@@ -39,6 +39,7 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
+import org.elasticsearch.test.junit.annotations.TestIssueLogging;
 import org.elasticsearch.xpack.core.searchablesnapshots.MountSearchableSnapshotAction;
 import org.elasticsearch.xpack.core.searchablesnapshots.MountSearchableSnapshotRequest;
 import org.elasticsearch.xpack.core.searchablesnapshots.SearchableSnapshotShardStats;
@@ -82,6 +83,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegTestCase {
 
+    @TestIssueLogging(issueUrl = "", value = "org.elasticsearch.index.store.direct:TRACE,org.elasticsearch.index.store.cache:DEBUG")
     public void testCreateAndRestoreSearchableSnapshot() throws Exception {
         final String fsRepoName = randomAlphaOfLength(10);
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
@@ -684,6 +686,8 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
         }
 
         ensureGreen(indexName);
+
+        logger.info("--> starting to assert hit counts");
         latch.countDown();
 
         for (int i = 0; i < threads.length; i++) {
@@ -727,6 +731,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
     }
 
     private void assertSearchableSnapshotStats(String indexName, boolean cacheEnabled, List<String> nonCachedExtensions) {
+        logger.info("--> start asserting stats");
         final SearchableSnapshotsStatsResponse statsResponse = client().execute(
             SearchableSnapshotsStatsAction.INSTANCE,
             new SearchableSnapshotsStatsRequest(indexName)
@@ -826,6 +831,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                 }
             }
         }
+        logger.info("--> done asserting stats");
     }
 
     private static long max(long... values) {
