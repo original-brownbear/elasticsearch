@@ -22,8 +22,8 @@ package org.elasticsearch.rest.action.admin.cluster;
 import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryRequest;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
 import java.io.IOException;
@@ -36,18 +36,14 @@ import static org.elasticsearch.rest.RestRequest.Method.PUT;
 /**
  * Registers repositories
  */
-public class RestPutRepositoryAction extends BaseRestHandler {
+public final class RestPutRepositoryAction extends StaticRestHandler {
 
-    @Override
-    public List<Route> routes() {
-        return List.of(
-            new Route(POST, "/_snapshot/{repository}"),
-            new Route(PUT, "/_snapshot/{repository}"));
-    }
+    public static final RestPutRepositoryAction INSTANCE = new RestPutRepositoryAction();
 
-    @Override
-    public String getName() {
-        return "put_repository_action";
+    private RestPutRepositoryAction() {
+        super(List.of(
+                new Route(POST, "/_snapshot/{repository}"),
+                new Route(PUT, "/_snapshot/{repository}")), "put_repository_action");
     }
 
     @Override

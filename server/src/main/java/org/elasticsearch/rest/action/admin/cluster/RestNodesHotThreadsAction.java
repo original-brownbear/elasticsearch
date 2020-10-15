@@ -25,35 +25,28 @@ import org.elasticsearch.action.admin.cluster.node.hotthreads.NodesHotThreadsRes
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestResponseListener;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
-public class RestNodesHotThreadsAction extends BaseRestHandler {
+public final class RestNodesHotThreadsAction extends StaticRestHandler {
 
-    @Override
-    public List<Route> routes() {
-        return List.of(
-            new Route(GET, "/_nodes/hot_threads"),
-            new Route(GET, "/_nodes/{nodeId}/hot_threads")
-        );
+    public static final RestNodesHotThreadsAction INSTANCE = new RestNodesHotThreadsAction();
+
+    private RestNodesHotThreadsAction() {
+        super(List.of(new Route(GET, "/_nodes/hot_threads"), new Route(GET, "/_nodes/{nodeId}/hot_threads")),
+                "nodes_hot_threads_action", false);
     }
 
     @Override
-    public String getName() {
-        return "nodes_hot_threads_action";
-    }
-
-    @Override
-    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {
         String[] nodesIds = Strings.splitStringByCommaToArray(request.param("nodeId"));
         NodesHotThreadsRequest nodesHotThreadsRequest = new NodesHotThreadsRequest(nodesIds);
         nodesHotThreadsRequest.threads(request.paramAsInt("threads", nodesHotThreadsRequest.threads()));
@@ -76,10 +69,5 @@ public class RestNodesHotThreadsAction extends BaseRestHandler {
                         return new BytesRestResponse(RestStatus.OK, sb.toString());
                     }
                 });
-    }
-
-    @Override
-    public boolean canTripCircuitBreaker() {
-        return false;
     }
 }

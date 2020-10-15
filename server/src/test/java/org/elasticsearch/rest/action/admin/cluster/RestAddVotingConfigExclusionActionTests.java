@@ -32,12 +32,9 @@ import java.util.Map;
 
 public class RestAddVotingConfigExclusionActionTests extends RestActionTestCase {
 
-    private RestAddVotingConfigExclusionAction action;
-
     @Before
     public void setupAction() {
-        action = new RestAddVotingConfigExclusionAction();
-        controller().registerHandler(action);
+        controller().registerHandler(RestAddVotingConfigExclusionAction.INSTANCE);
     }
 
     public void testResolveVotingConfigExclusionsRequestNodeIds() {
@@ -49,7 +46,8 @@ public class RestAddVotingConfigExclusionActionTests extends RestActionTestCase 
                                                 .withParams(params)
                                                 .build();
 
-        AddVotingConfigExclusionsRequest addVotingConfigExclusionsRequest = action.resolveVotingConfigExclusionsRequest(request);
+        AddVotingConfigExclusionsRequest addVotingConfigExclusionsRequest =
+                RestAddVotingConfigExclusionAction.INSTANCE.resolveVotingConfigExclusionsRequest(request);
         String[] expected = {"node-1", "node-2", "node-3"};
         assertArrayEquals(expected, addVotingConfigExclusionsRequest.getNodeIds());
         assertArrayEquals(Strings.EMPTY_ARRAY, addVotingConfigExclusionsRequest.getNodeNames());
@@ -64,10 +62,10 @@ public class RestAddVotingConfigExclusionActionTests extends RestActionTestCase 
                                                 .withParams(params)
                                                 .build();
 
-        AddVotingConfigExclusionsRequest addVotingConfigExclusionsRequest = action.resolveVotingConfigExclusionsRequest(request);
+        AddVotingConfigExclusionsRequest addVotingConfigExclusionsRequest =
+                RestAddVotingConfigExclusionAction.INSTANCE.resolveVotingConfigExclusionsRequest(request);
         String[] expected = {"node-1", "node-2", "node-3"};
         assertArrayEquals(Strings.EMPTY_ARRAY, addVotingConfigExclusionsRequest.getNodeIds());
         assertArrayEquals(expected, addVotingConfigExclusionsRequest.getNodeNames());
     }
-
 }

@@ -21,38 +21,28 @@ package org.elasticsearch.rest.action.admin.cluster;
 
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestActions.NodesResponseRestListener;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
-public class RestClusterStatsAction extends BaseRestHandler {
+public final class RestClusterStatsAction extends StaticRestHandler {
 
-    @Override
-    public List<Route> routes() {
-        return List.of(
-            new Route(GET, "/_cluster/stats"),
-            new Route(GET, "/_cluster/stats/nodes/{nodeId}"));
+    public static final RestClusterStatsAction INSTANCE = new RestClusterStatsAction();
+
+    private RestClusterStatsAction() {
+        super(List.of(
+                new Route(GET, "/_cluster/stats"),
+                new Route(GET, "/_cluster/stats/nodes/{nodeId}")), "cluster_stats_action", false);
     }
 
     @Override
-    public String getName() {
-        return "cluster_stats_action";
-    }
-
-    @Override
-    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {
         ClusterStatsRequest clusterStatsRequest = new ClusterStatsRequest().nodesIds(request.paramAsStringArray("nodeId", null));
         clusterStatsRequest.timeout(request.param("timeout"));
         return channel -> client.admin().cluster().clusterStats(clusterStatsRequest, new NodesResponseRestListener<>(channel));
-    }
-
-    @Override
-    public boolean canTripCircuitBreaker() {
-        return false;
     }
 }

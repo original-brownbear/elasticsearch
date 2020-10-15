@@ -25,11 +25,11 @@ import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestBuilderListener;
 
 import java.io.IOException;
@@ -41,18 +41,14 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 /**
  * Class handling cluster allocation explanation at the REST level
  */
-public class RestClusterAllocationExplainAction extends BaseRestHandler {
+public final class RestClusterAllocationExplainAction extends StaticRestHandler {
 
-    @Override
-    public List<Route> routes() {
-        return List.of(
-            new Route(GET, "/_cluster/allocation/explain"),
-            new Route(POST, "/_cluster/allocation/explain"));
-    }
+    public static final RestClusterAllocationExplainAction INSTANCE = new RestClusterAllocationExplainAction();
 
-    @Override
-    public String getName() {
-        return "cluster_allocation_explain_action";
+    private RestClusterAllocationExplainAction() {
+        super(List.of(
+                new Route(GET, "/_cluster/allocation/explain"),
+                new Route(POST, "/_cluster/allocation/explain")), "cluster_allocation_explain_action");
     }
 
     @Override

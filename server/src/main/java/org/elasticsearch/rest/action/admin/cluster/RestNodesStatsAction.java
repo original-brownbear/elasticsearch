@@ -24,11 +24,10 @@ import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags.Flag;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestActions.NodesResponseRestListener;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,18 +39,7 @@ import java.util.function.Consumer;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
-public class RestNodesStatsAction extends BaseRestHandler {
-
-    @Override
-    public List<Route> routes() {
-        return List.of(
-            new Route(GET, "/_nodes/stats"),
-            new Route(GET, "/_nodes/{nodeId}/stats"),
-            new Route(GET, "/_nodes/stats/{metric}"),
-            new Route(GET, "/_nodes/{nodeId}/stats/{metric}"),
-            new Route(GET, "/_nodes/stats/{metric}/{index_metric}"),
-            new Route(GET, "/_nodes/{nodeId}/stats/{metric}/{index_metric}"));
-    }
+public final class RestNodesStatsAction extends StaticRestHandler {
 
     static final Map<String, Consumer<NodesStatsRequest>> METRICS;
 
@@ -74,13 +62,21 @@ public class RestNodesStatsAction extends BaseRestHandler {
         FLAGS = Collections.unmodifiableMap(flags);
     }
 
-    @Override
-    public String getName() {
-        return "nodes_stats_action";
+    public static final RestNodesStatsAction INSTANCE = new RestNodesStatsAction();
+
+    private RestNodesStatsAction() {
+        super(List.of(
+                new Route(GET, "/_nodes/stats"),
+                new Route(GET, "/_nodes/{nodeId}/stats"),
+                new Route(GET, "/_nodes/stats/{metric}"),
+                new Route(GET, "/_nodes/{nodeId}/stats/{metric}"),
+                new Route(GET, "/_nodes/stats/{metric}/{index_metric}"),
+                new Route(GET, "/_nodes/{nodeId}/stats/{metric}/{index_metric}")),
+                "nodes_stats_action", false, Collections.singleton("level"));
     }
 
     @Override
-    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {
         String[] nodesIds = Strings.splitStringByCommaToArray(request.param("nodeId"));
         Set<String> metrics = Strings.tokenizeByCommaToSet(request.param("metric", "_all"));
 
@@ -174,17 +170,4 @@ public class RestNodesStatsAction extends BaseRestHandler {
 
         return channel -> client.admin().cluster().nodesStats(nodesStatsRequest, new NodesResponseRestListener<>(channel));
     }
-
-    private final Set<String> RESPONSE_PARAMS = Collections.singleton("level");
-
-    @Override
-    protected Set<String> responseParams() {
-        return RESPONSE_PARAMS;
-    }
-
-    @Override
-    public boolean canTripCircuitBreaker() {
-        return false;
-    }
-
 }

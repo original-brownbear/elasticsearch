@@ -22,33 +22,24 @@ package org.elasticsearch.rest.action.admin.cluster;
 import org.elasticsearch.action.admin.cluster.remote.RemoteInfoAction;
 import org.elasticsearch.action.admin.cluster.remote.RemoteInfoRequest;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
 import java.util.List;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
-public final class RestRemoteClusterInfoAction extends BaseRestHandler {
+public final class RestRemoteClusterInfoAction extends StaticRestHandler {
 
-    @Override
-    public List<Route> routes() {
-        return List.of(new Route(GET, "_remote/info"));
-    }
+    public static final RestRemoteClusterInfoAction INSTANCE = new RestRemoteClusterInfoAction();
 
-    @Override
-    public String getName() {
-        return "remote_cluster_info_action";
+    private RestRemoteClusterInfoAction() {
+        super(List.of(new Route(GET, "_remote/info")), "remote_cluster_info_action", false);
     }
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {
         return channel -> client.execute(RemoteInfoAction.INSTANCE, new RemoteInfoRequest(), new RestToXContentListener<>(channel));
-    }
-
-    @Override
-    public boolean canTripCircuitBreaker() {
-        return false;
     }
 }

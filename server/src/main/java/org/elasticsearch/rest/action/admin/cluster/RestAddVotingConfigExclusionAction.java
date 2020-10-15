@@ -24,30 +24,27 @@ import org.elasticsearch.action.admin.cluster.configuration.AddVotingConfigExclu
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 
-public class RestAddVotingConfigExclusionAction extends BaseRestHandler {
+public final class RestAddVotingConfigExclusionAction extends StaticRestHandler {
+
+    public static final RestAddVotingConfigExclusionAction INSTANCE = new RestAddVotingConfigExclusionAction();
+
     private static final TimeValue DEFAULT_TIMEOUT = TimeValue.timeValueSeconds(30L);
 
-    @Override
-    public String getName() {
-        return "add_voting_config_exclusions_action";
+
+    private RestAddVotingConfigExclusionAction() {
+        super(List.of(new Route(POST, "/_cluster/voting_config_exclusions")), "add_voting_config_exclusions_action");
     }
 
     @Override
-    public List<Route> routes() {
-        return List.of(new Route(POST, "/_cluster/voting_config_exclusions"));
-    }
-
-    @Override
-    protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+    protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {
         AddVotingConfigExclusionsRequest votingConfigExclusionsRequest = resolveVotingConfigExclusionsRequest(request);
         return channel -> client.execute(
             AddVotingConfigExclusionsAction.INSTANCE,
@@ -74,5 +71,4 @@ public class RestAddVotingConfigExclusionAction extends BaseRestHandler {
             TimeValue.parseTimeValue(request.param("timeout"), DEFAULT_TIMEOUT, getClass().getSimpleName() + ".timeout")
         );
     }
-
 }

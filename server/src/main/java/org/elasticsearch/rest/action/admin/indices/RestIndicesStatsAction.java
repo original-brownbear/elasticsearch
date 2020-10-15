@@ -25,11 +25,10 @@ import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -41,20 +40,16 @@ import java.util.function.Consumer;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
-public class RestIndicesStatsAction extends BaseRestHandler {
+public final class RestIndicesStatsAction extends StaticRestHandler {
 
-    @Override
-    public List<Route> routes() {
-        return List.of(
-            new Route(GET, "/_stats"),
-            new Route(GET, "/_stats/{metric}"),
-            new Route(GET, "/{index}/_stats"),
-            new Route(GET, "/{index}/_stats/{metric}"));
-    }
+    public static final RestIndicesStatsAction INSTANCE = new RestIndicesStatsAction();
 
-    @Override
-    public String getName() {
-        return "indices_stats_action";
+    private RestIndicesStatsAction() {
+        super(List.of(
+                new Route(GET, "/_stats"),
+                new Route(GET, "/_stats/{metric}"),
+                new Route(GET, "/{index}/_stats"),
+                new Route(GET, "/{index}/_stats/{metric}")), "indices_stats_action", false, Collections.singleton("level"));
     }
 
     @Override
@@ -73,7 +68,7 @@ public class RestIndicesStatsAction extends BaseRestHandler {
     }
 
     @Override
-    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {
         IndicesStatsRequest indicesStatsRequest = new IndicesStatsRequest();
         boolean forbidClosedIndices = request.paramAsBoolean("forbid_closed_indices", true);
         IndicesOptions defaultIndicesOption = forbidClosedIndices ? indicesStatsRequest.indicesOptions()
@@ -132,17 +127,4 @@ public class RestIndicesStatsAction extends BaseRestHandler {
 
         return channel -> client.admin().indices().stats(indicesStatsRequest, new RestToXContentListener<>(channel));
     }
-
-    @Override
-    public boolean canTripCircuitBreaker() {
-        return false;
-    }
-
-    private static final Set<String> RESPONSE_PARAMS = Collections.singleton("level");
-
-    @Override
-    protected Set<String> responseParams() {
-        return RESPONSE_PARAMS;
-    }
-
 }

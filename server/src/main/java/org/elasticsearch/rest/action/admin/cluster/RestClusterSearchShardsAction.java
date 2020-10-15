@@ -24,34 +24,29 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
-import java.io.IOException;
 import java.util.List;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 import static org.elasticsearch.rest.RestRequest.Method.POST;
 
-public class RestClusterSearchShardsAction extends BaseRestHandler {
+public final class RestClusterSearchShardsAction extends StaticRestHandler {
 
-    @Override
-    public List<Route> routes() {
-        return List.of(
-            new Route(GET, "/_search_shards"),
-            new Route(POST, "/_search_shards"),
-            new Route(GET, "/{index}/_search_shards"),
-            new Route(POST, "/{index}/_search_shards"));
+    public static final RestClusterSearchShardsAction INSTANCE = new RestClusterSearchShardsAction();
+
+    private RestClusterSearchShardsAction() {
+        super(List.of(
+                new Route(GET, "/_search_shards"),
+                new Route(POST, "/_search_shards"),
+                new Route(GET, "/{index}/_search_shards"),
+                new Route(POST, "/{index}/_search_shards")), "cluster_search_shards_action");
     }
 
     @Override
-    public String getName() {
-        return "cluster_search_shards_action";
-    }
-
-    @Override
-    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {
         String[] indices = Strings.splitStringByCommaToArray(request.param("index"));
         final ClusterSearchShardsRequest clusterSearchShardsRequest = Requests.clusterSearchShardsRequest(indices);
         clusterSearchShardsRequest.local(request.paramAsBoolean("local", clusterSearchShardsRequest.local()));

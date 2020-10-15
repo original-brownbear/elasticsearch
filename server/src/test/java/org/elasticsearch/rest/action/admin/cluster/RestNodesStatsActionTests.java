@@ -35,14 +35,6 @@ import static org.mockito.Mockito.mock;
 
 public class RestNodesStatsActionTests extends ESTestCase {
 
-    private RestNodesStatsAction action;
-
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        action = new RestNodesStatsAction();
-    }
-
     public void testUnrecognizedMetric() throws IOException {
         final HashMap<String, String> params = new HashMap<>();
         final String metric = randomAlphaOfLength(64);
@@ -50,7 +42,7 @@ public class RestNodesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_nodes/stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestNodesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(e, hasToString(containsString("request [/_nodes/stats] contains unrecognized metric: [" + metric + "]")));
     }
 
@@ -60,7 +52,7 @@ public class RestNodesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_nodes/stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestNodesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(
             e,
             hasToString(
@@ -75,7 +67,7 @@ public class RestNodesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_nodes/stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestNodesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(e, hasToString(containsString("request [/_nodes/stats] contains _all and individual metrics [_all," + metric + "]")));
     }
 
@@ -87,7 +79,7 @@ public class RestNodesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_nodes/stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestNodesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(e, hasToString(containsString("request [/_nodes/stats] contains unrecognized index metric: [" + indexMetric + "]")));
     }
 
@@ -98,7 +90,7 @@ public class RestNodesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_nodes/stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestNodesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(
             e,
             hasToString(
@@ -116,7 +108,7 @@ public class RestNodesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_nodes/stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestNodesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(
             e,
             hasToString(
@@ -131,7 +123,7 @@ public class RestNodesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_nodes/stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestNodesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(
             e,
             hasToString(

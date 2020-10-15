@@ -33,14 +33,6 @@ import static org.mockito.Mockito.mock;
 
 public class RestIndicesStatsActionTests extends ESTestCase {
 
-    private RestIndicesStatsAction action;
-
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        action = new RestIndicesStatsAction();
-    }
-
     public void testUnrecognizedMetric() throws IOException {
         final HashMap<String, String> params = new HashMap<>();
         final String metric = randomAlphaOfLength(64);
@@ -48,7 +40,7 @@ public class RestIndicesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestIndicesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(e, hasToString(containsString("request [/_stats] contains unrecognized metric: [" + metric + "]")));
     }
 
@@ -58,7 +50,7 @@ public class RestIndicesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestIndicesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(
             e,
             hasToString(
@@ -73,8 +65,7 @@ public class RestIndicesStatsActionTests extends ESTestCase {
         final RestRequest request = new FakeRestRequest.Builder(xContentRegistry()).withPath("/_stats").withParams(params).build();
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> action.prepareRequest(request, mock(NodeClient.class)));
+            () -> RestIndicesStatsAction.INSTANCE.prepareRequest(request, mock(NodeClient.class)));
         assertThat(e, hasToString(containsString("request [/_stats] contains _all and individual metrics [_all," + metric + "]")));
     }
-
 }

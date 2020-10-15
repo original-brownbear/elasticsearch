@@ -26,30 +26,24 @@ import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.StaticRestHandler;
 import org.elasticsearch.rest.action.RestStatusToXContentListener;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 
 import static org.elasticsearch.client.Requests.clusterHealthRequest;
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
-public class RestClusterHealthAction extends BaseRestHandler {
+public final class RestClusterHealthAction extends StaticRestHandler {
 
-    @Override
-    public List<Route> routes() {
-        return List.of(new Route(GET, "/_cluster/health"),
-            new Route(GET, "/_cluster/health/{index}"));
-    }
+    public static final RestClusterHealthAction INSTANCE = new RestClusterHealthAction();
 
-    @Override
-    public String getName() {
-        return "cluster_health_action";
+    private RestClusterHealthAction() {
+        super(List.of(new Route(GET, "/_cluster/health"), new Route(GET, "/_cluster/health/{index}")),
+                "cluster_health_action", false, Collections.singleton("level"));
     }
 
     @Override
@@ -58,7 +52,7 @@ public class RestClusterHealthAction extends BaseRestHandler {
     }
 
     @Override
-    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+    public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {
         final ClusterHealthRequest clusterHealthRequest = fromRequest(request);
         return channel -> client.admin().cluster().health(clusterHealthRequest, new RestStatusToXContentListener<>(channel));
     }
@@ -92,17 +86,4 @@ public class RestClusterHealthAction extends BaseRestHandler {
         }
         return clusterHealthRequest;
     }
-
-    private static final Set<String> RESPONSE_PARAMS = Collections.singleton("level");
-
-    @Override
-    protected Set<String> responseParams() {
-        return RESPONSE_PARAMS;
-    }
-
-    @Override
-    public boolean canTripCircuitBreaker() {
-        return false;
-    }
-
 }
