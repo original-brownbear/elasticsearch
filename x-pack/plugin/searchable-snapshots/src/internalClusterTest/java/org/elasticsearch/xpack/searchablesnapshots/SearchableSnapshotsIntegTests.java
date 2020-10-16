@@ -83,7 +83,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegTestCase {
 
-    @TestIssueLogging(issueUrl = "", value = "org.elasticsearch.index.store.direct:TRACE,org.elasticsearch.index.store.cache:DEBUG")
+    @TestIssueLogging(issueUrl = "", value = "_root:DEBUG")
     public void testCreateAndRestoreSearchableSnapshot() throws Exception {
         final String fsRepoName = randomAlphaOfLength(10);
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);

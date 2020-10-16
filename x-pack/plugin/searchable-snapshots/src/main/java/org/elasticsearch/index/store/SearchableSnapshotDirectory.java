@@ -337,6 +337,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
     }
 
     public void clearCache() {
+        logger.debug("Clearing cache of [{}]", this);
         cacheService.removeFromCache(cacheKey -> cacheKey.belongsTo(snapshotId, indexId, shardId));
     }
 
