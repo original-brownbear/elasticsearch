@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
@@ -57,7 +58,7 @@ public class CacheFile {
     private final Path file;
 
     private volatile Set<EvictionListener> listeners;
-    private volatile boolean evicted;
+    private final AtomicBoolean evicted = new AtomicBoolean(false);
 
     @Nullable // if evicted, or there are no listeners
     private volatile FileChannel channel;
@@ -67,7 +68,6 @@ public class CacheFile {
         this.description = Objects.requireNonNull(description);
         this.file = Objects.requireNonNull(file);
         this.listeners = new HashSet<>();
-        this.evicted = false;
 
         final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
         this.evictionLock = cacheLock.writeLock();
@@ -176,15 +176,12 @@ public class CacheFile {
     }
 
     public void startEviction() {
-        if (evicted == false) {
+        if (evicted.compareAndSet(false, true)) {
             final Set<EvictionListener> evictionListeners = new HashSet<>();
             evictionLock.lock();
             try {
-                if (evicted == false) {
-                    evicted = true;
-                    evictionListeners.addAll(listeners);
-                    refCounter.decRef();
-                }
+                evictionListeners.addAll(listeners);
+                refCounter.decRef();
             } finally {
                 evictionLock.unlock();
             }
@@ -221,7 +218,7 @@ public class CacheFile {
             assert listeners != null;
             if (listeners.isEmpty()) {
                 assert channel == null;
-                assert evicted == false || refCounter.refCount() != 0 || Files.notExists(file);
+                assert evicted.get() == false || refCounter.refCount() != 0 || Files.notExists(file);
             } else {
                 assert channel != null;
                 assert refCounter.refCount() > 0;
@@ -248,14 +245,14 @@ public class CacheFile {
             + ", listeners="
             + listeners.size()
             + ", evicted="
-            + evicted
+            + evicted.get()
             + ", tracker="
             + tracker
             + '}';
     }
 
     private void ensureOpen() {
-        if (evicted) {
+        if (evicted.get()) {
             throw new AlreadyClosedException("Cache file is evicted");
         }
     }
@@ -308,9 +305,7 @@ public class CacheFile {
                         for (SparseFileTracker.Gap gap : gaps) {
                             try {
                                 ensureOpen();
-                                if (readLock.tryLock() == false) {
-                                    throw new AlreadyClosedException("Cache file channel is being evicted, writing attempt cancelled");
-                                }
+                                readLock.lock();
                                 try {
                                     ensureOpen();
                                     if (channel == null) {
