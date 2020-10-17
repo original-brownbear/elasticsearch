@@ -12,6 +12,7 @@ import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
+import org.locationtech.jts.util.AssertionFailedException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 
@@ -308,8 +310,16 @@ public class CacheFile {
                         for (SparseFileTracker.Gap gap : gaps) {
                             try {
                                 ensureOpen();
-                                if (readLock.tryLock() == false) {
-                                    throw new AlreadyClosedException("Cache file channel is being evicted, writing attempt cancelled");
+                                // Can't use readLock.lock here since in case we hold some read-locks already but have a thread waiting on
+                                // a write lock, that write lock acquisition will have to work first. This will however not work often
+                                // times when we call this method from a thread that already holds the read lock via #fileLock and is
+                                // waiting for this thread to complete its ready before it will release it.
+                                // See https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6816565 comments for some details on this as
+                                // well as the use of
+                                // java.util.concurrent.locks.AbstractQueuedSynchronizer.apparentlyFirstQueuedIsExclusive by the reentrant
+                                // r-w lock.
+                                while (readLock.tryLock() == false) {
+                                    ensureOpen();
                                 }
                                 try {
                                     ensureOpen();
@@ -317,10 +327,10 @@ public class CacheFile {
                                         throw new AlreadyClosedException("Cache file channel has been released and closed");
                                     }
                                     writer.fillCacheRange(channel, gap.start(), gap.end(), gap::onProgress);
-                                    gap.onCompletion();
                                 } finally {
                                     readLock.unlock();
                                 }
+                                gap.onCompletion();
                             } catch (Exception e) {
                                 gap.onFailure(e);
                             }
