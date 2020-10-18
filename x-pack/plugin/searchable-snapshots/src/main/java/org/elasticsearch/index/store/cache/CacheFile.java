@@ -138,6 +138,8 @@ public class CacheFile {
         return success;
     }
 
+    // TODO: at least this can run on the CS applier thread and block it for a undefined but potentially very long time if an IO operation
+    //       hangs?
     public boolean release(final EvictionListener listener) {
         assert listener != null;
 
