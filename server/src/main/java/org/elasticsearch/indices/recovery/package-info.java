@@ -68,7 +68,10 @@
  *         On the target this request is handled and triggers a call to
  *         {@link org.elasticsearch.index.shard.IndexShard#openEngineAndSkipTranslogRecovery()} which opens a new engine and translog
  *         and then responds back to the recovery source.
- *         This
+ *         Once the recovery source receives that response, it invokes
+ *         {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#phase2} to replay outstanding translog operations on the target.
+ *         This is done by sending a series of {@link org.elasticsearch.indices.recovery.RecoveryTranslogOperationsRequest} to the target
+ *         which will respond with {@link org.elasticsearch.indices.recovery.RecoveryTranslogOperationsResponse} (TODO: why does this contain local checkpoint?).
  *     </ul>
  * </li>
  *
