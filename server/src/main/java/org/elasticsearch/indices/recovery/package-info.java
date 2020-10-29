@@ -42,19 +42,34 @@
  * in the following steps being executed.
  *
  * <li>
- *     <ul>A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is sent to the primary node of the shard to recover by the
- *     data node that is recovering the shard. This triggers {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover}
- *     on the primary node that receives the request. The {@code StartRecoveryRequest} contains information about the local state
- *     of the recovery target, based on which the recovery source will determine the recovery mechanism to use.</ul>
- *     <ul>In the simplest case, there is no shared existing data on the recovery target node:
- *     In this case, the recovery source node will execute phase 1 of the recovery by invoking
- *     {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#phase1}. Using the information about the files on the target node
- *     found in the {@code StartRecoveryRequest}, phase 1 will determine what segment files must be copied to the recovery target.
- *     The information about these files will then be sent to the recovery target via a
- *     {@link org.elasticsearch.indices.recovery.RecoveryFilesInfoRequest}. Once the recovery target has received the list of files
- *     that will be copied to it, {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#sendFiles} is invoked which
- *     will send the segment files over to the recovery target via a series of
- *     {@link org.elasticsearch.indices.recovery.RecoveryFileChunkRequest}.</ul>
+ *     <ul>
+ *         A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is sent to the primary node of the shard to recover by the
+ *         data node that is recovering the shard. This triggers {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover}
+ *         on the primary node that receives the request. The {@code StartRecoveryRequest} contains information about the local state
+*          of the recovery target, based on which the recovery source will determine the recovery mechanism to use.</ul>
+ *     <ul>
+ *         In the simplest case, there is no shared existing data on the recovery target node:
+ *         In this case, the recovery source node will execute phase 1 of the recovery by invoking
+ *         {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#phase1}. Using the information about the files on the target node
+ *         found in the {@code StartRecoveryRequest}, phase 1 will determine what segment files must be copied to the recovery target.
+ *         The information about these files will then be sent to the recovery target via a
+ *         {@link org.elasticsearch.indices.recovery.RecoveryFilesInfoRequest}. Once the recovery target has received the list of files
+ *         that will be copied to it, {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#sendFiles} is invoked which
+ *         will send the segment files over to the recovery target via a series of
+ *         {@link org.elasticsearch.indices.recovery.RecoveryFileChunkRequest}.</ul>
+ *     <ul>
+ *         TODO: describe retention lease things
+ *     <ul/>
+ *     <ul>
+ *         After the segment files have been copied from the source to the target, the translog based recovery step is executed by
+ *         invoking {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#prepareTargetForTranslog} on the recovery source.
+ *         This sends a {@link org.elasticsearch.indices.recovery.RecoveryPrepareForTranslogOperationsRequest} to the recovery target
+ *         which contains the estimated number of translog operations that have to be copied to the target.
+ *         On the target this request is handled and triggers a call to
+ *         {@link org.elasticsearch.index.shard.IndexShard#openEngineAndSkipTranslogRecovery()} which opens a new engine and translog
+ *         and then responds back to the recovery source.
+ *         This
+ *     </ul>
  * </li>
  *
  *
