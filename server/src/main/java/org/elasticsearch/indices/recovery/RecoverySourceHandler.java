@@ -356,7 +356,7 @@ public class RecoverySourceHandler {
                                       IndexShard primary, CancellableThreads cancellableThreads, Logger logger) {
         cancellableThreads.execute(() -> {
             CompletableFuture<Releasable> permit = new CompletableFuture<>();
-            final ActionListener<Releasable> onAcquired = new ActionListener<Releasable>() {
+            primary.acquirePrimaryOperationPermit(new ActionListener<>() {
                 @Override
                 public void onResponse(Releasable releasable) {
                     if (permit.complete(releasable) == false) {
@@ -368,8 +368,7 @@ public class RecoverySourceHandler {
                 public void onFailure(Exception e) {
                     permit.completeExceptionally(e);
                 }
-            };
-            primary.acquirePrimaryOperationPermit(onAcquired, ThreadPool.Names.SAME, reason);
+            }, ThreadPool.Names.SAME, reason);
             try (Releasable ignored = FutureUtils.get(permit)) {
                 // check that the IndexShard still has the primary authority. This needs to be checked under operation permit to prevent
                 // races, as IndexShard will switch its authority only when it holds all operation permits, see IndexShard.relocated()
@@ -796,7 +795,7 @@ public class RecoverySourceHandler {
         }
     }
 
-    void finalizeRecovery(long targetLocalCheckpoint, long trimAboveSeqNo, ActionListener<Void> listener) throws IOException {
+    private void finalizeRecovery(long targetLocalCheckpoint, long trimAboveSeqNo, ActionListener<Void> listener) {
         if (shard.state() == IndexShardState.CLOSED) {
             throw new IndexShardClosedException(request.shardId());
         }

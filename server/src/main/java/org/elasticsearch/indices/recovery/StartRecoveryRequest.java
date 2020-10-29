@@ -34,14 +34,14 @@ import java.io.IOException;
  */
 public class StartRecoveryRequest extends TransportRequest {
 
-    private long recoveryId;
-    private ShardId shardId;
-    private String targetAllocationId;
-    private DiscoveryNode sourceNode;
-    private DiscoveryNode targetNode;
-    private Store.MetadataSnapshot metadataSnapshot;
-    private boolean primaryRelocation;
-    private long startingSeqNo;
+    private final long recoveryId;
+    private final ShardId shardId;
+    private final String targetAllocationId;
+    private final DiscoveryNode sourceNode;
+    private final DiscoveryNode targetNode;
+    private final Store.MetadataSnapshot metadataSnapshot;
+    private final boolean primaryRelocation;
+    private final long startingSeqNo;
 
     public StartRecoveryRequest(StreamInput in) throws IOException {
         super(in);

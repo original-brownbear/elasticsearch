@@ -117,7 +117,7 @@ public class PeerRecoverySourceService extends AbstractLifecycleComponent implem
     public void beforeIndexShardClosed(ShardId shardId, @Nullable IndexShard indexShard,
                                        Settings indexSettings) {
         if (indexShard != null) {
-            ongoingRecoveries.cancel(indexShard, "shard is closed");
+            ongoingRecoveries.cancelBeforeClose(indexShard);
         }
     }
 
@@ -249,13 +249,13 @@ public class PeerRecoverySourceService extends AbstractLifecycleComponent implem
             }
         }
 
-        synchronized void cancel(IndexShard shard, String reason) {
+        synchronized void cancelBeforeClose(IndexShard shard) {
             final ShardRecoveryContext shardRecoveryContext = ongoingRecoveries.get(shard);
             if (shardRecoveryContext != null) {
                 final List<Exception> failures = new ArrayList<>();
                 for (RecoverySourceHandler handlers : shardRecoveryContext.recoveryHandlers.keySet()) {
                     try {
-                        handlers.cancel(reason);
+                        handlers.cancel("shard is closed");
                     } catch (Exception ex) {
                         failures.add(ex);
                     } finally {

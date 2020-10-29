@@ -151,11 +151,6 @@ public class PeerRecoveryTargetService implements IndexEventListener {
         retryRecovery(recoveryId, retryAfter, activityTimeout);
     }
 
-    protected void retryRecovery(final long recoveryId, final String reason, TimeValue retryAfter, TimeValue activityTimeout) {
-        logger.trace("will retry recovery with id [{}] in [{}] (reason [{}])", recoveryId, retryAfter, reason);
-        retryRecovery(recoveryId, retryAfter, activityTimeout);
-    }
-
     private void retryRecovery(final long recoveryId, final TimeValue retryAfter, final TimeValue activityTimeout) {
         RecoveryTarget newTarget = onGoingRecoveries.resetRecovery(recoveryId, activityTimeout);
         if (newTarget != null) {
@@ -615,11 +610,9 @@ public class PeerRecoveryTargetService implements IndexEventListener {
             if (cause instanceof IllegalIndexShardStateException || cause instanceof IndexNotFoundException ||
                 cause instanceof ShardNotFoundException) {
                 // if the target is not ready yet, retry
-                retryRecovery(
-                    recoveryId,
-                    "remote shard not ready",
-                    recoverySettings.retryDelayStateSync(),
-                    recoverySettings.activityTimeout());
+                final TimeValue retryAfter = recoverySettings.activityTimeout();
+                logger.trace("will retry recovery with id [{}] in [{}] (reason [remote shard not ready])", recoveryId, retryAfter);
+                retryRecovery(recoveryId, recoverySettings.retryDelayStateSync(), retryAfter);
                 return;
             }
 

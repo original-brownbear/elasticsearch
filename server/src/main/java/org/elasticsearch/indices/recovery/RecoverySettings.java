@@ -103,7 +103,7 @@ public class RecoverySettings {
     private volatile TimeValue retryDelayNetwork;
     private volatile TimeValue activityTimeout;
     private volatile TimeValue internalActionTimeout;
-    private volatile TimeValue internalActionRetryTimeout;
+    private final TimeValue internalActionRetryTimeout;
     private volatile TimeValue internalActionLongTimeout;
 
     private volatile ByteSizeValue chunkSize = DEFAULT_CHUNK_SIZE;
