@@ -36,19 +36,46 @@
  *
  * <h3>Checkpoints</h3>
  *
- * TODO: explain checkpoints and their tracking
+ * Many aspects of the recovery logic are based on the notion of local and global checkpoints. Each operation on a shard is tracked by a
+ * sequence number and the primary term during which it was applied to the index. The sequence number up to which operations have been
+ * processed on a shard is that shard's local checkpoint. The sequence number up to which operations on all replicas for a shard have been
+ * fully processed is referred to as the global checkpoint. Comparing the local of shard copies on a high level allows determining
+ * which operations have to be applied to a shard copy to bring it in-sync with the primary. By retaining operations in the
+ * {@link org.elasticsearch.indices.recovery.RecoveryState.Translog} they are available for replay to bring a shard from a certain local
+ * checkpoint to a higher local checkpoint.
+ * The global checkpoint allows for determining which operations are safely processed on all shards and thus don't have to be retained on
+ * the primary node for replaying them to replicas.
+ *
+ * The primary node tracks the global checkpoint via {@link org.elasticsearch.index.seqno.ReplicationTracker}. The primary term is tracked
+ * via the master node and in the cluster state and incremented each time the primary node for a shard changes.
+ *
+ * <h2>Peer Recovery</h2>
+ *
+ * Peer recovery is the process of bringing a shard copy on one node, referred to as the target node below, in-sync with the shard copy on
+ * another node, referred to as the source node below. It is always the primary node of a shard that serves as the source of the recovery.
+ * On a high level, recovery happens by a combination of comparing and subsequently synchronizing files and applied operations on the
+ * target with the source.
+ * Synchronizing the on disk file structure on the target with those on the source node is often referred to as file based recovery in
+ * documentation. Synchronizing operations based on comparing checkpoints is commonly referred to as ops based recovery.
+ * As primaries and replicas are independent Lucene indices that will execute their Lucene level merges independently the concrete on disk
+ * file structure on a pair of primary and replica nodes for a given shard will diverge over time even if both copies of the shard
+ * hold the same set of documents. Peer recovery will therefore try to avoid file based recovery where possible in order to reduce the
+ * amount of data that has to be transferred and prefer replaying just those operations missing on the target relative to the source.
+ * Replaying operations is possible as long as the primary node retains the missing operations in its
+ * {@link org.elasticsearch.indices.recovery.RecoveryState.Translog}.
  *
  * <h3>Retention Leases</h3>
  *
- * TODO: explain retention leases
+ * The duration for which a shard retains individual operations alongside
  *
- * <h2>Peer Recovery</h2>
+ * <h3>State Machine</h3>
  *
  * Peer recoveries are modeled via a {@link org.elasticsearch.cluster.routing.RecoverySource.PeerRecoverySource}.
  * They start by moving the shard's state to {@link org.elasticsearch.index.shard.IndexShardState#RECOVERING} and then triggering the
  * peer recovery through a call to {@link org.elasticsearch.indices.recovery.PeerRecoveryTargetService#startRecovery} which results
  * in the following steps being executed.
  *
+ * TODO: spell out exact target shard states in the CS below
  * <li>
  *     <ul>
  *         A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is sent to the primary node of the shard to recover by the
