@@ -32,7 +32,15 @@
  * Recoveries can have various kinds of sources that are modeled via the {@link org.elasticsearch.cluster.routing.RecoverySource}
  * returned by {@link org.elasticsearch.cluster.routing.ShardRouting#recoverySource()} for each shard routing. These sources and their
  * state machines will be described below. The actual recovery for all of them is started by invoking
- * {@link org.elasticsearch.index.shard.IndexShard#startRecovery)}
+ * {@link org.elasticsearch.index.shard.IndexShard#startRecovery)}.
+ *
+ * <h3>Checkpoints</h3>
+ *
+ * TODO: explain checkpoints and their tracking
+ *
+ * <h3>Retention Leases</h3>
+ *
+ * TODO: explain retention leases
  *
  * <h2>Peer Recovery</h2>
  *
@@ -71,7 +79,20 @@
  *         Once the recovery source receives that response, it invokes
  *         {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#phase2} to replay outstanding translog operations on the target.
  *         This is done by sending a series of {@link org.elasticsearch.indices.recovery.RecoveryTranslogOperationsRequest} to the target
- *         which will respond with {@link org.elasticsearch.indices.recovery.RecoveryTranslogOperationsResponse} (TODO: why does this contain local checkpoint?).
+ *         which will respond with {@link org.elasticsearch.indices.recovery.RecoveryTranslogOperationsResponse}s which contain the
+ *         maximum persisted local checkpoint for the target. Tracking the maximum of the received local checkpoint values is necessary
+ *         for the next step, finalizing the recovery.
+ *     </ul>
+ *     <ul>
+ *         After having replayed the translog operations, the recovery is finalized by a call to
+ *         {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#finalizeRecovery} on the source. With the knowledge that the
+ *         target has received all operations up to the maximum local checkpoint from tracked in the previous step, the source
+ *         (which is also the primary) can now update its in-sync checkpoint state by a call to
+ *         {@link org.elasticsearch.index.seqno.ReplicationTracker#markAllocationIdAsInSync}.
+ *         Once the in-sync sequence number information has been persisted successfully, the source sends a
+ *         {@link org.elasticsearch.indices.recovery.RecoveryFinalizeRecoveryRequest} to the target which contains the global checkpoint
+ *         as well as a sequence number above which the target can trim all operations from its translog since all operations above this
+ *         number have just been replayed in the previous step.
  *     </ul>
  * </li>
  *
