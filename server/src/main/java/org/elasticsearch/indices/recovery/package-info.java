@@ -79,10 +79,29 @@
  * <li>
  *     <ul>
  *         A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is sent to the primary node of the shard to recover by the
- *         data node that is recovering the shard. This triggers
+ *         data node that is the target of the shard recovery. This triggers
  *         {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover} on the primary node that receives the request. The
  *         {@code StartRecoveryRequest} contains information about the local state of the recovery target, based on which the recovery
- *         source will determine the recovery mechanism to use.
+ *         source will determine the recovery mechanism (file based or ops based) to use.
+ *     </ul>
+ *     <ul>
+ *        When determining whether to use ops based recovery the recovery source will check the following conditions
+ *        that must all be true simultaneously for ops based recovery to be executed:
+ *        <li>
+ *            <ul>
+ *                Target shard and source shard must share the same
+ *                {@link org.elasticsearch.index.engine.Engine#HISTORY_UUID_KEY} in their latest Lucene commit.
+ *            </ul>
+ *            <ul>
+ *                The source must have retained all operations between the latest sequence number present on the target.
+ *                See {@link org.elasticsearch.index.shard.IndexShard#hasCompleteHistoryOperations} for details.
+ *            </ul>
+ *            <ul>
+ *                TODO: When does this retention lease get instantiated?
+ *                A peer recovery retention lease must exist for the target shard and it must retain a sequence number below or equal
+ *                to the starting sequence number in {@link org.elasticsearch.indices.recovery.StartRecoveryRequest#startingSeqNo()}.
+ *            </ul>
+ *        </li>
  *     </ul>
  *     <ul>
  *         In the simplest case, there is no shared existing data on the recovery target node:
