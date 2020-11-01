@@ -78,8 +78,12 @@
  * TODO: spell out exact target shard states in the CS below
  * <li>
  *     <ul>
- *         A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is sent to the primary node of the shard to recover by the
- *         data node that is the target of the shard recovery. This triggers
+ *         The target shard starts out with a {@link org.elasticsearch.indices.recovery.RecoveryState} at stage
+ *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#INIT}. At the start of the peer recovery process the target node
+ *         will try to recover from its local translog as far as if there are any operations to recover from it and move to stage
+ *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#INDEX}.
+ *         A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is then sent to the primary node of the shard to recover by
+ *         the target node for the recovery. This triggers
  *         {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover} on the primary node that receives the request. The
  *         {@code StartRecoveryRequest} contains information about the local state of the recovery target, based on which the recovery
  *         source will determine the recovery mechanism (file based or ops based) to use.
