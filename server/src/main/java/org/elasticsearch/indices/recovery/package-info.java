@@ -70,18 +70,20 @@
  *
  * <h3>State Machine</h3>
  *
- * Peer recoveries are modeled via a {@link org.elasticsearch.cluster.routing.RecoverySource.PeerRecoverySource}.
- * They start by moving the shard's state to {@link org.elasticsearch.index.shard.IndexShardState#RECOVERING} and then triggering the
- * peer recovery through a call to {@link org.elasticsearch.indices.recovery.PeerRecoveryTargetService#startRecovery} which results
- * in the following steps being executed.
+ * Peer recoveries are modeled via a {@link org.elasticsearch.cluster.routing.RecoverySource.PeerRecoverySource}. They start by moving the
+ * shard's state to {@link org.elasticsearch.index.shard.IndexShardState#RECOVERING} and then triggering the peer recovery through a call
+ * to {@link org.elasticsearch.indices.recovery.PeerRecoveryTargetService#startRecovery} which results in the following steps being
+ * executed.
  *
  * TODO: spell out exact target shard states in the CS below
  * <li>
  *     <ul>
  *         A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is sent to the primary node of the shard to recover by the
- *         data node that is recovering the shard. This triggers {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover}
- *         on the primary node that receives the request. The {@code StartRecoveryRequest} contains information about the local state
-*          of the recovery target, based on which the recovery source will determine the recovery mechanism to use.</ul>
+ *         data node that is recovering the shard. This triggers
+ *         {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover} on the primary node that receives the request. The
+ *         {@code StartRecoveryRequest} contains information about the local state of the recovery target, based on which the recovery
+ *         source will determine the recovery mechanism to use.
+ *     </ul>
  *     <ul>
  *         In the simplest case, there is no shared existing data on the recovery target node:
  *         In this case, the recovery source node will execute phase 1 of the recovery by invoking
