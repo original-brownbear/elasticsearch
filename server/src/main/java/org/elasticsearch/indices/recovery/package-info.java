@@ -93,7 +93,8 @@
  *         will send the segment files over to the recovery target via a series of
  *         {@link org.elasticsearch.indices.recovery.RecoveryFileChunkRequest}.</ul>
  *     <ul>
- *         TODO: describe retention lease things
+ *         // TODO: explain retention lease logic in details
+ *         // TODO: soft deletes in detail maybe?
  *     <ul/>
  *     <ul>
  *         After the segment files have been copied from the source to the target, the translog based recovery step is executed by
