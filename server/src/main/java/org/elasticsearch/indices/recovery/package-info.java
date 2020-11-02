@@ -110,8 +110,8 @@
  *        </li>
  *     </ul>
  *     <ul>
- *         In the simplest case, there is no shared existing data on the recovery target node:
- *         In this case, the recovery source node will execute phase 1 of the recovery by invoking
+ *         In case the preconditions for ops based recovery aren't met, file-based recovery is executed first.
+ *         To trigger file based recovery, the source node will execute phase 1 of the recovery by invoking
  *         {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#phase1}. Using the information about the files on the target node
  *         found in the {@code StartRecoveryRequest}, phase 1 will determine what segment files must be copied to the recovery target.
  *         The information about these files will then be sent to the recovery target via a
@@ -123,9 +123,6 @@
  *         invoke to reset the recovery back to {@code INIT} stage, then prepare for receiving files and move to stage {@code INDEX}
  *         again.</ul>
  *     <ul>
- *         // TODO: explain retention lease logic in details
- *         // TODO: soft deletes in detail maybe?
- *     <ul/>
  *     <ul>
  *         After the segment files have been copied from the source to the target, the translog based recovery step is executed by
  *         invoking {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#prepareTargetForTranslog} on the recovery source.
