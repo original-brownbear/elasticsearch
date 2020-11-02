@@ -80,8 +80,11 @@
  *     <ul>
  *         The target shard starts out with a {@link org.elasticsearch.indices.recovery.RecoveryState} at stage
  *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#INIT}. At the start of the peer recovery process the target node
- *         will try to recover from its local translog as far as if there are any operations to recover from it and move to stage
- *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#INDEX}.
+ *         will try to recover from its local translog as far as if there are any operations to recover from it. It will first move to
+ *         stage {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#INDEX} and then try to recover as far as possible from
+ *         existing files and the existing translog. After that it moves to
+ *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#VERIFY_INDEX}. //TODO: continue here and explain verify index
+ *         // TODO: talk about org.elasticsearch.index.shard.IndexShard#resetRecoveryStage()
  *         A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is then sent to the primary node of the shard to recover by
  *         the target node for the recovery. This triggers
  *         {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover} on the primary node that receives the request. The
