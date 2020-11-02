@@ -166,7 +166,5 @@
  *         on the target node to {@link org.elasticsearch.index.shard.IndexShardState#STARTED} thus completing the peer recovery.
  *     </ul>
  * </li>
- *
- *
  */
 package org.elasticsearch.indices.recovery;
