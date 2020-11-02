@@ -32,7 +32,7 @@
  * Recoveries can have various kinds of sources that are modeled via the {@link org.elasticsearch.cluster.routing.RecoverySource}
  * returned by {@link org.elasticsearch.cluster.routing.ShardRouting#recoverySource()} for each shard routing. These sources and their
  * state machines will be described below. The actual recovery for all of them is started by invoking
- * {@link org.elasticsearch.index.shard.IndexShard#startRecovery)}.
+ * {@link org.elasticsearch.index.shard.IndexShard#startRecovery}.
  *
  * <h3>Checkpoints</h3>
  *
@@ -75,8 +75,8 @@
  * to {@link org.elasticsearch.indices.recovery.PeerRecoveryTargetService#startRecovery} which results in the following steps being
  * executed.
  *
- * <li>
- *     <ul>
+ * <ol>
+ *     <li>
  *         The target shard starts out with a {@link org.elasticsearch.indices.recovery.RecoveryState} at stage
  *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#INIT}. At the start of the peer recovery process the target node
  *         will try to recover from its local translog as far as if there are any operations to recover from it. It will first move to
@@ -89,26 +89,26 @@
  *         {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover} on the primary node that receives the request. The
  *         {@code StartRecoveryRequest} contains information about the local state of the recovery target, based on which the recovery
  *         source will determine the recovery mechanism (file based or ops based) to use.
- *     </ul>
- *     <ul>
+ *     </li>
+ *     <li>
  *        When determining whether to use ops based recovery the recovery source will check the following conditions
  *        that must all be true simultaneously for ops based recovery to be executed:
- *        <li>
- *            <ul>
+ *        <ul>
+ *            <li>
  *                Target shard and source shard must share the same
  *                {@link org.elasticsearch.index.engine.Engine#HISTORY_UUID_KEY} in their latest Lucene commit.
- *            </ul>
- *            <ul>
+ *            </li>
+ *            <li>
  *                The source must have retained all operations between the latest sequence number present on the target.
  *                See {@link org.elasticsearch.index.shard.IndexShard#hasCompleteHistoryOperations} for details.
- *            </ul>
- *            <ul>
+ *            </li>
+ *            <li>
  *                A peer recovery retention lease must exist for the target shard and it must retain a sequence number below or equal
  *                to the starting sequence number in {@link org.elasticsearch.indices.recovery.StartRecoveryRequest#startingSeqNo()}.
- *            </ul>
- *        </li>
- *     </ul>
- *     <ul>
+ *            </li>
+ *        </ul>
+ *     </li>
+ *     <li>
  *         In case the preconditions for ops based recovery aren't met, file-based recovery is executed first.
  *         To trigger file based recovery, the source node will execute phase 1 of the recovery by invoking
  *         {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#phase1}. Using the information about the files on the target node
@@ -120,9 +120,9 @@
  *         {@link org.elasticsearch.indices.recovery.RecoveryFileChunkRequest}.
  *         Receiving a {@code RecoveryFilesInfoRequest} on the target indicates to it that the recovery will be file-based so it will
  *         invoke to reset the recovery back to {@code INIT} stage, then prepare for receiving files and move to stage {@code INDEX}
- *         again.</ul>
- *     <ul>
- *     <ul>
+ *         again.
+ *     </li>
+ *     <li>
  *         After the segment files have been copied from the source to the target or copying files was skipped, the translog based recovery
  *         step is executed by invoking {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#prepareTargetForTranslog} on the
  *         recovery source. This sends a {@link org.elasticsearch.indices.recovery.RecoveryPrepareForTranslogOperationsRequest} to the
@@ -136,20 +136,21 @@
  *         which will respond with {@link org.elasticsearch.indices.recovery.RecoveryTranslogOperationsResponse}s which contain the
  *         maximum persisted local checkpoint for the target. Tracking the maximum of the received local checkpoint values is necessary
  *         for the next step, finalizing the recovery.
- *     </ul>
- *     <ul>
- *         After having replayed the translog operations, the recovery is finalized by a call to
+ *     </li>
+ *     <li>
+ *         After replaying the translog operations on the target, the recovery is finalized by a call to
  *         {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#finalizeRecovery} on the source. With the knowledge that the
- *         target has received all operations up to the maximum local checkpoint from tracked in the previous step, the source
+ *         target has received all operations up to the maximum local checkpoint tracked in the previous step, the source
  *         (which is also the primary) can now update its in-sync checkpoint state by a call to
  *         {@link org.elasticsearch.index.seqno.ReplicationTracker#markAllocationIdAsInSync}.
  *         Once the in-sync sequence number information has been persisted successfully, the source sends a
  *         {@link org.elasticsearch.indices.recovery.RecoveryFinalizeRecoveryRequest} to the target which contains the global checkpoint
  *         as well as a sequence number above which the target can trim all operations from its translog since all operations above this
- *         number have just been replayed in the previous step.
- *         This moves the target to recovery stage {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#FINALIZE}.
- *     </ul>
- *     <ul>
+ *         number have just been replayed in the previous step and were either of the same or a newer version that those in the existing
+ *         translog on the target.
+ *         This step then also moves the target to recovery stage {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#FINALIZE}.
+ *     </li>
+ *     <li>
  *         After the finalization step the recovery source will send a {@link org.elasticsearch.indices.recovery.RecoveryResponse} to the
  *         target which is implemented as a response to the initial {@code StartRecoveryRequest} that the target sent to initiate the
  *         recovery. This leads to a call to {@link org.elasticsearch.index.shard.IndexShard#postRecovery} which moves the recovery state
@@ -157,14 +158,14 @@
  *         shard to state {@link org.elasticsearch.index.shard.IndexShardState#POST_RECOVERY}. Finally, the recovery target will then
  *         send a {@link org.elasticsearch.cluster.action.shard.ShardStateAction.StartedShardEntry} transport message to master to inform
  *         it about the successful start of the shard.
- *     </ul>
- *     <ul>
+ *     </li>
+ *     <li>
  *         After receiving the {@code StartedShardEntry}, master will then update the cluster state to reflect the state of the now fully
  *         recovered recovery target by executing the
  *         {@link org.elasticsearch.cluster.action.shard.ShardStateAction.ShardStartedClusterStateTaskExecutor}. The resulting cluster
  *         state update is then observed by {@link org.elasticsearch.index.shard.IndexShard#updateShardState} which updates the shard state
  *         on the target node to {@link org.elasticsearch.index.shard.IndexShardState#STARTED} thus completing the peer recovery.
- *     </ul>
- * </li>
+ *     </li>
+ * </ol>
  */
 package org.elasticsearch.indices.recovery;
