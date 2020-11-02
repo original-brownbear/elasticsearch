@@ -75,7 +75,6 @@
  * to {@link org.elasticsearch.indices.recovery.PeerRecoveryTargetService#startRecovery} which results in the following steps being
  * executed.
  *
- * TODO: spell out exact target shard states in the CS below
  * <li>
  *     <ul>
  *         The target shard starts out with a {@link org.elasticsearch.indices.recovery.RecoveryState} at stage
@@ -124,10 +123,10 @@
  *         again.</ul>
  *     <ul>
  *     <ul>
- *         After the segment files have been copied from the source to the target, the translog based recovery step is executed by
- *         invoking {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#prepareTargetForTranslog} on the recovery source.
- *         This sends a {@link org.elasticsearch.indices.recovery.RecoveryPrepareForTranslogOperationsRequest} to the recovery target
- *         which contains the estimated number of translog operations that have to be copied to the target.
+ *         After the segment files have been copied from the source to the target or copying files was skipped, the translog based recovery
+ *         step is executed by invoking {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#prepareTargetForTranslog} on the
+ *         recovery source. This sends a {@link org.elasticsearch.indices.recovery.RecoveryPrepareForTranslogOperationsRequest} to the
+ *         recovery target which contains the estimated number of translog operations that have to be copied to the target.
  *         On the target this request is handled and triggers a call to
  *         {@link org.elasticsearch.index.shard.IndexShard#openEngineAndSkipTranslogRecovery()} which opens a new engine and translog
  *         and then responds back to the recovery source.
@@ -153,9 +152,18 @@
  *     <ul>
  *         After the finalization step the recovery source will send a {@link org.elasticsearch.indices.recovery.RecoveryResponse} to the
  *         target which is implemented as a response to the initial {@code StartRecoveryRequest} that the target sent to initiate the
- *         recovery. This leads to a call to {@link org.elasticsearch.index.shard.IndexShard#postRecovery} which moves teh recovery state
+ *         recovery. This leads to a call to {@link org.elasticsearch.index.shard.IndexShard#postRecovery} which moves the recovery state
  *         to stage {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#DONE}, triggers a refresh of the shard and moves the
- *         shard to state {@link org.elasticsearch.index.shard.IndexShardState#POST_RECOVERY}.
+ *         shard to state {@link org.elasticsearch.index.shard.IndexShardState#POST_RECOVERY}. Finally, the recovery target will then
+ *         send a {@link org.elasticsearch.cluster.action.shard.ShardStateAction.StartedShardEntry} transport message to master to inform
+ *         it about the successful start of the shard.
+ *     </ul>
+ *     <ul>
+ *         After receiving the {@code StartedShardEntry}, master will then update the cluster state to reflect the state of the now fully
+ *         recovered recovery target by executing the
+ *         {@link org.elasticsearch.cluster.action.shard.ShardStateAction.ShardStartedClusterStateTaskExecutor}. The resulting cluster
+ *         state update is then observed by {@link org.elasticsearch.index.shard.IndexShard#updateShardState} which updates the shard state
+ *         on the target node to {@link org.elasticsearch.index.shard.IndexShardState#STARTED} thus completing the peer recovery.
  *     </ul>
  * </li>
  *
