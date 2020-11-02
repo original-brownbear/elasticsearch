@@ -49,6 +49,11 @@
  * The primary node tracks the global checkpoint via {@link org.elasticsearch.index.seqno.ReplicationTracker}. The primary term is tracked
  * via the master node and in the cluster state and incremented each time the primary node for a shard changes.
  *
+ * <h3>Retention Leases</h3>
+ *
+ * The duration for which a shard retains individual operations for replay during recovery governed by
+ * the existing {@link org.elasticsearch.index.seqno.RetentionLease}. TODO: better
+
  * <h2>Peer Recovery</h2>
  *
  * Peer recovery is the process of bringing a shard copy on one node, referred to as the target node below, in-sync with the shard copy on
@@ -62,11 +67,7 @@
  * hold the same set of documents. Peer recovery will therefore try to avoid file based recovery where possible in order to reduce the
  * amount of data that has to be transferred and prefer replaying just those operations missing on the target relative to the source.
  * Replaying operations is possible as long as the primary node retains the missing operations in its
- * {@link org.elasticsearch.indices.recovery.RecoveryState.Translog}.
- *
- * <h3>Retention Leases</h3>
- *
- * The duration for which a shard retains individual operations alongside
+ * {@link org.elasticsearch.indices.recovery.RecoveryState.Translog} as well as the relevant soft deletes in its Lucene index.
  *
  * <h3>State Machine</h3>
  *
