@@ -148,6 +148,14 @@
  *         {@link org.elasticsearch.indices.recovery.RecoveryFinalizeRecoveryRequest} to the target which contains the global checkpoint
  *         as well as a sequence number above which the target can trim all operations from its translog since all operations above this
  *         number have just been replayed in the previous step.
+ *         This moves the target to recovery stage {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#FINALIZE}.
+ *     </ul>
+ *     <ul>
+ *         After the finalization step the recovery source will send a {@link org.elasticsearch.indices.recovery.RecoveryResponse} to the
+ *         target which is implemented as a response to the initial {@code StartRecoveryRequest} that the target sent to initiate the
+ *         recovery. This leads to a call to {@link org.elasticsearch.index.shard.IndexShard#postRecovery} which moves teh recovery state
+ *         to stage {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#DONE}, triggers a refresh of the shard and moves the
+ *         shard to state {@link org.elasticsearch.index.shard.IndexShardState#POST_RECOVERY}.
  *     </ul>
  * </li>
  *
