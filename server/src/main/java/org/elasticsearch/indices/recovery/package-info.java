@@ -82,9 +82,9 @@
  *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#INIT}. At the start of the peer recovery process the target node
  *         will try to recover from its local translog as far as if there are any operations to recover from it. It will first move to
  *         stage {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#INDEX} and then try to recover as far as possible from
- *         existing files and the existing translog. After that it moves to
- *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#VERIFY_INDEX}. //TODO: continue here and explain verify index
- *         // TODO: talk about org.elasticsearch.index.shard.IndexShard#resetRecoveryStage()
+ *         existing files and the existing translog. During this process it will move to
+ *         {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#VERIFY_INDEX}, verifying that the files on disk are not corrupted,
+ *         then to {@link org.elasticsearch.indices.recovery.RecoveryState.Stage#TRANSLOG} during recovery from translog.
  *         A {@link  org.elasticsearch.indices.recovery.StartRecoveryRequest} is then sent to the primary node of the shard to recover by
  *         the target node for the recovery. This triggers
  *         {@link org.elasticsearch.indices.recovery.PeerRecoverySourceService#recover} on the primary node that receives the request. The
@@ -104,7 +104,6 @@
  *                See {@link org.elasticsearch.index.shard.IndexShard#hasCompleteHistoryOperations} for details.
  *            </ul>
  *            <ul>
- *                TODO: When does this retention lease get instantiated?
  *                A peer recovery retention lease must exist for the target shard and it must retain a sequence number below or equal
  *                to the starting sequence number in {@link org.elasticsearch.indices.recovery.StartRecoveryRequest#startingSeqNo()}.
  *            </ul>
@@ -119,7 +118,10 @@
  *         {@link org.elasticsearch.indices.recovery.RecoveryFilesInfoRequest}. Once the recovery target has received the list of files
  *         that will be copied to it, {@link org.elasticsearch.indices.recovery.RecoverySourceHandler#sendFiles} is invoked which
  *         will send the segment files over to the recovery target via a series of
- *         {@link org.elasticsearch.indices.recovery.RecoveryFileChunkRequest}.</ul>
+ *         {@link org.elasticsearch.indices.recovery.RecoveryFileChunkRequest}.
+ *         Receiving a {@code RecoveryFilesInfoRequest} on the target indicates to it that the recovery will be file-based so it will
+ *         invoke to reset the recovery back to {@code INIT} stage, then prepare for receiving files and move to stage {@code INDEX}
+ *         again.</ul>
  *     <ul>
  *         // TODO: explain retention lease logic in details
  *         // TODO: soft deletes in detail maybe?
