@@ -16,6 +16,7 @@ import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.blobstore.cache.BlobStoreCacheService;
 import org.elasticsearch.blobstore.cache.CachedBlob;
 import org.elasticsearch.common.SuppressForbidden;
@@ -37,7 +38,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Locale;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -134,6 +134,18 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
         return Tuple.tuple(start, end);
     }
 
+    private static final ActionListener<Integer> POPULATE_FROM_CACHE_LISTENER = new ActionListener<>() {
+        @Override
+        public void onResponse(Integer integer) {
+            logger.trace("Filled [{}] bytes from cache in the background", integer);
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            logger.debug("Exception in background cache fill", e);
+        }
+    };
+
     @Override
     protected void readInternal(ByteBuffer b) throws IOException {
         ensureContext(ctx -> ctx != CACHE_WARMING_CONTEXT);
@@ -157,15 +169,13 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
             final CacheFile cacheFile = cacheFileReference.get();
 
             // Can we serve the read directly from disk? If so, do so and don't worry about anything else.
-
-            final Future<Integer> waitingForRead = cacheFile.readIfAvailableOrPending(Tuple.tuple(position, position + length), channel -> {
+            final PlainActionFuture<Integer> future = PlainActionFuture.newFuture();
+            if (cacheFile.readIfAvailableOrPending(Tuple.tuple(position, position + length), channel -> {
                 final int read = readCacheFile(channel, position, b);
                 assert read == length : read + " vs " + length;
                 return read;
-            });
-
-            if (waitingForRead != null) {
-                final Integer read = waitingForRead.get();
+            }, future)) {
+                final Integer read = future.get();
                 assert read == length;
                 readComplete(position, length);
                 return;
@@ -240,7 +250,8 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                                 stats.addCachedBytesWritten(to - from, endTimeNanos - startTimeNanos);
                                 logger.trace("copied bytes [{}-{}] of file [{}] from cache index to disk", from, to, fileInfo);
                             },
-                            directory.cacheFetchAsyncExecutor()
+                            directory.cacheFetchAsyncExecutor(),
+                            POPULATE_FROM_CACHE_LISTENER
                         );
                     } catch (Exception e) {
                         logger.debug(
@@ -283,7 +294,8 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                 + rangeToWrite;
             final Tuple<Long, Long> rangeToRead = Tuple.tuple(position, position + length);
 
-            final Future<Integer> populateCacheFuture = cacheFile.populateAndRead(rangeToWrite, rangeToRead, channel -> {
+            final PlainActionFuture<Integer> populateCacheFuture = PlainActionFuture.newFuture();
+            cacheFile.populateAndRead(rangeToWrite, rangeToRead, channel -> {
                 final int read;
                 if ((rangeToRead.v2() - rangeToRead.v1()) < b.remaining()) {
                     final ByteBuffer duplicate = b.duplicate();
@@ -295,11 +307,11 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                     read = readCacheFile(channel, position, b);
                 }
                 return read;
-            }, this::writeCacheFile, directory.cacheFetchAsyncExecutor());
+            }, this::writeCacheFile, directory.cacheFetchAsyncExecutor(), populateCacheFuture);
 
             if (indexCacheMiss != null) {
                 final Releasable onCacheFillComplete = stats.addIndexCacheFill();
-                final Future<Integer> readFuture = cacheFile.readIfAvailableOrPending(indexCacheMiss, channel -> {
+                if (cacheFile.readIfAvailableOrPending(indexCacheMiss, channel -> {
                     final int indexCacheMissLength = toIntBytes(indexCacheMiss.v2() - indexCacheMiss.v1());
 
                     // We assume that we only cache small portions of blobs so that we do not need to:
@@ -325,9 +337,7 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                         }
                     });
                     return indexCacheMissLength;
-                });
-
-                if (readFuture == null) {
+                }, POPULATE_FROM_CACHE_LISTENER) == false) {
                     // Normally doesn't happen, we're already obtaining a range covering all cache misses above, but theoretically
                     // possible in the case that the real populateAndRead call already failed to obtain this range of the file. In that
                     // case, simply move on.
@@ -484,6 +494,7 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                     // We do not actually read anything, but we want to wait for the write to complete before proceeding.
                     // noinspection UnnecessaryLocalVariable
                     final Tuple<Long, Long> rangeToRead = rangeToWrite;
+                    final PlainActionFuture<Integer> future = PlainActionFuture.newFuture();
                     cacheFile.populateAndRead(rangeToWrite, rangeToRead, (channel) -> bytesRead, (channel, start, end, progressUpdater) -> {
                         final ByteBuffer byteBuffer = ByteBuffer.wrap(copyBuffer, toIntBytes(start - readStart), toIntBytes(end - start));
                         final int writtenBytes = positionalWrite(channel, start, byteBuffer);
@@ -496,7 +507,8 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                         );
                         totalBytesWritten.addAndGet(writtenBytes);
                         progressUpdater.accept(start + writtenBytes);
-                    }, directory.cacheFetchAsyncExecutor()).get();
+                    }, directory.cacheFetchAsyncExecutor(), future);
+                    future.get();
                     totalBytesRead += bytesRead;
                     remainingBytes -= bytesRead;
                 }

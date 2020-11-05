@@ -27,9 +27,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -283,17 +281,15 @@ public class CacheFile {
      * {@link RangeAvailableHandler} when {@code rangeToRead} is available to read from the file. If {@code rangeToRead} is already
      * available then the {@link RangeAvailableHandler} is called synchronously by this method; if not then the given {@link Executor}
      * processes the missing ranges and notifies the {@link RangeAvailableHandler}.
-     *
-     * @return a future which returns the result of the {@link RangeAvailableHandler} once it has completed.
      */
-    Future<Integer> populateAndRead(
+    void populateAndRead(
         final Tuple<Long, Long> rangeToWrite,
         final Tuple<Long, Long> rangeToRead,
         final RangeAvailableHandler reader,
         final RangeMissingHandler writer,
-        final Executor executor
+        final Executor executor,
+        ActionListener<Integer> listener
     ) {
-        final CompletableFuture<Integer> future = new CompletableFuture<>();
         Releasable decrementRef = null;
         try {
             final FileChannelReference reference = acquireFileChannelReference();
@@ -301,7 +297,7 @@ public class CacheFile {
             final List<SparseFileTracker.Gap> gaps = tracker.waitForRange(
                 rangeToWrite,
                 rangeToRead,
-                rangeListener(rangeToRead, reader, future, reference, decrementRef)
+                rangeListener(rangeToRead, reader, listener, reference, decrementRef)
             );
 
             for (SparseFileTracker.Gap gap : gaps) {
@@ -330,9 +326,8 @@ public class CacheFile {
                 });
             }
         } catch (Exception e) {
-            releaseAndFail(future, decrementRef, e);
+            releaseAndFail(listener, decrementRef, e);
         }
-        return future;
     }
 
     /**
@@ -345,37 +340,40 @@ public class CacheFile {
      *         target range is neither available nor pending.
      */
     @Nullable
-    Future<Integer> readIfAvailableOrPending(final Tuple<Long, Long> rangeToRead, final RangeAvailableHandler reader) {
-        final CompletableFuture<Integer> future = new CompletableFuture<>();
+    boolean readIfAvailableOrPending(
+        final Tuple<Long, Long> rangeToRead,
+        final RangeAvailableHandler reader,
+        ActionListener<Integer> listener
+    ) {
         Releasable decrementRef = null;
         try {
             final FileChannelReference reference = acquireFileChannelReference();
             decrementRef = Releasables.releaseOnce(reference::decRef);
-            if (tracker.waitForRangeIfPending(rangeToRead, rangeListener(rangeToRead, reader, future, reference, decrementRef))) {
-                return future;
+            if (tracker.waitForRangeIfPending(rangeToRead, rangeListener(rangeToRead, reader, listener, reference, decrementRef))) {
+                return true;
             } else {
                 decrementRef.close();
-                return null;
+                return false;
             }
         } catch (Exception e) {
-            releaseAndFail(future, decrementRef, e);
-            return future;
+            releaseAndFail(listener, decrementRef, e);
+            return true;
         }
     }
 
-    private static void releaseAndFail(CompletableFuture<Integer> future, Releasable decrementRef, Exception e) {
+    private static void releaseAndFail(ActionListener<Integer> future, Releasable decrementRef, Exception e) {
         try {
             Releasables.close(decrementRef);
         } catch (Exception ex) {
             e.addSuppressed(ex);
         }
-        future.completeExceptionally(e);
+        future.onFailure(e);
     }
 
     private static ActionListener<Void> rangeListener(
         Tuple<Long, Long> rangeToRead,
         RangeAvailableHandler reader,
-        CompletableFuture<Integer> future,
+        ActionListener<Integer> listener,
         FileChannelReference reference,
         Releasable releasable
     ) {
@@ -388,8 +386,8 @@ public class CacheFile {
                 + '-'
                 + rangeToRead.v1()
                 + ']';
-            future.complete(read);
-        }, future::completeExceptionally), releasable::close);
+            listener.onResponse(read);
+        }, listener::onFailure), releasable::close);
     }
 
     /**

@@ -9,6 +9,7 @@ import org.apache.lucene.mockfile.FilterFileChannel;
 import org.apache.lucene.mockfile.FilterFileSystemProvider;
 import org.apache.lucene.mockfile.FilterPath;
 import org.apache.lucene.util.SetOnce;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.PathUtils;
@@ -158,21 +159,28 @@ public class CacheFileTests extends ESTestCase {
             random()
         );
         final ThreadPool threadPool = deterministicTaskQueue.getThreadPool();
-        final Future<Integer> populateAndReadFuture;
+        final PlainActionFuture<Integer> populateAndReadFuture;
         final Future<Integer> readIfAvailableFuture;
         if (randomBoolean()) {
-            populateAndReadFuture = cacheFile.populateAndRead(
+            populateAndReadFuture = PlainActionFuture.newFuture();
+            cacheFile.populateAndRead(
                 Tuple.tuple(0L, length),
                 Tuple.tuple(0L, length),
                 channel -> Math.toIntExact(length),
                 (channel, from, to, progressUpdater) -> progressUpdater.accept(length),
-                threadPool.generic()
+                threadPool.generic(),
+                populateAndReadFuture
             );
         } else {
             populateAndReadFuture = null;
         }
         if (randomBoolean()) {
-            readIfAvailableFuture = cacheFile.readIfAvailableOrPending(Tuple.tuple(0L, length), channel -> Math.toIntExact(length));
+            final PlainActionFuture<Integer> future = PlainActionFuture.newFuture();
+            if (cacheFile.readIfAvailableOrPending(Tuple.tuple(0L, length), channel -> Math.toIntExact(length), future)) {
+                readIfAvailableFuture = future;
+            } else {
+                readIfAvailableFuture = null;
+            }
         } else {
             readIfAvailableFuture = null;
         }
@@ -320,12 +328,12 @@ public class CacheFileTests extends ESTestCase {
             final long start = randomLongBetween(0L, cacheFile.getLength() - 1L);
             final long end = randomLongBetween(start + 1L, cacheFile.getLength());
             final Tuple<Long, Long> range = Tuple.tuple(start, end);
-            futures.add(
-                cacheFile.populateAndRead(range, range, channel -> Math.toIntExact(end - start), (channel, from, to, progressUpdater) -> {
-                    ranges.add(Tuple.tuple(from, to));
-                    progressUpdater.accept(to);
-                }, deterministicTaskQueue.getThreadPool().generic())
-            );
+            final PlainActionFuture<Integer> future = PlainActionFuture.newFuture();
+            cacheFile.populateAndRead(range, range, channel -> Math.toIntExact(end - start), (channel, from, to, progressUpdater) -> {
+                ranges.add(Tuple.tuple(from, to));
+                progressUpdater.accept(to);
+            }, deterministicTaskQueue.getThreadPool().generic(), future);
+            futures.add(future);
         }
         deterministicTaskQueue.runAllRunnableTasks();
         assertTrue(futures.stream().allMatch(Future::isDone));
