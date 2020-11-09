@@ -38,8 +38,8 @@ public class UnsignedLongFieldMapperTests extends MapperTestCase {
     }
 
     @Override
-    protected void writeFieldValue(XContentBuilder builder) throws IOException {
-        builder.value(123);
+    protected Object getSampleValueForDocument() {
+        return 123;
     }
 
     @Override
@@ -126,7 +126,7 @@ public class UnsignedLongFieldMapperTests extends MapperTestCase {
         assertEquals(9223372036854775807L, dvField.numericValue().longValue());
         IndexableField storedField = fields[2];
         assertTrue(storedField.fieldType().stored());
-        assertEquals(9223372036854775807L, storedField.numericValue().longValue());
+        assertEquals("18446744073709551615", storedField.stringValue());
     }
 
     public void testCoerceMappingParameterIsIllegal() {

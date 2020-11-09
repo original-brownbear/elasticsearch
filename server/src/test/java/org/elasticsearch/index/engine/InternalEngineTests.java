@@ -37,6 +37,7 @@ import org.apache.lucene.index.IndexCommit;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.IndexWriterMaxDocsChanger;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
@@ -1155,8 +1156,7 @@ public class InternalEngineTests extends EngineTestCase {
         Engine.Index create = new Engine.Index(newUid(doc), primaryTerm.get(), doc, Versions.MATCH_DELETED);
         Engine.IndexResult indexResult = engine.index(create);
         assertThat(indexResult.getVersion(), equalTo(1L));
-        try (Engine.GetResult get = engine.get(new Engine.Get(true, false, doc.id(), create.uid()),
-                searcherFactory)) {
+        try (Engine.GetResult get = engine.get(new Engine.Get(true, false, doc.id()), searcherFactory)) {
             assertEquals(1, get.version());
         }
 
@@ -1164,8 +1164,7 @@ public class InternalEngineTests extends EngineTestCase {
         Engine.IndexResult update_1_result = engine.index(update_1);
         assertThat(update_1_result.getVersion(), equalTo(2L));
 
-        try (Engine.GetResult get = engine.get(new Engine.Get(true, false, doc.id(), create.uid()),
-                searcherFactory)) {
+        try (Engine.GetResult get = engine.get(new Engine.Get(true, false, doc.id()), searcherFactory)) {
             assertEquals(2, get.version());
         }
 
@@ -1173,8 +1172,7 @@ public class InternalEngineTests extends EngineTestCase {
         Engine.IndexResult update_2_result = engine.index(update_2);
         assertThat(update_2_result.getVersion(), equalTo(3L));
 
-        try (Engine.GetResult get = engine.get(new Engine.Get(true, false, doc.id(), create.uid()),
-                searcherFactory)) {
+        try (Engine.GetResult get = engine.get(new Engine.Get(true, false, doc.id()), searcherFactory)) {
             assertEquals(3, get.version());
         }
 
@@ -1193,22 +1191,22 @@ public class InternalEngineTests extends EngineTestCase {
             engine.flush();
         }
         try (Engine.GetResult get = engine.get(
-            new Engine.Get(true, true, doc.id(), create.uid())
+            new Engine.Get(true, true, doc.id())
                 .setIfSeqNo(indexResult.getSeqNo()).setIfPrimaryTerm(primaryTerm.get()),
             searcherFactory)) {
             assertEquals(indexResult.getSeqNo(), get.docIdAndVersion().seqNo);
         }
 
-        expectThrows(VersionConflictEngineException.class, () -> engine.get(new Engine.Get(true, false, doc.id(), create.uid())
+        expectThrows(VersionConflictEngineException.class, () -> engine.get(new Engine.Get(true, false, doc.id())
                 .setIfSeqNo(indexResult.getSeqNo() + 1).setIfPrimaryTerm(primaryTerm.get()),
             searcherFactory));
 
-        expectThrows(VersionConflictEngineException.class, () -> engine.get(new Engine.Get(true, false, doc.id(), create.uid())
+        expectThrows(VersionConflictEngineException.class, () -> engine.get(new Engine.Get(true, false, doc.id())
                 .setIfSeqNo(indexResult.getSeqNo()).setIfPrimaryTerm(primaryTerm.get() + 1),
             searcherFactory));
 
         final VersionConflictEngineException versionConflictEngineException
-            = expectThrows(VersionConflictEngineException.class, () -> engine.get(new Engine.Get(true, false, doc.id(), create.uid())
+            = expectThrows(VersionConflictEngineException.class, () -> engine.get(new Engine.Get(true, false, doc.id())
                 .setIfSeqNo(indexResult.getSeqNo() + 1).setIfPrimaryTerm(primaryTerm.get() + 1),
             searcherFactory));
         assertThat(versionConflictEngineException.getStackTrace(), emptyArray());
@@ -1319,7 +1317,7 @@ public class InternalEngineTests extends EngineTestCase {
             }
             engine.forceMerge(true, 1, false, false, false, UUIDs.randomBase64UUID());
             assertConsistentHistoryBetweenTranslogAndLuceneIndex(engine, mapperService);
-            Map<Long, Translog.Operation> ops = readAllOperationsInLucene(engine, mapperService)
+            Map<Long, Translog.Operation> ops = readAllOperationsInLucene(engine, mapperService::fieldType)
                 .stream().collect(Collectors.toMap(Translog.Operation::seqNo, Function.identity()));
             for (long seqno = 0; seqno <= localCheckpoint; seqno++) {
                 long minSeqNoToRetain = Math.min(globalCheckpoint.get() + 1 - retainedExtraOps, safeCommitCheckpoint + 1);
@@ -1343,7 +1341,7 @@ public class InternalEngineTests extends EngineTestCase {
 
             engine.forceMerge(true, 1, false, false, false, UUIDs.randomBase64UUID());
             assertConsistentHistoryBetweenTranslogAndLuceneIndex(engine, mapperService);
-            assertThat(readAllOperationsInLucene(engine, mapperService), hasSize(liveDocs.size()));
+            assertThat(readAllOperationsInLucene(engine, mapperService::fieldType), hasSize(liveDocs.size()));
         }
     }
 
@@ -1407,7 +1405,7 @@ public class InternalEngineTests extends EngineTestCase {
             }
             engine.forceMerge(true, 1, false, false, false, UUIDs.randomBase64UUID());
             assertConsistentHistoryBetweenTranslogAndLuceneIndex(engine, mapperService);
-            Map<Long, Translog.Operation> ops = readAllOperationsInLucene(engine, mapperService)
+            Map<Long, Translog.Operation> ops = readAllOperationsInLucene(engine, mapperService::fieldType)
                 .stream().collect(Collectors.toMap(Translog.Operation::seqNo, Function.identity()));
             for (long seqno = 0; seqno <= engine.getPersistedLocalCheckpoint(); seqno++) {
                 String msg = "seq# [" + seqno + "], global checkpoint [" + globalCheckpoint + "], retained-ops [" + retainedExtraOps + "]";
@@ -1450,7 +1448,7 @@ public class InternalEngineTests extends EngineTestCase {
             }
             engine.forceMerge(true, 1, false, false, false, UUIDs.randomBase64UUID());
             assertConsistentHistoryBetweenTranslogAndLuceneIndex(engine, mapperService);
-            assertThat(readAllOperationsInLucene(engine, mapperService), hasSize(liveDocsWithSource.size()));
+            assertThat(readAllOperationsInLucene(engine, mapperService::fieldType), hasSize(liveDocsWithSource.size()));
         }
     }
 
@@ -1900,7 +1898,7 @@ public class InternalEngineTests extends EngineTestCase {
         assertOpsOnReplica(replicaOps, replicaEngine, true, logger);
         final int opsOnPrimary = assertOpsOnPrimary(primaryOps, finalReplicaVersion, deletedOnReplica, replicaEngine);
         final long currentSeqNo = getSequenceID(replicaEngine,
-            new Engine.Get(false, false, lastReplicaOp.uid().text(), lastReplicaOp.uid())).v1();
+            new Engine.Get(false, false, lastReplicaOp.uid().text())).v1();
         try (Engine.Searcher searcher = engine.acquireSearcher("test", Engine.SearcherScope.INTERNAL)) {
             final TotalHitCountCollector collector = new TotalHitCountCollector();
             searcher.search(new MatchAllDocsQuery(), collector);
@@ -1966,8 +1964,7 @@ public class InternalEngineTests extends EngineTestCase {
                     throw new AssertionError(e);
                 }
                 for (int op = 0; op < opsPerThread; op++) {
-                    try (Engine.GetResult get = engine.get(new Engine.Get(true, false,
-                        doc.id(), uidTerm), searcherFactory)) {
+                    try (Engine.GetResult get = engine.get(new Engine.Get(true, false, doc.id()), searcherFactory)) {
                         FieldsVisitor visitor = new FieldsVisitor(true);
                         get.docIdAndVersion().reader.document(get.docIdAndVersion().docId, visitor);
                         List<String> values = new ArrayList<>(Strings.commaDelimitedListToSet(visitor.source().utf8ToString()));
@@ -2009,8 +2006,7 @@ public class InternalEngineTests extends EngineTestCase {
             assertTrue(op.added + " should not exist", exists);
         }
 
-        try (Engine.GetResult get = engine.get(new Engine.Get(true, false,
-                doc.id(), uidTerm), searcherFactory)) {
+        try (Engine.GetResult get = engine.get(new Engine.Get(true, false, doc.id()), searcherFactory)) {
             FieldsVisitor visitor = new FieldsVisitor(true);
             get.docIdAndVersion().reader.document(get.docIdAndVersion().docId, visitor);
             List<String> values = Arrays.asList(Strings.commaDelimitedListToStringArray(visitor.source().utf8ToString()));
@@ -2437,8 +2433,7 @@ public class InternalEngineTests extends EngineTestCase {
                 10, VersionType.EXTERNAL, Engine.Operation.Origin.PRIMARY, System.nanoTime(), UNASSIGNED_SEQ_NO, 0));
 
             // Get should not find the document (we never indexed uid=2):
-            getResult = engine.get(new Engine.Get(true, false, "2", newUid("2")),
-                searcherFactory);
+            getResult = engine.get(new Engine.Get(true, false, "2"), searcherFactory);
             assertThat(getResult.exists(), equalTo(false));
 
             // Try to index uid=1 with a too-old version, should fail:
@@ -3337,7 +3332,7 @@ public class InternalEngineTests extends EngineTestCase {
             assertEquals(1, topDocs.totalHits.value);
         }
         if (engine.engineConfig.getIndexSettings().isSoftDeleteEnabled()) {
-            List<Translog.Operation> ops = readAllOperationsInLucene(engine, createMapperService());
+            List<Translog.Operation> ops = readAllOperationsInLucene(engine, createMapperService()::fieldType);
             assertThat(ops.stream().map(o -> o.seqNo()).collect(Collectors.toList()), hasItem(20L));
         }
     }
@@ -3679,8 +3674,7 @@ public class InternalEngineTests extends EngineTestCase {
     }
 
     public void testSequenceIDs() throws Exception {
-        Tuple<Long, Long> seqID = getSequenceID(engine, new Engine.Get(false, false,
-            "2", newUid("1")));
+        Tuple<Long, Long> seqID = getSequenceID(engine, new Engine.Get(false, false, "1"));
         // Non-existent doc returns no seqnum and no primary term
         assertThat(seqID.v1(), equalTo(UNASSIGNED_SEQ_NO));
         assertThat(seqID.v2(), equalTo(0L));
@@ -3974,8 +3968,7 @@ public class InternalEngineTests extends EngineTestCase {
         }
 
         assertThat(engine.getProcessedLocalCheckpoint(), equalTo(expectedLocalCheckpoint));
-        try (Engine.GetResult result = engine.get(new Engine.Get(true, false,
-            "2", uid), searcherFactory)) {
+        try (Engine.GetResult result = engine.get(new Engine.Get(true, false, "1"), searcherFactory)) {
             assertThat(result.exists(), equalTo(exists));
         }
     }
@@ -4026,7 +4019,7 @@ public class InternalEngineTests extends EngineTestCase {
                     localCheckpoint);
             EngineConfig noopEngineConfig = copy(engine.config(), new SoftDeletesRetentionMergePolicy(Lucene.SOFT_DELETES_FIELD,
                 () -> new MatchAllDocsQuery(), engine.config().getMergePolicy()));
-            noOpEngine = new InternalEngine(noopEngineConfig, supplier) {
+            noOpEngine = new InternalEngine(noopEngineConfig, IndexWriter.MAX_DOCS, supplier) {
                 @Override
                 protected long doGenerateSeqNoForOperation(Operation operation) {
                     throw new UnsupportedOperationException();
@@ -4059,7 +4052,7 @@ public class InternalEngineTests extends EngineTestCase {
             assertThat(noOp.reason(), equalTo(reason));
             if (engine.engineConfig.getIndexSettings().isSoftDeleteEnabled()) {
                 MapperService mapperService = createMapperService();
-                List<Translog.Operation> operationsFromLucene = readAllOperationsInLucene(noOpEngine, mapperService);
+                List<Translog.Operation> operationsFromLucene = readAllOperationsInLucene(noOpEngine, mapperService::fieldType);
                 assertThat(operationsFromLucene, hasSize(maxSeqNo + 2 - localCheckpoint)); // fills n gap and 2 manual noop.
                 for (int i = 0; i < operationsFromLucene.size(); i++) {
                     assertThat(operationsFromLucene.get(i),
@@ -4133,7 +4126,7 @@ public class InternalEngineTests extends EngineTestCase {
             }
         }
         if (engine.engineConfig.getIndexSettings().isSoftDeleteEnabled()) {
-            List<Translog.Operation> operations = readAllOperationsInLucene(engine, createMapperService());
+            List<Translog.Operation> operations = readAllOperationsInLucene(engine, createMapperService()::fieldType);
             assertThat(operations, hasSize(numOps));
         }
     }
@@ -4900,17 +4893,13 @@ public class InternalEngineTests extends EngineTestCase {
                 CountDownLatch awaitStarted = new CountDownLatch(1);
                 Thread thread = new Thread(() -> {
                     awaitStarted.countDown();
-                    try (Engine.GetResult getResult = engine.get(new Engine.Get(true, false,
-                            doc3.id(), doc3.uid()),
-                        engine::acquireSearcher)) {
+                    try (Engine.GetResult getResult = engine.get(new Engine.Get(true, false, doc3.id()), engine::acquireSearcher)) {
                         assertTrue(getResult.exists());
                     }
                 });
                 thread.start();
                 awaitStarted.await();
-                try (Engine.GetResult getResult = engine.get(new Engine.Get(true, false,
-                        doc.id(), doc.uid()),
-                    engine::acquireSearcher)) {
+                try (Engine.GetResult getResult = engine.get(new Engine.Get(true, false, doc.id()), engine::acquireSearcher)) {
                     assertFalse(getResult.exists());
                 }
                 thread.join();
@@ -5071,7 +5060,7 @@ public class InternalEngineTests extends EngineTestCase {
                 }
             }
             MapperService mapperService = createMapperService();
-            List<Translog.Operation> actualOps = readAllOperationsInLucene(engine, mapperService);
+            List<Translog.Operation> actualOps = readAllOperationsInLucene(engine, mapperService::fieldType);
             assertThat(actualOps.stream().map(o -> o.seqNo()).collect(Collectors.toList()), containsInAnyOrder(expectedSeqNos.toArray()));
             assertConsistentHistoryBetweenTranslogAndLuceneIndex(engine, mapperService);
         }
@@ -5152,7 +5141,7 @@ public class InternalEngineTests extends EngineTestCase {
                 long minRetainSeqNos = engine.getMinRetainedSeqNo();
                 assertThat(minRetainSeqNos, lessThanOrEqualTo(globalCheckpoint.get() + 1));
                 Long[] expectedOps = existingSeqNos.stream().filter(seqno -> seqno >= minRetainSeqNos).toArray(Long[]::new);
-                Set<Long> actualOps = readAllOperationsInLucene(engine, createMapperService()).stream()
+                Set<Long> actualOps = readAllOperationsInLucene(engine, createMapperService()::fieldType).stream()
                     .map(Translog.Operation::seqNo).collect(Collectors.toSet());
                 assertThat(actualOps, containsInAnyOrder(expectedOps));
             }
@@ -5239,7 +5228,7 @@ public class InternalEngineTests extends EngineTestCase {
                     @Override
                     protected void doRun() throws Exception {
                         latch.await();
-                        Translog.Snapshot changes = engine.newChangesSnapshot("test", mapperService, min, max, true);
+                        Translog.Snapshot changes = engine.newChangesSnapshot("test", mapperService::fieldType, min, max, true);
                         changes.close();
                     }
                 });
@@ -5989,6 +5978,64 @@ public class InternalEngineTests extends EngineTestCase {
                 SequentialStoredFieldsLeafReader lf = (SequentialStoredFieldsLeafReader) context.reader();
                 assertNotNull(lf.getSequentialStoredFieldsReader());
             }
+        }
+    }
+
+    public void testMaxDocsOnPrimary() throws Exception {
+        engine.close();
+        int maxDocs = randomIntBetween(1, 100);
+        IndexWriterMaxDocsChanger.setMaxDocs(maxDocs);
+        try {
+            engine = new InternalTestEngine(engine.config(), maxDocs, LocalCheckpointTracker::new);
+            int numDocs = between(maxDocs + 1, maxDocs * 2);
+            List<Engine.Operation> operations = new ArrayList<>(numDocs);
+            for (int i = 0; i < numDocs; i++) {
+                final String id = Integer.toString(randomInt(numDocs));
+                if (randomBoolean()) {
+                    operations.add(indexForDoc(createParsedDoc(id, null)));
+                } else {
+                    operations.add(new Engine.Delete(id, newUid(id), primaryTerm.get()));
+                }
+            }
+            for (int i = 0; i < numDocs; i++) {
+                final long maxSeqNo = engine.getLocalCheckpointTracker().getMaxSeqNo();
+                final Engine.Result result = applyOperation(engine, operations.get(i));
+                if (i < maxDocs) {
+                    assertThat(result.getResultType(), equalTo(Engine.Result.Type.SUCCESS));
+                    assertNull(result.getFailure());
+                    assertThat(engine.getLocalCheckpointTracker().getMaxSeqNo(), equalTo(maxSeqNo + 1L));
+                } else {
+                    assertThat(result.getResultType(), equalTo(Engine.Result.Type.FAILURE));
+                    assertNotNull(result.getFailure());
+                    assertThat(result.getFailure().getMessage(),
+                        containsString("Number of documents in the index can't exceed [" + maxDocs + "]"));
+                    assertThat(result.getSeqNo(), equalTo(UNASSIGNED_SEQ_NO));
+                    assertThat(engine.getLocalCheckpointTracker().getMaxSeqNo(), equalTo(maxSeqNo));
+                }
+                assertFalse(engine.isClosed.get());
+            }
+        } finally {
+            IndexWriterMaxDocsChanger.restoreMaxDocs();
+        }
+    }
+
+    public void testMaxDocsOnReplica() throws Exception {
+        engine.close();
+        int maxDocs = randomIntBetween(1, 100);
+        IndexWriterMaxDocsChanger.setMaxDocs(maxDocs);
+        try {
+            engine = new InternalTestEngine(engine.config(), maxDocs, LocalCheckpointTracker::new);
+            int numDocs = between(maxDocs + 1, maxDocs * 2);
+            List<Engine.Operation> operations = generateHistoryOnReplica(numDocs, randomBoolean(), randomBoolean(), randomBoolean());
+            final IllegalArgumentException error = expectThrows(IllegalArgumentException.class, () -> {
+                for (Engine.Operation op : operations) {
+                    applyOperation(engine, op);
+                }
+            });
+            assertThat(error.getMessage(), containsString("number of documents in the index cannot exceed " + maxDocs));
+            assertTrue(engine.isClosed.get());
+        } finally {
+            IndexWriterMaxDocsChanger.restoreMaxDocs();
         }
     }
 }
