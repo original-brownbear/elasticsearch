@@ -845,15 +845,9 @@ public class MetadataCreateIndexService {
         IndexMetadata.Builder indexMetadataBuilder = createIndexMetadataBuilder(indexName, sourceMetadata, indexSettings, routingNumShards);
         indexMetadataBuilder.system(isSystem);
         // now, update the mappings with the actual source
-        Map<String, MappingMetadata> mappingsMetadata = new HashMap<>();
         DocumentMapper mapper = documentMapperSupplier.get();
         if (mapper != null) {
-            MappingMetadata mappingMd = new MappingMetadata(mapper);
-            mappingsMetadata.put(mapper.type(), mappingMd);
-        }
-
-        for (MappingMetadata mappingMd : mappingsMetadata.values()) {
-            indexMetadataBuilder.putMapping(mappingMd);
+            indexMetadataBuilder.putMapping(new MappingMetadata(mapper));
         }
 
         // apply the aliases in reverse order as the lower index ones have higher order

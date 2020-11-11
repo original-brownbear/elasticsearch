@@ -40,6 +40,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.collect.HppcMaps;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.VersionedNamedWriteable;
@@ -184,12 +185,14 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
 
     private final SortedMap<String, IndexAbstraction> indicesLookup;
 
-    Metadata(String clusterUUID, boolean clusterUUIDCommitted, long version, CoordinationMetadata coordinationMetadata,
+    private final Map<CompressedXContent, CompressedXContent> mappingSources;
+
+    private Metadata(String clusterUUID, boolean clusterUUIDCommitted, long version, CoordinationMetadata coordinationMetadata,
              Settings transientSettings, Settings persistentSettings, DiffableStringMap hashesOfConsistentSettings,
              ImmutableOpenMap<String, IndexMetadata> indices, ImmutableOpenMap<String, IndexTemplateMetadata> templates,
              ImmutableOpenMap<String, Custom> customs, String[] allIndices, String[] visibleIndices, String[] allOpenIndices,
              String[] visibleOpenIndices, String[] allClosedIndices, String[] visibleClosedIndices,
-             SortedMap<String, IndexAbstraction> indicesLookup) {
+             SortedMap<String, IndexAbstraction> indicesLookup, Map<CompressedXContent, CompressedXContent> mappingSources) {
         this.clusterUUID = clusterUUID;
         this.clusterUUIDCommitted = clusterUUIDCommitted;
         this.version = version;
@@ -219,6 +222,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
         this.allClosedIndices = allClosedIndices;
         this.visibleClosedIndices = visibleClosedIndices;
         this.indicesLookup = indicesLookup;
+        this.mappingSources = mappingSources;
     }
 
     public long version() {
@@ -999,6 +1003,9 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
         private DiffableStringMap hashesOfConsistentSettings = new DiffableStringMap(Collections.emptyMap());
 
         private final ImmutableOpenMap.Builder<String, IndexMetadata> indices;
+
+        final Map<CompressedXContent, CompressedXContent> mappingSources;
+
         private final ImmutableOpenMap.Builder<String, IndexTemplateMetadata> templates;
         private final ImmutableOpenMap.Builder<String, Custom> customs;
 
@@ -1007,6 +1014,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             indices = ImmutableOpenMap.builder();
             templates = ImmutableOpenMap.builder();
             customs = ImmutableOpenMap.builder();
+            mappingSources = new HashMap<>();
             indexGraveyard(IndexGraveyard.builder().build()); // create new empty index graveyard to initialize
         }
 
@@ -1021,11 +1029,23 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             this.indices = ImmutableOpenMap.builder(metadata.indices);
             this.templates = ImmutableOpenMap.builder(metadata.templates);
             this.customs = ImmutableOpenMap.builder(metadata.customs);
+            this.mappingSources = new HashMap<>(metadata.mappingSources);
         }
 
         public Builder put(IndexMetadata.Builder indexMetadataBuilder) {
             // we know its a new one, increment the version and store
             indexMetadataBuilder.version(indexMetadataBuilder.version() + 1);
+            if (indexMetadataBuilder.mapping() != null) {
+                final CompressedXContent newSource = indexMetadataBuilder.mapping().source();
+                final CompressedXContent existingSource = mappingSources.get(indexMetadataBuilder.mapping().source());
+                if (existingSource != null) {
+                    if (existingSource != newSource) {
+                        indexMetadataBuilder.putMapping(new MappingMetadata(existingSource));
+                    }
+                } else {
+                    mappingSources.put(newSource, newSource);
+                }
+            }
             IndexMetadata indexMetadata = indexMetadataBuilder.build();
             indices.put(indexMetadata.getIndex().getName(), indexMetadata);
             return this;
@@ -1038,6 +1058,17 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             // if we put a new index metadata, increment its version
             if (incrementVersion) {
                 indexMetadata = IndexMetadata.builder(indexMetadata).version(indexMetadata.getVersion() + 1).build();
+            }
+            if (indexMetadata.mapping() != null) {
+                final CompressedXContent newSource = indexMetadata.mapping().source();
+                final CompressedXContent existingSource = mappingSources.get(indexMetadata.mapping().source());
+                if (existingSource != null) {
+                    if (existingSource != newSource) {
+                        indexMetadata = IndexMetadata.builder(indexMetadata).putMapping(new MappingMetadata(existingSource)).build();
+                    }
+                } else {
+                    mappingSources.put(newSource, newSource);
+                }
             }
             indices.put(indexMetadata.getIndex().getName(), indexMetadata);
             return this;
@@ -1067,11 +1098,14 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
 
         public Builder removeAllIndices() {
             indices.clear();
+            mappingSources.clear();
             return this;
         }
 
         public Builder indices(ImmutableOpenMap<String, IndexMetadata> indices) {
-            this.indices.putAll(indices);
+            for (ObjectCursor<IndexMetadata> index : indices.values()) {
+                put(index.value, false);
+            }
             return this;
         }
 
@@ -1401,9 +1435,19 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             String[] allClosedIndicesArray = allClosedIndices.toArray(Strings.EMPTY_ARRAY);
             String[] visibleClosedIndicesArray = visibleClosedIndices.toArray(Strings.EMPTY_ARRAY);
 
+            final Set<CompressedXContent> knownXContent = new HashSet<>();
+            for (ObjectCursor<IndexMetadata> value : indices.values()) {
+                final MappingMetadata mapping = value.value.mapping();
+                if (mapping != null) {
+                    knownXContent.add(mapping.source());
+                }
+            }
+            mappingSources.keySet().retainAll(knownXContent);
+
             return new Metadata(clusterUUID, clusterUUIDCommitted, version, coordinationMetadata, transientSettings, persistentSettings,
                 hashesOfConsistentSettings, indices.build(), templates.build(), customs.build(), allIndicesArray, visibleIndicesArray,
-                allOpenIndicesArray, visibleOpenIndicesArray, allClosedIndicesArray, visibleClosedIndicesArray, indicesLookup);
+                allOpenIndicesArray, visibleOpenIndicesArray, allClosedIndicesArray, visibleClosedIndicesArray, indicesLookup,
+                Collections.unmodifiableMap(mappingSources));
         }
 
         private SortedMap<String, IndexAbstraction> buildIndicesLookup() {
