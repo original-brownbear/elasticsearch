@@ -30,10 +30,12 @@
  * The allocation of shards to nodes is computed based on either the current cluster state or the cluster state in combination with an
  * {@link org.elasticsearch.cluster.routing.allocation.command.AllocationCommand}.
  *
- * Allocation based on just the cluster state is triggered by invoking
+ * Allocation based on just the cluster state is generally triggered by invoking
  * {@link org.elasticsearch.cluster.routing.allocation.AllocationService#reroute(org.elasticsearch.cluster.ClusterState, java.lang.String)}
  * which computes a new cluster state with updates allocations from a cluster state whose shard allocations are not in-sync with the rest
  * of the cluster state. Functionality that adds, removes, or otherwise modifies indices in the cluster state or a change in the available
  * data nodes will trigger invocation of this method.
+ *
+ * TODO: explain allocation ids
  */
 package org.elasticsearch.cluster.routing.allocation;
