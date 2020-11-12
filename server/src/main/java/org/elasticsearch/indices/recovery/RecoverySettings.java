@@ -84,8 +84,8 @@ public class RecoverySettings {
             TimeValue.timeValueSeconds(0), Property.Dynamic,  Property.NodeScope);
 
     /**
-     * recoveries that don't show any activity for more then this interval will be failed.
-     * defaults to `indices.recovery.internal_action_long_timeout`
+     * Recoveries that don't show any activity by the recovery source for more then this interval will be failed by the recovery target.
+     * Defaults to `indices.recovery.internal_action_long_timeout`.
      */
     public static final Setting<TimeValue> INDICES_RECOVERY_ACTIVITY_TIMEOUT_SETTING =
         Setting.timeSetting("indices.recovery.recovery_activity_timeout",

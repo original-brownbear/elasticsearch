@@ -251,6 +251,11 @@ public class RecoveriesCollection {
         }
     }
 
+    /**
+     * Runnable that executes on a peer recovery target periodically and checks that the recovery has made progress since the last
+     * execution of the instance by comparing timestamps from {@link RecoveryTarget#lastAccessTime()} between executions.
+     * The period at which an instance is executed is configured via {@link RecoverySettings#activityTimeout()}.
+     */
     private class RecoveryMonitor extends AbstractRunnable {
         private final long recoveryId;
         private final TimeValue checkInterval;
