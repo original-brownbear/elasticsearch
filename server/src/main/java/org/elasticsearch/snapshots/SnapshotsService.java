@@ -621,9 +621,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 boolean changed = false;
                 final String localNodeId = currentState.nodes().getLocalNodeId();
                 final String repoName = cloneEntry.repository();
+                int indexOfEarliestInitializingClone = -1;
                 final ShardGenerations shardGenerations = repoData.shardGenerations();
                 for (int i = 0; i < updatedEntries.size(); i++) {
-                    if (cloneEntry.snapshot().equals(updatedEntries.get(i).snapshot())) {
+                    final SnapshotsInProgress.Entry entry = updatedEntries.get(i);
+                    if (cloneEntry.repository().equals(entry.repository()) == false) {
+                        // different repo => just continue without modification
+                        continue;
+                    }
+                    if (cloneEntry.snapshot().getSnapshotId().equals(entry.snapshot().getSnapshotId())) {
                         final ImmutableOpenMap.Builder<RepositoryShardId, ShardSnapshotStatus> clonesBuilder =
                                 ImmutableOpenMap.builder();
                         final InFlightShardSnapshotStates inFlightShardStates =
@@ -641,9 +647,16 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             }
                         }
                         updatedEntry = cloneEntry.withClones(clonesBuilder.build());
-                        updatedEntries.set(i, updatedEntry);
+                        if (indexOfEarliestInitializingClone >= 0) {
+                            updatedEntries.set(i, updatedEntries.get(indexOfEarliestInitializingClone));
+                            updatedEntries.set(indexOfEarliestInitializingClone, updatedEntry);
+                        } else {
+                            updatedEntries.set(i, updatedEntry);
+                        }
                         changed = true;
                         break;
+                    } else if (indexOfEarliestInitializingClone == -1 && entry.source() != null && entry.clones().isEmpty()) {
+                        indexOfEarliestInitializingClone = i;
                     }
                 }
                 return updateWithSnapshots(currentState, changed ? SnapshotsInProgress.of(updatedEntries) : null, null);
@@ -1080,7 +1093,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             logger.warn("Failed to update snapshot state ", e);
         }
         assert assertConsistentWithClusterState(event.state());
-        assert assertNoDanglingSnapshots(event.state());
+        try {
+            assert assertNoDanglingSnapshots(event.state());
+        } catch (Throwable t) {
+            throw t;
+        }
     }
 
     /**
@@ -1138,7 +1155,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         final Set<String> reposSeen = new HashSet<>();
         for (SnapshotsInProgress.Entry entry : snapshotsInProgress.entries()) {
             if (reposSeen.add(entry.repository())) {
-                for (ObjectCursor<ShardSnapshotStatus> value : entry.shards().values()) {
+                for (ObjectCursor<ShardSnapshotStatus> value : (entry.isClone() ? entry.clones().values() : entry.shards().values())) {
                     if (value.value.equals(ShardSnapshotStatus.UNASSIGNED_QUEUED)) {
                         assert reposWithRunningDelete.contains(entry.repository())
                                 : "Found shard snapshot waiting to be assigned in [" + entry +

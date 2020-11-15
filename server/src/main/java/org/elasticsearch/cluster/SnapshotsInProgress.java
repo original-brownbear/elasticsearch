@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.ClusterState.Custom;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -507,6 +508,25 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 }
             }
             builder.endArray();
+            if (source != null) {
+                builder.field(SOURCE, source);
+                builder.startArray(CLONES);
+                {
+                    for (ObjectObjectCursor<RepositoryShardId, ShardSnapshotStatus> shardEntry : clones) {
+                        RepositoryShardId shardId = shardEntry.key;
+                        ShardSnapshotStatus status = shardEntry.value;
+                        builder.startObject();
+                        {
+                            builder.field(INDEX, shardId.index());
+                            builder.field(SHARD, shardId.shardId());
+                            builder.field(STATE, status.state());
+                            builder.field(NODE, status.nodeId());
+                        }
+                        builder.endObject();
+                    }
+                }
+                builder.endArray();
+            }
             builder.array(DATA_STREAMS, dataStreams.toArray(new String[0]));
             builder.endObject();
             return builder;
@@ -741,12 +761,33 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     private final List<Entry> entries;
 
     private static boolean assertConsistentEntries(List<Entry> entries) {
-        final Map<String, Set<ShardId>> assignedShardsByRepo = new HashMap<>();
+        final Map<String, Set<Tuple<String, Integer>>> assignedShardsByRepo = new HashMap<>();
+        final Map<String, Set<Tuple<String, Integer>>> queuedShardsByRepo = new HashMap<>();
         for (Entry entry : entries) {
             for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : entry.shards()) {
+                final ShardId sid = shard.key;
                 if (shard.value.isActive()) {
-                    assert assignedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>()).add(shard.key) :
-                            "Found duplicate shard assignments in " + entries;
+                    final Tuple<String, Integer> plainShardId = Tuple.tuple(sid.getIndexName(), sid.id());
+                    assert assignedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>())
+                            .add(plainShardId) : "Found duplicate shard assignments in " + entries;
+                    assert queuedShardsByRepo.getOrDefault(entry.repository(), Collections.emptySet()).contains(plainShardId) == false
+                            : "Found active shard assignments after queued shard assignments in " + entries;
+                } else if (shard.value.state() == ShardState.QUEUED) {
+                    queuedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>())
+                            .add(Tuple.tuple(sid.getIndexName(), sid.id()));
+                }
+            }
+            for (ObjectObjectCursor<RepositoryShardId, ShardSnapshotStatus> shard : entry.clones()) {
+                final RepositoryShardId sid = shard.key;
+                if (shard.value.isActive()) {
+                    final Tuple<String, Integer> plainShardId = Tuple.tuple(sid.indexName(), sid.shardId());
+                    assert assignedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>())
+                            .add(plainShardId) : "Found duplicate shard assignments in " + entries;
+                    assert queuedShardsByRepo.getOrDefault(entry.repository(), Collections.emptySet()).contains(plainShardId) == false
+                            : "Found active shard assignments after queued shard assignments in " + entries;
+                } else if (shard.value.state() == ShardState.QUEUED) {
+                    queuedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>())
+                            .add(Tuple.tuple(sid.indexName(), sid.shardId()));
                 }
             }
         }
@@ -815,6 +856,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     private static final String STATE = "state";
     private static final String INDICES = "indices";
     private static final String DATA_STREAMS = "data_streams";
+    private static final String SOURCE = "source";
+    private static final String CLONES = "clones";
     private static final String START_TIME_MILLIS = "start_time_millis";
     private static final String START_TIME = "start_time";
     private static final String REPOSITORY_STATE_ID = "repository_state_id";
