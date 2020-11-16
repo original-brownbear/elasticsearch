@@ -151,6 +151,17 @@ public class CollectionUtils {
         }
     }
 
+    public static <T> List<T> unmodifiableList(List<T> list) {
+        switch (list.size()) {
+            case 0:
+                return Collections.emptyList();
+            case 1:
+                return Collections.singletonList(list.get(0));
+            default:
+                return Collections.unmodifiableList(list);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static Iterable<?> convert(Object value) {
         if (value == null) {

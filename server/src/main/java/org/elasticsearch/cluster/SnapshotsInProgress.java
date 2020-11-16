@@ -63,6 +63,57 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     public static final String ABORTED_FAILURE_TEXT = "Snapshot was aborted by deletion";
 
+    // Common shard snapshot failure reasons
+    public static final String UNASSIGNED_SHARD_TEXT = "shard is unassigned";
+
+    public static final String NODE_SHUTDOWN_TEXT = "node shutdown";
+
+    private static final String PRIMARY_NOT_ALLOCATED_TEXT = "primary shard is not allocated";
+
+    private static final String PRIMARY_NOT_STARTED_TEXT = "primary shard hasn't been started yet";
+
+    private static final String MISSING_INDEX_TEXT = "missing index";
+
+    public static final String ABORTED_SHARD_TEXT = "aborted";
+
+    public static final String FAILED_CLONE_TEXT = "failed to clone shard snapshot";
+    // End of common shard snapshot failure reasons
+
+    /**
+     * This method allows for deduplicating failure message strings for shard snapshots when deserializing snapshot metadata and network
+     * messages. This optimization in practice since under certain conditions a message might be repeated thousands of times across
+     * a large number of shards and snapshots (e.g. when loading the list of all snapshots with their detailed
+     * {@link org.elasticsearch.snapshots.SnapshotInfo} for a repository) in which case this deduplication can save a non-trivial amount
+     * of memory.
+     *
+     * @param message shard failure reason string to deduplicate
+     * @return either the original {@code message} or an interned version of it
+     */
+    @Nullable
+    public static String deduplicateShardFailureMessage(@Nullable String message) {
+        if (message == null) {
+            return null;
+        }
+        switch (message) {
+            case UNASSIGNED_SHARD_TEXT:
+                return UNASSIGNED_SHARD_TEXT;
+            case NODE_SHUTDOWN_TEXT:
+                return NODE_SHUTDOWN_TEXT;
+            case PRIMARY_NOT_ALLOCATED_TEXT:
+                return PRIMARY_NOT_ALLOCATED_TEXT;
+            case PRIMARY_NOT_STARTED_TEXT:
+                return PRIMARY_NOT_STARTED_TEXT;
+            case MISSING_INDEX_TEXT:
+                return MISSING_INDEX_TEXT;
+            case ABORTED_SHARD_TEXT:
+                return ABORTED_SHARD_TEXT;
+            case FAILED_CLONE_TEXT:
+                return FAILED_CLONE_TEXT;
+            default:
+                return message;
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -274,7 +325,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 if (status.state().completed() == false) {
                     final String nodeId = status.nodeId();
                     status = new ShardSnapshotStatus(nodeId, nodeId == null ? ShardState.FAILED : ShardState.ABORTED,
-                            "aborted by snapshot deletion", status.generation());
+                            ABORTED_SHARD_TEXT, status.generation());
                 }
                 completed &= status.state().completed();
                 shardsBuilder.put(shardEntry.key, status);
@@ -539,7 +590,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
          * started.
          */
         public static final ShardSnapshotStatus MISSING =
-                new SnapshotsInProgress.ShardSnapshotStatus(null, ShardState.MISSING, "missing index", null);
+                new SnapshotsInProgress.ShardSnapshotStatus(null, ShardState.MISSING, MISSING_INDEX_TEXT, null);
 
         private final ShardState state;
 
@@ -552,6 +603,14 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         @Nullable
         private final String reason;
 
+        public static ShardSnapshotStatus primaryNotAllocated(@Nullable String generation) {
+            return new ShardSnapshotStatus(null, ShardState.MISSING, SnapshotsInProgress.PRIMARY_NOT_ALLOCATED_TEXT, generation);
+        }
+
+        public static ShardSnapshotStatus primaryNotStarted(String nodeId, @Nullable String generation) {
+            return new ShardSnapshotStatus(nodeId, ShardState.MISSING, PRIMARY_NOT_STARTED_TEXT, generation);
+        }
+
         public ShardSnapshotStatus(String nodeId, String generation) {
             this(nodeId, ShardState.INIT, generation);
         }
@@ -560,10 +619,10 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this(nodeId, state, null, generation);
         }
 
-        public ShardSnapshotStatus(@Nullable String nodeId, ShardState state, String reason, @Nullable String generation) {
+        public ShardSnapshotStatus(@Nullable String nodeId, ShardState state, @Nullable String reason, @Nullable String generation) {
             this.nodeId = nodeId;
             this.state = state;
-            this.reason = reason;
+            this.reason = deduplicateShardFailureMessage(reason);
             this.generation = generation;
             assert assertConsistent();
         }

@@ -24,6 +24,7 @@ import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
@@ -347,7 +348,7 @@ public final class RepositoryData {
             assert snapshotIds != null;
             List<SnapshotId> remaining = new ArrayList<>(snapshotIds);
             if (remaining.removeAll(snapshots)) {
-                remaining = Collections.unmodifiableList(remaining);
+                remaining = CollectionUtils.unmodifiableList(remaining);
             } else {
                 remaining = snapshotIds;
             }

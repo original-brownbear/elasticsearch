@@ -275,7 +275,7 @@ public class SnapshotShardsService extends AbstractLifecycleComponent implements
                         public void onFailure(Exception e) {
                             final String failure;
                             if (e instanceof AbortedSnapshotException) {
-                                failure = "aborted";
+                                failure = SnapshotsInProgress.ABORTED_SHARD_TEXT;
                                 logger.debug(() -> new ParameterizedMessage("[{}][{}] aborted shard snapshot", shardId, snapshot), e);
                             } else {
                                 failure = summarizeFailure(e);

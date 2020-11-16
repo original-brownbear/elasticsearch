@@ -18,8 +18,10 @@
  */
 package org.elasticsearch.snapshots;
 
+import org.elasticsearch.cluster.SnapshotsInProgress;
+
 public final class AbortedSnapshotException extends RuntimeException {
     public AbortedSnapshotException() {
-        super("aborted");
+        super(SnapshotsInProgress.ABORTED_SHARD_TEXT);
     }
 }

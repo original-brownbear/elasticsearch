@@ -21,6 +21,7 @@ package org.elasticsearch.snapshots;
 
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.action.ShardOperationFailedException;
+import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.ParseField;
@@ -42,15 +43,15 @@ import java.util.Objects;
 public class SnapshotShardFailure extends ShardOperationFailedException {
 
     @Nullable
-    private String nodeId;
-    private ShardId shardId;
+    private final String nodeId;
+    private final ShardId shardId;
 
     SnapshotShardFailure(StreamInput in) throws IOException {
         nodeId = in.readOptionalString();
         shardId = new ShardId(in);
         super.shardId = shardId.getId();
         index = shardId.getIndexName();
-        reason = in.readString();
+        reason = SnapshotsInProgress.deduplicateShardFailureMessage(in.readString());
         status = RestStatus.readFrom(in);
     }
 
@@ -125,7 +126,7 @@ public class SnapshotShardFailure extends ShardOperationFailedException {
         String index = (String) args[0];
         String indexUuid = (String) args[1];
         String nodeId = (String) args[2];
-        String reason = (String) args[3];
+        String reason = SnapshotsInProgress.deduplicateShardFailureMessage((String) args[3]);
         Integer intShardId = (Integer) args[4];
         String status = (String) args[5];
 

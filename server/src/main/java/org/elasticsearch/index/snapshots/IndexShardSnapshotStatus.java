@@ -19,6 +19,8 @@
 
 package org.elasticsearch.index.snapshots;
 
+import org.elasticsearch.snapshots.AbortedSnapshotException;
+
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -95,6 +97,8 @@ public class IndexShardSnapshotStatus {
             this.totalFileCount = totalFileCount;
             this.incrementalSize = incrementalSize;
             this.totalSize = totalSize;
+        } else if (isAborted()) {
+            throw new AbortedSnapshotException();
         } else {
             throw new IllegalStateException("Unable to move the shard snapshot status to [STARTED]: " +
                 "expecting [INIT] but got [" + stage.get() + "]");
