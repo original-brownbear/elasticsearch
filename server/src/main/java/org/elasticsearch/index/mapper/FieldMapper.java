@@ -304,7 +304,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         builder.field("type", contentType());
         getMergeBuilder().toXContent(builder, includeDefaults);
         multiFields.toXContent(builder, params);
-        copyTo.toXContent(builder, params);
+        copyTo.toXContent(builder);
     }
 
     protected abstract String contentType();
@@ -434,7 +434,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             this.copyToFields = copyToFields;
         }
 
-        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        public XContentBuilder toXContent(XContentBuilder builder) throws IOException {
             if (!copyToFields.isEmpty()) {
                 builder.startArray("copy_to");
                 for (String field : copyToFields) {
@@ -532,7 +532,8 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             this.value = null;
             this.parser = parser;
             this.initializer = initializer;
-            this.mergeValidator = (previous, toMerge, conflicts) -> updateable || Objects.equals(previous, toMerge);
+            this.mergeValidator = updateable ? (previous, toMerge, conflicts) -> true
+                    : (previous, toMerge, conflicts) -> Objects.equals(previous, toMerge);
         }
 
         /**
@@ -685,8 +686,14 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          */
         public static Parameter<Boolean> boolParam(String name, boolean updateable,
                                                    Function<FieldMapper, Boolean> initializer, boolean defaultValue) {
-            return new Parameter<>(name, updateable, () -> defaultValue, (n, c, o) -> XContentMapValues.nodeBooleanValue(o), initializer);
+            return new Parameter<>(name, updateable, defaultValue ? () -> true : () -> false,
+                    (n, c, o) -> XContentMapValues.nodeBooleanValue(o), initializer);
         }
+
+        private static final Explicit<Boolean> EXPLICIT_TRUE_FALSE = new Explicit<>(true, false);
+        private static final Explicit<Boolean> EXPLICIT_TRUE_TRUE = new Explicit<>(true, true);
+        private static final Explicit<Boolean> EXPLICIT_FALSE_TRUE = new Explicit<>(false, true);
+        private static final Explicit<Boolean> EXPLICIT_FALSE_FALSE = new Explicit<>(false, false);
 
         /**
          * Defines a parameter that takes the values {@code true} or {@code false}, and will always serialize
@@ -699,9 +706,8 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         public static Parameter<Explicit<Boolean>> explicitBoolParam(String name, boolean updateable,
                                                                      Function<FieldMapper, Explicit<Boolean>> initializer,
                                                                      boolean defaultValue) {
-            Explicit<Boolean> defaultExplicit = new Explicit<>(defaultValue, false);
-            return new Parameter<>(name, updateable, () -> defaultExplicit,
-                (n, c, o) -> new Explicit<>(XContentMapValues.nodeBooleanValue(o), true), initializer)
+            return new Parameter<>(name, updateable, defaultValue ? () -> EXPLICIT_TRUE_FALSE : () -> EXPLICIT_FALSE_FALSE,
+                (n, c, o) -> XContentMapValues.nodeBooleanValue(o) ? EXPLICIT_TRUE_TRUE : EXPLICIT_FALSE_TRUE, initializer)
                 .setSerializer((b, n, v) -> b.field(n, v.value()), v -> Boolean.toString(v.value()));
         }
 

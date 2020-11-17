@@ -972,7 +972,7 @@ public class TextFieldMapper extends FieldMapper {
         this.builder.index.toXContent(builder, includeDefaults);
         this.builder.store.toXContent(builder, includeDefaults);
         this.multiFields.toXContent(builder, params);
-        this.copyTo.toXContent(builder, params);
+        this.copyTo.toXContent(builder);
         this.builder.meta.toXContent(builder, includeDefaults);
         this.builder.indexOptions.toXContent(builder, includeDefaults);
         this.builder.termVectors.toXContent(builder, includeDefaults);
