@@ -467,7 +467,7 @@ public class TermsQueryBuilder extends AbstractQueryBuilder<TermsQueryBuilder> {
         } else if (this.termsLookup != null) {
             SetOnce<List<?>> supplier = new SetOnce<>();
             queryRewriteContext.registerAsyncAction((client, listener) ->
-                fetch(termsLookup, client, ActionListener.map(listener, list -> {
+                fetch(termsLookup, client, listener.map(list -> {
                 supplier.set(list);
                 return null;
             })));
