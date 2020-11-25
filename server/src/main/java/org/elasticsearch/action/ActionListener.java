@@ -45,6 +45,55 @@ public interface ActionListener<Response> {
      */
     void onFailure(Exception e);
 
+    default <T> ActionListener<T> map(CheckedFunction<T, Response, Exception> fn) {
+        return ActionListener.map(this, fn);
+    }
+
+    default <T> ActionListener<T> delegateFailure(BiConsumer<ActionListener<Response>, T> bc) {
+        return delegateFailure(this, bc);
+    }
+
+    default ActionListener<Response> delegateResponse(BiConsumer<ActionListener<Response>, Exception> bc) {
+        return delegateResponse(this, bc);
+    }
+
+    /**
+     * Wraps a given listener and returns a new listener which executes the provided {@code runAfter}
+     * callback when the listener is notified via either {@code #onResponse} or {@code #onFailure}.
+     */
+    default ActionListener<Response> runAfter(Runnable runAfter) {
+        final ActionListener<Response> self = this;
+        return new ActionListener<>() {
+            @Override
+            public void onResponse(Response response) {
+                try {
+                    self.onResponse(response);
+                } finally {
+                    runAfter.run();
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                try {
+                    self.onFailure(e);
+                } finally {
+                    runAfter.run();
+                }
+            }
+        };
+    }
+
+    /**
+     * Wraps a given listener and returns a new listener which executes the provided {@code runBefore}
+     * callback before the listener is notified via either {@code #onResponse} or {@code #onFailure}.
+     * If the callback throws an exception then it will be passed to the listener's {@code #onFailure} and its {@code #onResponse} will
+     * not be executed.
+     */
+    default ActionListener<Response> runBefore(CheckedRunnable<?> runBefore) {
+        return new RunBeforeListener<>(runBefore, this);
+    }
+
     /**
      * Creates a listener that listens for a response (or failure) and executes the
      * corresponding consumer when the response (or failure) is received.
@@ -56,21 +105,7 @@ public interface ActionListener<Response> {
      */
     static <Response> ActionListener<Response> wrap(CheckedConsumer<Response, ? extends Exception> onResponse,
             Consumer<Exception> onFailure) {
-        return new ActionListener<Response>() {
-            @Override
-            public void onResponse(Response response) {
-                try {
-                    onResponse.accept(response);
-                } catch (Exception e) {
-                    onFailure(e);
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                onFailure.accept(e);
-            }
-        };
+        return new WrappedActionListener<>(onResponse, onFailure);
     }
 
     /**
@@ -81,9 +116,8 @@ public interface ActionListener<Response> {
      * @param <T> Type of the listener
      * @return Delegating listener
      */
-    static <T> ActionListener<T> delegateResponse(ActionListener<T> delegate, BiConsumer<ActionListener<T>, Exception> bc) {
+    private static <T> ActionListener<T> delegateResponse(ActionListener<T> delegate, BiConsumer<ActionListener<T>, Exception> bc) {
         return new ActionListener<T>() {
-
             @Override
             public void onResponse(T r) {
                 delegate.onResponse(r);
@@ -105,7 +139,7 @@ public interface ActionListener<Response> {
      * @param <R> Type of the wrapped listeners
      * @return Delegating listener
      */
-    static <T, R> ActionListener<T> delegateFailure(ActionListener<R> delegate, BiConsumer<ActionListener<R>, T> bc) {
+    private static <T, R> ActionListener<T> delegateFailure(ActionListener<R> delegate, BiConsumer<ActionListener<R>, T> bc) {
         return new ActionListener<T>() {
 
             @Override
@@ -149,37 +183,11 @@ public interface ActionListener<Response> {
      * @return a listener that maps the received response and then passes it to its delegate listener
      */
     static <T, Response> ActionListener<Response> map(ActionListener<T> delegate, CheckedFunction<Response, T, Exception> fn) {
-        return new ActionListener<>() {
-            @Override
-            public void onResponse(Response response) {
-                T mapped;
-                try {
-                    mapped = fn.apply(response);
-                } catch (Exception e) {
-                    onFailure(e);
-                    return;
-                }
-                try {
-                    delegate.onResponse(mapped);
-                } catch (RuntimeException e) {
-                    assert false : new AssertionError("map: listener.onResponse failed", e);
-                    throw e;
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                try {
-                    delegate.onFailure(e);
-                } catch (RuntimeException ex) {
-                    if (ex != e) {
-                        ex.addSuppressed(e);
-                    }
-                    assert false : new AssertionError("map: listener.onFailure failed", ex);
-                    throw ex;
-                }
-            }
-        };
+        if (delegate instanceof MappedActionListener) {
+            return new MappedActionListener<>(fn.andThen(((MappedActionListener<T, T>) delegate).fn),
+                    ((MappedActionListener<?, T>) delegate).delegate);
+        }
+        return new MappedActionListener<>(fn, delegate);
     }
 
     /**
@@ -238,63 +246,6 @@ public interface ActionListener<Response> {
     }
 
     /**
-     * Wraps a given listener and returns a new listener which executes the provided {@code runAfter}
-     * callback when the listener is notified via either {@code #onResponse} or {@code #onFailure}.
-     */
-    static <Response> ActionListener<Response> runAfter(ActionListener<Response> delegate, Runnable runAfter) {
-        return new ActionListener<Response>() {
-            @Override
-            public void onResponse(Response response) {
-                try {
-                    delegate.onResponse(response);
-                } finally {
-                    runAfter.run();
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                try {
-                    delegate.onFailure(e);
-                } finally {
-                    runAfter.run();
-                }
-            }
-        };
-    }
-
-    /**
-     * Wraps a given listener and returns a new listener which executes the provided {@code runBefore}
-     * callback before the listener is notified via either {@code #onResponse} or {@code #onFailure}.
-     * If the callback throws an exception then it will be passed to the listener's {@code #onFailure} and its {@code #onResponse} will
-     * not be executed.
-     */
-    static <Response> ActionListener<Response> runBefore(ActionListener<Response> delegate, CheckedRunnable<?> runBefore) {
-        return new ActionListener<>() {
-            @Override
-            public void onResponse(Response response) {
-                try {
-                    runBefore.run();
-                } catch (Exception ex) {
-                    delegate.onFailure(ex);
-                    return;
-                }
-                delegate.onResponse(response);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                try {
-                    runBefore.run();
-                } catch (Exception ex) {
-                    e.addSuppressed(ex);
-                }
-                delegate.onFailure(e);
-            }
-        };
-    }
-
-    /**
      * Wraps a given listener and returns a new listener which makes sure {@link #onResponse(Object)}
      * and {@link #onFailure(Exception)} of the provided listener will be called at most once.
      */
@@ -337,6 +288,103 @@ public interface ActionListener<Response> {
         } catch (RuntimeException ex) {
             assert false : ex;
             throw ex;
+        }
+    }
+
+    final class WrappedActionListener<Response> implements ActionListener<Response> {
+        private final CheckedConsumer<Response, ? extends Exception> onResponse;
+        private final Consumer<Exception> onFailure;
+
+        public WrappedActionListener(CheckedConsumer<Response, ? extends Exception> onResponse, Consumer<Exception> onFailure) {
+            this.onResponse = onResponse;
+            this.onFailure = onFailure;
+        }
+
+        @Override
+        public void onResponse(Response response) {
+            try {
+                onResponse.accept(response);
+            } catch (Exception e) {
+                onFailure(e);
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            onFailure.accept(e);
+        }
+    }
+
+    final class MappedActionListener<Response, O> implements ActionListener<Response> {
+
+        private final CheckedFunction<Response, O, Exception> fn;
+
+        private final ActionListener<O> delegate;
+
+        public MappedActionListener(CheckedFunction<Response, O, Exception> fn, ActionListener<O> delegate) {
+            this.fn = fn;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void onResponse(Response response) {
+            O mapped;
+            try {
+                mapped = fn.apply(response);
+            } catch (Exception e) {
+                onFailure(e);
+                return;
+            }
+            try {
+                delegate.onResponse(mapped);
+            } catch (RuntimeException e) {
+                assert false : new AssertionError("map: listener.onResponse failed", e);
+                throw e;
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            try {
+                delegate.onFailure(e);
+            } catch (RuntimeException ex) {
+                if (ex != e) {
+                    ex.addSuppressed(e);
+                }
+                assert false : new AssertionError("map: listener.onFailure failed", ex);
+                throw ex;
+            }
+        }
+    }
+
+    class RunBeforeListener<T> implements ActionListener<T> {
+        private final CheckedRunnable<?> runBefore;
+        private final ActionListener<T> self;
+
+        public RunBeforeListener(CheckedRunnable<?> runBefore, ActionListener<T> self) {
+            this.runBefore = runBefore;
+            this.self = self;
+        }
+
+        @Override
+        public void onResponse(T response) {
+            try {
+                runBefore.run();
+            } catch (Exception ex) {
+                this.onFailure(ex);
+                return;
+            }
+            self.onResponse(response);
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            try {
+                runBefore.run();
+            } catch (Exception ex) {
+                e.addSuppressed(ex);
+            }
+            self.onFailure(e);
         }
     }
 }

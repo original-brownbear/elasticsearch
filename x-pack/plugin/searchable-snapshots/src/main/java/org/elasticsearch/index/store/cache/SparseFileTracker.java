@@ -201,13 +201,13 @@ public class SparseFileTracker {
             case 1:
                 final Range requiredRange = requiredRanges.get(0);
                 requiredRange.completionListener.addListener(
-                    ActionListener.map(wrappedListener, progress -> null),
+                    wrappedListener.map(progress -> null),
                     Math.min(requiredRange.completionListener.end, subRange.v2())
                 );
                 break;
             default:
                 final GroupedActionListener<Long> groupedActionListener = new GroupedActionListener<>(
-                    ActionListener.map(wrappedListener, progress -> null),
+                    wrappedListener.map(progress -> null),
                     requiredRanges.size()
                 );
                 requiredRanges.forEach(
@@ -309,10 +309,7 @@ public class SparseFileTracker {
 
     private ActionListener<Void> wrapWithAssertions(ActionListener<Void> listener) {
         if (Assertions.ENABLED) {
-            return ActionListener.runAfter(
-                listener,
-                () -> { assert Thread.holdsLock(mutex) == false : "mutex unexpectedly held in listener"; }
-            );
+            return listener.runAfter(() -> { assert Thread.holdsLock(mutex) == false : "mutex unexpectedly held in listener"; });
         } else {
             return listener;
         }

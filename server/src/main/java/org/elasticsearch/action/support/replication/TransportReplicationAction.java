@@ -285,9 +285,8 @@ public abstract class TransportReplicationAction<
 
     private void handleOperationRequest(final Request request, final TransportChannel channel, Task task) {
         Releasable releasable = checkOperationLimits(request);
-        ActionListener<Response> listener =
-            ActionListener.runBefore(new ChannelActionListener<>(channel, actionName, request), releasable::close);
-        runReroutePhase(task, request, listener, false);
+        runReroutePhase(task, request,
+                new ChannelActionListener<Response, Request>(channel, actionName, request).runBefore(releasable::close), false);
     }
 
     protected Releasable checkOperationLimits(final Request request) {
@@ -297,9 +296,8 @@ public abstract class TransportReplicationAction<
     protected void handlePrimaryRequest(final ConcreteShardRequest<Request> request, final TransportChannel channel, final Task task) {
         Releasable releasable = checkPrimaryLimits(request.getRequest(), request.sentFromLocalReroute(),
             request.localRerouteInitiatedByNodeClient());
-        ActionListener<Response> listener =
-            ActionListener.runBefore(new ChannelActionListener<>(channel, transportPrimaryAction, request), releasable::close);
-
+        ActionListener<Response> listener = new ChannelActionListener<Response, ConcreteShardRequest<Request>>(
+                channel, transportPrimaryAction, request).runBefore(releasable::close);
         try {
             new AsyncPrimaryAction(request, listener, (ReplicationTask) task).run();
         } catch (RuntimeException e) {
@@ -424,7 +422,7 @@ public abstract class TransportReplicationAction<
                     }, e -> handleException(primaryShardReference, e));
 
                     new ReplicationOperation<>(primaryRequest.getRequest(), primaryShardReference,
-                        ActionListener.map(responseListener, result -> result.finalResponseIfSuccessful),
+                        responseListener.map(result -> result.finalResponseIfSuccessful),
                         newReplicasProxy(), logger, threadPool, actionName, primaryRequest.getPrimaryTerm(), initialRetryBackoffBound,
                         retryTimeout)
                         .execute();
@@ -521,8 +519,8 @@ public abstract class TransportReplicationAction<
     protected void handleReplicaRequest(final ConcreteReplicaRequest<ReplicaRequest> replicaRequest, final TransportChannel channel,
                                         final Task task) {
         Releasable releasable = checkReplicaLimits(replicaRequest.getRequest());
-        ActionListener<ReplicaResponse> listener =
-            ActionListener.runBefore(new ChannelActionListener<>(channel, transportReplicaAction, replicaRequest), releasable::close);
+        ActionListener<ReplicaResponse> listener = new ChannelActionListener<ReplicaResponse, ConcreteReplicaRequest<ReplicaRequest>>(
+                channel, transportReplicaAction, replicaRequest).runBefore(releasable::close);
 
         try {
             new AsyncReplicaAction(replicaRequest, listener, (ReplicationTask) task).run();
@@ -954,7 +952,7 @@ public abstract class TransportReplicationAction<
         @Override
         public void perform(Request request, ActionListener<PrimaryResult<ReplicaRequest, Response>> listener) {
             if (Assertions.ENABLED) {
-                listener = ActionListener.map(listener, result -> {
+                listener = listener.map(result -> {
                     assert result.replicaRequest() == null || result.finalFailure == null : "a replica request [" + result.replicaRequest()
                         + "] with a primary failure [" + result.finalFailure + "]";
                     return result;

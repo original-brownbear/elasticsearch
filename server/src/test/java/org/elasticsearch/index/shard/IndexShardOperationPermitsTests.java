@@ -292,7 +292,7 @@ public class IndexShardOperationPermitsTests extends ESTestCase {
         CountDownLatch blockReleased = new CountDownLatch(1);
         boolean throwsException = randomBoolean();
         IndexShardClosedException exception = new IndexShardClosedException(new ShardId("blubb", "id", 0));
-        permits.blockOperations(ActionListener.runAfter(new ActionListener<>() {
+        permits.blockOperations(new ActionListener<Releasable>() {
             @Override
             public void onResponse(Releasable releasable) {
                 try (releasable) {
@@ -312,7 +312,7 @@ public class IndexShardOperationPermitsTests extends ESTestCase {
                     throw new RuntimeException(e);
                 }
             }
-        }, blockReleased::countDown), 1, TimeUnit.MINUTES, ThreadPool.Names.GENERIC);
+        }.runAfter(blockReleased::countDown), 1, TimeUnit.MINUTES, ThreadPool.Names.GENERIC);
         blockAcquired.await();
         return () -> {
             releaseBlock.countDown();

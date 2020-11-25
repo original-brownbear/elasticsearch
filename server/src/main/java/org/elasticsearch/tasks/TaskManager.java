@@ -169,22 +169,14 @@ public class TaskManager implements ClusterStateApplier {
         action.execute(task, request, new ActionListener<Response>() {
             @Override
             public void onResponse(Response response) {
-                try {
-                    Releasables.close(unregisterChildNode, () -> unregister(task));
-                } finally {
-                    onResponse.accept(task, response);
-                }
+                onResponse.accept(task, response);
             }
 
             @Override
             public void onFailure(Exception e) {
-                try {
-                    Releasables.close(unregisterChildNode, () -> unregister(task));
-                } finally {
-                    onFailure.accept(task, e);
-                }
+                onFailure.accept(task, e);
             }
-        });
+        }.runBefore(() -> Releasables.close(unregisterChildNode, () -> unregister(task))));
         return task;
     }
 

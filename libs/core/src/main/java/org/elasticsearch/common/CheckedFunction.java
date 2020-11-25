@@ -19,6 +19,7 @@
 
 package org.elasticsearch.common;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -27,4 +28,9 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface CheckedFunction<T, R, E extends Exception> {
     R apply(T t) throws E;
+
+    default <V> CheckedFunction<T, V, E> andThen(CheckedFunction<? super R, ? extends V, ? extends E> after) {
+        Objects.requireNonNull(after);
+        return (T t) -> after.apply(apply(t));
+    }
 }

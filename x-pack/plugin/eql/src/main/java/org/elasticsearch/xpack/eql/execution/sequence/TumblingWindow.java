@@ -515,7 +515,7 @@ public class TumblingWindow implements Executable {
 
     private void close(ActionListener<Payload> listener) {
         matcher.clear();
-        client.close(ActionListener.delegateFailure(listener, (l, r) -> {}));
+        client.close(listener.delegateFailure((l, r) -> {}));
     }
 
     private TimeValue timeTook() {

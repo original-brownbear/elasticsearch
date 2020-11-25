@@ -91,19 +91,15 @@ public class TransportResizeAction extends TransportMasterNodeAction<ResizeReque
         IndicesStatsRequestBuilder statsRequestBuilder = client.admin().indices().prepareStats(sourceIndex).clear().setDocs(true);
         IndicesStatsRequest statsRequest = statsRequestBuilder.request();
         statsRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-        client.execute(IndicesStatsAction.INSTANCE, statsRequest,
-            ActionListener.delegateFailure(listener, (delegatedListener, indicesStatsResponse) -> {
-                CreateIndexClusterStateUpdateRequest updateRequest = prepareCreateIndexRequest(resizeRequest, state,
+        client.execute(IndicesStatsAction.INSTANCE, statsRequest, listener.delegateFailure((delegatedListener, indicesStatsResponse) -> {
+            CreateIndexClusterStateUpdateRequest updateRequest = prepareCreateIndexRequest(resizeRequest, state,
                     i -> {
                         IndexShardStats shard = indicesStatsResponse.getIndex(sourceIndex).getIndexShards().get(i);
                         return shard == null ? null : shard.getPrimary().getDocs();
                     }, sourceIndex, targetIndex);
-                createIndexService.createIndex(
-                    updateRequest, ActionListener.map(delegatedListener,
-                        response -> new ResizeResponse(response.isAcknowledged(), response.isShardsAcknowledged(), updateRequest.index()))
-                );
-            }));
-
+            createIndexService.createIndex(updateRequest, delegatedListener.map(response ->
+                    new ResizeResponse(response.isAcknowledged(), response.isShardsAcknowledged(), updateRequest.index())));
+        }));
     }
 
     // static for unittesting this method

@@ -131,7 +131,7 @@ public class TaskResultsService {
                 // The index already exists but doesn't have our mapping
                 client.admin().indices().preparePutMapping(TASK_INDEX)
                     .setSource(taskResultIndexMapping(), XContentType.JSON)
-                    .execute(ActionListener.delegateFailure(listener, (l, r) -> doStoreResult(taskResult, listener)));
+                    .execute(listener.delegateFailure((l, r) -> doStoreResult(taskResult, listener)));
             } else {
                 doStoreResult(taskResult, listener);
             }

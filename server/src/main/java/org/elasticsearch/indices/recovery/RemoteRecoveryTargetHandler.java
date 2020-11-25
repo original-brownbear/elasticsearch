@@ -107,8 +107,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
         final RecoveryPrepareForTranslogOperationsRequest request =
             new RecoveryPrepareForTranslogOperationsRequest(recoveryId, requestSeqNo, shardId, totalTranslogOps);
         final Writeable.Reader<TransportResponse.Empty> reader = in -> TransportResponse.Empty.INSTANCE;
-        final ActionListener<TransportResponse.Empty> responseListener = ActionListener.map(listener, r -> null);
-        executeRetryableAction(action, request, standardTimeoutRequestOptions, responseListener, reader);
+        executeRetryableAction(action, request, standardTimeoutRequestOptions, listener.map(r -> null), reader);
     }
 
     @Override
@@ -118,9 +117,8 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
         final RecoveryFinalizeRecoveryRequest request =
             new RecoveryFinalizeRecoveryRequest(recoveryId, requestSeqNo, shardId, globalCheckpoint, trimAboveSeqNo);
         final Writeable.Reader<TransportResponse.Empty> reader = in -> TransportResponse.Empty.INSTANCE;
-        final ActionListener<TransportResponse.Empty> responseListener = ActionListener.map(listener, r -> null);
         executeRetryableAction(action, request, TransportRequestOptions.timeout(recoverySettings.internalActionLongTimeout()),
-                responseListener, reader);
+                listener.map(r -> null), reader);
     }
 
     @Override
@@ -129,7 +127,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
             targetNode, PeerRecoveryTargetService.Actions.HANDOFF_PRIMARY_CONTEXT,
             new RecoveryHandoffPrimaryContextRequest(recoveryId, shardId, primaryContext),
             standardTimeoutRequestOptions,
-            new ActionListenerResponseHandler<>(ActionListener.map(listener, r -> null), in -> TransportResponse.Empty.INSTANCE,
+            new ActionListenerResponseHandler<>(listener.map(r -> null), in -> TransportResponse.Empty.INSTANCE,
                     ThreadPool.Names.GENERIC));
     }
 
@@ -155,8 +153,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
                 retentionLeases,
                 mappingVersionOnPrimary);
         final Writeable.Reader<RecoveryTranslogOperationsResponse> reader = RecoveryTranslogOperationsResponse::new;
-        final ActionListener<RecoveryTranslogOperationsResponse> responseListener = ActionListener.map(listener, r -> r.localCheckpoint);
-        executeRetryableAction(action, request, translogOpsRequestOptions, responseListener, reader);
+        executeRetryableAction(action, request, translogOpsRequestOptions, listener.map(r -> r.localCheckpoint), reader);
     }
 
     @Override
@@ -167,8 +164,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
         RecoveryFilesInfoRequest request = new RecoveryFilesInfoRequest(recoveryId, requestSeqNo, shardId, phase1FileNames, phase1FileSizes,
             phase1ExistingFileNames, phase1ExistingFileSizes, totalTranslogOps);
         final Writeable.Reader<TransportResponse.Empty> reader = in -> TransportResponse.Empty.INSTANCE;
-        final ActionListener<TransportResponse.Empty> responseListener = ActionListener.map(listener, r -> null);
-        executeRetryableAction(action, request, standardTimeoutRequestOptions, responseListener, reader);
+        executeRetryableAction(action, request, standardTimeoutRequestOptions, listener.map(r -> null), reader);
     }
 
     @Override
@@ -240,7 +236,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
                                                                       TransportRequestOptions options, ActionListener<T> actionListener,
                                                                       Writeable.Reader<T> reader) {
         final Object key = new Object();
-        final ActionListener<T> removeListener = ActionListener.runBefore(actionListener, () -> onGoingRetryableActions.remove(key));
+        final ActionListener<T> removeListener = actionListener.runBefore(() -> onGoingRetryableActions.remove(key));
         final TimeValue initialDelay = TimeValue.timeValueMillis(200);
         final TimeValue timeout = recoverySettings.internalActionRetryTimeout();
         final RetryableAction<T> retryableAction = new RetryableAction<>(logger, threadPool, initialDelay, timeout, removeListener) {

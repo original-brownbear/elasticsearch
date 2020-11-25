@@ -94,8 +94,7 @@ public class RetentionLeaseActions {
         protected void asyncShardOperation(T request, ShardId shardId, final ActionListener<ActionResponse.Empty> listener) {
             final IndexService indexService = indicesService.indexServiceSafe(shardId.getIndex());
             final IndexShard indexShard = indexService.getShard(shardId.id());
-            indexShard.acquirePrimaryOperationPermit(
-                ActionListener.delegateFailure(listener, (delegatedListener, releasable) -> {
+            indexShard.acquirePrimaryOperationPermit(listener.delegateFailure((delegatedListener, releasable) -> {
                     try (Releasable ignore = releasable) {
                         doRetentionLeaseAction(indexShard, request, delegatedListener);
                     }
@@ -160,7 +159,7 @@ public class RetentionLeaseActions {
                         request.getId(),
                         request.getRetainingSequenceNumber(),
                         request.getSource(),
-                        ActionListener.map(listener, r -> ActionResponse.Empty.INSTANCE));
+                        listener.map(r -> ActionResponse.Empty.INSTANCE));
             }
         }
     }
@@ -240,9 +239,7 @@ public class RetentionLeaseActions {
             @Override
             void doRetentionLeaseAction(final IndexShard indexShard, final RemoveRequest request,
                                         final ActionListener<ActionResponse.Empty> listener) {
-                indexShard.removeRetentionLease(
-                        request.getId(),
-                        ActionListener.map(listener, r -> ActionResponse.Empty.INSTANCE));
+                indexShard.removeRetentionLease(request.getId(), listener.map(r -> ActionResponse.Empty.INSTANCE));
             }
 
         }

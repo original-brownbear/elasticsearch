@@ -386,7 +386,7 @@ public class CacheFile {
         FileChannelReference reference,
         Releasable releasable
     ) {
-        return ActionListener.runAfter(ActionListener.wrap(success -> {
+        return ActionListener.<Void>wrap(success -> {
             final int read = reader.onRangeAvailable(reference.fileChannel);
             assert read == rangeToRead.v2() - rangeToRead.v1() : "partial read ["
                 + read
@@ -396,7 +396,7 @@ public class CacheFile {
                 + rangeToRead.v1()
                 + ']';
             future.complete(read);
-        }, future::completeExceptionally), releasable::close);
+        }, future::completeExceptionally).runAfter(releasable::close);
     }
 
     /**

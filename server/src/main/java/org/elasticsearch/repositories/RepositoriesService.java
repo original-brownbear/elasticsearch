@@ -128,10 +128,10 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
 
         final ActionListener<AcknowledgedResponse> registrationListener;
         if (request.verify()) {
-            registrationListener = ActionListener.delegateFailure(listener, (delegatedListener, clusterStateUpdateResponse) -> {
+            registrationListener = listener.delegateFailure((delegatedListener, clusterStateUpdateResponse) -> {
                 if (clusterStateUpdateResponse.isAcknowledged()) {
                     // The response was acknowledged - all nodes should know about the new repository, let's verify them
-                    verifyRepository(request.name(), ActionListener.delegateFailure(delegatedListener,
+                    verifyRepository(request.name(), delegatedListener.delegateFailure(
                         (innerDelegatedListener, discoveryNodes) -> innerDelegatedListener.onResponse(clusterStateUpdateResponse)));
                 } else {
                     delegatedListener.onResponse(clusterStateUpdateResponse);
@@ -261,7 +261,7 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                 final String verificationToken = repository.startVerification();
                 if (verificationToken != null) {
                     try {
-                        verifyAction.verify(repositoryName, verificationToken, ActionListener.delegateFailure(listener,
+                        verifyAction.verify(repositoryName, verificationToken, listener.delegateFailure(
                             (delegatedListener, verifyResponse) -> threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(() -> {
                                 try {
                                     repository.endVerification(verificationToken);

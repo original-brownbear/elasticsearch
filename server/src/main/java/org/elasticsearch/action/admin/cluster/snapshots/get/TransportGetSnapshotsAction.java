@@ -105,22 +105,21 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
             return;
         }
         final GroupedActionListener<GetSnapshotsResponse.Response> groupedActionListener =
-                new GroupedActionListener<>(
-                        ActionListener.map(listener, responses -> {
-                            assert repos.size() == responses.size();
-                            return new GetSnapshotsResponse(responses);
-                        }), repos.size());
+                new GroupedActionListener<>(listener.map(responses -> {
+                    assert repos.size() == responses.size();
+                    return new GetSnapshotsResponse(responses);
+                }), repos.size());
 
         for (final RepositoryMetadata repo : repos) {
             final String repoName = repo.name();
-            getSingleRepoSnapshotInfo(snapshotsInProgress, repoName, snapshots, ignoreUnavailable, verbose, ActionListener.map(
-                    ActionListener.delegateResponse(groupedActionListener, (groupedListener, e) -> {
+            getSingleRepoSnapshotInfo(snapshotsInProgress, repoName, snapshots, ignoreUnavailable, verbose,
+                    groupedActionListener.delegateResponse((groupedListener, e) -> {
                         if (e instanceof ElasticsearchException) {
                             groupedListener.onResponse(GetSnapshotsResponse.Response.error(repoName, (ElasticsearchException) e));
                         } else {
                             groupedListener.onFailure(e);
                         }
-                    }), snInfos -> GetSnapshotsResponse.Response.snapshots(repoName, snInfos)));
+                    }).map(snInfos -> GetSnapshotsResponse.Response.snapshots(repoName, snInfos)));
         }
     }
 

@@ -249,7 +249,7 @@ public abstract class ESIndexLevelReplicationTestCase extends IndexShardTestCase
             DocWriteRequest<?> writeRequest, WriteRequest.RefreshPolicy refreshPolicy) throws Exception {
             PlainActionFuture<BulkItemResponse> listener = new PlainActionFuture<>();
             final ActionListener<BulkShardResponse> wrapBulkListener =
-                ActionListener.map(listener, bulkShardResponse -> bulkShardResponse.getResponses()[0]);
+                    listener.map(bulkShardResponse -> bulkShardResponse.getResponses()[0]);
             BulkItemRequest[] items = new BulkItemRequest[1];
             items[0] = new BulkItemRequest(0, writeRequest);
             BulkShardRequest request = new BulkShardRequest(shardId, refreshPolicy, items);
@@ -700,7 +700,7 @@ public abstract class ESIndexLevelReplicationTestCase extends IndexShardTestCase
                     getPrimaryShard().getPendingPrimaryTerm(),
                     globalCheckpoint,
                     maxSeqNoOfUpdatesOrDeletes,
-                    ActionListener.delegateFailure(listener, (delegatedListener, releasable) -> {
+                    listener.delegateFailure((delegatedListener, releasable) -> {
                         try {
                             performOnReplica(request, replica);
                             releasable.close();

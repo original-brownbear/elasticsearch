@@ -568,27 +568,23 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             repository.cloneShardSnapshot(sourceSnapshot, targetSnapshot, repoShardId, shardStatusBefore.generation(), ActionListener.wrap(
                     generation -> innerUpdateSnapshotState(
                             new ShardSnapshotUpdate(target, repoShardId,
-                                    new ShardSnapshotStatus(localNodeId, ShardState.SUCCESS, generation)),
-                            ActionListener.runBefore(
-                                    ActionListener.wrap(
-                                            v -> logger.trace("Marked [{}] as successfully cloned from [{}] to [{}]", repoShardId,
-                                                    sourceSnapshot, targetSnapshot),
-                                            e -> {
-                                                logger.warn("Cluster state update after successful shard clone [{}] failed", repoShardId);
-                                                failAllListenersOnMasterFailOver(e);
-                                            }
-                                    ), () -> currentlyCloning.remove(repoShardId))
+                                    new ShardSnapshotStatus(localNodeId, ShardState.SUCCESS, generation)), ActionListener.<Void>wrap(
+                                    v -> logger.trace("Marked [{}] as successfully cloned from [{}] to [{}]", repoShardId,
+                                            sourceSnapshot, targetSnapshot),
+                                    e -> {
+                                        logger.warn("Cluster state update after successful shard clone [{}] failed", repoShardId);
+                                        failAllListenersOnMasterFailOver(e);
+                                    }).runBefore(() -> currentlyCloning.remove(repoShardId))
                     ), e -> innerUpdateSnapshotState(
                             new ShardSnapshotUpdate(target, repoShardId,
                                     new ShardSnapshotStatus(localNodeId, ShardState.FAILED, "failed to clone shard snapshot", null)),
-                            ActionListener.runBefore(ActionListener.wrap(
+                            ActionListener.<Void>wrap(
                                     v -> logger.trace("Marked [{}] as failed clone from [{}] to [{}]", repoShardId,
                                             sourceSnapshot, targetSnapshot),
                                     ex -> {
                                         logger.warn("Cluster state update after failed shard clone [{}] failed", repoShardId);
                                         failAllListenersOnMasterFailOver(ex);
-                                    }
-                            ), () -> currentlyCloning.remove(repoShardId)))));
+                                    }).runBefore(() -> currentlyCloning.remove(repoShardId)))));
         }
     }
 
@@ -2648,7 +2644,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         protected void masterOperation(Task task, UpdateIndexShardSnapshotStatusRequest request, ClusterState state,
                                        ActionListener<ActionResponse.Empty> listener) {
             innerUpdateSnapshotState(new ShardSnapshotUpdate(request.snapshot(), request.shardId(), request.status()),
-                    ActionListener.delegateFailure(listener, (l, v) -> l.onResponse(ActionResponse.Empty.INSTANCE)));
+                    listener.delegateFailure((l, v) -> l.onResponse(ActionResponse.Empty.INSTANCE)));
         }
 
         @Override
