@@ -174,9 +174,8 @@ public class MetadataIndexStateService {
                     } else {
                         assert blockedIndices.isEmpty() == false : "List of blocked indices is empty but cluster state was changed";
                         threadPool.executor(ThreadPool.Names.MANAGEMENT)
-                            .execute(new WaitForClosedBlocksApplied(blockedIndices, request,
-                                ActionListener.wrap(verifyResults ->
-                                    clusterService.submitStateUpdateTask("close-indices", new ClusterStateUpdateTask(Priority.URGENT) {
+                            .execute(new WaitForClosedBlocksApplied(blockedIndices, request, listener.wrap((wrapped, verifyResults) ->
+                                clusterService.submitStateUpdateTask("close-indices", new ClusterStateUpdateTask(Priority.URGENT) {
                                         private final List<IndexResult> indices = new ArrayList<>();
 
                                         @Override
@@ -190,7 +189,7 @@ public class MetadataIndexStateService {
 
                                         @Override
                                         public void onFailure(final String source, final Exception e) {
-                                            listener.onFailure(e);
+                                            wrapped.onFailure(e);
                                         }
 
                                         @Override
@@ -215,14 +214,13 @@ public class MetadataIndexStateService {
                                                         // we maintain a kind of coherency by overriding the shardsAcknowledged value
                                                         // (see ShardsAcknowledgedResponse constructor)
                                                         boolean shardsAcked = acknowledged ? shardsAcknowledged : false;
-                                                        listener.onResponse(new CloseIndexResponse(acknowledged, shardsAcked, indices));
-                                                    }, listener::onFailure);
+                                                        wrapped.onResponse(new CloseIndexResponse(acknowledged, shardsAcked, indices));
+                                                    }, wrapped::onFailure);
                                             } else {
-                                                listener.onResponse(new CloseIndexResponse(acknowledged, false, indices));
+                                                wrapped.onResponse(new CloseIndexResponse(acknowledged, false, indices));
                                             }
                                         }
-                                    }),
-                                    listener::onFailure)
+                                    }))
                                 )
                             );
                     }

@@ -119,7 +119,7 @@ public class ReplicationOperation<
 
         totalShards.incrementAndGet();
         pendingActions.incrementAndGet(); // increase by 1 until we finish all primary coordination
-        primary.perform(request, ActionListener.wrap(this::handlePrimaryResult, resultListener::onFailure));
+        primary.perform(request, resultListener.wrap((i, r) -> this.handlePrimaryResult(r)));
     }
 
     private void handlePrimaryResult(final PrimaryResultT primaryResult) {

@@ -68,8 +68,7 @@ public class MetadataMigrateToDataStreamService {
     public void migrateToDataStream(MigrateToDataStreamClusterStateUpdateRequest request,
                                     ActionListener<AcknowledgedResponse> finalListener) {
         AtomicReference<String> writeIndexRef = new AtomicReference<>();
-        ActionListener<AcknowledgedResponse> listener = ActionListener.wrap(
-            response -> {
+        ActionListener<AcknowledgedResponse> listener = finalListener.wrap((wrapped, response) -> {
                 if (response.isAcknowledged()) {
                     String writeIndexName = writeIndexRef.get();
                     assert writeIndexName != null;
@@ -77,15 +76,12 @@ public class MetadataMigrateToDataStreamService {
                         new String[]{writeIndexName},
                         ActiveShardCount.DEFAULT,
                         request.masterNodeTimeout(),
-                        shardsAcked -> {
-                            finalListener.onResponse(AcknowledgedResponse.TRUE);
-                        },
-                        finalListener::onFailure);
+                        shardsAcked -> wrapped.onResponse(AcknowledgedResponse.TRUE),
+                        wrapped::onFailure);
                 } else {
-                    finalListener.onResponse(AcknowledgedResponse.FALSE);
+                    wrapped.onResponse(AcknowledgedResponse.FALSE);
                 }
-            },
-            finalListener::onFailure
+            }
         );
         clusterService.submitStateUpdateTask("migrate-to-data-stream [" + request.aliasName + "]",
             new AckedClusterStateUpdateTask(Priority.HIGH, request, listener) {

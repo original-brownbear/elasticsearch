@@ -267,7 +267,7 @@ public class MetadataCreateIndexService {
     public void createIndex(final CreateIndexClusterStateUpdateRequest request,
                             final ActionListener<ShardsAcknowledgedResponse> listener) {
         logger.trace("createIndex[{}]", request);
-        onlyCreateIndex(request, ActionListener.wrap(response -> {
+        onlyCreateIndex(request, listener.wrap((wrapped, response) -> {
             if (response.isAcknowledged()) {
                 logger.trace("[{}] index creation acknowledged, waiting for active shards [{}]",
                     request.index(), request.waitForActiveShards());
@@ -279,13 +279,13 @@ public class MetadataCreateIndexService {
                         } else {
                             logger.trace("[{}] index created and shards acknowledged", request.index());
                         }
-                        listener.onResponse(ShardsAcknowledgedResponse.of(true, shardsAcknowledged));
-                    }, listener::onFailure);
+                        wrapped.onResponse(ShardsAcknowledgedResponse.of(true, shardsAcknowledged));
+                    }, wrapped::onFailure);
             } else {
                 logger.trace("index creation not acknowledged for [{}]", request);
-                listener.onResponse(ShardsAcknowledgedResponse.NOT_ACKNOWLEDGED);
+                wrapped.onResponse(ShardsAcknowledgedResponse.NOT_ACKNOWLEDGED);
             }
-        }, listener::onFailure));
+        }));
     }
 
     private void onlyCreateIndex(final CreateIndexClusterStateUpdateRequest request,

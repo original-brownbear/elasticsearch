@@ -109,8 +109,7 @@ public final class ClearScrollController implements Runnable {
     }
 
     void cleanScrollIds(List<SearchContextIdForNode> contextIds) {
-        SearchScrollAsyncAction.collectNodesAndRun(contextIds, nodes, searchTransportService, ActionListener.wrap(
-            lookup -> {
+        SearchScrollAsyncAction.collectNodesAndRun(contextIds, nodes, searchTransportService, listener.wrap((wrappedListener, lookup) -> {
                 for (SearchContextIdForNode target : contextIds) {
                     final DiscoveryNode node = lookup.apply(target.getClusterAlias(), target.getNode());
                     if (node == null) {
@@ -125,7 +124,7 @@ public final class ClearScrollController implements Runnable {
                         }
                     }
                 }
-            }, listener::onFailure));
+            }));
     }
 
     private void onFreedContext(boolean freed) {

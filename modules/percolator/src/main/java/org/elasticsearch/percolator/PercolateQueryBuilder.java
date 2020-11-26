@@ -45,7 +45,6 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
-import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -410,7 +409,7 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
         }
         SetOnce<BytesReference> documentSupplier = new SetOnce<>();
         queryShardContext.registerAsyncAction((client, listener) -> {
-            client.get(getRequest, ActionListener.wrap(getResponse -> {
+            client.get(getRequest, listener.wrap((wrapped, getResponse) -> {
                 if (getResponse.isExists() == false) {
                     throw new ResourceNotFoundException(
                         "indexed document [{}/{}] couldn't be found", indexedDocumentIndex, indexedDocumentId
@@ -422,8 +421,8 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
                     );
                 }
                 documentSupplier.set(getResponse.getSourceAsBytesRef());
-                listener.onResponse(null);
-            }, listener::onFailure));
+                wrapped.onResponse(null);
+            }));
         });
 
         PercolateQueryBuilder rewritten = new PercolateQueryBuilder(field, documentSupplier::get);

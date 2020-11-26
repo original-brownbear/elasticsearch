@@ -20,6 +20,7 @@
 package org.elasticsearch.action;
 
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.CheckedRunnable;
@@ -61,6 +62,25 @@ public interface ActionListener<Response> {
      */
     default <T> ActionListener<T> map(CheckedFunction<T, Response, Exception> fn) {
         return new MappedActionListener<>(fn, this);
+    }
+
+    default <T> ActionListener<T> wrap(CheckedBiConsumer<ActionListener<Response>, T, ? extends Exception> fn) {
+        final ActionListener<Response> delegate = this;
+        return new ActionListener<>() {
+            @Override
+            public void onResponse(T response) {
+                try {
+                    fn.accept(delegate, response);
+                } catch (Exception e) {
+                    onFailure(e);
+                }
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                delegate.onFailure(e);
+            }
+        };
     }
 
     /**
@@ -314,7 +334,7 @@ public interface ActionListener<Response> {
 
         private final ActionListener<O> delegate;
 
-        public MappedActionListener(CheckedFunction<Response, O, Exception> fn, ActionListener<O> delegate) {
+        MappedActionListener(CheckedFunction<Response, O, Exception> fn, ActionListener<O> delegate) {
             this.fn = fn;
             this.delegate = delegate;
         }
