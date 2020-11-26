@@ -256,8 +256,7 @@ public class GatewayAllocator implements ExistingShardsAllocator {
         private void listStartedShards(ShardId shardId, String customDataPath, DiscoveryNode[] nodes,
                                        ActionListener<BaseNodesResponse<NodeGatewayStartedShards>> listener) {
             var request = new TransportNodesListGatewayStartedShards.Request(shardId, customDataPath, nodes);
-            client.executeLocally(TransportNodesListGatewayStartedShards.TYPE, request,
-                    listener.wrap((wrapped, r) -> wrapped.onResponse(r)));
+            client.executeLocally(TransportNodesListGatewayStartedShards.TYPE, request, listener.wrap());
         }
     }
 
@@ -287,8 +286,7 @@ public class GatewayAllocator implements ExistingShardsAllocator {
         private void listStoreFilesMetadata(ShardId shardId, String customDataPath, DiscoveryNode[] nodes,
                                             ActionListener<BaseNodesResponse<NodeStoreFilesMetadata>> listener) {
             var request = new TransportNodesListShardStoreMetadata.Request(shardId, customDataPath, nodes);
-            client.executeLocally(TransportNodesListShardStoreMetadata.TYPE, request,
-                    listener.wrap((wrapped, response) -> wrapped.onResponse(response)));
+            client.executeLocally(TransportNodesListShardStoreMetadata.TYPE, request, listener.wrap());
         }
 
         @Override

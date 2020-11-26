@@ -64,9 +64,28 @@ public interface ActionListener<Response> {
         return new MappedActionListener<>(fn, this);
     }
 
+    default <T> ActionListener<T> wrap() {
+        return new DelegateFailureActionListener<>(this) {
+            @Override
+            @SuppressWarnings("unchecked")
+            public void onResponse(T response) {
+                try {
+                    delegate.onResponse((Response) response);
+                } catch (Exception e) {
+                    onFailure(e);
+                }
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public <R> ActionListener<R> wrap() {
+                return (ActionListener<R>) this;
+            }
+        };
+    }
+
     default <T> ActionListener<T> wrap(CheckedBiConsumer<ActionListener<Response>, T, ? extends Exception> fn) {
-        final ActionListener<Response> delegate = this;
-        return new ActionListener<>() {
+        return new DelegateFailureActionListener<>(this) {
             @Override
             public void onResponse(T response) {
                 try {
@@ -77,8 +96,9 @@ public interface ActionListener<Response> {
             }
 
             @Override
-            public void onFailure(Exception e) {
-                delegate.onFailure(e);
+            @SuppressWarnings("unchecked")
+            public <R> ActionListener<R> wrap() {
+                return (ActionListener<R>) this;
             }
         };
     }
@@ -107,6 +127,12 @@ public interface ActionListener<Response> {
             @Override
             public void onFailure(Exception e) {
                 onFailure.accept(e);
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public <R> ActionListener<R> wrap() {
+                return (ActionListener<R>) this;
             }
         };
     }
@@ -144,16 +170,10 @@ public interface ActionListener<Response> {
      * @return Delegating listener
      */
     static <T, R> ActionListener<T> delegateFailure(ActionListener<R> delegate, BiConsumer<ActionListener<R>, T> bc) {
-        return new ActionListener<T>() {
-
+        return new DelegateFailureActionListener<>(delegate) {
             @Override
             public void onResponse(T r) {
                 bc.accept(delegate, r);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                delegate.onFailure(e);
             }
         };
     }
@@ -334,7 +354,7 @@ public interface ActionListener<Response> {
 
         private final ActionListener<O> delegate;
 
-        MappedActionListener(CheckedFunction<Response, O, Exception> fn, ActionListener<O> delegate) {
+        private MappedActionListener(CheckedFunction<Response, O, Exception> fn, ActionListener<O> delegate) {
             this.fn = fn;
             this.delegate = delegate;
         }
@@ -372,6 +392,20 @@ public interface ActionListener<Response> {
         @Override
         public <T> ActionListener<T> map(CheckedFunction<T, Response, Exception> fn) {
             return new MappedActionListener<>(fn.andThen(this.fn), this.delegate);
+        }
+    }
+
+    abstract class DelegateFailureActionListener<R, T> implements ActionListener<T> {
+
+        protected final ActionListener<R> delegate;
+
+        protected DelegateFailureActionListener(ActionListener<R> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public final void onFailure(Exception e) {
+            delegate.onFailure(e);
         }
     }
 }
