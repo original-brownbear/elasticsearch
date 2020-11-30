@@ -43,6 +43,11 @@ public class AllocateUnassignedDecision extends AbstractAllocationDecision {
     /** a constant representing a shard decision where no decision was taken */
     public static final AllocateUnassignedDecision NOT_TAKEN =
         new AllocateUnassignedDecision(AllocationStatus.NO_ATTEMPT, null, null, null, false, 0L, 0L);
+
+    /** A constant representing a shard decision waiting on fetching shard data from all nodes */
+    public static final AllocateUnassignedDecision FETCHING_SHARD_DATA =
+            new AllocateUnassignedDecision(AllocationStatus.FETCHING_SHARD_DATA, null, null, null, false, 0L, 0L);
+
     /**
      * a map of cached common no/throttle decisions that don't need explanations,
      * this helps prevent unnecessary object allocations for the non-explain API case
@@ -50,8 +55,7 @@ public class AllocateUnassignedDecision extends AbstractAllocationDecision {
     private static final Map<AllocationStatus, AllocateUnassignedDecision> CACHED_DECISIONS;
     static {
         Map<AllocationStatus, AllocateUnassignedDecision> cachedDecisions = new EnumMap<>(AllocationStatus.class);
-        cachedDecisions.put(AllocationStatus.FETCHING_SHARD_DATA,
-            new AllocateUnassignedDecision(AllocationStatus.FETCHING_SHARD_DATA, null, null, null, false, 0L, 0L));
+        cachedDecisions.put(AllocationStatus.FETCHING_SHARD_DATA, FETCHING_SHARD_DATA);
         cachedDecisions.put(AllocationStatus.NO_VALID_SHARD_COPY,
             new AllocateUnassignedDecision(AllocationStatus.NO_VALID_SHARD_COPY, null, null, null, false, 0L, 0L));
         cachedDecisions.put(AllocationStatus.DECIDERS_NO,

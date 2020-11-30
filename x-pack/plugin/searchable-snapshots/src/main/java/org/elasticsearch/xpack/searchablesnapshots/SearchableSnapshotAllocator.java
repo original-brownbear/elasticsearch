@@ -8,7 +8,6 @@ package org.elasticsearch.xpack.searchablesnapshots;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
-import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.AllocateUnassignedDecision;
 import org.elasticsearch.cluster.routing.allocation.AllocationDecision;
 import org.elasticsearch.cluster.routing.allocation.ExistingShardsAllocator;
@@ -87,7 +86,7 @@ public class SearchableSnapshotAllocator implements ExistingShardsAllocator {
 
         if (shardRouting.recoverySource().getType() == RecoverySource.Type.SNAPSHOT
             && allocation.snapshotShardSizeInfo().getShardSize(shardRouting) == null) {
-            return AllocateUnassignedDecision.no(UnassignedInfo.AllocationStatus.FETCHING_SHARD_DATA, null);
+            return AllocateUnassignedDecision.FETCHING_SHARD_DATA;
         }
 
         // let BalancedShardsAllocator take care of allocating this shard

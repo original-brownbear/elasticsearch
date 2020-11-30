@@ -55,17 +55,14 @@ public class SnapshotInProgressAllocationDecider extends AllocationDecider {
         return canMove(shardRouting, allocation);
     }
 
+    private static final Decision YES_NOT_SNAPSHOTTING = Decision.single(Decision.Type.YES, NAME, "the shard is not being snapshotted");
+
     private Decision canMove(ShardRouting shardRouting, RoutingAllocation allocation) {
         if (shardRouting.primary()) {
             // Only primary shards are snapshotted
 
-            SnapshotsInProgress snapshotsInProgress = allocation.custom(SnapshotsInProgress.TYPE);
-            if (snapshotsInProgress == null || snapshotsInProgress.entries().isEmpty()) {
-                // Snapshots are not running
-                return allocation.decision(Decision.YES, NAME, "no snapshots are currently running");
-            }
-
-            for (SnapshotsInProgress.Entry snapshot : snapshotsInProgress.entries()) {
+            final SnapshotsInProgress snapshots = allocation.custom(SnapshotsInProgress.TYPE);
+            for (SnapshotsInProgress.Entry snapshot : (snapshots == null ? SnapshotsInProgress.EMPTY : snapshots).entries()) {
                 SnapshotsInProgress.ShardSnapshotStatus shardSnapshotStatus = snapshot.shards().get(shardRouting.shardId());
                 if (shardSnapshotStatus != null && !shardSnapshotStatus.state().completed() && shardSnapshotStatus.nodeId() != null &&
                         shardSnapshotStatus.nodeId().equals(shardRouting.currentNodeId())) {
@@ -79,7 +76,7 @@ public class SnapshotInProgressAllocationDecider extends AllocationDecider {
                 }
             }
         }
-        return allocation.decision(Decision.YES, NAME, "the shard is not being snapshotted");
+        return YES_NOT_SNAPSHOTTING;
     }
 
 }

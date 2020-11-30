@@ -38,16 +38,21 @@ public class RestoreInProgressAllocationDecider extends AllocationDecider {
         return canAllocate(shardRouting, allocation);
     }
 
+    private static final Decision YES_NOT_RESTORE =
+            Decision.single(Decision.Type.YES, NAME, "ignored as shard is not being recovered from a snapshot");
+    private static final Decision YES_NOT_API_RESTORE = Decision.single(Decision.Type.YES, NAME, "not an API-level restore");
+    private static final Decision YES_CURRENTLY_RESTORING = Decision.single(Decision.Type.YES, NAME, "shard is currently being restored");
+
     @Override
     public Decision canAllocate(final ShardRouting shardRouting, final RoutingAllocation allocation) {
         final RecoverySource recoverySource = shardRouting.recoverySource();
         if (recoverySource == null || recoverySource.getType() != RecoverySource.Type.SNAPSHOT) {
-            return allocation.decision(Decision.YES, NAME, "ignored as shard is not being recovered from a snapshot");
+            return YES_NOT_RESTORE;
         }
 
         final RecoverySource.SnapshotRecoverySource source = (RecoverySource.SnapshotRecoverySource) recoverySource;
         if (source.restoreUUID().equals(RecoverySource.SnapshotRecoverySource.NO_API_RESTORE_UUID)) {
-            return allocation.decision(Decision.YES, NAME, "not an API-level restore");
+            return YES_NOT_API_RESTORE;
         }
 
         final RestoreInProgress restoresInProgress = allocation.custom(RestoreInProgress.TYPE);
@@ -59,7 +64,7 @@ public class RestoreInProgressAllocationDecider extends AllocationDecider {
                 if (shardRestoreStatus != null && shardRestoreStatus.state().completed() == false) {
                     assert shardRestoreStatus.state() != RestoreInProgress.State.SUCCESS : "expected shard [" + shardRouting
                         + "] to be in initializing state but got [" + shardRestoreStatus.state() + "]";
-                    return allocation.decision(Decision.YES, NAME, "shard is currently being restored");
+                    return YES_CURRENTLY_RESTORING;
                 }
             }
         }

@@ -27,33 +27,37 @@ public class SearchableSnapshotAllocationDecider extends AllocationDecider {
 
     @Override
     public Decision canAllocate(ShardRouting shardRouting, RoutingNode node, RoutingAllocation allocation) {
-        return allowAllocation(allocation.metadata().getIndexSafe(shardRouting.index()), allocation);
+        return allowAllocation(allocation.metadata().getIndexSafe(shardRouting.index()));
     }
 
     @Override
     public Decision canAllocate(ShardRouting shardRouting, RoutingAllocation allocation) {
-        return allowAllocation(allocation.metadata().getIndexSafe(shardRouting.index()), allocation);
+        return allowAllocation(allocation.metadata().getIndexSafe(shardRouting.index()));
     }
 
     @Override
     public Decision canAllocate(IndexMetadata indexMetadata, RoutingNode node, RoutingAllocation allocation) {
-        return allowAllocation(indexMetadata, allocation);
+        return allowAllocation(indexMetadata);
     }
 
     @Override
     public Decision canForceAllocatePrimary(ShardRouting shardRouting, RoutingNode node, RoutingAllocation allocation) {
-        return allowAllocation(allocation.metadata().getIndexSafe(shardRouting.index()), allocation);
+        return allowAllocation(allocation.metadata().getIndexSafe(shardRouting.index()));
     }
 
-    private Decision allowAllocation(IndexMetadata indexMetadata, RoutingAllocation allocation) {
+    private static final Decision YES_VALID_LICENSE = Decision.single(Decision.Type.YES, NAME, "valid license for searchable snapshots");
+    private static final Decision NO_INVALID_LICENSE = Decision.single(Decision.Type.NO, NAME, "invalid license for searchable snapshots");
+    private static final Decision YES_NOT_SNAPSHOT = Decision.single(
+        Decision.Type.YES,
+        NAME,
+        "decider only applicable for indices backed by searchable snapshots"
+    );
+
+    private Decision allowAllocation(IndexMetadata indexMetadata) {
         if (SearchableSnapshotsConstants.isSearchableSnapshotStore(indexMetadata.getSettings())) {
-            if (hasValidLicenseSupplier.getAsBoolean()) {
-                return allocation.decision(Decision.YES, NAME, "valid license for searchable snapshots");
-            } else {
-                return allocation.decision(Decision.NO, NAME, "invalid license for searchable snapshots");
-            }
+            return hasValidLicenseSupplier.getAsBoolean() ? YES_VALID_LICENSE : NO_INVALID_LICENSE;
         } else {
-            return allocation.decision(Decision.YES, NAME, "decider only applicable for indices backed by searchable snapshots");
+            return YES_NOT_SNAPSHOT;
         }
     }
 }
