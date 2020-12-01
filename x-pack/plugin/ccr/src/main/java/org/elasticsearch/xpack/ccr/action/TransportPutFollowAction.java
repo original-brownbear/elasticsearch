@@ -252,13 +252,10 @@ public final class TransportPutFollowAction
         ResumeFollowAction.Request resumeFollowRequest = new ResumeFollowAction.Request();
         resumeFollowRequest.setFollowerIndex(request.getFollowerIndex());
         resumeFollowRequest.setParameters(new FollowParameters(parameters));
-        client.execute(ResumeFollowAction.INSTANCE, resumeFollowRequest, ActionListener.wrap(
-            r -> activeShardsObserver.waitForActiveShards(new String[]{request.getFollowerIndex()},
-                request.waitForActiveShards(), request.timeout(), result ->
-                    listener.onResponse(new PutFollowAction.Response(true, result, r.isAcknowledged())),
-                listener::onFailure),
-            listener::onFailure
-        ));
+        client.execute(ResumeFollowAction.INSTANCE, resumeFollowRequest, listener.wrap((r, l) ->
+                activeShardsObserver.waitForActiveShards(new String[]{request.getFollowerIndex()},
+                        request.waitForActiveShards(), request.timeout(), result ->
+                                l.onResponse(new PutFollowAction.Response(true, result, r.isAcknowledged())), l::onFailure)));
     }
 
     static DataStream updateLocalDataStream(Index backingIndexToFollow,

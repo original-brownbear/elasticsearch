@@ -46,9 +46,8 @@ public class AnalyticsUsageTransportAction extends XPackUsageFeatureTransportAct
         if (available) {
             AnalyticsStatsAction.Request statsRequest = new AnalyticsStatsAction.Request();
             statsRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-            client.execute(AnalyticsStatsAction.INSTANCE, statsRequest, ActionListener.wrap(r ->
-                    listener.onResponse(new XPackUsageFeatureResponse(new AnalyticsFeatureSetUsage(true, true, r))),
-                listener::onFailure));
+            client.execute(AnalyticsStatsAction.INSTANCE, statsRequest, listener.wrap((r, l) ->
+                    l.onResponse(new XPackUsageFeatureResponse(new AnalyticsFeatureSetUsage(true, true, r)))));
         } else {
             AnalyticsFeatureSetUsage usage = new AnalyticsFeatureSetUsage(false, true,
                 new AnalyticsStatsAction.Response(state.getClusterName(), Collections.emptyList(), Collections.emptyList()));

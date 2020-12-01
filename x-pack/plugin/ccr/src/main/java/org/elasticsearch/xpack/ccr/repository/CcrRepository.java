@@ -373,11 +373,11 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
             //  response, we should be able to retry by creating a new session.
             final RestoreSession restoreSession = openSession(metadata.name(), remoteClient, leaderShardId, shardId, recoveryState);
             toClose.addFirst(restoreSession); // Some tests depend on closing session before cancelling retention lease renewal
-            restoreSession.restoreFiles(store, ActionListener.wrap(v -> {
+            restoreSession.restoreFiles(store, restoreListener.wrap((v, l) -> {
                 logger.trace("[{}] completed CCR restore", shardId);
                 updateMappings(remoteClient, leaderIndex, restoreSession.mappingVersion, client, shardId.getIndex());
-                restoreListener.onResponse(null);
-            }, restoreListener::onFailure));
+                l.onResponse(null);
+            }));
         } catch (Exception e) {
             restoreListener.onFailure(e);
         }
@@ -554,11 +554,11 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
 
                 @Override
                 protected void executeChunkRequest(FileChunk request, ActionListener<Void> listener) {
-                    final ActionListener<GetCcrRestoreFileChunkAction.GetCcrRestoreFileChunkResponse> threadedListener
-                        = new ThreadedActionListener<>(logger, threadPool, ThreadPool.Names.GENERIC, ActionListener.wrap(r -> {
-                            writeFileChunk(request.md, r);
-                            listener.onResponse(null);
-                        }, listener::onFailure), false);
+                    final ActionListener<GetCcrRestoreFileChunkAction.GetCcrRestoreFileChunkResponse> threadedListener =
+                            new ThreadedActionListener<>(logger, threadPool, ThreadPool.Names.GENERIC, listener.wrap((r, l) -> {
+                                writeFileChunk(request.md, r);
+                                l.onResponse(null);
+                            }), false);
 
                     remoteClient.execute(GetCcrRestoreFileChunkAction.INSTANCE,
                         new GetCcrRestoreFileChunkRequest(node, sessionUUID, request.md.name(), request.bytesRequested),

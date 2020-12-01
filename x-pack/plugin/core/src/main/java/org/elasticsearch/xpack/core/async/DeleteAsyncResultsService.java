@@ -78,8 +78,7 @@ public class DeleteAsyncResultsService {
                     }
                 );
                 //we get before deleting to verify that the user is authorized
-                store.authorizeResponse(searchId, false,
-                    ActionListener.wrap(res -> store.deleteResponse(searchId, deleteListener), listener::onFailure));
+                store.authorizeResponse(searchId, false, listener.wrap(res -> store.deleteResponse(searchId, deleteListener)));
             }
         } catch (Exception exc) {
             listener.onFailure(exc);

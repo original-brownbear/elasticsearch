@@ -190,10 +190,8 @@ public class SamlServiceProviderIndexTests extends ESSingleNodeTestCase {
 
     private Set<SamlServiceProviderDocument> getAllDocs() {
         final PlainActionFuture<Set<SamlServiceProviderDocument>> future = new PlainActionFuture<>();
-        serviceProviderIndex.findAll(assertListenerIsOnlyCalledOnce(ActionListener.wrap(
-            set -> future.onResponse(set.stream().map(doc -> doc.document.get()).collect(Collectors.toUnmodifiableSet())),
-            future::onFailure
-        )));
+        serviceProviderIndex.findAll(assertListenerIsOnlyCalledOnce(future.wrap((set, f) ->
+                f.onResponse(set.stream().map(doc -> doc.document.get()).collect(Collectors.toUnmodifiableSet())))));
         return future.actionGet();
     }
 
@@ -213,9 +211,8 @@ public class SamlServiceProviderIndexTests extends ESSingleNodeTestCase {
 
     private DeleteResponse deleteDocument(SamlServiceProviderDocument doc) {
         final PlainActionFuture<DeleteResponse> future = new PlainActionFuture<>();
-        serviceProviderIndex.readDocument(doc.docId, assertListenerIsOnlyCalledOnce(ActionListener.wrap(
-            info -> serviceProviderIndex.deleteDocument(info.version, WriteRequest.RefreshPolicy.IMMEDIATE, future),
-            future::onFailure)));
+        serviceProviderIndex.readDocument(doc.docId, assertListenerIsOnlyCalledOnce(future.wrap((info, f) ->
+                serviceProviderIndex.deleteDocument(info.version, WriteRequest.RefreshPolicy.IMMEDIATE, f))));
         return future.actionGet();
     }
 
@@ -227,10 +224,8 @@ public class SamlServiceProviderIndexTests extends ESSingleNodeTestCase {
 
     private Set<SamlServiceProviderDocument> findAllByEntityId(String entityId) {
         final PlainActionFuture<Set<SamlServiceProviderDocument>> future = new PlainActionFuture<>();
-        serviceProviderIndex.findByEntityId(entityId, assertListenerIsOnlyCalledOnce(ActionListener.wrap(
-            set -> future.onResponse(set.stream().map(doc -> doc.document.get()).collect(Collectors.toUnmodifiableSet())),
-            future::onFailure
-        )));
+        serviceProviderIndex.findByEntityId(entityId, assertListenerIsOnlyCalledOnce(future.wrap((set, f) ->
+                f.onResponse(set.stream().map(doc -> doc.document.get()).collect(Collectors.toUnmodifiableSet())))));
         return future.actionGet();
     }
 

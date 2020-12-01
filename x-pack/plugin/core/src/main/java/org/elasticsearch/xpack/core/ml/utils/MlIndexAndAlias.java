@@ -100,15 +100,13 @@ public final class MlIndexAndAlias {
         );
 
         // If both the index and alias were successfully created then wait for the shards of the index that the alias points to be ready
-        ActionListener<Boolean> indexCreatedListener = ActionListener.wrap(
-            created -> {
-                if (created) {
-                    waitForShardsReady(client, alias, loggingListener);
-                } else {
-                    loggingListener.onResponse(false);
+        ActionListener<Boolean> indexCreatedListener = loggingListener.wrap((created, l) -> {
+                    if (created) {
+                        waitForShardsReady(client, alias, l);
+                    } else {
+                        l.onResponse(false);
+                    }
                 }
-            },
-            loggingListener::onFailure
         );
 
         String legacyIndexWithoutSuffix = indexPatternPrefix;
@@ -140,9 +138,8 @@ public final class MlIndexAndAlias {
                     firstConcreteIndex,
                     alias,
                     false,
-                    ActionListener.wrap(
-                        unused -> updateWriteAlias(client, alias, legacyIndexWithoutSuffix, firstConcreteIndex, indexCreatedListener),
-                        loggingListener::onFailure)
+                    loggingListener.wrap(unused ->
+                            updateWriteAlias(client, alias, legacyIndexWithoutSuffix, firstConcreteIndex, indexCreatedListener))
                 );
                 return;
             }
@@ -170,9 +167,7 @@ public final class MlIndexAndAlias {
             client.threadPool().getThreadContext(),
             ML_ORIGIN,
             healthRequest,
-            ActionListener.<ClusterHealthResponse>wrap(
-                response -> listener.onResponse(response.isTimedOut() == false),
-                listener::onFailure),
+            listener.<ClusterHealthResponse>wrap((response, l) -> l.onResponse(response.isTimedOut() == false)),
             client.admin().cluster()::health
         );
     }
@@ -227,9 +222,7 @@ public final class MlIndexAndAlias {
         executeAsyncWithOrigin(client.threadPool().getThreadContext(),
             ML_ORIGIN,
             request,
-            ActionListener.<AcknowledgedResponse>wrap(
-                resp -> listener.onResponse(resp.isAcknowledged()),
-                listener::onFailure),
+            listener.<AcknowledgedResponse>wrap((resp, l) -> l.onResponse(resp.isAcknowledged())),
             client.admin().indices()::aliases);
     }
 
@@ -292,14 +285,12 @@ public final class MlIndexAndAlias {
 
         templateRequest.masterNodeTimeout(TimeValue.timeValueMinutes(1));
 
-        ActionListener<AcknowledgedResponse> innerListener = ActionListener.wrap(
-            response ->  {
-                if (response.isAcknowledged() == false) {
-                    logger.warn("error adding legacy template [{}], request was not acknowledged", templateName);
-                }
-                listener.onResponse(response.isAcknowledged());
-            },
-            listener::onFailure);
+        ActionListener<AcknowledgedResponse> innerListener = listener.wrap((response, l) -> {
+            if (response.isAcknowledged() == false) {
+                logger.warn("error adding legacy template [{}], request was not acknowledged", templateName);
+            }
+            l.onResponse(response.isAcknowledged());
+        });
 
         executeAsyncWithOrigin(client.threadPool().getThreadContext(), ML_ORIGIN, templateRequest, innerListener,
             client.admin().indices()::putTemplate);

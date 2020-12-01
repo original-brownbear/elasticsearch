@@ -99,73 +99,49 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
         Map<String, Object> inferenceUsage = new LinkedHashMap<>();
         int nodeCount = mlNodeCount(state);
 
-        // Step 5. extract trained model config count and then return results
-        ActionListener<SearchResponse> trainedModelConfigCountListener = ActionListener.wrap(
-            response -> {
-                addTrainedModelStats(response, inferenceUsage);
-                MachineLearningFeatureSetUsage usage = new MachineLearningFeatureSetUsage(
-                    licenseState.isAllowed(XPackLicenseState.Feature.MACHINE_LEARNING),
-                    enabled, jobsUsage, datafeedsUsage, analyticsUsage, inferenceUsage, nodeCount);
-                listener.onResponse(new XPackUsageFeatureResponse(usage));
-            },
-            listener::onFailure
-        );
-
-        // Step 4. Extract usage from ingest statistics and gather trained model config count
-        ActionListener<NodesStatsResponse> nodesStatsListener = ActionListener.wrap(
-            response -> {
-                addInferenceIngestUsage(response, inferenceUsage);
-                SearchRequestBuilder requestBuilder = client.prepareSearch(InferenceIndexConstants.INDEX_PATTERN)
-                    .setSize(0)
-                    .setQuery(QueryBuilders.boolQuery()
-                        .filter(QueryBuilders.termQuery(InferenceIndexConstants.DOC_TYPE.getPreferredName(), TrainedModelConfig.NAME)))
-                    .setTrackTotalHits(true);
-                ClientHelper.executeAsyncWithOrigin(client.threadPool().getThreadContext(),
-                    ClientHelper.ML_ORIGIN,
-                    requestBuilder.request(),
-                    trainedModelConfigCountListener,
-                    client::search);
-            },
-            listener::onFailure
-        );
-
-        // Step 3. Extract usage from data frame analytics stats and then request ingest node stats
-        ActionListener<GetDataFrameAnalyticsStatsAction.Response> dataframeAnalyticsListener = ActionListener.wrap(
-            response -> {
-                addDataFrameAnalyticsUsage(response, analyticsUsage);
-                String[] ingestNodes = ingestNodes(state);
-                NodesStatsRequest nodesStatsRequest = new NodesStatsRequest(ingestNodes).clear()
-                    .addMetric(NodesStatsRequest.Metric.INGEST.metricName());
-                client.execute(NodesStatsAction.INSTANCE, nodesStatsRequest, nodesStatsListener);
-            },
-            listener::onFailure
-        );
-
-        // Step 2. Extract usage from datafeeds stats and then request stats for data frame analytics
-        ActionListener<GetDatafeedsStatsAction.Response> datafeedStatsListener =
-            ActionListener.wrap(response -> {
-                addDatafeedsUsage(response, datafeedsUsage);
-                GetDataFrameAnalyticsStatsAction.Request dataframeAnalyticsStatsRequest =
-                    new GetDataFrameAnalyticsStatsAction.Request(GetDatafeedsStatsAction.ALL);
-                dataframeAnalyticsStatsRequest.setPageParams(new PageParams(0, 10_000));
-                client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, dataframeAnalyticsListener);
-            },
-            listener::onFailure);
-
-        // Step 1. Extract usage from jobs stats and then request stats for all datafeeds
-        GetJobsStatsAction.Request jobStatsRequest = new GetJobsStatsAction.Request(Metadata.ALL);
-        ActionListener<GetJobsStatsAction.Response> jobStatsListener = ActionListener.wrap(
-            response -> {
-                jobManagerHolder.getJobManager().expandJobs(Metadata.ALL, true, ActionListener.wrap(jobs -> {
+        // Step 0. Kick off the chain of callbacks by requesting jobs stats
+        client.execute(GetJobsStatsAction.INSTANCE, new GetJobsStatsAction.Request(Metadata.ALL),
+                listener.<SearchResponse>wrap((response, l) -> {
+                    // Step 5. extract trained model config count and then return results
+                    addTrainedModelStats(response, inferenceUsage);
+                    MachineLearningFeatureSetUsage usage = new MachineLearningFeatureSetUsage(
+                            licenseState.isAllowed(XPackLicenseState.Feature.MACHINE_LEARNING),
+                            enabled, jobsUsage, datafeedsUsage, analyticsUsage, inferenceUsage, nodeCount);
+                    l.onResponse(new XPackUsageFeatureResponse(usage));
+                }).<NodesStatsResponse>wrap((response, l) -> {
+                    // Step 4. Extract usage from ingest statistics and gather trained model config count
+                    addInferenceIngestUsage(response, inferenceUsage);
+                    SearchRequestBuilder requestBuilder = client.prepareSearch(InferenceIndexConstants.INDEX_PATTERN)
+                            .setSize(0)
+                            .setQuery(QueryBuilders.boolQuery().filter(
+                                    QueryBuilders.termQuery(InferenceIndexConstants.DOC_TYPE.getPreferredName(), TrainedModelConfig.NAME)))
+                            .setTrackTotalHits(true);
+                    ClientHelper.executeAsyncWithOrigin(client.threadPool().getThreadContext(),
+                            ClientHelper.ML_ORIGIN,
+                            requestBuilder.request(),
+                            l,
+                            client::search);
+                }).<GetDataFrameAnalyticsStatsAction.Response>wrap((response, l) -> {
+                    // Step 3. Extract usage from data frame analytics stats and then request ingest node stats
+                    addDataFrameAnalyticsUsage(response, analyticsUsage);
+                    String[] ingestNodes = ingestNodes(state);
+                    NodesStatsRequest nodesStatsRequest = new NodesStatsRequest(ingestNodes).clear()
+                            .addMetric(NodesStatsRequest.Metric.INGEST.metricName());
+                    client.execute(NodesStatsAction.INSTANCE, nodesStatsRequest, l);
+                }).<GetDatafeedsStatsAction.Response>wrap((response, l) -> {
+                    // Step 2. Extract usage from datafeeds stats and then request stats for data frame analytics
+                    addDatafeedsUsage(response, datafeedsUsage);
+                    GetDataFrameAnalyticsStatsAction.Request dataframeAnalyticsStatsRequest =
+                            new GetDataFrameAnalyticsStatsAction.Request(GetDatafeedsStatsAction.ALL);
+                    dataframeAnalyticsStatsRequest.setPageParams(new PageParams(0, 10_000));
+                    client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, l);
+                }).wrap((response, l) -> jobManagerHolder.getJobManager().expandJobs(Metadata.ALL, true, l.wrap((jobs, ll) -> {
+                    // Step 1. Extract usage from jobs stats and then request stats for all datafeeds
                     addJobsUsage(response, jobs.results(), jobsUsage);
                     GetDatafeedsStatsAction.Request datafeedStatsRequest = new GetDatafeedsStatsAction.Request(
-                        GetDatafeedsStatsAction.ALL);
-                    client.execute(GetDatafeedsStatsAction.INSTANCE, datafeedStatsRequest, datafeedStatsListener);
-                }, listener::onFailure));
-            }, listener::onFailure);
-
-        // Step 0. Kick off the chain of callbacks by requesting jobs stats
-        client.execute(GetJobsStatsAction.INSTANCE, jobStatsRequest, jobStatsListener);
+                            GetDatafeedsStatsAction.ALL);
+                    client.execute(GetDatafeedsStatsAction.INSTANCE, datafeedStatsRequest, ll);
+                }))));
     }
 
     private void addJobsUsage(GetJobsStatsAction.Response response, List<Job> jobs, Map<String, Object> jobsUsage) {

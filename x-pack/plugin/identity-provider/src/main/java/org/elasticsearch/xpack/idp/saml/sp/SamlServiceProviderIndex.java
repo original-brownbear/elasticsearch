@@ -241,8 +241,7 @@ public class SamlServiceProviderIndex implements Closeable {
         if (templateInstalled) {
             _writeDocument(document, opType, refreshPolicy, listener);
         } else {
-            installIndexTemplate(ActionListener.wrap(installed ->
-                _writeDocument(document, opType, refreshPolicy, listener), listener::onFailure));
+            installIndexTemplate(listener.wrap((installed, l) -> _writeDocument(document, opType, refreshPolicy, l)));
         }
     }
 
@@ -259,11 +258,11 @@ public class SamlServiceProviderIndex implements Closeable {
                 .source(xContentBuilder)
                 .id(document.docId)
                 .setRefreshPolicy(refreshPolicy);
-            client.index(request, ActionListener.wrap(response -> {
+            client.index(request, listener.wrap((response, l) -> {
                 logger.debug("Wrote service provider [{}][{}] as document [{}] ({})",
                     document.name, document.entityId, response.getId(), response.getResult());
-                listener.onResponse(response);
-            }, listener::onFailure));
+                l.onResponse(response);
+            }));
         } catch (IOException e) {
             listener.onFailure(e);
         }
@@ -293,8 +292,7 @@ public class SamlServiceProviderIndex implements Closeable {
     }
 
     public void refresh(ActionListener<Void> listener) {
-        client.admin().indices().refresh(new RefreshRequest(ALIAS_NAME), ActionListener.wrap(
-            response -> listener.onResponse(null), listener::onFailure));
+        client.admin().indices().refresh(new RefreshRequest(ALIAS_NAME), listener.wrap((response, l) -> l.onResponse(null)));
     }
 
     private void findDocuments(QueryBuilder query, ActionListener<Set<DocumentSupplier>> listener) {

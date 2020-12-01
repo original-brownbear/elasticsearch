@@ -123,23 +123,11 @@ public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Re
             .setEstimatedOperations(request.getTrainedModelConfig().getModelDefinition().getTrainedModel().estimatedNumOperations())
             .build();
 
-        ActionListener<Void> tagsModelIdCheckListener = ActionListener.wrap(
-            r -> trainedModelProvider.storeTrainedModel(trainedModelConfig, ActionListener.wrap(
-                bool -> {
-                    TrainedModelConfig configToReturn = new TrainedModelConfig.Builder(trainedModelConfig).clearDefinition().build();
-                    listener.onResponse(new PutTrainedModelAction.Response(configToReturn));
-                },
-                listener::onFailure
-            )),
-            listener::onFailure
-        );
-
-        ActionListener<Void> modelIdTagCheckListener = ActionListener.wrap(
-            r -> checkTagsAgainstModelIds(request.getTrainedModelConfig().getTags(), tagsModelIdCheckListener),
-            listener::onFailure
-        );
-
-        checkModelIdAgainstTags(request.getTrainedModelConfig().getModelId(), modelIdTagCheckListener);
+        checkModelIdAgainstTags(request.getTrainedModelConfig().getModelId(), listener.<Void>wrap((r, l) ->
+                trainedModelProvider.storeTrainedModel(
+                        trainedModelConfig, l.wrap((bool, ll) -> ll.onResponse(
+                                new Response(new TrainedModelConfig.Builder(trainedModelConfig).clearDefinition().build()))))
+        ).wrap((r, wrapped) -> checkTagsAgainstModelIds(request.getTrainedModelConfig().getTags(), wrapped)));
     }
 
     private void checkModelIdAgainstTags(String modelId, ActionListener<Void> listener) {
@@ -151,19 +139,15 @@ public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Re
         executeAsyncWithOrigin(client.threadPool().getThreadContext(),
             ML_ORIGIN,
             searchRequest,
-            ActionListener.<SearchResponse>wrap(
-                response -> {
+            listener.<SearchResponse>wrap((response, l) -> {
                     if (response.getHits().getTotalHits().value > 0) {
-                        listener.onFailure(
+                        l.onFailure(
                             ExceptionsHelper.badRequestException(
                                 Messages.getMessage(Messages.INFERENCE_MODEL_ID_AND_TAGS_UNIQUE, modelId)));
                         return;
                     }
-                    listener.onResponse(null);
-                },
-                listener::onFailure
-            ),
-            client::search);
+                l.onResponse(null);
+            }), client::search);
     }
 
     private void checkTagsAgainstModelIds(List<String> tags, ActionListener<Void> listener) {
@@ -180,18 +164,14 @@ public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Re
         executeAsyncWithOrigin(client.threadPool().getThreadContext(),
             ML_ORIGIN,
             searchRequest,
-            ActionListener.<SearchResponse>wrap(
-                response -> {
-                    if (response.getHits().getTotalHits().value > 0) {
-                        listener.onFailure(
+            listener.<SearchResponse>wrap((response, l) -> {
+                if (response.getHits().getTotalHits().value > 0) {
+                    l.onFailure(
                             ExceptionsHelper.badRequestException(Messages.getMessage(Messages.INFERENCE_TAGS_AND_MODEL_IDS_UNIQUE, tags)));
-                        return;
-                    }
-                    listener.onResponse(null);
-                },
-                listener::onFailure
-            ),
-            client::search);
+                    return;
+                }
+                l.onResponse(null);
+            }), client::search);
     }
 
     @Override

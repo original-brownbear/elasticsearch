@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.util.Map;
 
-import static org.elasticsearch.action.ActionListener.wrap;
 import static org.elasticsearch.xpack.core.ClientHelper.ASYNC_SEARCH_ORIGIN;
 
 public class TransportEqlSearchAction extends HandledTransportAction<EqlSearchRequest, EqlSearchResponse>
@@ -121,8 +120,7 @@ public class TransportEqlSearchAction extends HandledTransportAction<EqlSearchRe
 
         EqlConfiguration cfg = new EqlConfiguration(request.indices(), zoneId, username, clusterName, filter, timeout,
                 request.indicesOptions(), request.fetchSize(), clientId, new TaskId(nodeId, task.getId()), task);
-        planExecutor.eql(cfg, request.query(), params, wrap(r -> listener.onResponse(createResponse(r, task.getExecutionId())),
-            listener::onFailure));
+        planExecutor.eql(cfg, request.query(), params, listener.wrap((r, l) -> l.onResponse(createResponse(r, task.getExecutionId()))));
     }
 
     static EqlSearchResponse createResponse(Results results, AsyncExecutionId id) {

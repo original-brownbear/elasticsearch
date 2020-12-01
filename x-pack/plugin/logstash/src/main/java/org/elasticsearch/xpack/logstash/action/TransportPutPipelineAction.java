@@ -35,11 +35,6 @@ public class TransportPutPipelineAction extends HandledTransportAction<PutPipeli
             .setId(request.id())
             .setSource(request.source(), request.xContentType())
             .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
-            .execute(
-                ActionListener.wrap(
-                    indexResponse -> listener.onResponse(new PutPipelineResponse(indexResponse.status())),
-                    listener::onFailure
-                )
-            );
+            .execute(listener.wrap((indexResponse, l) -> l.onResponse(new PutPipelineResponse(indexResponse.status()))));
     }
 }

@@ -52,7 +52,7 @@ public class EqlUsageTransportAction extends XPackUsageFeatureTransportAction {
         EqlStatsRequest eqlRequest = new EqlStatsRequest();
         eqlRequest.includeStats(true);
         eqlRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-        client.execute(EqlStatsAction.INSTANCE, eqlRequest, ActionListener.wrap(r -> {
+        client.execute(EqlStatsAction.INSTANCE, eqlRequest, listener.wrap((r, l) -> {
             List<Counters> countersPerNode = r.getNodes()
                 .stream()
                 .map(EqlStatsResponse.NodeStatsResponse::getStats)
@@ -60,7 +60,7 @@ public class EqlUsageTransportAction extends XPackUsageFeatureTransportAction {
                 .collect(Collectors.toList());
             Counters mergedCounters = Counters.merge(countersPerNode);
             EqlFeatureSetUsage usage = new EqlFeatureSetUsage(available, true, mergedCounters.toNestedMap());
-            listener.onResponse(new XPackUsageFeatureResponse(usage));
-        }, listener::onFailure));
+            l.onResponse(new XPackUsageFeatureResponse(usage));
+        }));
     }
 }

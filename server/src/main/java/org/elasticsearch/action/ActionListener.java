@@ -20,6 +20,7 @@
 package org.elasticsearch.action;
 
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.CheckedRunnable;
@@ -61,6 +62,41 @@ public interface ActionListener<Response> {
      */
     default <T> ActionListener<T> map(CheckedFunction<T, Response, Exception> fn) {
         return new MappedActionListener<>(fn, this);
+    }
+
+    default <T> ActionListener<T> wrap(CheckedBiConsumer<T, ActionListener<Response>, Exception> onResponse) {
+        return new WrappedActionListener<>(onResponse, this);
+    }
+
+    default <T> ActionListener<T> wrap(CheckedConsumer<T, Exception> onResponse) {
+        return wrap((r, ignored) -> onResponse.accept(r));
+    }
+
+    final class WrappedActionListener<Response, HandledResponse> implements ActionListener<Response> {
+
+        private final ActionListener<HandledResponse> listener;
+
+        private final CheckedBiConsumer<Response, ActionListener<HandledResponse>, Exception> onResponse;
+
+        private WrappedActionListener(CheckedBiConsumer<Response, ActionListener<HandledResponse>, Exception> onResponse,
+                                      ActionListener<HandledResponse> listener) {
+            this.listener = listener;
+            this.onResponse = onResponse;
+        }
+
+        @Override
+        public void onResponse(Response response) {
+            try {
+                onResponse.accept(response, listener);
+            } catch (Exception e) {
+                onFailure(e);
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            listener.onFailure(e);
+        }
     }
 
     final class MappedActionListener<Response, MappedResponse> implements ActionListener<Response> {

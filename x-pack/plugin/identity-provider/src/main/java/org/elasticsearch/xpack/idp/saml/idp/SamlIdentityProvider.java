@@ -118,21 +118,18 @@ public class SamlIdentityProvider {
      */
     public void resolveServiceProvider(String spEntityId, @Nullable String acs, boolean allowDisabled,
                                        ActionListener<SamlServiceProvider> listener) {
-        serviceProviderResolver.resolve(spEntityId, ActionListener.wrap(
-            sp -> {
-                if (sp == null) {
-                    logger.debug("No explicitly registered service provider exists for entityId [{}]", spEntityId);
-                    resolveWildcardService(spEntityId, acs, listener);
-                } else if (allowDisabled == false && sp.isEnabled() == false) {
-                    logger.info("Service provider [{}][{}] is not enabled", spEntityId, sp.getName());
-                    listener.onResponse(null);
-                } else {
-                    logger.debug("Service provider for [{}] is [{}]", spEntityId, sp);
-                    listener.onResponse(sp);
-                }
-            },
-            listener::onFailure
-        ));
+        serviceProviderResolver.resolve(spEntityId, listener.wrap((sp, l) -> {
+            if (sp == null) {
+                logger.debug("No explicitly registered service provider exists for entityId [{}]", spEntityId);
+                resolveWildcardService(spEntityId, acs, l);
+            } else if (allowDisabled == false && sp.isEnabled() == false) {
+                logger.info("Service provider [{}][{}] is not enabled", spEntityId, sp.getName());
+                l.onResponse(null);
+            } else {
+                logger.debug("Service provider for [{}] is [{}]", spEntityId, sp);
+                l.onResponse(sp);
+            }
+        }));
     }
 
     private void resolveWildcardService(String entityId, String acs, ActionListener<SamlServiceProvider> listener) {

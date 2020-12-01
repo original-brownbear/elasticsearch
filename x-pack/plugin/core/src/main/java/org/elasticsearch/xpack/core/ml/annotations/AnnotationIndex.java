@@ -41,26 +41,19 @@ public class AnnotationIndex {
      */
     public static void createAnnotationsIndexIfNecessary(Client client, ClusterState state, final ActionListener<Boolean> finalListener) {
 
-        final ActionListener<Boolean> checkMappingsListener = ActionListener.wrap(success -> {
-            ElasticsearchMappings.addDocMappingIfMissing(
-                WRITE_ALIAS_NAME,
-                AnnotationIndex::annotationsMapping,
-                client,
-                state,
-                finalListener);
-        }, finalListener::onFailure);
+        final ActionListener<Boolean> checkMappingsListener = finalListener.wrap((success, l) ->
+                ElasticsearchMappings.addDocMappingIfMissing(WRITE_ALIAS_NAME, AnnotationIndex::annotationsMapping, client, state, l));
 
-        final ActionListener<Boolean> createAliasListener = ActionListener.wrap(success -> {
+        final ActionListener<Boolean> createAliasListener = finalListener.wrap((success, l) -> {
             final IndicesAliasesRequest request =
                 client.admin().indices().prepareAliases()
                     .addAliasAction(IndicesAliasesRequest.AliasActions.add().index(INDEX_NAME).alias(READ_ALIAS_NAME).isHidden(true))
                     .addAliasAction(IndicesAliasesRequest.AliasActions.add().index(INDEX_NAME).alias(WRITE_ALIAS_NAME).isHidden(true))
                     .request();
             executeAsyncWithOrigin(client.threadPool().getThreadContext(), ML_ORIGIN, request,
-                ActionListener.<AcknowledgedResponse>wrap(
-                    r -> checkMappingsListener.onResponse(r.isAcknowledged()), finalListener::onFailure),
+                l.<AcknowledgedResponse>wrap((r, ll) -> checkMappingsListener.onResponse(r.isAcknowledged())),
                 client.admin().indices()::aliases);
-        }, finalListener::onFailure);
+        });
 
         // Only create the index or aliases if some other ML index exists - saves clutter if ML is never used.
         SortedMap<String, IndexAbstraction> mlLookup = state.getMetadata().getIndicesLookup().tailMap(".ml");

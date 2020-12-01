@@ -301,13 +301,13 @@ public final class SourceDestValidator {
             license
         );
 
-        ActionListener<Context> validationListener = ActionListener.wrap(c -> {
+        ActionListener<Context> validationListener = listener.wrap((c, l) -> {
             if (c.getValidationException() != null) {
-                listener.onFailure(c.getValidationException());
+                l.onFailure(c.getValidationException());
             } else {
-                listener.onResponse(true);
+                l.onResponse(true);
             }
-        }, listener::onFailure);
+        });
 
         // We traverse the validations in reverse order as we chain the listeners from back to front
         for (int i = validations.size() - 1; i >= 0; i--) {
