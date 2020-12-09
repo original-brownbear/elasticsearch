@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionListener.AbstractActionListener;
 import org.elasticsearch.threadpool.Scheduler;
 
 import java.util.concurrent.CountDownLatch;
@@ -59,20 +60,23 @@ public final class BulkRequestHandler {
             semaphore.acquire();
             toRelease = semaphore::release;
             CountDownLatch latch = new CountDownLatch(1);
-            retry.withBackoff(consumer, bulkRequest, ActionListener.runAfter(new ActionListener<BulkResponse>() {
+            retry.withBackoff(consumer, bulkRequest, new AbstractActionListener<>() {
                 @Override
-                public void onResponse(BulkResponse response) {
+                public void innerOnResponse(BulkResponse response) {
                     listener.afterBulk(executionId, bulkRequest, response);
                 }
 
                 @Override
-                public void onFailure(Exception e) {
+                public void innerOnFailure(Exception e) {
                     listener.afterBulk(executionId, bulkRequest, e);
                 }
-            }, () -> {
-                semaphore.release();
-                latch.countDown();
-            }));
+
+                @Override
+                protected void runAfter() {
+                    semaphore.release();
+                    latch.countDown();
+                }
+            });
             bulkRequestSetupSuccessful = true;
             if (concurrentRequests == 0) {
                 latch.await();

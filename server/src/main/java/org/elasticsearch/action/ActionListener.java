@@ -257,25 +257,49 @@ public interface ActionListener<Response> {
      * callback when the listener is notified via either {@code #onResponse} or {@code #onFailure}.
      */
     static <Response> ActionListener<Response> runAfter(ActionListener<Response> delegate, Runnable runAfter) {
-        return new ActionListener<Response>() {
+        return new AbstractActionListener<Response>() {
             @Override
-            public void onResponse(Response response) {
-                try {
-                    delegate.onResponse(response);
-                } finally {
-                    runAfter.run();
-                }
+            public void innerOnResponse(Response response) {
+                delegate.onResponse(response);
             }
 
             @Override
-            public void onFailure(Exception e) {
-                try {
-                    delegate.onFailure(e);
-                } finally {
-                    runAfter.run();
-                }
+            public void innerOnFailure(Exception e) {
+                delegate.onFailure(e);
+            }
+
+            @Override
+            protected void runAfter() {
+                runAfter.run();
             }
         };
+    }
+
+    abstract class AbstractActionListener<Response> implements ActionListener<Response> {
+
+        protected abstract void innerOnResponse(Response response);
+
+        protected abstract void innerOnFailure(Exception e);
+
+        @Override
+        public void onResponse(Response response) {
+            try {
+                innerOnResponse(response);
+            } finally {
+                runAfter();
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            try {
+                innerOnFailure(e);
+            } finally {
+                runAfter();
+            }
+        }
+
+        protected void runAfter() {}
     }
 
     /**

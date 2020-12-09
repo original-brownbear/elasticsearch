@@ -313,20 +313,23 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
                     @Override
                     public void onResponse(Void v) {
                         context.markAsRequiringMappingUpdate();
-                        waitForMappingUpdate.accept(
-                            ActionListener.runAfter(new ActionListener<>() {
-                                @Override
-                                public void onResponse(Void v) {
-                                    assert context.requiresWaitingForMappingUpdate();
-                                    context.resetForExecutionForRetry();
-                                }
+                        waitForMappingUpdate.accept(new AbstractActionListener<>() {
+                            @Override
+                            public void innerOnResponse(Void v) {
+                                assert context.requiresWaitingForMappingUpdate();
+                                context.resetForExecutionForRetry();
+                            }
 
-                                @Override
-                                public void onFailure(Exception e) {
-                                    context.failOnMappingUpdate(e);
-                                }
-                            }, () -> itemDoneListener.onResponse(null))
-                        );
+                            @Override
+                            public void innerOnFailure(Exception e) {
+                                context.failOnMappingUpdate(e);
+                            }
+
+                            @Override
+                            protected void runAfter() {
+                                itemDoneListener.onResponse(null);
+                            }
+                        });
                     }
 
                     @Override
