@@ -223,9 +223,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         final String repositoryName = request.repository();
         final String snapshotName = indexNameExpressionResolver.resolveDateMathExpression(request.snapshot());
         validate(repositoryName, snapshotName);
-        // TODO: create snapshot UUID in CreateSnapshotRequest and make this operation idempotent to cleanly deal with transport layer
-        //       retries
-        final SnapshotId snapshotId = new SnapshotId(snapshotName, UUIDs.randomBase64UUID()); // new UUID for the snapshot
+        final SnapshotId snapshotId = new SnapshotId(snapshotName, request.uuid()); // new UUID for the snapshot
         Repository repository = repositoriesService.repository(request.repository());
         if (repository.isReadOnly()) {
             listener.onFailure(
@@ -234,15 +232,22 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         }
         final Snapshot snapshot = new Snapshot(repositoryName, snapshotId);
         final Map<String, Object> userMeta = repository.adaptUserMetadata(request.userMetadata());
+
         repository.executeConsistentStateUpdate(repositoryData -> new ClusterStateUpdateTask(request.masterNodeTimeout()) {
 
+            @Nullable
             private SnapshotsInProgress.Entry newEntry;
 
             @Override
             public ClusterState execute(ClusterState currentState) {
-                ensureSnapshotNameAvailableInRepo(repositoryData, snapshotName, repository);
                 final SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
                 final List<SnapshotsInProgress.Entry> runningSnapshots = snapshots.entries();
+                for (SnapshotsInProgress.Entry runningSnapshot : runningSnapshots) {
+                    if (runningSnapshot.snapshot().equals(snapshot)) {
+                        return currentState;
+                    }
+                }
+                ensureSnapshotNameAvailableInRepo(repositoryData, snapshotName, repository);
                 ensureSnapshotNameNotRunning(runningSnapshots, repositoryName, snapshotName);
                 validate(repositoryName, snapshotName, currentState);
                 final SnapshotDeletionsInProgress deletionsInProgress =
@@ -289,12 +294,16 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, final ClusterState newState) {
-                try {
-                    logger.info("snapshot [{}] started", snapshot);
+                if (newEntry == null) {
                     listener.onResponse(snapshot);
-                } finally {
-                    if (newEntry.state().completed()) {
-                        endSnapshot(newEntry, newState.metadata(), repositoryData);
+                } else {
+                    try {
+                        logger.info("snapshot [{}] started", snapshot);
+                        listener.onResponse(snapshot);
+                    } finally {
+                        if (newEntry.state().completed()) {
+                            endSnapshot(newEntry, newState.metadata(), repositoryData);
+                        }
                     }
                 }
             }
@@ -766,7 +775,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 // state).
                 for (Snapshot snapshot : Set.copyOf(snapshotCompletionListeners.keySet())) {
                     if (endingSnapshots.add(snapshot)) {
-                        failSnapshotCompletionListeners(snapshot, new SnapshotException(snapshot, "no longer master"));
+                        failSnapshotCompletionListeners(snapshot, new NotMasterException("no longer master"));
                     }
                 }
             }
@@ -1838,7 +1847,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             if (ExceptionsHelper.unwrap(e, NotMasterException.class, FailedToCommitClusterStateException.class) != null) {
                 repositoryOperations.clear();
                 for (Snapshot snapshot : Set.copyOf(snapshotCompletionListeners.keySet())) {
-                    failSnapshotCompletionListeners(snapshot, new SnapshotException(snapshot, "no longer master"));
+                    failSnapshotCompletionListeners(snapshot, e);
                 }
                 final Exception wrapped =
                         new RepositoryException("_all", "Failed to update cluster state during repository operation", e);

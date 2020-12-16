@@ -20,6 +20,7 @@ package org.elasticsearch.snapshots;
 
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.StepListener;
@@ -55,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
@@ -72,6 +74,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, numDataNodes = 0)
 public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
@@ -465,7 +468,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
                 assertThat(sme.getSnapshotName(), is(firstSnapshot));
             }
         }
-        expectThrows(SnapshotException.class, snapshotThreeFuture::actionGet);
+        assertFinishesOrSnapshotException(snapshotThreeFuture);
 
         logger.info("--> verify that all snapshots are gone and no more work is left in the cluster state");
         assertBusy(() -> {
@@ -653,7 +656,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
 
         logger.info("--> make sure all failing requests get a response");
         expectThrows(SnapshotException.class, firstFailedSnapshotFuture::actionGet);
-        expectThrows(SnapshotException.class, secondFailedSnapshotFuture::actionGet);
+        assertFinishesOrSnapshotException(secondFailedSnapshotFuture);
         expectThrows(RepositoryException.class, failedDeleteFuture::actionGet);
 
         awaitNoMoreRunningOperations();
@@ -1333,5 +1336,13 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         final ActionFuture<CreateSnapshotResponse> fut = startFullSnapshot(blockedRepoName, snapshotName);
         waitForBlock(internalCluster().getMasterName(), blockedRepoName);
         return fut;
+    }
+
+    private static void assertFinishesOrSnapshotException(Future<?> future) {
+        try {
+            future.get();
+        } catch (Exception e) {
+            assertThat(ExceptionsHelper.unwrap(e, SnapshotException.class), notNullValue());
+        }
     }
 }

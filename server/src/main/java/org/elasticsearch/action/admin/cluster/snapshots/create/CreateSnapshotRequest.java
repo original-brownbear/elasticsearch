@@ -26,6 +26,7 @@ import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -65,6 +66,8 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
 
     public static final Version SETTINGS_IN_REQUEST_VERSION = Version.V_8_0_0;
 
+    public static final Version UUID_IN_REQUEST_VERSION = Version.V_8_0_0;
+
     public static int MAXIMUM_METADATA_BYTES = 1024; // chosen arbitrarily
 
     private String snapshot;
@@ -83,7 +86,10 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
 
     private Map<String, Object> userMetadata;
 
+    private final String uuid;
+
     public CreateSnapshotRequest() {
+        uuid = UUIDs.randomBase64UUID();
     }
 
     /**
@@ -95,6 +101,7 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
     public CreateSnapshotRequest(String repository, String snapshot) {
         this.snapshot = snapshot;
         this.repository = repository;
+        this.uuid = UUIDs.randomBase64UUID();
     }
 
     public CreateSnapshotRequest(StreamInput in) throws IOException {
@@ -110,6 +117,11 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
         waitForCompletion = in.readBoolean();
         partial = in.readBoolean();
         userMetadata = in.readMap();
+        if (in.getVersion().onOrAfter(UUID_IN_REQUEST_VERSION)) {
+            uuid = in.readString();
+        } else {
+            uuid = UUIDs.randomBase64UUID();
+        }
     }
 
     @Override
@@ -126,6 +138,9 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
         out.writeBoolean(waitForCompletion);
         out.writeBoolean(partial);
         out.writeMap(userMetadata);
+        if (out.getVersion().onOrAfter(UUID_IN_REQUEST_VERSION)) {
+            out.writeString(uuid);
+        }
     }
 
     @Override
@@ -189,6 +204,10 @@ public class CreateSnapshotRequest extends MasterNodeRequest<CreateSnapshotReque
      */
     public String snapshot() {
         return this.snapshot;
+    }
+
+    public String uuid() {
+        return this.uuid;
     }
 
     /**
