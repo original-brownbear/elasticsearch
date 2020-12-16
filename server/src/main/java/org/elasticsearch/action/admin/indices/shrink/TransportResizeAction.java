@@ -21,12 +21,13 @@ package org.elasticsearch.action.admin.indices.shrink;
 
 import org.apache.lucene.index.IndexWriter;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.StepListener;
 import org.elasticsearch.action.admin.indices.create.CreateIndexClusterStateUpdateRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsAction;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequest;
-import org.elasticsearch.action.admin.indices.stats.IndicesStatsRequestBuilder;
+import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
 import org.elasticsearch.client.Client;
@@ -37,6 +38,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.MetadataCreateIndexService;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -95,33 +97,39 @@ public class TransportResizeAction extends TransportMasterNodeAction<ResizeReque
             return;
         }
 
-        IndicesStatsRequestBuilder statsRequestBuilder = client.admin().indices().prepareStats(sourceIndex).clear().setDocs(true);
-        IndicesStatsRequest statsRequest = statsRequestBuilder.request();
-        statsRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-        // TODO: only fetch indices stats for shrink type resize requests
-        client.execute(IndicesStatsAction.INSTANCE, statsRequest,
-            ActionListener.delegateFailure(listener, (delegatedListener, indicesStatsResponse) -> {
-                final CreateIndexClusterStateUpdateRequest updateRequest;
-                try {
-                    updateRequest = prepareCreateIndexRequest(resizeRequest, sourceMetadata, i -> {
-                        IndexShardStats shard = indicesStatsResponse.getIndex(sourceIndex).getIndexShards().get(i);
-                        return shard == null ? null : shard.getPrimary().getDocs();
-                    }, targetIndex);
-                } catch (Exception e) {
-                    delegatedListener.onFailure(e);
-                    return;
-                }
-                createIndexService.createIndex(
-                    updateRequest, delegatedListener.map(
-                        response -> new ResizeResponse(response.isAcknowledged(), response.isShardsAcknowledged(), updateRequest.index()))
-                );
-            }));
+        final StepListener<IndicesStatsResponse> indicesStatsListener = new StepListener<>();
+        // we only need the indices stats for shrink requests to avoid exceeding IndexWriter.MAX_DOCS
+        if (resizeRequest.getResizeType() == ResizeType.SHRINK) {
+            IndicesStatsRequest statsRequest = client.admin().indices().prepareStats(sourceIndex).clear().setDocs(true).request();
+            statsRequest.setParentTask(clusterService.localNode().getId(), task.getId());
+            client.execute(IndicesStatsAction.INSTANCE, statsRequest, indicesStatsListener);
+        } else {
+            indicesStatsListener.onResponse(null);
+        }
+        indicesStatsListener.whenComplete(indicesStatsResponse -> {
+            final CreateIndexClusterStateUpdateRequest updateRequest;
+            try {
+                updateRequest = prepareCreateIndexRequest(resizeRequest, sourceMetadata,
+                        indicesStatsResponse == null ? null :
+                                i -> {
+                                    IndexShardStats shard = indicesStatsResponse.getIndex(sourceIndex).getIndexShards().get(i);
+                                    return shard == null ? null : shard.getPrimary().getDocs();
+                                },
+                        targetIndex);
+            } catch (Exception e) {
+                listener.onFailure(e);
+                return;
+            }
+            createIndexService.createIndex(
+                    updateRequest, listener.map(response ->
+                            new ResizeResponse(response.isAcknowledged(), response.isShardsAcknowledged(), updateRequest.index())));
+        }, listener::onFailure);
     }
 
     // static for unittesting this method
     static CreateIndexClusterStateUpdateRequest prepareCreateIndexRequest(final ResizeRequest resizeRequest,
                                                                           final IndexMetadata sourceMetadata,
-                                                                          final IntFunction<DocsStats> perShardDocStats,
+                                                                          @Nullable final IntFunction<DocsStats> perShardDocStats,
                                                                           final String targetIndexName) {
         final CreateIndexRequest targetIndex = resizeRequest.getTargetIndexRequest();
         final Settings.Builder targetIndexSettingsBuilder = Settings.builder().put(targetIndex.settings())
@@ -143,6 +151,7 @@ public class TransportResizeAction extends TransportMasterNodeAction<ResizeReque
 
         for (int i = 0; i < numShards; i++) {
             if (resizeRequest.getResizeType() == ResizeType.SHRINK) {
+                assert perShardDocStats != null;
                 Set<ShardId> shardIds = IndexMetadata.selectShrinkShards(i, sourceMetadata, numShards);
                 long count = 0;
                 for (ShardId id : shardIds) {
