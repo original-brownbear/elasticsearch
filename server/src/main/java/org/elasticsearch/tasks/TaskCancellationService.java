@@ -52,7 +52,7 @@ public class TaskCancellationService {
     private static final Logger logger = LogManager.getLogger(TaskCancellationService.class);
     private final TransportService transportService;
     private final TaskManager taskManager;
-    private final TransportRequestDeduplicator<CancelRequest> deduplicator = new TransportRequestDeduplicator<>();
+    private final TransportRequestDeduplicator<CancelRequest, Void> deduplicator = new TransportRequestDeduplicator<>();
 
     public TaskCancellationService(TransportService transportService) {
         this.transportService = transportService;

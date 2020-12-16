@@ -93,7 +93,8 @@ public class ShardStateAction {
 
     // a list of shards that failed during replication
     // we keep track of these shards in order to avoid sending duplicate failed shard requests for a single failing shard.
-    private final TransportRequestDeduplicator<FailedShardEntry> remoteFailedShardsDeduplicator = new TransportRequestDeduplicator<>();
+    private final TransportRequestDeduplicator<FailedShardEntry, Void> remoteFailedShardsDeduplicator =
+            new TransportRequestDeduplicator<>();
 
     @Inject
     public ShardStateAction(ClusterService clusterService, TransportService transportService,

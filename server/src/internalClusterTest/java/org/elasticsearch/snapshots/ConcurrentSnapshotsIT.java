@@ -716,6 +716,18 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         expectThrows(ElasticsearchException.class, snapshotFour::actionGet);
     }
 
+    public void testCreateHugeRepo() throws Exception {
+        internalCluster().startMasterOnlyNodes(1);
+        internalCluster().startDataOnlyNodes(3);
+        final String repoName = "test-repo";
+        final Path repoPath = randomRepoPath();
+        createRepository(repoName, "fs", repoPath);
+        for (int i = 0; i < 500; i++) {
+            createIndexWithContent("index-" + i);
+        }
+        createNSnapshots(repoName, 200);
+    }
+
     public void testQueuedSnapshotOperationsAndBrokenRepoOnMasterFailOver2() throws Exception {
         disableRepoConsistencyCheck("This test corrupts the repository on purpose");
 

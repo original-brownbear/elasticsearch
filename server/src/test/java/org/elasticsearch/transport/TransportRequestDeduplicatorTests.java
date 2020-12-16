@@ -40,7 +40,7 @@ public class TransportRequestDeduplicatorTests extends ESTestCase {
             public void setParentTask(final TaskId taskId) {
             }
         };
-        final TransportRequestDeduplicator<TransportRequest> deduplicator = new TransportRequestDeduplicator<>();
+        final TransportRequestDeduplicator<TransportRequest,Void> deduplicator = new TransportRequestDeduplicator<>();
         final SetOnce<ActionListener<Void>> listenerHolder = new SetOnce<>();
         int iterationsPerThread = scaledRandomIntBetween(100, 1000);
         Thread[] threads = new Thread[between(1, 4)];

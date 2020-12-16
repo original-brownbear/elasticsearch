@@ -30,7 +30,7 @@ import java.util.function.BiConsumer;
 /**
  * Deduplicator that keeps track of requests that should not be sent/executed in parallel.
  */
-public final class TransportRequestDeduplicator<T> {
+public final class TransportRequestDeduplicator<T, R> {
 
     private final ConcurrentMap<T, CompositeListener> requests = ConcurrentCollections.newConcurrentMap();
 
@@ -44,8 +44,8 @@ public final class TransportRequestDeduplicator<T> {
      * @param listener Listener to invoke on request completion
      * @param callback Callback to be invoked with request and completion listener the first time the request is added to the deduplicator
      */
-    public void executeOnce(T request, ActionListener<Void> listener, BiConsumer<T, ActionListener<Void>> callback) {
-        ActionListener<Void> completionListener = requests.computeIfAbsent(request, CompositeListener::new).addListener(listener);
+    public void executeOnce(T request, ActionListener<R> listener, BiConsumer<T, ActionListener<R>> callback) {
+        ActionListener<R> completionListener = requests.computeIfAbsent(request, CompositeListener::new).addListener(listener);
         if (completionListener != null) {
             callback.accept(request, completionListener);
         }
@@ -63,20 +63,23 @@ public final class TransportRequestDeduplicator<T> {
         return requests.size();
     }
 
-    private final class CompositeListener implements ActionListener<Void> {
+    private final class CompositeListener implements ActionListener<R> {
 
-        private final List<ActionListener<Void>> listeners = new ArrayList<>();
+        private final List<ActionListener<R>> listeners = new ArrayList<>();
 
         private final T request;
 
         private boolean isNotified;
+
+        private R response;
+
         private Exception failure;
 
         CompositeListener(T request) {
             this.request = request;
         }
 
-        CompositeListener addListener(ActionListener<Void> listener) {
+        CompositeListener addListener(ActionListener<R> listener) {
             synchronized (this) {
                 if (this.isNotified == false) {
                     listeners.add(listener);
@@ -86,19 +89,20 @@ public final class TransportRequestDeduplicator<T> {
             if (failure != null) {
                 listener.onFailure(failure);
             } else {
-                listener.onResponse(null);
+                listener.onResponse(response);
             }
             return null;
         }
 
-        private void onCompleted(Exception failure) {
+        private void onCompleted(R response, Exception failure) {
             synchronized (this) {
                 this.failure = failure;
+                this.response = response;
                 this.isNotified = true;
             }
             try {
                 if (failure == null) {
-                    ActionListener.onResponse(listeners, null);
+                    ActionListener.onResponse(listeners, response);
                 } else {
                     ActionListener.onFailure(listeners, failure);
                 }
@@ -108,13 +112,13 @@ public final class TransportRequestDeduplicator<T> {
         }
 
         @Override
-        public void onResponse(final Void aVoid) {
-            onCompleted(null);
+        public void onResponse(final R response) {
+            onCompleted(response, null);
         }
 
         @Override
         public void onFailure(Exception failure) {
-            onCompleted(failure);
+            onCompleted(null, failure);
         }
     }
 }

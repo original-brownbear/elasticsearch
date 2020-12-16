@@ -118,6 +118,7 @@ import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotMissingException;
 import org.elasticsearch.snapshots.SnapshotsService;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.TransportRequestDeduplicator;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -271,6 +272,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     private final NamedXContentRegistry namedXContentRegistry;
 
     private final BigArrays bigArrays;
+
+    private final TransportRequestDeduplicator<String, RepositoryData> metadataLoadDeduplicator = new TransportRequestDeduplicator<>();
 
     /**
      * Flag that is set to {@code true} if this instance is started with {@link #metadata} that has a higher value for
@@ -1304,23 +1307,25 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public void getRepositoryData(ActionListener<RepositoryData> listener) {
-        if (latestKnownRepoGen.get() == RepositoryData.CORRUPTED_REPO_GEN) {
-            listener.onFailure(corruptedStateException(null));
-            return;
-        }
-        final Tuple<Long, BytesReference> cached = latestKnownRepositoryData.get();
-        // Fast path loading repository data directly from cache if we're in fully consistent mode and the cache matches up with
-        // the latest known repository generation
-        if (bestEffortConsistency == false && cached != null && cached.v1() == latestKnownRepoGen.get()) {
-            try {
-                listener.onResponse(repositoryDataFromCachedEntry(cached));
-            } catch (Exception e) {
-                listener.onFailure(e);
+        metadataLoadDeduplicator.executeOnce("latest-repository-data", listener, (req, l) -> {
+            if (latestKnownRepoGen.get() == RepositoryData.CORRUPTED_REPO_GEN) {
+                l.onFailure(corruptedStateException(null));
+                return;
             }
-            return;
-        }
-        // Slow path if we were not able to safely read the repository data from cache
-        threadPool.generic().execute(ActionRunnable.wrap(listener, this::doGetRepositoryData));
+            final Tuple<Long, BytesReference> cached = latestKnownRepositoryData.get();
+            // Fast path loading repository data directly from cache if we're in fully consistent mode and the cache matches up with
+            // the latest known repository generation
+            if (bestEffortConsistency == false && cached != null && cached.v1() == latestKnownRepoGen.get()) {
+                try {
+                    l.onResponse(repositoryDataFromCachedEntry(cached));
+                } catch (Exception e) {
+                    l.onFailure(e);
+                }
+                return;
+            }
+            // Slow path if we were not able to safely read the repository data from cache
+            threadPool.generic().execute(ActionRunnable.wrap(l, this::doGetRepositoryData));
+        }) ;
     }
 
     private void doGetRepositoryData(ActionListener<RepositoryData> listener) {
