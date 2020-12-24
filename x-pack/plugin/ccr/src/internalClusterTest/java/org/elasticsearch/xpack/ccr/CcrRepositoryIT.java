@@ -39,9 +39,13 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.index.Index;
+import org.elasticsearch.index.IndexService;
+import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.index.seqno.SeqNoStats;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
 import org.elasticsearch.index.store.Store;
+import org.elasticsearch.index.translog.Translog;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
@@ -489,6 +493,8 @@ public class CcrRepositoryIT extends CcrIntegTestCase {
             assertThat(bulkRequest.get().hasFailures(), is(false));
         }
 
+        SeqNoStats seqNoStats = leaderClient().admin().indices().prepareStats(leaderIndex).get().getIndex(leaderIndex).getShards()[0].getSeqNoStats();
+        assertThat(seqNoStats.getGlobalCheckpoint(), equalTo(seqNoStats.getMaxSeqNo()));
         final ForceMergeResponse forceMergeResponse = leaderClient().admin().indices().prepareForceMerge(leaderIndex)
             .setMaxNumSegments(1)
             .setFlush(true)
