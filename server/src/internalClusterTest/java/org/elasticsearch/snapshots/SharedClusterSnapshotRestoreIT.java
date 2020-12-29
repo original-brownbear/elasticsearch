@@ -1335,6 +1335,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
                      () -> client.admin().cluster().prepareSnapshotStatus("test-repo").setSnapshots("_foo").get());
     }
 
+    @AwaitsFix(bugUrl = "TODO: fix old version init")
     public void testListCorruptedSnapshot() throws Exception {
         disableRepoConsistencyCheck("This test intentionally leaves a broken repository");
 

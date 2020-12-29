@@ -1113,8 +1113,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
             final ActionListener<Void> allMetaListener = new GroupedActionListener<>(
                 ActionListener.wrap(v -> {
-                    final RepositoryData updatedRepositoryData = existingRepositoryData.addSnapshot(
-                        snapshotId, snapshotInfo.state(), Version.CURRENT, shardGenerations, indexMetas, indexMetaIdentifiers);
+                    final RepositoryData updatedRepositoryData =
+                            existingRepositoryData.addSnapshot(snapshotInfo, shardGenerations, indexMetas, indexMetaIdentifiers);
                     writeIndexGen(updatedRepositoryData, repositoryStateId, repositoryMetaVersion, stateTransformer,
                             ActionListener.wrap(
                                     newRepoData -> {
@@ -1156,8 +1156,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     }
                 ));
             }
-            executor.execute(ActionRunnable.run(allMetaListener,
-                () -> SNAPSHOT_FORMAT.write(snapshotInfo, blobContainer(), snapshotId.getUUID(), compress, bigArrays)));
+            if (repositoryMetaVersion.before(RepositoryData.SNAPSHOT_INFO_IN_REPO_DATA_VERSION)) {
+                executor.execute(ActionRunnable.run(allMetaListener,
+                        () -> SNAPSHOT_FORMAT.write(snapshotInfo, blobContainer(), snapshotId.getUUID(), compress, bigArrays)));
+            } else {
+                allMetaListener.onResponse(null);
+            }
         }, onUpdateFailure);
     }
 
@@ -1176,8 +1180,12 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public SnapshotInfo getSnapshotInfo(final SnapshotId snapshotId) {
+    public SnapshotInfo getSnapshotInfo(RepositoryData repositoryData, SnapshotId snapshotId) {
         try {
+            final SnapshotInfo info = repositoryData.getSnapshotInfo(snapshotId);
+            if (info != null) {
+                return info;
+            }
             return SNAPSHOT_FORMAT.read(blobContainer(), snapshotId.getUUID(), namedXContentRegistry, bigArrays);
         } catch (NoSuchFileException ex) {
             throw new SnapshotMissingException(metadata.name(), snapshotId, ex);
@@ -1675,7 +1683,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     snapshotIdsWithoutVersion.size());
                 for (SnapshotId snapshotId : snapshotIdsWithoutVersion) {
                     threadPool().executor(ThreadPool.Names.SNAPSHOT).execute(ActionRunnable.run(loadAllVersionsListener, () ->
-                        updatedVersionMap.put(snapshotId, getSnapshotInfo(snapshotId).version())));
+                        updatedVersionMap.put(snapshotId, getSnapshotInfo(repositoryData, snapshotId).version())));
                 }
             } else {
                 filterRepositoryDataStep.onResponse(repositoryData);

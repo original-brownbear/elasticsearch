@@ -211,7 +211,8 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
                 SnapshotId::getUUID, Function.identity())),
             repositoryData.getSnapshotIds().stream().collect(Collectors.toMap(
                 SnapshotId::getUUID, repositoryData::getSnapshotState)),
-            Collections.emptyMap(), Collections.emptyMap(), ShardGenerations.EMPTY, IndexMetaDataGenerations.EMPTY);
+            Collections.emptyMap(), Collections.emptyMap(), ShardGenerations.EMPTY, IndexMetaDataGenerations.EMPTY,
+            Collections.emptyMap());
 
         Files.write(repo.resolve(BlobStoreRepository.INDEX_FILE_PREFIX + withoutVersions.getGenId()),
             BytesReference.toBytes(BytesReference.bytes(
@@ -341,7 +342,7 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
                 repositoryData1.getIndices().values().stream().collect(
                         Collectors.toMap(Function.identity(), repositoryData1::getSnapshots)
                 ),  ShardGenerations.builder().putAll(repositoryData1.shardGenerations()).put(indexId, 0, "0").build(),
-                repositoryData1.indexMetaDataGenerations()
+                repositoryData1.indexMetaDataGenerations(), Collections.emptyMap()
         );
         Files.write(repoPath.resolve(BlobStoreRepository.INDEX_FILE_PREFIX + repositoryData1.getGenId()),
                 BytesReference.toBytes(BytesReference.bytes(

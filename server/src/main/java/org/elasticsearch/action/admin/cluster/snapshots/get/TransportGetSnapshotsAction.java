@@ -203,7 +203,7 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
 
         if (verbose) {
             threadPool.generic().execute(ActionRunnable.supply(
-                    listener, () -> snapshots(snapshotsInProgress, repo, new ArrayList<>(toResolve), ignoreUnavailable)));
+                    listener, () -> snapshots(repositoryData, snapshotsInProgress, repo, new ArrayList<>(toResolve), ignoreUnavailable)));
         } else {
             final List<SnapshotInfo> snapshotInfos;
             if (repositoryData != null) {
@@ -228,7 +228,7 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
      *                            if false, they will throw an error
      * @return list of snapshots
      */
-    private List<SnapshotInfo> snapshots(SnapshotsInProgress snapshotsInProgress, String repositoryName,
+    private List<SnapshotInfo> snapshots(RepositoryData repositoryData, SnapshotsInProgress snapshotsInProgress, String repositoryName,
                                         List<SnapshotId> snapshotIds, boolean ignoreUnavailable) {
         final Set<SnapshotInfo> snapshotSet = new HashSet<>();
         final Set<SnapshotId> snapshotIdsToIterate = new HashSet<>(snapshotIds);
@@ -243,7 +243,7 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
         final Repository repository = repositoriesService.repository(repositoryName);
         for (SnapshotId snapshotId : snapshotIdsToIterate) {
             try {
-                snapshotSet.add(repository.getSnapshotInfo(snapshotId));
+                snapshotSet.add(repository.getSnapshotInfo(repositoryData, snapshotId));
             } catch (Exception ex) {
                 if (ignoreUnavailable) {
                     logger.warn(() -> new ParameterizedMessage("failed to get snapshot [{}]", snapshotId), ex);

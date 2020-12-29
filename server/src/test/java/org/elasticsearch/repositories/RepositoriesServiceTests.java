@@ -198,7 +198,7 @@ public class RepositoriesServiceTests extends ESTestCase {
         }
 
         @Override
-        public SnapshotInfo getSnapshotInfo(SnapshotId snapshotId) {
+        public SnapshotInfo getSnapshotInfo(RepositoryData repositoryData, SnapshotId snapshotId) {
             return null;
         }
 

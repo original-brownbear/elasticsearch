@@ -196,7 +196,15 @@ public final class BlobStoreTestUtil {
         final BlobContainer repoRoot = repository.blobContainer();
         final Collection<SnapshotId> snapshotIds = repositoryData.getSnapshotIds();
         final List<String> expectedSnapshotUUIDs = snapshotIds.stream().map(SnapshotId::getUUID).collect(Collectors.toList());
-        for (String prefix : new String[]{BlobStoreRepository.SNAPSHOT_PREFIX, BlobStoreRepository.METADATA_PREFIX}) {
+        boolean noCheckSnapBlobs = false;
+        for (SnapshotId snapshotId : snapshotIds) {
+            if (repositoryData.getSnapshotInfo(snapshotId) != null) {
+                noCheckSnapBlobs = true;
+                break;
+            }
+        }
+        for (String prefix : noCheckSnapBlobs ? new String[]{BlobStoreRepository.METADATA_PREFIX}
+                : new String[]{BlobStoreRepository.SNAPSHOT_PREFIX, BlobStoreRepository.METADATA_PREFIX}) {
                 final Collection<String> foundSnapshotUUIDs = repoRoot.listBlobs().keySet().stream().filter(p -> p.startsWith(prefix))
                     .map(p -> p.replace(prefix, "").replace(".dat", ""))
                     .collect(Collectors.toSet());
@@ -214,7 +222,7 @@ public final class BlobStoreTestUtil {
         final Map<IndexId, Integer> maxShardCountsSeen = new HashMap<>();
         // Assert that for each snapshot, the relevant metadata was written to index and shard folders
         for (SnapshotId snapshotId: snapshotIds) {
-            final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotId);
+            final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(repositoryData, snapshotId);
             for (String index : snapshotInfo.indices()) {
                 final IndexId indexId = repositoryData.resolveIndexId(index);
                 assertThat(indices, hasKey(indexId.getId()));

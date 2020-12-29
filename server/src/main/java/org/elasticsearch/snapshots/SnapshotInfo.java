@@ -555,7 +555,7 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
         return builder;
     }
 
-    private XContentBuilder toXContentInternal(final XContentBuilder builder, final ToXContent.Params params) throws IOException {
+    public XContentBuilder toXContentInternal(final XContentBuilder builder, final ToXContent.Params params) throws IOException {
         builder.startObject(SNAPSHOT);
         builder.field(NAME, snapshotId.getName());
         builder.field(UUID, snapshotId.getUUID());

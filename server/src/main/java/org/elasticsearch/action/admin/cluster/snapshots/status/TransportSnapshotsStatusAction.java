@@ -261,7 +261,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                         throw new SnapshotMissingException(repositoryName, snapshotName);
                     }
                 }
-                SnapshotInfo snapshotInfo = snapshot(snapshotsInProgress, repositoryName, snapshotId);
+                SnapshotInfo snapshotInfo = snapshot(snapshotsInProgress, repositoryName, snapshotId, repositoryData);
                 List<SnapshotIndexShardStatus> shardStatusBuilder = new ArrayList<>();
                 if (snapshotInfo.state().completed()) {
                     Map<ShardId, IndexShardSnapshotStatus> shardStatuses = snapshotShards(repositoryName, repositoryData, snapshotInfo);
@@ -307,13 +307,14 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
      * @return snapshot
      * @throws SnapshotMissingException if snapshot is not found
      */
-    private SnapshotInfo snapshot(SnapshotsInProgress snapshotsInProgress, String repositoryName, SnapshotId snapshotId) {
+    private SnapshotInfo snapshot(SnapshotsInProgress snapshotsInProgress, String repositoryName, SnapshotId snapshotId,
+                                  RepositoryData repositoryData) {
         List<SnapshotsInProgress.Entry> entries =
             SnapshotsService.currentSnapshots(snapshotsInProgress, repositoryName, Collections.singletonList(snapshotId.getName()));
         if (!entries.isEmpty()) {
             return new SnapshotInfo(entries.iterator().next());
         }
-        return repositoriesService.repository(repositoryName).getSnapshotInfo(snapshotId);
+        return repositoriesService.repository(repositoryName).getSnapshotInfo(repositoryData, snapshotId);
     }
 
     /**

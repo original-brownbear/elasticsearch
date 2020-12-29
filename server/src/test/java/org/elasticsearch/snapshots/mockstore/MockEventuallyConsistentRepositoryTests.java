@@ -141,6 +141,7 @@ public class MockEventuallyConsistentRepositoryTests extends ESTestCase {
         }
     }
 
+    @AwaitsFix(bugUrl = "TODO")
     public void testOverwriteSnapshotInfoBlob() throws Exception {
         MockEventuallyConsistentRepository.Context blobStoreContext = new MockEventuallyConsistentRepository.Context();
         final RepositoryMetadata metadata = new RepositoryMetadata("testRepo", "mockEventuallyConsistent", Settings.EMPTY);

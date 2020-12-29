@@ -220,7 +220,7 @@ public class RestoreService implements ClusterStateApplier {
                         "snapshot UUID mismatch: expected [" + request.snapshotUuid() + "] but got [" + snapshotId.getUUID() + "]");
                 }
 
-                final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotId);
+                final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(repositoryData, snapshotId);
                 final Snapshot snapshot = new Snapshot(repositoryName, snapshotId);
 
                 // Make sure that we can restore from this snapshot
