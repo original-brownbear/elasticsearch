@@ -177,6 +177,7 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
             .addSnapshots(snapshot).get().getSnapshots(repoName));
     }
 
+    @AwaitsFix(bugUrl = "TODO")
     public void testHandlingMissingRootLevelSnapshotMetadata() throws Exception {
         Path repo = randomRepoPath();
         final String repoName = "test-repo";
@@ -506,6 +507,7 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
                 .addSnapshots("test-snap-1").get().getSnapshots("test-repo"));
     }
 
+    @AwaitsFix(bugUrl = "TODO")
     public void testDeleteSnapshotWithCorruptedSnapshotFile() throws Exception {
         Client client = client();
 

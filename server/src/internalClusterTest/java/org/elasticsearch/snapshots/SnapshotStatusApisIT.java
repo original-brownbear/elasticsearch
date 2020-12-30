@@ -123,6 +123,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
         assertSuccessful(createSnapshotResponseActionFuture);
     }
 
+    @AwaitsFix(bugUrl = "TODO")
     public void testExceptionOnMissingSnapBlob() throws IOException {
         disableRepoConsistencyCheck("This test intentionally corrupts the repository");
 
