@@ -1181,11 +1181,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     @Override
     public SnapshotInfo getSnapshotInfo(RepositoryData repositoryData, SnapshotId snapshotId) {
+        final SnapshotInfo info = repositoryData.getSnapshotInfo(snapshotId);
+        if (info != null) {
+            return info;
+        }
         try {
-            final SnapshotInfo info = repositoryData.getSnapshotInfo(snapshotId);
-            if (info != null) {
-                return info;
-            }
             return SNAPSHOT_FORMAT.read(blobContainer(), snapshotId.getUUID(), namedXContentRegistry, bigArrays);
         } catch (NoSuchFileException ex) {
             throw new SnapshotMissingException(metadata.name(), snapshotId, ex);
