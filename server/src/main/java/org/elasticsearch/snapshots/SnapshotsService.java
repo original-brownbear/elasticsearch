@@ -435,7 +435,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         // 1. step, load SnapshotInfo to make sure that source snapshot was successful for the indices we want to clone
         // TODO: we could skip this step for snapshots with state SUCCESS
         final StepListener<SnapshotInfo> snapshotInfoListener = new StepListener<>();
-        // TODO: stop loading repo data twice here obviously
+        // TODO: stop needlessly forking here
         executor.execute(ActionRunnable.supply(snapshotInfoListener, () -> repository.getSnapshotInfo(repositoryData, sourceSnapshot)));
         final StepListener<Collection<Tuple<IndexId, Integer>>> allShardCountsListener = new StepListener<>();
         final GroupedActionListener<Tuple<IndexId, Integer>> shardCountListener =
