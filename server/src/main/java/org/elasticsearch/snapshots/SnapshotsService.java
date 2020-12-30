@@ -391,7 +391,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             public void clusterStateProcessed(String source, ClusterState oldState, final ClusterState newState) {
                 logger.info("snapshot clone [{}] started", snapshot);
                 addListener(snapshot, ActionListener.wrap(r -> listener.onResponse(null), listener::onFailure));
-                startCloning(repository, newEntry);
+                startCloning(repositoryData, repository, newEntry);
             }
         }, "clone_snapshot [" + request.source() + "][" + snapshotName + ']', listener::onFailure);
     }
@@ -419,7 +419,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param repository     repository to run operation on
      * @param cloneEntry     clone operation in the cluster state
      */
-    private void startCloning(Repository repository, SnapshotsInProgress.Entry cloneEntry) {
+    private void startCloning(RepositoryData repositoryData, Repository repository, SnapshotsInProgress.Entry cloneEntry) {
         final List<IndexId> indices = cloneEntry.indices();
         final SnapshotId sourceSnapshot = cloneEntry.source();
         final Snapshot targetSnapshot = cloneEntry.snapshot();
@@ -436,10 +436,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         // TODO: we could skip this step for snapshots with state SUCCESS
         final StepListener<SnapshotInfo> snapshotInfoListener = new StepListener<>();
         // TODO: stop loading repo data twice here obviously
-        repository.getRepositoryData(ActionListener.wrap(repositoryData -> executor.execute(ActionRunnable.supply(
-                snapshotInfoListener, () -> repository.getSnapshotInfo(repositoryData, sourceSnapshot))),
-                snapshotInfoListener::onFailure));
-
+        executor.execute(ActionRunnable.supply(snapshotInfoListener, () -> repository.getSnapshotInfo(repositoryData, sourceSnapshot)));
         final StepListener<Collection<Tuple<IndexId, Integer>>> allShardCountsListener = new StepListener<>();
         final GroupedActionListener<Tuple<IndexId, Integer>> shardCountListener =
                 new GroupedActionListener<>(allShardCountsListener, indices.size());
@@ -451,14 +448,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
             }
             // 2. step, load the number of shards we have in each index to be cloned from the index metadata.
-            repository.getRepositoryData(ActionListener.wrap(repositoryData -> {
-                for (IndexId index : indices) {
-                    executor.execute(ActionRunnable.supply(shardCountListener, () -> {
-                        final IndexMetadata metadata = repository.getSnapshotIndexMetaData(repositoryData, sourceSnapshot, index);
-                        return Tuple.tuple(index, metadata.getNumberOfShards());
-                    }));
-                }
-            }, onFailure));
+            for (IndexId index : indices) {
+                executor.execute(ActionRunnable.supply(shardCountListener, () -> {
+                    final IndexMetadata metadata = repository.getSnapshotIndexMetaData(repositoryData, sourceSnapshot, index);
+                    return Tuple.tuple(index, metadata.getNumberOfShards());
+                }));
+            }
         }, onFailure);
 
         // 3. step, we have all the shard counts, now update the cluster state to have clone jobs in the snap entry
