@@ -163,7 +163,11 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
         final long indexingBytes = bulkRequest.ramBytesUsed();
         final boolean isOnlySystem = isOnlySystem(bulkRequest, clusterService.state().metadata().getIndicesLookup(), systemIndices);
         final Releasable releasable = indexingPressure.markCoordinatingOperationStarted(indexingOps, indexingBytes, isOnlySystem);
-        final ActionListener<BulkResponse> releasingListener = ActionListener.runBefore(listener, releasable::close);
+        bulkRequest.incRef();
+        final ActionListener<BulkResponse> releasingListener = ActionListener.runBefore(listener, () -> {
+            releasable.close();
+            bulkRequest.decRef();
+        });
         final String executorName = isOnlySystem ? Names.SYSTEM_WRITE : Names.WRITE;
         try {
             doInternalExecute(task, bulkRequest, executorName, releasingListener);
@@ -546,8 +550,12 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                     }
 
                     private void finishHim() {
-                        listener.onResponse(new BulkResponse(responses.toArray(new BulkItemResponse[responses.length()]),
-                            buildTookInMillis(startTimeNanos)));
+                        try {
+                            listener.onResponse(new BulkResponse(responses.toArray(new BulkItemResponse[responses.length()]),
+                                    buildTookInMillis(startTimeNanos)));
+                        } finally {
+                            bulkShardRequest.decRef();
+                        }
                     }
                 });
             }

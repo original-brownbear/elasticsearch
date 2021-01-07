@@ -319,6 +319,7 @@ public abstract class TransportReplicationAction<
         AsyncPrimaryAction(ConcreteShardRequest<Request> primaryRequest, ActionListener<Response> onCompletionListener,
                            ReplicationTask replicationTask) {
             this.primaryRequest = primaryRequest;
+            primaryRequest.incRef();
             this.onCompletionListener = onCompletionListener;
             this.replicationTask = replicationTask;
         }
@@ -445,6 +446,10 @@ public abstract class TransportReplicationAction<
             onCompletionListener.onFailure(e);
         }
 
+        @Override
+        public void onAfter() {
+            primaryRequest.decRef();
+        }
     }
 
     // allows subclasses to adapt the response
@@ -1202,6 +1207,21 @@ public abstract class TransportReplicationAction<
         @Override
         public String toString() {
             return "request: " + request + ", target allocation id: " + targetAllocationID + ", primary term: " + primaryTerm;
+        }
+
+        @Override
+        public void incRef() {
+            request.incRef();
+        }
+
+        @Override
+        public boolean tryIncRef() {
+            return request.tryIncRef();
+        }
+
+        @Override
+        public boolean decRef() {
+            return request.decRef();
         }
     }
 

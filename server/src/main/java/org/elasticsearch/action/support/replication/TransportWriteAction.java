@@ -182,6 +182,7 @@ public abstract class TransportWriteAction<
     @Override
     protected void shardOperationOnPrimary(
             Request request, IndexShard primary, ActionListener<PrimaryResult<ReplicaRequest, Response>> listener) {
+        request.incRef();
         threadPool.executor(executorFunction.apply(primary)).execute(new ActionRunnable<>(listener) {
             @Override
             protected void doRun() {
@@ -191,6 +192,11 @@ public abstract class TransportWriteAction<
             @Override
             public boolean isForceExecution() {
                 return force(request);
+            }
+
+            @Override
+            public void onAfter() {
+                request.decRef();
             }
         });
     }
@@ -207,7 +213,9 @@ public abstract class TransportWriteAction<
      */
     @Override
     protected void shardOperationOnReplica(ReplicaRequest request, IndexShard replica, ActionListener<ReplicaResult> listener) {
-        threadPool.executor(executorFunction.apply(replica)).execute(new ActionRunnable<>(listener) {
+        request.incRef();
+        threadPool.executor(executorFunction.apply(replica)).execute(new ActionRunnable<>(ActionListener.runAfter(
+                listener, request::decRef)) {
             @Override
             protected void doRun() {
                 dispatchedShardOperationOnReplica(request, replica, listener);

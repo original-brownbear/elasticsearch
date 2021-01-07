@@ -35,6 +35,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lease.Releasable;
+import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -579,14 +580,45 @@ public class TransportService extends AbstractLifecycleComponent
                                                                 final TransportRequestOptions options,
                                                                 TransportResponseHandler<T> handler) {
         final Transport.Connection connection;
+        final Releasable releaseRequest = Releasables.releaseOnce(request::decRef);
+        request.incRef();
+        final TransportResponseHandler<T> wrappedHandler = new TransportResponseHandler<>() {
+            @Override
+            public void handleResponse(T response) {
+                try {
+                    handler.handleResponse(response);
+                } finally {
+                    releaseRequest.close();
+                }
+            }
+
+            @Override
+            public void handleException(TransportException exp) {
+                try {
+                    handler.handleException(exp);
+                } finally {
+                    releaseRequest.close();
+                }
+            }
+
+            @Override
+            public T read(StreamInput in) throws IOException {
+                return handler.read(in);
+            }
+
+            @Override
+            public String executor() {
+                return handler.executor();
+            }
+        };
         try {
             connection = getConnection(node);
         } catch (final NodeNotConnectedException ex) {
             // the caller might not handle this so we invoke the handler
-            handler.handleException(ex);
+            wrappedHandler.handleException(ex);
             return;
         }
-        sendRequest(connection, action, request, options, handler);
+        sendRequest(connection, action, request, options, wrappedHandler);
     }
 
     /**

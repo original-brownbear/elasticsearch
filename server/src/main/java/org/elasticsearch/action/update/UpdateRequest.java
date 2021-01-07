@@ -63,7 +63,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
 
     private static final long SHALLOW_SIZE = RamUsageEstimator.shallowSizeOfInstance(UpdateRequest.class);
 
-    private static ObjectParser<UpdateRequest, Void> PARSER;
+    private static final ObjectParser<UpdateRequest, Void> PARSER;
 
     private static final ParseField SCRIPT_FIELD = new ParseField("script");
     private static final ParseField SCRIPTED_UPSERT_FIELD = new ParseField("scripted_upsert");
@@ -119,6 +119,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
 
     private ActiveShardCount waitForActiveShards = ActiveShardCount.DEFAULT;
 
+    @Nullable
     private IndexRequest upsertRequest;
 
     private boolean scriptedUpsert = false;
@@ -963,4 +964,6 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         }
         return SHALLOW_SIZE + RamUsageEstimator.sizeOf(id) + childRequestBytes;
     }
+
+    // TODO: ref count doc and upsert request
 }

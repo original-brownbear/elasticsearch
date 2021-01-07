@@ -25,9 +25,11 @@ import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotR
 import org.elasticsearch.action.admin.cluster.snapshots.status.SnapshotsStatusResponse;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
+import org.junit.After;
 import org.junit.Before;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_BLOCKS_READ;
@@ -81,6 +83,11 @@ public class SnapshotBlocksIT extends ESIntegTestCase {
                                                                             .execute().actionGet();
         assertThat(snapshotResponse.status(), equalTo(RestStatus.OK));
         ensureSearchable();
+    }
+
+    @After
+    public void ensureAllReleased() throws Exception {
+        MockPageCacheRecycler.ensureAllPagesAreReleased();
     }
 
     public void testCreateSnapshotWithBlocks() {

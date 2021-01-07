@@ -170,6 +170,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
         ActionListener<PrimaryResult<BulkShardRequest, BulkShardResponse>> listener,
         ThreadPool threadPool,
         String executorName) {
+        request.incRef();
         new ActionRunnable<>(listener) {
 
             private final Executor executor = threadPool.executor(executorName);
@@ -222,10 +223,14 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
             }
 
             private void finishRequest() {
-                ActionListener.completeWith(listener,
-                    () -> new WritePrimaryResult<>(
-                        context.getBulkShardRequest(), context.buildShardResponse(), context.getLocationToSync(), null,
-                        context.getPrimary(), logger));
+                try {
+                    ActionListener.completeWith(listener,
+                            () -> new WritePrimaryResult<>(
+                                    context.getBulkShardRequest(), context.buildShardResponse(), context.getLocationToSync(), null,
+                                    context.getPrimary(), logger));
+                } finally {
+                    request.decRef();
+                }
             }
         }.run();
     }
