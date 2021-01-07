@@ -38,6 +38,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 
@@ -71,6 +72,19 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
      */
     final List<DocWriteRequest<?>> requests = new ArrayList<>();
     private final Set<String> indices = new HashSet<>();
+
+    private final AbstractRefCounted refCounted = new AbstractRefCounted("bulk-request") {
+        @Override
+        protected void closeInternal() {
+            for (DocWriteRequest<?> request : requests) {
+                if (request != null) {
+                    request.decRef();
+                }
+            }
+            requests.clear();
+            indices.clear();
+        }
+    };
 
     protected TimeValue timeout = BulkShardRequest.DEFAULT_TIMEOUT;
     private ActiveShardCount waitForActiveShards = ActiveShardCount.DEFAULT;
@@ -152,6 +166,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
         Objects.requireNonNull(request, "'request' must not be null");
         applyGlobalMandatoryParameters(request);
 
+        request.incRef();
         requests.add(request);
         // lack of source is validated in validate() method
         sizeInBytes += (request.source() != null ? request.source().length() : 0) + REQUEST_OVERHEAD;
@@ -439,5 +454,20 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
 
     public Set<String> getIndices() {
         return Collections.unmodifiableSet(indices);
+    }
+
+    @Override
+    public void incRef() {
+        refCounted.incRef();
+    }
+
+    @Override
+    public boolean tryIncRef() {
+        return refCounted.tryIncRef();
+    }
+
+    @Override
+    public boolean decRef() {
+        return refCounted.decRef();
     }
 }

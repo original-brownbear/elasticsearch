@@ -766,6 +766,7 @@ public class IndicesRequestIT extends ESIntegTestCase {
                 synchronized (InterceptingTransportService.this) {
                     if (actions.contains(action)) {
                         List<TransportRequest> requestList = requests.get(action);
+                        request.incRef();
                         if (requestList == null) {
                             requestList = new ArrayList<>();
                             requestList.add(request);

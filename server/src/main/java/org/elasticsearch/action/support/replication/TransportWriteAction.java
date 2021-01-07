@@ -35,6 +35,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lease.Releasable;
+import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexingPressure;
 import org.elasticsearch.index.engine.Engine;
@@ -182,7 +183,9 @@ public abstract class TransportWriteAction<
     @Override
     protected void shardOperationOnPrimary(
             Request request, IndexShard primary, ActionListener<PrimaryResult<ReplicaRequest, Response>> listener) {
-        threadPool.executor(executorFunction.apply(primary)).execute(new ActionRunnable<>(listener) {
+        request.incRef();
+        threadPool.executor(executorFunction.apply(primary)).execute(
+                new ActionRunnable<>(ActionListener.runAfter(listener, Releasables.releaseOnce(request::decRef)::close)) {
             @Override
             protected void doRun() {
                 dispatchedShardOperationOnPrimary(request, primary, listener);
@@ -207,7 +210,9 @@ public abstract class TransportWriteAction<
      */
     @Override
     protected void shardOperationOnReplica(ReplicaRequest request, IndexShard replica, ActionListener<ReplicaResult> listener) {
-        threadPool.executor(executorFunction.apply(replica)).execute(new ActionRunnable<>(listener) {
+        request.incRef();
+        threadPool.executor(executorFunction.apply(replica)).execute(new ActionRunnable<>(
+                ActionListener.runAfter(listener, Releasables.releaseOnce(request::decRef)::close)) {
             @Override
             protected void doRun() {
                 dispatchedShardOperationOnReplica(request, replica, listener);

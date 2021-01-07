@@ -546,8 +546,12 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                     }
 
                     private void finishHim() {
-                        listener.onResponse(new BulkResponse(responses.toArray(new BulkItemResponse[responses.length()]),
-                            buildTookInMillis(startTimeNanos)));
+                        try {
+                            listener.onResponse(new BulkResponse(responses.toArray(new BulkItemResponse[responses.length()]),
+                                    buildTookInMillis(startTimeNanos)));
+                        } finally {
+                            bulkShardRequest.decRef();
+                        }
                     }
                 });
             }

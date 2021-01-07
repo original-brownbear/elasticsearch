@@ -297,8 +297,9 @@ public abstract class TransportReplicationAction<
     protected void handlePrimaryRequest(final ConcreteShardRequest<Request> request, final TransportChannel channel, final Task task) {
         Releasable releasable = checkPrimaryLimits(request.getRequest(), request.sentFromLocalReroute(),
             request.localRerouteInitiatedByNodeClient());
+        request.incRef();
         ActionListener<Response> listener =
-            ActionListener.runBefore(new ChannelActionListener<>(channel, transportPrimaryAction, request), releasable::close);
+            ActionListener.runAfter(ActionListener.runBefore(new ChannelActionListener<>(channel, transportPrimaryAction, request), releasable::close), request::decRef);
 
         try {
             new AsyncPrimaryAction(request, listener, (ReplicationTask) task).run();
@@ -521,8 +522,9 @@ public abstract class TransportReplicationAction<
     protected void handleReplicaRequest(final ConcreteReplicaRequest<ReplicaRequest> replicaRequest, final TransportChannel channel,
                                         final Task task) {
         Releasable releasable = checkReplicaLimits(replicaRequest.getRequest());
+        replicaRequest.incRef();
         ActionListener<ReplicaResponse> listener =
-            ActionListener.runBefore(new ChannelActionListener<>(channel, transportReplicaAction, replicaRequest), releasable::close);
+            ActionListener.runAfter(ActionListener.runBefore(new ChannelActionListener<>(channel, transportReplicaAction, replicaRequest), releasable::close), replicaRequest::decRef);
 
         try {
             new AsyncReplicaAction(replicaRequest, listener, (ReplicationTask) task).run();
@@ -1202,6 +1204,21 @@ public abstract class TransportReplicationAction<
         @Override
         public String toString() {
             return "request: " + request + ", target allocation id: " + targetAllocationID + ", primary term: " + primaryTerm;
+        }
+
+        @Override
+        public void incRef() {
+            request.incRef();
+        }
+
+        @Override
+        public boolean tryIncRef() {
+            return request.tryIncRef();
+        }
+
+        @Override
+        public boolean decRef() {
+            return request.decRef();
         }
     }
 

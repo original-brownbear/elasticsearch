@@ -28,6 +28,7 @@ import org.elasticsearch.action.support.replication.ReplicationRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
@@ -40,6 +41,19 @@ public class BulkShardRequest extends ReplicatedWriteRequest<BulkShardRequest> i
     private static final long SHALLOW_SIZE = RamUsageEstimator.shallowSizeOfInstance(BulkShardRequest.class);
 
     private final BulkItemRequest[] items;
+
+    private final AbstractRefCounted refCounted = new AbstractRefCounted("bulk-shard-request") {
+        @Override
+        protected void closeInternal() {
+            for (int i = 0; i < items.length; i++) {
+                BulkItemRequest item = items[i];
+                if (item != null) {
+                    item.decRef();
+                    items[i] = null;
+                }
+            }
+        }
+    };
 
     public BulkShardRequest(StreamInput in) throws IOException {
         super(in);
@@ -157,5 +171,20 @@ public class BulkShardRequest extends ReplicatedWriteRequest<BulkShardRequest> i
     @Override
     public long ramBytesUsed() {
         return SHALLOW_SIZE + Stream.of(items).mapToLong(Accountable::ramBytesUsed).sum();
+    }
+
+    @Override
+    public void incRef() {
+        refCounted.incRef();
+    }
+
+    @Override
+    public boolean tryIncRef() {
+        return refCounted.tryIncRef();
+    }
+
+    @Override
+    public boolean decRef() {
+        return refCounted.decRef();
     }
 }
