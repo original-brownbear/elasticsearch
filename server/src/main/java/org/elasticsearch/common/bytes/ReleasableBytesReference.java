@@ -90,11 +90,13 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
 
     @Override
     public byte get(int index) {
+        assert refCount() > 0;
         return delegate.get(index);
     }
 
     @Override
     public int getInt(int index) {
+        assert refCount() > 0;
         return delegate.getInt(index);
     }
 
@@ -116,6 +118,7 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
 
     @Override
     public long ramBytesUsed() {
+        assert refCount() > 0;
         return delegate.ramBytesUsed();
     }
 
@@ -144,7 +147,11 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
     @Override
     public String utf8ToString() {
         assert refCount() > 0;
-        return delegate.utf8ToString();
+        try {
+            return delegate.utf8ToString();
+        } catch (Throwable t) {
+          throw new AssertionError(t);
+        }
     }
 
     @Override
@@ -161,6 +168,7 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
 
     @Override
     public int compareTo(BytesReference o) {
+        assert refCount() > 0;
         return delegate.compareTo(o);
     }
 

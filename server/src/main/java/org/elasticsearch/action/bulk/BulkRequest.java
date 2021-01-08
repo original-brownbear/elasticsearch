@@ -195,6 +195,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
         if (request.script() != null) {
             sizeInBytes += request.script().getIdOrCode().length() * 2;
         }
+        request.incRef();
         indices.add(request.index());
         return this;
     }
