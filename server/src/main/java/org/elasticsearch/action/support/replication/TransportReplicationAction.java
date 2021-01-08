@@ -284,9 +284,10 @@ public abstract class TransportReplicationAction<
     }
 
     private void handleOperationRequest(final Request request, final TransportChannel channel, Task task) {
+        request.incRef();
         Releasable releasable = checkOperationLimits(request);
-        ActionListener<Response> listener =
-            ActionListener.runBefore(new ChannelActionListener<>(channel, actionName, request), releasable::close);
+        ActionListener<Response> listener = ActionListener.runAfter(ActionListener.runBefore(
+                new ChannelActionListener<>(channel, actionName, request), releasable::close), request::decRef);
         runReroutePhase(task, request, listener, false);
     }
 
@@ -298,8 +299,8 @@ public abstract class TransportReplicationAction<
         Releasable releasable = checkPrimaryLimits(request.getRequest(), request.sentFromLocalReroute(),
             request.localRerouteInitiatedByNodeClient());
         request.incRef();
-        ActionListener<Response> listener =
-            ActionListener.runAfter(ActionListener.runBefore(new ChannelActionListener<>(channel, transportPrimaryAction, request), releasable::close), request::decRef);
+        ActionListener<Response> listener = ActionListener.runAfter(ActionListener.runBefore(
+                new ChannelActionListener<>(channel, transportPrimaryAction, request), releasable::close), request::decRef);
 
         try {
             new AsyncPrimaryAction(request, listener, (ReplicationTask) task).run();
@@ -523,8 +524,8 @@ public abstract class TransportReplicationAction<
                                         final Task task) {
         Releasable releasable = checkReplicaLimits(replicaRequest.getRequest());
         replicaRequest.incRef();
-        ActionListener<ReplicaResponse> listener =
-            ActionListener.runAfter(ActionListener.runBefore(new ChannelActionListener<>(channel, transportReplicaAction, replicaRequest), releasable::close), replicaRequest::decRef);
+        ActionListener<ReplicaResponse> listener = ActionListener.runAfter(ActionListener.runBefore(
+                new ChannelActionListener<>(channel, transportReplicaAction, replicaRequest), releasable::close), replicaRequest::decRef);
 
         try {
             new AsyncReplicaAction(replicaRequest, listener, (ReplicationTask) task).run();

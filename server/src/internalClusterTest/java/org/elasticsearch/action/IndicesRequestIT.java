@@ -611,6 +611,7 @@ public class IndicesRequestIT extends ESIntegTestCase {
                 IndicesRequest indicesRequest = convertRequest(internalRequest);
                 assertThat(internalRequest.getClass().getName(), indicesRequest.indices(), equalTo(originalRequest.indices()));
                 assertThat(indicesRequest.indicesOptions(), equalTo(originalRequest.indicesOptions()));
+                internalRequest.decRef();
             }
         }
     }
@@ -624,6 +625,7 @@ public class IndicesRequestIT extends ESIntegTestCase {
                 for (String index : indicesRequest.indices()) {
                     assertThat(indices, hasItem(index));
                 }
+                internalRequest.decRef();
             }
         }
     }

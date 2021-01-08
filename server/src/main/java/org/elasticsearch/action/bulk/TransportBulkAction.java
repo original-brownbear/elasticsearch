@@ -163,7 +163,9 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
         final long indexingBytes = bulkRequest.ramBytesUsed();
         final boolean isOnlySystem = isOnlySystem(bulkRequest, clusterService.state().metadata().getIndicesLookup(), systemIndices);
         final Releasable releasable = indexingPressure.markCoordinatingOperationStarted(indexingOps, indexingBytes, isOnlySystem);
-        final ActionListener<BulkResponse> releasingListener = ActionListener.runBefore(listener, releasable::close);
+        bulkRequest.incRef();
+        final ActionListener<BulkResponse> releasingListener =
+                ActionListener.runAfter(ActionListener.runBefore(listener, releasable::close), bulkRequest::decRef);
         final String executorName = isOnlySystem ? Names.SYSTEM_WRITE : Names.WRITE;
         try {
             doInternalExecute(task, bulkRequest, executorName, releasingListener);
@@ -494,6 +496,7 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                 ShardId shardId = clusterService.operationRouting().indexShards(clusterState, concreteIndex, request.id(),
                     request.routing()).shardId();
                 List<BulkItemRequest> shardRequests = requestsByShard.computeIfAbsent(shardId, shard -> new ArrayList<>());
+                request.incRef();
                 shardRequests.add(new BulkItemRequest(i, request));
             }
 
