@@ -184,18 +184,27 @@ public abstract class TransportWriteAction<
     protected void shardOperationOnPrimary(
             Request request, IndexShard primary, ActionListener<PrimaryResult<ReplicaRequest, Response>> listener) {
         request.incRef();
-        threadPool.executor(executorFunction.apply(primary)).execute(
-                new ActionRunnable<>(ActionListener.runAfter(listener, Releasables.releaseOnce(request::decRef)::close)) {
-            @Override
-            protected void doRun() {
-                dispatchedShardOperationOnPrimary(request, primary, listener);
-            }
+        final Releasable releasable = Releasables.releaseOnce(request::decRef);
+        boolean success = false;
+        try {
+            threadPool.executor(executorFunction.apply(primary)).execute(
+                    new ActionRunnable<>(ActionListener.runAfter(listener, releasable::close)) {
+                        @Override
+                        protected void doRun() {
+                            dispatchedShardOperationOnPrimary(request, primary, listener);
+                        }
 
-            @Override
-            public boolean isForceExecution() {
-                return force(request);
+                        @Override
+                        public boolean isForceExecution() {
+                            return force(request);
+                        }
+                    });
+            success = true;
+        } finally {
+            if (success == false) {
+                releasable.close();
             }
-        });
+        }
     }
 
     protected abstract void dispatchedShardOperationOnPrimary(
@@ -211,18 +220,27 @@ public abstract class TransportWriteAction<
     @Override
     protected void shardOperationOnReplica(ReplicaRequest request, IndexShard replica, ActionListener<ReplicaResult> listener) {
         request.incRef();
-        threadPool.executor(executorFunction.apply(replica)).execute(new ActionRunnable<>(
-                ActionListener.runAfter(listener, Releasables.releaseOnce(request::decRef)::close)) {
-            @Override
-            protected void doRun() {
-                dispatchedShardOperationOnReplica(request, replica, listener);
-            }
+        final Releasable releasable = Releasables.releaseOnce(request::decRef);
+        boolean success = false;
+        try {
+            threadPool.executor(executorFunction.apply(replica)).execute(new ActionRunnable<>(
+                    ActionListener.runAfter(listener, releasable::close)) {
+                @Override
+                protected void doRun() {
+                    dispatchedShardOperationOnReplica(request, replica, listener);
+                }
 
-            @Override
-            public boolean isForceExecution() {
-                return true;
+                @Override
+                public boolean isForceExecution() {
+                    return true;
+                }
+            });
+            success = true;
+        } finally {
+            if (success == false) {
+                releasable.close();
             }
-        });
+        }
     }
 
     protected abstract void dispatchedShardOperationOnReplica(

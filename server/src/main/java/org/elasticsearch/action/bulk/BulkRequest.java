@@ -217,6 +217,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
      * The list of requests in this bulk request.
      */
     public List<DocWriteRequest<?>> requests() {
+        assert refCounted.refCount() > 0;
         return this.requests;
     }
 

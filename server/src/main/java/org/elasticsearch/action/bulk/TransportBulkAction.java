@@ -56,8 +56,10 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.lease.Releasable;
+import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
+import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.IndexingPressure;
@@ -164,8 +166,9 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
         final boolean isOnlySystem = isOnlySystem(bulkRequest, clusterService.state().metadata().getIndicesLookup(), systemIndices);
         final Releasable releasable = indexingPressure.markCoordinatingOperationStarted(indexingOps, indexingBytes, isOnlySystem);
         bulkRequest.incRef();
+        final Releasable releaseBytes = Releasables.releaseOnce(bulkRequest::decRef);
         final ActionListener<BulkResponse> releasingListener =
-                ActionListener.runAfter(ActionListener.runBefore(listener, releasable::close), bulkRequest::decRef);
+                ActionListener.runAfter(ActionListener.runBefore(listener, releasable::close), releaseBytes::close);
         final String executorName = isOnlySystem ? Names.SYSTEM_WRITE : Names.WRITE;
         try {
             doInternalExecute(task, bulkRequest, executorName, releasingListener);
@@ -211,10 +214,21 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                         .allMatch(IndexRequest::isPipelineResolved);
                     assert arePipelinesResolved : bulkRequest;
                 }
-                if (clusterService.localNode().isIngestNode()) {
-                    processBulkIndexIngestRequest(task, bulkRequest, executorName, listener);
-                } else {
-                    ingestForwarder.forwardIngestRequest(BulkAction.INSTANCE, bulkRequest, listener);
+                bulkRequest.incRef();
+                Releasable releaseBytes = Releasables.releaseOnce(bulkRequest::decRef);
+                boolean success = false;
+                try {
+                    ActionListener<BulkResponse> wrappedListener = ActionListener.runAfter(listener, releaseBytes::close);
+                    if (clusterService.localNode().isIngestNode()) {
+                        processBulkIndexIngestRequest(task, bulkRequest, executorName, wrappedListener);
+                    } else {
+                        ingestForwarder.forwardIngestRequest(BulkAction.INSTANCE, bulkRequest, wrappedListener);
+                    }
+                    success = true;
+                } finally {
+                    if (success == false) {
+                        releaseBytes.close();
+                    }
                 }
             } catch (Exception e) {
                 listener.onFailure(e);
@@ -277,6 +291,7 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                                 DocWriteRequest<?> request = bulkRequest.requests.get(i);
                                 if (request != null && setResponseFailureIfIndexMatches(responses, i, request, index, e)) {
                                     bulkRequest.requests.set(i, null);
+                                    request.decRef();
                                 }
                             }
                         }
@@ -481,7 +496,10 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                     BulkItemResponse bulkItemResponse = new BulkItemResponse(i, docWriteRequest.opType(), failure);
                     responses.set(i, bulkItemResponse);
                     // make sure the request gets never processed again
-                    bulkRequest.requests.set(i, null);
+                    RefCounted refCounted = bulkRequest.requests.set(i, null);
+                    if (refCounted != null) {
+                        refCounted.decRef();
+                    }
                 }
             }
 
@@ -645,7 +663,10 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
             BulkItemResponse bulkItemResponse = new BulkItemResponse(idx, request.opType(), failure);
             responses.set(idx, bulkItemResponse);
             // make sure the request gets never processed again
-            bulkRequest.requests.set(idx, null);
+            RefCounted refCounted = bulkRequest.requests.set(idx, null);
+            if (refCounted != null) {
+                refCounted.decRef();
+            }
         }
     }
 
@@ -696,6 +717,8 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                                                ActionListener<BulkResponse> listener) {
         final long ingestStartTimeInNanos = System.nanoTime();
         final BulkRequestModifier bulkRequestModifier = new BulkRequestModifier(original);
+        ActionListener<BulkResponse> wrappedListener =
+                ActionListener.runAfter(listener, Releasables.releaseOnce(bulkRequestModifier)::close);
         ingestService.executeBulkRequest(
             original.numberOfActions(),
             () -> bulkRequestModifier,
@@ -703,12 +726,13 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
             (originalThread, exception) -> {
                 if (exception != null) {
                     logger.debug("failed to execute pipeline for a bulk request", exception);
-                    listener.onFailure(exception);
+                    wrappedListener.onFailure(exception);
                 } else {
                     long ingestTookInMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - ingestStartTimeInNanos);
                     BulkRequest bulkRequest = bulkRequestModifier.getBulkRequest();
-                    ActionListener<BulkResponse> actionListener = bulkRequestModifier.wrapActionListenerIfNeeded(ingestTookInMillis,
-                        listener);
+                    ActionListener<BulkResponse> actionListener =
+                            ActionListener.runAfter(bulkRequestModifier.wrapActionListenerIfNeeded(ingestTookInMillis,
+                                    wrappedListener), Releasables.releaseOnce(bulkRequest::decRef)::close);
                     if (bulkRequest.requests().isEmpty()) {
                         // at this stage, the transport bulk action can't deal with a bulk request with no requests,
                         // so we stop and send an empty response back to the client.
@@ -745,7 +769,7 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
         );
     }
 
-    static final class BulkRequestModifier implements Iterator<DocWriteRequest<?>> {
+    static final class BulkRequestModifier implements Iterator<DocWriteRequest<?>>, Releasable {
 
         final BulkRequest bulkRequest;
         final SparseFixedBitSet failedSlots;
@@ -756,6 +780,7 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
 
         BulkRequestModifier(BulkRequest bulkRequest) {
             this.bulkRequest = bulkRequest;
+            bulkRequest.incRef();
             this.failedSlots = new SparseFixedBitSet(bulkRequest.requests().size());
             this.itemResponses = new ArrayList<>(bulkRequest.requests().size());
             this.originalSlots = new AtomicIntegerArray(bulkRequest.requests().size()); // oversize, but that's ok
@@ -768,11 +793,12 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
 
         @Override
         public boolean hasNext() {
-            return (currentSlot + 1) < bulkRequest.requests().size();
+            return (currentSlot + 1) < originalSlots.length();
         }
 
         BulkRequest getBulkRequest() {
             if (itemResponses.isEmpty()) {
+                bulkRequest.incRef();
                 return bulkRequest;
             } else {
                 BulkRequest modifiedBulkRequest = new BulkRequest();
@@ -835,5 +861,9 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
             itemResponses.add(new BulkItemResponse(slot, indexRequest.opType(), failure));
         }
 
+        @Override
+        public void close() {
+            bulkRequest.decRef();
+        }
     }
 }
