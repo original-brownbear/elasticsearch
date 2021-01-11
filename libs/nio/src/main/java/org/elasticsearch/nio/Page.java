@@ -20,7 +20,6 @@
 package org.elasticsearch.nio;
 
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
-import org.elasticsearch.common.util.concurrent.RefCounted;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;

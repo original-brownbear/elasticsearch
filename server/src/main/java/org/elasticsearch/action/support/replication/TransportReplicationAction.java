@@ -181,7 +181,17 @@ public abstract class TransportReplicationAction<
     @Override
     protected void doExecute(Task task, Request request, ActionListener<Response> listener) {
         assert request.shardId() != null : "request shardId must be set";
-        runReroutePhase(task, request, listener, true);
+        request.incRef();
+        Releasable releaseBytes = Releasables.releaseOnce(request::decRef);
+        boolean success = false;
+        try {
+            runReroutePhase(task, request, ActionListener.runAfter(listener, releaseBytes::close), true);
+            success = true;
+        } finally {
+            if (success == false) {
+                releaseBytes.close();
+            }
+        }
     }
 
     private void runReroutePhase(Task task, Request request, ActionListener<Response> listener, boolean initiatedByNodeClient) {
@@ -284,11 +294,21 @@ public abstract class TransportReplicationAction<
     }
 
     private void handleOperationRequest(final Request request, final TransportChannel channel, Task task) {
-        request.incRef();
         Releasable releasable = checkOperationLimits(request);
+        request.incRef();
+        Releasable releaseBytes = Releasables.releaseOnce(request::decRef);
         ActionListener<Response> listener = ActionListener.runAfter(ActionListener.runBefore(
-                new ChannelActionListener<>(channel, actionName, request), releasable::close), request::decRef);
-        runReroutePhase(task, request, listener, false);
+                new ChannelActionListener<>(channel, actionName, request), releasable::close),
+                releaseBytes::close);
+        boolean success = false;
+        try {
+            runReroutePhase(task, request, listener, false);
+            success = true;
+        } finally {
+            if (success == false) {
+                releaseBytes.close();
+            }
+        }
     }
 
     protected Releasable checkOperationLimits(final Request request) {
@@ -299,13 +319,20 @@ public abstract class TransportReplicationAction<
         Releasable releasable = checkPrimaryLimits(request.getRequest(), request.sentFromLocalReroute(),
             request.localRerouteInitiatedByNodeClient());
         request.incRef();
+        Releasable releaseBytes = Releasables.releaseOnce(request::decRef);
         ActionListener<Response> listener = ActionListener.runAfter(ActionListener.runBefore(
-                new ChannelActionListener<>(channel, transportPrimaryAction, request), releasable::close), request::decRef);
-
+                new ChannelActionListener<>(channel, transportPrimaryAction, request), releasable::close),
+                releaseBytes::close);
+        boolean success = false;
         try {
             new AsyncPrimaryAction(request, listener, (ReplicationTask) task).run();
+            success = true;
         } catch (RuntimeException e) {
             listener.onFailure(e);
+        } finally {
+            if (success == false) {
+                releaseBytes.close();
+            }
         }
     }
 
@@ -524,13 +551,20 @@ public abstract class TransportReplicationAction<
                                         final Task task) {
         Releasable releasable = checkReplicaLimits(replicaRequest.getRequest());
         replicaRequest.incRef();
+        Releasable releaseBytes = Releasables.releaseOnce(replicaRequest::decRef);
         ActionListener<ReplicaResponse> listener = ActionListener.runAfter(ActionListener.runBefore(
-                new ChannelActionListener<>(channel, transportReplicaAction, replicaRequest), releasable::close), replicaRequest::decRef);
-
+                new ChannelActionListener<>(channel, transportReplicaAction, replicaRequest), releasable::close),
+                releaseBytes::close);
+        boolean success = false;
         try {
             new AsyncReplicaAction(replicaRequest, listener, (ReplicationTask) task).run();
+            success = true;
         } catch (RuntimeException e) {
             listener.onFailure(e);
+        } finally {
+            if (success == false) {
+                releaseBytes.close();
+            }
         }
     }
 

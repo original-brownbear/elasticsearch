@@ -185,6 +185,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
         Objects.requireNonNull(request, "'request' must not be null");
         applyGlobalMandatoryParameters(request);
 
+        request.incRef();
         requests.add(request);
         if (request.doc() != null) {
             sizeInBytes += request.doc().source().length();
@@ -195,7 +196,6 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
         if (request.script() != null) {
             sizeInBytes += request.script().getIdOrCode().length() * 2;
         }
-        request.incRef();
         indices.add(request.index());
         return this;
     }
