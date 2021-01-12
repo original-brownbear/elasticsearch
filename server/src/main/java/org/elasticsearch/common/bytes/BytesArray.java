@@ -91,7 +91,7 @@ public final class BytesArray extends AbstractBytesReference {
 
     @Override
     public BytesReference slice(int from, int length) {
-        if (from == 0 && length == this.length) {
+        if (from == 0 && this.length == length) {
             return this;
         }
         Objects.checkFromIndexSize(from, length, this.length);
