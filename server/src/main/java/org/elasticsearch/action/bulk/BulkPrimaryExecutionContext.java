@@ -292,9 +292,7 @@ class BulkPrimaryExecutionContext {
         if (translatedResponse.isFailed() == false && requestToExecute != null && requestToExecute != getCurrent())  {
             RefCounted existing = request.items()[currentIndex];
             requestToExecute.incRef();
-            if (existing != null) {
-                existing.decRef();
-            }
+            existing.decRef();
             request.items()[currentIndex] = new BulkItemRequest(request.items()[currentIndex].id(), requestToExecute);
         }
         getCurrentItem().setPrimaryResponse(translatedResponse);
