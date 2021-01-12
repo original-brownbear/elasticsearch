@@ -41,6 +41,8 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
+import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -48,6 +50,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.shard.ShardId;
+import org.elasticsearch.transport.LeakTracker;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -121,6 +124,22 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
     private long ifSeqNo = UNASSIGNED_SEQ_NO;
     private long ifPrimaryTerm = UNASSIGNED_PRIMARY_TERM;
 
+    private static final LeakTracker leakTracker = new LeakTracker(IndexRequest.class);
+
+    private LeakTracker.Leak<IndexRequest> leak;
+
+    private final RefCounted refCounted = new AbstractRefCounted("index-request") {
+        @Override
+        protected void closeInternal() {
+            if (source != null) {
+                source.decRef();
+            }
+            if (leak != null) {
+                leak.close(IndexRequest.this);
+            }
+        }
+    };
+
     public IndexRequest(StreamInput in) throws IOException {
         this(null, in);
     }
@@ -158,6 +177,7 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
         } else {
             requireAlias = false;
         }
+        leak = leakTracker.track(this);
     }
 
     public IndexRequest() {
@@ -433,6 +453,9 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
      * Sets the document to index in bytes form.
      */
     public IndexRequest source(BytesReference source, XContentType xContentType) {
+        if (this.source != null) {
+            this.source.decRef();
+        }
         this.source = ReleasableBytesReference.wrap(Objects.requireNonNull(source));
         this.contentType = Objects.requireNonNull(xContentType);
         return this;
@@ -726,16 +749,22 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
     }
     @Override
     public void incRef() {
-        source.incRef();
+        if (leak != null) {
+            leak.record();
+        }
+        refCounted.incRef();
     }
 
     @Override
     public boolean tryIncRef() {
-        return source.tryIncRef();
+        return refCounted.tryIncRef();
     }
 
     @Override
     public boolean decRef() {
-        return source.decRef();
+        if (leak != null) {
+            leak.record();
+        }
+        return refCounted.decRef();
     }
 }

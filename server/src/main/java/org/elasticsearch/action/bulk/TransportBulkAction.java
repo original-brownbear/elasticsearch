@@ -547,6 +547,7 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                             }
                             responses.set(bulkItemResponse.getItemId(), bulkItemResponse);
                         }
+                        bulkShardRequest.decRef();
                         if (counter.decrementAndGet() == 0) {
                             finishHim();
                         }
@@ -561,18 +562,15 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
                             responses.set(request.id(), new BulkItemResponse(request.id(), docWriteRequest.opType(),
                                     new BulkItemResponse.Failure(indexName, docWriteRequest.id(), e)));
                         }
+                        bulkShardRequest.decRef();
                         if (counter.decrementAndGet() == 0) {
                             finishHim();
                         }
                     }
 
                     private void finishHim() {
-                        try {
-                            listener.onResponse(new BulkResponse(responses.toArray(new BulkItemResponse[responses.length()]),
-                                    buildTookInMillis(startTimeNanos)));
-                        } finally {
-                            bulkShardRequest.decRef();
-                        }
+                        listener.onResponse(new BulkResponse(responses.toArray(new BulkItemResponse[responses.length()]),
+                                buildTookInMillis(startTimeNanos)));
                     }
                 });
             }
