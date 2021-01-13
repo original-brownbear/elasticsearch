@@ -35,7 +35,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
-import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ObjectParser;
@@ -128,7 +127,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
     private boolean detectNoop = true;
     private boolean requireAlias = false;
 
-    private final RefCounted refCounted = new AbstractRefCounted("update-request") {
+    private final AbstractRefCounted refCounted = new AbstractRefCounted("update-request") {
         @Override
         protected void closeInternal() {
             if (doc != null) {
@@ -851,6 +850,7 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
     }
 
     private void doWrite(StreamOutput out, boolean thin) throws IOException {
+        assert refCounted.refCount() > 0;
         waitForActiveShards.writeTo(out);
         if (out.getVersion().before(Version.V_8_0_0)) {
             out.writeString(MapperService.SINGLE_MAPPING_NAME);

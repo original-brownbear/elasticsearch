@@ -192,12 +192,13 @@ public class TransportUpdateAction extends TransportInstanceSingleOperationActio
         final IndexShard indexShard = indexService.getShard(shardId.getId());
         final UpdateHelper.Result result = updateHelper.prepare(request, indexShard, threadPool::absoluteTimeInMillis);
         final ActionListener<UpdateResponse> wrappedListener;
+        final BulkRequest bulk;
         switch (result.getResponseResult()) {
             case CREATED:
                 IndexRequest upsertRequest = result.action();
                 // we fetch it from the index request so we don't generate the bytes twice, its already done in the index request
                 final BytesReference upsertSourceBytes = upsertRequest.source();
-                BulkRequest bulk = toSingleItemBulkRequest(upsertRequest);
+                bulk = toSingleItemBulkRequest(upsertRequest);
                 wrappedListener =
                         ActionListener.runAfter(listener, Releasables.releaseOnce(bulk::decRef)::close);
                 client.bulk(bulk, wrapBulkResponse(
@@ -226,7 +227,7 @@ public class TransportUpdateAction extends TransportInstanceSingleOperationActio
                 wrappedListener = ActionListener.runAfter(listener, Releasables.releaseOnce(bulk::decRef)::close);
                 // we fetch it from the index request so we don't generate the bytes twice, its already done in the index request
                 final BytesReference indexSourceBytes = indexRequest.source();
-                client.bulk(toSingleItemBulkRequest(indexRequest), wrapBulkResponse(
+                client.bulk(bulk, wrapBulkResponse(
                         ActionListener.<IndexResponse>wrap(response -> {
                             UpdateResponse update = new UpdateResponse(response.getShardInfo(), response.getShardId(),
                                 response.getId(), response.getSeqNo(), response.getPrimaryTerm(),

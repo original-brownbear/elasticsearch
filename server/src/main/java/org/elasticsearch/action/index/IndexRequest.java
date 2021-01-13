@@ -42,7 +42,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
-import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -123,7 +122,7 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
     private long ifSeqNo = UNASSIGNED_SEQ_NO;
     private long ifPrimaryTerm = UNASSIGNED_PRIMARY_TERM;
 
-    private final RefCounted refCounted = new AbstractRefCounted("index-request") {
+    private final AbstractRefCounted refCounted = new AbstractRefCounted("index-request") {
         @Override
         protected void closeInternal() {
             if (source != null) {
@@ -351,10 +350,12 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
      * The source of the document to index, recopied to a new array if it is unsafe.
      */
     public BytesReference source() {
+        assert refCounted.refCount() > 0;
         return source;
     }
 
     public Map<String, Object> sourceAsMap() {
+        assert refCounted.refCount() > 0;
         return XContentHelper.convertToMap(source, false, contentType).v2();
     }
 
@@ -444,6 +445,7 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
      * Sets the document to index in bytes form.
      */
     public IndexRequest source(BytesReference source, XContentType xContentType) {
+        assert refCounted.refCount() > 0;
         if (this.source != null) {
             this.source.decRef();
         }
@@ -652,6 +654,7 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
     }
 
     private void writeBody(StreamOutput out) throws IOException {
+        assert refCounted.refCount() > 0;
         if (out.getVersion().before(Version.V_8_0_0)) {
             out.writeOptionalString(MapperService.SINGLE_MAPPING_NAME);
         }

@@ -163,6 +163,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
     }
 
     BulkRequest internalAdd(IndexRequest request) {
+        assert refCounted.refCount() > 0;
         Objects.requireNonNull(request, "'request' must not be null");
         applyGlobalMandatoryParameters(request);
 
@@ -182,6 +183,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
     }
 
     BulkRequest internalAdd(UpdateRequest request) {
+        assert refCounted.refCount() > 0;
         Objects.requireNonNull(request, "'request' must not be null");
         applyGlobalMandatoryParameters(request);
 
@@ -204,6 +206,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
      * Adds an {@link DeleteRequest} to the list of actions to execute.
      */
     public BulkRequest add(DeleteRequest request) {
+        assert refCounted.refCount() > 0;
         Objects.requireNonNull(request, "'request' must not be null");
         applyGlobalMandatoryParameters(request);
 
@@ -419,6 +422,7 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
+        assert refCounted.refCount() > 0;
         super.writeTo(out);
         waitForActiveShards.writeTo(out);
         out.writeCollection(requests, DocWriteRequest::writeDocumentRequest);
