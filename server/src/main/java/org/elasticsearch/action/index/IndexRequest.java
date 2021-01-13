@@ -50,7 +50,6 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.shard.ShardId;
-import org.elasticsearch.transport.LeakTracker;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -124,18 +123,11 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
     private long ifSeqNo = UNASSIGNED_SEQ_NO;
     private long ifPrimaryTerm = UNASSIGNED_PRIMARY_TERM;
 
-    private static final LeakTracker leakTracker = new LeakTracker(IndexRequest.class);
-
-    private LeakTracker.Leak<IndexRequest> leak;
-
     private final RefCounted refCounted = new AbstractRefCounted("index-request") {
         @Override
         protected void closeInternal() {
             if (source != null) {
                 source.decRef();
-            }
-            if (leak != null) {
-                leak.close(IndexRequest.this);
             }
         }
     };
@@ -177,7 +169,6 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
         } else {
             requireAlias = false;
         }
-        leak = leakTracker.track(this);
     }
 
     public IndexRequest() {
@@ -749,9 +740,6 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
     }
     @Override
     public void incRef() {
-        if (leak != null) {
-            leak.record();
-        }
         refCounted.incRef();
     }
 
@@ -762,9 +750,6 @@ public class IndexRequest extends ReplicatedWriteRequest<IndexRequest> implement
 
     @Override
     public boolean decRef() {
-        if (leak != null) {
-            leak.record();
-        }
         return refCounted.decRef();
     }
 }

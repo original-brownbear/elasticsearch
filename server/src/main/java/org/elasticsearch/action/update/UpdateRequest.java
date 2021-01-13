@@ -51,7 +51,6 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.transport.LeakTracker;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -129,10 +128,6 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
     private boolean detectNoop = true;
     private boolean requireAlias = false;
 
-    private static final LeakTracker leakTracker = new LeakTracker(UpdateRequest.class);
-
-    private LeakTracker.Leak<UpdateRequest> leak;
-
     private final RefCounted refCounted = new AbstractRefCounted("update-request") {
         @Override
         protected void closeInternal() {
@@ -141,9 +136,6 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
             }
             if (upsertRequest != null) {
                 upsertRequest.decRef();
-            }
-            if (leak != null) {
-                leak.close(UpdateRequest.this);
             }
         }
     };
@@ -188,7 +180,6 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
         } else {
             requireAlias = false;
         }
-        leak = leakTracker.track(this);
     }
 
     public UpdateRequest(String index, String id) {
@@ -989,9 +980,6 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
 
     @Override
     public void incRef() {
-        if (leak != null) {
-            leak.record();
-        }
         refCounted.incRef();
     }
 
@@ -1002,9 +990,6 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
 
     @Override
     public boolean decRef() {
-        if (leak != null) {
-            leak.record();
-        }
         return refCounted.decRef();
     }
 }

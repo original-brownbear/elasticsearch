@@ -41,7 +41,6 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.transport.LeakTracker;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -82,9 +81,6 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
                     request.decRef();
                 }
             }
-            if (leak != null) {
-                leak.close(BulkRequest.this);
-            }
             requests.clear();
             indices.clear();
         }
@@ -100,10 +96,6 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
 
     private long sizeInBytes = 0;
 
-    private static final LeakTracker leakTracker = new LeakTracker(BulkRequest.class);
-
-    private LeakTracker.Leak<BulkRequest> leak;
-
     public BulkRequest() {}
 
     public BulkRequest(StreamInput in) throws IOException {
@@ -112,7 +104,6 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
         requests.addAll(in.readList(i -> DocWriteRequest.readDocumentRequest(null, i)));
         refreshPolicy = RefreshPolicy.readFrom(in);
         timeout = in.readTimeValue();
-        leak = leakTracker.track(this);
     }
 
     public BulkRequest(@Nullable String globalIndex) {
@@ -175,9 +166,6 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
         Objects.requireNonNull(request, "'request' must not be null");
         applyGlobalMandatoryParameters(request);
 
-        if (leak != null) {
-            leak = leakTracker.track(this);
-        }
         request.incRef();
         requests.add(request);
         // lack of source is validated in validate() method
@@ -197,9 +185,6 @@ public class BulkRequest extends ActionRequest implements CompositeIndicesReques
         Objects.requireNonNull(request, "'request' must not be null");
         applyGlobalMandatoryParameters(request);
 
-        if (leak != null) {
-            leak = leakTracker.track(this);
-        }
         request.incRef();
         requests.add(request);
         if (request.doc() != null) {
