@@ -104,9 +104,6 @@ class BulkPrimaryExecutionContext {
         currentItemState = ItemProcessingState.INITIAL;
         currentIndex =  findNextNonAborted(currentIndex + 1);
         retryCounter = 0;
-        if (requestToExecute != null) {
-            requestToExecute.decRef();
-        }
         requestToExecute = null;
         executionResult = null;
         assert assertInvariants(ItemProcessingState.INITIAL);
@@ -199,7 +196,6 @@ class BulkPrimaryExecutionContext {
      */
     public void setRequestToExecute(DocWriteRequest writeRequest) {
         assert assertInvariants(ItemProcessingState.INITIAL);
-        writeRequest.incRef();
         requestToExecute = writeRequest;
         currentItemState = ItemProcessingState.TRANSLATED;
         assert assertInvariants(ItemProcessingState.TRANSLATED);
@@ -215,9 +211,6 @@ class BulkPrimaryExecutionContext {
     public void markAsRequiringMappingUpdate() {
         assert assertInvariants(ItemProcessingState.TRANSLATED);
         currentItemState = ItemProcessingState.WAIT_FOR_MAPPING_UPDATE;
-        if (requestToExecute != null) {
-            requestToExecute.decRef();
-        }
         requestToExecute = null;
         assert assertInvariants(ItemProcessingState.WAIT_FOR_MAPPING_UPDATE);
     }
@@ -226,9 +219,6 @@ class BulkPrimaryExecutionContext {
     public void resetForExecutionForRetry() {
         assertInvariants(ItemProcessingState.WAIT_FOR_MAPPING_UPDATE, ItemProcessingState.EXECUTED);
         currentItemState = ItemProcessingState.INITIAL;
-        if (requestToExecute != null) {
-            requestToExecute.decRef();
-        }
         requestToExecute = null;
         executionResult = null;
         assertInvariants(ItemProcessingState.INITIAL);
