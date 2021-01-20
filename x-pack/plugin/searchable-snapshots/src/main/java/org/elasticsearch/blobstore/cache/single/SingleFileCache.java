@@ -7,6 +7,7 @@ package org.elasticsearch.blobstore.cache.single;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
 import org.elasticsearch.core.internal.io.Streams;
 
@@ -26,8 +27,6 @@ public final class SingleFileCache extends AbstractRefCounted {
 
     private final Path path;
 
-    private final long size;
-
     private final int pageSize;
 
     private final CachePage[] pages;
@@ -37,7 +36,6 @@ public final class SingleFileCache extends AbstractRefCounted {
     public SingleFileCache(Path path, long size, int pageSize) throws IOException {
         super("single-file-cache");
         this.path = path;
-        this.size = size;
         this.pageSize = pageSize;
         int pageCount = Math.toIntExact(size / pageSize);
         pages = new CachePage[pageCount];
@@ -92,7 +90,7 @@ public final class SingleFileCache extends AbstractRefCounted {
             assert offset + length <= limit;
         }
 
-        public void initWith(Supplier<InputStream> stream, int length) throws IOException {
+        public void initWith(CheckedSupplier<InputStream, IOException> stream, int length) throws IOException {
             if (limit >= 0) {
                 return;
             }
