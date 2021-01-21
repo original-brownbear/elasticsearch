@@ -1,3 +1,9 @@
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License;
+ * you may not use this file except in compliance with the Elastic License.
+ */
+
 package org.elasticsearch.blobstore.cache.single;
 
 import org.elasticsearch.common.CheckedBiFunction;
@@ -23,8 +29,7 @@ public final class CachedFileReference extends AbstractRefCounted {
         singleFileCache.incRef();
     }
 
-    public int read(long offset, ByteBuffer buffer, CheckedBiFunction<Long, Long, InputStream, IOException> blobReader)
-            throws IOException {
+    public int read(long offset, ByteBuffer buffer, CheckedBiFunction<Long, Long, InputStream, IOException> blobReader) throws IOException {
         int pageIndex = Math.toIntExact(offset % singleFileCache.pageSize());
         final SingleFileCache.CachePage relevantPage;
         final SingleFileCache.CachePage p = pages.get(pageIndex);

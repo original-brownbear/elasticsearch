@@ -11,7 +11,6 @@ import java.io.ByteArrayInputStream;
 
 public class SingleFileCacheTest extends ESTestCase {
 
-
     public void testAcquireAndReleasePages() throws Exception {
         final int pageSize = 2048;
         final int pages = 512;
