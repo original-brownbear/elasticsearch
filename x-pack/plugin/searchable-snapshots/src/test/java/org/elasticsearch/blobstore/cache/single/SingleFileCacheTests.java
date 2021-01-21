@@ -9,7 +9,7 @@ import org.elasticsearch.test.ESTestCase;
 
 import java.io.ByteArrayInputStream;
 
-public class SingleFileCacheTest extends ESTestCase {
+public class SingleFileCacheTests extends ESTestCase {
 
     public void testAcquireAndReleasePages() throws Exception {
         final int pageSize = 2048;
