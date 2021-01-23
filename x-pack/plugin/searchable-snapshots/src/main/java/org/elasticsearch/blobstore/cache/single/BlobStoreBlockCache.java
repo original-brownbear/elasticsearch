@@ -8,20 +8,19 @@ package org.elasticsearch.blobstore.cache.single;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.TriConsumer;
-import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 public final class BlobStoreBlockCache extends AbstractRefCounted {
 
@@ -77,7 +76,7 @@ public final class BlobStoreBlockCache extends AbstractRefCounted {
 
         private int writerIndex;
 
-        Page (int index) {
+        Page(int index) {
             super("block-cache-page");
             this.index = index;
         }
@@ -113,8 +112,8 @@ public final class BlobStoreBlockCache extends AbstractRefCounted {
         }
 
         // TODO: this should be safe for use by multiple readers concurrently
-        //       the dst buffer will see its position moved by however many bytes could be read
-        //       if it wasn't filled completely but the file contains more bytes then #write should be used to cache the missing bytes
+        // the dst buffer will see its position moved by however many bytes could be read
+        // if it wasn't filled completely but the file contains more bytes then #write should be used to cache the missing bytes
         public void read(long offset, ByteBuffer dst) {
             final int pageNum = Math.toIntExact(offset / pageSize);
             final int pageIndex = Collections.binarySearch(offsets, pageNum);
@@ -136,7 +135,7 @@ public final class BlobStoreBlockCache extends AbstractRefCounted {
         }
 
         // TODO: length should be a multiple of page size or the number of bytes remaining in the file ideally
-        //       this will always work out since we ensure we have more pages than files that may be open concurrently
+        // this will always work out since we ensure we have more pages than files that may be open concurrently
         public void write(long offset, InputStream stream, long length) {
 
         }
