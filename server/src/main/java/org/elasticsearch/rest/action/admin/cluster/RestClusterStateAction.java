@@ -21,6 +21,7 @@ package org.elasticsearch.rest.action.admin.cluster;
 
 import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.ActionRunnable;
+import org.elasticsearch.action.ResultDeduplicator;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateAction;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
@@ -30,8 +31,11 @@ import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
+import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -42,6 +46,7 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.RestActionListener;
 import org.elasticsearch.rest.action.RestBuilderListener;
 import org.elasticsearch.rest.action.RestCancellableNodeClient;
+import org.elasticsearch.rest.action.RestResponseListener;
 import org.elasticsearch.tasks.TaskCancelledException;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -60,6 +65,9 @@ public class RestClusterStateAction extends BaseRestHandler {
     private final SettingsFilter settingsFilter;
 
     private final ThreadPool threadPool;
+
+    private final ResultDeduplicator<Tuple<ClusterStateRequest, Long>, BytesRestResponse> responseDeduplicator
+            = new ResultDeduplicator<>();
 
     public RestClusterStateAction(SettingsFilter settingsFilter, ThreadPool threadPool) {
         this.settingsFilter = settingsFilter;
@@ -132,12 +140,20 @@ public class RestClusterStateAction extends BaseRestHandler {
                         final long startTimeMs = threadPool.relativeTimeInMillis();
                         // Process serialization on MANAGEMENT pool since the serialization of the cluster state to XContent
                         // can be too slow to execute on an IO thread
-                        threadPool.executor(ThreadPool.Names.MANAGEMENT).execute(
-                                ActionRunnable.wrap(this, l -> new RestBuilderListener<ClusterStateResponse>(channel) {
-                                    @Override
-                                    public RestResponse buildResponse(final ClusterStateResponse response,
-                                                                      final XContentBuilder builder) throws Exception {
-                                        ensureOpen();
+                        final Long csVersion = response.getState() == null ? null : response.getState().version();
+                        responseDeduplicator.executeOnce(Tuple.tuple(clusterStateRequest, csVersion), new RestResponseListener<>(channel) {
+                            @Override
+                            public RestResponse buildResponse(BytesRestResponse bytesRestResponse) {
+                                final BytesReference content = bytesRestResponse.content();
+                                if (content instanceof RefCounted) {
+                                    ((RefCounted) content).incRef();
+                                }
+                                return bytesRestResponse;
+                            }
+                        }, (inputs, listener) -> threadPool.executor(ThreadPool.Names.MANAGEMENT).execute(
+                                ActionRunnable.wrap(listener, l -> {
+                                    ensureOpen();
+                                    try (XContentBuilder builder = channel.newBuilder()) {
                                         if (clusterStateRequest.local() == false &&
                                                 threadPool.relativeTimeInMillis() - startTimeMs >
                                                         clusterStateRequest.masterNodeTimeout().millis()) {
@@ -155,9 +171,14 @@ public class RestClusterStateAction extends BaseRestHandler {
                                             responseState.toXContent(builder, params);
                                         }
                                         builder.endObject();
-                                        return new BytesRestResponse(RestStatus.OK, builder);
+                                        final BytesRestResponse resp = new BytesRestResponse(RestStatus.OK, builder);
+                                        l.onResponse(resp);
+                                        final BytesReference content = resp.content();
+                                        if (content instanceof RefCounted) {
+                                            ((RefCounted) content).decRef();
+                                        }
                                     }
-                                }.onResponse(response)));
+                                })));
                     }
                 });
     }

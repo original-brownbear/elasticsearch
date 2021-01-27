@@ -34,6 +34,7 @@ import org.elasticsearch.tasks.TaskId;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 
 public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateRequest> implements IndicesRequest.Replaceable {
 
@@ -239,4 +240,21 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
         return stringBuilder.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClusterStateRequest that = (ClusterStateRequest) o;
+        return routingTable == that.routingTable && nodes == that.nodes && metadata == that.metadata && blocks == that.blocks &&
+                customs == that.customs && Objects.equals(waitForMetadataVersion, that.waitForMetadataVersion)
+                && Objects.equals(waitForTimeout, that.waitForTimeout)
+                && Arrays.equals(indices, that.indices) && Objects.equals(indicesOptions, that.indicesOptions);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(routingTable, nodes, metadata, blocks, customs, waitForMetadataVersion, waitForTimeout, indicesOptions);
+        result = 31 * result + Arrays.hashCode(indices);
+        return result;
+    }
 }
