@@ -49,17 +49,17 @@ public class SharedBytes {
         // return fileChannel;
         return new FileChannel() {
             @Override
-            public int read(ByteBuffer dst) throws IOException {
+            public int read(ByteBuffer dst) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public long read(ByteBuffer[] dsts, int offset, int length) throws IOException {
+            public long read(ByteBuffer[] dsts, int offset, int length) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public int write(ByteBuffer src) throws IOException {
+            public int write(ByteBuffer src) {
                 throw new UnsupportedOperationException();
             }
 
@@ -87,7 +87,7 @@ public class SharedBytes {
             }
 
             @Override
-            public FileChannel truncate(long size) throws IOException {
+            public FileChannel truncate(long size) {
                 assert false;
                 throw new UnsupportedOperationException();
             }
@@ -133,19 +133,19 @@ public class SharedBytes {
             }
 
             @Override
-            public MappedByteBuffer map(MapMode mode, long position, long size) throws IOException {
+            public MappedByteBuffer map(MapMode mode, long position, long size) {
                 assert false;
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public FileLock lock(long position, long size, boolean shared) throws IOException {
+            public FileLock lock(long position, long size, boolean shared) {
                 assert false;
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public FileLock tryLock(long position, long size, boolean shared) throws IOException {
+            public FileLock tryLock(long position, long size, boolean shared) {
                 assert false;
                 throw new UnsupportedOperationException();
             }
