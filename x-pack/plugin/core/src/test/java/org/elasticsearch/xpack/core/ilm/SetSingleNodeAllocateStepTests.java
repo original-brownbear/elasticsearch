@@ -29,7 +29,6 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.test.VersionUtils;
-import org.elasticsearch.xpack.core.ilm.AsyncActionStep.Listener;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import org.hamcrest.Matchers;
 import org.mockito.Mockito;
@@ -201,10 +200,10 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
 
         SetSingleNodeAllocateStep step = createRandomInstance();
         SetOnce<Exception> actionCompleted = new SetOnce<>();
-        step.performAction(indexMetadata, clusterState, null, new Listener() {
+        step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 throw new AssertionError("Unexpected method call");
             }
 
@@ -295,10 +294,10 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
         }).when(indicesClient).updateSettings(Mockito.any(), Mockito.any());
 
         SetOnce<Boolean> exceptionThrown = new SetOnce<>();
-        step.performAction(indexMetadata, clusterState, null, new Listener() {
+        step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 throw new AssertionError("Unexpected method call");
             }
 
@@ -351,10 +350,10 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
         SetSingleNodeAllocateStep step = createRandomInstance();
 
         SetOnce<Boolean> exceptionThrown = new SetOnce<>();
-        step.performAction(indexMetadata, clusterState, null, new Listener() {
+        step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 throw new AssertionError("Unexpected method call");
             }
 
@@ -574,10 +573,10 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
 
         SetOnce<Boolean> actionCompleted = new SetOnce<>();
 
-        step.performAction(indexMetadata, clusterState, null, new Listener() {
+        step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 actionCompleted.set(complete);
             }
 
@@ -612,10 +611,10 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
 
         SetOnce<Exception> actionCompleted = new SetOnce<>();
 
-        step.performAction(indexMetadata, clusterState, null, new Listener() {
+        step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 throw new AssertionError("Unexpected method call");
             }
 

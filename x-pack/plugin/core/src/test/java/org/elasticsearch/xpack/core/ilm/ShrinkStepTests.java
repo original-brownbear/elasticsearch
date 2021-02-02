@@ -15,7 +15,6 @@ import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.xpack.core.ilm.AsyncActionStep.Listener;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import org.mockito.Mockito;
 
@@ -123,10 +122,10 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
         }).when(indicesClient).resizeIndex(Mockito.any(), Mockito.any());
 
         SetOnce<Boolean> actionCompleted = new SetOnce<>();
-        step.performAction(sourceIndexMetadata, emptyClusterState(), null, new Listener() {
+        step.performAction(sourceIndexMetadata, emptyClusterState(), null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 actionCompleted.set(complete);
             }
 
@@ -159,10 +158,10 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
         }).when(indicesClient).resizeIndex(Mockito.any(), Mockito.any());
 
         SetOnce<Boolean> actionCompleted = new SetOnce<>();
-        step.performAction(indexMetadata, emptyClusterState(), null, new Listener() {
+        step.performAction(indexMetadata, emptyClusterState(), null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 actionCompleted.set(complete);
             }
 
@@ -196,10 +195,10 @@ public class ShrinkStepTests extends AbstractStepTestCase<ShrinkStep> {
         }).when(indicesClient).resizeIndex(Mockito.any(), Mockito.any());
 
         SetOnce<Boolean> exceptionThrown = new SetOnce<>();
-        step.performAction(indexMetadata, emptyClusterState(), null, new Listener() {
+        step.performAction(indexMetadata, emptyClusterState(), null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 throw new AssertionError("Unexpected method call");
             }
 

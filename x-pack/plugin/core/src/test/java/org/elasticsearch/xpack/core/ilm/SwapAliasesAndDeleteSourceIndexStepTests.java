@@ -18,7 +18,6 @@ import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.test.client.NoOpClient;
-import org.elasticsearch.xpack.core.ilm.AsyncActionStep.Listener;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 
 import java.util.Arrays;
@@ -108,9 +107,9 @@ public class SwapAliasesAndDeleteSourceIndexStepTests extends AbstractStepTestCa
                         .build()
                 ).build();
 
-            step.performAction(sourceIndexMetadata, clusterState, null, new Listener() {
+            step.performAction(sourceIndexMetadata, clusterState, null, new ActionListener<>() {
                 @Override
-                public void onResponse(boolean complete) {
+                public void onResponse(Boolean complete) {
                 }
 
                 @Override

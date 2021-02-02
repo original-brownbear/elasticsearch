@@ -75,9 +75,9 @@ public class CreateSnapshotStepTests extends AbstractStepTestCase<CreateSnapshot
                 ClusterState.builder(emptyClusterState()).metadata(Metadata.builder().put(indexMetadata, true).build()).build();
 
             CreateSnapshotStep createSnapshotStep = createRandomInstance();
-            createSnapshotStep.performAction(indexMetadata, clusterState, null, new AsyncActionStep.Listener() {
+            createSnapshotStep.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
                 @Override
-                public void onResponse(boolean complete) {
+                public void onResponse(Boolean complete) {
                     fail("expecting a failure as the index doesn't have any snapshot name in its ILM execution state");
                 }
 
@@ -100,9 +100,9 @@ public class CreateSnapshotStepTests extends AbstractStepTestCase<CreateSnapshot
                 ClusterState.builder(emptyClusterState()).metadata(Metadata.builder().put(indexMetadata, true).build()).build();
 
             CreateSnapshotStep createSnapshotStep = createRandomInstance();
-            createSnapshotStep.performAction(indexMetadata, clusterState, null, new AsyncActionStep.Listener() {
+            createSnapshotStep.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
                 @Override
-                public void onResponse(boolean complete) {
+                public void onResponse(Boolean complete) {
                     fail("expecting a failure as the index doesn't have any snapshot name in its ILM execution state");
                 }
 
@@ -136,9 +136,9 @@ public class CreateSnapshotStepTests extends AbstractStepTestCase<CreateSnapshot
 
         try (NoOpClient client = getCreateSnapshotRequestAssertingClient(repository, snapshotName, indexName)) {
             CreateSnapshotStep step = new CreateSnapshotStep(randomStepKey(), randomStepKey(), client);
-            step.performAction(indexMetadata, clusterState, null, new AsyncActionStep.Listener() {
+            step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
                 @Override
-                public void onResponse(boolean complete) {
+                public void onResponse(Boolean complete) {
                 }
 
                 @Override

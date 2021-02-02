@@ -88,9 +88,9 @@ public class DeleteStepTests extends AbstractStepMasterTimeoutTestCase<DeleteSte
         ClusterState clusterState = ClusterState.builder(emptyClusterState()).metadata(
             Metadata.builder().put(indexMetadata, true).build()
         ).build();
-        step.performAction(indexMetadata, clusterState, null, new AsyncActionStep.Listener() {
+        step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 actionCompleted.set(complete);
             }
 
@@ -127,9 +127,9 @@ public class DeleteStepTests extends AbstractStepMasterTimeoutTestCase<DeleteSte
         ClusterState clusterState = ClusterState.builder(emptyClusterState()).metadata(
             Metadata.builder().put(indexMetadata, true).build()
         ).build();
-        step.performAction(indexMetadata, clusterState, null, new AsyncActionStep.Listener() {
+        step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 throw new AssertionError("Unexpected method call");
             }
 
@@ -158,9 +158,9 @@ public class DeleteStepTests extends AbstractStepMasterTimeoutTestCase<DeleteSte
         ).build();
 
         IllegalStateException illegalStateException = expectThrows(IllegalStateException.class,
-            () -> createRandomInstance().performDuringNoSnapshot(sourceIndexMetadata, clusterState, new AsyncActionStep.Listener() {
+            () -> createRandomInstance().performDuringNoSnapshot(sourceIndexMetadata, clusterState, new ActionListener<>() {
                 @Override
-                public void onResponse(boolean complete) {
+                public void onResponse(Boolean complete) {
                     fail("unexpected listener callback");
                 }
 

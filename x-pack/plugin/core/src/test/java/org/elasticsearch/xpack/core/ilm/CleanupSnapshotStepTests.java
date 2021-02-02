@@ -70,9 +70,9 @@ public class CleanupSnapshotStepTests extends AbstractStepTestCase<CleanupSnapsh
                 ClusterState.builder(emptyClusterState()).metadata(Metadata.builder().put(indexMetadata, true).build()).build();
 
             CleanupSnapshotStep cleanupSnapshotStep = createRandomInstance();
-            cleanupSnapshotStep.performAction(indexMetadata, clusterState, null, new AsyncActionStep.Listener() {
+            cleanupSnapshotStep.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
                 @Override
-                public void onResponse(boolean complete) {
+                public void onResponse(Boolean complete) {
                     assertThat(complete, is(true));
                 }
 
@@ -97,9 +97,9 @@ public class CleanupSnapshotStepTests extends AbstractStepTestCase<CleanupSnapsh
                 ClusterState.builder(emptyClusterState()).metadata(Metadata.builder().put(indexMetadata, true).build()).build();
 
             CleanupSnapshotStep cleanupSnapshotStep = createRandomInstance();
-            cleanupSnapshotStep.performAction(indexMetadata, clusterState, null, new AsyncActionStep.Listener() {
+            cleanupSnapshotStep.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
                 @Override
-                public void onResponse(boolean complete) {
+                public void onResponse(Boolean complete) {
                     assertThat(complete, is(true));
                 }
 
@@ -129,9 +129,9 @@ public class CleanupSnapshotStepTests extends AbstractStepTestCase<CleanupSnapsh
 
         try (NoOpClient client = getDeleteSnapshotRequestAssertingClient(snapshotName)) {
             CleanupSnapshotStep step = new CleanupSnapshotStep(randomStepKey(), randomStepKey(), client);
-            step.performAction(indexMetadata, clusterState, null, new AsyncActionStep.Listener() {
+            step.performAction(indexMetadata, clusterState, null, new ActionListener<>() {
                 @Override
-                public void onResponse(boolean complete) {
+                public void onResponse(Boolean complete) {
                 }
 
                 @Override

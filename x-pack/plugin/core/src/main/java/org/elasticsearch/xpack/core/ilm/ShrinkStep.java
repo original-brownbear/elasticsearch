@@ -22,9 +22,9 @@ import java.util.Objects;
 public class ShrinkStep extends AsyncActionStep {
     public static final String NAME = "shrink";
 
-    private Integer numberOfShards;
-    private ByteSizeValue maxSinglePrimarySize;
-    private String shrunkIndexPrefix;
+    private final Integer numberOfShards;
+    private final ByteSizeValue maxSinglePrimarySize;
+    private final String shrunkIndexPrefix;
 
     public ShrinkStep(StepKey key, StepKey nextStepKey, Client client, Integer numberOfShards,
                       ByteSizeValue maxSinglePrimarySize, String shrunkIndexPrefix) {
@@ -47,7 +47,8 @@ public class ShrinkStep extends AsyncActionStep {
     }
 
     @Override
-    public void performAction(IndexMetadata indexMetadata, ClusterState currentState, ClusterStateObserver observer, Listener listener) {
+    public void performAction(IndexMetadata indexMetadata, ClusterState currentState, ClusterStateObserver observer,
+                              ActionListener<Boolean> listener) {
         LifecycleExecutionState lifecycleState = LifecycleExecutionState.fromIndexMetadata(indexMetadata);
         if (lifecycleState.getLifecycleDate() == null) {
             throw new IllegalStateException("source index [" + indexMetadata.getIndex().getName() +

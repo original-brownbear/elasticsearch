@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.core.ilm;
 
 import org.apache.lucene.util.SetOnce;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateObserver;
@@ -25,8 +26,8 @@ import java.util.Objects;
 public class AsyncActionBranchingStep extends AsyncActionStep {
     private final AsyncActionStep stepToExecute;
 
-    private StepKey nextKeyOnIncompleteResponse;
-    private SetOnce<Boolean> onResponseResult;
+    private final StepKey nextKeyOnIncompleteResponse;
+    private final SetOnce<Boolean> onResponseResult;
 
     public AsyncActionBranchingStep(AsyncActionStep stepToExecute, StepKey nextKeyOnIncompleteResponse, Client client) {
         // super.nextStepKey is set to null since it is not used by this step
@@ -43,10 +44,10 @@ public class AsyncActionBranchingStep extends AsyncActionStep {
 
     @Override
     public void performAction(IndexMetadata indexMetadata, ClusterState currentClusterState, ClusterStateObserver observer,
-                              Listener listener) {
-        stepToExecute.performAction(indexMetadata, currentClusterState, observer, new Listener() {
+                              ActionListener<Boolean> listener) {
+        stepToExecute.performAction(indexMetadata, currentClusterState, observer, new ActionListener<>() {
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 onResponseResult.set(complete);
                 listener.onResponse(complete);
             }

@@ -13,7 +13,6 @@ import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.xpack.core.ilm.AsyncActionStep.Listener;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
 import org.mockito.Mockito;
 
@@ -81,10 +80,10 @@ public class UpdateSettingsStepTests extends AbstractStepMasterTimeoutTestCase<U
 
         SetOnce<Boolean> actionCompleted = new SetOnce<>();
 
-        step.performAction(indexMetadata, emptyClusterState(), null, new Listener() {
+        step.performAction(indexMetadata, emptyClusterState(), null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 actionCompleted.set(complete);
             }
 
@@ -117,10 +116,10 @@ public class UpdateSettingsStepTests extends AbstractStepMasterTimeoutTestCase<U
         }).when(indicesClient).updateSettings(Mockito.any(), Mockito.any());
 
         SetOnce<Boolean> exceptionThrown = new SetOnce<>();
-        step.performAction(indexMetadata, emptyClusterState(), null, new Listener() {
+        step.performAction(indexMetadata, emptyClusterState(), null, new ActionListener<>() {
 
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 throw new AssertionError("Unexpected method call");
             }
 

@@ -6,6 +6,7 @@
 package org.elasticsearch.xpack.core.ilm;
 
 import org.elasticsearch.Version;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.mockito.Mockito;
 
@@ -51,9 +52,9 @@ public abstract class AbstractUnfollowIndexStepTestCase<T extends AbstractUnfoll
 
         Boolean[] completed = new Boolean[1];
         Exception[] failure = new Exception[1];
-        step.performAction(indexMetadata, null, null, new AsyncActionStep.Listener() {
+        step.performAction(indexMetadata, null, null, new ActionListener<>() {
             @Override
-            public void onResponse(boolean complete) {
+            public void onResponse(Boolean complete) {
                 completed[0] = complete;
             }
 
