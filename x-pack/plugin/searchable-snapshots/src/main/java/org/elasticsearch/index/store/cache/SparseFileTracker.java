@@ -11,6 +11,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.GroupedActionListener;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.collect.Tuple;
+import org.elasticsearch.xpack.searchablesnapshots.cache.ByteRange;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,7 +62,7 @@ public class SparseFileTracker {
      * @param length      the length of the file tracked by the sparse file tracker
      * @param ranges      the set of ranges to be considered present
      */
-    public SparseFileTracker(String description, long length, SortedSet<Tuple<Long, Long>> ranges) {
+    public SparseFileTracker(String description, long length, SortedSet<ByteRange> ranges) {
         this.description = description;
         this.length = length;
         if (length < 0) {
@@ -71,8 +72,8 @@ public class SparseFileTracker {
         if (ranges.isEmpty() == false) {
             synchronized (mutex) {
                 Range previous = null;
-                for (Tuple<Long, Long> next : ranges) {
-                    final Range range = new Range(next.v1(), next.v2(), null);
+                for (ByteRange next : ranges) {
+                    final Range range = new Range(next.start(), next.end(), null);
                     if (range.end <= range.start) {
                         throw new IllegalArgumentException("Range " + range + " cannot be empty");
                     }
@@ -142,24 +143,24 @@ public class SparseFileTracker {
      * @return A collection of gaps that the client should fill in to satisfy this range
      * @throws IllegalArgumentException if invalid range is requested
      */
-    public List<Gap> waitForRange(final Tuple<Long, Long> range, final Tuple<Long, Long> subRange, final ActionListener<Void> listener) {
-        final long start = range.v1();
-        final long end = range.v2();
+    public List<Gap> waitForRange(final ByteRange range, final ByteRange subRange, final ActionListener<Void> listener) {
+        final long start = range.start();
+        final long end = range.end();
         if (end < start || start < 0L || length < end) {
             throw new IllegalArgumentException("invalid range [start=" + start + ", end=" + end + ", length=" + length + "]");
         }
 
-        if (subRange.v2() < subRange.v1() || subRange.v1() < 0L || length < subRange.v2()) {
+        if (subRange.end() < subRange.start() || subRange.start() < 0L || length < subRange.end()) {
             throw new IllegalArgumentException(
-                "invalid range to listen to [start=" + subRange.v1() + ", end=" + subRange.v2() + ", length=" + length + "]"
+                "invalid range to listen to [start=" + subRange.start() + ", end=" + subRange.end() + ", length=" + length + "]"
             );
         }
-        if (subRange.v1() < start || end < subRange.v2()) {
+        if (subRange.start() < start || end < subRange.end()) {
             throw new IllegalArgumentException(
                 "unable to listen to range [start="
-                    + subRange.v1()
+                    + subRange.start()
                     + ", end="
-                    + subRange.v2()
+                    + subRange.end()
                     + "] when range is [start="
                     + start
                     + ", end="
@@ -238,11 +239,11 @@ public class SparseFileTracker {
             assert pendingRanges.size() != 1 || gaps.size() <= 1 : gaps;
 
             // Pending ranges that needs to be filled before executing the listener
-            requiredRanges = (start == subRange.v1() && end == subRange.v2())
+            requiredRanges = (start == subRange.start() && end == subRange.end())
                 ? pendingRanges
                 : pendingRanges.stream()
-                    .filter(pendingRange -> pendingRange.start < subRange.v2())
-                    .filter(pendingRange -> subRange.v1() < pendingRange.end)
+                    .filter(pendingRange -> pendingRange.start < subRange.end())
+                    .filter(pendingRange -> subRange.start() < pendingRange.end)
                     .sorted(Comparator.comparingLong(r -> r.start))
                     .collect(Collectors.toList());
         }
@@ -259,7 +260,7 @@ public class SparseFileTracker {
                 final Range requiredRange = requiredRanges.get(0);
                 requiredRange.completionListener.addListener(
                     wrappedListener.map(progress -> null),
-                    Math.min(requiredRange.completionListener.end, subRange.v2())
+                    Math.min(requiredRange.completionListener.end, subRange.end())
                 );
                 break;
             default:
@@ -268,7 +269,7 @@ public class SparseFileTracker {
                     requiredRanges.size()
                 );
                 requiredRanges.forEach(
-                    r -> r.completionListener.addListener(groupedActionListener, Math.min(r.completionListener.end, subRange.v2()))
+                    r -> r.completionListener.addListener(groupedActionListener, Math.min(r.completionListener.end, subRange.end()))
                 );
         }
 
@@ -277,7 +278,8 @@ public class SparseFileTracker {
 
     /**
      * Called before reading a range from the file to ensure that this range is present. Unlike
-     * {@link SparseFileTracker#waitForRange(Tuple, Tuple, ActionListener)} this method does not expect the caller to fill in any gaps.
+     * {@link SparseFileTracker#waitForRange(ByteRange, ByteRange, ActionListener)} this method does not expect the caller to fill in any
+     * gaps.
      *
      * @param range    A tuple that contains the (inclusive) start and (exclusive) end of the desired range
      * @param listener Listener for when the listening range is fully available
@@ -286,9 +288,9 @@ public class SparseFileTracker {
      *                      filled.
      * @throws IllegalArgumentException if invalid range is requested
      */
-    public boolean waitForRangeIfPending(final Tuple<Long, Long> range, final ActionListener<Void> listener) {
-        final long start = range.v1();
-        final long end = range.v2();
+    public boolean waitForRangeIfPending(final ByteRange range, final ActionListener<Void> listener) {
+        final long start = range.start();
+        final long end = range.end();
         if (end < start || start < 0L || length < end) {
             throw new IllegalArgumentException("invalid range [start=" + start + ", end=" + end + ", length=" + length + "]");
         }

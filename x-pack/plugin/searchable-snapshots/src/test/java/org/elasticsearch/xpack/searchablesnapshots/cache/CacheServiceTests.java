@@ -198,7 +198,7 @@ public class CacheServiceTests extends AbstractSearchableSnapshotsTestCase {
                 resolveSnapshotCache(randomShardPath(cacheKey.getShardId())).resolve(cacheKey.getSnapshotUUID())
             );
             final String cacheFileUuid = UUIDs.randomBase64UUID(random());
-            final SortedSet<Tuple<Long, Long>> cacheFileRanges = randomBoolean() ? randomRanges(fileLength) : emptySortedSet();
+            final SortedSet<ByteRange> cacheFileRanges = randomBoolean() ? randomRanges(fileLength) : emptySortedSet();
 
             if (randomBoolean()) {
                 final Path cacheFilePath = cacheDir.resolve(cacheFileUuid);
@@ -213,8 +213,8 @@ public class CacheServiceTests extends AbstractSearchableSnapshotsTestCase {
                 assertThat(cacheFile.getCacheKey(), equalTo(cacheKey));
                 assertThat(cacheFile.getLength(), equalTo(fileLength));
 
-                for (Tuple<Long, Long> cacheFileRange : cacheFileRanges) {
-                    assertThat(cacheFile.getAbsentRangeWithin(cacheFileRange.v1(), cacheFileRange.v2()), nullValue());
+                for (ByteRange cacheFileRange : cacheFileRanges) {
+                    assertThat(cacheFile.getAbsentRangeWithin(cacheFileRange.start(), cacheFileRange.end()), nullValue());
                 }
             } else {
                 final FileNotFoundException exception = expectThrows(

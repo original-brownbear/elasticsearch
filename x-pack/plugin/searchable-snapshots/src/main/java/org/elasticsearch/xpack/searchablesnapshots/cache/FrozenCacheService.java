@@ -194,18 +194,19 @@ public class FrozenCacheService implements Releasable {
         return getRegion(position);
     }
 
-    private Tuple<Long, Long> mapSubRangeToRegion(Tuple<Long, Long> range, int region) {
+    private ByteRange mapSubRangeToRegion(Tuple<Long, Long> range, int region) {
         final long regionStart = getRegionStart(region);
         final long regionEnd = getRegionEnd(region);
         if (range.v1() >= regionEnd || range.v2() <= regionStart) {
-            return Tuple.tuple(0L, 0L);
+            return ByteRange.EMPTY;
         }
         final long rangeStart = Math.max(regionStart, range.v1());
         final long rangeEnd = Math.min(regionEnd, range.v2());
         if (rangeStart >= rangeEnd) {
-            return Tuple.tuple(0L, 0L);
+            return ByteRange.EMPTY;
         }
-        return Tuple.tuple(getRegionRelativePosition(rangeStart), rangeEnd == regionEnd ? regionSize : getRegionRelativePosition(rangeEnd));
+        return ByteRange.of(
+                getRegionRelativePosition(rangeStart), rangeEnd == regionEnd ? regionSize : getRegionRelativePosition(rangeEnd));
     }
 
     private long getRegionSize(long fileLength, int region) {
@@ -578,8 +579,8 @@ public class FrozenCacheService implements Releasable {
         }
 
         public StepListener<Integer> populateAndRead(
-            final Tuple<Long, Long> rangeToWrite,
-            final Tuple<Long, Long> rangeToRead,
+            final ByteRange rangeToWrite,
+            final ByteRange rangeToRead,
             final RangeAvailableHandler reader,
             final RangeMissingHandler writer,
             final Executor executor
@@ -596,7 +597,7 @@ public class FrozenCacheService implements Releasable {
                 final SharedBytes.IO fileChannel = sharedBytes.getFileChannel(sharedBytesPos);
                 listener.whenComplete(integer -> fileChannel.decRef(), e -> fileChannel.decRef());
                 final ActionListener<Void> rangeListener = rangeListener(rangeToRead, reader, listener, fileChannel);
-                if (rangeToRead.v1().equals(rangeToRead.v2())) {
+                if (rangeToRead.start() == (rangeToRead.end())) {
                     // nothing to read, skip
                     rangeListener.onResponse(null);
                     return listener;
@@ -642,7 +643,7 @@ public class FrozenCacheService implements Releasable {
         }
 
         @Nullable
-        public StepListener<Integer> readIfAvailableOrPending(final Tuple<Long, Long> rangeToRead, final RangeAvailableHandler reader) {
+        public StepListener<Integer> readIfAvailableOrPending(final ByteRange rangeToRead, final RangeAvailableHandler reader) {
             final StepListener<Integer> listener = new StepListener<>();
             Releasable decrementRef = null;
             try {
@@ -667,7 +668,7 @@ public class FrozenCacheService implements Releasable {
         }
 
         private ActionListener<Void> rangeListener(
-            Tuple<Long, Long> rangeToRead,
+            ByteRange rangeToRead,
             RangeAvailableHandler reader,
             ActionListener<Integer> listener,
             SharedBytes.IO fileChannel
@@ -677,16 +678,16 @@ public class FrozenCacheService implements Releasable {
                 assert regionOwners[sharedBytesPos].get() == CacheFileRegion.this;
                 final int read = reader.onRangeAvailable(
                     fileChannel,
-                    physicalStartOffset + rangeToRead.v1(),
-                    rangeToRead.v1(),
-                    rangeToRead.v2() - rangeToRead.v1()
+                    physicalStartOffset + rangeToRead.start(),
+                    rangeToRead.start(),
+                    rangeToRead.end() - rangeToRead.start()
                 );
-                assert read == rangeToRead.v2() - rangeToRead.v1() : "partial read ["
+                assert read == rangeToRead.end() - rangeToRead.start() : "partial read ["
                     + read
                     + "] does not match the range to read ["
-                    + rangeToRead.v2()
+                    + rangeToRead.end()
                     + '-'
-                    + rangeToRead.v1()
+                    + rangeToRead.start()
                     + ']';
                 listener.onResponse(read);
             }, listener::onFailure);
@@ -729,8 +730,8 @@ public class FrozenCacheService implements Releasable {
             final long readStart = rangeToRead.v1();
             for (int i = getRegion(rangeToWrite.v1()); i <= getEndingRegion(rangeToWrite.v2()); i++) {
                 final int region = i;
-                final Tuple<Long, Long> subRangeToWrite = mapSubRangeToRegion(rangeToWrite, region);
-                final Tuple<Long, Long> subRangeToRead = mapSubRangeToRegion(rangeToRead, region);
+                final ByteRange subRangeToWrite = mapSubRangeToRegion(rangeToWrite, region);
+                final ByteRange subRangeToRead = mapSubRangeToRegion(rangeToRead, region);
                 final CacheFileRegion fileRegion = get(cacheKey, length, region);
                 final StepListener<Integer> lis = fileRegion.populateAndRead(
                     subRangeToWrite,
@@ -770,7 +771,7 @@ public class FrozenCacheService implements Releasable {
             final long start = rangeToRead.v1();
             for (int i = getRegion(rangeToRead.v1()); i <= getEndingRegion(rangeToRead.v2()); i++) {
                 final int region = i;
-                final Tuple<Long, Long> subRangeToRead = mapSubRangeToRegion(rangeToRead, region);
+                final ByteRange subRangeToRead = mapSubRangeToRegion(rangeToRead, region);
                 final CacheFileRegion fileRegion = get(cacheKey, length, region);
                 final StepListener<Integer> lis = fileRegion.readIfAvailableOrPending(
                     subRangeToRead,

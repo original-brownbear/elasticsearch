@@ -179,7 +179,8 @@ public class PersistentCache implements Closeable {
                                 final Document document = leafReaderContext.reader().document(docIdSetIterator.docID());
                                 final String cacheFileId = getValue(document, CACHE_ID_FIELD);
                                 if (predicate.test(snapshotCacheDir.resolve(cacheFileId))) {
-                                    long size = buildCacheFileRanges(document).stream().mapToLong(range -> range.v2() - range.v1()).sum();
+                                    long size =
+                                            buildCacheFileRanges(document).stream().mapToLong(range -> range.end() - range.start()).sum();
                                     logger.trace("cache file [{}] has size [{}]", getValue(document, CACHE_ID_FIELD), size);
                                     aggregateSize += size;
                                 }
@@ -240,7 +241,7 @@ public class PersistentCache implements Closeable {
 
                                                 final CacheKey cacheKey = buildCacheKey(cacheDocument);
                                                 final long fileLength = getFileLength(cacheDocument);
-                                                final SortedSet<Tuple<Long, Long>> ranges = buildCacheFileRanges(cacheDocument);
+                                                final SortedSet<ByteRange> ranges = buildCacheFileRanges(cacheDocument);
 
                                                 logger.trace("adding cache file with [id={}, key={}, ranges={}]", id, cacheKey, ranges);
                                                 cacheService.put(cacheKey, fileLength, file.getParent(), id, ranges);
@@ -614,20 +615,20 @@ public class PersistentCache implements Closeable {
         return Long.parseLong(fileLength);
     }
 
-    private static SortedSet<Tuple<Long, Long>> buildCacheFileRanges(Document document) throws IOException {
+    private static SortedSet<ByteRange> buildCacheFileRanges(Document document) throws IOException {
         final BytesRef cacheRangesBytesRef = document.getBinaryValue(CACHE_RANGES_FIELD);
         assert cacheRangesBytesRef != null;
 
-        final SortedSet<Tuple<Long, Long>> cacheRanges = new TreeSet<>(Comparator.comparingLong(Tuple::v1));
+        final SortedSet<ByteRange> cacheRanges = new TreeSet<>(Comparator.comparingLong(ByteRange::start));
         try (StreamInput input = new ByteBufferStreamInput(ByteBuffer.wrap(cacheRangesBytesRef.bytes))) {
             final int length = input.readVInt();
             assert length > 0 : "empty cache ranges";
-            Tuple<Long, Long> previous = null;
+            ByteRange previous = null;
             for (int i = 0; i < length; i++) {
-                final Tuple<Long, Long> range = Tuple.tuple(input.readVLong(), input.readVLong());
-                assert range.v1() < range.v2() : range;
-                assert range.v2() <= getFileLength(document);
-                assert previous == null || previous.v2() < range.v1();
+                final ByteRange range = ByteRange.of(input.readVLong(), input.readVLong());
+                assert range.start() < range.end() : range;
+                assert range.start() <= getFileLength(document);
+                assert previous == null || previous.end() < range.start();
 
                 final boolean added = cacheRanges.add(range);
                 assert added : range + " already exist in " + cacheRanges;

@@ -18,6 +18,7 @@ import org.elasticsearch.index.store.cache.CacheFile.EvictionListener;
 import org.elasticsearch.index.store.cache.TestUtils.FSyncTrackingFileSystemProvider;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.xpack.searchablesnapshots.cache.ByteRange;
 import org.hamcrest.Matcher;
 
 import java.io.IOException;
@@ -194,8 +195,8 @@ public class CacheFileTests extends ESTestCase {
         final Future<Integer> readIfAvailableFuture;
         if (randomBoolean()) {
             populateAndReadFuture = cacheFile.populateAndRead(
-                Tuple.tuple(0L, length),
-                Tuple.tuple(0L, length),
+                ByteRange.of(0L, length),
+                ByteRange.of(0L, length),
                 channel -> Math.toIntExact(length),
                 (channel, from, to, progressUpdater) -> progressUpdater.accept(length),
                 threadPool.generic()
@@ -204,7 +205,7 @@ public class CacheFileTests extends ESTestCase {
             populateAndReadFuture = null;
         }
         if (randomBoolean()) {
-            readIfAvailableFuture = cacheFile.readIfAvailableOrPending(Tuple.tuple(0L, length), channel -> Math.toIntExact(length));
+            readIfAvailableFuture = cacheFile.readIfAvailableOrPending(ByteRange.of(0L, length), channel -> Math.toIntExact(length));
         } else {
             readIfAvailableFuture = null;
         }

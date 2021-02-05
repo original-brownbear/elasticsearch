@@ -27,6 +27,7 @@ import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.PathUtilsForTesting;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.index.store.IndexInputStats;
+import org.elasticsearch.xpack.searchablesnapshots.cache.ByteRange;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -80,7 +81,7 @@ public final class TestUtils {
         for (int i = 0; i < between(0, 10); i++) {
             final long start = randomLongBetween(0L, Math.max(0L, cacheFile.getLength() - 1L));
             final long end = randomLongBetween(Math.min(start + 1L, cacheFile.getLength()), cacheFile.getLength());
-            final Tuple<Long, Long> range = Tuple.tuple(start, end);
+            final ByteRange range = ByteRange.of(start, end);
             futures.add(
                 cacheFile.populateAndRead(range, range, channel -> Math.toIntExact(end - start), (channel, from, to, progressUpdater) -> {
                     consumer.apply(channel, from, to);
@@ -112,12 +113,12 @@ public final class TestUtils {
     /**
      * Generates a sorted set of non-empty and non-contiguous random ranges that could fit into a file of a given maximum length.
      */
-    public static SortedSet<Tuple<Long, Long>> randomRanges(long length) {
-        final SortedSet<Tuple<Long, Long>> randomRanges = new TreeSet<>(Comparator.comparingLong(Tuple::v1));
+    public static SortedSet<ByteRange> randomRanges(long length) {
+        final SortedSet<ByteRange> randomRanges = new TreeSet<>(Comparator.comparingLong(ByteRange::start));
         for (long i = 0L; i < length;) {
             long start = randomLongBetween(i, Math.max(0L, length - 1L));
             long end = randomLongBetween(start + 1L, length); // +1 for non empty ranges
-            randomRanges.add(Tuple.tuple(start, end));
+            randomRanges.add(ByteRange.of(start, end));
             i = end + 1L + randomLongBetween(0L, Math.max(0L, length - end)); // +1 for non contiguous ranges
         }
         return randomRanges;

@@ -30,6 +30,7 @@ import org.elasticsearch.index.store.BaseSearchableSnapshotIndexInput;
 import org.elasticsearch.index.store.IndexInputStats;
 import org.elasticsearch.index.store.SearchableSnapshotDirectory;
 import org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshotsConstants;
+import org.elasticsearch.xpack.searchablesnapshots.cache.ByteRange;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -165,8 +166,8 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
 
             // Can we serve the read directly from disk? If so, do so and don't worry about anything else.
 
-            final Future<Integer> waitingForRead = cacheFile.readIfAvailableOrPending(Tuple.tuple(position, position + length), channel -> {
-                final int read = readCacheFile(channel, position, b);
+            final Future<Integer> waitingForRead = cacheFile.readIfAvailableOrPending(ByteRange.of(position, position + length), chan -> {
+                final int read = readCacheFile(chan, position, b);
                 assert read == length : read + " vs " + length;
                 return read;
             });
@@ -180,7 +181,7 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
 
             // Requested data is not on disk, so try the cache index next.
 
-            final Tuple<Long, Long> indexCacheMiss; // null if not a miss
+            final ByteRange indexCacheMiss; // null if not a miss
 
             // We try to use the cache index if:
             // - the file is small enough to be fully cached
@@ -198,10 +199,10 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
 
                     if (canBeFullyCached) {
                         // if the index input is smaller than twice the size of the blob cache, it will be fully indexed
-                        indexCacheMiss = Tuple.tuple(0L, fileInfo.length());
+                        indexCacheMiss = ByteRange.of(0L, fileInfo.length());
                     } else {
                         // the index input is too large to fully cache, so just cache the initial range
-                        indexCacheMiss = Tuple.tuple(0L, (long) BlobStoreCacheService.DEFAULT_CACHED_BLOB_SIZE);
+                        indexCacheMiss = ByteRange.of(0L, BlobStoreCacheService.DEFAULT_CACHED_BLOB_SIZE);
                     }
 
                     // We must fill in a cache miss even if CACHE_NOT_READY since the cache index is only created on the first put.
@@ -223,7 +224,7 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                     assert b.position() == length : "copied " + b.position() + " but expected " + length;
 
                     try {
-                        final Tuple<Long, Long> cachedRange = Tuple.tuple(cachedBlob.from(), cachedBlob.to());
+                        final ByteRange cachedRange = ByteRange.of(cachedBlob.from(), cachedBlob.to());
                         cacheFile.populateAndRead(
                             cachedRange,
                             cachedRange,
@@ -277,20 +278,20 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
             final Tuple<Long, Long> startRangeToWrite = computeRange(position);
             final Tuple<Long, Long> endRangeToWrite = computeRange(position + length - 1);
             assert startRangeToWrite.v2() <= endRangeToWrite.v2() : startRangeToWrite + " vs " + endRangeToWrite;
-            final Tuple<Long, Long> rangeToWrite = Tuple.tuple(
-                Math.min(startRangeToWrite.v1(), indexCacheMiss == null ? Long.MAX_VALUE : indexCacheMiss.v1()),
-                Math.max(endRangeToWrite.v2(), indexCacheMiss == null ? Long.MIN_VALUE : indexCacheMiss.v2())
+            final ByteRange rangeToWrite = ByteRange.of(
+                Math.min(startRangeToWrite.v1(), indexCacheMiss == null ? Long.MAX_VALUE : indexCacheMiss.start()),
+                Math.max(endRangeToWrite.v2(), indexCacheMiss == null ? Long.MIN_VALUE : indexCacheMiss.end())
             );
 
-            assert rangeToWrite.v1() <= position && position + length <= rangeToWrite.v2() : "["
+            assert rangeToWrite.start() <= position && position + length <= rangeToWrite.end() : "["
                 + position
                 + "-"
                 + (position + length)
                 + "] vs "
                 + rangeToWrite;
 
-            final Tuple<Long, Long> rangeToRead = Tuple.tuple(position, position + length);
-            assert rangeToRead.v2() - rangeToRead.v1() == b.remaining() : b.remaining() + " vs " + rangeToRead;
+            final ByteRange rangeToRead = ByteRange.of(position, position + length);
+            assert rangeToRead.end() - rangeToRead.start() == b.remaining() : b.remaining() + " vs " + rangeToRead;
 
             final Future<Integer> populateCacheFuture = cacheFile.populateAndRead(
                 rangeToWrite,
@@ -303,7 +304,7 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
             if (indexCacheMiss != null) {
                 final Releasable onCacheFillComplete = stats.addIndexCacheFill();
                 final Future<Integer> readFuture = cacheFile.readIfAvailableOrPending(indexCacheMiss, channel -> {
-                    final int indexCacheMissLength = toIntBytes(indexCacheMiss.v2() - indexCacheMiss.v1());
+                    final int indexCacheMissLength = toIntBytes(indexCacheMiss.end() - indexCacheMiss.start());
 
                     // We assume that we only cache small portions of blobs so that we do not need to:
                     // - use a BigArrays for allocation
@@ -312,11 +313,11 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                     assert indexCacheMissLength <= COPY_BUFFER_SIZE : indexCacheMiss;
 
                     final ByteBuffer byteBuffer = ByteBuffer.allocate(indexCacheMissLength);
-                    Channels.readFromFileChannelWithEofException(channel, indexCacheMiss.v1(), byteBuffer);
+                    Channels.readFromFileChannelWithEofException(channel, indexCacheMiss.start(), byteBuffer);
                     // NB use Channels.readFromFileChannelWithEofException not readCacheFile() to avoid counting this in the stats
                     byteBuffer.flip();
                     final BytesReference content = BytesReference.fromByteBuffer(byteBuffer);
-                    directory.putCachedBlob(fileInfo.physicalName(), indexCacheMiss.v1(), content, new ActionListener<>() {
+                    directory.putCachedBlob(fileInfo.physicalName(), indexCacheMiss.start(), content, new ActionListener<>() {
                         @Override
                         public void onResponse(Void response) {
                             onCacheFillComplete.close();
@@ -483,11 +484,11 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
 
                     // The range to prewarm in cache
                     final long readStart = rangeStart + totalBytesRead;
-                    final Tuple<Long, Long> rangeToWrite = Tuple.tuple(readStart, readStart + bytesRead);
+                    final ByteRange rangeToWrite = ByteRange.of(readStart, readStart + bytesRead);
 
                     // We do not actually read anything, but we want to wait for the write to complete before proceeding.
                     // noinspection UnnecessaryLocalVariable
-                    final Tuple<Long, Long> rangeToRead = rangeToWrite;
+                    final ByteRange rangeToRead = rangeToWrite;
                     cacheFile.populateAndRead(rangeToWrite, rangeToRead, (channel) -> bytesRead, (channel, start, end, progressUpdater) -> {
                         final ByteBuffer byteBuffer = ByteBuffer.wrap(copyBuffer, toIntBytes(start - readStart), toIntBytes(end - start));
                         final int writtenBytes = positionalWrite(channel, start, byteBuffer);

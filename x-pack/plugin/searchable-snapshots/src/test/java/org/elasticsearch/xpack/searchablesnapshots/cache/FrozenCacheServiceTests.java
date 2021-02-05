@@ -56,8 +56,8 @@ public class FrozenCacheServiceTests extends ESTestCase {
             assertFalse(region1.tryEvict());
             assertEquals(3, cacheService.freeRegionCount());
             region0.populateAndRead(
-                Tuple.tuple(0L, 1L),
-                Tuple.tuple(0L, 1L),
+                ByteRange.of(0L, 1L),
+                ByteRange.of(0L, 1L),
                 (channel, channelPos, relativePos, length) -> 1,
                 (channel, channelPos, relativePos, length, progressUpdater) -> progressUpdater.accept(length),
                 taskQueue.getThreadPool().executor(ThreadPool.Names.GENERIC)

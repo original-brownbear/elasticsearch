@@ -325,7 +325,7 @@ public class CacheService extends AbstractLifecycleComponent {
         final long fileLength,
         final Path cacheDir,
         final String cacheFileUuid,
-        final SortedSet<Tuple<Long, Long>> cacheFileRanges
+        final SortedSet<ByteRange> cacheFileRanges
     ) throws Exception {
 
         ensureLifecycleInitializing();

@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESTestCase;
+import org.elasticsearch.xpack.searchablesnapshots.cache.ByteRange;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,14 +60,14 @@ public class SparseFileTrackerTests extends ESTestCase {
 
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> sparseFileTracker.waitForRange(Tuple.tuple(-1L, randomLongBetween(0L, length)), null, listener)
+            () -> sparseFileTracker.waitForRange(ByteRange.of(-1L, randomLongBetween(0L, length)), null, listener)
         );
         assertThat("start must not be negative", e.getMessage(), containsString("invalid range"));
         assertThat(invoked.get(), is(false));
 
         e = expectThrows(
             IllegalArgumentException.class,
-            () -> sparseFileTracker.waitForRange(Tuple.tuple(randomLongBetween(0L, Math.max(0L, length - 1L)), length + 1L), null, listener)
+            () -> sparseFileTracker.waitForRange(ByteRange.of(randomLongBetween(0L, Math.max(0L, length - 1L)), length + 1L), null, listener)
         );
         assertThat("end must not be greater than length", e.getMessage(), containsString("invalid range"));
         assertThat(invoked.get(), is(false));
@@ -75,7 +76,7 @@ public class SparseFileTrackerTests extends ESTestCase {
             e = expectThrows(IllegalArgumentException.class, () -> {
                 long start = randomLongBetween(1L, Math.max(1L, length - 1L));
                 long end = randomLongBetween(0L, start - 1L);
-                sparseFileTracker.waitForRange(Tuple.tuple(start, end), null, listener);
+                sparseFileTracker.waitForRange(ByteRange.of(start, end), null, listener);
             });
             assertThat("end must not be greater than length", e.getMessage(), containsString("invalid range"));
             assertThat(invoked.get(), is(false));
@@ -86,7 +87,7 @@ public class SparseFileTrackerTests extends ESTestCase {
             if (start > 0L) {
                 e = expectThrows(
                     IllegalArgumentException.class,
-                    () -> sparseFileTracker.waitForRange(Tuple.tuple(start, end), Tuple.tuple(start - 1L, end), listener)
+                    () -> sparseFileTracker.waitForRange(ByteRange.of(start, end), ByteRange.of(start - 1L, end), listener)
                 );
                 assertThat(
                     "listener range start must not be smaller than range start",
@@ -97,7 +98,7 @@ public class SparseFileTrackerTests extends ESTestCase {
             } else {
                 e = expectThrows(
                     IllegalArgumentException.class,
-                    () -> sparseFileTracker.waitForRange(Tuple.tuple(start, end), Tuple.tuple(start - 1L, end), listener)
+                    () -> sparseFileTracker.waitForRange(ByteRange.of(start, end), ByteRange.of(start - 1L, end), listener)
                 );
                 assertThat(
                     "listener range start must not be smaller than zero",
@@ -110,7 +111,7 @@ public class SparseFileTrackerTests extends ESTestCase {
             if (end < length) {
                 e = expectThrows(
                     IllegalArgumentException.class,
-                    () -> sparseFileTracker.waitForRange(Tuple.tuple(start, end), Tuple.tuple(start, end + 1L), listener)
+                    () -> sparseFileTracker.waitForRange(ByteRange.of(start, end), ByteRange.of(start, end + 1L), listener)
                 );
                 assertThat(
                     "listener range end must not be greater than range end",
@@ -121,7 +122,7 @@ public class SparseFileTrackerTests extends ESTestCase {
             } else {
                 e = expectThrows(
                     IllegalArgumentException.class,
-                    () -> sparseFileTracker.waitForRange(Tuple.tuple(start, end), Tuple.tuple(start, end + 1L), listener)
+                    () -> sparseFileTracker.waitForRange(ByteRange.of(start, end), ByteRange.of(start, end + 1L), listener)
                 );
                 assertThat(
                     "listener range end must not be greater than length",
@@ -153,7 +154,7 @@ public class SparseFileTrackerTests extends ESTestCase {
             }
         }
 
-        final Tuple<Long, Long> range = Tuple.tuple(start, end);
+        final ByteRange range = ByteRange.of(start, end);
         if (pending) {
             final AtomicBoolean expectNotification = new AtomicBoolean();
             final AtomicBoolean wasNotified = new AtomicBoolean();
@@ -204,25 +205,25 @@ public class SparseFileTrackerTests extends ESTestCase {
             assertTrue(listenersCalled.stream().allMatch(AtomicBoolean::get));
         }
 
-        final Tuple<Long, Long> range;
+        final ByteRange range;
         {
             final long start = randomLongBetween(0L, Math.max(0L, fileContents.length - 1));
-            range = Tuple.tuple(start, randomLongBetween(start, fileContents.length));
+            range = ByteRange.of(start, randomLongBetween(start, fileContents.length));
         }
 
-        final Tuple<Long, Long> subRange;
+        final ByteRange subRange;
         {
-            final long rangeLength = range.v2() - range.v1();
+            final long rangeLength = range.end() - range.start();
             if (rangeLength > 1L) {
-                final long start = randomLongBetween(range.v1(), range.v2() - 1L);
-                subRange = Tuple.tuple(start, randomLongBetween(start + 1L, range.v2()));
+                final long start = randomLongBetween(range.start(), range.end() - 1L);
+                subRange = ByteRange.of(start, randomLongBetween(start + 1L, range.end()));
             } else {
-                subRange = Tuple.tuple(range.v1(), range.v2());
+                subRange = ByteRange.of(range.start(), range.end());
             }
         }
 
         boolean pending = false;
-        for (long i = subRange.v1(); i < subRange.v2(); i++) {
+        for (long i = subRange.start(); i < subRange.end(); i++) {
             if (fileContents[toIntBytes(i)] == UNAVAILABLE) {
                 pending = true;
             }
@@ -246,8 +247,8 @@ public class SparseFileTrackerTests extends ESTestCase {
             assertTrue(wasNotified.get());
 
             for (final SparseFileTracker.Gap gap : gaps) {
-                assertThat(gap.start(), greaterThanOrEqualTo(range.v1()));
-                assertThat(gap.end(), lessThanOrEqualTo(range.v2()));
+                assertThat(gap.start(), greaterThanOrEqualTo(range.start()));
+                assertThat(gap.end(), lessThanOrEqualTo(range.end()));
 
                 for (long i = gap.start(); i < gap.end(); i++) {
                     assertThat(fileContents[toIntBytes(i)], equalTo(UNAVAILABLE));
@@ -278,7 +279,7 @@ public class SparseFileTrackerTests extends ESTestCase {
             assertFalse(waitIfPendingWasNotified.get());
 
             long triggeringProgress = -1L;
-            for (long i = subRange.v1(); i < subRange.v2(); i++) {
+            for (long i = subRange.start(); i < subRange.end(); i++) {
                 if (fileContents[toIntBytes(i)] == UNAVAILABLE) {
                     triggeringProgress = i;
                 }
@@ -286,8 +287,8 @@ public class SparseFileTrackerTests extends ESTestCase {
             assertThat(triggeringProgress, greaterThanOrEqualTo(0L));
 
             for (final SparseFileTracker.Gap gap : gaps) {
-                assertThat(gap.start(), greaterThanOrEqualTo(range.v1()));
-                assertThat(gap.end(), lessThanOrEqualTo(range.v2()));
+                assertThat(gap.start(), greaterThanOrEqualTo(range.start()));
+                assertThat(gap.end(), lessThanOrEqualTo(range.end()));
 
                 for (long i = gap.start(); i < gap.end(); i++) {
                     assertThat(fileContents[toIntBytes(i)], equalTo(UNAVAILABLE));
@@ -419,13 +420,13 @@ public class SparseFileTrackerTests extends ESTestCase {
 
     public void testSparseFileTrackerCreatedWithCompletedRanges() {
         final long fileLength = between(0, 1000);
-        final SortedSet<Tuple<Long, Long>> completedRanges = randomRanges(fileLength);
+        final SortedSet<ByteRange> completedRanges = randomRanges(fileLength);
 
         final SparseFileTracker sparseFileTracker = new SparseFileTracker("test", fileLength, completedRanges);
         assertThat(sparseFileTracker.getCompletedRanges(), equalTo(completedRanges));
 
-        for (Tuple<Long, Long> completedRange : completedRanges) {
-            assertThat(sparseFileTracker.getAbsentRangeWithin(completedRange.v1(), completedRange.v2()), nullValue());
+        for (ByteRange completedRange : completedRanges) {
+            assertThat(sparseFileTracker.getAbsentRangeWithin(completedRange.start(), completedRange.end()), nullValue());
 
             final AtomicBoolean listenerCalled = new AtomicBoolean();
             assertThat(sparseFileTracker.waitForRange(completedRange, completedRange, new ActionListener<>() {
@@ -529,8 +530,8 @@ public class SparseFileTrackerTests extends ESTestCase {
 
         if (randomBoolean()) {
             final List<SparseFileTracker.Gap> gaps = sparseFileTracker.waitForRange(
-                Tuple.tuple(rangeStart, rangeEnd),
-                Tuple.tuple(subRangeStart, subRangeEnd),
+                ByteRange.of(rangeStart, rangeEnd),
+                ByteRange.of(subRangeStart, subRangeEnd),
                 actionListener
             );
 
@@ -541,7 +542,7 @@ public class SparseFileTrackerTests extends ESTestCase {
                 gapConsumer.accept(gap);
             }
         } else {
-            final boolean listenerRegistered = sparseFileTracker.waitForRangeIfPending(Tuple.tuple(rangeStart, rangeEnd), actionListener);
+            final boolean listenerRegistered = sparseFileTracker.waitForRangeIfPending(ByteRange.of(rangeStart, rangeEnd), actionListener);
             if (listenerRegistered == false) {
                 assertTrue(listenerCalled.compareAndSet(false, true));
             }
