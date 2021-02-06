@@ -14,8 +14,6 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
-import org.elasticsearch.cluster.routing.IndexRoutingTable;
-import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -502,10 +500,7 @@ public class SearchableSnapshotsCanMatchOnCoordinatorIntegTests extends BaseSear
     }
 
     private void waitUntilAllShardsAreUnassigned(Index index) throws Exception {
-        assertBusy(() -> {
-            ClusterService clusterService = internalCluster().getCurrentMasterNodeInstance(ClusterService.class);
-            IndexRoutingTable indexRoutingTable = clusterService.state().getRoutingTable().index(index);
-            assertThat(indexRoutingTable.allPrimaryShardsUnassigned(), equalTo(true));
-        });
+        logger.info("--> waiting for all shards on [{}] to become unassigned", index);
+        awaitClusterState(state -> state.getRoutingTable().index(index).allPrimaryShardsUnassigned());
     }
 }
