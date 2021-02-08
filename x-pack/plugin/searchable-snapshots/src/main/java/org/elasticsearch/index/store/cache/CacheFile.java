@@ -10,7 +10,6 @@ import org.apache.lucene.store.AlreadyClosedException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
@@ -438,7 +437,7 @@ public class CacheFile {
     ) {
         return ActionListener.runAfter(ActionListener.wrap(success -> {
             final int read = reader.onRangeAvailable(reference.fileChannel);
-            assert read == rangeToRead.end() - rangeToRead.start() : "partial read ["
+            assert read == rangeToRead.length() : "partial read ["
                 + read
                 + "] does not match the range to read ["
                 + rangeToRead.end()
@@ -467,9 +466,9 @@ public class CacheFile {
         return reference;
     }
 
-    public Tuple<Long, Long> getAbsentRangeWithin(long start, long end) {
+    public ByteRange getAbsentRangeWithin(ByteRange range) {
         ensureOpen();
-        return tracker.getAbsentRangeWithin(start, end);
+        return tracker.getAbsentRangeWithin(range);
     }
 
     // used in tests

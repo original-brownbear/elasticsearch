@@ -599,7 +599,7 @@ public class FrozenCacheService implements Releasable {
                 final SharedBytes.IO fileChannel = sharedBytes.getFileChannel(sharedBytesPos);
                 listener.whenComplete(integer -> fileChannel.decRef(), e -> fileChannel.decRef());
                 final ActionListener<Void> rangeListener = rangeListener(rangeToRead, reader, listener, fileChannel);
-                if (rangeToRead.start() == (rangeToRead.end())) {
+                if (rangeToRead.length() == 0L) {
                     // nothing to read, skip
                     rangeListener.onResponse(null);
                     return listener;
@@ -682,9 +682,9 @@ public class FrozenCacheService implements Releasable {
                     fileChannel,
                     physicalStartOffset + rangeToRead.start(),
                     rangeToRead.start(),
-                    rangeToRead.end() - rangeToRead.start()
+                    rangeToRead.length()
                 );
-                assert read == rangeToRead.end() - rangeToRead.start() : "partial read ["
+                assert read == rangeToRead.length() : "partial read ["
                     + read
                     + "] does not match the range to read ["
                     + rangeToRead.end()

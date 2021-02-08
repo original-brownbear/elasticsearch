@@ -135,11 +135,11 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
             : fileInfo.partSize().getBytes();
     }
 
-    private Tuple<Long, Long> computeRange(long position) {
+    private ByteRange computeRange(long position) {
         final long rangeSize = getDefaultRangeSize();
         long start = (position / rangeSize) * rangeSize;
         long end = Math.min(start + rangeSize, fileInfo.length());
-        return Tuple.tuple(start, end);
+        return ByteRange.of(start, end);
     }
 
     @Override
@@ -275,12 +275,12 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
             // Requested data is also not in the cache index, so we must visit the blob store to satisfy both the target range and any
             // miss in the cache index.
 
-            final Tuple<Long, Long> startRangeToWrite = computeRange(position);
-            final Tuple<Long, Long> endRangeToWrite = computeRange(position + length - 1);
-            assert startRangeToWrite.v2() <= endRangeToWrite.v2() : startRangeToWrite + " vs " + endRangeToWrite;
+            final ByteRange startRangeToWrite = computeRange(position);
+            final ByteRange endRangeToWrite = computeRange(position + length - 1);
+            assert startRangeToWrite.end() <= endRangeToWrite.end() : startRangeToWrite + " vs " + endRangeToWrite;
             final ByteRange rangeToWrite = ByteRange.of(
-                Math.min(startRangeToWrite.v1(), indexCacheMiss == null ? Long.MAX_VALUE : indexCacheMiss.start()),
-                Math.max(endRangeToWrite.v2(), indexCacheMiss == null ? Long.MIN_VALUE : indexCacheMiss.end())
+                Math.min(startRangeToWrite.start(), indexCacheMiss == null ? Long.MAX_VALUE : indexCacheMiss.start()),
+                Math.max(endRangeToWrite.end(), indexCacheMiss == null ? Long.MIN_VALUE : indexCacheMiss.end())
             );
 
             assert rangeToWrite.start() <= position && position + length <= rangeToWrite.end() : "["
@@ -291,7 +291,7 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                 + rangeToWrite;
 
             final ByteRange rangeToRead = ByteRange.of(position, position + length);
-            assert rangeToRead.end() - rangeToRead.start() == b.remaining() : b.remaining() + " vs " + rangeToRead;
+            assert rangeToRead.length() == b.remaining() : b.remaining() + " vs " + rangeToRead;
 
             final Future<Integer> populateCacheFuture = cacheFile.populateAndRead(
                 rangeToWrite,
@@ -304,7 +304,7 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
             if (indexCacheMiss != null) {
                 final Releasable onCacheFillComplete = stats.addIndexCacheFill();
                 final Future<Integer> readFuture = cacheFile.readIfAvailableOrPending(indexCacheMiss, channel -> {
-                    final int indexCacheMissLength = toIntBytes(indexCacheMiss.end() - indexCacheMiss.start());
+                    final int indexCacheMissLength = toIntBytes(indexCacheMiss.length());
 
                     // We assume that we only cache small portions of blobs so that we do not need to:
                     // - use a BigArrays for allocation
@@ -439,47 +439,46 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
         if (part >= fileInfo.numberOfParts()) {
             throw new IllegalArgumentException("Unexpected part number [" + part + "]");
         }
-        final Tuple<Long, Long> partRange = computeRange(IntStream.range(0, part).mapToLong(fileInfo::partBytes).sum());
+        final ByteRange partRange = computeRange(IntStream.range(0, part).mapToLong(fileInfo::partBytes).sum());
         assert assertRangeIsAlignedWithPart(partRange);
 
         try {
             final CacheFile cacheFile = cacheFileReference.get();
 
-            final Tuple<Long, Long> range = cacheFile.getAbsentRangeWithin(partRange.v1(), partRange.v2());
+            final ByteRange range = cacheFile.getAbsentRangeWithin(partRange);
             if (range == null) {
                 logger.trace(
                     "prefetchPart: part [{}] bytes [{}-{}] is already fully available for cache file [{}]",
                     part,
-                    partRange.v1(),
-                    partRange.v2(),
+                    partRange.start(),
+                    partRange.end(),
                     cacheFileReference
                 );
                 return Tuple.tuple(cacheFile.getInitialLength(), 0L);
             }
 
-            final long rangeStart = range.v1();
-            final long rangeEnd = range.v2();
-            final long rangeLength = rangeEnd - rangeStart;
+            final long rangeStart = range.start();
+            final long rangeEnd = range.end();
 
             logger.trace(
                 "prefetchPart: prewarming part [{}] bytes [{}-{}] by fetching bytes [{}-{}] for cache file [{}]",
                 part,
-                partRange.v1(),
-                partRange.v2(),
+                partRange.start(),
+                partRange.end(),
                 rangeStart,
                 rangeEnd,
                 cacheFileReference
             );
 
-            final byte[] copyBuffer = new byte[toIntBytes(Math.min(COPY_BUFFER_SIZE, rangeLength))];
+            final byte[] copyBuffer = new byte[toIntBytes(Math.min(COPY_BUFFER_SIZE, range.length()))];
 
             long totalBytesRead = 0L;
             final AtomicLong totalBytesWritten = new AtomicLong();
-            long remainingBytes = rangeEnd - rangeStart;
+            long remainingBytes = range.length();
             final long startTimeNanos = stats.currentTimeNanos();
-            try (InputStream input = openInputStreamFromBlobStore(rangeStart, rangeLength)) {
+            try (InputStream input = openInputStreamFromBlobStore(rangeStart, range.length())) {
                 while (remainingBytes > 0L) {
-                    assert totalBytesRead + remainingBytes == rangeLength;
+                    assert totalBytesRead + remainingBytes == range.length();
                     final int bytesRead = readSafe(input, copyBuffer, rangeStart, rangeEnd, remainingBytes, cacheFileReference);
 
                     // The range to prewarm in cache
@@ -508,8 +507,8 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                 final long endTimeNanos = stats.currentTimeNanos();
                 stats.addCachedBytesWritten(totalBytesWritten.get(), endTimeNanos - startTimeNanos);
             }
-            assert totalBytesRead == rangeLength;
-            return Tuple.tuple(cacheFile.getInitialLength(), rangeLength);
+            assert totalBytesRead == range.length();
+            return Tuple.tuple(cacheFile.getInitialLength(), range.length());
         } catch (final Exception e) {
             throw new IOException("Failed to prefetch file part in cache", e);
         }
@@ -556,16 +555,16 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
     /**
      * Asserts that the range of bytes to warm in cache is aligned with {@link #fileInfo}'s part size.
      */
-    private boolean assertRangeIsAlignedWithPart(Tuple<Long, Long> range) {
+    private boolean assertRangeIsAlignedWithPart(ByteRange range) {
         if (fileInfo.numberOfParts() == 1L) {
             final long length = fileInfo.length();
-            assert range.v1() == 0L : "start of range [" + range.v1() + "] is not aligned with zero";
-            assert range.v2() == length : "end of range [" + range.v2() + "] is not aligned with file length [" + length + ']';
+            assert range.start() == 0L : "start of range [" + range.start() + "] is not aligned with zero";
+            assert range.end() == length : "end of range [" + range.end() + "] is not aligned with file length [" + length + ']';
         } else {
             final long length = fileInfo.partSize().getBytes();
-            assert range.v1() % length == 0L : "start of range [" + range.v1() + "] is not aligned with part start";
-            assert range.v2() % length == 0L || (range.v2() == fileInfo.length()) : "end of range ["
-                + range.v2()
+            assert range.start() % length == 0L : "start of range [" + range.start() + "] is not aligned with part start";
+            assert range.end() % length == 0L || (range.end() == fileInfo.length()) : "end of range ["
+                + range.end()
                 + "] is not aligned with part end or with file length";
         }
         return true;

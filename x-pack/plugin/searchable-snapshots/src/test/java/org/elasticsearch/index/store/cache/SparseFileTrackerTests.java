@@ -9,7 +9,6 @@ package org.elasticsearch.index.store.cache;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.coordination.DeterministicTaskQueue;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.searchablesnapshots.cache.ByteRange;
@@ -57,15 +56,9 @@ public class SparseFileTrackerTests extends ESTestCase {
 
         final AtomicBoolean invoked = new AtomicBoolean(false);
         final ActionListener<Void> listener = ActionListener.wrap(() -> invoked.set(true));
-
-        IllegalArgumentException e = expectThrows(
-            IllegalArgumentException.class,
-            () -> sparseFileTracker.waitForRange(ByteRange.of(-1L, randomLongBetween(0L, length)), null, listener)
-        );
-        assertThat("start must not be negative", e.getMessage(), containsString("invalid range"));
         assertThat(invoked.get(), is(false));
 
-        e = expectThrows(
+        IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
             () -> sparseFileTracker.waitForRange(
                 ByteRange.of(randomLongBetween(0L, Math.max(0L, length - 1L)), length + 1L),
@@ -217,8 +210,7 @@ public class SparseFileTrackerTests extends ESTestCase {
 
         final ByteRange subRange;
         {
-            final long rangeLength = range.end() - range.start();
-            if (rangeLength > 1L) {
+            if (range.length() > 1L) {
                 final long start = randomLongBetween(range.start(), range.end() - 1L);
                 subRange = ByteRange.of(start, randomLongBetween(start + 1L, range.end()));
             } else {
@@ -430,7 +422,7 @@ public class SparseFileTrackerTests extends ESTestCase {
         assertThat(sparseFileTracker.getCompletedRanges(), equalTo(completedRanges));
 
         for (ByteRange completedRange : completedRanges) {
-            assertThat(sparseFileTracker.getAbsentRangeWithin(completedRange.start(), completedRange.end()), nullValue());
+            assertThat(sparseFileTracker.getAbsentRangeWithin(completedRange), nullValue());
 
             final AtomicBoolean listenerCalled = new AtomicBoolean();
             assertThat(sparseFileTracker.waitForRange(completedRange, completedRange, new ActionListener<>() {
@@ -476,27 +468,27 @@ public class SparseFileTrackerTests extends ESTestCase {
 
     private static void checkRandomAbsentRange(byte[] fileContents, SparseFileTracker sparseFileTracker, boolean expectExact) {
         final long checkStart = randomLongBetween(0, fileContents.length - 1);
-        final long checkEnd = randomLongBetween(0, fileContents.length);
+        final long checkEnd = randomLongBetween(checkStart, fileContents.length);
 
-        final Tuple<Long, Long> freeRange = sparseFileTracker.getAbsentRangeWithin(checkStart, checkEnd);
+        final ByteRange freeRange = sparseFileTracker.getAbsentRangeWithin(ByteRange.of(checkStart, checkEnd));
         if (freeRange == null) {
             for (long i = checkStart; i < checkEnd; i++) {
                 assertThat(fileContents[toIntBytes(i)], equalTo(AVAILABLE));
             }
         } else {
-            assertThat(freeRange.v1(), greaterThanOrEqualTo(checkStart));
-            assertTrue(freeRange.toString(), freeRange.v1() < freeRange.v2());
-            assertThat(freeRange.v2(), lessThanOrEqualTo(checkEnd));
-            for (long i = checkStart; i < freeRange.v1(); i++) {
+            assertThat(freeRange.start(), greaterThanOrEqualTo(checkStart));
+            assertTrue(freeRange.toString(), freeRange.start() < freeRange.end());
+            assertThat(freeRange.end(), lessThanOrEqualTo(checkEnd));
+            for (long i = checkStart; i < freeRange.start(); i++) {
                 assertThat(fileContents[toIntBytes(i)], equalTo(AVAILABLE));
             }
-            for (long i = freeRange.v2(); i < checkEnd; i++) {
+            for (long i = freeRange.end(); i < checkEnd; i++) {
                 assertThat(fileContents[toIntBytes(i)], equalTo(AVAILABLE));
             }
             if (expectExact) {
                 // without concurrent activity, the returned range is as small as possible
-                assertThat(fileContents[toIntBytes(freeRange.v1())], equalTo(UNAVAILABLE));
-                assertThat(fileContents[toIntBytes(freeRange.v2() - 1)], equalTo(UNAVAILABLE));
+                assertThat(fileContents[toIntBytes(freeRange.start())], equalTo(UNAVAILABLE));
+                assertThat(fileContents[toIntBytes(freeRange.end() - 1)], equalTo(UNAVAILABLE));
             }
         }
     }

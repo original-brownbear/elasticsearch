@@ -179,7 +179,7 @@ public final class TestUtils {
     }
 
     public static long sumOfCompletedRangesLengths(CacheFile cacheFile) {
-        return cacheFile.getCompletedRanges().stream().mapToLong(range -> range.end() - range.start()).sum();
+        return cacheFile.getCompletedRanges().stream().mapToLong(ByteRange::length).sum();
     }
 
     /**

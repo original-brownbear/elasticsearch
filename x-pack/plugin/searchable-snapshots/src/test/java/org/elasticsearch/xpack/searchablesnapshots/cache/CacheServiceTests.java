@@ -214,7 +214,7 @@ public class CacheServiceTests extends AbstractSearchableSnapshotsTestCase {
                 assertThat(cacheFile.getLength(), equalTo(fileLength));
 
                 for (ByteRange cacheFileRange : cacheFileRanges) {
-                    assertThat(cacheFile.getAbsentRangeWithin(cacheFileRange.start(), cacheFileRange.end()), nullValue());
+                    assertThat(cacheFile.getAbsentRangeWithin(cacheFileRange), nullValue());
                 }
             } else {
                 final FileNotFoundException exception = expectThrows(

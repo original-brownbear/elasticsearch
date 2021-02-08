@@ -24,6 +24,7 @@ public final class ByteRange {
     private ByteRange(long start, long end) {
         this.start = start;
         this.end = end;
+        assert start >= 0L : "Start must be >= 0 but saw [" + start + "]";
         assert end >= start : "End must be greater or equal to start but saw [" + start + "][" + start + "]";
     }
 
@@ -33,6 +34,14 @@ public final class ByteRange {
 
     public long end() {
         return end;
+    }
+
+    public long length() {
+        return end - start;
+    }
+
+    public boolean isSubRangeOf(ByteRange range) {
+        return start >= range.start() && end <= range.end();
     }
 
     @Override
@@ -50,5 +59,10 @@ public final class ByteRange {
         }
         final ByteRange that = (ByteRange) obj;
         return start == that.start && end == that.end;
+    }
+
+    @Override
+    public String toString() {
+        return "ByteRange{" + start + "}{" + end + "}";
     }
 }

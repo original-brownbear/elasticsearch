@@ -178,9 +178,7 @@ public class PersistentCache implements Closeable {
                                 final Document document = leafReaderContext.reader().document(docIdSetIterator.docID());
                                 final String cacheFileId = getValue(document, CACHE_ID_FIELD);
                                 if (predicate.test(snapshotCacheDir.resolve(cacheFileId))) {
-                                    long size = buildCacheFileRanges(document).stream()
-                                        .mapToLong(range -> range.end() - range.start())
-                                        .sum();
+                                    long size = buildCacheFileRanges(document).stream().mapToLong(ByteRange::length).sum();
                                     logger.trace("cache file [{}] has size [{}]", getValue(document, CACHE_ID_FIELD), size);
                                     aggregateSize += size;
                                 }
