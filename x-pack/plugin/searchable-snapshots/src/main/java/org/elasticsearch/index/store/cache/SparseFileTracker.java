@@ -78,7 +78,7 @@ public class SparseFileTracker {
                     if (length < next.end()) {
                         throw new IllegalArgumentException("Range " + next + " is exceeding maximum length [" + length + ']');
                     }
-                    final Range range = new Range(next, null);
+                    final Range range = new Range(next);
                     if (previous != null && range.start <= previous.end) {
                         throw new IllegalArgumentException("Range " + range + " is overlapping a previous range " + previous);
                     }
@@ -108,7 +108,7 @@ public class SparseFileTracker {
                 if (completedRanges == null) {
                     completedRanges = new TreeSet<>();
                 }
-                completedRanges.add(range.asByteRange());
+                completedRanges.add(ByteRange.of(range.start, range.end));
             }
         }
         return completedRanges == null ? Collections.emptySortedSet() : completedRanges;
@@ -175,7 +175,7 @@ public class SparseFileTracker {
 
             final List<Range> pendingRanges = new ArrayList<>();
 
-            final Range targetRange = new Range(range, null);
+            final Range targetRange = new Range(range);
             final SortedSet<Range> earlierRanges = ranges.headSet(targetRange, false); // ranges with strictly earlier starts
             if (earlierRanges.isEmpty() == false) {
                 final Range lastEarlierRange = earlierRanges.last();
@@ -294,7 +294,7 @@ public class SparseFileTracker {
         synchronized (mutex) {
             assert invariant();
 
-            final Range targetRange = new Range(range, null);
+            final Range targetRange = new Range(range);
             final SortedSet<Range> earlierRanges = ranges.headSet(targetRange, false); // ranges with strictly earlier starts
             if (earlierRanges.isEmpty() == false) {
                 final Range lastEarlierRange = earlierRanges.last();
@@ -598,8 +598,8 @@ public class SparseFileTracker {
         @Nullable // if not pending
         final ProgressListenableActionFuture completionListener;
 
-        Range(ByteRange range, @Nullable ProgressListenableActionFuture completionListener) {
-            this(range.start(), range.end(), completionListener);
+        Range(ByteRange range) {
+            this(range.start(), range.end(), null);
         }
 
         Range(long start, long end, @Nullable ProgressListenableActionFuture completionListener) {
@@ -611,10 +611,6 @@ public class SparseFileTracker {
 
         boolean isPending() {
             return completionListener != null;
-        }
-
-        public ByteRange asByteRange() {
-            return ByteRange.of(start, end);
         }
 
         @Override
