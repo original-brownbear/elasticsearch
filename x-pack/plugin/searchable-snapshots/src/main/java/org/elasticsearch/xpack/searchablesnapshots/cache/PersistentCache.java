@@ -40,7 +40,6 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -132,7 +131,7 @@ public class PersistentCache implements Closeable {
         }
     }
 
-    public void addCacheFile(CacheFile cacheFile, SortedSet<Tuple<Long, Long>> ranges) throws IOException {
+    public void addCacheFile(CacheFile cacheFile, SortedSet<ByteRange> ranges) throws IOException {
         ensureStarted();
         getWriter(cacheFile).updateCacheFile(cacheFile, ranges);
     }
@@ -179,8 +178,9 @@ public class PersistentCache implements Closeable {
                                 final Document document = leafReaderContext.reader().document(docIdSetIterator.docID());
                                 final String cacheFileId = getValue(document, CACHE_ID_FIELD);
                                 if (predicate.test(snapshotCacheDir.resolve(cacheFileId))) {
-                                    long size =
-                                            buildCacheFileRanges(document).stream().mapToLong(range -> range.end() - range.start()).sum();
+                                    long size = buildCacheFileRanges(document).stream()
+                                        .mapToLong(range -> range.end() - range.start())
+                                        .sum();
                                     logger.trace("cache file [{}] has size [{}]", getValue(document, CACHE_ID_FIELD), size);
                                     aggregateSize += size;
                                 }
@@ -495,7 +495,7 @@ public class PersistentCache implements Closeable {
             return nodePath;
         }
 
-        void updateCacheFile(CacheFile cacheFile, SortedSet<Tuple<Long, Long>> cacheRanges) throws IOException {
+        void updateCacheFile(CacheFile cacheFile, SortedSet<ByteRange> cacheRanges) throws IOException {
             updateCacheFile(buildId(cacheFile), buildDocument(nodePath, cacheFile, cacheRanges));
         }
 
@@ -561,7 +561,7 @@ public class PersistentCache implements Closeable {
         return new Term(CACHE_ID_FIELD, cacheFileUuid);
     }
 
-    private static Document buildDocument(NodeEnvironment.NodePath nodePath, CacheFile cacheFile, SortedSet<Tuple<Long, Long>> cacheRanges)
+    private static Document buildDocument(NodeEnvironment.NodePath nodePath, CacheFile cacheFile, SortedSet<ByteRange> cacheRanges)
         throws IOException {
         final Document document = new Document();
         document.add(new StringField(CACHE_ID_FIELD, buildId(cacheFile), Field.Store.YES));
@@ -569,9 +569,9 @@ public class PersistentCache implements Closeable {
 
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             output.writeVInt(cacheRanges.size());
-            for (Tuple<Long, Long> cacheRange : cacheRanges) {
-                output.writeVLong(cacheRange.v1());
-                output.writeVLong(cacheRange.v2());
+            for (ByteRange cacheRange : cacheRanges) {
+                output.writeVLong(cacheRange.start());
+                output.writeVLong(cacheRange.end());
             }
             output.flush();
             document.add(new StoredField(CACHE_RANGES_FIELD, output.bytes().toBytesRef()));

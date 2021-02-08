@@ -206,7 +206,9 @@ public class FrozenCacheService implements Releasable {
             return ByteRange.EMPTY;
         }
         return ByteRange.of(
-                getRegionRelativePosition(rangeStart), rangeEnd == regionEnd ? regionSize : getRegionRelativePosition(rangeEnd));
+            getRegionRelativePosition(rangeStart),
+            rangeEnd == regionEnd ? regionSize : getRegionRelativePosition(rangeEnd)
+        );
     }
 
     private long getRegionSize(long fileLength, int region) {

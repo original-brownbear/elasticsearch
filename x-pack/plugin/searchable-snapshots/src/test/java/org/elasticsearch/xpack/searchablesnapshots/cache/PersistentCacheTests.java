@@ -249,7 +249,7 @@ public class PersistentCacheTests extends AbstractSearchableSnapshotsTestCase {
                         final CacheFile.EvictionListener listener = evictedCacheFile -> {};
                         randomCacheFile.acquire(listener);
                         try {
-                            SortedSet<Tuple<Long, Long>> ranges = null;
+                            SortedSet<ByteRange> ranges = null;
                             while (ranges == null || ranges.isEmpty()) {
                                 ranges = randomPopulateAndReads(randomCacheFile);
                             }

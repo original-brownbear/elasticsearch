@@ -98,8 +98,8 @@ public class SparseFileTracker {
         return length;
     }
 
-    public SortedSet<Tuple<Long, Long>> getCompletedRanges() {
-        SortedSet<Tuple<Long, Long>> completedRanges = null;
+    public SortedSet<ByteRange> getCompletedRanges() {
+        SortedSet<ByteRange> completedRanges = null;
         synchronized (mutex) {
             assert invariant();
             for (Range range : ranges) {
@@ -107,9 +107,9 @@ public class SparseFileTracker {
                     continue;
                 }
                 if (completedRanges == null) {
-                    completedRanges = new TreeSet<>(Comparator.comparingLong(Tuple::v1));
+                    completedRanges = new TreeSet<>(Comparator.comparingLong(ByteRange::start));
                 }
-                completedRanges.add(Tuple.tuple(range.start, range.end));
+                completedRanges.add(ByteRange.of(range.start, range.end));
             }
         }
         return completedRanges == null ? Collections.emptySortedSet() : completedRanges;

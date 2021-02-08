@@ -171,7 +171,7 @@ public class CacheFile {
     }
 
     // Only used in tests
-    SortedSet<Tuple<Long, Long>> getCompletedRanges() {
+    SortedSet<ByteRange> getCompletedRanges() {
         return tracker.getCompletedRanges();
     }
 
@@ -498,7 +498,7 @@ public class CacheFile {
      * @throws IOException                       if the cache file failed to be fsync
      * @throws java.nio.file.NoSuchFileException if the cache file does not exist
      */
-    public SortedSet<Tuple<Long, Long>> fsync() throws IOException {
+    public SortedSet<ByteRange> fsync() throws IOException {
         if (refCounter.tryIncRef()) {
             try {
                 if (needsFsync.compareAndSet(true, false)) {
@@ -507,7 +507,7 @@ public class CacheFile {
                         // Capture the completed ranges before fsyncing; ranges that are completed after this point won't be considered as
                         // persisted on disk by the caller of this method, even if they are fully written to disk at the time the file
                         // fsync is effectively executed
-                        final SortedSet<Tuple<Long, Long>> completedRanges = tracker.getCompletedRanges();
+                        final SortedSet<ByteRange> completedRanges = tracker.getCompletedRanges();
                         assert completedRanges != null;
                         assert completedRanges.isEmpty() == false;
 
