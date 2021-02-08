@@ -53,10 +53,6 @@ public final class ByteRange implements Comparable<ByteRange> {
         return end - start;
     }
 
-    public boolean contains(long position) {
-        return position >= start && position <= end;
-    }
-
     public boolean isSubRangeOf(ByteRange range) {
         return start >= range.start() && end <= range.end();
     }
