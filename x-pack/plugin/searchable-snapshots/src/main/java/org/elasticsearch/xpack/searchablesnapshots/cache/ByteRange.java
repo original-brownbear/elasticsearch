@@ -7,6 +7,8 @@
 
 package org.elasticsearch.xpack.searchablesnapshots.cache;
 
+import org.elasticsearch.common.Nullable;
+
 public final class ByteRange implements Comparable<ByteRange> {
 
     public static final ByteRange EMPTY = new ByteRange(0L, 0L);
@@ -26,6 +28,19 @@ public final class ByteRange implements Comparable<ByteRange> {
         assert end >= start : "End must be greater or equal to start but saw [" + start + "][" + start + "]";
     }
 
+    public ByteRange minEnvelope(@Nullable ByteRange other) {
+        if (other == null) {
+            return this;
+        }
+        if (other.isSubRangeOf(this)) {
+            return this;
+        }
+        if (this.isSubRangeOf(other)) {
+            return other;
+        }
+        return of(Math.min(start, other.start), Math.max(end, other.end));
+    }
+
     public long start() {
         return start;
     }
@@ -36,6 +51,10 @@ public final class ByteRange implements Comparable<ByteRange> {
 
     public long length() {
         return end - start;
+    }
+
+    public boolean contains(long position) {
+        return position >= start && position <= end;
     }
 
     public boolean isSubRangeOf(ByteRange range) {

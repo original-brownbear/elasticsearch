@@ -278,19 +278,10 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
             final ByteRange startRangeToWrite = computeRange(position);
             final ByteRange endRangeToWrite = computeRange(position + length - 1);
             assert startRangeToWrite.end() <= endRangeToWrite.end() : startRangeToWrite + " vs " + endRangeToWrite;
-            final ByteRange rangeToWrite = ByteRange.of(
-                Math.min(startRangeToWrite.start(), indexCacheMiss == null ? Long.MAX_VALUE : indexCacheMiss.start()),
-                Math.max(endRangeToWrite.end(), indexCacheMiss == null ? Long.MIN_VALUE : indexCacheMiss.end())
-            );
-
-            assert rangeToWrite.start() <= position && position + length <= rangeToWrite.end() : "["
-                + position
-                + "-"
-                + (position + length)
-                + "] vs "
-                + rangeToWrite;
+            final ByteRange rangeToWrite = startRangeToWrite.minEnvelope(endRangeToWrite).minEnvelope(indexCacheMiss);
 
             final ByteRange rangeToRead = ByteRange.of(position, position + length);
+            assert rangeToRead.isSubRangeOf(rangeToWrite) : rangeToRead + " vs " + rangeToWrite;
             assert rangeToRead.length() == b.remaining() : b.remaining() + " vs " + rangeToRead;
 
             final Future<Integer> populateCacheFuture = cacheFile.populateAndRead(
@@ -457,16 +448,13 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
                 return Tuple.tuple(cacheFile.getInitialLength(), 0L);
             }
 
-            final long rangeStart = range.start();
-            final long rangeEnd = range.end();
-
             logger.trace(
                 "prefetchPart: prewarming part [{}] bytes [{}-{}] by fetching bytes [{}-{}] for cache file [{}]",
                 part,
                 partRange.start(),
                 partRange.end(),
-                rangeStart,
-                rangeEnd,
+                range.start(),
+                range.end(),
                 cacheFileReference
             );
 
@@ -476,13 +464,13 @@ public class CachedBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
             final AtomicLong totalBytesWritten = new AtomicLong();
             long remainingBytes = range.length();
             final long startTimeNanos = stats.currentTimeNanos();
-            try (InputStream input = openInputStreamFromBlobStore(rangeStart, range.length())) {
+            try (InputStream input = openInputStreamFromBlobStore(range.start(), range.length())) {
                 while (remainingBytes > 0L) {
                     assert totalBytesRead + remainingBytes == range.length();
-                    final int bytesRead = readSafe(input, copyBuffer, rangeStart, rangeEnd, remainingBytes, cacheFileReference);
+                    final int bytesRead = readSafe(input, copyBuffer, range.start(), range.end(), remainingBytes, cacheFileReference);
 
                     // The range to prewarm in cache
-                    final long readStart = rangeStart + totalBytesRead;
+                    final long readStart = range.start() + totalBytesRead;
                     final ByteRange rangeToWrite = ByteRange.of(readStart, readStart + bytesRead);
 
                     // We do not actually read anything, but we want to wait for the write to complete before proceeding.
