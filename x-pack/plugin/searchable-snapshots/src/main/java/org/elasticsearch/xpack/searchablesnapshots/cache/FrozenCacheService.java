@@ -14,7 +14,6 @@ import org.elasticsearch.Assertions;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.StepListener;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.settings.Setting;
@@ -194,14 +193,14 @@ public class FrozenCacheService implements Releasable {
         return getRegion(position);
     }
 
-    private ByteRange mapSubRangeToRegion(Tuple<Long, Long> range, int region) {
+    private ByteRange mapSubRangeToRegion(ByteRange range, int region) {
         final long regionStart = getRegionStart(region);
         final long regionEnd = getRegionEnd(region);
-        if (range.v1() >= regionEnd || range.v2() <= regionStart) {
+        if (range.start() >= regionEnd || range.end() <= regionStart) {
             return ByteRange.EMPTY;
         }
-        final long rangeStart = Math.max(regionStart, range.v1());
-        final long rangeEnd = Math.min(regionEnd, range.v2());
+        final long rangeStart = Math.max(regionStart, range.start());
+        final long rangeEnd = Math.min(regionEnd, range.end());
         if (rangeStart >= rangeEnd) {
             return ByteRange.EMPTY;
         }
@@ -721,16 +720,16 @@ public class FrozenCacheService implements Releasable {
         }
 
         public StepListener<Integer> populateAndRead(
-            final Tuple<Long, Long> rangeToWrite,
-            final Tuple<Long, Long> rangeToRead,
+            final ByteRange rangeToWrite,
+            final ByteRange rangeToRead,
             final RangeAvailableHandler reader,
             final RangeMissingHandler writer,
             final Executor executor
         ) {
             StepListener<Integer> stepListener = null;
-            final long writeStart = rangeToWrite.v1();
-            final long readStart = rangeToRead.v1();
-            for (int i = getRegion(rangeToWrite.v1()); i <= getEndingRegion(rangeToWrite.v2()); i++) {
+            final long writeStart = rangeToWrite.start();
+            final long readStart = rangeToRead.start();
+            for (int i = getRegion(rangeToWrite.start()); i <= getEndingRegion(rangeToWrite.end()); i++) {
                 final int region = i;
                 final ByteRange subRangeToWrite = mapSubRangeToRegion(rangeToWrite, region);
                 final ByteRange subRangeToRead = mapSubRangeToRegion(rangeToRead, region);
@@ -768,10 +767,10 @@ public class FrozenCacheService implements Releasable {
         }
 
         @Nullable
-        public StepListener<Integer> readIfAvailableOrPending(final Tuple<Long, Long> rangeToRead, final RangeAvailableHandler reader) {
+        public StepListener<Integer> readIfAvailableOrPending(final ByteRange rangeToRead, final RangeAvailableHandler reader) {
             StepListener<Integer> stepListener = null;
-            final long start = rangeToRead.v1();
-            for (int i = getRegion(rangeToRead.v1()); i <= getEndingRegion(rangeToRead.v2()); i++) {
+            final long start = rangeToRead.start();
+            for (int i = getRegion(rangeToRead.start()); i <= getEndingRegion(rangeToRead.end()); i++) {
                 final int region = i;
                 final ByteRange subRangeToRead = mapSubRangeToRegion(rangeToRead, region);
                 final CacheFileRegion fileRegion = get(cacheKey, length, region);
