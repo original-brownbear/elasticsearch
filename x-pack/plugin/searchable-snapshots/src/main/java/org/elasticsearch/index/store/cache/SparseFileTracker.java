@@ -106,7 +106,7 @@ public class SparseFileTracker {
                     continue;
                 }
                 if (completedRanges == null) {
-                    completedRanges = new TreeSet<>(Comparator.comparingLong(ByteRange::start));
+                    completedRanges = new TreeSet<>();
                 }
                 completedRanges.add(range.asByteRange());
             }
@@ -284,10 +284,8 @@ public class SparseFileTracker {
      * @throws IllegalArgumentException if invalid range is requested
      */
     public boolean waitForRangeIfPending(final ByteRange range, final ActionListener<Void> listener) {
-        final long start = range.start();
-        final long end = range.end();
-        if (end < start || start < 0L || length < end) {
-            throw new IllegalArgumentException("invalid range [start=" + start + ", end=" + end + ", length=" + length + "]");
+        if (length < range.end()) {
+            throw new IllegalArgumentException("invalid range [" + range + ", length=" + length + "]");
         }
 
         final ActionListener<Void> wrappedListener = wrapWithAssertions(listener);
@@ -296,19 +294,19 @@ public class SparseFileTracker {
         synchronized (mutex) {
             assert invariant();
 
-            final Range targetRange = new Range(start, end, null);
+            final Range targetRange = new Range(range, null);
             final SortedSet<Range> earlierRanges = ranges.headSet(targetRange, false); // ranges with strictly earlier starts
             if (earlierRanges.isEmpty() == false) {
                 final Range lastEarlierRange = earlierRanges.last();
-                if (start < lastEarlierRange.end) {
+                if (range.start() < lastEarlierRange.end) {
                     if (lastEarlierRange.isPending()) {
                         pendingRanges.add(lastEarlierRange);
                     }
-                    targetRange.start = Math.min(end, lastEarlierRange.end);
+                    targetRange.start = Math.min(range.end(), lastEarlierRange.end);
                 }
             }
 
-            while (targetRange.start < end) {
+            while (targetRange.start < range.end()) {
                 assert 0 <= targetRange.start : targetRange;
                 assert invariant();
 
@@ -323,14 +321,14 @@ public class SparseFileTracker {
                         if (firstExistingRange.isPending()) {
                             pendingRanges.add(firstExistingRange);
                         }
-                        targetRange.start = Math.min(end, firstExistingRange.end);
+                        targetRange.start = Math.min(range.end(), firstExistingRange.end);
                     } else {
                         return false;
                     }
                 }
             }
             assert targetRange.start == targetRange.end : targetRange;
-            assert targetRange.start == end : targetRange;
+            assert targetRange.start == range.end() : targetRange;
             assert invariant();
         }
 
@@ -345,7 +343,7 @@ public class SparseFileTracker {
                 final Range pendingRange = pendingRanges.get(0);
                 pendingRange.completionListener.addListener(
                     wrappedListener.map(progress -> null),
-                    Math.min(pendingRange.completionListener.end, end)
+                    Math.min(pendingRange.completionListener.end, range.end())
                 );
                 return true;
             default:
@@ -354,7 +352,7 @@ public class SparseFileTracker {
                     pendingRanges.size()
                 );
                 pendingRanges.forEach(
-                    r -> r.completionListener.addListener(groupedActionListener, Math.min(r.completionListener.end, end))
+                    r -> r.completionListener.addListener(groupedActionListener, Math.min(r.completionListener.end, range.end()))
                 );
                 return true;
         }

@@ -40,7 +40,6 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,7 +70,7 @@ public final class TestUtils {
     }
 
     public static SortedSet<ByteRange> randomPopulateAndReads(CacheFile cacheFile, TriConsumer<FileChannel, Long, Long> consumer) {
-        final SortedSet<ByteRange> ranges = synchronizedNavigableSet(new TreeSet<>(Comparator.comparingLong(ByteRange::start)));
+        final SortedSet<ByteRange> ranges = synchronizedNavigableSet(new TreeSet<>());
         final List<Future<Integer>> futures = new ArrayList<>();
         final DeterministicTaskQueue deterministicTaskQueue = new DeterministicTaskQueue(
             builder().put(NODE_NAME_SETTING.getKey(), "_node").build(),
@@ -113,7 +112,7 @@ public final class TestUtils {
      * Generates a sorted set of non-empty and non-contiguous random ranges that could fit into a file of a given maximum length.
      */
     public static SortedSet<ByteRange> randomRanges(long length) {
-        final SortedSet<ByteRange> randomRanges = new TreeSet<>(Comparator.comparingLong(ByteRange::start));
+        final SortedSet<ByteRange> randomRanges = new TreeSet<>();
         for (long i = 0L; i < length;) {
             long start = randomLongBetween(i, Math.max(0L, length - 1L));
             long end = randomLongBetween(start + 1L, length); // +1 for non empty ranges
@@ -124,8 +123,7 @@ public final class TestUtils {
     }
 
     public static SortedSet<ByteRange> mergeContiguousRanges(final SortedSet<ByteRange> ranges) {
-        // Eclipse needs the TreeSet type to be explicit (see https://bugs.eclipse.org/bugs/show_bug.cgi?id=568600)
-        return ranges.stream().collect(() -> new TreeSet<ByteRange>(Comparator.comparingLong(ByteRange::start)), (gaps, gap) -> {
+        return ranges.stream().collect(TreeSet::new, (gaps, gap) -> {
             if (gaps.isEmpty()) {
                 gaps.add(gap);
             } else {

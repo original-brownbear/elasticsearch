@@ -66,7 +66,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -617,14 +616,14 @@ public class PersistentCache implements Closeable {
         final BytesRef cacheRangesBytesRef = document.getBinaryValue(CACHE_RANGES_FIELD);
         assert cacheRangesBytesRef != null;
 
-        final SortedSet<ByteRange> cacheRanges = new TreeSet<>(Comparator.comparingLong(ByteRange::start));
+        final SortedSet<ByteRange> cacheRanges = new TreeSet<>();
         try (StreamInput input = new ByteBufferStreamInput(ByteBuffer.wrap(cacheRangesBytesRef.bytes))) {
             final int length = input.readVInt();
             assert length > 0 : "empty cache ranges";
             ByteRange previous = null;
             for (int i = 0; i < length; i++) {
                 final ByteRange range = ByteRange.of(input.readVLong(), input.readVLong());
-                assert range.start() < range.end() : range;
+                assert range.length() > 0 : range;
                 assert range.start() <= getFileLength(document);
                 assert previous == null || previous.end() < range.start();
 

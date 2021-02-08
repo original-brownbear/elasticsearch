@@ -7,9 +7,7 @@
 
 package org.elasticsearch.xpack.searchablesnapshots.cache;
 
-import java.util.Objects;
-
-public final class ByteRange {
+public final class ByteRange implements Comparable<ByteRange> {
 
     public static final ByteRange EMPTY = new ByteRange(0L, 0L);
 
@@ -46,7 +44,7 @@ public final class ByteRange {
 
     @Override
     public int hashCode() {
-        return Objects.hash(start, end);
+        return 31 * Long.hashCode(start) + Long.hashCode(end);
     }
 
     @Override
@@ -64,5 +62,10 @@ public final class ByteRange {
     @Override
     public String toString() {
         return "ByteRange{" + start + "}{" + end + "}";
+    }
+
+    @Override
+    public int compareTo(ByteRange o) {
+        return Long.compare(start, o.start);
     }
 }

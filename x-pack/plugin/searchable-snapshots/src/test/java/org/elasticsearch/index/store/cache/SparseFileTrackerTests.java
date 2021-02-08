@@ -14,7 +14,6 @@ import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.searchablesnapshots.cache.ByteRange;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -445,9 +444,7 @@ public class SparseFileTrackerTests extends ESTestCase {
         final SparseFileTracker sparseFileTracker = new SparseFileTracker("test", fileContents.length);
 
         final Set<AtomicBoolean> listenersCalled = new HashSet<>();
-        final SortedSet<ByteRange> gapsProcessed = Collections.synchronizedNavigableSet(
-            new TreeSet<>(Comparator.comparingLong(ByteRange::start))
-        );
+        final SortedSet<ByteRange> gapsProcessed = Collections.synchronizedNavigableSet(new TreeSet<>());
         for (int i = between(0, 10); i > 0; i--) {
             waitForRandomRange(fileContents, sparseFileTracker, listenersCalled::add, gap -> {
                 if (processGap(fileContents, gap)) {
