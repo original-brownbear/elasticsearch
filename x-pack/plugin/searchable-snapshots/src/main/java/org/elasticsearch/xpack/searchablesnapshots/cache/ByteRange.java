@@ -28,6 +28,11 @@ public final class ByteRange implements Comparable<ByteRange> {
         assert end >= start : "End must be greater or equal to start but saw [" + start + "][" + start + "]";
     }
 
+    /**
+     * Computes the smallest range that contains both this instance as well as the given {@code other} range.
+     *
+     * @param other other range or {@code null} in which case this instance is returned
+     */
     public ByteRange minEnvelope(@Nullable ByteRange other) {
         if (other == null) {
             return this;
@@ -53,6 +58,9 @@ public final class ByteRange implements Comparable<ByteRange> {
         return end - start;
     }
 
+    /**
+     * Checks if this instance is fully contained in the given {@code range}.
+     */
     public boolean isSubRangeOf(ByteRange range) {
         return start >= range.start() && end <= range.end();
     }
