@@ -349,31 +349,37 @@ public class FrozenEngineTests extends EngineTestCase {
         IOUtils.close(engine, store);
         final AtomicLong globalCheckpoint = new AtomicLong(SequenceNumbers.NO_OPS_PERFORMED);
         try (Store store = createStore()) {
-            EngineConfig config = config(defaultSettings, store, createTempDir(), newMergePolicy(), null, null, null,
-                globalCheckpoint::get, new NoneCircuitBreakerService());
-            final int totalDocs;
-            try (InternalEngine engine = createEngine(config)) {
-                applyOperations(engine, generateHistoryOnReplica(between(10, 1000), false, randomBoolean(), randomBoolean()));
-                globalCheckpoint.set(engine.getProcessedLocalCheckpoint());
-                engine.syncTranslog();
-                // We need to force flush to make the last commit a safe commit; otherwise, we might fail to open ReadOnlyEngine
-                // See TransportVerifyShardBeforeCloseAction#executeShardOperation
-                engine.flush(true, true);
-                engine.refresh("test");
-                try (Engine.SearcherSupplier reader = engine.acquireSearcherSupplier(Function.identity())) {
-                    try (Engine.Searcher searcher = reader.acquireSearcher("test")) {
-                        totalDocs = searcher.search(new MatchAllDocsQuery(), Integer.MAX_VALUE).scoreDocs.length;
+            try {
+                EngineConfig config = config(defaultSettings, store, createTempDir(), newMergePolicy(), null, null, null,
+                        globalCheckpoint::get, new NoneCircuitBreakerService());
+                final int totalDocs;
+                try (InternalEngine engine = createEngine(config)) {
+                    applyOperations(engine, generateHistoryOnReplica(between(10, 1000), false, randomBoolean(), randomBoolean()));
+                    globalCheckpoint.set(engine.getProcessedLocalCheckpoint());
+                    engine.syncTranslog();
+                    // We need to force flush to make the last commit a safe commit; otherwise, we might fail to open ReadOnlyEngine
+                    // See TransportVerifyShardBeforeCloseAction#executeShardOperation
+                    engine.flush(true, true);
+                    engine.refresh("test");
+                    try (Engine.SearcherSupplier reader = engine.acquireSearcherSupplier(Function.identity())) {
+                        try (Engine.Searcher searcher = reader.acquireSearcher("test")) {
+                            totalDocs = searcher.search(new MatchAllDocsQuery(), Integer.MAX_VALUE).scoreDocs.length;
+                        }
                     }
                 }
-            }
-            try (FrozenEngine frozenEngine = new FrozenEngine(config, true)) {
-                try (Engine.SearcherSupplier reader = frozenEngine.acquireSearcherSupplier(Function.identity())) {
-                    try (Engine.Searcher searcher = reader.acquireSearcher("test")) {
-                        TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), Integer.MAX_VALUE);
-                        assertThat(topDocs.scoreDocs.length, equalTo(totalDocs));
+                try (FrozenEngine frozenEngine = new FrozenEngine(config, true)) {
+                    try (Engine.SearcherSupplier reader = frozenEngine.acquireSearcherSupplier(Function.identity())) {
+                        try (Engine.Searcher searcher = reader.acquireSearcher("test")) {
+                            TopDocs topDocs = searcher.search(new MatchAllDocsQuery(), Integer.MAX_VALUE);
+                            assertThat(topDocs.scoreDocs.length, equalTo(totalDocs));
+                        }
                     }
                 }
+            } catch (Throwable t) {
+                throw new AssertionError(t);
             }
+        } catch (Throwable t) {
+            throw new AssertionError(t);
         }
     }
 }
