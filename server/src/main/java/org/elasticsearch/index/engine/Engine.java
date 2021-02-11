@@ -1696,6 +1696,7 @@ public abstract class Engine implements Closeable {
                 logger.debug("close acquired writeLock");
                 closeNoLock("api", closedLatch);
             }
+            logger.debug("closed");
         }
         awaitPendingClose();
     }
