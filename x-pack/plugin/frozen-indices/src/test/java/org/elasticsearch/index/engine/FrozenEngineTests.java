@@ -23,6 +23,7 @@ import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.store.Store;
 import org.elasticsearch.indices.breaker.HierarchyCircuitBreakerService;
 import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
+import org.elasticsearch.test.junit.annotations.TestIssueLogging;
 import org.hamcrest.Matchers;
 
 import java.io.IOException;
@@ -345,6 +346,7 @@ public class FrozenEngineTests extends EngineTestCase {
         }
     }
 
+    @TestIssueLogging(value = "_root:TRACE", issueUrl = "")
     public void testSearchers() throws Exception {
         IOUtils.close(engine, store);
         final AtomicLong globalCheckpoint = new AtomicLong(SequenceNumbers.NO_OPS_PERFORMED);
