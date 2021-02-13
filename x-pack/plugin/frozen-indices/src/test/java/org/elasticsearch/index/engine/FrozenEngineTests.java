@@ -361,13 +361,16 @@ public class FrozenEngineTests extends EngineTestCase {
                 // We need to force flush to make the last commit a safe commit; otherwise, we might fail to open ReadOnlyEngine
                 // See TransportVerifyShardBeforeCloseAction#executeShardOperation
                 engine.flush(true, true);
-                engine.refresh("test");
+                //engine.refresh("test");
+                /*
                 try (Engine.SearcherSupplier reader = engine.acquireSearcherSupplier(Function.identity())) {
                     try (Engine.Searcher searcher = reader.acquireSearcher("test")) {
                         totalDocs = searcher.search(new MatchAllDocsQuery(), Integer.MAX_VALUE).scoreDocs.length;
                     }
                 }
+                 */
             }
+            /*
             try (FrozenEngine frozenEngine = new FrozenEngine(config, true)) {
                 try (Engine.SearcherSupplier reader = frozenEngine.acquireSearcherSupplier(Function.identity())) {
                     try (Engine.Searcher searcher = reader.acquireSearcher("test")) {
@@ -376,6 +379,7 @@ public class FrozenEngineTests extends EngineTestCase {
                     }
                 }
             }
+             */
         }
     }
 }

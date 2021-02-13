@@ -8,6 +8,7 @@
 
 package org.elasticsearch.index.engine;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.document.LongPoint;
@@ -323,6 +324,9 @@ public class InternalEngine extends Engine {
      */
     @SuppressForbidden(reason = "reference counting is required here")
     private static final class ExternalReaderManager extends ReferenceManager<ElasticsearchDirectoryReader> {
+
+        private static final Logger logger = LogManager.getLogger(ExternalReaderManager.class);
+
         private final BiConsumer<ElasticsearchDirectoryReader, ElasticsearchDirectoryReader> refreshListener;
         private final ElasticsearchReaderManager internalReaderManager;
         private boolean isWarmedUp; //guarded by refreshLock
@@ -337,7 +341,7 @@ public class InternalEngine extends Engine {
         @Override
         protected ElasticsearchDirectoryReader refreshIfNeeded(ElasticsearchDirectoryReader referenceToRefresh) throws IOException {
             // we simply run a blocking refresh on the internal reference manager and then steal it's reader
-            // it's a save operation since we acquire the reader which incs it's reference but then down the road
+            // it's a safe operation since we acquire the reader which incs it's reference but then down the road
             // steal it by calling incRef on the "stolen" reader
             internalReaderManager.maybeRefreshBlocking();
             final ElasticsearchDirectoryReader newReader = internalReaderManager.acquire();
@@ -355,9 +359,11 @@ public class InternalEngine extends Engine {
             }
             // nothing has changed - both ref managers share the same instance so we can use reference equality
             if (referenceToRefresh == newReader) {
+                logger.debug("--> nothing changed");
                 internalReaderManager.release(newReader);
                 return null;
             } else {
+                logger.debug("--> stole reference");
                 return newReader; // steal the reference
             }
         }
