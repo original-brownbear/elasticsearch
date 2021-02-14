@@ -21,6 +21,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.ActionTestUtils;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
+import org.elasticsearch.action.support.replication.TransportReplicationAction;
 import org.elasticsearch.action.support.replication.TransportWriteAction.WritePrimaryResult;
 import org.elasticsearch.action.update.UpdateHelper;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -185,8 +186,9 @@ public class TransportShardBulkActionTests extends IndexShardTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         TransportShardBulkAction.performOnPrimary(
             bulkShardRequest, shard, null, threadPool::absoluteTimeInMillis, new NoopMappingUpdatePerformer(),
-            listener -> {}, ActionListener.runAfter(
-                ActionTestUtils.assertNoFailureListener(result -> {
+            listener -> {},
+                ActionTestUtils.<TransportReplicationAction.PrimaryResult<BulkShardRequest, BulkShardResponse>>assertNoFailureListener(
+                        result -> {
                     // since at least 1 item passed, the tran log location should exist,
                     assertThat(((WritePrimaryResult<BulkShardRequest, BulkShardResponse>) result).location, notNullValue());
                     // and the response should exist and match the item count
@@ -216,7 +218,7 @@ public class TransportShardBulkActionTests extends IndexShardTestCase {
                     } catch (IOException e) {
                         throw new AssertionError(e);
                     }
-                }), latch::countDown), threadPool, Names.WRITE);
+                }).runAfter(latch::countDown), threadPool, Names.WRITE);
 
         latch.await();
     }

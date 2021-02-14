@@ -287,7 +287,7 @@ public class SnapshotRetentionTask implements SchedulerEngine.Listener {
         final AtomicInteger deleted = new AtomicInteger(0);
         final AtomicInteger failed = new AtomicInteger(0);
         final GroupedActionListener<Void> allDeletesListener =
-                new GroupedActionListener<>(ActionListener.runAfter(listener.map(v -> null),
+                new GroupedActionListener<>(listener.map(v -> null).runAfter(
                         () -> {
                             TimeValue totalElapsedTime = TimeValue.timeValueNanos(nowNanoSupplier.getAsLong() - startTime);
                             logger.debug("total elapsed time for deletion of [{}] snapshots: {}", deleted, totalElapsedTime);
@@ -317,8 +317,8 @@ public class SnapshotRetentionTask implements SchedulerEngine.Listener {
                 final long deleteStartTime = nowNanoSupplier.getAsLong();
                 // TODO: Use snapshot multi-delete instead of this loop if all nodes in the cluster support it
                 //       i.e are newer or equal to SnapshotsService#MULTI_DELETE_VERSION
-                deleteSnapshot(policyId, repo, info.snapshotId(), slmStats, ActionListener.runAfter(
-                        ActionListener.wrap(acknowledgedResponse -> {
+                deleteSnapshot(policyId, repo, info.snapshotId(), slmStats,
+                        ActionListener.<AcknowledgedResponse>wrap(acknowledgedResponse -> {
                             deleted.incrementAndGet();
                             assert acknowledgedResponse.isAcknowledged();
                             historyStore.putAsync(SnapshotHistoryItem.deletionSuccessRecord(Instant.now().toEpochMilli(),
@@ -338,7 +338,7 @@ public class SnapshotRetentionTask implements SchedulerEngine.Listener {
                             } finally {
                                 allDeletesListener.onFailure(e);
                             }
-                        }), () -> {
+                        }).runAfter(() -> {
                             runningDeletions.remove(info.snapshotId());
                             long finishTime = nowNanoSupplier.getAsLong();
                             TimeValue deletionTime = TimeValue.timeValueNanos(finishTime - deleteStartTime);

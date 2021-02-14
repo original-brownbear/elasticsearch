@@ -280,7 +280,7 @@ public class SearchableSnapshotAllocator implements ExistingShardsAllocator {
             client.execute(
                 TransportSearchableSnapshotCacheStoresAction.TYPE,
                 new TransportSearchableSnapshotCacheStoresAction.Request(snapshotId, shardId, dataNodes),
-                ActionListener.runAfter(new ActionListener<>() {
+                new ActionListener<NodesCacheFilesMetadata>() {
                     @Override
                     public void onResponse(NodesCacheFilesMetadata nodesCacheFilesMetadata) {
                         final Map<DiscoveryNode, NodeCacheFilesMetadata> res = new HashMap<>(nodesCacheFilesMetadata.getNodesMap().size());
@@ -304,7 +304,7 @@ public class SearchableSnapshotAllocator implements ExistingShardsAllocator {
                         }
                         asyncFetch.addData(res);
                     }
-                }, () -> {
+                }.runAfter(() -> {
                     if (asyncFetch.data() != null) {
                         rerouteService.reroute("async_shard_cache_fetch", Priority.HIGH, REROUTE_LISTENER);
                     }

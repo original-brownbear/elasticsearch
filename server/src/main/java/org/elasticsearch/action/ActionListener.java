@@ -48,19 +48,17 @@ public interface ActionListener<Response> {
      * @param <T> Response type of the wrapped listener
      * @return a listener that maps the received response and then passes it to this instance
      */
-    default <T> ActionListener<T> map(CheckedFunction<T, Response, Exception> fn) {
+    default <T, K extends T> ActionListener<K> map(CheckedFunction<K, Response, Exception> fn) {
         return new MappedActionListener<>(fn, this);
     }
 
-    final class MappedActionListener<Response, MappedResponse> implements ActionListener<Response> {
+    final class MappedActionListener<Response, MappedResponse> extends DelegatingActionListener<MappedResponse, Response> {
 
         private final CheckedFunction<Response, MappedResponse, Exception> fn;
 
-        private final ActionListener<MappedResponse> delegate;
-
         private MappedActionListener(CheckedFunction<Response, MappedResponse, Exception> fn, ActionListener<MappedResponse> delegate) {
+            super(delegate);
             this.fn = fn;
-            this.delegate = delegate;
         }
 
         @Override
@@ -94,8 +92,58 @@ public interface ActionListener<Response> {
         }
 
         @Override
-        public <T> ActionListener<T> map(CheckedFunction<T, Response, Exception> fn) {
+        public <T, K extends T> ActionListener<K> map(CheckedFunction<K, Response, Exception> fn) {
             return new MappedActionListener<>(t -> this.fn.apply(fn.apply(t)), this.delegate);
+        }
+    }
+
+    /**
+     * Wraps this listener and returns a new listener which executes the provided {@code runAfter}
+     * callback when this is notified via either {@link #onResponse} or {@link #onFailure}.
+     */
+    default <T extends Response> ActionListener<T> runAfter(Runnable runAfter) {
+        return new RunAfterActionListener<>(this, runAfter);
+    }
+
+    abstract class DelegatingActionListener<R, T> implements ActionListener<T> {
+
+        protected final ActionListener<R> delegate;
+
+        protected DelegatingActionListener(ActionListener<R> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            delegate.onFailure(e);
+        }
+    }
+
+    final class RunAfterActionListener<K, T extends K> extends DelegatingActionListener<K, T> {
+
+        private final Runnable runAfter;
+
+        public RunAfterActionListener(ActionListener<K> delegate, Runnable runAfter) {
+            super(delegate);
+            this.runAfter = runAfter;
+        }
+
+        @Override
+        public void onResponse(T response) {
+            try {
+                delegate.onResponse(response);
+            } finally {
+                runAfter.run();
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            try {
+                super.onFailure(e);
+            } finally {
+                runAfter.run();
+            }
         }
     }
 
@@ -135,12 +183,11 @@ public interface ActionListener<Response> {
      * @param <T> Type of the listener
      * @return Delegating listener
      */
-    static <T> ActionListener<T> delegateResponse(ActionListener<T> delegate, BiConsumer<ActionListener<T>, Exception> bc) {
-        return new ActionListener<T>() {
-
+    static <T> ActionListener<T> delegateResponse(ActionListener<T> delegate, BiConsumer<ActionListener<? super T>, Exception> bc) {
+        return new DelegatingActionListener<>(delegate) {
             @Override
-            public void onResponse(T r) {
-                delegate.onResponse(r);
+            public void onResponse(T t) {
+                delegate.onResponse(t);
             }
 
             @Override
@@ -160,16 +207,10 @@ public interface ActionListener<Response> {
      * @return Delegating listener
      */
     static <T, R> ActionListener<T> delegateFailure(ActionListener<R> delegate, BiConsumer<ActionListener<R>, T> bc) {
-        return new ActionListener<T>() {
-
+        return new DelegatingActionListener<>(delegate) {
             @Override
             public void onResponse(T r) {
                 bc.accept(delegate, r);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                delegate.onFailure(e);
             }
         };
     }
@@ -239,32 +280,6 @@ public interface ActionListener<Response> {
             }
         }
         ExceptionsHelper.maybeThrowRuntimeAndSuppress(exceptionList);
-    }
-
-    /**
-     * Wraps a given listener and returns a new listener which executes the provided {@code runAfter}
-     * callback when the listener is notified via either {@code #onResponse} or {@code #onFailure}.
-     */
-    static <Response> ActionListener<Response> runAfter(ActionListener<Response> delegate, Runnable runAfter) {
-        return new ActionListener<Response>() {
-            @Override
-            public void onResponse(Response response) {
-                try {
-                    delegate.onResponse(response);
-                } finally {
-                    runAfter.run();
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                try {
-                    delegate.onFailure(e);
-                } finally {
-                    runAfter.run();
-                }
-            }
-        };
     }
 
     /**
