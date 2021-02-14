@@ -253,12 +253,11 @@ public final class TransportPutFollowAction
         ResumeFollowAction.Request resumeFollowRequest = new ResumeFollowAction.Request();
         resumeFollowRequest.setFollowerIndex(request.getFollowerIndex());
         resumeFollowRequest.setParameters(new FollowParameters(parameters));
-        client.execute(ResumeFollowAction.INSTANCE, resumeFollowRequest, ActionListener.wrap(
+        client.execute(ResumeFollowAction.INSTANCE, resumeFollowRequest, listener.wrap(
             r -> activeShardsObserver.waitForActiveShards(new String[]{request.getFollowerIndex()},
                 request.waitForActiveShards(), request.timeout(), result ->
                     listener.onResponse(new PutFollowAction.Response(true, result, r.isAcknowledged())),
-                listener::onFailure),
-            listener::onFailure
+                listener::onFailure)
         ));
     }
 

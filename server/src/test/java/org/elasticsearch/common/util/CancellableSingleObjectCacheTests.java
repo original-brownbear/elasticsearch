@@ -181,7 +181,7 @@ public class CancellableSingleObjectCacheTests extends ESTestCase {
                     final StepListener<Integer> stepListener = new StepListener<>();
                     final AtomicBoolean isComplete = new AtomicBoolean();
                     final AtomicBoolean isCancelled = new AtomicBoolean();
-                    testCache.get(input, isCancelled::get, ActionListener.runBefore(stepListener,
+                    testCache.get(input, isCancelled::get, stepListener.runBefore(
                             () -> assertTrue(isComplete.compareAndSet(false, true))));
 
                     final Runnable next = queue.poll();

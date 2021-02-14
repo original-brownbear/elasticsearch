@@ -487,7 +487,7 @@ public class Querier {
 
             ScrollCursor.handle(response, () -> new SchemaSearchHitRowSet(schema, exts, mask, query.limit(), response),
                     p -> listener.onResponse(p),
-                    p -> clear(response.getScrollId(), wrap(success -> listener.onResponse(p), listener::onFailure)), schema);
+                    p -> clear(response.getScrollId(), listener.wrap(success -> listener.onResponse(p))), schema);
         }
 
         private HitExtractor createExtractor(FieldExtraction ref) {

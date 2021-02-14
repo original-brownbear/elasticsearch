@@ -86,12 +86,11 @@ public final class AutoCreateAction extends ActionType<CreateIndexResponse> {
                                        ClusterState state,
                                        ActionListener<CreateIndexResponse> finalListener) {
             AtomicReference<String> indexNameRef = new AtomicReference<>();
-            ActionListener<AcknowledgedResponse> listener = ActionListener.wrap(
-                response -> {
-                    String indexName = indexNameRef.get();
-                    assert indexName != null;
-                    if (response.isAcknowledged()) {
-                        activeShardsObserver.waitForActiveShards(
+            ActionListener<AcknowledgedResponse> listener = finalListener.wrap(response -> {
+                String indexName = indexNameRef.get();
+                assert indexName != null;
+                if (response.isAcknowledged()) {
+                    activeShardsObserver.waitForActiveShards(
                             new String[]{indexName},
                             ActiveShardCount.DEFAULT,
                             request.timeout(),
@@ -99,13 +98,11 @@ public final class AutoCreateAction extends ActionType<CreateIndexResponse> {
                                 finalListener.onResponse(new CreateIndexResponse(true, shardsAcked, indexName));
                             },
                             finalListener::onFailure
-                        );
-                    } else {
-                        finalListener.onResponse(new CreateIndexResponse(false, false, indexName));
-                    }
-                },
-                finalListener::onFailure
-            );
+                    );
+                } else {
+                    finalListener.onResponse(new CreateIndexResponse(false, false, indexName));
+                }
+            });
             clusterService.submitStateUpdateTask("auto create [" + request.index() + "]",
                 new AckedClusterStateUpdateTask(Priority.URGENT, request, listener) {
 

@@ -100,7 +100,7 @@ public class SamlAuthnRequestValidator {
                 return;
             }
             final AuthnRequest authnRequest = samlFactory.buildXmlObject(root, AuthnRequest.class);
-            getSpFromAuthnRequest(authnRequest.getIssuer(), authnRequest.getAssertionConsumerServiceURL(), ActionListener.wrap(
+            getSpFromAuthnRequest(authnRequest.getIssuer(), authnRequest.getAssertionConsumerServiceURL(), listener.wrap(
                 sp -> {
                     try {
                         validateAuthnRequest(authnRequest, sp, parsedQueryString, listener);
@@ -110,9 +110,7 @@ public class SamlAuthnRequestValidator {
                     } catch (Exception e) {
                         logAndRespond("Could not validate AuthnRequest", e, listener);
                     }
-                },
-                listener::onFailure
-            ));
+                }));
         } catch (ElasticsearchSecurityException e) {
             logger.debug("Could not process AuthnRequest", e);
             listener.onFailure(e);
@@ -231,7 +229,7 @@ public class SamlAuthnRequestValidator {
             throw new ElasticsearchSecurityException("SAML authentication request has no issuer", RestStatus.BAD_REQUEST);
         }
         final String issuerString = issuer.getValue();
-        idp.resolveServiceProvider(issuerString, acs, false, ActionListener.wrap(
+        idp.resolveServiceProvider(issuerString, acs, false, listener.wrap(
             serviceProvider -> {
                 if (null == serviceProvider) {
                     throw new ElasticsearchSecurityException(
@@ -239,9 +237,7 @@ public class SamlAuthnRequestValidator {
                         issuerString, acs);
                 }
                 listener.onResponse(serviceProvider);
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     private void checkDestination(AuthnRequest request) {

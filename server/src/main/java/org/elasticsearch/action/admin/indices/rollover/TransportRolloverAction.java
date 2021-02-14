@@ -92,8 +92,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
         // synchronization (in this case, the submitStateUpdateTask which is serialized on the master node), where we then regenerate the
         // names and re-check conditions. More explanation follows inline below.
         client.execute(IndicesStatsAction.INSTANCE, statsRequest,
-
-            ActionListener.wrap(statsResponse -> {
+            listener.wrap(statsResponse -> {
                 // Now that we have the stats for the cluster, we need to know the
                 // names of the index for which we should evaluate
                 // conditions, as well as what our newly created index *would* be.
@@ -209,7 +208,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                     listener.onResponse(new RolloverResponse(trialSourceIndexName, trialRolloverIndexName,
                         trialConditionResults, false, false, false, false));
                 }
-            }, listener::onFailure));
+            }));
     }
 
     static Map<String, Boolean> evaluateConditions(final Collection<Condition<?>> conditions,

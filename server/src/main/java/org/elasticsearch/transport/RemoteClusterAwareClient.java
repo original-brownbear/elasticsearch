@@ -34,7 +34,7 @@ final class RemoteClusterAwareClient extends AbstractClient {
     @Override
     protected <Request extends ActionRequest, Response extends ActionResponse>
     void doExecute(ActionType<Response> action, Request request, ActionListener<Response> listener) {
-        remoteClusterService.ensureConnected(clusterAlias, ActionListener.wrap(v -> {
+        remoteClusterService.ensureConnected(clusterAlias, listener.wrap(v -> {
             Transport.Connection connection;
             if (request instanceof RemoteClusterAwareRequest) {
                 DiscoveryNode preferredTargetNode = ((RemoteClusterAwareRequest) request).getPreferredTargetNode();
@@ -44,8 +44,7 @@ final class RemoteClusterAwareClient extends AbstractClient {
             }
             service.sendRequest(connection, action.name(), request, TransportRequestOptions.EMPTY,
                 new ActionListenerResponseHandler<>(listener, action.getResponseReader()));
-        },
-        listener::onFailure));
+        }));
     }
 
     @Override

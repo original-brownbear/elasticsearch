@@ -327,9 +327,9 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
                              ActionListener<Void> listener) {
         final ShardId shardId = store.shardId();
         final LinkedList<Closeable> toClose = new LinkedList<>();
-        final ActionListener<Void> restoreListener = ActionListener.runBefore(ActionListener.delegateResponse(listener,
-            (l, e) -> l.onFailure(new IndexShardRestoreFailedException(shardId, "failed to restore snapshot [" + snapshotId + "]", e))),
-            () -> IOUtils.close(toClose));
+        final ActionListener<Void> restoreListener = ActionListener.delegateResponse(listener,
+            (l, e) -> l.onFailure(new IndexShardRestoreFailedException(shardId, "failed to restore snapshot [" + snapshotId + "]", e)))
+                .runBefore(() -> IOUtils.close(toClose));
         try {
             // TODO: Add timeouts to network calls / the restore process.
             createEmptyStore(store);
@@ -384,11 +384,11 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
             //  response, we should be able to retry by creating a new session.
             final RestoreSession restoreSession = openSession(metadata.name(), remoteClient, leaderShardId, shardId, recoveryState);
             toClose.addFirst(restoreSession); // Some tests depend on closing session before cancelling retention lease renewal
-            restoreSession.restoreFiles(store, ActionListener.wrap(v -> {
+            restoreSession.restoreFiles(store, restoreListener.wrap(v -> {
                 logger.trace("[{}] completed CCR restore", shardId);
                 updateMappings(remoteClient, leaderIndex, restoreSession.mappingVersion, client, shardId.getIndex());
                 restoreListener.onResponse(null);
-            }, restoreListener::onFailure));
+            }));
         } catch (Exception e) {
             restoreListener.onFailure(e);
         }

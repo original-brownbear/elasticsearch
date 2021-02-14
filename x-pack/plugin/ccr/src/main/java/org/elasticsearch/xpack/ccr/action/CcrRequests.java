@@ -58,8 +58,7 @@ public final class CcrRequests {
         if (metadataVersion > 0) {
             request.waitForMetadataVersion(metadataVersion).waitForTimeout(timeoutSupplier.get());
         }
-        client.admin().cluster().state(request, ActionListener.wrap(
-            response -> {
+        client.admin().cluster().state(request, listener.wrap(response -> {
                 if (response.getState() == null) { // timeout on wait_for_metadata_version
                     assert metadataVersion > 0 : metadataVersion;
                     if (timeoutSupplier.get().nanos() < 0) {
@@ -83,9 +82,7 @@ public final class CcrRequests {
                         getIndexMetadata(client, index, mappingVersion, metadata.version() + 1, timeoutSupplier, listener);
                     }
                 }
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     public static final RequestValidators.RequestValidator<PutMappingRequest> CCR_PUT_MAPPING_REQUEST_VALIDATOR =

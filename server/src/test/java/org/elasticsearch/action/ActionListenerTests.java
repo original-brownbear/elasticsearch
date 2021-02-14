@@ -163,15 +163,13 @@ public class ActionListenerTests extends ESTestCase {
     public void testRunBefore() {
         {
             AtomicBoolean afterSuccess = new AtomicBoolean();
-            ActionListener<Object> listener =
-                ActionListener.runBefore(ActionListener.wrap(r -> {}, e -> {}), () -> afterSuccess.set(true));
+            ActionListener<Object> listener = ActionListener.wrap(r -> {}, e -> {}).runBefore(() -> afterSuccess.set(true));
             listener.onResponse(null);
             assertThat(afterSuccess.get(), equalTo(true));
         }
         {
             AtomicBoolean afterFailure = new AtomicBoolean();
-            ActionListener<Object> listener =
-                ActionListener.runBefore(ActionListener.wrap(r -> {}, e -> {}), () -> afterFailure.set(true));
+            ActionListener<Object> listener = ActionListener.wrap(r -> {}, e -> {}).runBefore(() -> afterFailure.set(true));
             listener.onFailure(null);
             assertThat(afterFailure.get(), equalTo(true));
         }

@@ -232,7 +232,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param listener snapshot completion listener
      */
     public void executeSnapshot(final CreateSnapshotRequest request, final ActionListener<SnapshotInfo> listener) {
-        createSnapshot(request, ActionListener.wrap(snapshot -> addListener(snapshot, listener.map(Tuple::v2)), listener::onFailure));
+        createSnapshot(request, listener.wrap(snapshot -> addListener(snapshot, listener.map(Tuple::v2))));
     }
 
     /**
@@ -492,7 +492,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             @Override
             public void clusterStateProcessed(String source, ClusterState oldState, final ClusterState newState) {
                 logger.info("snapshot clone [{}] started", snapshot);
-                addListener(snapshot, ActionListener.wrap(r -> listener.onResponse(null), listener::onFailure));
+                addListener(snapshot, listener.wrap(r -> listener.onResponse(null)));
                 startCloning(repository, newEntry);
             }
         }, "clone_snapshot [" + request.source() + "][" + snapshotName + ']', listener::onFailure);
@@ -659,26 +659,25 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     generation -> innerUpdateSnapshotState(
                             new ShardSnapshotUpdate(target, repoShardId,
                                     new ShardSnapshotStatus(localNodeId, ShardState.SUCCESS, generation)),
-                            ActionListener.runBefore(
-                                    ActionListener.wrap(
-                                            v -> logger.trace("Marked [{}] as successfully cloned from [{}] to [{}]", repoShardId,
-                                                    sourceSnapshot, targetSnapshot),
-                                            e -> {
-                                                logger.warn("Cluster state update after successful shard clone [{}] failed", repoShardId);
-                                                failAllListenersOnMasterFailOver(e);
-                                            }
-                                    ), () -> currentlyCloning.remove(repoShardId))
+                            ActionListener.wrap(
+                                    v -> logger.trace("Marked [{}] as successfully cloned from [{}] to [{}]", repoShardId,
+                                            sourceSnapshot, targetSnapshot),
+                                    e -> {
+                                        logger.warn("Cluster state update after successful shard clone [{}] failed", repoShardId);
+                                        failAllListenersOnMasterFailOver(e);
+                                    }
+                            ).runBefore(() -> currentlyCloning.remove(repoShardId))
                     ), e -> innerUpdateSnapshotState(
                             new ShardSnapshotUpdate(target, repoShardId,
                                     new ShardSnapshotStatus(localNodeId, ShardState.FAILED, "failed to clone shard snapshot", null)),
-                            ActionListener.runBefore(ActionListener.wrap(
+                            ActionListener.wrap(
                                     v -> logger.trace("Marked [{}] as failed clone from [{}] to [{}]", repoShardId,
                                             sourceSnapshot, targetSnapshot),
                                     ex -> {
                                         logger.warn("Cluster state update after failed shard clone [{}] failed", repoShardId);
                                         failAllListenersOnMasterFailOver(ex);
                                     }
-                            ), () -> currentlyCloning.remove(repoShardId)))));
+                            ).runBefore(() -> currentlyCloning.remove(repoShardId)))));
         }
     }
 

@@ -114,10 +114,9 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
             client.executeLocally(TransportNodesSnapshotsStatus.TYPE,
                 new TransportNodesSnapshotsStatus.Request(nodesIds.toArray(Strings.EMPTY_ARRAY))
                     .snapshots(snapshots).timeout(request.masterNodeTimeout()),
-                ActionListener.wrap(nodeSnapshotStatuses -> threadPool.generic().execute(
+                    listener.wrap(nodeSnapshotStatuses -> threadPool.generic().execute(
                     ActionRunnable.wrap(listener,
-                        l -> buildResponse(snapshotsInProgress, request, currentSnapshots, nodeSnapshotStatuses, l))
-                ), listener::onFailure));
+                        l -> buildResponse(snapshotsInProgress, request, currentSnapshots, nodeSnapshotStatuses, l)))));
         } else {
             // We don't have any in-progress shards, just return current stats
             buildResponse(snapshotsInProgress, request, currentSnapshots, null, listener);
@@ -229,7 +228,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
         final Set<String> requestedSnapshotNames = Sets.newHashSet(request.snapshots());
         final ListenableFuture<RepositoryData> repositoryDataListener = new ListenableFuture<>();
         repositoriesService.getRepositoryData(repositoryName, repositoryDataListener);
-        repositoryDataListener.addListener(ActionListener.wrap(repositoryData -> {
+        repositoryDataListener.addListener(listener.wrap(repositoryData -> {
             final Map<String, SnapshotId> matchedSnapshotIds = repositoryData.getSnapshotIds().stream()
                 .filter(s -> requestedSnapshotNames.contains(s.getName()))
                 .collect(Collectors.toMap(SnapshotId::getName, Function.identity()));
@@ -284,7 +283,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                 }
             }
             listener.onResponse(new SnapshotsStatusResponse(Collections.unmodifiableList(builder)));
-        }, listener::onFailure), threadPool.generic());
+        }), threadPool.generic());
     }
 
     /**

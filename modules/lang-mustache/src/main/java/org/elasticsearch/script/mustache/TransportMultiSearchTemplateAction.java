@@ -68,7 +68,7 @@ public class TransportMultiSearchTemplateAction extends HandledTransportAction<M
             }
         }
 
-        client.multiSearch(multiSearchRequest, ActionListener.wrap(r -> {
+        client.multiSearch(multiSearchRequest, listener.wrap(r -> {
             for (int i = 0; i < r.getResponses().length; i++) {
                 MultiSearchResponse.Item item = r.getResponses()[i];
                 int originalSlot = originalSlots.get(i);
@@ -79,6 +79,6 @@ public class TransportMultiSearchTemplateAction extends HandledTransportAction<M
                 }
             }
             listener.onResponse(new MultiSearchTemplateResponse(items, r.getTook().millis()));
-        }, listener::onFailure));
+        }));
     }
 }

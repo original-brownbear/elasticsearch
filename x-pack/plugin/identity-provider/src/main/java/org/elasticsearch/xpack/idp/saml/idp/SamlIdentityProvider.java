@@ -119,7 +119,7 @@ public class SamlIdentityProvider {
      */
     public void resolveServiceProvider(String spEntityId, @Nullable String acs, boolean allowDisabled,
                                        ActionListener<SamlServiceProvider> listener) {
-        serviceProviderResolver.resolve(spEntityId, ActionListener.wrap(
+        serviceProviderResolver.resolve(spEntityId, listener.wrap(
             sp -> {
                 if (sp == null) {
                     logger.debug("No explicitly registered service provider exists for entityId [{}]", spEntityId);
@@ -131,9 +131,7 @@ public class SamlIdentityProvider {
                     logger.debug("Service provider for [{}] is [{}]", spEntityId, sp);
                     listener.onResponse(sp);
                 }
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     private void resolveWildcardService(String entityId, String acs, ActionListener<SamlServiceProvider> listener) {
