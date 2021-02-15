@@ -109,7 +109,7 @@ public class FrozenIndexInput extends BaseSearchableSnapshotIndexInput {
 
     @Override
     public void innerClose() {
-        // nothing needed to be done here
+        frozenCacheFile.decRef();
     }
 
     private void ensureContext(Predicate<IOContext> predicate) throws IOException {
@@ -686,6 +686,7 @@ public class FrozenIndexInput extends BaseSearchableSnapshotIndexInput {
             defaultRangeSize,
             recoveryRangeSize
         );
+        slice.frozenCacheFile.incRef();
         slice.isClone = true;
         return slice;
     }
