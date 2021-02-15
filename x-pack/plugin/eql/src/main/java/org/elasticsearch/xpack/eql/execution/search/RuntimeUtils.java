@@ -50,7 +50,7 @@ public final class RuntimeUtils {
     private RuntimeUtils() {}
 
     public static ActionListener<SearchResponse> searchLogListener(ActionListener<SearchResponse> listener, Logger log) {
-        return ActionListener.wrap(response -> {
+        return listener.wrap(response -> {
             ShardSearchFailure[] failures = response.getShardFailures();
             if (CollectionUtils.isEmpty(failures) == false) {
                 listener.onFailure(new EqlIllegalArgumentException(failures[0].reason(), failures[0].getCause()));
@@ -60,11 +60,11 @@ public final class RuntimeUtils {
                 logSearchResponse(response, log);
             }
             listener.onResponse(response);
-        }, listener::onFailure);
+        });
     }
 
     public static ActionListener<MultiSearchResponse> multiSearchLogListener(ActionListener<MultiSearchResponse> listener, Logger log) {
-        return ActionListener.wrap(items -> {
+        return listener.wrap(items -> {
             for (MultiSearchResponse.Item item : items) {
                 Exception failure = item.getFailure();
                 SearchResponse response = item.getResponse();
@@ -84,7 +84,7 @@ public final class RuntimeUtils {
                 }
             }
             listener.onResponse(items);
-        }, listener::onFailure);
+        });
     }
 
     private static void logSearchResponse(SearchResponse response, Logger logger) {

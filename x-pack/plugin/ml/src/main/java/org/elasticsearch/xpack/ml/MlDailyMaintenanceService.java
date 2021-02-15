@@ -179,7 +179,7 @@ public class MlDailyMaintenanceService implements Releasable {
     }
 
     private void triggerDeleteExpiredDataTask(ActionListener<AcknowledgedResponse> finalListener) {
-        ActionListener<DeleteExpiredDataAction.Response> deleteExpiredDataActionListener = ActionListener.wrap(
+        ActionListener<DeleteExpiredDataAction.Response> deleteExpiredDataActionListener = finalListener.wrap(
             deleteExpiredDataResponse -> {
                 if (deleteExpiredDataResponse.isDeleted()) {
                     LOGGER.info("Successfully completed [ML] maintenance task: triggerDeleteExpiredDataTask");
@@ -187,9 +187,7 @@ public class MlDailyMaintenanceService implements Releasable {
                     LOGGER.info("Halting [ML] maintenance tasks before completion as elapsed time is too great");
                 }
                 finalListener.onResponse(AcknowledgedResponse.TRUE);
-            },
-            finalListener::onFailure
-        );
+            });
 
         executeAsyncWithOrigin(
             client,
@@ -203,7 +201,7 @@ public class MlDailyMaintenanceService implements Releasable {
     public void triggerDeleteJobsInStateDeletingWithoutDeletionTask(ActionListener<AcknowledgedResponse> finalListener) {
         SetOnce<Set<String>> jobsInStateDeletingHolder = new SetOnce<>();
 
-        ActionListener<List<Tuple<DeleteJobAction.Request, AcknowledgedResponse>>> deleteJobsActionListener = ActionListener.wrap(
+        ActionListener<List<Tuple<DeleteJobAction.Request, AcknowledgedResponse>>> deleteJobsActionListener = finalListener.wrap(
             deleteJobsResponses -> {
                 List<String> jobIds =
                     deleteJobsResponses.stream()
@@ -217,11 +215,9 @@ public class MlDailyMaintenanceService implements Releasable {
                     LOGGER.info("The following ML jobs could not be deleted: [" + String.join(",", jobIds) + "]");
                 }
                 finalListener.onResponse(AcknowledgedResponse.TRUE);
-            },
-            finalListener::onFailure
-        );
+            });
 
-        ActionListener<ListTasksResponse> listTasksActionListener = ActionListener.wrap(
+        ActionListener<ListTasksResponse> listTasksActionListener = finalListener.wrap(
             listTasksResponse -> {
                 Set<String> jobsInStateDeleting = jobsInStateDeletingHolder.get();
                 Set<String> jobsWithDeletionTask =
@@ -246,15 +242,13 @@ public class MlDailyMaintenanceService implements Releasable {
                                 ML_ORIGIN,
                                 DeleteJobAction.INSTANCE,
                                 request,
-                                ActionListener.wrap(response -> listener.onResponse(Tuple.tuple(request, response)), listener::onFailure))
+                                listener.wrap(response -> listener.onResponse(Tuple.tuple(request, response))))
                     );
                 }
                 chainTaskExecutor.execute(deleteJobsActionListener);
-            },
-            finalListener::onFailure
-        );
+            });
 
-        ActionListener<GetJobsAction.Response> getJobsActionListener = ActionListener.wrap(
+        ActionListener<GetJobsAction.Response> getJobsActionListener = finalListener.wrap(
             getJobsResponse -> {
                 Set<String> jobsInStateDeleting =
                     getJobsResponse.getResponse().results().stream()
@@ -272,9 +266,7 @@ public class MlDailyMaintenanceService implements Releasable {
                     ListTasksAction.INSTANCE,
                     new ListTasksRequest().setActions(DeleteJobAction.NAME),
                     listTasksActionListener);
-            },
-            finalListener::onFailure
-        );
+            });
 
         executeAsyncWithOrigin(client, ML_ORIGIN, GetJobsAction.INSTANCE, new GetJobsAction.Request("*"), getJobsActionListener);
     }

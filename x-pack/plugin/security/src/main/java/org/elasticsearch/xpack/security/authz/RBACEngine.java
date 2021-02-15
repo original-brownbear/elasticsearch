@@ -118,15 +118,14 @@ public class RBACEngine implements AuthorizationEngine {
     @Override
     public void resolveAuthorizationInfo(RequestInfo requestInfo, ActionListener<AuthorizationInfo> listener) {
         final Authentication authentication = requestInfo.getAuthentication();
-        getRoles(authentication.getUser(), authentication, ActionListener.wrap(role -> {
+        getRoles(authentication.getUser(), authentication, listener.wrap(role -> {
             if (authentication.getUser().isRunAs()) {
-                getRoles(authentication.getUser().authenticatedUser(), authentication, ActionListener.wrap(
-                    authenticatedUserRole -> listener.onResponse(new RBACAuthorizationInfo(role, authenticatedUserRole)),
-                    listener::onFailure));
+                getRoles(authentication.getUser().authenticatedUser(), authentication, listener.wrap(
+                    authenticatedUserRole -> listener.onResponse(new RBACAuthorizationInfo(role, authenticatedUserRole))));
             } else {
                 listener.onResponse(new RBACAuthorizationInfo(role, role));
             }
-        }, listener::onFailure));
+        }));
     }
 
     private void getRoles(User user, Authentication authentication, ActionListener<Role> listener) {

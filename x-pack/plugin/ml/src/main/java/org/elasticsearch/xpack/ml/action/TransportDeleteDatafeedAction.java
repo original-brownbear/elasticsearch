@@ -79,15 +79,10 @@ public class TransportDeleteDatafeedAction extends AcknowledgedTransportMasterNo
 
     private void forceDeleteDatafeed(DeleteDatafeedAction.Request request, ClusterState state,
                                      ActionListener<AcknowledgedResponse> listener) {
-        ActionListener<Boolean> finalListener = ActionListener.wrap(
-                response -> deleteDatafeedConfig(request, listener),
-                listener::onFailure
-        );
+        ActionListener<Boolean> finalListener = listener.wrap(response -> deleteDatafeedConfig(request, listener));
 
-        ActionListener<IsolateDatafeedAction.Response> isolateDatafeedHandler = ActionListener.wrap(
-                response -> removeDatafeedTask(request, state, finalListener),
-                listener::onFailure
-        );
+        ActionListener<IsolateDatafeedAction.Response> isolateDatafeedHandler =
+                listener.wrap(response -> removeDatafeedTask(request, state, finalListener));
 
         IsolateDatafeedAction.Request isolateDatafeedRequest = new IsolateDatafeedAction.Request(request.getDatafeedId());
         executeAsyncWithOrigin(client, ML_ORIGIN, IsolateDatafeedAction.INSTANCE, isolateDatafeedRequest, isolateDatafeedHandler);
@@ -132,22 +127,15 @@ public class TransportDeleteDatafeedAction extends AcknowledgedTransportMasterNo
 
         datafeedConfigProvider.getDatafeedConfig(
             datafeedId,
-            ActionListener.wrap(
+            listener.wrap(
                 datafeedConfigBuilder -> {
                     String jobId = datafeedConfigBuilder.build().getJobId();
                     JobDataDeleter jobDataDeleter = new JobDataDeleter(client, jobId);
                     jobDataDeleter.deleteDatafeedTimingStats(
-                        ActionListener.wrap(
-                            unused1 -> {
-                                datafeedConfigProvider.deleteDatafeedConfig(
-                                    datafeedId,
-                                    ActionListener.wrap(
-                                        unused2 -> listener.onResponse(AcknowledgedResponse.TRUE),
-                                        listener::onFailure));
-                            },
-                            listener::onFailure));
-                },
-                listener::onFailure));
+                        listener.wrap(
+                            unused1 -> datafeedConfigProvider.deleteDatafeedConfig(
+                                datafeedId, listener.wrap(unused2 -> listener.onResponse(AcknowledgedResponse.TRUE)))));
+                }));
     }
 
     @Override

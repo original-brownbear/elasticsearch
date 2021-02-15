@@ -499,7 +499,7 @@ public class NativeUsersStore {
      * @param password the plaintext password to verify
      */
     void verifyPassword(String username, final SecureString password, ActionListener<AuthenticationResult> listener) {
-        getUserAndPassword(username, ActionListener.wrap((userAndPassword) -> {
+        getUserAndPassword(username, listener.wrap((userAndPassword) -> {
             if (userAndPassword == null || userAndPassword.passwordHash() == null) {
                 listener.onResponse(AuthenticationResult.notHandled());
             } else if (userAndPassword.verifyPassword(password)) {
@@ -507,7 +507,7 @@ public class NativeUsersStore {
             } else {
                 listener.onResponse(AuthenticationResult.unsuccessful("Password authentication failed for " + username, null));
             }
-        }, listener::onFailure));
+        }));
     }
 
     void getReservedUserInfo(String username, ActionListener<ReservedUserInfo> listener) {

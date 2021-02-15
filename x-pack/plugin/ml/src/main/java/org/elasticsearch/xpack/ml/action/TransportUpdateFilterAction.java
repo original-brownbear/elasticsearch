@@ -64,9 +64,8 @@ public class TransportUpdateFilterAction extends HandledTransportAction<UpdateFi
 
     @Override
     protected void doExecute(Task task, UpdateFilterAction.Request request, ActionListener<PutFilterAction.Response> listener) {
-        ActionListener<FilterWithSeqNo> filterListener = ActionListener.wrap(filterWithVersion -> {
-            updateFilter(filterWithVersion, request, listener);
-        }, listener::onFailure);
+        ActionListener<FilterWithSeqNo> filterListener =
+                listener.wrap(filterWithVersion -> updateFilter(filterWithVersion, request, listener));
 
         getFilterWithVersion(request.getFilterId(), filterListener);
     }
@@ -117,10 +116,8 @@ public class TransportUpdateFilterAction extends HandledTransportAction<UpdateFi
         executeAsyncWithOrigin(client, ML_ORIGIN, IndexAction.INSTANCE, indexRequest, new ActionListener<IndexResponse>() {
             @Override
             public void onResponse(IndexResponse indexResponse) {
-                jobManager.notifyFilterChanged(filter, request.getAddItems(), request.getRemoveItems(), ActionListener.wrap(
-                        response -> listener.onResponse(new PutFilterAction.Response(filter)),
-                        listener::onFailure
-                ));
+                jobManager.notifyFilterChanged(filter, request.getAddItems(), request.getRemoveItems(),
+                        listener.wrap(response -> listener.onResponse(new PutFilterAction.Response(filter))));
             }
 
             @Override

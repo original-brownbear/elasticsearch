@@ -126,15 +126,10 @@ public class AsyncResultsService<Task extends AsyncTask, Response extends AsyncR
             if (expirationTimeMillis != -1) {
                 task.setExpirationTime(expirationTimeMillis);
             }
-            addCompletionListener.apply(task, new ActionListener<>() {
+            addCompletionListener.apply(task, new ActionListener.FailureDelegatingListener<>(listener) {
                 @Override
                 public void onResponse(Response response) {
-                    sendFinalResponse(request, response, nowInMillis, listener);
-                }
-
-                @Override
-                public void onFailure(Exception exc) {
-                    listener.onFailure(exc);
+                    sendFinalResponse(request, response, nowInMillis, delegate);
                 }
             }, request.getWaitForCompletionTimeout());
         } catch (Exception exc) {
@@ -146,16 +141,10 @@ public class AsyncResultsService<Task extends AsyncTask, Response extends AsyncR
                                             GetAsyncResultRequest request,
                                             long nowInMillis,
                                             ActionListener<Response> listener) {
-        store.getResponse(searchId, true,
-            new ActionListener<>() {
+        store.getResponse(searchId, true, new ActionListener.FailureDelegatingListener<>(listener) {
                 @Override
                 public void onResponse(Response response) {
-                    sendFinalResponse(request, response, nowInMillis, listener);
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    listener.onFailure(e);
+                    sendFinalResponse(request, response, nowInMillis, delegate);
                 }
             });
     }

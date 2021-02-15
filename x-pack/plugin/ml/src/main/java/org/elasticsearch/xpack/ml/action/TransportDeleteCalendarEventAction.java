@@ -54,10 +54,10 @@ public class TransportDeleteCalendarEventAction extends HandledTransportAction<D
                              ActionListener<AcknowledgedResponse> listener) {
         final String eventId = request.getEventId();
 
-        ActionListener<Calendar> calendarListener = ActionListener.wrap(
+        ActionListener<Calendar> calendarListener = listener.wrap(
                 calendar -> {
                     GetRequest getRequest = new GetRequest(MlMetaIndex.indexName(), eventId);
-                    executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, ActionListener.wrap(
+                    executeAsyncWithOrigin(client, ML_ORIGIN, GetAction.INSTANCE, getRequest, listener.wrap(
                             getResponse -> {
                                 if (getResponse.isExists() == false) {
                                     listener.onFailure(new ResourceNotFoundException("No event with id [" + eventId + "]"));
@@ -81,9 +81,9 @@ public class TransportDeleteCalendarEventAction extends HandledTransportAction<D
                                 }
 
                                 deleteEvent(eventId, calendar, listener);
-                            }, listener::onFailure)
+                            })
                     );
-                }, listener::onFailure);
+                });
 
         // Get the calendar first so we check the calendar exists before checking the event exists
         jobResultsProvider.calendar(request.getCalendarId(), calendarListener);
@@ -101,10 +101,8 @@ public class TransportDeleteCalendarEventAction extends HandledTransportAction<D
                         if (response.status() == RestStatus.NOT_FOUND) {
                             listener.onFailure(new ResourceNotFoundException("No event with id [" + eventId + "]"));
                         } else {
-                            jobManager.updateProcessOnCalendarChanged(calendar.getJobIds(), ActionListener.wrap(
-                                    r -> listener.onResponse(AcknowledgedResponse.TRUE),
-                                    listener::onFailure
-                            ));
+                            jobManager.updateProcessOnCalendarChanged(calendar.getJobIds(),
+                                    listener.wrap(r -> listener.onResponse(AcknowledgedResponse.TRUE)));
                         }
                     }
 

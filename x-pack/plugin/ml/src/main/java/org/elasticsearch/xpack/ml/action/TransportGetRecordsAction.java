@@ -36,7 +36,7 @@ public class TransportGetRecordsAction extends HandledTransportAction<GetRecords
     @Override
     protected void doExecute(Task task, GetRecordsAction.Request request, ActionListener<GetRecordsAction.Response> listener) {
 
-        jobManager.jobExists(request.getJobId(), ActionListener.wrap(
+        jobManager.jobExists(request.getJobId(), listener.wrap(
                 jobExists -> {
                     RecordsQueryBuilder query = new RecordsQueryBuilder()
                             .includeInterim(request.isExcludeInterim() == false)
@@ -49,8 +49,6 @@ public class TransportGetRecordsAction extends HandledTransportAction<GetRecords
                             .sortDescending(request.isDescending());
                     jobResultsProvider.records(request.getJobId(), query, page ->
                             listener.onResponse(new GetRecordsAction.Response(page)), listener::onFailure, client);
-                },
-                listener::onFailure
-        ));
+                }));
     }
 }

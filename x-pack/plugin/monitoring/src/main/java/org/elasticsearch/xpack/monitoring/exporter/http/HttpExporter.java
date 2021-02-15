@@ -957,7 +957,7 @@ public class HttpExporter extends Exporter {
         }
 
         if (migrationCoordinator.canInstall()) {
-            resource.checkAndPublishIfDirty(client, ActionListener.wrap((success) -> {
+            resource.checkAndPublishIfDirty(client, listener.wrap((success) -> {
                 if (success) {
                     final String name = "xpack.monitoring.exporters." + config.name();
 
@@ -966,7 +966,7 @@ public class HttpExporter extends Exporter {
                     // we're not ready yet, so keep waiting
                     listener.onResponse(null);
                 }
-            }, listener::onFailure));
+            }));
         } else {
             // we're migrating right now, so keep waiting
             listener.onResponse(null);

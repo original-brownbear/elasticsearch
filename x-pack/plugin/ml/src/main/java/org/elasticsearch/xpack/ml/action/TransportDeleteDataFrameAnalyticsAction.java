@@ -108,10 +108,8 @@ public class TransportDeleteDataFrameAnalyticsAction
                              ActionListener<AcknowledgedResponse> listener) {
         logger.debug("[{}] Force deleting data frame analytics job", request.getId());
 
-        ActionListener<StopDataFrameAnalyticsAction.Response> stopListener = ActionListener.wrap(
-            stopResponse -> normalDelete(parentTaskClient, clusterService.state(), request, listener),
-            listener::onFailure
-        );
+        ActionListener<StopDataFrameAnalyticsAction.Response> stopListener = listener.wrap(
+            stopResponse -> normalDelete(parentTaskClient, clusterService.state(), request, listener));
 
         stopJob(parentTaskClient, request, stopListener);
     }
@@ -180,7 +178,7 @@ public class TransportDeleteDataFrameAnalyticsAction
         );
 
         // Step 3. Delete job docs from stats index
-        ActionListener<BulkByScrollResponse> deleteStateHandler = ActionListener.wrap(
+        ActionListener<BulkByScrollResponse> deleteStateHandler = listener.wrap(
             bulkByScrollResponse -> {
                 if (bulkByScrollResponse.isTimedOut()) {
                     logger.warn("[{}] DeleteByQuery for state timed out", id);
@@ -193,15 +191,11 @@ public class TransportDeleteDataFrameAnalyticsAction
                     }
                 }
                 deleteStats(parentTaskClient, id, request.timeout(), deleteStatsHandler);
-            },
-            listener::onFailure
-        );
+            });
 
         // Step 2. Delete state
-        ActionListener<DataFrameAnalyticsConfig> configListener = ActionListener.wrap(
-            config -> deleteState(parentTaskClient, config, request.timeout(), deleteStateHandler),
-            listener::onFailure
-        );
+        ActionListener<DataFrameAnalyticsConfig> configListener =
+                listener.wrap(config -> deleteState(parentTaskClient, config, request.timeout(), deleteStateHandler));
 
         // Step 1. Get the config to check if it exists
         configProvider.get(id, configListener);
@@ -211,7 +205,7 @@ public class TransportDeleteDataFrameAnalyticsAction
         DeleteRequest deleteRequest = new DeleteRequest(MlConfigIndex.indexName());
         deleteRequest.id(DataFrameAnalyticsConfig.documentId(id));
         deleteRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-        executeAsyncWithOrigin(parentTaskClient, ML_ORIGIN, DeleteAction.INSTANCE, deleteRequest, ActionListener.wrap(
+        executeAsyncWithOrigin(parentTaskClient, ML_ORIGIN, DeleteAction.INSTANCE, deleteRequest, listener.wrap(
             deleteResponse -> {
                 if (deleteResponse.getResult() == DocWriteResponse.Result.NOT_FOUND) {
                     listener.onFailure(ExceptionsHelper.missingDataFrameAnalytics(id));
@@ -221,25 +215,21 @@ public class TransportDeleteDataFrameAnalyticsAction
                 logger.info("[{}] Deleted", id);
                 auditor.info(id, Messages.DATA_FRAME_ANALYTICS_AUDIT_DELETED);
                 listener.onResponse(AcknowledgedResponse.TRUE);
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     private void deleteState(ParentTaskAssigningClient parentTaskClient,
                              DataFrameAnalyticsConfig config,
                              TimeValue timeout,
                              ActionListener<BulkByScrollResponse> listener) {
-        ActionListener<Boolean> deleteModelStateListener = ActionListener.wrap(
+        ActionListener<Boolean> deleteModelStateListener = listener.wrap(
             r -> executeDeleteByQuery(
                     parentTaskClient,
                     AnomalyDetectorsIndex.jobStateIndexPattern(),
                     QueryBuilders.idsQuery().addIds(StoredProgress.documentId(config.getId())),
                     timeout,
                     listener
-                )
-            , listener::onFailure
-        );
+                ));
 
         deleteModelState(parentTaskClient, config, timeout, 1, deleteModelStateListener);
     }
@@ -260,17 +250,14 @@ public class TransportDeleteDataFrameAnalyticsAction
             AnomalyDetectorsIndex.jobStateIndexPattern(),
             query,
             timeout,
-            ActionListener.wrap(
+            listener.wrap(
                 response -> {
                     if (response.getDeleted() > 0) {
                         deleteModelState(parentTaskClient, config, timeout, docNum + 1, listener);
                         return;
                     }
                     listener.onResponse(true);
-                },
-                listener::onFailure
-            )
-        );
+                }));
     }
 
     private void deleteStats(ParentTaskAssigningClient parentTaskClient,

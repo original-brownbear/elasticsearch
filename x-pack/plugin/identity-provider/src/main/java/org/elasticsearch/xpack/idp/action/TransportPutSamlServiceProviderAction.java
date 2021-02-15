@@ -65,7 +65,7 @@ public class TransportPutSamlServiceProviderAction
             return;
         }
         logger.trace("Searching for existing ServiceProvider with id [{}] for [{}]", document.entityId, request);
-        index.findByEntityId(document.entityId, ActionListener.wrap(matchingDocuments -> {
+        index.findByEntityId(document.entityId, listener.wrap(matchingDocuments -> {
             if (matchingDocuments.isEmpty()) {
                 // derive a document id from the entity id so that don't accidentally create duplicate entities due to a race condition
                 document.docId = deriveDocumentId(document);
@@ -87,7 +87,7 @@ public class TransportPutSamlServiceProviderAction
                 listener.onFailure(new IllegalStateException(
                     "Multiple service providers already exist with entity id [" + document.entityId + "]"));
             }
-        }, listener::onFailure));
+        }));
     }
 
     private void writeDocument(SamlServiceProviderDocument document, DocWriteRequest.OpType opType,
@@ -104,16 +104,14 @@ public class TransportPutSamlServiceProviderAction
             return;
         }
         logger.debug("[{}] service provider [{}] in document [{}] of [{}]", opType, document.entityId, document.docId, index);
-        index.writeDocument(document, opType, refreshPolicy, ActionListener.wrap(
+        index.writeDocument(document, opType, refreshPolicy, listener.wrap(
             response -> listener.onResponse(new PutSamlServiceProviderResponse(
                 response.getId(),
                 response.getResult() == DocWriteResponse.Result.CREATED,
                 response.getSeqNo(),
                 response.getPrimaryTerm(),
                 document.entityId,
-                document.enabled)),
-            listener::onFailure
-        ));
+                document.enabled))));
     }
 
     private String deriveDocumentId(SamlServiceProviderDocument document) {

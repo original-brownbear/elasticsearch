@@ -40,30 +40,21 @@ public class DatafeedContextProvider {
             listener.onResponse(context.build());
         };
 
-        ActionListener<RestartTimeInfo> restartTimeInfoListener = ActionListener.wrap(
-            restartTimeInfo -> {
-                context.setRestartTimeInfo(restartTimeInfo);
-                resultsProvider.datafeedTimingStats(context.getJob().getId(), timingStatsListener, listener::onFailure);
-            },
-            listener::onFailure
-        );
+        ActionListener<RestartTimeInfo> restartTimeInfoListener = listener.wrap(restartTimeInfo -> {
+            context.setRestartTimeInfo(restartTimeInfo);
+            resultsProvider.datafeedTimingStats(context.getJob().getId(), timingStatsListener, listener::onFailure);
+        });
 
-        ActionListener<Job.Builder> jobConfigListener = ActionListener.wrap(
-            jobBuilder -> {
-                context.setJob(jobBuilder.build());
-                resultsProvider.getRestartTimeInfo(jobBuilder.getId(), restartTimeInfoListener);
-            },
-            listener::onFailure
-        );
+        ActionListener<Job.Builder> jobConfigListener = listener.wrap(jobBuilder -> {
+            context.setJob(jobBuilder.build());
+            resultsProvider.getRestartTimeInfo(jobBuilder.getId(), restartTimeInfoListener);
+        });
 
-        ActionListener<DatafeedConfig.Builder> datafeedListener = ActionListener.wrap(
-            datafeedConfigBuilder -> {
-                DatafeedConfig datafeedConfig = datafeedConfigBuilder.build();
-                context.setDatafeedConfig(datafeedConfig);
-                jobConfigProvider.getJob(datafeedConfig.getJobId(), jobConfigListener);
-            },
-            listener::onFailure
-        );
+        ActionListener<DatafeedConfig.Builder> datafeedListener = listener.wrap(datafeedConfigBuilder -> {
+            DatafeedConfig datafeedConfig = datafeedConfigBuilder.build();
+            context.setDatafeedConfig(datafeedConfig);
+            jobConfigProvider.getJob(datafeedConfig.getJobId(), jobConfigListener);
+        });
 
         datafeedConfigProvider.getDatafeedConfig(datafeedId, datafeedListener);
     }

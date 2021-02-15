@@ -114,9 +114,9 @@ public class TransportCloseJobAction extends TransportTasksAction<JobTask, Close
                 true,
                 tasksMetadata,
                 request.isForce(),
-                ActionListener.wrap(
+                listener.wrap(
                     expandedJobIds -> {
-                        validate(expandedJobIds, request.isForce(), tasksMetadata, ActionListener.wrap(
+                        validate(expandedJobIds, request.isForce(), tasksMetadata, listener.wrap(
                             response -> {
                                 request.setOpenJobIds(response.openJobIds.toArray(new String[0]));
                                 if (response.openJobIds.isEmpty() && response.closingJobIds.isEmpty()) {
@@ -161,12 +161,8 @@ public class TransportCloseJobAction extends TransportTasksAction<JobTask, Close
 
                                     normalCloseJob(state, task, request, response.openJobIds, response.closingJobIds, listener);
                                 }
-                                },
-                            listener::onFailure
-                    ));
-                    },
-                listener::onFailure
-            ));
+                        }));
+                }));
         }
     }
 
@@ -193,7 +189,7 @@ public class TransportCloseJobAction extends TransportTasksAction<JobTask, Close
     void validate(Collection<String> expandedJobIds, boolean forceClose, PersistentTasksCustomMetadata tasksMetadata,
                   ActionListener<OpenAndClosingIds> listener) {
 
-        checkDatafeedsHaveStopped(expandedJobIds, tasksMetadata, ActionListener.wrap(
+        checkDatafeedsHaveStopped(expandedJobIds, tasksMetadata, listener.wrap(
                 response -> {
                     OpenAndClosingIds ids = new OpenAndClosingIds();
                     List<String> failedJobs = new ArrayList<>();
@@ -217,14 +213,12 @@ public class TransportCloseJobAction extends TransportTasksAction<JobTask, Close
                     // If there are failed jobs force close is true
                     ids.openJobIds.addAll(failedJobs);
                     listener.onResponse(ids);
-                },
-                listener::onFailure
-        ));
+                }));
     }
 
     void checkDatafeedsHaveStopped(Collection<String> jobIds, PersistentTasksCustomMetadata tasksMetadata,
                                    ActionListener<Boolean> listener) {
-        datafeedConfigProvider.findDatafeedsForJobIds(jobIds, ActionListener.wrap(
+        datafeedConfigProvider.findDatafeedsForJobIds(jobIds, listener.wrap(
                 datafeedIds -> {
                     for (String datafeedId : datafeedIds) {
                         DatafeedState datafeedState = MlTasks.getDatafeedState(datafeedId, tasksMetadata);
@@ -235,9 +229,7 @@ public class TransportCloseJobAction extends TransportTasksAction<JobTask, Close
                         }
                     }
                     listener.onResponse(Boolean.TRUE);
-                },
-                listener::onFailure
-        ));
+                }));
     }
 
     static void addJobAccordingToState(String jobId, PersistentTasksCustomMetadata tasksMetadata,
@@ -288,7 +280,7 @@ public class TransportCloseJobAction extends TransportTasksAction<JobTask, Close
     @Override
     protected void taskOperation(CloseJobAction.Request request, JobTask jobTask, ActionListener<CloseJobAction.Response> listener) {
         JobTaskState taskState = new JobTaskState(JobState.CLOSING, jobTask.getAllocationId(), "close job (api)");
-        jobTask.updatePersistentTaskState(taskState, ActionListener.wrap(task -> {
+        jobTask.updatePersistentTaskState(taskState, listener.wrap(task -> {
             // we need to fork because we are now on a network threadpool and closeJob method may take a while to complete:
             threadPool.executor(MachineLearning.UTILITY_THREAD_POOL_NAME).execute(new AbstractRunnable() {
                 @Override
@@ -307,7 +299,7 @@ public class TransportCloseJobAction extends TransportTasksAction<JobTask, Close
                     listener.onResponse(new CloseJobAction.Response(true));
                 }
             });
-        }, listener::onFailure));
+        }));
     }
 
     @Override
@@ -412,10 +404,7 @@ public class TransportCloseJobAction extends TransportTasksAction<JobTask, Close
         }
 
         ActionListener<CloseJobAction.Response> finalListener =
-                ActionListener.wrap(
-                        r -> waitForJobClosed(request, waitForCloseRequest,
-                        r, listener),
-                        listener::onFailure);
+                listener.wrap(r -> waitForJobClosed(request, waitForCloseRequest, r, listener));
         super.doExecute(task, request, finalListener);
     }
 

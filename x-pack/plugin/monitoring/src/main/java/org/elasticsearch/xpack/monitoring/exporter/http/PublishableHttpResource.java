@@ -126,14 +126,14 @@ public abstract class PublishableHttpResource extends HttpResource {
      */
     @Override
     protected final void doCheckAndPublish(final RestClient client, final ActionListener<ResourcePublishResult> listener) {
-        doCheck(client, ActionListener.wrap(exists -> {
+        doCheck(client, listener.wrap(exists -> {
             if (exists) {
                 // it already exists, so we can skip publishing it
                 listener.onResponse(ResourcePublishResult.ready());
             } else {
                 doPublish(client, listener);
             }
-        }, listener::onFailure));
+        }));
     }
 
     /**

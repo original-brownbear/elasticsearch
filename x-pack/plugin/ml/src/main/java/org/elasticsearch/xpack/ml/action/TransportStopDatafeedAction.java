@@ -136,7 +136,7 @@ public class TransportStopDatafeedAction extends TransportTasksAction<TransportS
                 request.allowNoMatch(),
                 tasks,
                 request.isForce(),
-                ActionListener.wrap(
+                listener.wrap(
                     expandedIds -> {
                         List<String> startedDatafeeds = new ArrayList<>();
                         List<String> stoppingDatafeeds = new ArrayList<>();
@@ -153,8 +153,7 @@ public class TransportStopDatafeedAction extends TransportTasksAction<TransportS
                         } else {
                             normalStopDatafeed(task, request, listener, tasks, nodes, startedDatafeeds, stoppingDatafeeds);
                         }
-                    },
-                    listener::onFailure
+                    }
             ));
         }
     }

@@ -89,10 +89,9 @@ public class TransportMonitoringMigrateAlertsAction extends TransportMasterNodeA
     private ActionListener<ClusterUpdateSettingsResponse> completeOnManagementThread(
         ActionListener<MonitoringMigrateAlertsResponse> delegate) {
         // Send failures to the final listener directly, and on success, fork to management thread and execute best effort alert removal
-        return ActionListener.wrap(
+        return delegate.wrap(
             (response) -> threadPool.executor(ThreadPool.Names.MANAGEMENT).execute(
-                ActionRunnable.wrap(delegate, (listener) -> afterSettingUpdate(listener, response))),
-            delegate::onFailure
+                ActionRunnable.wrap(delegate, (listener) -> afterSettingUpdate(listener, response)))
         );
     }
 

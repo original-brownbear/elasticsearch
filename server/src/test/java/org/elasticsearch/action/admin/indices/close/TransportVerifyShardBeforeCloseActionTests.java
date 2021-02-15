@@ -134,12 +134,10 @@ public class TransportVerifyShardBeforeCloseActionTests extends ESTestCase {
         final TransportVerifyShardBeforeCloseAction.ShardRequest request =
             new TransportVerifyShardBeforeCloseAction.ShardRequest(indexShard.shardId(), clusterBlock, phase1, taskId);
         final PlainActionFuture<Void> res = PlainActionFuture.newFuture();
-        action.shardOperationOnPrimary(request, indexShard, ActionListener.wrap(
-            r -> {
-                assertNotNull(r);
-                res.onResponse(null);
-            },
-            res::onFailure
+        action.shardOperationOnPrimary(request, indexShard, res.wrap(r -> {
+                    assertNotNull(r);
+                    res.onResponse(null);
+                }
         ));
         try {
             res.get();

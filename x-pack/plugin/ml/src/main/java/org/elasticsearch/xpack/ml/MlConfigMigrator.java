@@ -163,12 +163,7 @@ public class MlConfigMigrator {
         }
 
         if (clusterState.metadata().hasIndex(MlConfigIndex.indexName()) == false) {
-            createConfigIndex(ActionListener.wrap(
-                    response -> {
-                        unMarkMigrationInProgress.onResponse(Boolean.FALSE);
-                    },
-                    unMarkMigrationInProgress::onFailure
-            ));
+            createConfigIndex(unMarkMigrationInProgress.wrap(response -> unMarkMigrationInProgress.onResponse(Boolean.FALSE)));
             return;
         }
 
@@ -177,30 +172,26 @@ public class MlConfigMigrator {
             return;
         }
 
-        snapshotMlMeta(MlMetadata.getMlMetadata(clusterState), ActionListener.wrap(
-                response -> {
+        snapshotMlMeta(MlMetadata.getMlMetadata(clusterState), unMarkMigrationInProgress.wrap(response -> {
                     // We have successfully snapshotted the ML configs so we don't need to try again
                     tookConfigSnapshot.set(true);
                     migrateBatches(batches, unMarkMigrationInProgress);
-                },
-                unMarkMigrationInProgress::onFailure
+                }
         ));
     }
 
     private void migrateBatches(List<JobsAndDatafeeds> batches, ActionListener<Boolean> listener) {
         VoidChainTaskExecutor voidChainTaskExecutor = new VoidChainTaskExecutor(EsExecutors.newDirectExecutorService(), true);
         for (JobsAndDatafeeds batch : batches) {
-            voidChainTaskExecutor.add(chainedListener -> writeConfigToIndex(batch.datafeedConfigs, batch.jobs, ActionListener.wrap(
+            voidChainTaskExecutor.add(chainedListener -> writeConfigToIndex(batch.datafeedConfigs, batch.jobs, chainedListener.wrap(
                 failedDocumentIds -> {
                     List<Job> successfulJobWrites = filterFailedJobConfigWrites(failedDocumentIds, batch.jobs);
                     List<DatafeedConfig> successfulDatafeedWrites =
                         filterFailedDatafeedConfigWrites(failedDocumentIds, batch.datafeedConfigs);
                     removeFromClusterState(successfulJobWrites, successfulDatafeedWrites, chainedListener);
-                },
-                chainedListener::onFailure
-            )));
+                })));
         }
-        voidChainTaskExecutor.execute(ActionListener.wrap(aVoids -> listener.onResponse(true), listener::onFailure));
+        voidChainTaskExecutor.execute(listener.wrap(aVoids -> listener.onResponse(true)));
     }
 
     // Exposed for testing
@@ -214,12 +205,10 @@ public class MlConfigMigrator {
         bulkRequestBuilder.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
         executeAsyncWithOrigin(client.threadPool().getThreadContext(), ML_ORIGIN, bulkRequestBuilder.request(),
-                ActionListener.<BulkResponse>wrap(
-                        bulkResponse -> {
-                            Set<String> failedDocumentIds = documentsNotWritten(bulkResponse);
-                            listener.onResponse(failedDocumentIds);
-                        },
-                        listener::onFailure),
+                listener.<BulkResponse>wrap(bulkResponse -> {
+                    Set<String> failedDocumentIds = documentsNotWritten(bulkResponse);
+                    listener.onResponse(failedDocumentIds);
+                }),
                 client::bulk
         );
     }
@@ -463,7 +452,7 @@ public class MlConfigMigrator {
             return;
         }
 
-        AnomalyDetectorsIndex.createStateIndexAndAliasIfNecessary(client, clusterService.state(), expressionResolver, ActionListener.wrap(
+        AnomalyDetectorsIndex.createStateIndexAndAliasIfNecessary(client, clusterService.state(), expressionResolver, listener.wrap(
             r -> {
                 executeAsyncWithOrigin(client.threadPool().getThreadContext(), ML_ORIGIN, indexRequest,
                     ActionListener.<IndexResponse>wrap(
@@ -480,9 +469,7 @@ public class MlConfigMigrator {
                         }),
                     client::index
                 );
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     private void createConfigIndex(ActionListener<Boolean> listener) {
@@ -500,10 +487,7 @@ public class MlConfigMigrator {
         }
 
         executeAsyncWithOrigin(client.threadPool().getThreadContext(), ML_ORIGIN, createIndexRequest,
-                ActionListener.<CreateIndexResponse>wrap(
-                        r -> listener.onResponse(r.isAcknowledged()),
-                        listener::onFailure
-                ), client.admin().indices()::create);
+                listener.<CreateIndexResponse>wrap(r -> listener.onResponse(r.isAcknowledged())), client.admin().indices()::create);
     }
 
     public static Job updateJobForMigration(Job job) {

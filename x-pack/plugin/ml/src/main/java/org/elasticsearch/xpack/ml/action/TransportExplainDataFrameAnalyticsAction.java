@@ -128,20 +128,13 @@ public class TransportExplainDataFrameAnalyticsAction
                     .build();
                 extractedFieldsDetectorFactory.createFromSource(
                     config,
-                    ActionListener.wrap(
-                        extractedFieldsDetector -> explain(task, config, extractedFieldsDetector, listener),
-                        listener::onFailure
-                    )
+                    listener.wrap(extractedFieldsDetector -> explain(task, config, extractedFieldsDetector, listener))
                 );
             });
         } else {
             extractedFieldsDetectorFactory.createFromSource(
                 request.getConfig(),
-                ActionListener.wrap(
-                    extractedFieldsDetector -> explain(task, request.getConfig(), extractedFieldsDetector, listener),
-                    listener::onFailure
-                )
-            );
+                listener.wrap(extractedFieldsDetector -> explain(task, request.getConfig(), extractedFieldsDetector, listener)));
         }
     }
 
@@ -158,10 +151,8 @@ public class TransportExplainDataFrameAnalyticsAction
             return;
         }
 
-        ActionListener<MemoryEstimation> memoryEstimationListener = ActionListener.wrap(
-            memoryEstimation -> listener.onResponse(new ExplainDataFrameAnalyticsAction.Response(fieldExtraction.v2(), memoryEstimation)),
-            listener::onFailure
-        );
+        ActionListener<MemoryEstimation> memoryEstimationListener = listener.wrap(
+            memoryEstimation -> listener.onResponse(new ExplainDataFrameAnalyticsAction.Response(fieldExtraction.v2(), memoryEstimation)));
 
         estimateMemoryUsage(task, config, fieldExtraction.v1(), memoryEstimationListener);
     }
@@ -182,12 +173,8 @@ public class TransportExplainDataFrameAnalyticsAction
             estimateMemoryTaskId,
             config,
             extractorFactory,
-            ActionListener.wrap(
-                result -> listener.onResponse(
-                    new MemoryEstimation(result.getExpectedMemoryWithoutDisk(), result.getExpectedMemoryWithDisk())),
-                listener::onFailure
-            )
-        );
+            listener.wrap(result -> listener.onResponse(
+                    new MemoryEstimation(result.getExpectedMemoryWithoutDisk(), result.getExpectedMemoryWithDisk()))));
     }
 
     /**

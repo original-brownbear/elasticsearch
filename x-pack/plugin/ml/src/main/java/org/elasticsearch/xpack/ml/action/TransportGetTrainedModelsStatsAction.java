@@ -75,14 +75,12 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
 
         GetTrainedModelsStatsAction.Response.Builder responseBuilder = new GetTrainedModelsStatsAction.Response.Builder();
 
-        ActionListener<List<InferenceStats>> inferenceStatsListener = ActionListener.wrap(
+        ActionListener<List<InferenceStats>> inferenceStatsListener = listener.wrap(
             inferenceStats -> listener.onResponse(responseBuilder.setInferenceStatsByModelId(inferenceStats.stream()
                     .collect(Collectors.toMap(InferenceStats::getModelId, Function.identity())))
-                    .build()),
-            listener::onFailure
-        );
+                    .build()));
 
-        ActionListener<NodesStatsResponse> nodesStatsListener = ActionListener.wrap(
+        ActionListener<NodesStatsResponse> nodesStatsListener = listener.wrap(
             nodesStatsResponse -> {
                 Map<String, IngestStats> modelIdIngestStats = inferenceIngestStatsByModelId(nodesStatsResponse,
                     pipelineIdsByModelIds(clusterService.state(),
@@ -90,11 +88,9 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
                         responseBuilder.getExpandedIds()));
                 responseBuilder.setIngestStatsByModelId(modelIdIngestStats);
                 trainedModelProvider.getInferenceStats(responseBuilder.getExpandedIds().toArray(new String[0]), inferenceStatsListener);
-            },
-            listener::onFailure
-        );
+            });
 
-        ActionListener<Tuple<Long, Set<String>>> idsListener = ActionListener.wrap(
+        ActionListener<Tuple<Long, Set<String>>> idsListener = listener.wrap(
             tuple -> {
                 responseBuilder.setExpandedIds(tuple.v2())
                     .setTotalModelCount(tuple.v1());
@@ -102,9 +98,7 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
                 NodesStatsRequest nodesStatsRequest = new NodesStatsRequest(ingestNodes).clear()
                     .addMetric(NodesStatsRequest.Metric.INGEST.metricName());
                 executeAsyncWithOrigin(client, ML_ORIGIN, NodesStatsAction.INSTANCE, nodesStatsRequest, nodesStatsListener);
-            },
-            listener::onFailure
-        );
+            });
 
         trainedModelProvider.expandIds(request.getResourceId(),
             request.isAllowNoResources(),

@@ -53,7 +53,7 @@ public class TransportDeleteFilterAction extends HandledTransportAction<DeleteFi
     @Override
     protected void doExecute(Task task, DeleteFilterAction.Request request, ActionListener<AcknowledgedResponse> listener) {
         final String filterId = request.getFilterId();
-        jobConfigProvider.findJobsWithCustomRules(ActionListener.wrap(
+        jobConfigProvider.findJobsWithCustomRules(listener.wrap(
                 jobs-> {
                     List<String> currentlyUsedBy = findJobsUsingFilter(jobs, filterId);
                     if (currentlyUsedBy.isEmpty() == false) {
@@ -62,10 +62,7 @@ public class TransportDeleteFilterAction extends HandledTransportAction<DeleteFi
                     } else {
                         deleteFilter(filterId, listener);
                     }
-                },
-                listener::onFailure
-            )
-        );
+                }));
     }
 
     private static List<String> findJobsUsingFilter(List<Job> jobs, String filterId) {

@@ -325,16 +325,11 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     public void executeDfsPhase(ShardSearchRequest request, boolean keepStatesInContext,
                                 SearchShardTask task, ActionListener<SearchPhaseResult> listener) {
         final IndexShard shard = getShard(request);
-        rewriteAndFetchShardRequest(shard, request, new ActionListener<ShardSearchRequest>() {
+        rewriteAndFetchShardRequest(shard, request, new ActionListener.FailureDelegatingListener<>(listener) {
             @Override
             public void onResponse(ShardSearchRequest rewritten) {
                 // fork the execution in the search thread pool
-                runAsync(getExecutor(shard), () -> executeDfsPhase(request, task, keepStatesInContext), listener);
-            }
-
-            @Override
-            public void onFailure(Exception exc) {
-                listener.onFailure(exc);
+                runAsync(getExecutor(shard), () -> executeDfsPhase(request, task, keepStatesInContext), delegate);
             }
         });
     }
@@ -372,7 +367,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
         assert request.canReturnNullResponseIfMatchNoDocs() == false || request.numberOfShards() > 1
             : "empty responses require more than one shard";
         final IndexShard shard = getShard(request);
-        rewriteAndFetchShardRequest(shard, request, new ActionListener<ShardSearchRequest>() {
+        rewriteAndFetchShardRequest(shard, request, new ActionListener.FailureDelegatingListener<>(listener) {
             @Override
             public void onResponse(ShardSearchRequest orig) {
                 // check if we can shortcut the query phase entirely.
@@ -383,21 +378,16 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                         ShardSearchRequest clone = new ShardSearchRequest(orig);
                         canMatchResp = canMatch(clone, false);
                     } catch (Exception exc) {
-                        listener.onFailure(exc);
+                        delegate.onFailure(exc);
                         return;
                     }
                     if (canMatchResp.canMatch == false) {
-                        listener.onResponse(QuerySearchResult.nullInstance());
+                        delegate.onResponse(QuerySearchResult.nullInstance());
                         return;
                     }
                 }
                 // fork the execution in the search thread pool
-                runAsync(getExecutor(shard), () -> executeQueryPhase(orig, task, keepStatesInContext), listener);
-            }
-
-            @Override
-            public void onFailure(Exception exc) {
-                listener.onFailure(exc);
+                runAsync(getExecutor(shard), () -> executeQueryPhase(orig, task, keepStatesInContext), delegate);
             }
         });
     }
@@ -1266,14 +1256,14 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private void rewriteAndFetchShardRequest(IndexShard shard, ShardSearchRequest request, ActionListener<ShardSearchRequest> listener) {
-        ActionListener<Rewriteable> actionListener = ActionListener.wrap(r -> {
+        ActionListener<Rewriteable> actionListener = listener.wrap(r -> {
             if (request.readerId() != null) {
                 listener.onResponse(request);
             } else {
                 // now we need to check if there is a pending refresh and register
                 shard.awaitShardSearchActive(b -> listener.onResponse(request));
             }
-        }, listener::onFailure);
+        });
         // we also do rewrite on the coordinating node (TransportSearchService) but we also need to do it here for BWC as well as
         // AliasFilters that might need to be rewritten. These are edge-cases but we are every efficient doing the rewrite here so it's not
         // adding a lot of overhead

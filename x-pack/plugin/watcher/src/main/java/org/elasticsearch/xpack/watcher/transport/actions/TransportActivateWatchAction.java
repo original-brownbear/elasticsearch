@@ -72,12 +72,12 @@ public class TransportActivateWatchAction extends WatcherTransportAction<Activat
             updateRequest.retryOnConflict(2);
 
             executeAsyncWithOrigin(client.threadPool().getThreadContext(), WATCHER_ORIGIN, updateRequest,
-                    ActionListener.<UpdateResponse>wrap(updateResponse -> {
+                listener.<UpdateResponse>wrap(updateResponse -> {
                 GetRequest getRequest = new GetRequest(Watch.INDEX, request.getWatchId())
                         .preference(Preference.LOCAL.type()).realtime(true);
 
                 executeAsyncWithOrigin(client.threadPool().getThreadContext(), WATCHER_ORIGIN, getRequest,
-                        ActionListener.<GetResponse>wrap(getResponse -> {
+                        listener.<GetResponse>wrap(getResponse -> {
                             if (getResponse.isExists()) {
                                 Watch watch = parser.parseWithSecrets(request.getWatchId(), true, getResponse.getSourceAsBytesRef(), now,
                                         XContentType.JSON, getResponse.getSeqNo(), getResponse.getPrimaryTerm());
@@ -87,8 +87,8 @@ public class TransportActivateWatchAction extends WatcherTransportAction<Activat
                                 listener.onFailure(new ResourceNotFoundException("Watch with id [{}] does not exist",
                                         request.getWatchId()));
                             }
-                        }, listener::onFailure), client::get);
-            }, listener::onFailure), client::update);
+                        }), client::get);
+            }), client::update);
         } catch (IOException e) {
             listener.onFailure(e);
         }

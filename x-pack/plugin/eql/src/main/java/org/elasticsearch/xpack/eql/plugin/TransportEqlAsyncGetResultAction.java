@@ -65,16 +65,14 @@ public class TransportEqlAsyncGetResultAction extends HandledTransportAction<Get
     protected void doExecute(Task task, GetAsyncResultRequest request, ActionListener<EqlSearchResponse> listener) {
         DiscoveryNode node = resultsService.getNode(request.getId());
         if (node == null || resultsService.isLocalNode(node)) {
-            resultsService.retrieveResult(request, ActionListener.wrap(
+            resultsService.retrieveResult(request, listener.wrap(
                 r -> {
                     if (r.getException() != null) {
                         listener.onFailure(r.getException());
                     } else {
                         listener.onResponse(r.getResponse());
                     }
-                },
-                listener::onFailure
-            ));
+                }));
         } else {
             transportService.sendRequest(node, EqlAsyncActionNames.EQL_ASYNC_GET_RESULT_ACTION_NAME, request,
                 new ActionListenerResponseHandler<>(listener, EqlSearchResponse::new, ThreadPool.Names.SAME));

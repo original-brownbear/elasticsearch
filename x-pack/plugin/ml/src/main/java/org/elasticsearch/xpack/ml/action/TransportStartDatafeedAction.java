@@ -210,34 +210,22 @@ public class TransportStartDatafeedAction extends TransportMasterNodeAction<Star
                 }
             };
 
-        ActionListener<Job.Builder> jobListener = ActionListener.wrap(
-                jobBuilder -> {
-                    try {
-                        Job job = jobBuilder.build();
-                        validate(job, datafeedConfigHolder.get(), tasks, xContentRegistry);
-                        auditDeprecations(datafeedConfigHolder.get(), job, auditor, xContentRegistry);
-                        createDataExtractor.accept(job);
-                    } catch (Exception e) {
-                        listener.onFailure(e);
-                    }
-                },
-                listener::onFailure
+        ActionListener<Job.Builder> jobListener = listener.wrap(jobBuilder -> {
+                    Job job = jobBuilder.build();
+                    validate(job, datafeedConfigHolder.get(), tasks, xContentRegistry);
+                    auditDeprecations(datafeedConfigHolder.get(), job, auditor, xContentRegistry);
+                    createDataExtractor.accept(job);
+                }
         );
 
-        ActionListener<DatafeedConfig.Builder> datafeedListener = ActionListener.wrap(
-                datafeedBuilder -> {
-                    try {
-                        DatafeedConfig datafeedConfig = datafeedBuilder.build();
-                        params.setDatafeedIndices(datafeedConfig.getIndices());
-                        params.setJobId(datafeedConfig.getJobId());
-                        params.setIndicesOptions(datafeedConfig.getIndicesOptions());
-                        datafeedConfigHolder.set(datafeedConfig);
-                        jobConfigProvider.getJob(datafeedConfig.getJobId(), jobListener);
-                    } catch (Exception e) {
-                        listener.onFailure(e);
-                    }
-                },
-                listener::onFailure
+        ActionListener<DatafeedConfig.Builder> datafeedListener = listener.wrap(datafeedBuilder -> {
+                    DatafeedConfig datafeedConfig = datafeedBuilder.build();
+                    params.setDatafeedIndices(datafeedConfig.getIndices());
+                    params.setJobId(datafeedConfig.getJobId());
+                    params.setIndicesOptions(datafeedConfig.getIndicesOptions());
+                    datafeedConfigHolder.set(datafeedConfig);
+                    jobConfigProvider.getJob(datafeedConfig.getJobId(), jobListener);
+                }
         );
 
         datafeedConfigProvider.getDatafeedConfig(params.getDatafeedId(), datafeedListener);

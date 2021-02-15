@@ -142,7 +142,7 @@ public class BasicQueryClient implements QueryClient {
             multiSearchBuilder.add(search);
         }
 
-        search(multiSearchBuilder.request(), ActionListener.wrap(r -> {
+        search(multiSearchBuilder.request(), listener.wrap(r -> {
             for (MultiSearchResponse.Item item : r.getResponses()) {
                 // check for failures
                 if (item.isFailure()) {
@@ -165,6 +165,6 @@ public class BasicQueryClient implements QueryClient {
                 }
             }
             listener.onResponse(seq);
-        }, listener::onFailure));
+        }));
     }
 }

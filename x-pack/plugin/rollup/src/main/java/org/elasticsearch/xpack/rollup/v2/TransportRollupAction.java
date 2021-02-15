@@ -111,7 +111,7 @@ public class TransportRollupAction extends AcknowledgedTransportMasterNodeAction
         // 4. shrink index
         // 5. delete temporary index
         // at any point if there is an issue, then cleanup temp index
-        client.admin().indices().create(req, ActionListener.wrap(createIndexResponse ->
+        client.admin().indices().create(req, listener.wrap(createIndexResponse ->
             client.execute(RollupIndexerAction.INSTANCE, rollupIndexerRequest, ActionListener.wrap(indexerResp -> {
                 if (indexerResp.isCreated()) {
                     client.admin().indices().updateSettings(updateSettingsReq, ActionListener.wrap(updateSettingsResponse -> {
@@ -133,7 +133,7 @@ public class TransportRollupAction extends AcknowledgedTransportMasterNodeAction
                     deleteTmpIndex(originalIndexName, tmpIndexName, listener,
                         new ElasticsearchException("Unable to index into temp rollup index [" + tmpIndexName + "]"));
                 }
-            }, e -> deleteTmpIndex(originalIndexName, tmpIndexName, listener, e))), listener::onFailure));
+            }, e -> deleteTmpIndex(originalIndexName, tmpIndexName, listener, e)))));
     }
 
     @Override

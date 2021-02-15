@@ -171,7 +171,7 @@ public class TransformTask extends AllocatedPersistentTask implements SchedulerE
         TransformCheckpointService transformsCheckpointService,
         ActionListener<TransformCheckpointingInfo> listener
     ) {
-        ActionListener<TransformCheckpointingInfoBuilder> checkPointInfoListener = ActionListener.wrap(infoBuilder -> {
+        ActionListener<TransformCheckpointingInfoBuilder> checkPointInfoListener = listener.wrap(infoBuilder -> {
             if (context.getChangesLastDetectedAt() != null) {
                 infoBuilder.setChangesLastDetectedAt(context.getChangesLastDetectedAt());
             }
@@ -179,7 +179,7 @@ public class TransformTask extends AllocatedPersistentTask implements SchedulerE
                 infoBuilder.setLastSearchTime(context.getLastSearchTime());
             }
             listener.onResponse(infoBuilder.build());
-        }, listener::onFailure);
+        });
 
         ClientTransformIndexer indexer = getIndexer();
         if (indexer == null) {

@@ -521,13 +521,12 @@ public class RecoverySourceHandler {
                 recoveryTarget.receiveFileInfo(phase1FileNames, phase1FileSizes, phase1ExistingFileNames,
                         phase1ExistingFileSizes, translogOps.getAsInt(), sendFileInfoStep);
 
-                sendFileInfoStep.whenComplete(r ->
-                    sendFiles(store, phase1Files.toArray(new StoreFileMetadata[0]), translogOps, sendFilesStep), listener::onFailure);
+                sendFileInfoStep.addListener(listener.wrap(
+                        r -> sendFiles(store, phase1Files.toArray(new StoreFileMetadata[0]), translogOps, sendFilesStep)));
 
-                sendFilesStep.whenComplete(r -> createRetentionLease(startingSeqNo, createRetentionLeaseStep), listener::onFailure);
+                sendFilesStep.addListener(listener.wrap(r -> createRetentionLease(startingSeqNo, createRetentionLeaseStep)));
 
-                createRetentionLeaseStep.whenComplete(retentionLease ->
-                    {
+                createRetentionLeaseStep.addListener(listener.wrap(retentionLease -> {
                         final long lastKnownGlobalCheckpoint = shard.getLastKnownGlobalCheckpoint();
                         assert retentionLease == null || retentionLease.retainingSequenceNumber() - 1 <= lastKnownGlobalCheckpoint
                             : retentionLease + " vs " + lastKnownGlobalCheckpoint;
@@ -536,29 +535,28 @@ public class RecoverySourceHandler {
                         // to the max seqno of this commit? Because (in rare corner cases) this commit might not be a safe commit here on
                         // the primary, and in these cases the max seqno would be too high to be valid as a global checkpoint.
                         cleanFiles(store, recoverySourceMetadata, translogOps, lastKnownGlobalCheckpoint, cleanFilesStep);
-                    },
-                    listener::onFailure);
+                }));
 
                 final long totalSize = totalSizeInBytes;
                 final long existingTotalSize = existingTotalSizeInBytes;
-                cleanFilesStep.whenComplete(r -> {
+                cleanFilesStep.addListener(listener.wrap(r -> {
                     final TimeValue took = stopWatch.totalTime();
                     logger.trace("recovery [phase1]: took [{}]", took);
                     listener.onResponse(new SendFileResult(phase1FileNames, phase1FileSizes, totalSize, phase1ExistingFileNames,
                         phase1ExistingFileSizes, existingTotalSize, took));
-                }, listener::onFailure);
+                }));
             } else {
                 logger.trace("skipping [phase1] since source and target have identical sync id [{}]", recoverySourceMetadata.getSyncId());
 
                 // but we must still create a retention lease
                 final StepListener<RetentionLease> createRetentionLeaseStep = new StepListener<>();
                 createRetentionLease(startingSeqNo, createRetentionLeaseStep);
-                createRetentionLeaseStep.whenComplete(retentionLease -> {
+                createRetentionLeaseStep.addListener(listener.wrap(retentionLease -> {
                     final TimeValue took = stopWatch.totalTime();
                     logger.trace("recovery [phase1]: took [{}]", took);
                     listener.onResponse(new SendFileResult(Collections.emptyList(), Collections.emptyList(), 0L, Collections.emptyList(),
                         Collections.emptyList(), 0L, took));
-                }, listener::onFailure);
+                }));
 
             }
         } catch (Exception e) {
@@ -671,7 +669,7 @@ public class RecoverySourceHandler {
         final StepListener<Void> sendListener = new StepListener<>();
         final OperationBatchSender sender = new OperationBatchSender(startingSeqNo, endingSeqNo, snapshot, maxSeenAutoIdTimestamp,
             maxSeqNoOfUpdatesOrDeletes, retentionLeases, mappingVersion, sendListener);
-        sendListener.whenComplete(
+        sendListener.addListener(listener.wrap(
             ignored -> {
                 final long skippedOps = sender.skippedOps.get();
                 final int totalSentOps = sender.sentOps.get();
@@ -683,7 +681,7 @@ public class RecoverySourceHandler {
                 final TimeValue tookTime = stopWatch.totalTime();
                 logger.trace("recovery [phase2]: took [{}]", tookTime);
                 listener.onResponse(new SendSnapshotResult(targetLocalCheckpoint, totalSentOps, tookTime));
-            }, listener::onFailure);
+            }));
         sender.start();
     }
 
@@ -805,7 +803,7 @@ public class RecoverySourceHandler {
         final StepListener<Void> finalizeListener = new StepListener<>();
         cancellableThreads.checkForCancel();
         recoveryTarget.finalizeRecovery(globalCheckpoint, trimAboveSeqNo, finalizeListener);
-        finalizeListener.whenComplete(r -> {
+        finalizeListener.addListener(listener.wrap(r -> {
             runUnderPrimaryPermit(() -> shard.updateGlobalCheckpointForShard(request.targetAllocationId(), globalCheckpoint),
                 shardId + " updating " + request.targetAllocationId() + "'s global checkpoint", shard, cancellableThreads, logger);
 
@@ -813,10 +811,10 @@ public class RecoverySourceHandler {
                 logger.trace("performing relocation hand-off");
                 // this acquires all IndexShard operation permits and will thus delay new recoveries until it is done
                 cancellableThreads.execute(() -> shard.relocated(request.targetAllocationId(), recoveryTarget::handoffPrimaryContext,
-                        ActionListener.wrap(v -> {
+                        listener.wrap(v -> {
                             cancellableThreads.checkForCancel();
                             completeFinalizationListener(listener, stopWatch);
-                        }, listener::onFailure)));
+                        })));
                 /*
                  * if the recovery process fails after disabling primary mode on the source shard, both relocation source and
                  * target are failed (see {@link IndexShard#updateRoutingEntry}).
@@ -824,7 +822,7 @@ public class RecoverySourceHandler {
             } else {
                 completeFinalizationListener(listener, stopWatch);
             }
-        }, listener::onFailure);
+        }));
     }
 
     private void completeFinalizationListener(ActionListener<Void> listener, StopWatch stopWatch) {

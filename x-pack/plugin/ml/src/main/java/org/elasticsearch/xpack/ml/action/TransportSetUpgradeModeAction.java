@@ -122,7 +122,7 @@ public class TransportSetUpgradeModeAction extends AcknowledgedTransportMasterNo
         final PersistentTasksCustomMetadata tasksCustomMetadata = state.metadata().custom(PersistentTasksCustomMetadata.TYPE);
 
         // <4> We have unassigned the tasks, respond to the listener.
-        ActionListener<List<PersistentTask<?>>> unassignPersistentTasksListener = ActionListener.wrap(
+        ActionListener<List<PersistentTask<?>>> unassignPersistentTasksListener = wrappedListener.wrap(
             unassignedPersistentTasks -> {
                 // Wait for our tasks to all stop
                 client.admin()
@@ -132,7 +132,7 @@ public class TransportSetUpgradeModeAction extends AcknowledgedTransportMasterNo
                     // There is a chance that we failed un-allocating a task due to allocation_id being changed
                     // This call will timeout in that case and return an error
                     .setWaitForCompletion(true)
-                    .setTimeout(request.timeout()).execute(ActionListener.wrap(
+                    .setTimeout(request.timeout()).execute(wrappedListener.wrap(
                         r -> {
                             try {
                                 // Handle potential node timeouts,
@@ -147,20 +147,14 @@ public class TransportSetUpgradeModeAction extends AcknowledgedTransportMasterNo
                                 logger.info("Caught node failures waiting for tasks to be unassigned", ex);
                                 wrappedListener.onFailure(ex);
                             }
-                        },
-                        wrappedListener::onFailure));
-            },
-            wrappedListener::onFailure
-        );
+                        }));
+        });
 
         // <3> After isolating the datafeeds, unassign the tasks
-        ActionListener<List<IsolateDatafeedAction.Response>> isolateDatafeedListener = ActionListener.wrap(
-            isolatedDatafeeds -> {
-                logger.info("Isolated the datafeeds");
-                unassignPersistentTasks(tasksCustomMetadata, unassignPersistentTasksListener);
-            },
-            wrappedListener::onFailure
-        );
+        ActionListener<List<IsolateDatafeedAction.Response>> isolateDatafeedListener = wrappedListener.wrap(isolatedDatafeeds -> {
+            logger.info("Isolated the datafeeds");
+            unassignPersistentTasks(tasksCustomMetadata, unassignPersistentTasksListener);
+        });
 
         /*
           <2> Handle the cluster response and act accordingly
@@ -185,7 +179,7 @@ public class TransportSetUpgradeModeAction extends AcknowledgedTransportMasterNo
           </.2>
           </2>
          */
-        ActionListener<AcknowledgedResponse> clusterStateUpdateListener = ActionListener.wrap(
+        ActionListener<AcknowledgedResponse> clusterStateUpdateListener = wrappedListener.wrap(
             acknowledgedResponse -> {
                 // State change was not acknowledged, we either timed out or ran into some exception
                 // We should not continue and alert failure to the end user
@@ -214,15 +208,13 @@ public class TransportSetUpgradeModeAction extends AcknowledgedTransportMasterNo
                             persistentTasksCustomMetadata.tasks().stream()
                                 .noneMatch(t -> ML_TASK_NAMES.contains(t.getTaskName()) && t.getAssignment().equals(AWAITING_UPGRADE)),
                         request.timeout(),
-                        ActionListener.wrap(r -> {
+                        wrappedListener.wrap(r -> {
                             logger.info("Done waiting for tasks to be out of AWAITING_UPGRADE");
                             wrappedListener.onResponse(AcknowledgedResponse.TRUE);
-                        }, wrappedListener::onFailure)
+                        })
                     );
                 }
-            },
-            wrappedListener::onFailure
-        );
+            });
 
         //<1> Change MlMetadata to indicate that upgrade_mode is now enabled
         clusterService.submitStateUpdateTask("ml-set-upgrade-mode",

@@ -107,7 +107,7 @@ public class TransportGetDataFrameAnalyticsStatsAction
                                  ActionListener<QueryPage<Stats>> listener) {
         logger.debug("Get stats for running task [{}]", task.getParams().getId());
 
-        ActionListener<Void> updateProgressListener = ActionListener.wrap(
+        ActionListener<Void> updateProgressListener = listener.wrap(
             aVoid -> {
                 StatsHolder statsHolder = task.getStatsHolder();
                 if (statsHolder == null) {
@@ -125,8 +125,7 @@ public class TransportGetDataFrameAnalyticsStatsAction
                 );
                 listener.onResponse(new QueryPage<>(Collections.singletonList(stats), 1,
                     GetDataFrameAnalyticsAction.Response.RESULTS_FIELD));
-            }, listener::onFailure
-        );
+            });
 
         // We must update the progress of the reindexing task as it might be stale
         task.updateTaskProgress(updateProgressListener);
@@ -137,14 +136,14 @@ public class TransportGetDataFrameAnalyticsStatsAction
                              ActionListener<GetDataFrameAnalyticsStatsAction.Response> listener) {
         logger.debug("Get stats for data frame analytics [{}]", request.getId());
 
-        ActionListener<GetDataFrameAnalyticsAction.Response> getResponseListener = ActionListener.wrap(
+        ActionListener<GetDataFrameAnalyticsAction.Response> getResponseListener = listener.wrap(
             getResponse -> {
                 List<String> expandedIds = getResponse.getResources().results().stream().map(DataFrameAnalyticsConfig::getId)
                     .collect(Collectors.toList());
                 request.setExpandedIds(expandedIds);
-                ActionListener<GetDataFrameAnalyticsStatsAction.Response> runningTasksStatsListener = ActionListener.wrap(
+                ActionListener<GetDataFrameAnalyticsStatsAction.Response> runningTasksStatsListener = listener.wrap(
                     runningTasksStatsResponse -> gatherStatsForStoppedTasks(getResponse.getResources().results(), runningTasksStatsResponse,
-                        ActionListener.wrap(
+                            listener.wrap(
                             finalResponse -> {
 
                                 // While finalResponse has all the stats objects we need, we should report the count
@@ -152,14 +151,10 @@ public class TransportGetDataFrameAnalyticsStatsAction
                                 QueryPage<Stats> finalStats = new QueryPage<>(finalResponse.getResponse().results(),
                                     getResponse.getResources().count(), GetDataFrameAnalyticsAction.Response.RESULTS_FIELD);
                                 listener.onResponse(new GetDataFrameAnalyticsStatsAction.Response(finalStats));
-                            },
-                            listener::onFailure)),
-                    listener::onFailure
+                            }))
                 );
                 super.doExecute(task, request, runningTasksStatsListener);
-            },
-            listener::onFailure
-        );
+            });
 
         GetDataFrameAnalyticsAction.Request getRequest = new GetDataFrameAnalyticsAction.Request();
         getRequest.setResourceId(request.getId());

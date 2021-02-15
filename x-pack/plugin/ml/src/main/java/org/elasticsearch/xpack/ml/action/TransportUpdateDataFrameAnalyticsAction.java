@@ -75,16 +75,13 @@ public class TransportUpdateDataFrameAnalyticsAction
                     request.getUpdate(),
                     headers,
                     state,
-                    ActionListener.wrap(
-                        updatedConfig -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(updatedConfig)),
-                        listener::onFailure));
+                    listener.wrap(updatedConfig -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(updatedConfig))));
             });
 
         // Obviously if we're updating a job it's impossible that the config index has no mappings at
         // all, but if we rewrite the job config we may add new fields that require the latest mappings
         ElasticsearchMappings.addDocMappingIfMissing(
-            MlConfigIndex.indexName(), MlConfigIndex::mapping, client, state,
-            ActionListener.wrap(bool -> doUpdate.run(), listener::onFailure));
+            MlConfigIndex.indexName(), MlConfigIndex::mapping, client, state, listener.wrap(bool -> doUpdate.run()));
     }
 
     @Override

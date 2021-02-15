@@ -143,32 +143,26 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
             });
 
         // Start job task
-        ActionListener<Boolean> configIndexMappingUpdaterListener = ActionListener.wrap(
-            _unused -> {
+        ActionListener<Boolean> configIndexMappingUpdaterListener = listener.wrap(_unused -> {
                 logger.info("[{}] [{}] sending start upgrade request", params.getJobId(), params.getSnapshotId());
                 persistentTasksService.sendStartRequest(
                     MlTasks.snapshotUpgradeTaskId(params.getJobId(), params.getSnapshotId()),
                     MlTasks.JOB_SNAPSHOT_UPGRADE_TASK_NAME,
                     params,
                     waitForJobToStart);
-            },
-            listener::onFailure
-        );
+        });
 
         // Update config index if necessary
-        ActionListener<Long> memoryRequirementRefreshListener = ActionListener.wrap(
-            mem -> ElasticsearchMappings.addDocMappingIfMissing(
+        ActionListener<Long> memoryRequirementRefreshListener = listener.wrap(mem -> ElasticsearchMappings.addDocMappingIfMissing(
                 MlConfigIndex.indexName(),
                 MlConfigIndex::mapping,
                 client,
                 state,
-                configIndexMappingUpdaterListener),
-            listener::onFailure
-        );
+                configIndexMappingUpdaterListener));
 
         // Check that model snapshot exists and should actually be upgraded
         // Then refresh the memory
-        ActionListener<Result<ModelSnapshot>> getSnapshotHandler = ActionListener.wrap(
+        ActionListener<Result<ModelSnapshot>> getSnapshotHandler = listener.wrap(
             response -> {
                 if (response == null) {
                     listener.onFailure(
@@ -185,11 +179,9 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
                     return;
                 }
                 memoryTracker.refreshAnomalyDetectorJobMemoryAndAllOthers(params.getJobId(), memoryRequirementRefreshListener);
-            },
-            listener::onFailure
-        );
+            });
 
-        ActionListener<Job> getJobHandler = ActionListener.wrap(
+        ActionListener<Job> getJobHandler = listener.wrap(
             job -> {
                 if (request.getSnapshotId().equals(job.getModelSnapshotId())
                     && (JobState.CLOSED.equals(MlTasks.getJobState(request.getJobId(), customMetadata)) == false)) {
@@ -206,15 +198,10 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
                     request.getSnapshotId(),
                     getSnapshotHandler::onResponse,
                     getSnapshotHandler::onFailure);
-            },
-            listener::onFailure
-        );
+            });
 
         // Get the job config to verify it exists
-        jobConfigProvider.getJob(request.getJobId(), ActionListener.wrap(
-            builder -> getJobHandler.onResponse(builder.build()),
-            listener::onFailure
-        ));
+        jobConfigProvider.getJob(request.getJobId(), listener.wrap(builder -> getJobHandler.onResponse(builder.build())));
     }
 
     private void waitForJobStarted(String taskId,

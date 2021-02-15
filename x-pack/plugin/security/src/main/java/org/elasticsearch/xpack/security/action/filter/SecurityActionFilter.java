@@ -151,8 +151,7 @@ public class SecurityActionFilter implements ActionFilter {
          here if a request is not associated with any other user.
          */
         final String securityAction = actionMapper.action(action, request);
-        authcService.authenticate(securityAction, request, SystemUser.INSTANCE,
-                ActionListener.wrap((authc) -> {
+        authcService.authenticate(securityAction, request, SystemUser.INSTANCE, listener.wrap((authc) -> {
                     if (authc != null) {
                         final String requestId = AuditUtil.extractRequestId(threadContext);
                         assert Strings.hasText(requestId);
@@ -170,7 +169,7 @@ public class SecurityActionFilter implements ActionFilter {
                     } else {
                         listener.onFailure(new IllegalStateException("no authentication present but auth is allowed"));
                     }
-                }, listener::onFailure));
+                }));
     }
 
     private <Request extends ActionRequest> void authorizeRequest(Authentication authentication, String securityAction, Request request,

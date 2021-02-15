@@ -144,7 +144,7 @@ public abstract class FileRestoreContext {
                     }
                 }
 
-                restoreFiles(filesToRecover, store, ActionListener.wrap(
+                restoreFiles(filesToRecover, store, listener.wrap(
                     v -> {
                         store.incRef();
                         try {
@@ -153,7 +153,7 @@ public abstract class FileRestoreContext {
                         } finally {
                             store.decRef();
                         }
-                    }, listener::onFailure));
+                    }));
             } catch (IOException ex) {
                 throw new IndexShardRestoreFailedException(shardId, "Failed to recover index", ex);
             }

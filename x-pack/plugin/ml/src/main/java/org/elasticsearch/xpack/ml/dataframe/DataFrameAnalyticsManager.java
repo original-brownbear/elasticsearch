@@ -117,15 +117,13 @@ public class DataFrameAnalyticsManager {
         );
 
         // Retrieve configuration
-        ActionListener<Boolean> statsIndexListener = ActionListener.wrap(
-            aBoolean -> configProvider.get(task.getParams().getId(), configListener),
-            configListener::onFailure
-        );
+        ActionListener<Boolean> statsIndexListener =
+                configListener.wrap(aBoolean -> configProvider.get(task.getParams().getId(), configListener));
 
         // Make sure the stats index and alias exist
-        ActionListener<Boolean> stateAliasListener = ActionListener.wrap(
+        ActionListener<Boolean> stateAliasListener = configListener.wrap(
             aBoolean -> createStatsIndexAndUpdateMappingsIfNecessary(new ParentTaskAssigningClient(client, task.getParentTaskId()),
-                    clusterState, statsIndexListener), configListener::onFailure
+                    clusterState, statsIndexListener)
         );
 
         // Make sure the state index and alias exist
@@ -134,15 +132,13 @@ public class DataFrameAnalyticsManager {
     }
 
     private void createStatsIndexAndUpdateMappingsIfNecessary(Client client, ClusterState clusterState, ActionListener<Boolean> listener) {
-        ActionListener<Boolean> createIndexListener = ActionListener.wrap(
+        ActionListener<Boolean> createIndexListener = listener.wrap(
             aBoolean -> ElasticsearchMappings.addDocMappingIfMissing(
                     MlStatsIndex.writeAlias(),
                     MlStatsIndex::mapping,
                     client,
                     clusterState,
-                    listener)
-            , listener::onFailure
-        );
+                    listener));
 
         MlStatsIndex.createStatsIndexAndAliasIfNecessary(client, clusterState, expressionResolver, createIndexListener);
     }

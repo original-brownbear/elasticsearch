@@ -146,8 +146,7 @@ public class TransportIndicesShardStoresAction
         private void listStartedShards(ShardId shardId, String customDataPath, DiscoveryNode[] nodes,
                                        ActionListener<BaseNodesResponse<NodeGatewayStartedShards>> listener) {
             var request = new TransportNodesListGatewayStartedShards.Request(shardId, customDataPath, nodes);
-            client.executeLocally(TransportNodesListGatewayStartedShards.TYPE, request,
-                ActionListener.wrap(listener::onResponse, listener::onFailure));
+            client.executeLocally(TransportNodesListGatewayStartedShards.TYPE, request, listener.wrap(listener::onResponse));
         }
 
         private class InternalAsyncFetch extends AsyncShardFetch<NodeGatewayStartedShards> {

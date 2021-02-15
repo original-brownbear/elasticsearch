@@ -120,7 +120,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 TRANSFORM_ORIGIN,
                 IndexAction.INSTANCE,
                 indexRequest,
-                ActionListener.wrap(r -> { listener.onResponse(true); }, listener::onFailure)
+                listener.wrap(r -> listener.onResponse(true))
             );
         } catch (IOException e) {
             // not expected to happen but for the sake of completeness
@@ -169,7 +169,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             TRANSFORM_ORIGIN,
             DeleteByQueryAction.INSTANCE,
             deleteByQueryRequest,
-            ActionListener.wrap(response -> {
+            listener.wrap(response -> {
                 if ((response.getBulkFailures().isEmpty() && response.getSearchFailures().isEmpty()) == false) {
                     Tuple<RestStatus, Throwable> statusAndReason = getStatusAndReason(response);
                     listener.onFailure(
@@ -178,7 +178,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     return;
                 }
                 listener.onResponse(true);
-            }, listener::onFailure)
+            })
         );
     }
 
@@ -201,7 +201,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             TRANSFORM_ORIGIN,
             DeleteByQueryAction.INSTANCE,
             deleteByQueryRequest,
-            ActionListener.wrap(response -> {
+            listener.wrap(response -> {
                 if ((response.getBulkFailures().isEmpty() && response.getSearchFailures().isEmpty()) == false) {
                     Tuple<RestStatus, Throwable> statusAndReason = getStatusAndReason(response);
                     listener.onFailure(
@@ -210,7 +210,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     return;
                 }
                 listener.onResponse(true);
-            }, listener::onFailure)
+            })
         );
     }
 
@@ -236,7 +236,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             TRANSFORM_ORIGIN,
             DeleteByQueryAction.INSTANCE,
             deleteByQueryRequest,
-            ActionListener.wrap(response -> {
+            listener.wrap(response -> {
                 if ((response.getBulkFailures().isEmpty() && response.getSearchFailures().isEmpty()) == false) {
                     Tuple<RestStatus, Throwable> statusAndReason = getStatusAndReason(response);
                     listener.onFailure(
@@ -245,7 +245,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     return;
                 }
                 listener.onResponse(response.getDeleted());
-            }, listener::onFailure)
+            })
         );
     }
 
@@ -313,7 +313,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             TRANSFORM_ORIGIN,
             SearchAction.INSTANCE,
             searchRequest,
-            ActionListener.<SearchResponse>wrap(searchResponse -> {
+            resultListener.<SearchResponse>wrap(searchResponse -> {
                 if (searchResponse.getHits().getHits().length == 0) {
                     // do not fail if checkpoint does not exist but return an empty checkpoint
                     logger.trace("found no checkpoint for transform [" + transformId + "], returning empty checkpoint");
@@ -322,7 +322,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 }
                 BytesReference source = searchResponse.getHits().getHits()[0].getSourceRef();
                 parseCheckpointsLenientlyFromSource(source, transformId, resultListener);
-            }, resultListener::onFailure)
+            })
         );
     }
 
@@ -345,7 +345,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             TRANSFORM_ORIGIN,
             SearchAction.INSTANCE,
             searchRequest,
-            ActionListener.<SearchResponse>wrap(searchResponse -> {
+            resultListener.<SearchResponse>wrap(searchResponse -> {
                 if (searchResponse.getHits().getHits().length == 0) {
                     resultListener.onFailure(
                         new ResourceNotFoundException(TransformMessages.getMessage(TransformMessages.REST_UNKNOWN_TRANSFORM, transformId))
@@ -354,7 +354,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 }
                 BytesReference source = searchResponse.getHits().getHits()[0].getSourceRef();
                 parseTransformLenientlyFromSource(source, transformId, resultListener);
-            }, resultListener::onFailure)
+            })
         );
     }
 
@@ -376,7 +376,8 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             .seqNoAndPrimaryTerm(true)
             .request();
 
-        executeAsyncWithOrigin(client, TRANSFORM_ORIGIN, SearchAction.INSTANCE, searchRequest, ActionListener.wrap(searchResponse -> {
+        executeAsyncWithOrigin(client, TRANSFORM_ORIGIN, SearchAction.INSTANCE, searchRequest,
+                configAndVersionListener.wrap(searchResponse -> {
             if (searchResponse.getHits().getHits().length == 0) {
                 configAndVersionListener.onFailure(
                     new ResourceNotFoundException(TransformMessages.getMessage(TransformMessages.REST_UNKNOWN_TRANSFORM, transformId))
@@ -388,14 +389,11 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             parseTransformLenientlyFromSource(
                 source,
                 transformId,
-                ActionListener.wrap(
-                    config -> configAndVersionListener.onResponse(
+                configAndVersionListener.wrap(config -> configAndVersionListener.onResponse(
                         Tuple.tuple(config, new SeqNoPrimaryTermAndIndex(hit.getSeqNo(), hit.getPrimaryTerm(), hit.getIndex()))
-                    ),
-                    configAndVersionListener::onFailure
-                )
+                ))
             );
-        }, configAndVersionListener::onFailure));
+        }));
     }
 
     @Override
@@ -427,7 +425,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             client.threadPool().getThreadContext(),
             TRANSFORM_ORIGIN,
             request,
-            ActionListener.<SearchResponse>wrap(searchResponse -> {
+            foundIdsListener.<SearchResponse>wrap(searchResponse -> {
                 long totalHits = searchResponse.getHits().getTotalHits().value;
                 // important: preserve order
                 Set<String> ids = new LinkedHashSet<>(searchResponse.getHits().getHits().length);
@@ -461,7 +459,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 } else {
                     foundIdsListener.onResponse(new Tuple<>(totalHits, new ArrayList<>(ids)));
                 }
-            }, foundIdsListener::onFailure),
+            }),
             client::search
         );
     }
@@ -565,7 +563,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             TRANSFORM_ORIGIN,
             SearchAction.INSTANCE,
             searchRequest,
-            ActionListener.<SearchResponse>wrap(searchResponse -> {
+            resultListener.<SearchResponse>wrap(searchResponse -> {
                 if (searchResponse.getHits().getHits().length == 0) {
                     resultListener.onFailure(
                         new ResourceNotFoundException(TransformMessages.getMessage(TransformMessages.UNKNOWN_TRANSFORM_STATS, transformId))
@@ -589,7 +587,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     );
                     resultListener.onFailure(e);
                 }
-            }, resultListener::onFailure)
+            })
         );
     }
 
@@ -616,7 +614,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             client.threadPool().getThreadContext(),
             TRANSFORM_ORIGIN,
             searchRequest,
-            ActionListener.<SearchResponse>wrap(searchResponse -> {
+            listener.<SearchResponse>wrap(searchResponse -> {
                 List<TransformStoredDoc> stats = new ArrayList<>();
                 String previousId = null;
                 for (SearchHit hit : searchResponse.getHits().getHits()) {
@@ -638,7 +636,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 }
 
                 listener.onResponse(stats);
-            }, listener::onFailure),
+            }),
             client::search
         );
     }
@@ -649,7 +647,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
             client.threadPool().getThreadContext(),
             TRANSFORM_ORIGIN,
             new RefreshRequest(TransformInternalIndexConstants.LATEST_INDEX_NAME),
-            ActionListener.<RefreshResponse>wrap(r -> listener.onResponse(true), listener::onFailure),
+            listener.<RefreshResponse>wrap(r -> listener.onResponse(true)),
             client.admin().indices()::refresh
         );
     }

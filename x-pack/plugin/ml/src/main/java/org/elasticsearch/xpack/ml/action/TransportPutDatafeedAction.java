@@ -108,9 +108,8 @@ public class TransportPutDatafeedAction extends TransportMasterNodeAction<PutDat
                 final RoleDescriptor.IndicesPrivileges.Builder indicesPrivilegesBuilder = RoleDescriptor.IndicesPrivileges.builder()
                     .indices(indices);
 
-                ActionListener<HasPrivilegesResponse> privResponseListener = ActionListener.wrap(
-                    r -> handlePrivsResponse(username, request, r, state, listener),
-                    listener::onFailure);
+                ActionListener<HasPrivilegesResponse> privResponseListener =
+                        listener.wrap(r -> handlePrivsResponse(username, request, r, state, listener));
 
                 ActionListener<GetRollupIndexCapsAction.Response> getRollupIndexCapsActionHandler = ActionListener.wrap(
                     response -> {
@@ -235,17 +234,14 @@ public class TransportPutDatafeedAction extends TransportMasterNodeAction<PutDat
     }
 
     private void checkJobDoesNotHaveADatafeed(String jobId, ActionListener<Boolean> listener) {
-        datafeedConfigProvider.findDatafeedsForJobIds(Collections.singletonList(jobId), ActionListener.wrap(
-                datafeedIds -> {
-                    if (datafeedIds.isEmpty()) {
-                        listener.onResponse(Boolean.TRUE);
-                    } else {
-                        listener.onFailure(ExceptionsHelper.conflictStatusException("A datafeed [" + datafeedIds.iterator().next()
-                                + "] already exists for job [" + jobId + "]"));
-                    }
-                },
-                listener::onFailure
-        ));
+        datafeedConfigProvider.findDatafeedsForJobIds(Collections.singletonList(jobId), listener.wrap(datafeedIds -> {
+            if (datafeedIds.isEmpty()) {
+                listener.onResponse(Boolean.TRUE);
+            } else {
+                listener.onFailure(ExceptionsHelper.conflictStatusException("A datafeed [" + datafeedIds.iterator().next()
+                        + "] already exists for job [" + jobId + "]"));
+            }
+        }));
     }
 
     @Override

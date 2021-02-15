@@ -53,27 +53,24 @@ public class TransportOpenIdConnectLogoutAction extends HandledTransportAction<O
 
     @Override
     protected void doExecute(Task task, OpenIdConnectLogoutRequest request, ActionListener<OpenIdConnectLogoutResponse> listener) {
-        invalidateRefreshToken(request.getRefreshToken(), ActionListener.wrap(ignore -> {
+        invalidateRefreshToken(request.getRefreshToken(), listener.wrap(ignore -> {
             final String token = request.getToken();
-            tokenService.getAuthenticationAndMetadata(token, ActionListener.wrap(
-                tuple -> {
+            tokenService.getAuthenticationAndMetadata(token, listener.wrap(tuple -> {
                     final Authentication authentication = tuple.v1();
                     final Map<String, Object> tokenMetadata = tuple.v2();
                     validateAuthenticationAndMetadata(authentication, tokenMetadata);
-                    tokenService.invalidateAccessToken(token, ActionListener.wrap(
-                        result -> {
-                            if (logger.isTraceEnabled()) {
-                                logger.trace("OpenID Connect Logout for user [{}] and token [{}...{}]",
+                    tokenService.invalidateAccessToken(token, listener.wrap(result -> {
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("OpenID Connect Logout for user [{}] and token [{}...{}]",
                                     authentication.getUser().principal(),
                                     token.substring(0, 8),
                                     token.substring(token.length() - 8));
-                            }
-                            OpenIdConnectLogoutResponse response = buildResponse(authentication, tokenMetadata);
-                            listener.onResponse(response);
-                        }, listener::onFailure)
-                    );
-                }, listener::onFailure));
-        }, listener::onFailure));
+                        }
+                        OpenIdConnectLogoutResponse response = buildResponse(authentication, tokenMetadata);
+                        listener.onResponse(response);
+                    }));
+            }));
+        }));
     }
 
     private OpenIdConnectLogoutResponse buildResponse(Authentication authentication, Map<String, Object> tokenMetadata) {

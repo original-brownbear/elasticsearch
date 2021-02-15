@@ -289,7 +289,7 @@ public final class AsyncTaskIndexService<R extends AsyncResponse<R>> {
         GetRequest internalGet = new GetRequest(index)
             .preference(asyncExecutionId.getEncoded())
             .id(asyncExecutionId.getDocId());
-        clientWithOrigin.get(internalGet, ActionListener.wrap(
+        clientWithOrigin.get(internalGet, listener.wrap(
             get -> {
                 if (get.isExists() == false) {
                     listener.onFailure(new ResourceNotFoundException(asyncExecutionId.getEncoded()));
@@ -317,9 +317,7 @@ public final class AsyncTaskIndexService<R extends AsyncResponse<R>> {
                 } else {
                     listener.onResponse(null);
                 }
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     /**
@@ -331,9 +329,8 @@ public final class AsyncTaskIndexService<R extends AsyncResponse<R>> {
     public void getResponse(AsyncExecutionId asyncExecutionId,
                             boolean restoreResponseHeaders,
                             ActionListener<R> listener) {
-        getEncodedResponse(asyncExecutionId, restoreResponseHeaders, ActionListener.wrap(
-            (t) -> listener.onResponse(decodeResponse(t.v1()).withExpirationTime(t.v2())),
-            listener::onFailure
+        getEncodedResponse(asyncExecutionId, restoreResponseHeaders, listener.wrap(
+            (t) -> listener.onResponse(decodeResponse(t.v1()).withExpirationTime(t.v2()))
         ));
     }
 
@@ -356,14 +353,10 @@ public final class AsyncTaskIndexService<R extends AsyncResponse<R>> {
                 sendFinalStatusResponse(request, response, listener);
             } else { // get status response from index
                 getStatusResponseFromIndex(asyncExecutionId, statusProducerFromIndex,
-                    new ActionListener<>() {
+                    new ActionListener.FailureDelegatingListener<>(listener) {
                         @Override
                         public void onResponse(SR searchStatusResponse) {
-                            sendFinalStatusResponse(request, searchStatusResponse, listener);
-                        }
-                        @Override
-                        public void onFailure(Exception e) {
-                            listener.onFailure(e);
+                            sendFinalStatusResponse(request, searchStatusResponse, delegate);
                         }
                     }
                 );
@@ -387,7 +380,7 @@ public final class AsyncTaskIndexService<R extends AsyncResponse<R>> {
         GetRequest internalGet = new GetRequest(index)
             .preference(asyncId)
             .id(asyncExecutionId.getDocId());
-        clientWithOrigin.get(internalGet, ActionListener.wrap(
+        clientWithOrigin.get(internalGet, listener.wrap(
             get -> {
                 if (get.isExists() == false) {
                     listener.onFailure(new ResourceNotFoundException(asyncExecutionId.getEncoded()));
@@ -400,9 +393,7 @@ public final class AsyncTaskIndexService<R extends AsyncResponse<R>> {
                 } else {
                     listener.onResponse(null);
                 }
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     private static <SR extends SearchStatusResponse> void sendFinalStatusResponse(

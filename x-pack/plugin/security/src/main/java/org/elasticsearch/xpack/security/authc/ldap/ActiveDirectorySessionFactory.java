@@ -128,14 +128,14 @@ class ActiveDirectorySessionFactory extends PoolingSessionFactory {
 
     @Override
     void getUnauthenticatedSessionWithPool(LDAPConnectionPool connectionPool, String user, ActionListener<LdapSession> listener) {
-        getADAuthenticator(user).searchForDN(connectionPool, user, null, Math.toIntExact(timeout.seconds()), ActionListener.wrap(entry -> {
+        getADAuthenticator(user).searchForDN(connectionPool, user, null, Math.toIntExact(timeout.seconds()), listener.wrap(entry -> {
             if (entry == null) {
                 listener.onResponse(null);
             } else {
                 final String dn = entry.getDN();
                 listener.onResponse(new LdapSession(logger, config, connectionPool, dn, groupResolver, metadataResolver, timeout, null));
             }
-        }, listener::onFailure));
+        }));
     }
 
     @Override

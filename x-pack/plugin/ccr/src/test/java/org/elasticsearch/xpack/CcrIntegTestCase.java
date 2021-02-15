@@ -738,7 +738,7 @@ public abstract class CcrIntegTestCase extends ESTestCase {
     protected ActionListener<RestoreService.RestoreCompletionResponse> waitForRestore(
             final ClusterService clusterService,
             final ActionListener<RestoreInfo> listener) {
-        return new ActionListener<RestoreService.RestoreCompletionResponse>() {
+        return new ActionListener.FailureDelegatingListener<>(listener) {
 
             @Override
             public void onResponse(RestoreService.RestoreCompletionResponse restoreCompletionResponse) {
@@ -759,7 +759,7 @@ public abstract class CcrIntegTestCase extends ESTestCase {
                                  * Clean up the listener in that case and acknowledge completion of restore operation to client.
                                  */
                                 clusterService.removeListener(this);
-                                listener.onResponse(null);
+                                delegate.onResponse(null);
                             } else if (newEntry == null) {
                                 clusterService.removeListener(this);
                                 ImmutableOpenMap<ShardId, RestoreInProgress.ShardRestoreStatus> shards = prevEntry.shards();
@@ -768,7 +768,7 @@ public abstract class CcrIntegTestCase extends ESTestCase {
                                         shards.size(),
                                         shards.size() - RestoreService.failedShards(shards));
                                 logger.debug("restore of [{}] completed", snapshot);
-                                listener.onResponse(ri);
+                                delegate.onResponse(ri);
                             } else {
                                 // restore not completed yet, wait for next cluster state update
                             }
@@ -778,15 +778,9 @@ public abstract class CcrIntegTestCase extends ESTestCase {
 
                     clusterService.addListener(clusterStateListener);
                 } else {
-                    listener.onResponse(restoreCompletionResponse.getRestoreInfo());
+                    delegate.onResponse(restoreCompletionResponse.getRestoreInfo());
                 }
             }
-
-            @Override
-            public void onFailure(Exception t) {
-                listener.onFailure(t);
-            }
-
         };
     }
 

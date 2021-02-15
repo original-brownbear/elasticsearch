@@ -42,9 +42,6 @@ public class TransportGetCalendarsAction extends HandledTransportAction<GetCalen
 
     private void getCalendars(String[] idTokens, PageParams pageParams, ActionListener<GetCalendarsAction.Response> listener) {
         CalendarQueryBuilder query = new CalendarQueryBuilder().pageParams(pageParams).calendarIdTokens(idTokens).sort(true);
-        jobResultsProvider.calendars(query, ActionListener.wrap(
-                calendars -> listener.onResponse(new GetCalendarsAction.Response(calendars)),
-                listener::onFailure
-        ));
+        jobResultsProvider.calendars(query, listener.wrap(calendars -> listener.onResponse(new GetCalendarsAction.Response(calendars))));
     }
 }

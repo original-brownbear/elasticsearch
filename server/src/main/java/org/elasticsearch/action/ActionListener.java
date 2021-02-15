@@ -52,6 +52,17 @@ public interface ActionListener<Response> {
         return new MappedActionListener<>(fn, this);
     }
 
+    /**
+     * Creates a new listener that passes any {@link #onFailure} calls to this instance and passes {@link #onResponse} calls to the given
+     * consumer. Any exceptions thrown by the consumer will be caught and passed to {@link #onFailure} as well.
+     *
+     * @param onResponse response consumer
+     * @return wrapped listener
+     */
+    default <T> ActionListener<T> wrap(CheckedConsumer<T, ? extends Exception> onResponse) {
+        return new WrappingActionListener<>(this, onResponse);
+    }
+
     final class MappedActionListener<Response, MappedResponse> implements ActionListener<Response> {
 
         private final CheckedFunction<Response, MappedResponse, Exception> fn;
@@ -124,7 +135,49 @@ public interface ActionListener<Response> {
             public void onFailure(Exception e) {
                 onFailure.accept(e);
             }
+
+            @Override
+            public <T> ActionListener<T> wrap(CheckedConsumer<T, ? extends Exception> onResponse) {
+                return ActionListener.wrap(onResponse, onFailure);
+            }
         };
+    }
+
+    abstract class FailureDelegatingListener<T, K> implements ActionListener<T> {
+        protected final ActionListener<K> delegate;
+
+        protected FailureDelegatingListener(ActionListener<K> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public final void onFailure(Exception e) {
+            delegate.onFailure(e);
+        }
+
+        @Override
+        public final <S> ActionListener<S> wrap(CheckedConsumer<S, ? extends Exception> onResponse) {
+            return new WrappingActionListener<>(delegate, onResponse);
+        }
+    }
+
+    final class WrappingActionListener<T, K> extends FailureDelegatingListener<T, K> {
+
+        private final CheckedConsumer<T, ? extends Exception> onResponse;
+
+        WrappingActionListener(ActionListener<K> delegate, CheckedConsumer<T, ? extends Exception> onResponse) {
+            super(delegate);
+            this.onResponse = onResponse;
+        }
+
+        @Override
+        public void onResponse(T t) {
+            try {
+                onResponse.accept(t);
+            } catch (Exception e) {
+                onFailure(e);
+            }
+        }
     }
 
     /**
@@ -160,16 +213,10 @@ public interface ActionListener<Response> {
      * @return Delegating listener
      */
     static <T, R> ActionListener<T> delegateFailure(ActionListener<R> delegate, BiConsumer<ActionListener<R>, T> bc) {
-        return new ActionListener<T>() {
-
+        return new FailureDelegatingListener<>(delegate) {
             @Override
             public void onResponse(T r) {
                 bc.accept(delegate, r);
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                delegate.onFailure(e);
             }
         };
     }

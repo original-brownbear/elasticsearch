@@ -66,7 +66,7 @@ public class TransportAckWatchAction extends WatcherTransportAction<AckWatchRequ
         WatcherStatsRequest watcherStatsRequest = new WatcherStatsRequest();
         watcherStatsRequest.includeCurrentWatches(true);
 
-        executeAsyncWithOrigin(client, WATCHER_ORIGIN, WatcherStatsAction.INSTANCE, watcherStatsRequest, ActionListener.wrap(response -> {
+        executeAsyncWithOrigin(client, WATCHER_ORIGIN, WatcherStatsAction.INSTANCE, watcherStatsRequest, listener.wrap(response -> {
             boolean isWatchRunning = response.getNodes().stream()
                 .anyMatch(node -> node.getSnapshots().stream().anyMatch(snapshot -> snapshot.watchId().equals(request.getWatchId())));
             if (isWatchRunning) {
@@ -77,7 +77,7 @@ public class TransportAckWatchAction extends WatcherTransportAction<AckWatchRequ
                     .preference(Preference.LOCAL.type()).realtime(true);
 
                 executeAsyncWithOrigin(client.threadPool().getThreadContext(), WATCHER_ORIGIN, getRequest,
-                    ActionListener.<GetResponse>wrap(getResponse -> {
+                    listener.<GetResponse>wrap(getResponse -> {
                         if (getResponse.isExists() == false) {
                             listener.onFailure(new ResourceNotFoundException("Watch with id [{}] does not exist", request.getWatchId()));
                         } else {
@@ -121,14 +121,11 @@ public class TransportAckWatchAction extends WatcherTransportAction<AckWatchRequ
                             updateRequest.doc(builder);
 
                             executeAsyncWithOrigin(client.threadPool().getThreadContext(), WATCHER_ORIGIN, updateRequest,
-                                ActionListener.<UpdateResponse>wrap(
-                                    (updateResponse) -> listener.onResponse(new AckWatchResponse(watch.status())),
-                                    listener::onFailure), client::update);
+                                    listener.<UpdateResponse>wrap(
+                                    (updateResponse) -> listener.onResponse(new AckWatchResponse(watch.status()))), client::update);
                         }
-                    }, listener::onFailure), client::get);
-
+                    }), client::get);
             }
-
-        }, listener::onFailure));
+        }));
     }
 }

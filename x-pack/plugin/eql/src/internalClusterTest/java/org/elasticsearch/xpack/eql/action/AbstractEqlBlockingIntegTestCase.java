@@ -187,7 +187,7 @@ public abstract class AbstractEqlBlockingIntegTestCase extends AbstractEqlIntegT
                     ActionFilterChain<Request, Response> chain) {
                     ActionListener<Response> listenerWrapper = listener;
                     if (action.equals(FieldCapabilitiesAction.NAME)) {
-                        listenerWrapper = ActionListener.wrap(resp -> {
+                        listenerWrapper = listener.wrap(resp -> {
                             try {
                                 fieldCaps.incrementAndGet();
                                 logger.trace("blocking field caps on " + nodeId);
@@ -198,7 +198,7 @@ public abstract class AbstractEqlBlockingIntegTestCase extends AbstractEqlIntegT
                             } finally {
                                 listener.onResponse(resp);
                             }
-                        }, listener::onFailure);
+                        });
 
                     }
                     chain.proceed(task, action, request, listenerWrapper);

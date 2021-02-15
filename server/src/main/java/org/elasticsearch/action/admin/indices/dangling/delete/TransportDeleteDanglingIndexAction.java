@@ -167,7 +167,8 @@ public class TransportDeleteDanglingIndexAction extends AcknowledgedTransportMas
     }
 
     private void findDanglingIndex(String indexUUID, ActionListener<Index> listener) {
-        this.nodeClient.execute(ListDanglingIndicesAction.INSTANCE, new ListDanglingIndicesRequest(indexUUID), new ActionListener<>() {
+        this.nodeClient.execute(ListDanglingIndicesAction.INSTANCE, new ListDanglingIndicesRequest(indexUUID),
+            new ActionListener.FailureDelegatingListener<>(listener) {
             @Override
             public void onResponse(ListDanglingIndicesResponse response) {
                 if (response.hasFailures()) {
@@ -179,7 +180,7 @@ public class TransportDeleteDanglingIndexAction extends AcknowledgedTransportMas
                         e.addSuppressed(failure);
                     }
 
-                    listener.onFailure(e);
+                    delegate.onFailure(e);
                     return;
                 }
 
@@ -188,18 +189,13 @@ public class TransportDeleteDanglingIndexAction extends AcknowledgedTransportMas
                 for (NodeListDanglingIndicesResponse nodeResponse : nodes) {
                     for (DanglingIndexInfo each : nodeResponse.getDanglingIndices()) {
                         if (each.getIndexUUID().equals(indexUUID)) {
-                            listener.onResponse(new Index(each.getIndexName(), each.getIndexUUID()));
+                            delegate.onResponse(new Index(each.getIndexName(), each.getIndexUUID()));
                             return;
                         }
                     }
                 }
 
-                listener.onFailure(new IllegalArgumentException("No dangling index found for UUID [" + indexUUID + "]"));
-            }
-
-            @Override
-            public void onFailure(Exception exp) {
-                listener.onFailure(exp);
+                delegate.onFailure(new IllegalArgumentException("No dangling index found for UUID [" + indexUUID + "]"));
             }
         });
     }

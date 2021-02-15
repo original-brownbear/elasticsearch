@@ -80,7 +80,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<Get
     @Override
     protected void doExecute(Task task, GetOverallBucketsAction.Request request,
                              ActionListener<GetOverallBucketsAction.Response> listener) {
-        jobManager.expandJobs(request.getJobId(), request.allowNoMatch(), ActionListener.wrap(
+        jobManager.expandJobs(request.getJobId(), request.allowNoMatch(), listener.wrap(
                 jobPage -> {
                     if (jobPage.count() == 0) {
                         listener.onResponse(new GetOverallBucketsAction.Response(
@@ -97,8 +97,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<Get
                             listener.onFailure(e);
                         }
                     });
-                },
-                listener::onFailure
+                }
         ));
     }
 
@@ -106,18 +105,18 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<Get
                                    ActionListener<GetOverallBucketsAction.Response> listener) {
         JobsContext jobsContext = JobsContext.build(jobs, request);
 
-        ActionListener<List<OverallBucket>> overallBucketsListener = ActionListener.wrap(overallBuckets -> {
+        ActionListener<List<OverallBucket>> overallBucketsListener = listener.wrap(overallBuckets -> {
             listener.onResponse(new GetOverallBucketsAction.Response(new QueryPage<>(overallBuckets, overallBuckets.size(),
                     OverallBucket.RESULTS_FIELD)));
-        }, listener::onFailure);
+        });
 
-        ActionListener<ChunkedBucketSearcher> chunkedBucketSearcherListener = ActionListener.wrap(searcher -> {
+        ActionListener<ChunkedBucketSearcher> chunkedBucketSearcherListener = listener.wrap(searcher -> {
             if (searcher == null) {
                 listener.onResponse(new GetOverallBucketsAction.Response(new QueryPage<>(Collections.emptyList(), 0, Job.RESULTS_FIELD)));
                 return;
             }
             searcher.searchAndComputeOverallBuckets(overallBucketsListener);
-        }, listener::onFailure);
+        });
 
         OverallBucketsProvider overallBucketsProvider = new OverallBucketsProvider(jobsContext.maxBucketSpan, request.getTopN(),
                 request.getOverallScore());
@@ -147,7 +146,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<Get
         searchRequest.source().aggregation(AggregationBuilders.min(EARLIEST_TIME).field(Result.TIMESTAMP.getPreferredName()));
         searchRequest.source().aggregation(AggregationBuilders.max(LATEST_TIME).field(Result.TIMESTAMP.getPreferredName()));
         executeAsyncWithOrigin(client.threadPool().getThreadContext(), ML_ORIGIN, searchRequest,
-                ActionListener.<SearchResponse>wrap(searchResponse -> {
+                listener.<SearchResponse>wrap(searchResponse -> {
                     long totalHits = searchResponse.getHits().getTotalHits().value;
                     if (totalHits > 0) {
                         Aggregations aggregations = searchResponse.getAggregations();
@@ -160,7 +159,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<Get
                     } else {
                         listener.onResponse(null);
                     }
-                }, listener::onFailure),
+                }),
                 client::search);
     }
 
@@ -231,7 +230,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<Get
                 return;
             }
             executeAsyncWithOrigin(client.threadPool().getThreadContext(), ML_ORIGIN, nextSearch(),
-                    ActionListener.<SearchResponse>wrap(searchResponse -> {
+                    listener.<SearchResponse>wrap(searchResponse -> {
                         Histogram histogram = searchResponse.getAggregations().get(Result.TIMESTAMP.getPreferredName());
                         overallBucketsProcessor.process(overallBucketsProvider.computeOverallBuckets(histogram));
                         if (overallBucketsProcessor.size() > MAX_RESULT_COUNT) {
@@ -242,7 +241,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<Get
                             return;
                         }
                         searchAndComputeOverallBuckets(listener);
-                    }, listener::onFailure),
+                    }),
                     client::search);
         }
 

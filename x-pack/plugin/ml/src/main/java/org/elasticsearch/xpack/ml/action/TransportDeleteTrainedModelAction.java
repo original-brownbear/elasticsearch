@@ -80,13 +80,11 @@ public class TransportDeleteTrainedModelAction
             return;
         }
 
-        trainedModelProvider.deleteTrainedModel(request.getId(), ActionListener.wrap(
+        trainedModelProvider.deleteTrainedModel(request.getId(), listener.wrap(
             r -> {
                 auditor.info(request.getId(), "trained model deleted");
                 listener.onResponse(AcknowledgedResponse.TRUE);
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     private Set<String> getReferencedModelKeys(IngestMetadata ingestMetadata) {

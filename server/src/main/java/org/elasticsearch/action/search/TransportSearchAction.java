@@ -264,7 +264,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         final long relativeStartNanos = System.nanoTime();
         final SearchTimeProvider timeProvider =
             new SearchTimeProvider(searchRequest.getOrCreateAbsoluteStartMillis(), relativeStartNanos, System::nanoTime);
-        ActionListener<SearchSourceBuilder> rewriteListener = ActionListener.wrap(source -> {
+        ActionListener<SearchSourceBuilder> rewriteListener = listener.wrap(source -> {
             if (source != searchRequest.source()) {
                 // only set it if it changed - we don't allow null values to be set but it might be already null. this way we catch
                 // situations when source is rewritten to null due to a bug
@@ -296,7 +296,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     AtomicInteger skippedClusters = new AtomicInteger(0);
                     collectSearchShards(searchRequest.indicesOptions(), searchRequest.preference(), searchRequest.routing(),
                         skippedClusters, remoteClusterIndices, remoteClusterService, threadPool,
-                        ActionListener.wrap(
+                            listener.wrap(
                             searchShardsResponses -> {
                                 final BiFunction<String, String, DiscoveryNode> clusterNodeLookup =
                                     getRemoteClusterNodeLookup(searchShardsResponses);
@@ -318,11 +318,10 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                                     clusterNodeLookup, clusterState, remoteAliasFilters, listener,
                                     new SearchResponse.Clusters(totalClusters, successfulClusters, skippedClusters.get()),
                                     searchContext, searchAsyncActionProvider);
-                            },
-                            listener::onFailure));
+                            }));
                 }
             }
-        }, listener::onFailure);
+        });
         if (searchRequest.source() == null) {
             rewriteListener.onResponse(searchRequest.source());
         } else {

@@ -189,7 +189,7 @@ public class NativeRoleMappingStore implements UserRoleMapper {
                 "the upgrade API is run on the security index"));
         } else {
             try {
-                inner.accept(request, ActionListener.wrap(r -> refreshRealms(listener, r), listener::onFailure));
+                inner.accept(request, listener.wrap(r -> refreshRealms(listener, r)));
             } catch (Exception e) {
                 logger.error(new ParameterizedMessage("failed to modify role-mapping [{}]", name), e);
                 listener.onFailure(e);
@@ -314,7 +314,7 @@ public class NativeRoleMappingStore implements UserRoleMapper {
         if (securityIndex.isAvailable() == false) {
             reportStats(listener, Collections.emptyList());
         } else {
-            getMappings(ActionListener.wrap(mappings -> reportStats(listener, mappings), listener::onFailure));
+            getMappings(listener.wrap(mappings -> reportStats(listener, mappings)));
         }
     }
 

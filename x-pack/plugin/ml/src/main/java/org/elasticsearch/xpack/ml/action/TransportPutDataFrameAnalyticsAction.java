@@ -115,10 +115,7 @@ public class TransportPutDataFrameAnalyticsAction
 
         final DataFrameAnalyticsConfig config = request.getConfig();
 
-        ActionListener<Boolean> sourceDestValidationListener = ActionListener.wrap(
-            aBoolean -> putValidatedConfig(config, listener),
-            listener::onFailure
-        );
+        ActionListener<Boolean> sourceDestValidationListener = listener.wrap(aBoolean -> putValidatedConfig(config, listener));
 
         sourceDestValidator.validate(clusterService.state(), config.getSource().getIndex(), config.getDest().getIndex(), null,
             SourceDestValidations.ALL_VALIDATIONS, sourceDestValidationListener);
@@ -149,9 +146,8 @@ public class TransportPutDataFrameAnalyticsAction
                 privRequest.clusterPrivileges(Strings.EMPTY_ARRAY);
                 privRequest.indexPrivileges(sourceIndexPrivileges, destIndexPrivileges);
 
-                ActionListener<HasPrivilegesResponse> privResponseListener = ActionListener.wrap(
-                    r -> handlePrivsResponse(username, preparedForPutConfig, r, listener),
-                    listener::onFailure);
+                ActionListener<HasPrivilegesResponse> privResponseListener =
+                        listener.wrap(r -> handlePrivsResponse(username, preparedForPutConfig, r, listener));
 
                 client.execute(HasPrivilegesAction.INSTANCE, privRequest, privResponseListener);
             });
@@ -159,10 +155,7 @@ public class TransportPutDataFrameAnalyticsAction
             updateDocMappingAndPutConfig(
                 preparedForPutConfig,
                 threadPool.getThreadContext().getHeaders(),
-                ActionListener.wrap(
-                    unused -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(preparedForPutConfig)),
-                    listener::onFailure
-                ));
+                    listener.wrap(unused -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(preparedForPutConfig))));
         }
     }
 
@@ -173,10 +166,7 @@ public class TransportPutDataFrameAnalyticsAction
             updateDocMappingAndPutConfig(
                 memoryCappedConfig,
                 threadPool.getThreadContext().getHeaders(),
-                ActionListener.wrap(
-                    unused -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(memoryCappedConfig)),
-                    listener::onFailure
-            ));
+                listener.wrap(unused -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(memoryCappedConfig))));
         } else {
             XContentBuilder builder = JsonXContent.contentBuilder();
             builder.startObject();
@@ -206,16 +196,12 @@ public class TransportPutDataFrameAnalyticsAction
             MlConfigIndex::mapping,
             client,
             clusterState,
-            ActionListener.wrap(
-                unused -> configProvider.put(config, headers, ActionListener.wrap(
-                    indexResponse -> {
-                        auditor.info(
-                            config.getId(),
-                            Messages.getMessage(Messages.DATA_FRAME_ANALYTICS_AUDIT_CREATED, config.getAnalysis().getWriteableName()));
-                        listener.onResponse(config);
-                    },
-                    listener::onFailure)),
-                listener::onFailure));
+            listener.wrap(unused -> configProvider.put(config, headers, listener.wrap(indexResponse -> {
+                auditor.info(
+                        config.getId(),
+                        Messages.getMessage(Messages.DATA_FRAME_ANALYTICS_AUDIT_CREATED, config.getAnalysis().getWriteableName()));
+                listener.onResponse(config);
+            }))));
     }
 
     @Override

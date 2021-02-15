@@ -39,11 +39,7 @@ public class TransportUpdateCalendarJobAction extends HandledTransportAction<Upd
         Set<String> jobIdsToRemove = Strings.tokenizeByCommaToSet(request.getJobIdsToRemoveExpression());
 
         jobResultsProvider.updateCalendar(request.getCalendarId(), jobIdsToAdd, jobIdsToRemove,
-                c -> {
-                    jobManager.updateProcessOnCalendarChanged(c.getJobIds(), ActionListener.wrap(
-                            r -> listener.onResponse(new PutCalendarAction.Response(c)),
-                            listener::onFailure
-                    ));
-                }, listener::onFailure);
+                c -> jobManager.updateProcessOnCalendarChanged(c.getJobIds(),
+                        listener.wrap(r -> listener.onResponse(new PutCalendarAction.Response(c)))), listener::onFailure);
     }
 }

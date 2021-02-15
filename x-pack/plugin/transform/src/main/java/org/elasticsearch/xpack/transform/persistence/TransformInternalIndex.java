@@ -369,7 +369,7 @@ public final class TransformInternalIndex {
         createLatestVersionedIndexIfRequired(
             clusterService,
             client,
-            ActionListener.wrap(r -> installLatestAuditIndexTemplateIfRequired(clusterService, client, listener), listener::onFailure)
+            listener.wrap(r -> installLatestAuditIndexTemplateIfRequired(clusterService, client, listener))
         );
     }
 

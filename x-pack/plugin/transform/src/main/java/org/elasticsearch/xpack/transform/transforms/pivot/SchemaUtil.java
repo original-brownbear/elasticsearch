@@ -149,7 +149,7 @@ public final class SchemaUtil {
             sourceIndex,
             allFieldNames.values().stream().filter(Objects::nonNull).toArray(String[]::new),
             runtimeMappings,
-            ActionListener.wrap(
+            listener.wrap(
                 sourceMappings -> listener.onResponse(
                     resolveMappings(
                         aggregationSourceFieldNames,
@@ -157,8 +157,7 @@ public final class SchemaUtil {
                         fieldNamesForGrouping,
                         fieldTypesForGrouping,
                         sourceMappings)
-                ),
-                listener::onFailure
+                )
             )
         );
     }
@@ -184,7 +183,7 @@ public final class SchemaUtil {
             ClientHelper.TRANSFORM_ORIGIN,
             FieldCapabilitiesAction.INSTANCE,
             fieldCapabilitiesRequest,
-            ActionListener.wrap(r -> listener.onResponse(extractFieldMappings(r)), listener::onFailure)
+            listener.wrap(r -> listener.onResponse(extractFieldMappings(r)))
         );
     }
 
@@ -269,9 +268,8 @@ public final class SchemaUtil {
         client.execute(
             FieldCapabilitiesAction.INSTANCE,
             fieldCapabilitiesRequest,
-            ActionListener.wrap(
-                response -> listener.onResponse(mergeSourceMappingsWithRuntimeMappings(extractFieldMappings(response), runtimeMappings)),
-                listener::onFailure)
+            listener.wrap(
+                response -> listener.onResponse(mergeSourceMappingsWithRuntimeMappings(extractFieldMappings(response), runtimeMappings)))
         );
     }
 

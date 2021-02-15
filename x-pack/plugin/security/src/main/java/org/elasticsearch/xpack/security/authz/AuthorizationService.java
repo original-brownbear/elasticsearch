@@ -222,11 +222,10 @@ public class AuthorizationService {
             } else {
                 final String finalAuditId = auditId;
                 final RequestInfo requestInfo = new RequestInfo(authentication, unwrappedRequest, action);
-                final ActionListener<AuthorizationInfo> authzInfoListener = wrapPreservingContext(ActionListener.wrap(
-                        authorizationInfo -> {
-                            threadContext.putTransient(AUTHORIZATION_INFO_KEY, authorizationInfo);
-                            maybeAuthorizeRunAs(requestInfo, finalAuditId, authorizationInfo, listener);
-                        }, listener::onFailure), threadContext);
+                final ActionListener<AuthorizationInfo> authzInfoListener = wrapPreservingContext(listener.wrap(authorizationInfo -> {
+                    threadContext.putTransient(AUTHORIZATION_INFO_KEY, authorizationInfo);
+                    maybeAuthorizeRunAs(requestInfo, finalAuditId, authorizationInfo, listener);
+                }), threadContext);
                 getAuthorizationEngine(authentication).resolveAuthorizationInfo(requestInfo, authzInfoListener);
             }
         }
@@ -333,14 +332,14 @@ public class AuthorizationService {
                 final RequestInfo aliasesRequestInfo = new RequestInfo(authentication, request, IndicesAliasesAction.NAME);
                 authzEngine.authorizeIndexAction(aliasesRequestInfo, authzInfo,
                     ril -> {
-                        resolvedIndicesAsyncSupplier.getAsync(ActionListener.wrap(resolvedIndices -> {
+                        resolvedIndicesAsyncSupplier.getAsync(ril.wrap(resolvedIndices -> {
                             List<String> aliasesAndIndices = new ArrayList<>(resolvedIndices.getLocal());
                             for (Alias alias : aliases) {
                                 aliasesAndIndices.add(alias.name());
                             }
                             ResolvedIndices withAliases = new ResolvedIndices(aliasesAndIndices, Collections.emptyList());
                             ril.onResponse(withAliases);
-                        }, ril::onFailure));
+                        }));
                     },
                     metadata.getIndicesLookup(),
                     wrapPreservingContext(new AuthorizationResultListener<>(
@@ -354,8 +353,7 @@ public class AuthorizationService {
             authorizeBulkItems(requestInfo, authzInfo, authzEngine, resolvedIndicesAsyncSupplier, authorizedIndicesSupplier, metadata,
                     requestId,
                     wrapPreservingContext(
-                            ActionListener.wrap(ignore -> runRequestInterceptors(requestInfo, authzInfo, authorizationEngine, listener),
-                                    listener::onFailure),
+                            listener.wrap(ignore -> runRequestInterceptors(requestInfo, authzInfo, authorizationEngine, listener)),
                             threadContext));
         } else {
             runRequestInterceptors(requestInfo, authzInfo, authorizationEngine, listener);
@@ -489,8 +487,8 @@ public class AuthorizationService {
         final Map<String, Set<String>> actionToIndicesMap = new HashMap<>();
         final AuditTrail auditTrail = auditTrailService.get();
 
-        authorizedIndicesSupplier.getAsync(ActionListener.wrap(authorizedIndices -> {
-            resolvedIndicesAsyncSupplier.getAsync(ActionListener.wrap(overallResolvedIndices -> {
+        authorizedIndicesSupplier.getAsync(listener.wrap(authorizedIndices -> {
+            resolvedIndicesAsyncSupplier.getAsync(listener.wrap(overallResolvedIndices -> {
                 final Set<String> localIndices = new HashSet<>(overallResolvedIndices.getLocal());
                 for (BulkItemRequest item : request.items()) {
                     String resolvedIndex = resolvedIndexNames.computeIfAbsent(item.index(), key -> {
@@ -521,7 +519,7 @@ public class AuthorizationService {
                 }
 
                 final ActionListener<Collection<Tuple<String, IndexAuthorizationResult>>> bulkAuthzListener =
-                    ActionListener.wrap(collection -> {
+                    listener.wrap(collection -> {
                         final Map<String, IndicesAccessControl> actionToIndicesAccessControl = new HashMap<>();
                         final AtomicBoolean audit = new AtomicBoolean(false);
                         collection.forEach(tuple -> {
@@ -552,7 +550,7 @@ public class AuthorizationService {
                             }
                         }
                         listener.onResponse(null);
-                    }, listener::onFailure);
+                    });
                 final ActionListener<Tuple<String, IndexAuthorizationResult>> groupedActionListener = wrapPreservingContext(
                     new GroupedActionListener<>(bulkAuthzListener, actionToIndicesMap.size()), threadContext);
 
@@ -561,12 +559,11 @@ public class AuthorizationService {
                         new RequestInfo(requestInfo.getAuthentication(), requestInfo.getRequest(), bulkItemAction);
                     authzEngine.authorizeIndexAction(bulkItemInfo, authzInfo,
                         ril -> ril.onResponse(new ResolvedIndices(new ArrayList<>(indices), Collections.emptyList())),
-                        metadata.getIndicesLookup(), ActionListener.wrap(indexAuthorizationResult ->
-                                groupedActionListener.onResponse(new Tuple<>(bulkItemAction, indexAuthorizationResult)),
-                            groupedActionListener::onFailure));
+                        metadata.getIndicesLookup(), groupedActionListener.wrap(indexAuthorizationResult ->
+                                groupedActionListener.onResponse(new Tuple<>(bulkItemAction, indexAuthorizationResult))));
                 });
-            }, listener::onFailure));
-        }, listener::onFailure));
+            }));
+        }));
     }
 
     private static IllegalArgumentException illegalArgument(String message) {
@@ -716,10 +713,10 @@ public class AuthorizationService {
         @Override
         public synchronized void getAsync(ActionListener<V> listener) {
             if (value == null) {
-                asyncSupplier.getAsync(ActionListener.wrap(loaded -> {
+                asyncSupplier.getAsync(listener.wrap(loaded -> {
                     value = loaded;
                     listener.onResponse(value);
-                }, listener::onFailure));
+                }));
             } else {
                 listener.onResponse(value);
             }

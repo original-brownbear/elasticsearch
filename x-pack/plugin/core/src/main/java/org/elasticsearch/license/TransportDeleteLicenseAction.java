@@ -43,15 +43,10 @@ public class TransportDeleteLicenseAction extends AcknowledgedTransportMasterNod
     @Override
     protected void masterOperation(Task task, final DeleteLicenseRequest request, ClusterState state,
                                    final ActionListener<AcknowledgedResponse> listener) throws ElasticsearchException {
-        licenseService.removeLicense(request, new ActionListener<PostStartBasicResponse>() {
+        licenseService.removeLicense(request, new ActionListener.FailureDelegatingListener<>(listener) {
             @Override
             public void onResponse(PostStartBasicResponse postStartBasicResponse) {
-                listener.onResponse(AcknowledgedResponse.of(postStartBasicResponse.isAcknowledged()));
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                listener.onFailure(e);
+                delegate.onResponse(AcknowledgedResponse.of(postStartBasicResponse.isAcknowledged()));
             }
         });
     }

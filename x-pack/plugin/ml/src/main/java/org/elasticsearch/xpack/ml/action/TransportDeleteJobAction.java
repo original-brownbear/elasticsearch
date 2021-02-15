@@ -180,15 +180,14 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
                 }
         );
 
-        ActionListener<Boolean> markAsDeletingListener = ActionListener.wrap(
+        ActionListener<Boolean> markAsDeletingListener = finalListener.wrap(
                 response -> {
                     if (request.isForce()) {
                         forceDeleteJob(parentTaskClient, request, finalListener);
                     } else {
                         normalDeleteJob(parentTaskClient, request, finalListener);
                     }
-                },
-                finalListener::onFailure);
+                });
 
         ActionListener<Boolean> jobExistsListener = ActionListener.wrap(
             response -> {
@@ -252,15 +251,11 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
         // -------
         // Don't report an error if the document has already been deleted
         CheckedConsumer<Boolean, Exception> deleteJobStateHandler = response -> jobConfigProvider.deleteJob(jobId, false,
-                ActionListener.wrap(
-                        deleteResponse -> apiResponseHandler.accept(Boolean.TRUE),
-                        listener::onFailure
-                )
-        );
+                listener.wrap(deleteResponse -> apiResponseHandler.accept(Boolean.TRUE)));
 
         // Step 2. Remove the job from any calendars
         CheckedConsumer<Boolean, Exception> removeFromCalendarsHandler = response -> jobResultsProvider.removeJobFromCalendars(jobId,
-                ActionListener.wrap(deleteJobStateHandler::accept, listener::onFailure));
+                listener.wrap(deleteJobStateHandler));
 
 
         // Step 1. Delete the physical storage
@@ -453,13 +448,12 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
     private void deleteModelState(ParentTaskAssigningClient parentTaskClient, String jobId, ActionListener<BulkByScrollResponse> listener) {
         GetModelSnapshotsAction.Request request = new GetModelSnapshotsAction.Request(jobId, null);
         request.setPageParams(new PageParams(0, MAX_SNAPSHOTS_TO_DELETE));
-        executeAsyncWithOrigin(parentTaskClient, ML_ORIGIN, GetModelSnapshotsAction.INSTANCE, request, ActionListener.wrap(
+        executeAsyncWithOrigin(parentTaskClient, ML_ORIGIN, GetModelSnapshotsAction.INSTANCE, request, listener.wrap(
                 response -> {
                     List<ModelSnapshot> deleteCandidates = response.getPage().results();
                     JobDataDeleter deleter = new JobDataDeleter(parentTaskClient, jobId);
                     deleter.deleteModelSnapshots(deleteCandidates, listener);
-                },
-                listener::onFailure));
+                }));
     }
 
     private void deleteCategorizerState(ParentTaskAssigningClient parentTaskClient, String jobId, int docNum,
@@ -512,7 +506,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
         GetAliasesRequest aliasesRequest = new GetAliasesRequest().aliases(readAliasName, writeAliasName)
                 .indicesOptions(IndicesOptions.lenientExpandOpenHidden());
         executeAsyncWithOrigin(parentTaskClient.threadPool().getThreadContext(), ML_ORIGIN, aliasesRequest,
-                ActionListener.<GetAliasesResponse>wrap(
+                finishedHandler.<GetAliasesResponse>wrap(
                         getAliasesResponse -> {
                             // remove the aliases from the concrete indices found in the first step
                             IndicesAliasesRequest removeRequest = buildRemoveAliasesRequest(getAliasesResponse);
@@ -525,8 +519,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
                             executeAsyncWithOrigin(parentTaskClient.threadPool().getThreadContext(), ML_ORIGIN, removeRequest,
                                     finishedHandler,
                                     parentTaskClient.admin().indices()::aliases);
-                        },
-                        finishedHandler::onFailure), parentTaskClient.admin().indices()::getAliases);
+                        }), parentTaskClient.admin().indices()::getAliases);
     }
 
     private IndicesAliasesRequest buildRemoveAliasesRequest(GetAliasesResponse getAliasesResponse) {
@@ -631,7 +624,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
 
     private void markJobAsDeletingIfNotUsed(String jobId, ActionListener<Boolean> listener) {
 
-        datafeedConfigProvider.findDatafeedsForJobIds(Collections.singletonList(jobId), ActionListener.wrap(
+        datafeedConfigProvider.findDatafeedsForJobIds(Collections.singletonList(jobId), listener.wrap(
                 datafeedIds -> {
                     if (datafeedIds.isEmpty() == false) {
                         listener.onFailure(ExceptionsHelper.conflictStatusException("Cannot delete job [" + jobId + "] because datafeed ["
@@ -639,8 +632,6 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
                         return;
                     }
                     jobConfigProvider.markJobAsDeleting(jobId, listener);
-                },
-                listener::onFailure
-        ));
+                }));
     }
 }

@@ -99,11 +99,9 @@ public final class DestinationIndex {
                                               Clock clock,
                                               DataFrameAnalyticsConfig analyticsConfig,
                                               ActionListener<CreateIndexResponse> listener) {
-        ActionListener<CreateIndexRequest> createIndexRequestListener = ActionListener.wrap(
+        ActionListener<CreateIndexRequest> createIndexRequestListener = listener.wrap(
             createIndexRequest -> ClientHelper.executeWithHeadersAsync(analyticsConfig.getHeaders(), ClientHelper.ML_ORIGIN, client,
-                    CreateIndexAction.INSTANCE, createIndexRequest, listener),
-            listener::onFailure
-        );
+                    CreateIndexAction.INSTANCE, createIndexRequest, listener));
 
         prepareCreateIndexRequest(client, clock, analyticsConfig, createIndexRequestListener);
     }
@@ -113,13 +111,8 @@ public final class DestinationIndex {
         AtomicReference<Settings> settingsHolder = new AtomicReference<>();
         AtomicReference<MappingMetadata> mappingsHolder = new AtomicReference<>();
 
-        ActionListener<FieldCapabilitiesResponse> fieldCapabilitiesListener = ActionListener.wrap(
-            fieldCapabilitiesResponse -> {
-                listener.onResponse(
-                    createIndexRequest(clock, config, settingsHolder.get(), mappingsHolder.get(), fieldCapabilitiesResponse));
-            },
-            listener::onFailure
-        );
+        ActionListener<FieldCapabilitiesResponse> fieldCapabilitiesListener = listener.wrap(fieldCapabilitiesResponse ->
+            listener.onResponse(createIndexRequest(clock, config, settingsHolder.get(), mappingsHolder.get(), fieldCapabilitiesResponse)));
 
         ActionListener<MappingMetadata> mappingsListener = ActionListener.wrap(
             mappings -> {

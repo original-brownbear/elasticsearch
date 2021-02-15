@@ -54,7 +54,7 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
 
         Response.Builder responseBuilder = Response.builder();
 
-        ActionListener<LocalModel> getModelListener = ActionListener.wrap(
+        ActionListener<LocalModel> getModelListener = listener.wrap(
             model -> {
                 TypedChainTaskExecutor<InferenceResults> typedChainTaskExecutor =
                     new TypedChainTaskExecutor<>(client.threadPool().executor(ThreadPool.Names.SAME),
@@ -76,15 +76,13 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
                         listener.onFailure(e);
                     }
                 ));
-            },
-            listener::onFailure
-        );
+            });
 
         if (licenseState.checkFeature(XPackLicenseState.Feature.MACHINE_LEARNING)) {
             responseBuilder.setLicensed(true);
             this.modelLoadingService.getModelForPipeline(request.getModelId(), getModelListener);
         } else {
-            trainedModelProvider.getTrainedModel(request.getModelId(), GetTrainedModelsAction.Includes.empty(), ActionListener.wrap(
+            trainedModelProvider.getTrainedModel(request.getModelId(), GetTrainedModelsAction.Includes.empty(), listener.wrap(
                 trainedModelConfig -> {
                     responseBuilder.setLicensed(licenseState.isAllowedByLicense(trainedModelConfig.getLicenseLevel()));
                     if (licenseState.isAllowedByLicense(trainedModelConfig.getLicenseLevel()) || request.isPreviouslyLicensed()) {
@@ -92,9 +90,7 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
                     } else {
                         listener.onFailure(LicenseUtils.newComplianceException(XPackField.MACHINE_LEARNING));
                     }
-                },
-                listener::onFailure
-            ));
+                }));
         }
     }
 }

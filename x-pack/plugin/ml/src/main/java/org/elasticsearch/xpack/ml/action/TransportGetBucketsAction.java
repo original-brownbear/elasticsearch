@@ -35,7 +35,7 @@ public class TransportGetBucketsAction extends HandledTransportAction<GetBuckets
 
     @Override
     protected void doExecute(Task task, GetBucketsAction.Request request, ActionListener<GetBucketsAction.Response> listener) {
-        jobManager.jobExists(request.getJobId(), ActionListener.wrap(
+        jobManager.jobExists(request.getJobId(), listener.wrap(
                 ok -> {
                     BucketsQueryBuilder query =
                             new BucketsQueryBuilder().expand(request.isExpand())
@@ -59,9 +59,6 @@ public class TransportGetBucketsAction extends HandledTransportAction<GetBuckets
                     jobResultsProvider.buckets(request.getJobId(), query, q ->
                             listener.onResponse(new GetBucketsAction.Response(q)), listener::onFailure, client);
 
-                },
-                listener::onFailure
-
-        ));
+                }));
     }
 }

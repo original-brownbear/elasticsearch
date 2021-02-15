@@ -35,7 +35,7 @@ public class TransportGetInfluencersAction extends HandledTransportAction<GetInf
 
     @Override
     protected void doExecute(Task task, GetInfluencersAction.Request request, ActionListener<GetInfluencersAction.Response> listener) {
-        jobManager.jobExists(request.getJobId(), ActionListener.wrap(
+        jobManager.jobExists(request.getJobId(), listener.wrap(
                 jobExists -> {
                     InfluencersQueryBuilder.InfluencersQuery query = new InfluencersQueryBuilder()
                             .includeInterim(request.isExcludeInterim() == false)
@@ -48,8 +48,6 @@ public class TransportGetInfluencersAction extends HandledTransportAction<GetInf
                             .sortDescending(request.isDescending()).build();
                     jobResultsProvider.influencers(request.getJobId(), query,
                             page -> listener.onResponse(new GetInfluencersAction.Response(page)), listener::onFailure, client);
-                },
-                listener::onFailure)
-        );
+                }));
     }
 }

@@ -62,7 +62,7 @@ public class TransportGetDatafeedsAction extends TransportMasterNodeReadAction<G
         Map<String, DatafeedConfig> clusterStateConfigs =
                 expandClusterStateDatafeeds(request.getDatafeedId(), request.allowNoMatch(), state);
 
-        datafeedConfigProvider.expandDatafeedConfigs(request.getDatafeedId(), request.allowNoMatch(), ActionListener.wrap(
+        datafeedConfigProvider.expandDatafeedConfigs(request.getDatafeedId(), request.allowNoMatch(), listener.wrap(
                 datafeedBuilders -> {
                     // Check for duplicate datafeeds
                     for (DatafeedConfig.Builder datafeed : datafeedBuilders) {
@@ -83,8 +83,7 @@ public class TransportGetDatafeedsAction extends TransportMasterNodeReadAction<G
                     Collections.sort(datafeeds, Comparator.comparing(DatafeedConfig::getId));
                     listener.onResponse(new GetDatafeedsAction.Response(new QueryPage<>(datafeeds, datafeeds.size(),
                             DatafeedConfig.RESULTS_FIELD)));
-                },
-                listener::onFailure
+                }
         ));
     }
 

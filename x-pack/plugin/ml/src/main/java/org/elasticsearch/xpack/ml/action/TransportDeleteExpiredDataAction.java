@@ -109,7 +109,7 @@ public class TransportDeleteExpiredDataAction extends HandledTransportAction<Del
                 () -> deleteExpiredData(request, dataRemovers, listener, isTimedOutSupplier)
             );
         } else {
-            jobConfigProvider.expandJobs(request.getJobId(), false, true, ActionListener.wrap(
+            jobConfigProvider.expandJobs(request.getJobId(), false, true, listener.wrap(
                 jobBuilders -> {
                     threadPool.executor(MachineLearning.UTILITY_THREAD_POOL_NAME).execute(() -> {
                             List<Job> jobs = jobBuilders.stream().map(Job.Builder::build).collect(Collectors.toList());
@@ -119,9 +119,7 @@ public class TransportDeleteExpiredDataAction extends HandledTransportAction<Del
                             deleteExpiredData(request, dataRemovers, listener, isTimedOutSupplier);
                         }
                     );
-                },
-                listener::onFailure
-            ));
+                }));
         }
     }
 
@@ -152,7 +150,7 @@ public class TransportDeleteExpiredDataAction extends HandledTransportAction<Del
                            boolean haveAllPreviousDeletionsCompleted) {
         if (haveAllPreviousDeletionsCompleted && mlDataRemoversIterator.hasNext()) {
             MlDataRemover remover = mlDataRemoversIterator.next();
-            ActionListener<Boolean> nextListener = ActionListener.wrap(
+            ActionListener<Boolean> nextListener = listener.wrap(
                 booleanResponse ->
                     deleteExpiredData(
                         request,
@@ -161,8 +159,7 @@ public class TransportDeleteExpiredDataAction extends HandledTransportAction<Del
                         listener,
                         isTimedOutSupplier,
                         booleanResponse
-                    ),
-                listener::onFailure);
+                    ));
             // Removing expired ML data and artifacts requires multiple operations.
             // These are queued up and executed sequentially in the action listener,
             // the chained calls must all run the ML utility thread pool NOT the thread

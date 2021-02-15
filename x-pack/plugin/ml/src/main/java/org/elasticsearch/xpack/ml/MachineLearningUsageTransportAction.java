@@ -101,19 +101,17 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
         int nodeCount = mlNodeCount(state);
 
         // Step 5. extract trained model config count and then return results
-        ActionListener<SearchResponse> trainedModelConfigCountListener = ActionListener.wrap(
+        ActionListener<SearchResponse> trainedModelConfigCountListener = listener.wrap(
             response -> {
                 addTrainedModelStats(response, inferenceUsage);
                 MachineLearningFeatureSetUsage usage = new MachineLearningFeatureSetUsage(
                     licenseState.isAllowed(XPackLicenseState.Feature.MACHINE_LEARNING),
                     enabled, jobsUsage, datafeedsUsage, analyticsUsage, inferenceUsage, nodeCount);
                 listener.onResponse(new XPackUsageFeatureResponse(usage));
-            },
-            listener::onFailure
-        );
+            });
 
         // Step 4. Extract usage from ingest statistics and gather trained model config count
-        ActionListener<NodesStatsResponse> nodesStatsListener = ActionListener.wrap(
+        ActionListener<NodesStatsResponse> nodesStatsListener = listener.wrap(
             response -> {
                 addInferenceIngestUsage(response, inferenceUsage);
                 SearchRequestBuilder requestBuilder = client.prepareSearch(InferenceIndexConstants.INDEX_PATTERN)
@@ -126,44 +124,39 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
                     requestBuilder.request(),
                     trainedModelConfigCountListener,
                     client::search);
-            },
-            listener::onFailure
-        );
+            });
 
         // Step 3. Extract usage from data frame analytics stats and then request ingest node stats
-        ActionListener<GetDataFrameAnalyticsStatsAction.Response> dataframeAnalyticsListener = ActionListener.wrap(
+        ActionListener<GetDataFrameAnalyticsStatsAction.Response> dataframeAnalyticsListener = listener.wrap(
             response -> {
                 addDataFrameAnalyticsUsage(response, analyticsUsage);
                 String[] ingestNodes = ingestNodes(state);
                 NodesStatsRequest nodesStatsRequest = new NodesStatsRequest(ingestNodes).clear()
                     .addMetric(NodesStatsRequest.Metric.INGEST.metricName());
                 client.execute(NodesStatsAction.INSTANCE, nodesStatsRequest, nodesStatsListener);
-            },
-            listener::onFailure
-        );
+            });
 
         // Step 2. Extract usage from datafeeds stats and then request stats for data frame analytics
         ActionListener<GetDatafeedsStatsAction.Response> datafeedStatsListener =
-            ActionListener.wrap(response -> {
+                listener.wrap(response -> {
                 addDatafeedsUsage(response, datafeedsUsage);
                 GetDataFrameAnalyticsStatsAction.Request dataframeAnalyticsStatsRequest =
                     new GetDataFrameAnalyticsStatsAction.Request(GetDatafeedsStatsAction.ALL);
                 dataframeAnalyticsStatsRequest.setPageParams(new PageParams(0, 10_000));
                 client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, dataframeAnalyticsListener);
-            },
-            listener::onFailure);
+            });
 
         // Step 1. Extract usage from jobs stats and then request stats for all datafeeds
         GetJobsStatsAction.Request jobStatsRequest = new GetJobsStatsAction.Request(Metadata.ALL);
-        ActionListener<GetJobsStatsAction.Response> jobStatsListener = ActionListener.wrap(
+        ActionListener<GetJobsStatsAction.Response> jobStatsListener = listener.wrap(
             response -> {
-                jobManagerHolder.getJobManager().expandJobs(Metadata.ALL, true, ActionListener.wrap(jobs -> {
+                jobManagerHolder.getJobManager().expandJobs(Metadata.ALL, true, listener.wrap(jobs -> {
                     addJobsUsage(response, jobs.results(), jobsUsage);
                     GetDatafeedsStatsAction.Request datafeedStatsRequest = new GetDatafeedsStatsAction.Request(
                         GetDatafeedsStatsAction.ALL);
                     client.execute(GetDatafeedsStatsAction.INSTANCE, datafeedStatsRequest, datafeedStatsListener);
-                }, listener::onFailure));
-            }, listener::onFailure);
+                }));
+            });
 
         // Step 0. Kick off the chain of callbacks by requesting jobs stats
         client.execute(GetJobsStatsAction.INSTANCE, jobStatsRequest, jobStatsListener);

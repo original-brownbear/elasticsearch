@@ -87,7 +87,7 @@ public class TransportExecuteWatchAction extends WatcherTransportAction<ExecuteW
                     .preference(Preference.LOCAL.type()).realtime(true);
 
             executeAsyncWithOrigin(client.threadPool().getThreadContext(), WATCHER_ORIGIN, getRequest,
-                    ActionListener.<GetResponse>wrap(response -> {
+                    listener.<GetResponse>wrap(response -> {
                         if (response.isExists()) {
                             Watch watch = watchParser.parse(request.getId(), true, response.getSourceAsBytesRef(),
                                 request.getXContentType(), response.getSeqNo(), response.getPrimaryTerm());
@@ -96,7 +96,7 @@ public class TransportExecuteWatchAction extends WatcherTransportAction<ExecuteW
                         } else {
                             listener.onFailure(new ResourceNotFoundException("Watch with id [{}] does not exist", request.getId()));
                         }
-                    }, listener::onFailure), client::get);
+                    }), client::get);
         } else if (request.getWatchSource() != null) {
             try {
                 assert request.isRecordExecution() == false;

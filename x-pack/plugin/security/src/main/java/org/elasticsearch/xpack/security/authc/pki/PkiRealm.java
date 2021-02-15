@@ -208,10 +208,10 @@ public class PkiRealm extends Realm implements CachingRealm {
             metadata = Map.of("pki_dn", token.dn());
         }
         final UserRoleMapper.UserData userData = new UserRoleMapper.UserData(principal, token.dn(), Set.of(), metadata, config);
-        roleMapper.resolveRoles(userData, ActionListener.wrap(roles -> {
+        roleMapper.resolveRoles(userData, listener.wrap(roles -> {
             final User computedUser = new User(principal, roles.toArray(new String[roles.size()]), null, null, metadata, true);
             listener.onResponse(AuthenticationResult.success(computedUser));
-        }, listener::onFailure));
+        }));
     }
 
     @Override

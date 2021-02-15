@@ -89,7 +89,7 @@ public class TransportPutEnrichPolicyAction extends AcknowledgedTransportMasterN
             privRequest.clusterPrivileges(Strings.EMPTY_ARRAY);
             privRequest.indexPrivileges(privileges);
 
-            ActionListener<HasPrivilegesResponse> wrappedListener = ActionListener.wrap(r -> {
+            ActionListener<HasPrivilegesResponse> wrappedListener = listener.wrap(r -> {
                 if (r.isCompleteMatch()) {
                     putPolicy(request, listener);
                 } else {
@@ -101,7 +101,7 @@ public class TransportPutEnrichPolicyAction extends AcknowledgedTransportMasterN
                         )
                     );
                 }
-            }, listener::onFailure);
+            });
             client.execute(HasPrivilegesAction.INSTANCE, privRequest, wrappedListener);
         } else {
             putPolicy(request, listener);

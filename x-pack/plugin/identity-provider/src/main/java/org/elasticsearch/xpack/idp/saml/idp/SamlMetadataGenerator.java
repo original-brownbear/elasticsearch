@@ -43,7 +43,7 @@ public class SamlMetadataGenerator {
     }
 
     public void generateMetadata(String spEntityId, String acs, ActionListener<SamlMetadataResponse> listener) {
-        idp.resolveServiceProvider(spEntityId, acs, true, ActionListener.wrap(
+        idp.resolveServiceProvider(spEntityId, acs, true, listener.wrap(
             sp -> {
                 try {
                     if (null == sp) {
@@ -59,9 +59,7 @@ public class SamlMetadataGenerator {
                     logger.debug("Error generating IDP metadata to share with [" + spEntityId + "]", e);
                     listener.onFailure(e);
                 }
-            },
-            listener::onFailure
-        ));
+            }));
     }
 
     EntityDescriptor buildEntityDescriptor(SamlServiceProvider sp) throws Exception {

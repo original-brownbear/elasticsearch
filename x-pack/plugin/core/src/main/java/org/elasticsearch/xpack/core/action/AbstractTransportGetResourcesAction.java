@@ -95,7 +95,7 @@ public abstract class AbstractTransportGetResourcesAction<Resource extends ToXCo
         executeAsyncWithOrigin(client.threadPool().getThreadContext(),
             executionOrigin(),
             searchRequest,
-            new ActionListener<SearchResponse>() {
+            new ActionListener.FailureDelegatingListener<SearchResponse, QueryPage<Resource>>(listener) {
                 @Override
                 public void onResponse(SearchResponse response) {
                     List<Resource> docs = new ArrayList<>();
@@ -120,22 +120,16 @@ public abstract class AbstractTransportGetResourcesAction<Resource extends ToXCo
                     ExpandedIdsMatcher requiredMatches = new ExpandedIdsMatcher(tokens, request.isAllowNoResources());
                     requiredMatches.filterMatchedIds(foundResourceIds);
                     if (requiredMatches.hasUnmatchedIds()) {
-                        listener.onFailure(notFoundException(requiredMatches.unmatchedIdsString()));
+                        delegate.onFailure(notFoundException(requiredMatches.unmatchedIdsString()));
                     } else {
                         // if only exact ids have been given, take the count from docs to avoid potential duplicates
                         // in versioned indexes (like transform)
                         if (requiredMatches.isOnlyExact()) {
-                            listener.onResponse(new QueryPage<>(docs, docs.size(), getResultsField()));
+                            delegate.onResponse(new QueryPage<>(docs, docs.size(), getResultsField()));
                         } else {
-                            listener.onResponse(new QueryPage<>(docs, totalHitCount, getResultsField()));
+                            delegate.onResponse(new QueryPage<>(docs, totalHitCount, getResultsField()));
                         }
                     }
-                }
-
-
-                @Override
-                public void onFailure(Exception e) {
-                    listener.onFailure(e);
                 }
             },
             client::search);

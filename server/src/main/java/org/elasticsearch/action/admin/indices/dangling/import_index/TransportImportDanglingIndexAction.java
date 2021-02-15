@@ -99,7 +99,8 @@ public class TransportImportDanglingIndexAction extends HandledTransportAction<I
     private void findDanglingIndex(ImportDanglingIndexRequest request, ActionListener<IndexMetadata> listener) {
         final String indexUUID = request.getIndexUUID();
 
-        this.nodeClient.execute(FindDanglingIndexAction.INSTANCE, new FindDanglingIndexRequest(indexUUID), new ActionListener<>() {
+        this.nodeClient.execute(FindDanglingIndexAction.INSTANCE, new FindDanglingIndexRequest(indexUUID),
+                new ActionListener.FailureDelegatingListener<>(listener) {
             @Override
             public void onResponse(FindDanglingIndexResponse response) {
                 if (response.hasFailures()) {
@@ -111,7 +112,7 @@ public class TransportImportDanglingIndexAction extends HandledTransportAction<I
                         e.addSuppressed(failure);
                     }
 
-                    listener.onFailure(e);
+                    delegate.onFailure(e);
                     return;
                 }
 
@@ -122,7 +123,7 @@ public class TransportImportDanglingIndexAction extends HandledTransportAction<I
                 metaDataSortedByVersion.sort(Comparator.comparingLong(IndexMetadata::getVersion));
 
                 if (metaDataSortedByVersion.isEmpty()) {
-                    listener.onFailure(new IllegalArgumentException("No dangling index found for UUID [" + indexUUID + "]"));
+                    delegate.onFailure(new IllegalArgumentException("No dangling index found for UUID [" + indexUUID + "]"));
                     return;
                 }
 
@@ -132,12 +133,7 @@ public class TransportImportDanglingIndexAction extends HandledTransportAction<I
                     indexUUID
                 );
 
-                listener.onResponse(metaDataSortedByVersion.get(metaDataSortedByVersion.size() - 1));
-            }
-
-            @Override
-            public void onFailure(Exception exp) {
-                listener.onFailure(exp);
+                delegate.onResponse(metaDataSortedByVersion.get(metaDataSortedByVersion.size() - 1));
             }
         });
     }

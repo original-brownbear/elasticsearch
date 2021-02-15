@@ -73,7 +73,7 @@ public abstract class AbstractCompositeAggFunction implements Function {
             client,
             SearchAction.INSTANCE,
             buildSearchRequest(sourceConfig, null, numberOfBuckets),
-            ActionListener.wrap(r -> {
+            listener.wrap(r -> {
                 try {
                     final Aggregations aggregations = r.getAggregations();
                     if (aggregations == null) {
@@ -92,7 +92,7 @@ public abstract class AbstractCompositeAggFunction implements Function {
                 } catch (AggregationResultUtils.AggregationExtractionException extractionException) {
                     listener.onFailure(new ElasticsearchStatusException(extractionException.getMessage(), RestStatus.BAD_REQUEST));
                 }
-            }, listener::onFailure)
+            })
         );
     }
 

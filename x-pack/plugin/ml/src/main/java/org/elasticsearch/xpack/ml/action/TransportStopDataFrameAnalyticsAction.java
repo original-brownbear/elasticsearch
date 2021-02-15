@@ -94,7 +94,7 @@ public class TransportStopDataFrameAnalyticsAction
 
         logger.debug("Received request to stop data frame analytics [{}]", request.getId());
 
-        ActionListener<Set<String>> expandedIdsListener = ActionListener.wrap(
+        ActionListener<Set<String>> expandedIdsListener = listener.wrap(
             idsToStop -> {
                 logger.debug("Resolved data frame analytics to stop: {}", idsToStop);
 
@@ -111,9 +111,7 @@ public class TransportStopDataFrameAnalyticsAction
                 } else {
                     normalStop(task, request, listener, tasks, analyticsByTaskState);
                 }
-            },
-            listener::onFailure
-        );
+            });
 
         findIdsToStop(state, request, expandedIdsListener);
     }
@@ -122,21 +120,17 @@ public class TransportStopDataFrameAnalyticsAction
                                ActionListener<Set<String>> expandedIdsListener) {
         Set<String> startedIds = getAllStartedIds(clusterState);
 
-        ActionListener<Set<String>> matchingIdsListener = ActionListener.wrap(
-            matchingIds -> {
-                startedIds.retainAll(matchingIds);
-                expandedIdsListener.onResponse(startedIds);
-            },
-            expandedIdsListener::onFailure
-        );
+        ActionListener<Set<String>> matchingIdsListener = expandedIdsListener.wrap(matchingIds -> {
+            startedIds.retainAll(matchingIds);
+            expandedIdsListener.onResponse(startedIds);
+        });
 
         if (request.isForce()) {
             matchAllStartedIds(request, startedIds, matchingIdsListener);
         } else {
-            configProvider.getMultiple(request.getId(), request.allowNoMatch(), ActionListener.wrap(
+            configProvider.getMultiple(request.getId(), request.allowNoMatch(), matchingIdsListener.wrap(
                 configs -> matchingIdsListener.onResponse(
-                    configs.stream().map(DataFrameAnalyticsConfig::getId).collect(Collectors.toSet())),
-                matchingIdsListener::onFailure
+                    configs.stream().map(DataFrameAnalyticsConfig::getId).collect(Collectors.toSet()))
             ));
         }
     }
@@ -158,10 +152,8 @@ public class TransportStopDataFrameAnalyticsAction
             // There are expressions that did not match any started task.
             // If there are no configs for those either, we should error.
             // We check this by trying a get with the unmatched expressions.
-            configProvider.getMultiple(expandedIdsMatcher.unmatchedIdsString(), request.allowNoMatch(), ActionListener.wrap(
-                configs -> matchingIdsListener.onResponse(MlStrings.findMatching(tokens, startedIds)),
-                matchingIdsListener::onFailure
-            ));
+            configProvider.getMultiple(expandedIdsMatcher.unmatchedIdsString(), request.allowNoMatch(), matchingIdsListener.wrap(
+                    configs -> matchingIdsListener.onResponse(MlStrings.findMatching(tokens, startedIds))));
         } else {
             matchingIdsListener.onResponse(MlStrings.findMatching(tokens, startedIds));
         }
@@ -353,13 +345,10 @@ public class TransportStopDataFrameAnalyticsAction
                             ActionListener<StopDataFrameAnalyticsAction.Response> listener) {
         persistentTasksService.waitForPersistentTasksCondition(persistentTasks ->
                 persistentTasks.findTasks(MlTasks.DATA_FRAME_ANALYTICS_TASK_NAME, t -> taskIds.contains(t.getId())).isEmpty(),
-            request.getTimeout(), ActionListener.wrap(
-                booleanResponse -> {
+                request.getTimeout(), listener.wrap(booleanResponse -> {
                     auditor.info(request.getId(), Messages.DATA_FRAME_ANALYTICS_AUDIT_STOPPED);
                     listener.onResponse(response);
-                },
-                listener::onFailure
-            ));
+                }));
     }
 
     // Visible for testing

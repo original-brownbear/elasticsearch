@@ -175,7 +175,7 @@ public class TransportStartDataFrameAnalyticsAction
             };
 
         // Start persistent task
-        ActionListener<StartContext> memoryUsageHandledListener = ActionListener.wrap(
+        ActionListener<StartContext> memoryUsageHandledListener = listener.wrap(
             startContext -> {
                 TaskParams taskParams =
                     new TaskParams(
@@ -187,15 +187,11 @@ public class TransportStartDataFrameAnalyticsAction
                     MlTasks.DATA_FRAME_ANALYTICS_TASK_NAME,
                     taskParams,
                     waitForAnalyticsToStart);
-            },
-            listener::onFailure
-        );
+            });
 
         // Perform memory usage estimation for this config
-        ActionListener<StartContext> startContextListener = ActionListener.wrap(
-            startContext -> estimateMemoryUsageAndUpdateMemoryTracker(startContext, memoryUsageHandledListener),
-            listener::onFailure
-        );
+        ActionListener<StartContext> startContextListener =
+                listener.wrap(startContext -> estimateMemoryUsageAndUpdateMemoryTracker(startContext, memoryUsageHandledListener));
 
         // Get start context
         getStartContext(request.getId(), task, startContextListener);
@@ -205,7 +201,7 @@ public class TransportStartDataFrameAnalyticsAction
         final String jobId = startContext.config.getId();
 
         // Tell the job tracker to refresh the memory requirement for this job and all other jobs that have persistent tasks
-        ActionListener<ExplainDataFrameAnalyticsAction.Response> explainListener = ActionListener.wrap(
+        ActionListener<ExplainDataFrameAnalyticsAction.Response> explainListener = listener.wrap(
             explainResponse -> {
                 ByteSizeValue expectedMemoryWithoutDisk = explainResponse.getMemoryEstimation().getExpectedMemoryWithoutDisk();
                 auditor.info(jobId,
@@ -226,9 +222,7 @@ public class TransportStartDataFrameAnalyticsAction
                 memoryTracker.addDataFrameAnalyticsJobMemoryAndRefreshAllOthers(
                     jobId, startContext.config.getModelMemoryLimit().getBytes(), ActionListener.wrap(
                         aVoid -> listener.onResponse(startContext), listener::onFailure));
-            },
-            listener::onFailure
-        );
+            });
 
         PutDataFrameAnalyticsAction.Request explainRequest = new PutDataFrameAnalyticsAction.Request(startContext.config);
         ClientHelper.executeAsyncWithOrigin(
@@ -244,21 +238,16 @@ public class TransportStartDataFrameAnalyticsAction
 
         ParentTaskAssigningClient parentTaskClient = new ParentTaskAssigningClient(client, task.getParentTaskId());
         // Step 7. Validate that there are analyzable data in the source index
-        ActionListener<StartContext> validateMappingsMergeListener = ActionListener.wrap(
-            startContext -> validateSourceIndexHasAnalyzableData(startContext, finalListener),
-            finalListener::onFailure
-        );
+        ActionListener<StartContext> validateMappingsMergeListener = finalListener.wrap(
+            startContext -> validateSourceIndexHasAnalyzableData(startContext, finalListener));
 
         // Step 6. Validate mappings can be merged
-        ActionListener<StartContext> toValidateMappingsListener = ActionListener.wrap(
+        ActionListener<StartContext> toValidateMappingsListener = finalListener.wrap(
             startContext -> MappingsMerger.mergeMappings(parentTaskClient, startContext.config.getHeaders(),
-                startContext.config.getSource(), ActionListener.wrap(
-                mappings -> validateMappingsMergeListener.onResponse(startContext), finalListener::onFailure)),
-            finalListener::onFailure
-        );
+                startContext.config.getSource(), finalListener.wrap(mappings -> validateMappingsMergeListener.onResponse(startContext))));
 
         // Step 5. Validate dest index is empty if task is starting for first time
-        ActionListener<StartContext> toValidateDestEmptyListener = ActionListener.wrap(
+        ActionListener<StartContext> toValidateDestEmptyListener = finalListener.wrap(
             startContext -> {
                 switch (startContext.startingState) {
                     case FIRST_TIME:
@@ -280,54 +269,40 @@ public class TransportStartDataFrameAnalyticsAction
                             startContext.startingState));
                         break;
                 }
-            },
-            finalListener::onFailure
-        );
+            });
 
         // Step 4. Check data extraction is possible
-        ActionListener<StartContext> toValidateExtractionPossibleListener = ActionListener.wrap(
-            startContext -> {
-                new ExtractedFieldsDetectorFactory(parentTaskClient).createFromSource(startContext.config, ActionListener.wrap(
-                    extractedFieldsDetector -> {
-                        startContext.extractedFields = extractedFieldsDetector.detect().v1();
-                        toValidateDestEmptyListener.onResponse(startContext);
-                    },
-                    finalListener::onFailure)
-                );
-            },
-            finalListener::onFailure
-        );
+        ActionListener<StartContext> toValidateExtractionPossibleListener = finalListener.wrap(startContext ->
+                        new ExtractedFieldsDetectorFactory(parentTaskClient).createFromSource(startContext.config, finalListener.wrap(
+                                extractedFieldsDetector -> {
+                                    startContext.extractedFields = extractedFieldsDetector.detect().v1();
+                                    toValidateDestEmptyListener.onResponse(startContext);
+                                })));
 
         // Step 3. Validate source and dest
-        ActionListener<StartContext> startContextListener = ActionListener.wrap(
+        ActionListener<StartContext> startContextListener = finalListener.wrap(
             startContext -> {
                 // Validate the query parses
                 startContext.config.getSource().getParsedQuery();
 
                 // Validate source/dest are valid
                 sourceDestValidator.validate(clusterService.state(), startContext.config.getSource().getIndex(),
-                    startContext.config.getDest().getIndex(), null, SourceDestValidations.ALL_VALIDATIONS, ActionListener.wrap(
-                        aBoolean -> toValidateExtractionPossibleListener.onResponse(startContext), finalListener::onFailure));
-            },
-            finalListener::onFailure
+                    startContext.config.getDest().getIndex(), null, SourceDestValidations.ALL_VALIDATIONS,
+                        finalListener.wrap(aBoolean -> toValidateExtractionPossibleListener.onResponse(startContext)));
+            }
         );
 
         // Step 2. Get stats to recover progress
-        ActionListener<DataFrameAnalyticsConfig> getConfigListener = ActionListener.wrap(
-            config -> getProgress(config, ActionListener.wrap(
-                progress -> startContextListener.onResponse(new StartContext(config, progress)), finalListener::onFailure)),
-            finalListener::onFailure
-        );
+        ActionListener<DataFrameAnalyticsConfig> getConfigListener = finalListener.wrap(config -> getProgress(config, finalListener.wrap(
+                progress -> startContextListener.onResponse(new StartContext(config, progress)))));
 
         // Step 1. Get the config
         configProvider.get(id, getConfigListener);
     }
 
     private void validateSourceIndexHasAnalyzableData(StartContext startContext, ActionListener<StartContext> listener) {
-        ActionListener<Void> validateAtLeastOneAnalyzedFieldListener = ActionListener.wrap(
-            aVoid -> validateSourceIndexRowsCount(startContext, listener),
-            listener::onFailure
-        );
+        ActionListener<Void> validateAtLeastOneAnalyzedFieldListener =
+                listener.wrap(aVoid -> validateSourceIndexRowsCount(startContext, listener));
 
         validateSourceIndexHasAtLeastOneAnalyzedField(startContext, validateAtLeastOneAnalyzedFieldListener);
     }
@@ -385,7 +360,7 @@ public class TransportStartDataFrameAnalyticsAction
 
     private void getProgress(DataFrameAnalyticsConfig config, ActionListener<List<PhaseProgress>> listener) {
         GetDataFrameAnalyticsStatsAction.Request getStatsRequest = new GetDataFrameAnalyticsStatsAction.Request(config.getId());
-        executeAsyncWithOrigin(client, ML_ORIGIN, GetDataFrameAnalyticsStatsAction.INSTANCE, getStatsRequest, ActionListener.wrap(
+        executeAsyncWithOrigin(client, ML_ORIGIN, GetDataFrameAnalyticsStatsAction.INSTANCE, getStatsRequest, listener.wrap(
             statsResponse -> {
                 List<GetDataFrameAnalyticsStatsAction.Response.Stats> stats = statsResponse.getResponse().results();
                 if (stats.isEmpty()) {
@@ -394,8 +369,7 @@ public class TransportStartDataFrameAnalyticsAction
                 } else {
                     listener.onResponse(stats.get(0).getProgress());
                 }
-            },
-            listener::onFailure
+            }
         ));
     }
 

@@ -230,8 +230,7 @@ public class IndexResolver {
             }
 
             client.admin().indices().getIndex(indexRequest,
-                wrap(response -> filterResults(javaRegex, aliases, response, retrieveIndices, retrieveFrozenIndices, listener),
-                    listener::onFailure));
+                listener.wrap(response -> filterResults(javaRegex, aliases, response, retrieveIndices, retrieveFrozenIndices, listener)));
 
         } else {
             filterResults(javaRegex, aliases, null, false, false, listener);
@@ -282,10 +281,8 @@ public class IndexResolver {
     public void resolveAsMergedMapping(String indexWildcard, String javaRegex, IndicesOptions indicesOptions,
             ActionListener<IndexResolution> listener) {
         FieldCapabilitiesRequest fieldRequest = createFieldCapsRequest(indexWildcard, indicesOptions);
-        client.fieldCaps(fieldRequest,
-                ActionListener.wrap(
-                        response -> listener.onResponse(mergedMappings(typeRegistry, indexWildcard, response.getIndices(), response.get())),
-                        listener::onFailure));
+        client.fieldCaps(fieldRequest, listener.wrap(
+                    response -> listener.onResponse(mergedMappings(typeRegistry, indexWildcard, response.getIndices(), response.get()))));
     }
 
     /**
@@ -294,10 +291,8 @@ public class IndexResolver {
     public void resolveAsMergedMapping(String indexWildcard, String javaRegex, boolean includeFrozen,
             ActionListener<IndexResolution> listener) {
         FieldCapabilitiesRequest fieldRequest = createFieldCapsRequest(indexWildcard, includeFrozen);
-        client.fieldCaps(fieldRequest,
-                ActionListener.wrap(
-                        response -> listener.onResponse(mergedMappings(typeRegistry, indexWildcard, response.getIndices(), response.get())),
-                        listener::onFailure));
+        client.fieldCaps(fieldRequest, listener.wrap(
+                response -> listener.onResponse(mergedMappings(typeRegistry, indexWildcard, response.getIndices(), response.get()))));
     }
 
     public static IndexResolution mergedMappings(DataTypeRegistry typeRegistry, String indexPattern, String[] indexNames,
@@ -477,19 +472,17 @@ public class IndexResolver {
     public void resolveAsSeparateMappings(String indexWildcard, String javaRegex, boolean includeFrozen,
             ActionListener<List<EsIndex>> listener) {
         FieldCapabilitiesRequest fieldRequest = createFieldCapsRequest(indexWildcard, includeFrozen);
-        client.fieldCaps(fieldRequest, wrap(response -> {
-            client.admin().indices().getAliases(createGetAliasesRequest(response, includeFrozen), wrap(aliases ->
-                listener.onResponse(separateMappings(typeRegistry, javaRegex, response.getIndices(), response.get(), aliases.getAliases())),
-                ex -> {
-                    if (ex instanceof IndexNotFoundException || ex instanceof ElasticsearchSecurityException) {
-                        listener.onResponse(separateMappings(typeRegistry, javaRegex, response.getIndices(), response.get(), null));
-                    } else {
-                        listener.onFailure(ex);
-                    }
-                }));
-            },
-            listener::onFailure));
-
+        client.fieldCaps(fieldRequest, listener.wrap(response -> client.admin().indices().getAliases(
+            createGetAliasesRequest(response, includeFrozen),
+            wrap(aliases -> listener.onResponse(
+                    separateMappings(typeRegistry, javaRegex, response.getIndices(), response.get(), aliases.getAliases())),
+            ex -> {
+                if (ex instanceof IndexNotFoundException || ex instanceof ElasticsearchSecurityException) {
+                    listener.onResponse(separateMappings(typeRegistry, javaRegex, response.getIndices(), response.get(), null));
+                } else {
+                    listener.onFailure(ex);
+                }
+            }))));
     }
 
     private GetAliasesRequest createGetAliasesRequest(FieldCapabilitiesResponse response, boolean includeFrozen) {

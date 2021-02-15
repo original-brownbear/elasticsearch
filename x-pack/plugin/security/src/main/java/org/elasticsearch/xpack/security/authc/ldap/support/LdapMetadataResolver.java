@@ -57,13 +57,13 @@ public class LdapMetadataResolver {
         } else {
             searchForEntry(connection, userDn, SearchScope.BASE, OBJECT_CLASS_PRESENCE_FILTER,
                     Math.toIntExact(timeout.seconds()), ignoreReferralErrors,
-                    ActionListener.wrap((SearchResultEntry entry) -> {
+                    listener.wrap((SearchResultEntry entry) -> {
                         if (entry == null) {
                             listener.onResponse(Map.of());
                         } else {
                             listener.onResponse(toMap(entry::getAttribute));
                         }
-                    }, listener::onFailure), this.attributeNames);
+                    }), this.attributeNames);
         }
     }
 

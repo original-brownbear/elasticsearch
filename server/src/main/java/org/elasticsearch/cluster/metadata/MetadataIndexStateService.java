@@ -165,7 +165,7 @@ public class MetadataIndexStateService {
                         assert blockedIndices.isEmpty() == false : "List of blocked indices is empty but cluster state was changed";
                         threadPool.executor(ThreadPool.Names.MANAGEMENT)
                             .execute(new WaitForClosedBlocksApplied(blockedIndices, request,
-                                ActionListener.wrap(verifyResults ->
+                                listener.wrap(verifyResults ->
                                     clusterService.submitStateUpdateTask("close-indices", new ClusterStateUpdateTask(Priority.URGENT) {
                                         private final List<IndexResult> indices = new ArrayList<>();
 
@@ -211,8 +211,7 @@ public class MetadataIndexStateService {
                                                 listener.onResponse(new CloseIndexResponse(acknowledged, false, indices));
                                             }
                                         }
-                                    }),
-                                    listener::onFailure)
+                                    }))
                                 )
                             );
                     }
@@ -414,7 +413,7 @@ public class MetadataIndexStateService {
                         assert blockedIndices.isEmpty() == false : "List of blocked indices is empty but cluster state was changed";
                         threadPool.executor(ThreadPool.Names.MANAGEMENT)
                             .execute(new WaitForBlocksApplied(blockedIndices, request,
-                                    ActionListener.wrap(verifyResults ->
+                                    listener.wrap(verifyResults ->
                                             clusterService.submitStateUpdateTask("finalize-index-block-[" + request.getBlock().name +
                                                     "]-[" + blockedIndices.keySet().stream().map(Index::getName)
                                                         .collect(Collectors.joining(", ")) + "]",
@@ -444,10 +443,7 @@ public class MetadataIndexStateService {
                                                         AddBlockResult::hasFailures);
                                                     listener.onResponse(new AddIndexBlockResponse(acknowledged, acknowledged, indices));
                                                 }
-                                            }),
-                                        listener::onFailure)
-                                )
-                            );
+                                            }))));
                     }
                 }
 
@@ -565,20 +561,16 @@ public class MetadataIndexStateService {
             if (request.ackTimeout() != null) {
                 shardRequest.timeout(request.ackTimeout());
             }
-            client.executeLocally(TransportVerifyShardBeforeCloseAction.TYPE, shardRequest, new ActionListener<>() {
+            client.executeLocally(TransportVerifyShardBeforeCloseAction.TYPE, shardRequest,
+                    new ActionListener.FailureDelegatingListener<>(listener) {
                 @Override
                 public void onResponse(ReplicationResponse replicationResponse) {
                     final TransportVerifyShardBeforeCloseAction.ShardRequest shardRequest =
-                        new TransportVerifyShardBeforeCloseAction.ShardRequest(shardId, closingBlock, false, parentTaskId);
+                            new TransportVerifyShardBeforeCloseAction.ShardRequest(shardId, closingBlock, false, parentTaskId);
                     if (request.ackTimeout() != null) {
                         shardRequest.timeout(request.ackTimeout());
                     }
-                    client.executeLocally(TransportVerifyShardBeforeCloseAction.TYPE, shardRequest, listener);
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    listener.onFailure(e);
+                    client.executeLocally(TransportVerifyShardBeforeCloseAction.TYPE, shardRequest, delegate);
                 }
             });
         }
@@ -769,7 +761,7 @@ public class MetadataIndexStateService {
 
     public void openIndex(final OpenIndexClusterStateUpdateRequest request,
                           final ActionListener<ShardsAcknowledgedResponse> listener) {
-        onlyOpenIndex(request, ActionListener.wrap(response -> {
+        onlyOpenIndex(request, listener.wrap(response -> {
             if (response.isAcknowledged()) {
                 String[] indexNames = Arrays.stream(request.indices()).map(Index::getName).toArray(String[]::new);
                 activeShardsObserver.waitForActiveShards(indexNames, request.waitForActiveShards(), request.ackTimeout(),
@@ -783,7 +775,7 @@ public class MetadataIndexStateService {
             } else {
                 listener.onResponse(ShardsAcknowledgedResponse.NOT_ACKNOWLEDGED);
             }
-        }, listener::onFailure));
+        }));
     }
 
     private void onlyOpenIndex(final OpenIndexClusterStateUpdateRequest request,

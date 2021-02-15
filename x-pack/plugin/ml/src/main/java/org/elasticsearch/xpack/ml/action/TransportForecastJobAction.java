@@ -72,7 +72,7 @@ public class TransportForecastJobAction extends TransportJobTaskAction<ForecastJ
 
     @Override
     protected void taskOperation(ForecastJobAction.Request request, JobTask task, ActionListener<ForecastJobAction.Response> listener) {
-        jobManager.getJob(task.getJobId(), ActionListener.wrap(
+        jobManager.getJob(task.getJobId(), listener.wrap(
                 job -> {
                     validate(job, request);
 
@@ -110,9 +110,7 @@ public class TransportForecastJobAction extends TransportJobTaskAction<ForecastJ
                             listener.onFailure(e);
                         }
                     });
-                },
-                listener::onFailure
-        ));
+                }));
     }
 
     private void getForecastRequestStats(String jobId, String forecastId, ActionListener<ForecastJobAction.Response> listener) {

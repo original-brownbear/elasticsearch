@@ -157,7 +157,7 @@ public class NativePrivilegeStore {
                 final long invalidationCounter = numInvalidation.get();
                 // Always fetch all privileges of an application for caching purpose
                 logger.debug("Fetching application privilege documents for: {}", applicationNamesCacheKey);
-                innerGetPrivileges(applicationNamesCacheKey, ActionListener.wrap(fetchedDescriptors -> {
+                innerGetPrivileges(applicationNamesCacheKey, listener.wrap(fetchedDescriptors -> {
                     final Map<String, Set<ApplicationPrivilegeDescriptor>> mapOfFetchedDescriptors = fetchedDescriptors.stream()
                         .collect(Collectors.groupingBy(ApplicationPrivilegeDescriptor::getApplication, Collectors.toUnmodifiableSet()));
                     if (descriptorsCache != null) {
@@ -171,7 +171,7 @@ public class NativePrivilegeStore {
                         }
                     }
                     listener.onResponse(filterDescriptorsForPrivilegeNames(fetchedDescriptors, names));
-                }, listener::onFailure));
+                }));
             }
         }
     }
@@ -326,7 +326,7 @@ public class NativePrivilegeStore {
                               ActionListener<Map<String, List<String>>> listener) {
         securityIndexManager.prepareIndexIfNeededThenExecute(listener::onFailure, () -> {
             ActionListener<IndexResponse> groupListener = new GroupedActionListener<>(
-                ActionListener.wrap((Collection<IndexResponse> responses) -> {
+                listener.wrap((Collection<IndexResponse> responses) -> {
                     final Map<String, List<String>> createdNames = responses.stream()
                         .filter(r -> r.getResult() == DocWriteResponse.Result.CREATED)
                         .map(r -> r.getId())
@@ -335,7 +335,7 @@ public class NativePrivilegeStore {
                     clearCaches(listener,
                         privileges.stream().map(ApplicationPrivilegeDescriptor::getApplication).collect(Collectors.toUnmodifiableSet()),
                         createdNames);
-                }, listener::onFailure), privileges.size());
+                }), privileges.size());
             for (ApplicationPrivilegeDescriptor privilege : privileges) {
                 innerPutPrivilege(privilege, refreshPolicy, groupListener);
             }
@@ -368,14 +368,14 @@ public class NativePrivilegeStore {
         } else {
             securityIndexManager.checkIndexVersionThenExecute(listener::onFailure, () -> {
                 ActionListener<DeleteResponse> groupListener = new GroupedActionListener<>(
-                    ActionListener.wrap(responses -> {
+                    listener.wrap(responses -> {
                         final Map<String, List<String>> deletedNames = responses.stream()
                             .filter(r -> r.getResult() == DocWriteResponse.Result.DELETED)
                             .map(r -> r.getId())
                             .map(NativePrivilegeStore::nameFromDocId)
                             .collect(TUPLES_TO_MAP);
                         clearCaches(listener, Collections.singleton(application), deletedNames);
-                    }, listener::onFailure), names.size());
+                    }), names.size());
                 for (String name : names) {
                     ClientHelper.executeAsyncWithOrigin(client.threadPool().getThreadContext(), SECURITY_ORIGIN,
                         client.prepareDelete(SECURITY_MAIN_ALIAS, toDocId(application, name))

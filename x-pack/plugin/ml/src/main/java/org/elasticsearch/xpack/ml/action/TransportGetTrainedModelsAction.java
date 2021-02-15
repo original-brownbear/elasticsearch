@@ -41,7 +41,7 @@ public class TransportGetTrainedModelsAction extends HandledTransportAction<Requ
 
         Response.Builder responseBuilder = Response.builder();
 
-        ActionListener<Tuple<Long, Set<String>>> idExpansionListener = ActionListener.wrap(
+        ActionListener<Tuple<Long, Set<String>>> idExpansionListener = listener.wrap(
             totalAndIds -> {
                 responseBuilder.setTotalCount(totalAndIds.v1());
 
@@ -61,24 +61,17 @@ public class TransportGetTrainedModelsAction extends HandledTransportAction<Requ
                     provider.getTrainedModel(
                         totalAndIds.v2().iterator().next(),
                         request.getIncludes(),
-                        ActionListener.wrap(
-                            config -> listener.onResponse(responseBuilder.setModels(Collections.singletonList(config)).build()),
-                            listener::onFailure
-                        )
+                        listener.wrap(config -> listener.onResponse(responseBuilder.setModels(Collections.singletonList(config)).build()))
                     );
                 } else {
                     provider.getTrainedModels(
                         totalAndIds.v2(),
                         request.getIncludes(),
                         request.isAllowNoResources(),
-                        ActionListener.wrap(
-                            configs -> listener.onResponse(responseBuilder.setModels(configs).build()),
-                            listener::onFailure
-                        )
+                        listener.wrap(configs -> listener.onResponse(responseBuilder.setModels(configs).build()))
                     );
                 }
-            },
-            listener::onFailure
+            }
         );
 
         provider.expandIds(request.getResourceId(),

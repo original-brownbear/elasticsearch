@@ -43,7 +43,7 @@ public abstract class TransportSingleItemBulkWriteAction<
 
     public static <Response extends ReplicationResponse & WriteResponse>
     ActionListener<BulkResponse> wrapBulkResponse(ActionListener<Response> listener) {
-        return ActionListener.wrap(bulkItemResponses -> {
+        return listener.wrap(bulkItemResponses -> {
             assert bulkItemResponses.getItems().length == 1 : "expected only one item in bulk request";
             BulkItemResponse bulkItemResponse = bulkItemResponses.getItems()[0];
             if (bulkItemResponse.isFailed() == false) {
@@ -52,7 +52,7 @@ public abstract class TransportSingleItemBulkWriteAction<
             } else {
                 listener.onFailure(bulkItemResponse.getFailure().getCause());
             }
-        }, listener::onFailure);
+        });
     }
 
     public static BulkRequest toSingleItemBulkRequest(ReplicatedWriteRequest<?> request) {

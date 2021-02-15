@@ -358,7 +358,7 @@ public abstract class AbstractGeometryQueryBuilder<QB extends AbstractGeometryQu
      */
     private void fetch(Client client, GetRequest getRequest, String path, ActionListener<Geometry> listener) {
         getRequest.preference("_local");
-        client.get(getRequest, new ActionListener<>(){
+        client.get(getRequest, new ActionListener.FailureDelegatingListener<>(listener){
 
             @Override
             public void onResponse(GetResponse response) {
@@ -383,7 +383,7 @@ public abstract class AbstractGeometryQueryBuilder<QB extends AbstractGeometryQu
                                 if (pathElements[currentPathSlot].equals(parser.currentName())) {
                                     parser.nextToken();
                                     if (++currentPathSlot == pathElements.length) {
-                                        listener.onResponse(new GeometryParser(true, true, true).parse(parser));
+                                        delegate.onResponse(new GeometryParser(true, true, true).parse(parser));
                                         return;
                                     }
                                 } else {
@@ -397,11 +397,6 @@ public abstract class AbstractGeometryQueryBuilder<QB extends AbstractGeometryQu
                 } catch (Exception e) {
                     onFailure(e);
                 }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                listener.onFailure(e);
             }
         });
     }
@@ -471,10 +466,10 @@ public abstract class AbstractGeometryQueryBuilder<QB extends AbstractGeometryQu
             queryRewriteContext.registerAsyncAction((client, listener) -> {
                 GetRequest getRequest = new GetRequest(indexedShapeIndex, indexedShapeId);
                 getRequest.routing(indexedShapeRouting);
-                fetch(client, getRequest, indexedShapePath, ActionListener.wrap(builder-> {
+                fetch(client, getRequest, indexedShapePath, listener.wrap(builder-> {
                     supplier.set(builder);
                     listener.onResponse(null);
-                }, listener::onFailure));
+                }));
             });
             return newShapeQueryBuilder(this.fieldName, supplier::get, this.indexedShapeId).relation(relation);
         }

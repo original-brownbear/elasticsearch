@@ -50,17 +50,11 @@ public class RecoveryRequestTracker {
             checkpointTracker.markSeqNoAsProcessed(requestSeqNo);
             final ListenableFuture<Void> future = new ListenableFuture<>();
             ongoingRequests.put(requestSeqNo, future);
-            future.addListener(new ActionListener<>() {
+            future.addListener(new ActionListener.FailureDelegatingListener<>(listener) {
                 @Override
                 public void onResponse(Void v) {
                     ongoingRequests.remove(requestSeqNo);
-                    listener.onResponse(v);
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    // We do not remove the future to cache the error for retried requests
-                    listener.onFailure(e);
+                    delegate.onResponse(v);
                 }
             }, EsExecutors.newDirectExecutorService());
             return future;

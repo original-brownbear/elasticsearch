@@ -84,7 +84,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
                 request.getSnapshotId(), jobId, request.getDeleteInterveningResults());
 
         // 4. Revert the state
-        ActionListener<Boolean> configMappingUpdateListener = ActionListener.wrap(
+        ActionListener<Boolean> configMappingUpdateListener = listener.wrap(
             r -> {
                 PersistentTasksCustomMetadata tasks = state.getMetadata().custom(PersistentTasksCustomMetadata.TYPE);
                 JobState jobState = MlTasks.getJobState(jobId, tasks);
@@ -112,22 +112,15 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
                     }
                     jobManager.revertSnapshot(request, wrappedListener, modelSnapshot);
                 }, listener::onFailure);
-            },
-            listener::onFailure
-        );
+            });
 
         // 3. Ensure the config index mappings are up to date
-        ActionListener<Boolean> jobExistsListener = ActionListener.wrap(
-            r -> ElasticsearchMappings.addDocMappingIfMissing(MlConfigIndex.indexName(), MlConfigIndex::mapping,
-                client, state, configMappingUpdateListener),
-            listener::onFailure
-        );
+        ActionListener<Boolean> jobExistsListener = listener.wrap(r ->
+            ElasticsearchMappings.addDocMappingIfMissing(MlConfigIndex.indexName(), MlConfigIndex::mapping,
+                client, state, configMappingUpdateListener));
 
         // 2. Verify the job exists
-        ActionListener<Boolean> createStateIndexListener = ActionListener.wrap(
-            r -> jobManager.jobExists(jobId, jobExistsListener),
-            listener::onFailure
-        );
+        ActionListener<Boolean> createStateIndexListener = listener.wrap(r -> jobManager.jobExists(jobId, jobExistsListener));
 
         // 1. Verify/Create the state index and its alias exists
         AnomalyDetectorsIndex.createStateIndexAndAliasIfNecessary(client, state, indexNameExpressionResolver, createStateIndexListener);
@@ -160,7 +153,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
             ModelSnapshot modelSnapshot,
             String jobId) {
 
-        return ActionListener.wrap(response -> {
+        return listener.wrap(response -> {
             Date deleteAfter = modelSnapshot.getLatestResultTimeStamp() == null ? new Date(0) : modelSnapshot.getLatestResultTimeStamp();
             logger.info("[{}] Removing intervening annotations after reverting model: deleting annotations after [{}]", jobId, deleteAfter);
 
@@ -183,7 +176,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
                     listener.onFailure(e);
                 }
             });
-        }, listener::onFailure);
+        });
     }
 
     private ActionListener<RevertModelSnapshotAction.Response> wrapDeleteOldDataListener(
@@ -194,23 +187,19 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
         // If we need to delete buckets that occurred after the snapshot, we
         // wrap the listener with one that invokes the OldDataRemover on
         // acknowledged responses
-        return ActionListener.wrap(response -> {
+        return listener.wrap(response -> {
             Date deleteAfter = modelSnapshot.getLatestResultTimeStamp() == null ? new Date(0) : modelSnapshot.getLatestResultTimeStamp();
             logger.info("[{}] Removing intervening records after reverting model: deleting results after [{}]", jobId, deleteAfter);
 
             JobDataDeleter dataDeleter = new JobDataDeleter(client, jobId);
-            dataDeleter.deleteResultsFromTime(deleteAfter.getTime() + 1, new ActionListener<Boolean>() {
-                @Override
-                public void onResponse(Boolean success) {
-                    listener.onResponse(response);
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    listener.onFailure(e);
-                }
+            dataDeleter.deleteResultsFromTime(deleteAfter.getTime() + 1,
+                new ActionListener.FailureDelegatingListener<>(listener) {
+                    @Override
+                    public void onResponse(Boolean success) {
+                        delegate.onResponse(response);
+                    }
             });
-        }, listener::onFailure);
+        });
     }
 
     private ActionListener<RevertModelSnapshotAction.Response> wrapRevertDataCountsListener(
@@ -218,22 +207,15 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
             ModelSnapshot modelSnapshot,
             String jobId) {
 
-        return ActionListener.wrap(response -> {
-            jobResultsProvider.dataCounts(jobId, counts -> {
-                counts.setLatestRecordTimeStamp(modelSnapshot.getLatestRecordTimeStamp());
-                jobDataCountsPersister.persistDataCountsAsync(jobId, counts, new ActionListener<Boolean>() {
-                    @Override
-                    public void onResponse(Boolean aBoolean) {
-                        listener.onResponse(response);
-                    }
-
-                    @Override
-                    public void onFailure(Exception e) {
-                        listener.onFailure(e);
-                    }
-                });
-            }, listener::onFailure);
-        }, listener::onFailure);
+        return listener.wrap(response -> jobResultsProvider.dataCounts(jobId, counts -> {
+            counts.setLatestRecordTimeStamp(modelSnapshot.getLatestRecordTimeStamp());
+            jobDataCountsPersister.persistDataCountsAsync(jobId, counts, new ActionListener.FailureDelegatingListener<>(listener) {
+                @Override
+                public void onResponse(Boolean aBoolean) {
+                    listener.onResponse(response);
+                }
+            });
+        }, listener::onFailure));
     }
 
     @Override
