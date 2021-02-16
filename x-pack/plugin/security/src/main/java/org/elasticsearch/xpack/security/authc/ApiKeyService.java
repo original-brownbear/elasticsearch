@@ -273,13 +273,12 @@ public class ApiKeyService {
 
             securityIndex.prepareIndexIfNeededThenExecute(listener::onFailure, () ->
                 executeAsyncWithOrigin(client, SECURITY_ORIGIN, BulkAction.INSTANCE, bulkRequest,
-                    TransportSingleItemBulkWriteAction.<IndexResponse>wrapBulkResponse(ActionListener.wrap(
+                    TransportSingleItemBulkWriteAction.<IndexResponse>wrapBulkResponse(listener.wrap(
                         indexResponse -> {
                             assert request.getId().equals(indexResponse.getId());
                             listener.onResponse(
                                     new CreateApiKeyResponse(request.getName(), request.getId(), apiKey, expiration));
-                        },
-                        listener::onFailure))));
+                        }))));
         } catch (IOException e) {
             listener.onFailure(e);
         }
@@ -594,7 +593,7 @@ public class ApiKeyService {
                 }
 
                 if (valueAlreadyInCache.get()) {
-                    listenableCacheEntry.addListener(ActionListener.wrap(result -> {
+                    listenableCacheEntry.addListener(listener.wrap(result -> {
                             if (result.success) {
                                 if (result.verify(credentials.getKey())) {
                                     // move on
@@ -608,32 +607,28 @@ public class ApiKeyService {
                                 apiKeyAuthCache.invalidate(credentials.getId(), listenableCacheEntry);
                                 validateApiKeyCredentials(docId, apiKeyDoc, credentials, clock, listener);
                             }
-                        }, listener::onFailure),
+                        }),
                         threadPool.generic(), threadPool.getThreadContext());
                 } else {
-                    verifyKeyAgainstHash(apiKeyDoc.hash, credentials, ActionListener.wrap(
-                        verified -> {
-                            listenableCacheEntry.onResponse(new CachedApiKeyHashResult(verified, credentials.getKey()));
-                            if (verified) {
-                                // move on
-                                validateApiKeyExpiration(apiKeyDoc, credentials, clock, listener);
-                            } else {
-                                listener.onResponse(AuthenticationResult.unsuccessful("invalid credentials", null));
-                            }
-                        }, listener::onFailure
-                    ));
-                }
-            } else {
-                verifyKeyAgainstHash(apiKeyDoc.hash, credentials, ActionListener.wrap(
-                    verified -> {
+                    verifyKeyAgainstHash(apiKeyDoc.hash, credentials, listener.wrap(verified -> {
+                        listenableCacheEntry.onResponse(new CachedApiKeyHashResult(verified, credentials.getKey()));
                         if (verified) {
                             // move on
                             validateApiKeyExpiration(apiKeyDoc, credentials, clock, listener);
                         } else {
                             listener.onResponse(AuthenticationResult.unsuccessful("invalid credentials", null));
                         }
-                    },
-                    listener::onFailure
+                    }));
+                }
+            } else {
+                verifyKeyAgainstHash(apiKeyDoc.hash, credentials, listener.wrap(verified -> {
+                            if (verified) {
+                                // move on
+                                validateApiKeyExpiration(apiKeyDoc, credentials, clock, listener);
+                            } else {
+                                listener.onResponse(AuthenticationResult.unsuccessful("invalid credentials", null));
+                            }
+                        }
                 ));
             }
         }
@@ -818,7 +813,7 @@ public class ApiKeyService {
                 .onFailure(new IllegalArgumentException("One of [api key id, api key name, username, realm name] must be specified"));
         } else {
             findApiKeysForUserRealmApiKeyIdAndNameCombination(realmName, username, apiKeyName, apiKeyIds, true, false,
-                ActionListener.wrap(apiKeys -> {
+                invalidateListener.wrap(apiKeys -> {
                     if (apiKeys.isEmpty()) {
                         logger.debug(
                             "No active api keys to invalidate for realm [{}], username [{}], api key name [{}] and api key id [{}]",
@@ -828,7 +823,7 @@ public class ApiKeyService {
                         invalidateAllApiKeys(apiKeys.stream().map(apiKey -> apiKey.getId()).collect(Collectors.toSet()),
                             invalidateListener);
                     }
-                }, invalidateListener::onFailure));
+                }));
         }
     }
 
@@ -1058,7 +1053,7 @@ public class ApiKeyService {
         ensureEnabled();
         final String[] apiKeyIds = Strings.hasText(apiKeyId) == false ? null : new String[] { apiKeyId };
         findApiKeysForUserRealmApiKeyIdAndNameCombination(realmName, username, apiKeyName, apiKeyIds, false, false,
-            ActionListener.wrap(apiKeyInfos -> {
+            listener.wrap(apiKeyInfos -> {
                 if (apiKeyInfos.isEmpty()) {
                     logger.debug("No active api keys found for realm [{}], user [{}], api key name [{}] and api key id [{}]",
                         realmName, username, apiKeyName, apiKeyId);
@@ -1066,7 +1061,7 @@ public class ApiKeyService {
                 } else {
                     listener.onResponse(new GetApiKeyResponse(apiKeyInfos));
                 }
-            }, listener::onFailure));
+            }));
     }
 
     /**

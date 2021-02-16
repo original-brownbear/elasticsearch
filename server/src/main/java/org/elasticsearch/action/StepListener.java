@@ -80,7 +80,7 @@ public final class StepListener<Response> extends NotifyOnceListener<Response> {
             StepListener<OtherResponse> other,
             BiFunction<Response, OtherResponse, OuterResponse> fn) {
         final StepListener<OuterResponse> combined = new StepListener<>();
-        addListener(combined.wrap(r1 -> other.addListener(combined.wrap(r2 -> combined.onResponse(fn.apply(r1, r2))))));
+        addListener(combined.wrap((r1, c1) -> other.addListener(c1.wrap((r2, c2) -> c2.onResponse(fn.apply(r1, r2))))));
         return combined;
     }
 

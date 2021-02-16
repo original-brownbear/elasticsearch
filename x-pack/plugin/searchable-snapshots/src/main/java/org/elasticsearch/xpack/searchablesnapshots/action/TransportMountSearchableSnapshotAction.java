@@ -162,7 +162,7 @@ public class TransportMountSearchableSnapshotAction extends TransportMasterNodeA
         final Repository repository = repositoriesService.repository(repoName);
         final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
         repository.getRepositoryData(repositoryDataListener);
-        repositoryDataListener.addListener(listener.wrap(repoData -> {
+        repositoryDataListener.addListener(listener.wrap((repoData, l) -> {
             final Map<String, IndexId> indexIds = repoData.getIndices();
             if (indexIds.containsKey(indexName) == false) {
                 throw new IndexNotFoundException("index [" + indexName + "] not found in repository [" + repoName + "]");
@@ -233,7 +233,7 @@ public class TransportMountSearchableSnapshotAction extends TransportMasterNodeA
                         .masterNodeTimeout(request.masterNodeTimeout())
                         // Fail the restore if the snapshot found above is swapped out from under us before the restore happens
                         .snapshotUuid(snapshotId.getUUID()),
-                    listener
+                    l
                 );
         }));
     }

@@ -136,9 +136,8 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
             // (if acks timed out then acknowledgementStep completes before the master processes this cluster state, hence why we have
             // to wait for the publication to be complete too)
             final StepListener<List<DiscoveryNode>> verifyStep = new StepListener<>();
-            publicationStep.addListener(listener.wrap(ignored -> acknowledgementStep.addListener(
-                    listener.wrap(clusterStateUpdateResponse -> {
-                        if (clusterStateUpdateResponse.isAcknowledged()) {
+            publicationStep.addListener(listener.wrap((ignored, l) -> acknowledgementStep.addListener(l.wrap(response -> {
+                        if (response.isAcknowledged()) {
                             // The response was acknowledged - all nodes should know about the new repository, let's verify them
                             verifyRepository(request.name(), verifyStep);
                         } else {
@@ -157,7 +156,7 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                     repositoryData -> updateRepositoryUuidInMetadata(clusterService, request.name(), repositoryData, updateRepoUuidStep)));
 
             // Finally respond to the outer listener with the response from the original cluster state update
-            updateRepoUuidStep.addListener(listener.wrap(ignored -> acknowledgementStep.addListener(listener)));
+            updateRepoUuidStep.addListener(listener.wrap((ignored, l) -> acknowledgementStep.addListener(l)));
 
         } else {
             acknowledgementStep.addListener(listener);

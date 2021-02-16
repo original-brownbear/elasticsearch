@@ -58,12 +58,12 @@ public class PutPipelineTransportAction extends AcknowledgedTransportMasterNodeA
         NodesInfoRequest nodesInfoRequest = new NodesInfoRequest();
         nodesInfoRequest.clear()
             .addMetric(NodesInfoRequest.Metric.INGEST.metricName());
-        client.admin().cluster().nodesInfo(nodesInfoRequest, listener.wrap(nodeInfos -> {
+        client.admin().cluster().nodesInfo(nodesInfoRequest, listener.wrap((nodeInfos, l) -> {
             Map<DiscoveryNode, IngestInfo> ingestInfos = new HashMap<>();
             for (NodeInfo nodeInfo : nodeInfos.getNodes()) {
                 ingestInfos.put(nodeInfo.getNode(), nodeInfo.getInfo(IngestInfo.class));
             }
-            ingestService.putPipeline(ingestInfos, request, listener);
+            ingestService.putPipeline(ingestInfos, request, l);
         }));
     }
 

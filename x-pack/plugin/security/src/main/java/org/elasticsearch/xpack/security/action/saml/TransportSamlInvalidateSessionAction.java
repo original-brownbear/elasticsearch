@@ -69,9 +69,8 @@ public final class TransportSamlInvalidateSessionAction
                                    ActionListener<SamlInvalidateSessionResponse> listener) {
         try {
             final SamlLogoutRequestHandler.Result result = realm.getLogoutHandler().parseFromQueryString(request.getQueryString());
-            findAndInvalidateTokens(realm, result, ActionListener.wrap(count -> listener.onResponse(
-                    new SamlInvalidateSessionResponse(realm.name(), count, buildLogoutResponseUrl(realm, result))
-            ), listener::onFailure));
+            findAndInvalidateTokens(realm, result, listener.wrap(count -> listener.onResponse(
+                    new SamlInvalidateSessionResponse(realm.name(), count, buildLogoutResponseUrl(realm, result)))));
         } catch (ElasticsearchSecurityException e) {
             logger.info("Failed to invalidate SAML session", e);
             listener.onFailure(e);
@@ -107,12 +106,12 @@ public final class TransportSamlInvalidateSessionAction
 
     private void invalidateTokenPair(Tuple<UserToken, String> tokenPair, ActionListener<TokensInvalidationResult> listener) {
         // Invalidate the refresh token first, so the client doesn't trigger a refresh once the access token is invalidated
-        tokenService.invalidateRefreshToken(tokenPair.v2(), ActionListener.wrap(ignore -> tokenService.invalidateAccessToken(
+        tokenService.invalidateRefreshToken(tokenPair.v2(), listener.wrap(ignore -> tokenService.invalidateAccessToken(
                 tokenPair.v1(),
                 ActionListener.wrap(listener::onResponse, e -> {
                     logger.info("Failed to invalidate SAML access_token [{}] - {}", tokenPair.v1().getId(), e.toString());
                     listener.onFailure(e);
-                })), listener::onFailure));
+                }))));
     }
 
 

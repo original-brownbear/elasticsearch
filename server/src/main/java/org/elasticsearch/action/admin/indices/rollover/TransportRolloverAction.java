@@ -92,7 +92,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
         // synchronization (in this case, the submitStateUpdateTask which is serialized on the master node), where we then regenerate the
         // names and re-check conditions. More explanation follows inline below.
         client.execute(IndicesStatsAction.INSTANCE, statsRequest,
-            listener.wrap(statsResponse -> {
+            listener.wrap((statsResponse, l) -> {
                 // Now that we have the stats for the cluster, we need to know the
                 // names of the index for which we should evaluate
                 // conditions, as well as what our newly created index *would* be.
@@ -110,7 +110,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
 
                 // If this is a dry run, return with the results without invoking a cluster state update
                 if (rolloverRequest.isDryRun()) {
-                    listener.onResponse(new RolloverResponse(trialSourceIndexName, trialRolloverIndexName,
+                    l.onResponse(new RolloverResponse(trialSourceIndexName, trialRolloverIndexName,
                         trialConditionResults, true, false, false, false));
                     return;
                 }
@@ -177,7 +177,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
 
                         @Override
                         public void onFailure(String source, Exception e) {
-                            listener.onFailure(e);
+                            l.onFailure(e);
                         }
 
                         @Override
@@ -192,20 +192,20 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                                 activeShardsObserver.waitForActiveShards(new String[]{rolloverIndex.get()},
                                     rolloverRequest.getCreateIndexRequest().waitForActiveShards(),
                                     rolloverRequest.masterNodeTimeout(),
-                                    isShardsAcknowledged -> listener.onResponse(new RolloverResponse(
+                                    isShardsAcknowledged -> l.onResponse(new RolloverResponse(
                                         sourceIndex.get(), rolloverIndex.get(), conditionResults.get(), false, true, true,
                                         isShardsAcknowledged)),
-                                    listener::onFailure);
+                                        l::onFailure);
                             } else {
                                 // We did not roll over due to conditions not being met inside the cluster state update
-                                listener.onResponse(new RolloverResponse(
+                                l.onResponse(new RolloverResponse(
                                     trialSourceIndexName, trialRolloverIndexName, trialConditionResults, false, false, false, false));
                             }
                         }
                     });
                 } else {
                     // conditions not met
-                    listener.onResponse(new RolloverResponse(trialSourceIndexName, trialRolloverIndexName,
+                    l.onResponse(new RolloverResponse(trialSourceIndexName, trialRolloverIndexName,
                         trialConditionResults, false, false, false, false));
                 }
             }));

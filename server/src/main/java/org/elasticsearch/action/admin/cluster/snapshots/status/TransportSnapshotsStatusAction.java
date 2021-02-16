@@ -114,9 +114,8 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
             client.executeLocally(TransportNodesSnapshotsStatus.TYPE,
                 new TransportNodesSnapshotsStatus.Request(nodesIds.toArray(Strings.EMPTY_ARRAY))
                     .snapshots(snapshots).timeout(request.masterNodeTimeout()),
-                    listener.wrap(nodeSnapshotStatuses -> threadPool.generic().execute(
-                    ActionRunnable.wrap(listener,
-                        l -> buildResponse(snapshotsInProgress, request, currentSnapshots, nodeSnapshotStatuses, l))
+                    listener.wrap((nodeSnapshotStatuses, li) -> threadPool.generic().execute(
+                    ActionRunnable.wrap(li, l -> buildResponse(snapshotsInProgress, request, currentSnapshots, nodeSnapshotStatuses, l))
                 )));
         } else {
             // We don't have any in-progress shards, just return current stats
@@ -229,7 +228,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
         final Set<String> requestedSnapshotNames = Sets.newHashSet(request.snapshots());
         final ListenableFuture<RepositoryData> repositoryDataListener = new ListenableFuture<>();
         repositoriesService.getRepositoryData(repositoryName, repositoryDataListener);
-        repositoryDataListener.addListener(listener.wrap(repositoryData -> {
+        repositoryDataListener.addListener(listener.wrap((repositoryData, l) -> {
             final Map<String, SnapshotId> matchedSnapshotIds = repositoryData.getSnapshotIds().stream()
                 .filter(s -> requestedSnapshotNames.contains(s.getName()))
                 .collect(Collectors.toMap(SnapshotId::getName, Function.identity()));
@@ -283,7 +282,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                         (endTime == 0 ? threadPool.absoluteTimeInMillis() : endTime) - startTime));
                 }
             }
-            listener.onResponse(new SnapshotsStatusResponse(Collections.unmodifiableList(builder)));
+            l.onResponse(new SnapshotsStatusResponse(Collections.unmodifiableList(builder)));
         }), threadPool.generic());
     }
 

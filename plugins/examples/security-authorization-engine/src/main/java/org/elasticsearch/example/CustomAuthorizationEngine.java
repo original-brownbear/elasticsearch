@@ -82,14 +82,14 @@ public class CustomAuthorizationEngine implements AuthorizationEngine {
                                      Map<String, IndexAbstraction> aliasOrIndexLookup,
                                      ActionListener<IndexAuthorizationResult> listener) {
         if (isSuperuser(requestInfo.getAuthentication().getUser())) {
-            indicesAsyncSupplier.getAsync(listener.wrap(resolvedIndices -> {
+            indicesAsyncSupplier.getAsync(listener.wrap((resolvedIndices, l) -> {
                 Map<String, IndexAccessControl> indexAccessControlMap = new HashMap<>();
                 for (String name : resolvedIndices.getLocal()) {
                     indexAccessControlMap.put(name, new IndexAccessControl(true, FieldPermissions.DEFAULT, null));
                 }
                 IndicesAccessControl indicesAccessControl =
                     new IndicesAccessControl(true, Collections.unmodifiableMap(indexAccessControlMap));
-                listener.onResponse(new IndexAuthorizationResult(true, indicesAccessControl));
+                l.onResponse(new IndexAuthorizationResult(true, indicesAccessControl));
             }));
         } else {
             listener.onResponse(new IndexAuthorizationResult(true, IndicesAccessControl.DENIED));

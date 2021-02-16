@@ -50,34 +50,30 @@ public final class TransportSamlLogoutAction
 
     @Override
     protected void doExecute(Task task, SamlLogoutRequest request, ActionListener<SamlLogoutResponse> listener) {
-        invalidateRefreshToken(request.getRefreshToken(), ActionListener.wrap(ignore -> {
+        invalidateRefreshToken(request.getRefreshToken(), listener.wrap(ignore -> {
             try {
                 final String token = request.getToken();
-                tokenService.getAuthenticationAndMetadata(token, ActionListener.wrap(
-                        tuple -> {
-                            Authentication authentication = tuple.v1();
-                            final Map<String, Object> tokenMetadata = tuple.v2();
-                            SamlLogoutResponse response = buildResponse(authentication, tokenMetadata);
-                            tokenService.invalidateAccessToken(token, ActionListener.wrap(
-                                    created -> {
-                                        if (logger.isTraceEnabled()) {
-                                            logger.trace("SAML Logout User [{}], Token [{}...{}]",
-                                                    authentication.getUser().principal(),
-                                                    token.substring(0, 8),
-                                                    token.substring(token.length() - 8)
-                                            );
-                                        }
-                                        listener.onResponse(response);
-                                    },
-                                    listener::onFailure
-                            ));
-                        }, listener::onFailure
-                ));
+                tokenService.getAuthenticationAndMetadata(token, listener.wrap(tuple -> {
+                    Authentication authentication = tuple.v1();
+                    final Map<String, Object> tokenMetadata = tuple.v2();
+                    SamlLogoutResponse response = buildResponse(authentication, tokenMetadata);
+                    tokenService.invalidateAccessToken(token, listener.wrap(created -> {
+                                if (logger.isTraceEnabled()) {
+                                    logger.trace("SAML Logout User [{}], Token [{}...{}]",
+                                            authentication.getUser().principal(),
+                                            token.substring(0, 8),
+                                            token.substring(token.length() - 8)
+                                    );
+                                }
+                                listener.onResponse(response);
+                            }
+                    ));
+                }));
             } catch (ElasticsearchException e) {
                 logger.debug("Internal exception during SAML logout", e);
                 listener.onFailure(e);
             }
-        }, listener::onFailure));
+        }));
     }
 
     private void invalidateRefreshToken(String refreshToken, ActionListener<TokensInvalidationResult> listener) {

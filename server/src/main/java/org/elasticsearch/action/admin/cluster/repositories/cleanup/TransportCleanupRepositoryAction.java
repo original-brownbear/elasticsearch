@@ -144,7 +144,7 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
         final BlobStoreRepository blobStoreRepository = (BlobStoreRepository) repository;
         final StepListener<RepositoryData> repositoryDataListener = new StepListener<>();
         repository.getRepositoryData(repositoryDataListener);
-        repositoryDataListener.addListener(listener.wrap(repositoryData -> {
+        repositoryDataListener.addListener(listener.wrap((repositoryData, l) -> {
             final long repositoryStateId = repositoryData.getGenId();
             logger.info("Running cleanup operations on repository [{}][{}]", repositoryName, repositoryStateId);
             clusterService.submitStateUpdateTask("cleanup repository [" + repositoryName + "][" + repositoryStateId + ']',
@@ -186,7 +186,7 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                     public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                         startedCleanup = true;
                         logger.debug("Initialized repository cleanup in cluster state for [{}][{}]", repositoryName, repositoryStateId);
-                        threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(ActionRunnable.wrap(listener,
+                        threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(ActionRunnable.wrap(l,
                             l -> blobStoreRepository.cleanup(
                                 repositoryStateId,
                                 snapshotsService.minCompatibleVersion(
@@ -205,7 +205,7 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                         assert failure != null || result != null;
                         if (startedCleanup == false) {
                             logger.debug("No cleanup task to remove from cluster state because we failed to start one", failure);
-                            listener.onFailure(failure);
+                            l.onFailure(failure);
                             return;
                         }
                         clusterService.submitStateUpdateTask(
@@ -223,7 +223,7 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                                     }
                                     logger.warn(() ->
                                         new ParameterizedMessage("[{}] failed to remove repository cleanup task", repositoryName), e);
-                                    listener.onFailure(e);
+                                    l.onFailure(e);
                                 }
 
                                 @Override
@@ -231,12 +231,12 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                                     if (failure == null) {
                                         logger.info("Done with repository cleanup on [{}][{}] with result [{}]",
                                             repositoryName, repositoryStateId, result);
-                                        listener.onResponse(result);
+                                        l.onResponse(result);
                                     } else {
                                         logger.warn(() -> new ParameterizedMessage(
                                             "Failed to run repository cleanup operations on [{}][{}]",
                                             repositoryName, repositoryStateId), failure);
-                                        listener.onFailure(failure);
+                                        l.onFailure(failure);
                                     }
                                 }
                             });

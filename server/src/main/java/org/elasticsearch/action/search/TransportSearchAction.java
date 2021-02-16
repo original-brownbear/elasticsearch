@@ -264,7 +264,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         final long relativeStartNanos = System.nanoTime();
         final SearchTimeProvider timeProvider =
             new SearchTimeProvider(searchRequest.getOrCreateAbsoluteStartMillis(), relativeStartNanos, System::nanoTime);
-        ActionListener<SearchSourceBuilder> rewriteListener = listener.wrap(source -> {
+        ActionListener<SearchSourceBuilder> rewriteListener = listener.wrap((source, rewriteL) -> {
             if (source != searchRequest.source()) {
                 // only set it if it changed - we don't allow null values to be set but it might be already null. this way we catch
                 // situations when source is rewritten to null due to a bug
@@ -283,21 +283,21 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             final ClusterState clusterState = clusterService.state();
             if (remoteClusterIndices.isEmpty()) {
                 executeLocalSearch(
-                    task, timeProvider, searchRequest, localIndices, clusterState, listener, searchContext, searchAsyncActionProvider);
+                    task, timeProvider, searchRequest, localIndices, clusterState, rewriteL, searchContext, searchAsyncActionProvider);
             } else {
                 if (shouldMinimizeRoundtrips(searchRequest)) {
                     final TaskId parentTaskId = task.taskInfo(clusterService.localNode().getId(), false).getTaskId();
                     ccsRemoteReduce(parentTaskId, searchRequest, localIndices, remoteClusterIndices, timeProvider,
                         searchService.aggReduceContextBuilder(searchRequest),
-                        remoteClusterService, threadPool, listener,
+                        remoteClusterService, threadPool, rewriteL,
                         (r, l) -> executeLocalSearch(
                             task, timeProvider, r, localIndices, clusterState, l, searchContext, searchAsyncActionProvider));
                 } else {
                     AtomicInteger skippedClusters = new AtomicInteger(0);
                     collectSearchShards(searchRequest.indicesOptions(), searchRequest.preference(), searchRequest.routing(),
                         skippedClusters, remoteClusterIndices, remoteClusterService, threadPool,
-                            listener.wrap(
-                            searchShardsResponses -> {
+                            rewriteL.wrap(
+                             (searchShardsResponses, rewriteLL) -> {
                                 final BiFunction<String, String, DiscoveryNode> clusterNodeLookup =
                                     getRemoteClusterNodeLookup(searchShardsResponses);
                                 final Map<String, AliasFilter> remoteAliasFilters;
@@ -315,7 +315,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                                 int totalClusters = remoteClusterIndices.size() + localClusters;
                                 int successfulClusters = searchShardsResponses.size() + localClusters;
                                 executeSearch((SearchTask) task, timeProvider, searchRequest, localIndices, remoteShardIterators,
-                                    clusterNodeLookup, clusterState, remoteAliasFilters, listener,
+                                    clusterNodeLookup, clusterState, remoteAliasFilters, rewriteLL,
                                     new SearchResponse.Clusters(totalClusters, successfulClusters, skippedClusters.get()),
                                     searchContext, searchAsyncActionProvider);
                             }));

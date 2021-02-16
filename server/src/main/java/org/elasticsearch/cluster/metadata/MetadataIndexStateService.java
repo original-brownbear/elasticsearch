@@ -413,7 +413,7 @@ public class MetadataIndexStateService {
                         assert blockedIndices.isEmpty() == false : "List of blocked indices is empty but cluster state was changed";
                         threadPool.executor(ThreadPool.Names.MANAGEMENT)
                             .execute(new WaitForBlocksApplied(blockedIndices, request,
-                                    listener.wrap(verifyResults ->
+                                    listener.wrap((verifyResults, l) ->
                                             clusterService.submitStateUpdateTask("finalize-index-block-[" + request.getBlock().name +
                                                     "]-[" + blockedIndices.keySet().stream().map(Index::getName)
                                                         .collect(Collectors.joining(", ")) + "]",
@@ -421,7 +421,7 @@ public class MetadataIndexStateService {
                                                 private final List<AddBlockResult> indices = new ArrayList<>();
 
                                                 @Override
-                                                public ClusterState execute(final ClusterState currentState) throws Exception {
+                                                public ClusterState execute(final ClusterState currentState) {
                                                     Tuple<ClusterState, Collection<AddBlockResult>> addBlockResult =
                                                         finalizeBlock(currentState, blockedIndices, verifyResults, request.getBlock());
                                                     assert verifyResults.size() == addBlockResult.v2().size();
@@ -431,7 +431,7 @@ public class MetadataIndexStateService {
 
                                                 @Override
                                                 public void onFailure(final String source, final Exception e) {
-                                                    listener.onFailure(e);
+                                                    l.onFailure(e);
                                                 }
 
                                                 @Override
@@ -441,7 +441,7 @@ public class MetadataIndexStateService {
 
                                                     final boolean acknowledged = indices.stream().noneMatch(
                                                         AddBlockResult::hasFailures);
-                                                    listener.onResponse(new AddIndexBlockResponse(acknowledged, acknowledged, indices));
+                                                    l.onResponse(new AddIndexBlockResponse(acknowledged, acknowledged, indices));
                                                 }
                                             }))));
                     }

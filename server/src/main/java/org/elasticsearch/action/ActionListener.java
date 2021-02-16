@@ -9,10 +9,7 @@
 package org.elasticsearch.action;
 
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.common.CheckedConsumer;
-import org.elasticsearch.common.CheckedFunction;
-import org.elasticsearch.common.CheckedRunnable;
-import org.elasticsearch.common.CheckedSupplier;
+import org.elasticsearch.common.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +58,20 @@ public interface ActionListener<Response> {
      */
     default <T> ActionListener<T> wrap(CheckedConsumer<T, ? extends Exception> onResponse) {
         return new WrappingActionListener<>(this, onResponse);
+    }
+
+    default <T> ActionListener<T> wrap(CheckedBiConsumer<T, ActionListener<Response>, ? extends Exception> onResponse) {
+        return new FailureDelegatingListener<>(this) {
+
+            @Override
+            public void onResponse(T t) {
+                try {
+                    onResponse.accept(t, delegate);
+                } catch (Exception e) {
+                    onFailure(e);
+                }
+            }
+        };
     }
 
     final class MappedActionListener<Response, MappedResponse> implements ActionListener<Response> {
