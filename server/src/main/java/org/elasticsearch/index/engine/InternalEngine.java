@@ -2196,6 +2196,7 @@ public class InternalEngine extends Engine {
 
         @Override
         public void accept(ElasticsearchDirectoryReader reader, ElasticsearchDirectoryReader previousReader) {
+            logger.debug("--> warming [{}][{}]", reader, previousReader);
             if (warmer != null) {
                 try {
                     warmer.warm(reader);
@@ -2258,6 +2259,7 @@ public class InternalEngine extends Engine {
 
         @Override
         public synchronized void beforeMerge(OnGoingMerge merge) {
+            logger.trace("--> before merge [{}]", merge);
             int maxNumMerges = mergeScheduler.getMaxMergeCount();
             if (numMergesInFlight.incrementAndGet() > maxNumMerges) {
                 if (isThrottling.getAndSet(true) == false) {
@@ -2269,6 +2271,7 @@ public class InternalEngine extends Engine {
 
         @Override
         public synchronized void afterMerge(OnGoingMerge merge) {
+            logger.trace("--> after merge [{}]", merge);
             int maxNumMerges = mergeScheduler.getMaxMergeCount();
             if (numMergesInFlight.decrementAndGet() < maxNumMerges) {
                 if (isThrottling.getAndSet(false)) {
@@ -2306,6 +2309,7 @@ public class InternalEngine extends Engine {
 
         @Override
         protected void handleMergeException(final Throwable exc) {
+            logger.trace("--> merge exception", exc);
             engineConfig.getThreadPool().generic().execute(new AbstractRunnable() {
                 @Override
                 public void onFailure(Exception e) {

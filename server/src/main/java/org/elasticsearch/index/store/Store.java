@@ -8,6 +8,7 @@
 
 package org.elasticsearch.index.store;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.codecs.CodecUtil;
@@ -409,6 +410,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
     }
 
     private void closeInternal() {
+        logger.debug("--> closing store");
         // Leverage try-with-resources to close the shard lock for us
         try (Closeable c = shardLock) {
             try {
@@ -680,6 +682,8 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
 
     static final class StoreDirectory extends FilterDirectory {
 
+        private static final Logger logger = LogManager.getLogger(StoreDirectory.class);
+
         private final Logger deletesLogger;
 
         StoreDirectory(ByteSizeCachingDirectory delegateDirectory, Logger deletesLogger) {
@@ -705,6 +709,49 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
         @Override
         public void deleteFile(String name) throws IOException {
             deleteFile("StoreDirectory.deleteFile", name);
+        }
+
+        @Override
+        public IndexInput openInput(String name, IOContext context)
+                throws IOException {
+            final IndexInput wrapped = super.openInput(name, context);
+            return new IndexInput(wrapped.toString()) {
+                @Override
+                public void close() throws IOException {
+                    logger.debug("--> closing [{}]", wrapped);
+                    wrapped.close();
+                }
+
+                @Override
+                public long getFilePointer() {
+                    return wrapped.getFilePointer();
+                }
+
+                @Override
+                public void seek(long pos) throws IOException {
+                    wrapped.seek(pos);
+                }
+
+                @Override
+                public long length() {
+                    return wrapped.length();
+                }
+
+                @Override
+                public IndexInput slice(String sliceDescription, long offset, long length) throws IOException {
+                    return wrapped.slice(sliceDescription, offset, length);
+                }
+
+                @Override
+                public byte readByte() throws IOException {
+                    return wrapped.readByte();
+                }
+
+                @Override
+                public void readBytes(byte[] b, int offset, int len) throws IOException {
+                    wrapped.readBytes(b, offset, len);
+                }
+            };
         }
 
         private void innerClose() throws IOException {
