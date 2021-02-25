@@ -1360,4 +1360,20 @@ public abstract class StreamInput extends InputStream {
             return null;
         }
     }
+
+    public boolean hasArray() {
+        return false;
+    }
+
+    public int arrayOffset() {
+        throw new UnsupportedOperationException();
+    }
+
+    public int arrayLength() {
+        throw new UnsupportedOperationException();
+    }
+
+    public byte[] array() {
+        throw new UnsupportedOperationException();
+    }
 }

@@ -180,6 +180,21 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
         return delegate.hashCode();
     }
 
+    @Override
+    public boolean hasArray() {
+        return delegate.hasArray();
+    }
+
+    @Override
+    public byte[] array() {
+        return delegate.array();
+    }
+
+    @Override
+    public int offset() {
+        return delegate.offset();
+    }
+
     private static final class RefCountedReleasable extends AbstractRefCounted {
 
         private final Releasable releasable;

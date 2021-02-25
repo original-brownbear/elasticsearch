@@ -166,4 +166,24 @@ class BytesReferenceStreamInput extends StreamInput {
         // We ignore readLimit since the data is all in-memory and therefore we can reset the mark no matter how far we advance.
         this.mark = offset();
     }
+
+    @Override
+    public boolean hasArray() {
+        return bytesReference.hasArray();
+    }
+
+    @Override
+    public int arrayOffset() {
+        return bytesReference.offset() + offset();
+    }
+
+    @Override
+    public int arrayLength() {
+        return bytesReference.length();
+    }
+
+    @Override
+    public byte[] array() {
+        return bytesReference.array();
+    }
 }

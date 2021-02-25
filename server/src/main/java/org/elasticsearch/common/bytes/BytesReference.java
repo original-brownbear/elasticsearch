@@ -174,4 +174,16 @@ public interface BytesReference extends Comparable<BytesReference>, ToXContentFr
      * @see BytesRefIterator
      */
     BytesRefIterator iterator();
+
+    default boolean hasArray() {
+        return false;
+    }
+
+    default byte[] array() {
+        throw new UnsupportedOperationException();
+    }
+
+    default int offset() {
+        throw new UnsupportedOperationException();
+    }
 }

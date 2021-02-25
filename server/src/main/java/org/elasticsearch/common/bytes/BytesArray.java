@@ -87,6 +87,11 @@ public final class BytesArray extends AbstractBytesReference {
         return new BytesArray(bytes, offset + from, length);
     }
 
+    @Override
+    public boolean hasArray() {
+        return true;
+    }
+
     public byte[] array() {
         return bytes;
     }
