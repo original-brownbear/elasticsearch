@@ -401,6 +401,21 @@ public class SearchResponse extends ActionResponse implements StatusToXContentOb
     }
 
     @Override
+    public void incRef() {
+        internalResponse.incRef();
+    }
+
+    @Override
+    public boolean tryIncRef() {
+        return internalResponse.tryIncRef();
+    }
+
+    @Override
+    public boolean decRef() {
+        return internalResponse.decRef();
+    }
+
+    @Override
     public String toString() {
         return Strings.toString(this);
     }

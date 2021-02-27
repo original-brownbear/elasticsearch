@@ -79,4 +79,19 @@ public final class FetchSearchResult extends SearchPhaseResult {
         contextId.writeTo(out);
         hits.writeTo(out);
     }
+
+    @Override
+    public void incRef() {
+        hits.incRef();
+    }
+
+    @Override
+    public boolean tryIncRef() {
+        return hits.tryIncRef();
+    }
+
+    @Override
+    public boolean decRef() {
+        return hits.decRef();
+    }
 }

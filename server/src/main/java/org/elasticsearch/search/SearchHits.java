@@ -16,6 +16,8 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
+import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
+import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
@@ -30,7 +32,8 @@ import java.util.Objects;
 
 import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
 
-public final class SearchHits implements Writeable, ToXContentFragment, Iterable<SearchHit> {
+public final class SearchHits implements Writeable, ToXContentFragment, Iterable<SearchHit>, RefCounted {
+
     public static SearchHits empty() {
         return empty(true);
     }
@@ -41,6 +44,15 @@ public final class SearchHits implements Writeable, ToXContentFragment, Iterable
     }
 
     public static final SearchHit[] EMPTY = new SearchHit[0];
+
+    private final AbstractRefCounted refCounted = new AbstractRefCounted("search-hits") {
+        @Override
+        protected void closeInternal() {
+            for (SearchHit hit : hits) {
+                hit.decRef();
+            }
+        }
+    };
 
     private final SearchHit[] hits;
     private final TotalHits totalHits;
@@ -167,6 +179,21 @@ public final class SearchHits implements Writeable, ToXContentFragment, Iterable
         return Arrays.stream(getHits()).iterator();
     }
 
+    @Override
+    public void incRef() {
+        refCounted.incRef();
+    }
+
+    @Override
+    public boolean tryIncRef() {
+        return refCounted.tryIncRef();
+    }
+
+    @Override
+    public boolean decRef() {
+        return refCounted.decRef();
+    }
+
     public static final class Fields {
         public static final String HITS = "hits";
         public static final String TOTAL = "total";
@@ -175,6 +202,7 @@ public final class SearchHits implements Writeable, ToXContentFragment, Iterable
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        assert refCounted.refCount() > 0;
         builder.startObject(Fields.HITS);
         boolean totalHitAsInt = params.paramAsBoolean(RestSearchAction.TOTAL_HITS_AS_INT_PARAM, false);
         if (totalHitAsInt) {

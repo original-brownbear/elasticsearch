@@ -17,12 +17,14 @@ import org.elasticsearch.common.ParseField;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.text.Text;
+import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser.ValueType;
@@ -66,7 +68,7 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureFieldN
  *
  * @see SearchHits
  */
-public final class SearchHit implements Writeable, ToXContentObject, Iterable<DocumentField> {
+public final class SearchHit implements Writeable, ToXContentObject, Iterable<DocumentField>, RefCounted {
 
     private final transient int docId;
 
@@ -81,7 +83,7 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
     private long seqNo = SequenceNumbers.UNASSIGNED_SEQ_NO;
     private long primaryTerm = SequenceNumbers.UNASSIGNED_PRIMARY_TERM;
 
-    private BytesReference source;
+    private ReleasableBytesReference source;
 
     private Map<String, DocumentField> documentFields;
     private final Map<String, DocumentField> metaFields;
@@ -140,8 +142,9 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
         version = in.readLong();
         seqNo = in.readZLong();
         primaryTerm = in.readVLong();
-        source = in.readBytesReference();
+        source = in.readReleasableBytesReference();
         if (source.length() == 0) {
+            source.decRef();
             source = null;
         }
         if (in.readBoolean()) {
@@ -366,7 +369,13 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
         }
 
         try {
-            this.source = CompressorFactory.uncompressIfNeeded(this.source);
+            ReleasableBytesReference original = this.source;
+            BytesReference uncompressed = CompressorFactory.uncompressIfNeeded(original);
+            if (uncompressed == original) {
+                return original;
+            }
+            original.decRef();
+            this.source = ReleasableBytesReference.wrap(uncompressed);
             return this.source;
         } catch (IOException e) {
             throw new ElasticsearchParseException("failed to decompress source", e);
@@ -377,7 +386,7 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
      * Sets representation, might be compressed....
      */
     public SearchHit sourceRef(BytesReference source) {
-        this.source = source;
+        this.source = source == null ? null : ReleasableBytesReference.wrap(source);
         this.sourceAsMap = null;
         return this;
     }
@@ -559,6 +568,32 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
         this.innerHits = innerHits;
     }
 
+    @Override
+    public void incRef() {
+        // TODO: inner hits
+        if (source != null) {
+            source.incRef();
+        }
+    }
+
+    @Override
+    public boolean tryIncRef() {
+        // TODO: inner hits
+        if (source != null) {
+            return source.tryIncRef();
+        }
+        return true;
+    }
+
+    @Override
+    public boolean decRef() {
+        // TODO: inner hits
+        if (source != null) {
+            return source.decRef();
+        }
+        return false;
+    }
+
     public static class Fields {
         static final String _INDEX = "_index";
         static final String _ID = "_id";
@@ -587,6 +622,7 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        assert source == null || source.refCount() > 0;
         builder.startObject();
         toInnerXContent(builder, params);
         builder.endObject();

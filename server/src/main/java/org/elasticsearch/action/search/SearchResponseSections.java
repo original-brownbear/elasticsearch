@@ -9,6 +9,7 @@
 package org.elasticsearch.action.search;
 
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.concurrent.RefCounted;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.search.SearchHits;
@@ -29,7 +30,7 @@ import java.util.Map;
  * to parse aggregations into, which are not serializable. This is the common part that can be
  * shared between core and client.
  */
-public class SearchResponseSections implements ToXContentFragment {
+public class SearchResponseSections implements ToXContentFragment, RefCounted {
 
     protected final SearchHits hits;
     protected final Aggregations aggregations;
@@ -107,5 +108,20 @@ public class SearchResponseSections implements ToXContentFragment {
 
     protected void writeTo(StreamOutput out) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void incRef() {
+        hits.incRef();
+    }
+
+    @Override
+    public boolean tryIncRef() {
+        return hits.tryIncRef();
+    }
+
+    @Override
+    public boolean decRef() {
+        return hits.decRef();
     }
 }
