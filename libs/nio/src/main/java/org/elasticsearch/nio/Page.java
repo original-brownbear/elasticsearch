@@ -56,7 +56,13 @@ public class Page implements Closeable {
 
     @Override
     public void close() {
-        refCountedCloseable.decRef();
+        if (refCountedCloseable.decRef()) {
+            System.out.println("Released " + byteBuffer.array().toString() + " via " + refCountedCloseable.toString());
+        }
+    }
+
+    public RefCountedCloseable getRefCountedCloseable() {
+        return refCountedCloseable;
     }
 
     private static class RefCountedCloseable extends AbstractRefCounted {
@@ -76,6 +82,11 @@ public class Page implements Closeable {
                 assert false : e;
                 throw new IllegalStateException(e);
             }
+        }
+
+        @Override
+        public String toString() {
+            return closeable.toString();
         }
     }
 }

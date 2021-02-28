@@ -305,11 +305,11 @@ public class MockNioTransport extends TcpTransport {
             BytesReference[] references = new BytesReference[pages.length];
             for (int i = 0; i < pages.length; ++i) {
                 references[i] = BytesReference.fromByteBuffer(pages[i].byteBuffer());
-                logger.info("--> acquired [{}] by [{}]", pages[i].byteBuffer().array().toString() , pages[i]);
+                logger.info("--> acquired [{}] by [{}]", pages[i].byteBuffer().array().toString() , pages[i].getRefCountedCloseable());
             }
             Releasable releasable = () -> {
                 for (Page page : pages) {
-                    logger.info("--> released [{}] by [{}]", page.byteBuffer().array().toString(), page);
+                    logger.info("--> released [{}] by [{}]", page.byteBuffer().array().toString(), page.getRefCountedCloseable());
                     page.close();
                 }
             };
