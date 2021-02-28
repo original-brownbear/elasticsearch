@@ -140,7 +140,11 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
     @Override
     public String utf8ToString() {
         assert refCount() > 0;
-        return delegate.utf8ToString();
+        try {
+            return delegate.utf8ToString();
+        } catch (Throwable e) {
+            throw new AssertionError(e);
+        }
     }
 
     @Override

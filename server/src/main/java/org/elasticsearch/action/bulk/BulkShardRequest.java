@@ -113,6 +113,7 @@ public class BulkShardRequest extends ReplicatedWriteRequest<BulkShardRequest> i
 
     @Override
     public String toString() {
+        assert refCounted.refCount() > 0;
         // This is included in error messages so we'll try to make it somewhat user friendly.
         StringBuilder b = new StringBuilder("BulkShardRequest [");
         b.append(shardId).append("] containing [");

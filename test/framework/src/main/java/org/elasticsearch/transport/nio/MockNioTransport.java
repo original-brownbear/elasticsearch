@@ -305,8 +305,14 @@ public class MockNioTransport extends TcpTransport {
             BytesReference[] references = new BytesReference[pages.length];
             for (int i = 0; i < pages.length; ++i) {
                 references[i] = BytesReference.fromByteBuffer(pages[i].byteBuffer());
+                logger.info("--> acquired [{}] by [{}]", pages[i].byteBuffer().array().toString() , pages[i]);
             }
-            Releasable releasable = () -> IOUtils.closeWhileHandlingException(pages);
+            Releasable releasable = () -> {
+                for (Page page : pages) {
+                    logger.info("--> released [{}] by [{}]", page.byteBuffer().array().toString(), page);
+                    page.close();
+                }
+            };
             try (ReleasableBytesReference reference =
                          new ReleasableBytesReference(CompositeBytesReference.of(references), new LeakAwareRefCounted(releasable))) {
                 pipeline.handleBytes(channel, reference);
