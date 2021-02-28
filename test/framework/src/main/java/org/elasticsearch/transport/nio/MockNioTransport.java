@@ -214,7 +214,7 @@ public class MockNioTransport extends TcpTransport {
                     return new Page(ByteBuffer.allocate(length), () -> {});
                 } else {
                     Recycler.V<byte[]> bytes = pageCacheRecycler.bytePage(false);
-                    return new Page(ByteBuffer.wrap(bytes.v(), 0, length), bytes::close);
+                    return new Page(ByteBuffer.wrap(bytes.v(), 0, length), bytes);
                 }
             };
             MockTcpReadWriteHandler readWriteHandler = new MockTcpReadWriteHandler(nioChannel, pageCacheRecycler, MockNioTransport.this);
