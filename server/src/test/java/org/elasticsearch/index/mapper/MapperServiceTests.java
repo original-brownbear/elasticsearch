@@ -223,14 +223,14 @@ public class MapperServiceTests extends MapperServiceTestCase {
             .build();
         MapperService mapperService = createMapperService(settings, mapping(b -> {}));
 
-        CompressedXContent mapping = new CompressedXContent(BytesReference.bytes(
+        BytesReference mapping = BytesReference.bytes(
             XContentFactory.jsonBuilder().startObject().startObject("_doc")
                 .startObject("properties")
                     .startObject(testString)
                         .field("type", "text")
                     .endObject()
                 .endObject()
-            .endObject().endObject()));
+            .endObject().endObject());
 
         DocumentMapper documentMapper = mapperService.merge("_doc", mapping, MergeReason.MAPPING_RECOVERY);
 

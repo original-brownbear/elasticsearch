@@ -64,12 +64,12 @@ public class UpdateMappingTests extends ESSingleNodeTestCase {
         testConflictWhileMergingAndMappingUnchanged(mapping, mappingUpdate);
     }
 
-    protected void testConflictWhileMergingAndMappingUnchanged(XContentBuilder mapping, XContentBuilder mappingUpdate) throws IOException {
+    protected void testConflictWhileMergingAndMappingUnchanged(XContentBuilder mapping, XContentBuilder mappingUpdate) {
         IndexService indexService = createIndex("test", Settings.builder().build(), mapping);
         CompressedXContent mappingBeforeUpdate = indexService.mapperService().documentMapper().mappingSource();
         // simulate like in MetadataMappingService#putMapping
         try {
-            indexService.mapperService().merge("type", new CompressedXContent(BytesReference.bytes(mappingUpdate)),
+            indexService.mapperService().merge("type", BytesReference.bytes(mappingUpdate),
                 MapperService.MergeReason.MAPPING_UPDATE);
             fail();
         } catch (IllegalArgumentException e) {
@@ -91,11 +91,11 @@ public class UpdateMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject().endObject();
 
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () ->
-            mapperService.merge("type", new CompressedXContent(Strings.toString(update)), MapperService.MergeReason.MAPPING_UPDATE));
+            mapperService.merge("type", BytesReference.bytes(update), MapperService.MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), containsString("mapper [foo] cannot be changed from type [long] to [double]"));
 
         e = expectThrows(IllegalArgumentException.class, () ->
-            mapperService.merge("type", new CompressedXContent(Strings.toString(update)), MapperService.MergeReason.MAPPING_UPDATE));
+            mapperService.merge("type", BytesReference.bytes(update), MapperService.MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), containsString("mapper [foo] cannot be changed from type [long] to [double]"));
 
         assertThat(((FieldMapper) mapperService.documentMapper().mapping().getRoot().getMapper("foo")).fieldType().typeName(),
@@ -113,7 +113,7 @@ public class UpdateMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject().endObject();
 
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () ->
-            mapperService.merge("type", new CompressedXContent(Strings.toString(update)), MapperService.MergeReason.MAPPING_UPDATE));
+            mapperService.merge("type", BytesReference.bytes(update), MapperService.MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), containsString("mapper [foo] cannot be changed from type [long] to [double]"));
 
         assertThat(((FieldMapper) mapperService.documentMapper().mapping().getRoot().getMapper("foo")).fieldType().typeName(),
@@ -127,16 +127,16 @@ public class UpdateMappingTests extends ESSingleNodeTestCase {
         MapperService mapperService = createIndex("test", Settings.builder().build()).mapperService();
 
         MapperParsingException e = expectThrows(MapperParsingException.class, () ->
-            mapperService.merge("type", new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE));
+            mapperService.merge("type", BytesReference.bytes(mapping), MapperService.MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), containsString("Field [_id] is defined more than once"));
 
         MapperParsingException e2 = expectThrows(MapperParsingException.class, () ->
-            mapperService.merge("type", new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE));
+            mapperService.merge("type", BytesReference.bytes(mapping), MapperService.MergeReason.MAPPING_UPDATE));
         assertThat(e2.getMessage(), containsString("Field [_id] is defined more than once"));
     }
 
     public void testRejectFieldDefinedTwice() throws IOException {
-        String mapping1 = Strings.toString(XContentFactory.jsonBuilder().startObject()
+        BytesReference mapping1 = BytesReference.bytes(XContentFactory.jsonBuilder().startObject()
                 .startObject("type")
                     .startObject("properties")
                         .startObject("foo")
@@ -144,7 +144,7 @@ public class UpdateMappingTests extends ESSingleNodeTestCase {
                         .endObject()
                     .endObject()
                 .endObject().endObject());
-        String mapping2 = Strings.toString(XContentFactory.jsonBuilder().startObject()
+        BytesReference mapping2 = BytesReference.bytes(XContentFactory.jsonBuilder().startObject()
                 .startObject("type")
                     .startObject("properties")
                         .startObject("foo")
@@ -154,15 +154,15 @@ public class UpdateMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject());
 
         MapperService mapperService1 = createIndex("test1").mapperService();
-        mapperService1.merge("type", new CompressedXContent(mapping1), MergeReason.MAPPING_UPDATE);
+        mapperService1.merge("type", mapping1, MergeReason.MAPPING_UPDATE);
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-                () -> mapperService1.merge("type", new CompressedXContent(mapping2), MergeReason.MAPPING_UPDATE));
+                () -> mapperService1.merge("type", mapping2, MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), equalTo("can't merge a non object mapping [foo] with an object mapping"));
 
         MapperService mapperService2 = createIndex("test2").mapperService();
-        mapperService2.merge("type", new CompressedXContent(mapping2), MergeReason.MAPPING_UPDATE);
+        mapperService2.merge("type", mapping2, MergeReason.MAPPING_UPDATE);
         e = expectThrows(IllegalArgumentException.class,
-                () -> mapperService2.merge("type", new CompressedXContent(mapping1), MergeReason.MAPPING_UPDATE));
+                () -> mapperService2.merge("type", mapping1, MergeReason.MAPPING_UPDATE));
         assertThat(e.getMessage(), equalTo("can't merge a non object mapping [foo] with an object mapping"));
     }
 

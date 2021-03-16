@@ -253,11 +253,11 @@ public abstract class MapperServiceTestCase extends ESTestCase {
      * Merge a new mapping into the one in the provided {@link MapperService}.
      */
     protected final void merge(MapperService mapperService, String mapping) throws IOException {
-        mapperService.merge(null, new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(null, new BytesArray(mapping), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     protected final void merge(MapperService mapperService, MapperService.MergeReason reason, String mapping) throws IOException {
-        mapperService.merge(null, new CompressedXContent(mapping), reason);
+        mapperService.merge(null, new BytesArray(mapping), reason);
     }
 
     /**
@@ -266,7 +266,7 @@ public abstract class MapperServiceTestCase extends ESTestCase {
     protected final void merge(MapperService mapperService,
                                MapperService.MergeReason reason,
                                XContentBuilder mapping) throws IOException {
-        mapperService.merge(null, new CompressedXContent(BytesReference.bytes(mapping)), reason);
+        mapperService.merge(null, BytesReference.bytes(mapping), reason);
     }
 
     protected final XContentBuilder topMapping(CheckedConsumer<XContentBuilder, IOException> buildFields) throws IOException {

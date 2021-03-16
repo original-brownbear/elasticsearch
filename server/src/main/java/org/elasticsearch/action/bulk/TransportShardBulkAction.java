@@ -43,8 +43,10 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.index.IndexingPressure;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
@@ -289,7 +291,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
 
             try {
                 primary.mapperService().merge(MapperService.SINGLE_MAPPING_NAME,
-                    new CompressedXContent(result.getRequiredMappingUpdate(), XContentType.JSON, ToXContent.EMPTY_PARAMS),
+                    BytesReference.bytes(result.getRequiredMappingUpdate(), XContentType.JSON, ToXContent.EMPTY_PARAMS),
                     MapperService.MergeReason.MAPPING_UPDATE_PREFLIGHT);
             } catch (Exception e) {
                 logger.info(() -> new ParameterizedMessage("{} mapping update rejected by primary", primary.shardId()), e);

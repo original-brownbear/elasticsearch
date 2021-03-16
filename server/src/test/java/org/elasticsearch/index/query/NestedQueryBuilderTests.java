@@ -15,8 +15,7 @@ import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MapperService;
@@ -48,7 +47,7 @@ public class NestedQueryBuilderTests extends AbstractQueryTestCase<NestedQueryBu
 
     @Override
     protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
-        mapperService.merge("_doc", new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
+        mapperService.merge("_doc", BytesReference.bytes(PutMappingRequest.simpleMapping(
                 TEXT_FIELD_NAME, "type=text",
                 INT_FIELD_NAME, "type=integer",
                 DOUBLE_FIELD_NAME, "type=double",
@@ -57,7 +56,7 @@ public class NestedQueryBuilderTests extends AbstractQueryTestCase<NestedQueryBu
                 OBJECT_FIELD_NAME, "type=object",
                 GEO_POINT_FIELD_NAME, "type=geo_point",
                 "nested1", "type=nested"
-        ))), MapperService.MergeReason.MAPPING_UPDATE);
+        )), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     /**

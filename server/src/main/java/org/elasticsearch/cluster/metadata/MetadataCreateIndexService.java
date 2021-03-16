@@ -40,6 +40,8 @@ import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.ValidationException;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.PathUtils;
 import org.elasticsearch.common.logging.DeprecationCategory;
@@ -522,14 +524,12 @@ public class MetadataCreateIndexService {
                                                               final String indexName) throws Exception {
         List<Map<String, Object>> result = new ArrayList<>();
 
-        List<CompressedXContent> templateMappings =
-            MetadataIndexTemplateService.collectMappings(currentState, templateName, indexName, xContentRegistry);
-        for (CompressedXContent templateMapping : templateMappings) {
-            Map<String, Object> parsedTemplateMapping = MapperService.parseMapping(xContentRegistry, templateMapping.string());
+        for (BytesReference templateMapping : MetadataIndexTemplateService.collectMappings(currentState, templateName, indexName, xContentRegistry)) {
+            Map<String, Object> parsedTemplateMapping = MapperService.parseMapping(xContentRegistry, templateMapping);
             result.add(parsedTemplateMapping);
         }
 
-        Map<String, Object> parsedRequestMappings = MapperService.parseMapping(xContentRegistry, requestMappings);
+        Map<String, Object> parsedRequestMappings = MapperService.parseMapping(xContentRegistry, new BytesArray(requestMappings));
         result.add(parsedRequestMappings);
         return result;
     }
@@ -541,7 +541,7 @@ public class MetadataCreateIndexService {
                                                                                             throws Exception {
         logger.info("applying create index request using existing index [{}] metadata", sourceMetadata.getIndex().getName());
 
-        final Map<String, Object> mappings = MapperService.parseMapping(xContentRegistry, request.mappings());
+        final Map<String, Object> mappings = MapperService.parseMapping(xContentRegistry, new BytesArray(request.mappings()));
         if (mappings.isEmpty() == false) {
             throw new IllegalArgumentException("mappings are not allowed when creating an index from a source index, " +
                 "all mappings are copied from the source index");
@@ -573,11 +573,11 @@ public class MetadataCreateIndexService {
      */
     static Map<String, Object> parseV1Mappings(String mappingsJson, List<CompressedXContent> templateMappings,
                                                NamedXContentRegistry xContentRegistry) throws Exception {
-        Map<String, Object> mappings = MapperService.parseMapping(xContentRegistry, mappingsJson);
+        Map<String, Object> mappings = MapperService.parseMapping(xContentRegistry, new BytesArray(mappingsJson));
         // apply templates, merging the mappings into the request mapping if exists
         for (CompressedXContent mapping : templateMappings) {
             if (mapping != null) {
-                Map<String, Object> templateMapping = MapperService.parseMapping(xContentRegistry, mapping.string());
+                Map<String, Object> templateMapping = MapperService.parseMapping(xContentRegistry, mapping.compressedReference());
                 if (templateMapping.isEmpty()) {
                     // Someone provided an empty '{}' for mappings, which is okay, but to avoid
                     // tripping the below assertion, we can safely ignore it
@@ -926,7 +926,7 @@ public class MetadataCreateIndexService {
             indexService.getIndexSortSupplier().get();
         }
         if (request.dataStreamName() != null) {
-            validateTimestampFieldMapping("@timestamp", mapperService);
+            validateTimestampFieldMapping(mapperService);
         }
     }
 

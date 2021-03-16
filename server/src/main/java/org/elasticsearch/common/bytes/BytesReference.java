@@ -12,10 +12,14 @@ import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.io.stream.BytesStream;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.ByteArray;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.common.xcontent.XContentType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,6 +44,23 @@ public interface BytesReference extends Comparable<BytesReference>, ToXContentFr
             return new BytesArray(((ByteArrayOutputStream) stream).toByteArray());
         } else {
             return ((BytesStream) stream).bytes();
+        }
+    }
+
+    static BytesReference bytes(ToXContent xcontent) throws IOException {
+        return bytes(xcontent, XContentType.JSON, ToXContent.EMPTY_PARAMS);
+    }
+
+    static BytesReference bytes(ToXContent xcontent, XContentType type, ToXContent.Params params) throws IOException {
+        try (XContentBuilder builder = XContentFactory.contentBuilder(type, new BytesStreamOutput())) {
+            if (xcontent.isFragment()) {
+                builder.startObject();
+            }
+            xcontent.toXContent(builder, params);
+            if (xcontent.isFragment()) {
+                builder.endObject();
+            }
+            return bytes(builder);
         }
     }
 

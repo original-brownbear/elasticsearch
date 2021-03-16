@@ -19,6 +19,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -69,8 +70,7 @@ public class IntervalQueryBuilderTests extends AbstractQueryTestCase<IntervalQue
             .endObject()
             .endObject().endObject().endObject();
 
-        mapperService.merge("_doc",
-            new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("_doc", BytesReference.bytes(mapping), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     private static IntervalsSourceProvider createRandomSource(int depth, boolean useScripts) {

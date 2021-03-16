@@ -9,6 +9,7 @@
 package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.index.IndexableField;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -37,7 +38,7 @@ public class JavaMultiFieldMergeTests extends MapperServiceTestCase {
         assertThat(f, nullValue());
 
         mapping = copyToStringFromClasspath("/org/elasticsearch/index/mapper/multifield/merge/test-mapping2.json");
-        mapperService.merge("person", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("person", new BytesArray(mapping), MapperService.MergeReason.MAPPING_UPDATE);
 
         assertTrue(mapperService.fieldType("name").isSearchable());
 
@@ -53,7 +54,7 @@ public class JavaMultiFieldMergeTests extends MapperServiceTestCase {
         assertThat(f, notNullValue());
 
         mapping = copyToStringFromClasspath("/org/elasticsearch/index/mapper/multifield/merge/test-mapping3.json");
-        mapperService.merge("person", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("person", new BytesArray(mapping), MapperService.MergeReason.MAPPING_UPDATE);
 
         assertTrue(mapperService.fieldType("name").isSearchable());
 
@@ -63,7 +64,7 @@ public class JavaMultiFieldMergeTests extends MapperServiceTestCase {
         assertThat(mapperService.fieldType("name.not_indexed3"), nullValue());
 
         mapping = copyToStringFromClasspath("/org/elasticsearch/index/mapper/multifield/merge/test-mapping4.json");
-        mapperService.merge("person", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("person", new BytesArray(mapping), MapperService.MergeReason.MAPPING_UPDATE);
 
         assertTrue(mapperService.fieldType("name").isSearchable());
 
@@ -87,7 +88,7 @@ public class JavaMultiFieldMergeTests extends MapperServiceTestCase {
         assertThat(f, nullValue());
 
         mapping = copyToStringFromClasspath("/org/elasticsearch/index/mapper/multifield/merge/upgrade1.json");
-        mapperService.merge("person", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("person", new BytesArray(mapping), MapperService.MergeReason.MAPPING_UPDATE);
 
         assertTrue(mapperService.fieldType("name").isSearchable());
 
@@ -103,7 +104,7 @@ public class JavaMultiFieldMergeTests extends MapperServiceTestCase {
         assertThat(f, notNullValue());
 
         mapping = copyToStringFromClasspath("/org/elasticsearch/index/mapper/multifield/merge/upgrade2.json");
-        mapperService.merge("person", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("person", new BytesArray(mapping), MapperService.MergeReason.MAPPING_UPDATE);
 
         assertTrue(mapperService.fieldType("name").isSearchable());
 
@@ -115,7 +116,7 @@ public class JavaMultiFieldMergeTests extends MapperServiceTestCase {
 
         mapping = copyToStringFromClasspath("/org/elasticsearch/index/mapper/multifield/merge/upgrade3.json");
         try {
-            mapperService.merge("person", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+            mapperService.merge("person", new BytesArray(mapping), MapperService.MergeReason.MAPPING_UPDATE);
             fail();
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsString("Cannot update parameter [index] from [true] to [false]"));

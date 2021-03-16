@@ -10,7 +10,7 @@ package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -161,7 +161,7 @@ public class RootObjectMapperTests extends MapperServiceTestCase {
     }
 
     public void testDynamicTemplatesForIndexTemplate() throws IOException {
-        String mapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
+        BytesReference mapping = BytesReference.bytes(XContentFactory.jsonBuilder().startObject()
             .startArray("dynamic_templates")
                 .startObject()
                     .startObject("first_template")
@@ -182,18 +182,17 @@ public class RootObjectMapperTests extends MapperServiceTestCase {
             .endArray()
         .endObject());
         MapperService mapperService = createMapperService(Version.CURRENT, Settings.EMPTY, () -> true);
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mapping, MergeReason.INDEX_TEMPLATE);
 
         // There should be no update if templates are not set.
-        mapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
+        mapping = BytesReference.bytes(XContentFactory.jsonBuilder().startObject()
             .startObject("properties")
                 .startObject("field")
                     .field("type", "integer")
                 .endObject()
             .endObject()
         .endObject());
-        DocumentMapper mapper = mapperService.merge(MapperService.SINGLE_MAPPING_NAME,
-            new CompressedXContent(mapping), MergeReason.INDEX_TEMPLATE);
+        DocumentMapper mapper = mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mapping, MergeReason.INDEX_TEMPLATE);
 
         DynamicTemplate[] templates = mapper.mapping().getRoot().dynamicTemplates();
         assertEquals(2, templates.length);
@@ -203,7 +202,7 @@ public class RootObjectMapperTests extends MapperServiceTestCase {
         assertEquals("second", templates[1].pathMatch());
 
         // Dynamic templates should be appended and deduplicated.
-        mapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
+        mapping = BytesReference.bytes(XContentFactory.jsonBuilder().startObject()
             .startArray("dynamic_templates")
                 .startObject()
                     .startObject("third_template")
@@ -223,7 +222,7 @@ public class RootObjectMapperTests extends MapperServiceTestCase {
                 .endObject()
             .endArray()
         .endObject());
-        mapper = mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping), MergeReason.INDEX_TEMPLATE);
+        mapper = mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mapping, MergeReason.INDEX_TEMPLATE);
 
         templates = mapper.mapping().getRoot().dynamicTemplates();
         assertEquals(3, templates.length);

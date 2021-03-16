@@ -1340,7 +1340,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                     if (binary) {
                         builder.value(mmd.source().compressed());
                     } else {
-                        builder.map(XContentHelper.convertToMap(mmd.source().uncompressed(), true).v2());
+                        builder.map(XContentHelper.convertToMap(mmd.source().compressedReference(), true).v2());
                     }
                 }
                 builder.endArray();
@@ -1348,7 +1348,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                 builder.startObject(KEY_MAPPINGS);
                 MappingMetadata mmd = indexMetadata.mapping();
                 if (mmd != null) {
-                    Map<String, Object> mapping = XContentHelper.convertToMap(mmd.source().uncompressed(), false).v2();
+                    Map<String, Object> mapping = XContentHelper.convertToMap(mmd.source().compressedReference(), false).v2();
                     if (mapping.size() == 1 && mapping.containsKey(mmd.type())) {
                         // the type name is the root value, reduce it
                         mapping = (Map<String, Object>) mapping.get(mmd.type());

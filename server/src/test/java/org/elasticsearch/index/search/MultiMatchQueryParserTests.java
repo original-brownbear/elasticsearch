@@ -22,6 +22,8 @@ import org.apache.lucene.search.SynonymQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.lucene.search.Queries;
 import org.elasticsearch.common.settings.Settings;
@@ -87,7 +89,7 @@ public class MultiMatchQueryParserTests extends ESSingleNodeTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}";
-        mapperService.merge("person", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("person", new BytesArray(mapping), MapperService.MergeReason.MAPPING_UPDATE);
         this.indexService = indexService;
     }
 
@@ -340,7 +342,7 @@ public class MultiMatchQueryParserTests extends ESSingleNodeTestCase {
             .put("index.analysis.normalizer.my_lowercase.type", "custom")
             .putList("index.analysis.normalizer.my_lowercase.filter", "lowercase").build());
         MapperService mapperService = indexService.mapperService();
-        String mapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
+        BytesReference mapping = BytesReference.bytes(XContentFactory.jsonBuilder().startObject()
             .startObject("type")
                 .startObject("properties")
                     .startObject("field")
@@ -361,7 +363,7 @@ public class MultiMatchQueryParserTests extends ESSingleNodeTestCase {
                     .endObject()
                 .endObject()
             .endObject().endObject());
-        mapperService.merge("type", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("type", mapping, MapperService.MergeReason.MAPPING_UPDATE);
         SearchExecutionContext searchExecutionContext = indexService.newSearchExecutionContext(
             randomInt(20),
             0,

@@ -340,10 +340,10 @@ public abstract class EngineTestCase extends ESTestCase {
 
     public static CheckedBiFunction<String, Integer, ParsedDocument, IOException> nestedParsedDocFactory() throws Exception {
         final MapperService mapperService = createMapperService();
-        final String nestedMapping = Strings.toString(XContentFactory.jsonBuilder().startObject().startObject("type")
+        final BytesReference nestedMapping = BytesReference.bytes(XContentFactory.jsonBuilder().startObject().startObject("type")
             .startObject("properties").startObject("nested_field").field("type", "nested").endObject().endObject()
             .endObject().endObject());
-        final DocumentMapper nestedMapper = mapperService.parse("type", new CompressedXContent(nestedMapping));
+        final DocumentMapper nestedMapper = mapperService.parse("type", nestedMapping);
         return (docId, nestedFieldValues) -> {
             final XContentBuilder source = XContentFactory.jsonBuilder().startObject().field("field", "value");
             if (nestedFieldValues > 0) {

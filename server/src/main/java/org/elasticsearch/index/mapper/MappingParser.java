@@ -9,6 +9,7 @@
 package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -71,10 +72,10 @@ public final class MappingParser {
     }
 
     @SuppressWarnings("unchecked")
-    Mapping parse(@Nullable String type, CompressedXContent source) throws MapperParsingException {
+    Mapping parse(@Nullable String type, BytesReference source) throws MapperParsingException {
         Map<String, Object> mapping = null;
         if (source != null) {
-            mapping = XContentHelper.convertToMap(source.compressedReference(), true, XContentType.JSON).v2();
+            mapping = XContentHelper.convertToMap(source, true, XContentType.JSON).v2();
             if (mapping.isEmpty()) {
                 if (type == null) {
                     throw new MapperParsingException("malformed mapping, no type name found");
