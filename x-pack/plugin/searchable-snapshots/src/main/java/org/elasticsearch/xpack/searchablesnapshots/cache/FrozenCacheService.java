@@ -256,8 +256,8 @@ public class FrozenCacheService implements Releasable {
     }
 
     /**
-     * Returns a {@link CacheFileRegion} instance for the given file parameters. The returned instance is reference must have its
-     * reference count decremented by one once no longer used.
+     * Returns a {@link CacheFileRegion} instance for the given file parameters. The returned instance must have its reference count
+     * decremented by one once no longer used.
      *
      * @param cacheKey          cache key under which the region is tracked
      * @param fileLength        overall length of the file to cache
