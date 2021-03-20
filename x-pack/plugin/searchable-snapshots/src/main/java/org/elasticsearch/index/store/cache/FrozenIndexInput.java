@@ -229,21 +229,12 @@ public class FrozenIndexInput extends BaseSearchableSnapshotIndexInput {
                             (cacheWriter, relativePos, len) -> {
                                 assert len <= cachedBlob.to() - cachedBlob.from();
                                 final long startTimeNanos = stats.currentTimeNanos();
-                                final BytesRefIterator iterator = cachedBlob.bytes()
-                                    .slice(toIntBytes(relativePos), toIntBytes(len))
-                                    .iterator();
-                                BytesRef current;
-                                while ((current = iterator.next()) != null) {
-                                    final ByteBuffer byteBuffer = ByteBuffer.wrap(current.bytes, current.offset, current.length);
-                                    cacheWriter.accept(byteBuffer);
-                                }
-                                final long endTimeNanos = stats.currentTimeNanos();
-                                stats.addCachedBytesWritten(len, endTimeNanos - startTimeNanos);
-                                logger.trace(
-                                    "copied bytes [{}-{}] of file [{}] from cache index to disk",
+                                writeCacheFile(
+                                    cacheWriter,
+                                    cachedBlob.bytes().slice(toIntBytes(relativePos), toIntBytes(len)).streamInput(),
                                     relativePos,
-                                    relativePos + len,
-                                    fileName
+                                    len,
+                                    startTimeNanos
                                 );
                             },
                             directory.cacheFetchAsyncExecutor()
@@ -300,7 +291,14 @@ public class FrozenIndexInput extends BaseSearchableSnapshotIndexInput {
                     luceneByteBufLock,
                     stopAsyncReads
                 ),
-                (cacheWriter, relativePos, len) -> this.writeCacheFile(cacheWriter, relativePos, len, rangeToWrite.start()),
+                (cacheWriter, relativePos, len) -> {
+                    final long startTimeNanos = stats.currentTimeNanos();
+                    final long streamStartPosition = rangeToWrite.start() + relativePos + compoundFileOffset;
+
+                    try (InputStream input = openInputStreamFromBlobStore(streamStartPosition, len)) {
+                        this.writeCacheFile(cacheWriter, input, relativePos, len, startTimeNanos);
+                    }
+                },
                 directory.cacheFetchAsyncExecutor()
             );
 
@@ -566,35 +564,50 @@ public class FrozenIndexInput extends BaseSearchableSnapshotIndexInput {
         return bytesRead;
     }
 
-    private void writeCacheFile(CheckedConsumer<ByteBuffer, IOException> cacheWriter, long relativePos, long length, long logicalPos)
-        throws IOException {
+    /**
+     * Thread local direct byte buffer to aggregate multiple positional writes to the cache file.
+     */
+    private static final ThreadLocal<ByteBuffer> writeBuffer = ThreadLocal.withInitial(
+        () -> ByteBuffer.allocateDirect(COPY_BUFFER_SIZE * 8)
+    );
+
+    private void writeCacheFile(
+        final CheckedConsumer<ByteBuffer, IOException> cacheWriter,
+        final InputStream input,
+        final long relativePos,
+        final long length,
+        final long startTimeNanos
+    ) throws IOException {
         assert assertCurrentThreadMayWriteCacheFile();
-        logger.trace(
-            "{}: writing logical {} pos {} length {} (details: {})",
-            fileInfo.physicalName(),
-            logicalPos,
-            relativePos,
-            length,
-            frozenCacheFile
-        );
+        logger.trace("{}: writing pos {} length {} (details: {})", fileInfo.physicalName(), relativePos, length, frozenCacheFile);
         final long end = relativePos + length;
         final byte[] copyBuffer = new byte[toIntBytes(Math.min(COPY_BUFFER_SIZE, length))];
         logger.trace(() -> new ParameterizedMessage("writing range [{}-{}] to cache file [{}]", relativePos, end, frozenCacheFile));
 
         long bytesCopied = 0L;
         long remaining = length;
-        final long startTimeNanos = stats.currentTimeNanos();
-        try (InputStream input = openInputStreamFromBlobStore(logicalPos + relativePos + compoundFileOffset, length)) {
-            while (remaining > 0L) {
-                final int bytesRead = readSafe(input, copyBuffer, relativePos, end, remaining, frozenCacheFile);
-                cacheWriter.accept(ByteBuffer.wrap(copyBuffer, 0, bytesRead));
-                bytesCopied += bytesRead;
-                remaining -= bytesRead;
+        final ByteBuffer buf = writeBuffer.get();
+        buf.clear();
+        while (remaining > 0L) {
+            final int bytesRead = readSafe(input, copyBuffer, relativePos, end, remaining, frozenCacheFile);
+            if (bytesRead > buf.remaining()) {
+                bytesCopied += consumerBuffer(cacheWriter, buf);
             }
-            final long endTimeNanos = stats.currentTimeNanos();
-            assert bytesCopied == length;
-            stats.addCachedBytesWritten(bytesCopied, endTimeNanos - startTimeNanos);
+            buf.put(copyBuffer, 0, bytesRead);
+            remaining -= bytesRead;
         }
+        bytesCopied += consumerBuffer(cacheWriter, buf);
+        final long endTimeNanos = stats.currentTimeNanos();
+        assert bytesCopied == length;
+        stats.addCachedBytesWritten(bytesCopied, endTimeNanos - startTimeNanos);
+    }
+
+    private static int consumerBuffer(CheckedConsumer<ByteBuffer, IOException> cacheWriter, ByteBuffer buf) throws IOException {
+        buf.flip();
+        final int bytesWritten = buf.remaining();
+        cacheWriter.accept(buf);
+        buf.clear();
+        return bytesWritten;
     }
 
     @Override
