@@ -218,7 +218,7 @@ public final class SharedCacheConfiguration {
         // first determine the number of large regions in this file
         final int largeRegions = largeRegions(fileSize, cacheHeaderLength, cacheFooterLength);
         final int headerRegions = cacheHeaderLength > 0 ? 1 : 0;
-        if (fileSize - position < cacheFooterLength) {
+        if (fileSize - position <= cacheFooterLength) {
             // N large regions and one or no header regions
             return largeRegions + headerRegions;
         }

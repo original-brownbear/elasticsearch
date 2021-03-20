@@ -800,11 +800,13 @@ public class FrozenCacheService implements Releasable {
 
                 final long regionStart = regionStart(region);
                 final long readRangeRelativeStart = regionStart - rangeToRead.start();
+                final long regionEnd = regionStart + regionSize(region);
+                final ByteRange regionRange = ByteRange.of(regionStart, regionEnd);
                 // find out what gaps we must fill for the given region
-                final ByteRange subRangeToRead = mapSubRangeToRegion(rangeToRead, region);
-                final ByteRange subRangeToWrite = mapSubRangeToRegion(rangeToWrite, region);
-                assert subRangeToRead.length() > 0 || subRangeToWrite.length() > 0
-                    : "Either read or write region must be non-empty but saw [" + subRangeToRead + "][" + subRangeToWrite + "]";
+                final ByteRange subRangeToWrite = regionRange.relativeOverlap(rangeToWrite);
+                final ByteRange subRangeToRead = rangeToRead.hasOverlap(regionRange)
+                    ? regionRange.relativeOverlap(rangeToRead)
+                    : ByteRange.of(subRangeToWrite.start(), subRangeToWrite.start());
 
                 final List<SparseFileTracker.Gap> gaps = fileRegion.tracker.waitForRange(
                     subRangeToWrite,
@@ -857,8 +859,10 @@ public class FrozenCacheService implements Releasable {
             final int lastRegion = regionForPosition(rangeToRead.end() - 1);
             for (int region = regionForPosition(start); region <= lastRegion; region++) {
                 final CacheFileRegion fileRegion = get(cacheKey, fileSize, region, headerCacheLength, footerCacheLength);
-                final ByteRange subRangeToRead = mapSubRangeToRegion(rangeToRead, region);
-                final long regionRelativeStart = regionStart(region) - start;
+                final long regionStart = regionStart(region);
+                final ByteRange subRangeToRead = ByteRange.of(regionStart, regionStart + fileRegion.tracker.getLength())
+                    .relativeOverlap(rangeToRead);
+                final long regionRelativeStart = regionStart - start;
                 final StepListener<Integer> lis = fileRegion.readIfAvailableOrPending(subRangeToRead, regionRelativeStart, reader);
                 if (lis == null) {
                     return null;
@@ -870,26 +874,6 @@ public class FrozenCacheService implements Releasable {
                 }
             }
             return stepListener;
-        }
-
-        private ByteRange mapSubRangeToRegion(ByteRange range, int region) {
-            if (region == 0 && range.end() <= headerCacheLength) {
-                return range;
-            }
-            final long regionStart = regionStart(region);
-            final long regionEnd;
-            if (footerCacheLength > 0 && fileSize - regionStart <= footerCacheLength) {
-                regionEnd = fileSize;
-            } else {
-                regionEnd = regionStart + regionSize(region);
-            }
-            final ByteRange regionRange = ByteRange.of(regionStart, regionEnd);
-            if (range.hasOverlap(regionRange) == false) {
-                return ByteRange.EMPTY;
-            }
-            final ByteRange overlap = regionRange.overlap(range);
-            final long start = overlap.start() - regionStart;
-            return ByteRange.of(start, start + overlap.length());
         }
 
         private long regionSize(int region) {
