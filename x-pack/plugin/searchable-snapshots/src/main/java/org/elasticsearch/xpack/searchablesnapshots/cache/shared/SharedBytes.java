@@ -36,17 +36,13 @@ public class SharedBytes extends AbstractRefCounted {
 
     private static final String CACHE_FILE_NAME = "shared_snapshot_cache";
 
-    private static final StandardOpenOption[] OPEN_OPTIONS = new StandardOpenOption[] {
-        StandardOpenOption.READ,
-        StandardOpenOption.WRITE,
-        StandardOpenOption.CREATE };
-
     final int numRegions;
     final long regionSize;
 
     // TODO: for systems like Windows without true p-write/read support we should split this up into multiple channels since positional
     // operations in #IO are not contention-free there (https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6265734)
-    private final FileChannel fileChannel;
+    private final FileChannel fileChannelW;
+    private final FileChannel fileChannelR;
 
     private final Path path;
 
@@ -66,25 +62,27 @@ public class SharedBytes extends AbstractRefCounted {
             // We fill either the full file or the bytes between its current size and the desired size once with zeros to fully allocate
             // the file up front
             final ByteBuffer fillBytes = ByteBuffer.allocate(Channels.WRITE_CHUNK_SIZE);
-            this.fileChannel = FileChannel.open(cacheFile, OPEN_OPTIONS);
-            long written = fileChannel.size();
+            this.fileChannelW = FileChannel.open(cacheFile, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.DSYNC);
+            this.fileChannelR = FileChannel.open(cacheFile, StandardOpenOption.READ);
+            long written = fileChannelW.size();
             if (fileSize < written) {
                 logger.info("creating shared snapshot cache file [size={}, path={}]", fileSize, cacheFile);
             } else if (fileSize == written) {
                 logger.debug("reusing existing shared snapshot cache file [size={}, path={}]", fileSize, cacheFile);
             }
-            fileChannel.position(written);
+            fileChannelW.position(written);
             while (written < fileSize) {
                 final int toWrite = Math.toIntExact(Math.min(fileSize - written, Channels.WRITE_CHUNK_SIZE));
                 fillBytes.position(0).limit(toWrite);
-                Channels.writeToChannel(fillBytes, fileChannel);
+                Channels.writeToChannel(fillBytes, fileChannelW);
                 written += toWrite;
             }
-            if (written > fileChannel.size()) {
-                fileChannel.truncate(fileSize);
+            if (written > fileChannelW.size()) {
+                fileChannelW.truncate(fileSize);
             }
         } else {
-            this.fileChannel = null;
+            this.fileChannelW = null;
+            this.fileChannelR = null;
             for (Path path : environment.nodeDataPaths()) {
                 Files.deleteIfExists(path.resolve(CACHE_FILE_NAME));
             }
@@ -120,7 +118,7 @@ public class SharedBytes extends AbstractRefCounted {
     @Override
     protected void closeInternal() {
         try {
-            IOUtils.close(fileChannel, path == null ? null : () -> Files.deleteIfExists(path));
+            IOUtils.close(fileChannelR, fileChannelW, path == null ? null : () -> Files.deleteIfExists(path));
         } catch (IOException e) {
             logger.warn("Failed to clean up shared bytes file", e);
         }
@@ -129,7 +127,8 @@ public class SharedBytes extends AbstractRefCounted {
     private final Map<Integer, IO> ios = ConcurrentCollections.newConcurrentMap();
 
     IO getFileChannel(int sharedBytesPos) {
-        assert fileChannel != null;
+        assert fileChannelR != null;
+        assert fileChannelW != null;
         return ios.compute(sharedBytesPos, (p, io) -> {
             if (io == null || io.tryIncRef() == false) {
                 final IO newIO;
@@ -169,7 +168,7 @@ public class SharedBytes extends AbstractRefCounted {
         @SuppressForbidden(reason = "Use positional reads on purpose")
         public int read(ByteBuffer dst, long position) throws IOException {
             checkOffsets(position, dst.remaining());
-            return fileChannel.read(dst, position);
+            return fileChannelR.read(dst, position);
         }
 
         @SuppressForbidden(reason = "Use positional writes on purpose")
@@ -178,7 +177,7 @@ public class SharedBytes extends AbstractRefCounted {
             assert position % PAGE_SIZE == 0;
             assert src.remaining() % PAGE_SIZE == 0;
             checkOffsets(position, src.remaining());
-            return fileChannel.write(src, position);
+            return fileChannelW.write(src, position);
         }
 
         private void checkOffsets(long position, long length) {

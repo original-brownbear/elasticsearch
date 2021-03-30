@@ -293,7 +293,7 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
      * Thread local direct byte buffer to aggregate multiple positional writes to the cache file.
      */
     private static final ThreadLocal<ByteBuffer> writeBuffer = ThreadLocal.withInitial(
-        () -> ByteBuffer.allocateDirect(COPY_BUFFER_SIZE * 8)
+        () -> ByteBuffer.allocateDirect(COPY_BUFFER_SIZE * 256 + SharedBytes.PAGE_SIZE - 1).alignedSlice(SharedBytes.PAGE_SIZE)
     );
 
     private void writeCacheFile(
