@@ -251,9 +251,10 @@ public class RepositoriesServiceTests extends ESTestCase {
         }
 
         @Override
-        public void snapshotShard(Store store, MapperService mapperService, SnapshotId snapshotId, IndexId indexId,
-                                  IndexCommit snapshotIndexCommit, String shardStateIdentifier, IndexShardSnapshotStatus snapshotStatus,
-                                  Version repositoryMetaVersion, Map<String, Object> userMetadata, ActionListener<String> listener) {
+        public void snapshotShard(Store store, MapperService mapperService, Map<SnapshotId, Map<String, Object>> snapshots,
+                                  IndexId indexId, IndexCommit snapshotIndexCommit, String shardStateIdentifier,
+                                  IndexShardSnapshotStatus snapshotStatus, Version repositoryMetaVersion,
+                                  ActionListener<String> listener) {
 
         }
 

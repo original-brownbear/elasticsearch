@@ -2087,9 +2087,9 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     }
 
     @Override
-    public void snapshotShard(Store store, MapperService mapperService, SnapshotId snapshotId, IndexId indexId,
+    public void snapshotShard(Store store, MapperService mapperService, Map<SnapshotId, Map<String, Object>> snapshots, IndexId indexId,
                               IndexCommit snapshotIndexCommit, String shardStateIdentifier, IndexShardSnapshotStatus snapshotStatus,
-                              Version repositoryMetaVersion, Map<String, Object> userMetadata, ActionListener<String> listener) {
+                              Version repositoryMetaVersion, ActionListener<String> listener) {
         if (isReadOnly()) {
             listener.onFailure(new RepositoryException(metadata.name(), "cannot snapshot shard on a readonly repository"));
             return;
@@ -2098,7 +2098,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         final long startTime = threadPool.absoluteTimeInMillis();
         try {
             final String generation = snapshotStatus.generation();
-            logger.debug("[{}] [{}] snapshot to [{}] [{}] ...", shardId, snapshotId, metadata.name(), generation);
+            logger.debug("[{}] [{}] snapshot to [{}] [{}] ...", shardId, snapshots.keySet(), metadata.name(), generation);
             final BlobContainer shardContainer = shardContainer(indexId, shardId);
             final Set<String> blobs;
             if (generation == null) {
@@ -2112,16 +2112,19 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
 
             Tuple<BlobStoreIndexShardSnapshots, String> tuple = buildBlobStoreIndexShardSnapshots(blobs, shardContainer, generation);
-            BlobStoreIndexShardSnapshots snapshots = tuple.v1();
+            BlobStoreIndexShardSnapshots existingSnapshots = tuple.v1();
             String fileListGeneration = tuple.v2();
 
-            if (snapshots.snapshots().stream().anyMatch(sf -> sf.snapshot().equals(snapshotId.getName()))) {
-                throw new IndexShardSnapshotFailedException(shardId,
-                    "Duplicate snapshot name [" + snapshotId.getName() + "] detected, aborting");
+            final Set<String> snapshotNames = snapshots.keySet().stream().map(SnapshotId::getName).collect(Collectors.toSet());
+            for (SnapshotFiles snapshot : existingSnapshots.snapshots()) {
+                if (snapshotNames.contains(snapshot.snapshot())) {
+                    throw new IndexShardSnapshotFailedException(shardId,
+                            "Duplicate snapshot name [" + snapshot.snapshot() + "] detected, aborting");
+                }
             }
             // First inspect all known SegmentInfos instances to see if we already have an equivalent commit in the repository
             final List<BlobStoreIndexShardSnapshot.FileInfo> filesFromSegmentInfos = Optional.ofNullable(shardStateIdentifier).map(id -> {
-                for (SnapshotFiles snapshotFileSet : snapshots.snapshots()) {
+                for (SnapshotFiles snapshotFileSet : existingSnapshots.snapshots()) {
                     if (id.equals(snapshotFileSet.shardStateIdentifier())) {
                         return snapshotFileSet.indexFiles();
                     }
@@ -2145,7 +2148,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     // TODO apparently we don't use the MetadataSnapshot#.recoveryDiff(...) here but we should
                     try {
                         logger.trace(
-                            "[{}] [{}] Loading store metadata using index commit [{}]", shardId, snapshotId, snapshotIndexCommit);
+                            "[{}] {} Loading store metadata using index commit [{}]", shardId, snapshots.keySet(), snapshotIndexCommit);
                         metadataFromStore = store.getMetadata(snapshotIndexCommit);
                         fileNames = snapshotIndexCommit.getFileNames();
                     } catch (IOException e) {
@@ -2154,14 +2157,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 }
                 for (String fileName : fileNames) {
                     if (snapshotStatus.isAborted()) {
-                        logger.debug("[{}] [{}] Aborted on the file [{}], exiting", shardId, snapshotId, fileName);
+                        logger.debug("[{}] {} Aborted on the file [{}], exiting", shardId, snapshots.keySet(), fileName);
                         throw new AbortedSnapshotException();
                     }
 
-                    logger.trace("[{}] [{}] Processing [{}]", shardId, snapshotId, fileName);
+                    logger.trace("[{}] [{}] Processing [{}]", shardId, snapshots.keySet(), fileName);
                     final StoreFileMetadata md = metadataFromStore.get(fileName);
                     BlobStoreIndexShardSnapshot.FileInfo existingFileInfo = null;
-                    List<BlobStoreIndexShardSnapshot.FileInfo> filesInfo = snapshots.findPhysicalIndexFiles(fileName);
+                    List<BlobStoreIndexShardSnapshot.FileInfo> filesInfo = existingSnapshots.findPhysicalIndexFiles(fileName);
                     if (filesInfo != null) {
                         for (BlobStoreIndexShardSnapshot.FileInfo fileInfo : filesInfo) {
                             if (fileInfo.isSame(md)) {
@@ -2211,8 +2214,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final boolean writeShardGens = SnapshotsService.useShardGenerations(repositoryMetaVersion);
             // build a new BlobStoreIndexShardSnapshot, that includes this one and all the saved ones
             List<SnapshotFiles> newSnapshotsList = new ArrayList<>();
-            newSnapshotsList.add(new SnapshotFiles(snapshotId.getName(), indexCommitPointFiles, shardStateIdentifier));
-            for (SnapshotFiles point : snapshots) {
+            for (SnapshotId snapshotId : snapshots.keySet()) {
+                newSnapshotsList.add(new SnapshotFiles(snapshotId.getName(), indexCommitPointFiles, shardStateIdentifier));
+            }
+            for (SnapshotFiles point : existingSnapshots) {
                 newSnapshotsList.add(point);
             }
             final BlobStoreIndexShardSnapshots updatedBlobStoreIndexShardSnapshots = new BlobStoreIndexShardSnapshots(newSnapshotsList);
@@ -2227,7 +2232,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             bigArrays);
                 } catch (IOException e) {
                     throw new IndexShardSnapshotFailedException(shardId,
-                            "Failed to write shard level snapshot metadata for [" + snapshotId + "] to ["
+                            "Failed to write shard level snapshot metadata for " + snapshots.keySet() + " to ["
                                     + INDEX_SHARD_SNAPSHOTS_FORMAT.blobName(indexGeneration) + "]", e);
                 }
                 afterWriteSnapBlob = () -> {};
@@ -2249,14 +2254,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         writeShardIndexBlobAtomic(shardContainer, newGen, updatedBlobStoreIndexShardSnapshots);
                     } catch (IOException e) {
                         throw new IndexShardSnapshotFailedException(shardId,
-                                "Failed to finalize snapshot creation [" + snapshotId + "] with shard index ["
+                                "Failed to finalize snapshot creation " + snapshots.keySet() + " with shard index ["
                                         + INDEX_SHARD_SNAPSHOTS_FORMAT.blobName(indexGeneration) + "]", e);
                     }
                     try {
                         deleteFromContainer(shardContainer, blobsToDelete);
                     } catch (IOException e) {
-                        logger.warn(() -> new ParameterizedMessage("[{}][{}] failed to delete old index-N blobs during finalization",
-                                snapshotId, shardId), e);
+                        logger.warn(() -> new ParameterizedMessage("[{}]{} failed to delete old index-N blobs during finalization",
+                                snapshots.keySet(), shardId), e);
                     }
                 };
             }
@@ -2267,18 +2272,21 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     snapshotStatus.moveToFinalize(snapshotIndexCommit.getGeneration());
 
                 // now create and write the commit point
-                logger.trace("[{}] [{}] writing shard snapshot file", shardId, snapshotId);
-                try {
-                    INDEX_SHARD_SNAPSHOT_FORMAT.write(new BlobStoreIndexShardSnapshot(snapshotId.getName(),
-                            lastSnapshotStatus.getIndexVersion(),
-                            indexCommitPointFiles,
-                            lastSnapshotStatus.getStartTime(),
-                            threadPool.absoluteTimeInMillis() - lastSnapshotStatus.getStartTime(),
-                            lastSnapshotStatus.getIncrementalFileCount(),
-                            lastSnapshotStatus.getIncrementalSize()
-                    ), shardContainer, snapshotId.getUUID(), compress, bigArrays);
-                } catch (IOException e) {
-                    throw new IndexShardSnapshotFailedException(shardId, "Failed to write commit point", e);
+                // TODO: parallelize over snapshot ids
+                logger.trace("[{}] [{}] writing shard snapshot file", shardId, snapshots.keySet());
+                for (SnapshotId snapshotId : snapshots.keySet()) {
+                    try {
+                        INDEX_SHARD_SNAPSHOT_FORMAT.write(new BlobStoreIndexShardSnapshot(snapshotId.getName(),
+                                lastSnapshotStatus.getIndexVersion(),
+                                indexCommitPointFiles,
+                                lastSnapshotStatus.getStartTime(),
+                                threadPool.absoluteTimeInMillis() - lastSnapshotStatus.getStartTime(),
+                                lastSnapshotStatus.getIncrementalFileCount(),
+                                lastSnapshotStatus.getIncrementalSize()
+                        ), shardContainer, snapshotId.getUUID(), compress, bigArrays);
+                    } catch (IOException e) {
+                        throw new IndexShardSnapshotFailedException(shardId, "Failed to write commit point", e);
+                    }
                 }
                 afterWriteSnapBlob.run();
                 snapshotStatus.moveToDone(threadPool.absoluteTimeInMillis(), indexGeneration);
@@ -2293,14 +2301,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             final int workers = Math.min(threadPool.info(ThreadPool.Names.SNAPSHOT).getMax(), indexIncrementalFileCount);
             final ActionListener<Void> filesListener = fileQueueListener(filesToSnapshot, workers, allFilesUploadedListener);
             for (int i = 0; i < workers; ++i) {
-                executeOneFileSnapshot(store, snapshotId, indexId, snapshotStatus, filesToSnapshot, executor, filesListener);
+                executeOneFileSnapshot(store, indexId, snapshotStatus, filesToSnapshot, executor, filesListener);
             }
         } catch (Exception e) {
             listener.onFailure(e);
         }
     }
 
-    private void executeOneFileSnapshot(Store store, SnapshotId snapshotId, IndexId indexId, IndexShardSnapshotStatus snapshotStatus,
+    private void executeOneFileSnapshot(Store store, IndexId indexId, IndexShardSnapshotStatus snapshotStatus,
                                         BlockingQueue<BlobStoreIndexShardSnapshot.FileInfo> filesToSnapshot, Executor executor,
                                         ActionListener<Void> listener) throws InterruptedException {
         final ShardId shardId = store.shardId();
@@ -2310,8 +2318,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         } else {
             executor.execute(ActionRunnable.wrap(listener, l -> {
                 try (Releasable ignored = incrementStoreRef(store, snapshotStatus, shardId)) {
-                    snapshotFile(snapshotFileInfo, indexId, shardId, snapshotId, snapshotStatus, store);
-                    executeOneFileSnapshot(store, snapshotId, indexId, snapshotStatus, filesToSnapshot, executor, l);
+                    snapshotFile(snapshotFileInfo, indexId, shardId, snapshotStatus, store);
+                    executeOneFileSnapshot(store, indexId, snapshotStatus, filesToSnapshot, executor, l);
                 }
             }));
         }
@@ -2680,7 +2688,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
      * Snapshot individual file
      * @param fileInfo file to be snapshotted
      */
-    private void snapshotFile(BlobStoreIndexShardSnapshot.FileInfo fileInfo, IndexId indexId, ShardId shardId, SnapshotId snapshotId,
+    private void snapshotFile(BlobStoreIndexShardSnapshot.FileInfo fileInfo, IndexId indexId, ShardId shardId,
                               IndexShardSnapshotStatus snapshotStatus, Store store) throws IOException {
         final BlobContainer shardContainer = shardContainer(indexId, shardId);
         final String file = fileInfo.physicalName();
@@ -2705,8 +2713,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
                     private void checkAborted() {
                         if (snapshotStatus.isAborted()) {
-                            logger.debug("[{}] [{}] Aborted on the file [{}], exiting", shardId,
-                                snapshotId, fileInfo.physicalName());
+                            logger.debug("[{}] Aborted on the file [{}], exiting", shardId, fileInfo.physicalName());
                             throw new AbortedSnapshotException();
                         }
                     }

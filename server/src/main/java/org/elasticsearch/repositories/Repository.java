@@ -191,7 +191,7 @@ public interface Repository extends LifecycleComponent {
      * {@link IndexShardSnapshotStatus#isAborted()} to see if the snapshot process should be aborted.
      * @param store                 store to be snapshotted
      * @param mapperService         the shards mapper service
-     * @param snapshotId            snapshot id
+     * @param snapshots             map of snapshot ids to their user metadata in {@link SnapshotsInProgress.Entry#userMetadata()}
      * @param indexId               id for the index being snapshotted
      * @param snapshotIndexCommit   commit point
      * @param shardStateIdentifier  a unique identifier of the state of the shard that is stored with the shard's snapshot and used
@@ -199,12 +199,11 @@ public interface Repository extends LifecycleComponent {
      *                              snapshotting will be done by inspecting the physical files referenced by {@code snapshotIndexCommit}
      * @param snapshotStatus        snapshot status
      * @param repositoryMetaVersion version of the updated repository metadata to write
-     * @param userMetadata          user metadata of the snapshot found in {@link SnapshotsInProgress.Entry#userMetadata()}
      * @param listener              listener invoked on completion
      */
-    void snapshotShard(Store store, MapperService mapperService, SnapshotId snapshotId, IndexId indexId, IndexCommit snapshotIndexCommit,
-                       @Nullable String shardStateIdentifier, IndexShardSnapshotStatus snapshotStatus, Version repositoryMetaVersion,
-                       Map<String, Object> userMetadata, ActionListener<String> listener);
+    void snapshotShard(Store store, MapperService mapperService, Map<SnapshotId, Map<String, Object>> snapshots, IndexId indexId,
+                       IndexCommit snapshotIndexCommit, @Nullable String shardStateIdentifier, IndexShardSnapshotStatus snapshotStatus,
+                       Version repositoryMetaVersion, ActionListener<String> listener);
 
     /**
      * Restores snapshot of the shard.
