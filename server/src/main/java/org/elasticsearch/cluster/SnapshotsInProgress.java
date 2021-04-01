@@ -178,37 +178,6 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             assert assertShardsConsistent(this.source, this.state, this.indices, this.shards, this.clones);
         }
 
-        private Entry(StreamInput in, Map<String, Map<String, IndexId>> indexLookup) throws IOException {
-            snapshot = new Snapshot(in);
-            includeGlobalState = in.readBoolean();
-            partial = in.readBoolean();
-            state = State.fromValue(in.readByte());
-            indices = in.readList(IndexId::new);
-            final Map<String, IndexId> forRepo = indexLookup.computeIfAbsent(snapshot.getRepository(), k -> new HashMap<>());
-            for (IndexId index : indices) {
-                forRepo.put(index.getName(), index);
-            }
-            startTime = in.readLong();
-            shards = in.readImmutableMap(ShardId::new, ShardSnapshotStatus::readFrom);
-            repositoryStateId = in.readLong();
-            failure = in.readOptionalString();
-            userMetadata = in.readMap();
-            version = Version.readVersion(in);
-            dataStreams = in.readStringList();
-            if (in.getVersion().onOrAfter(SnapshotsService.CLONE_SNAPSHOT_VERSION)) {
-                source = in.readOptionalWriteable(SnapshotId::new);
-                clones = in.readImmutableMap(RepositoryShardId::new, ShardSnapshotStatus::readFrom);
-            } else {
-                source = null;
-                clones = ImmutableOpenMap.of();
-            }
-            if (in.getVersion().onOrAfter(FEATURE_STATES_VERSION)) {
-                featureStates = Collections.unmodifiableList(in.readList(SnapshotFeatureInfo::new));
-            } else {
-                featureStates = Collections.emptyList();
-            }
-        }
-
         private static boolean assertShardsConsistent(SnapshotId source, State state, List<IndexId> indices,
                                                       ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards,
                                                       ImmutableOpenMap<RepositoryShardId, ShardSnapshotStatus> clones) {
@@ -829,7 +798,31 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     public SnapshotsInProgress(StreamInput in) throws IOException {
         this.indexLookup = new HashMap<>();
-        this.entries = in.readList(i -> new SnapshotsInProgress.Entry(i, indexLookup));
+        this.entries = in.readList(inpt -> {
+            final Snapshot snapshot = new Snapshot(in);
+            final boolean includeGlobalState = in.readBoolean();
+            final boolean partial = in.readBoolean();
+            final State state = State.fromValue(in.readByte());
+            final Map<String, IndexId> forRepo = indexLookup.computeIfAbsent(snapshot.getRepository(), k -> new HashMap<>());
+            final List<IndexId> indices = in.readList(ipt -> {
+                IndexId idx = new IndexId(ipt);
+                forRepo.put(idx.getName(), idx);
+                return idx;
+            });
+            final long startTime = in.readLong();
+            final ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards = in.readImmutableMap(ShardId::new, ShardSnapshotStatus::readFrom);
+            final long repositoryStateId = in.readLong();
+            final String failure = in.readOptionalString();
+            final Map<String, Object> userMetadata = in.readMap();
+            final Version version = Version.readVersion(in);
+            final List<String> dataStreams = in.readStringList();
+            final SnapshotId source = in.readOptionalWriteable(SnapshotId::new);
+            final ImmutableOpenMap<RepositoryShardId, ShardSnapshotStatus> clones =
+                    in.readImmutableMap(RepositoryShardId::new, ShardSnapshotStatus::readFrom);
+            final List<SnapshotFeatureInfo> featureStates = in.readList(SnapshotFeatureInfo::new);
+            return new Entry(snapshot, includeGlobalState, partial, state, indices, dataStreams, featureStates, startTime,
+                    repositoryStateId, shards, failure, userMetadata, version, source, clones);
+        });
     }
 
     @Override
