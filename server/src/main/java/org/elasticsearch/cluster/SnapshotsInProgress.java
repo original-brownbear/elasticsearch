@@ -178,12 +178,16 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             assert assertShardsConsistent(this.source, this.state, this.indices, this.shards, this.clones);
         }
 
-        private Entry(StreamInput in) throws IOException {
+        private Entry(StreamInput in, Map<String, Map<String, IndexId>> indexLookup) throws IOException {
             snapshot = new Snapshot(in);
             includeGlobalState = in.readBoolean();
             partial = in.readBoolean();
             state = State.fromValue(in.readByte());
             indices = in.readList(IndexId::new);
+            final Map<String, IndexId> forRepo = indexLookup.computeIfAbsent(snapshot.getRepository(), k -> new HashMap<>());
+            for (IndexId index : indices) {
+                forRepo.put(index.getName(), index);
+            }
             startTime = in.readLong();
             shards = in.readImmutableMap(ShardId::new, ShardSnapshotStatus::readFrom);
             repositoryStateId = in.readLong();
@@ -724,6 +728,17 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     private final List<Entry> entries;
 
+    private final Map<String, Map<String, IndexId>> indexLookup;
+
+    @Nullable
+    public IndexId indexId(String repoName, String indexName) {
+        return indexLookup.getOrDefault(repoName, Collections.emptyMap()).get(indexName);
+    }
+
+    public Map<String, IndexId> getInFlightIndexIds(String repositoryName) {
+        return Collections.unmodifiableMap(indexLookup.getOrDefault(repositoryName, Collections.emptyMap()));
+    }
+
     private static boolean assertConsistentEntries(List<Entry> entries) {
         final Map<String, Set<Tuple<String, Integer>>> assignedShardsByRepo = new HashMap<>();
         final Map<String, Set<Tuple<String, Integer>>> queuedShardsByRepo = new HashMap<>();
@@ -770,6 +785,17 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     private SnapshotsInProgress(List<Entry> entries) {
         this.entries = entries;
+        if (entries.isEmpty()) {
+            this.indexLookup = Collections.emptyMap();
+        } else {
+            this.indexLookup = new HashMap<>();
+            for (Entry entry : entries) {
+                final Map<String, IndexId> forRepo = this.indexLookup.computeIfAbsent(entry.repository(), k -> new HashMap<>());
+                for (IndexId index : entry.indices) {
+                    forRepo.put(index.getName(), index);
+                }
+            }
+        }
         assert assertConsistentEntries(entries);
     }
 
@@ -802,7 +828,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     }
 
     public SnapshotsInProgress(StreamInput in) throws IOException {
-        this.entries = in.readList(SnapshotsInProgress.Entry::new);
+        this.indexLookup = new HashMap<>();
+        this.entries = in.readList(i -> new SnapshotsInProgress.Entry(i, indexLookup));
     }
 
     @Override

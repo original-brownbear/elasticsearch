@@ -324,8 +324,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
                 logger.trace("[{}][{}] creating snapshot for indices [{}]", repositoryName, snapshotName, indices);
 
-                final List<IndexId> indexIds = repositoryData.resolveNewIndices(
-                        indices, getInFlightIndexIds(runningSnapshots, repositoryName));
+                final List<IndexId> indexIds = repositoryData.resolveNewIndices(indices, snapshots.getInFlightIndexIds(repositoryName));
                 final Version version = minCompatibleVersion(currentState.nodes().getMinNodeVersion(), repositoryData, null);
                 ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards = shards(snapshots, deletionsInProgress, currentState.metadata(),
                     currentState.routingTable(), indexIds, useShardGenerations(version), repositoryData, repositoryName);
@@ -377,12 +376,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         })) {
             throw new InvalidSnapshotNameException(repositoryName, snapshotName, "snapshot with the same name is already in-progress");
         }
-    }
-
-    private static Map<String, IndexId> getInFlightIndexIds(List<SnapshotsInProgress.Entry> runningSnapshots, String repositoryName) {
-        return runningSnapshots.stream().filter(entry -> entry.repository().equals(repositoryName))
-                .flatMap(entry -> entry.indices().stream()).distinct()
-                .collect(Collectors.toMap(IndexId::getName, Function.identity()));
     }
 
     // TODO: It is worth revisiting the design choice of creating a placeholder entry in snapshots-in-progress here once we have a cache
@@ -702,14 +695,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private static ShardGenerations buildGenerations(SnapshotsInProgress.Entry snapshot, Metadata metadata) {
         ShardGenerations.Builder builder = ShardGenerations.builder();
-        final Map<String, IndexId> indexLookup = new HashMap<>();
-        snapshot.indices().forEach(idx -> indexLookup.put(idx.getName(), idx));
         if (snapshot.isClone()) {
-            snapshot.clones().forEach(c -> {
-                final IndexId indexId = indexLookup.get(c.key.indexName());
-                builder.put(indexId, c.key.shardId(), c.value.generation());
-            });
+            snapshot.clones().forEach(c -> builder.put(c.key.index(), c.key.shardId(), c.value.generation()));
         } else {
+            // TODO: ditch this lookup building also
+            final Map<String, IndexId> indexLookup = new HashMap<>();
+            snapshot.indices().forEach(idx -> indexLookup.put(idx.getName(), idx));
             snapshot.shards().forEach(c -> {
                 if (metadata.index(c.key.getIndex()) == null) {
                     assert snapshot.partial() :
@@ -2437,7 +2428,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         // Tasks that were used to complete an existing in-progress shard snapshot
         final Set<ShardSnapshotUpdate> executedTasks = new HashSet<>();
         // Outer loop over all snapshot entries in the order they were created in
-        for (SnapshotsInProgress.Entry entry : currentState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries()) {
+        final SnapshotsInProgress snapshotsInProgress = currentState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
+        for (SnapshotsInProgress.Entry entry : snapshotsInProgress.entries()) {
             if (entry.state().completed()) {
                 // completed snapshots do not require any updates so we just add them to the new list and keep going
                 entries.add(entry);
@@ -2445,7 +2437,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             }
             ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> shards = null;
             ImmutableOpenMap.Builder<RepositoryShardId, ShardSnapshotStatus> clones = null;
-            Map<String, IndexId> indicesLookup = null;
             // inner loop over all the shard updates that are potentially applicable to the current snapshot entry
             for (Iterator<ShardSnapshotUpdate> iterator = unconsumedTasks.iterator(); iterator.hasNext(); ) {
                 final ShardSnapshotUpdate updateSnapshotState = iterator.next();
@@ -2559,13 +2550,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         // We applied the update for a shard snapshot state to its snapshot entry, now check if we can update
                         // either a clone or a snapshot
                         if (entry.isClone()) {
-                            // Since we updated a normal snapshot we need to translate its shard ids to repository shard ids which requires
-                            // a lookup for the index ids
-                            if (indicesLookup == null) {
-                                indicesLookup = entry.indices().stream().collect(Collectors.toMap(IndexId::getName, Function.identity()));
-                            }
                             // shard snapshot was completed, we check if we can start a clone operation for the same repo shard
-                            final IndexId indexId = indicesLookup.get(finishedShardId.getIndexName());
+                            final IndexId indexId = snapshotsInProgress.indexId(entry.repository(), finishedShardId.getIndexName());
                             // If the lookup finds the index id then at least the entry is concerned with the index id just updated
                             // so we check on a shard level
                             if (indexId != null) {
