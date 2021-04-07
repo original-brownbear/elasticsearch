@@ -31,7 +31,6 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.settings.Settings;
@@ -77,7 +76,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAllSuccessful;
@@ -341,8 +339,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         // set the index level setting to false, and see that the reverse works
 
         client().admin().indices().prepareClearCache().setRequestCache(true).get(); // clean the cache
-        assertAcked(client().admin().indices().prepareUpdateSettings("idx")
-            .setSettings(Settings.builder().put(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING.getKey(), false)));
+        updateIndexSettings("idx", Settings.builder().put(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING.getKey(), false));
 
         assertThat(client().prepareSearch("idx").setSearchType(SearchType.QUERY_THEN_FETCH).setSize(0).get()
             .getHits().getTotalHits().value, equalTo((long) numDocs));
@@ -358,8 +355,7 @@ public class IndexStatsIT extends ESIntegTestCase {
     public void testNonThrottleStats() throws Exception {
         assertAcked(prepareCreate("test")
                 .setSettings(settingsBuilder()
-                                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, "1")
-                                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "0")
+                                .put(indexSettingsNoReplicas(1).build())
                                 .put(MergePolicyConfig.INDEX_MERGE_POLICY_MAX_MERGE_AT_ONCE_SETTING.getKey(), "2")
                                 .put(MergePolicyConfig.INDEX_MERGE_POLICY_SEGMENTS_PER_TIER_SETTING.getKey(), "2")
                                 .put(MergeSchedulerConfig.MAX_THREAD_COUNT_SETTING.getKey(), "1")
@@ -389,8 +385,7 @@ public class IndexStatsIT extends ESIntegTestCase {
     public void testThrottleStats() throws Exception {
         assertAcked(prepareCreate("test")
                     .setSettings(settingsBuilder()
-                                 .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, "1")
-                                 .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "0")
+                                 .put(indexSettingsNoReplicas(1).build())
                                  .put(MergePolicyConfig.INDEX_MERGE_POLICY_MAX_MERGE_AT_ONCE_SETTING.getKey(), "2")
                                  .put(MergePolicyConfig.INDEX_MERGE_POLICY_SEGMENTS_PER_TIER_SETTING.getKey(), "2")
                                  .put(MergeSchedulerConfig.MAX_THREAD_COUNT_SETTING.getKey(), "1")
@@ -589,9 +584,8 @@ public class IndexStatsIT extends ESIntegTestCase {
     }
 
     public void testSegmentsStats() {
-        assertAcked(prepareCreate("test_index")
-            .setSettings(Settings.builder().put(SETTING_NUMBER_OF_REPLICAS, between(0, 1))
-                .put(IndexSettings.INDEX_REFRESH_INTERVAL_SETTING.getKey(), TimeValue.MINUS_ONE)));
+        assertAcked(prepareCreate("test_index").setSettings(
+                indexSettingsWithReplicas(between(0, 1)).put(IndexSettings.INDEX_REFRESH_INTERVAL_SETTING.getKey(), TimeValue.MINUS_ONE)));
         ensureGreen();
 
         NumShards test1 = getNumShards("test_index");

@@ -275,8 +275,7 @@ public final class ClusterAllocationExplainIT extends ESIntegTestCase {
         ensureStableCluster(1);
 
         logger.info("--> setting allocation filtering to only allow allocation on the currently running node");
-        client().admin().indices().prepareUpdateSettings("idx").setSettings(
-            Settings.builder().put("index.routing.allocation.include._name", primaryNodeName)).get();
+        updateIndexSettings("idx", Settings.builder().put("index.routing.allocation.include._name", primaryNodeName));
 
         logger.info("--> restarting the stopped nodes");
         internalCluster().startNode(Settings.builder().put("node.name", nodes.get(0)).put(node0DataPathSettings).build());
@@ -480,8 +479,7 @@ public final class ClusterAllocationExplainIT extends ESIntegTestCase {
         prepareIndex(1, 0);
 
         logger.info("--> setting up allocation filtering to prevent allocation to both nodes");
-        client().admin().indices().prepareUpdateSettings("idx").setSettings(
-            Settings.builder().put("index.routing.allocation.include._name", "non_existent_node")).get();
+        updateIndexSettings("idx", Settings.builder().put("index.routing.allocation.include._name", "non_existent_node"));
 
         boolean includeYesDecisions = randomBoolean();
         boolean includeDiskInfo = randomBoolean();
@@ -589,8 +587,7 @@ public final class ClusterAllocationExplainIT extends ESIntegTestCase {
         prepareIndex(5, 0);
 
         logger.info("--> disabling rebalancing on the index");
-        client().admin().indices().prepareUpdateSettings("idx").setSettings(
-            Settings.builder().put("index.routing.rebalance.enable", "none")).get();
+        updateIndexSettings("idx", Settings.builder().put("index.routing.rebalance.enable", "none"));
 
         logger.info("--> starting another node, with rebalancing disabled, it should get no shards");
         internalCluster().startNode();
@@ -804,8 +801,7 @@ public final class ClusterAllocationExplainIT extends ESIntegTestCase {
         prepareIndex(5, 0);
 
         logger.info("--> setting up allocation filtering to only allow allocation to the current node");
-        client().admin().indices().prepareUpdateSettings("idx").setSettings(
-            Settings.builder().put("index.routing.allocation.include._name", firstNode)).get();
+        updateIndexSettings("idx", Settings.builder().put("index.routing.allocation.include._name", firstNode));
 
         logger.info("--> starting another node, with filtering not allowing allocation to the new node, it should not get any shards");
         internalCluster().startNode();
@@ -1019,8 +1015,7 @@ public final class ClusterAllocationExplainIT extends ESIntegTestCase {
                 .build(),
             ActiveShardCount.ONE);
 
-        client().admin().indices().prepareUpdateSettings("idx").setSettings(
-            Settings.builder().put("index.routing.allocation.include._name", (String) null)).get();
+        updateIndexSettings("idx", Settings.builder().put("index.routing.allocation.include._name", (String) null));
         ensureGreen();
 
         assertThat(replicaNode().getName(), equalTo(replicaNode));

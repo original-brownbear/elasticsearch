@@ -165,8 +165,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
          /*
          * we corrupted the primary shard - now lets make sure we never recover from it successfully
          */
-        Settings build = Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "2").build();
-        client().admin().indices().prepareUpdateSettings("test").setSettings(build).get();
+        updateIndexSettings("test", indexSettingsWithReplicas(2));
         ClusterHealthResponse health = client().admin().cluster()
             .health(Requests.clusterHealthRequest("test").waitForGreenStatus()
                 .timeout("5m") // sometimes due to cluster rebalacing and random settings default timeout is just not enough.
@@ -268,8 +267,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
         /*
          * we corrupted the primary shard - now lets make sure we never recover from it successfully
          */
-        Settings build = Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "1").build();
-        client().admin().indices().prepareUpdateSettings("test").setSettings(build).get();
+        updateIndexSettings("test", indexSettingsWithReplicas(1));
         client().admin().cluster().prepareReroute().get();
 
         boolean didClusterTurnRed = waitUntil(() -> {
@@ -359,11 +357,8 @@ public class CorruptedFileIT extends ESIntegTestCase {
             });
         }
 
-        Settings build = Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "1")
-            .put("index.routing.allocation.include._name",
-                primariesNode.getNode().getName() + "," + unluckyNode.getNode().getName()).build();
-        client().admin().indices().prepareUpdateSettings("test").setSettings(build).get();
+        updateIndexSettings("test", indexSettingsWithReplicas(1).put("index.routing.allocation.include._name",
+                primariesNode.getNode().getName() + "," + unluckyNode.getNode().getName()));
         client().admin().cluster().prepareReroute().get();
         hasCorrupted.await();
         corrupt.set(false);
@@ -438,10 +433,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
             });
         }
 
-        Settings build = Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "1")
-            .put("index.routing.allocation.include._name", "*").build();
-        client().admin().indices().prepareUpdateSettings("test").setSettings(build).get();
+        updateIndexSettings("test", indexSettingsWithReplicas(1).put("index.routing.allocation.include._name", "*"));
         client().admin().cluster().prepareReroute().get();
         ClusterHealthResponse actionGet = client().admin().cluster()
             .health(Requests.clusterHealthRequest("test").waitForGreenStatus()).actionGet();

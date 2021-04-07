@@ -10,7 +10,6 @@ package org.elasticsearch.plugins;
 
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.allocation.decider.EnableAllocationDecider;
@@ -71,10 +70,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
         ensureStableCluster(2 + 1, masterNode);
 
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
-        createIndex(indexName, Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 2)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-            .build());
+        createIndex(indexName, indexSettingsNoReplicas(2).build());
 
         final NumShards numShards = getNumShards(indexName);
         assertFalse(client().admin().cluster().prepareHealth()
@@ -125,10 +121,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
         ensureStableCluster(4 + 1, masterNode);
 
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
-        createIndex(indexName, Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 4)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, between(0, 1))
-            .build());
+        createIndex(indexName, indexSettingsWithShardsAndReplicas(4, between(0, 1)).build());
 
         final NumShards numShards = getNumShards(indexName);
         assertFalse(client().admin().cluster().prepareHealth()
@@ -188,10 +181,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
         ensureStableCluster(4 + 1, masterNode);
 
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
-        createIndex(indexName, Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 4)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, between(0, 1))
-            .build());
+        createIndex(indexName, indexSettingsWithShardsAndReplicas(4, between(0, 1)).build());
 
         final NumShards numShards = getNumShards(indexName);
         assertFalse(client().admin().cluster().prepareHealth()
@@ -245,9 +235,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
         logger.debug("--> creating [{}] leftover indices on data node [{}]", leftovers.length, dataNode);
         for (int i = 0; i < leftovers.length; i++) {
             final String indexName = "index-" + i;
-            createIndex(indexName, Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+            createIndex(indexName, indexSettingsNoReplicas(1)
                 .put("index.routing.allocation.include._name", dataNode)
                 .build());
             ensureGreen(indexName);
@@ -264,10 +252,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
 
         logger.debug("--> creating a new index [{}]", indexName);
-        assertAcked(client().admin().indices().prepareCreate(indexName).setSettings(
-            Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+        assertAcked(client().admin().indices().prepareCreate(indexName).setSettings(indexSettingsNoReplicas(1)
                 .put("index.routing.allocation.enable", EnableAllocationDecider.Allocation.NONE)
                 .build())
             .setWaitForActiveShards(ActiveShardCount.NONE));

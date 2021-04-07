@@ -290,8 +290,7 @@ public class RareClusterStateIT extends ESIntegTestCase {
                 .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                 .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
                 .put("index.routing.allocation.include._name", master)).get();
-        client().admin().indices().prepareUpdateSettings("index").setSettings(Settings.builder()
-                .put("index.routing.allocation.include._name", "")).get();
+        updateIndexSettings("index", Settings.builder().put("index.routing.allocation.include._name", ""));
         ensureGreen();
 
         // Check routing tables

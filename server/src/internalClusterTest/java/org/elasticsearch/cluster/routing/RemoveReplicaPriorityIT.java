@@ -58,9 +58,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
                 .map(c -> c.value.getId()).limit(3).collect(Collectors.joining(","));
         final String excludedDataNodeId = dataNodeIdFilter.substring(0, dataNodeIdFilter.indexOf(','));
 
-        createIndex(INDEX_NAME, Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 3)
+        createIndex(INDEX_NAME, indexSettingsWithShardsAndReplicas(1, 3)
                 .put(IndexMetadata.INDEX_ROUTING_INCLUDE_GROUP_PREFIX + "._id", dataNodeIdFilter)
                 .put(IndexMetadata.INDEX_ROUTING_EXCLUDE_GROUP_PREFIX + "._id", excludedDataNodeId)
                 .build());
@@ -85,8 +83,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
         });
 
         if (randomBoolean()) {
-            assertAcked(client().admin().indices().prepareUpdateSettings(INDEX_NAME)
-                    .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 2)));
+            updateIndexSettings(INDEX_NAME, indexSettingsWithReplicas(2));
 
             assertBusy(() -> {
                 final IndexShardRoutingTable indexShardRoutingTable = client().admin().cluster().prepareState().clear()
@@ -98,8 +95,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
         }
 
         if (randomBoolean()) {
-            assertAcked(client().admin().indices().prepareUpdateSettings(INDEX_NAME)
-                    .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)));
+            updateIndexSettings(INDEX_NAME, indexSettingsWithReplicas(1));
 
             assertBusy(() -> {
                 final IndexShardRoutingTable indexShardRoutingTable = client().admin().cluster().prepareState().clear()
@@ -111,8 +107,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
         }
 
         if (randomBoolean()) {
-            assertAcked(client().admin().indices().prepareUpdateSettings(INDEX_NAME)
-                    .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)));
+            updateIndexSettings(INDEX_NAME, indexSettingsWithReplicas(0));
 
             assertBusy(() -> {
                 final IndexShardRoutingTable indexShardRoutingTable = client().admin().cluster().prepareState().clear()

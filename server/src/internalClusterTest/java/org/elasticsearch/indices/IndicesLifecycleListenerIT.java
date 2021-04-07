@@ -112,8 +112,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
      */
     public void testIndexShardFailedOnRelocation() throws Throwable {
         String node1 = internalCluster().startNode();
-        client().admin().indices().prepareCreate("index1")
-            .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0)).get();
+        client().admin().indices().prepareCreate("index1").setSettings(indexSettingsNoReplicas(1)).get();
         ensureGreen("index1");
         String node2 = internalCluster().startNode();
         internalCluster().getInstance(MockIndexEventListener.TestEventListener.class, node2)
@@ -151,8 +150,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
 
 
         //create an index
-        assertAcked(client().admin().indices().prepareCreate("test")
-                .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 6).put(SETTING_NUMBER_OF_REPLICAS, 0)));
+        assertAcked(client().admin().indices().prepareCreate("test").setSettings(indexSettingsNoReplicas(6)));
         ensureGreen();
         assertThat(stateChangeListenerNode1.creationSettings.getAsInt(SETTING_NUMBER_OF_SHARDS, -1), equalTo(6));
         assertThat(stateChangeListenerNode1.creationSettings.getAsInt(SETTING_NUMBER_OF_REPLICAS, -1), equalTo(0));
@@ -183,8 +181,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
 
 
         //increase replicas from 0 to 1
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder().put(SETTING_NUMBER_OF_REPLICAS, 1)));
+        updateIndexSettings("test", indexSettingsWithReplicas(1));
         ensureGreen();
 
         //3 replicas are allocated to the first node

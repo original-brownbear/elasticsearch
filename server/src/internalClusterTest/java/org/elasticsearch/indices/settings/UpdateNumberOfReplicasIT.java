@@ -66,8 +66,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         final long settingsVersion =
                 client().admin().cluster().prepareState().get().getState().metadata().index("test").getSettingsVersion();
         logger.info("Increasing the number of replicas from 1 to 2");
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder().put("index.number_of_replicas", 2)).execute().actionGet());
+        updateIndexSettings("test", indexSettingsWithReplicas(2));
         logger.info("Running Cluster Health");
         clusterHealth = client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForYellowStatus()
             .setWaitForActiveShards(numShards.numPrimaries * 2).execute().actionGet();
@@ -106,8 +105,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         }
 
         logger.info("Decreasing number of replicas from 2 to 0");
-        assertAcked(client().admin().indices().prepareUpdateSettings("test").
-            setSettings(Settings.builder().put("index.number_of_replicas", 0)).get());
+        updateIndexSettings("test", indexSettingsWithReplicas(0));
 
         logger.info("Running Cluster Health");
         clusterHealth = client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID)

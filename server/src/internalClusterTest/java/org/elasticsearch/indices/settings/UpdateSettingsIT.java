@@ -395,7 +395,7 @@ public class UpdateSettingsIT extends ESIntegTestCase {
             .admin()
             .indices()
             .prepareUpdateSettings("test")
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1))
+            .setSettings(indexSettingsWithReplicas(1))
             .execute()
             .actionGet();
 
@@ -448,7 +448,7 @@ public class UpdateSettingsIT extends ESIntegTestCase {
             client().prepareIndex("test").setId("1").setSource("f", 3).setVersionType(VersionType.EXTERNAL).setVersion(1),
             VersionConflictEngineException.class);
 
-        assertAcked(client().admin().indices().prepareUpdateSettings("test").setSettings(Settings.builder().put("index.gc_deletes", 0)));
+        updateIndexSettings("test", Settings.builder().put("index.gc_deletes", 0));
 
         client().prepareDelete("test", "1").setVersionType(VersionType.EXTERNAL).setVersion(4).get();
 
@@ -607,7 +607,7 @@ public class UpdateSettingsIT extends ESIntegTestCase {
                 .admin()
                 .indices()
                 .prepareUpdateSettings("test")
-                .setSettings(Settings.builder().put("index.number_of_replicas", numberOfReplicas))
+                .setSettings(indexSettingsWithReplicas(numberOfReplicas))
                 .get());
         final long newSettingsVersion =
                 client().admin().cluster().prepareState().get().getState().metadata().index("test").getSettingsVersion();
@@ -631,7 +631,7 @@ public class UpdateSettingsIT extends ESIntegTestCase {
                 .admin()
                 .indices()
                 .prepareUpdateSettings("test")
-                .setSettings(Settings.builder().put("index.number_of_replicas", 1 + numberOfReplicas))
+                .setSettings(indexSettingsWithReplicas(1 + numberOfReplicas))
                 .get());
         final long newSettingsVersion =
                 client().admin().cluster().prepareState().get().getState().metadata().index("test").getSettingsVersion();
@@ -651,10 +651,7 @@ public class UpdateSettingsIT extends ESIntegTestCase {
 
     private void runTestDefaultNumberOfReplicasTest(final boolean closeIndex) {
         if (randomBoolean()) {
-            assertAcked(client().admin()
-                .indices()
-                .prepareCreate("test")
-                .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, randomIntBetween(1, 8))));
+            assertAcked(client().admin().indices().prepareCreate("test").setSettings(indexSettingsWithReplicas(randomIntBetween(1, 8))));
         } else {
             assertAcked(client().admin().indices().prepareCreate("test"));
         }
@@ -667,10 +664,7 @@ public class UpdateSettingsIT extends ESIntegTestCase {
          * Previous versions of Elasticsearch would throw an exception that the number of replicas had to have a value, and could not be
          * null. In the update settings logic, we ensure this by providing an explicit default value if the setting is set to null.
          */
-        assertAcked(client().admin()
-            .indices()
-            .prepareUpdateSettings("test")
-            .setSettings(Settings.builder().putNull(IndexMetadata.SETTING_NUMBER_OF_REPLICAS)));
+        updateIndexSettings("test", Settings.builder().putNull(IndexMetadata.SETTING_NUMBER_OF_REPLICAS));
 
         final GetSettingsResponse response = client().admin().indices().prepareGetSettings("test").get();
 
@@ -682,12 +676,10 @@ public class UpdateSettingsIT extends ESIntegTestCase {
     public void testNoopUpdate() {
         internalCluster().ensureAtLeastNumDataNodes(2);
         final ClusterService clusterService = internalCluster().getMasterNodeInstance(ClusterService.class);
-        assertAcked(client().admin().indices().prepareCreate("test")
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)));
+        assertAcked(client().admin().indices().prepareCreate("test").setSettings(indexSettingsWithReplicas(0)));
 
         ClusterState currentState = clusterService.state();
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)));
+        updateIndexSettings("test", indexSettingsWithReplicas(1));
         assertNotSame(currentState, clusterService.state());
         client().admin().cluster().prepareHealth()
             .setWaitForGreenStatus()
@@ -697,33 +689,23 @@ public class UpdateSettingsIT extends ESIntegTestCase {
             .get();
         currentState = clusterService.state();
 
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)));
+        updateIndexSettings("test", indexSettingsWithReplicas(1));
         assertSame(clusterService.state(), currentState);
 
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder().putNull(IndexMetadata.SETTING_NUMBER_OF_REPLICAS)));
+        updateIndexSettings("test", Settings.builder().putNull(IndexMetadata.SETTING_NUMBER_OF_REPLICAS));
         assertSame(clusterService.state(), currentState);
 
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder()
-                .putNull(SETTING_BLOCKS_READ)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)));
+        updateIndexSettings("test", indexSettingsWithReplicas(1).putNull(SETTING_BLOCKS_READ));
         assertSame(currentState, clusterService.state());
 
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder()
-                .put(SETTING_BLOCKS_READ, true)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)));
+        updateIndexSettings("test", indexSettingsWithReplicas(1).put(SETTING_BLOCKS_READ, true));
         assertNotSame(currentState, clusterService.state());
         currentState = clusterService.state();
 
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder().put(SETTING_BLOCKS_READ, true)));
+        updateIndexSettings("test", Settings.builder().put(SETTING_BLOCKS_READ, true));
         assertSame(currentState, clusterService.state());
 
-        assertAcked(client().admin().indices().prepareUpdateSettings("test")
-            .setSettings(Settings.builder().putNull(SETTING_BLOCKS_READ)));
+        updateIndexSettings("test", Settings.builder().putNull(SETTING_BLOCKS_READ));
         assertNotSame(currentState, clusterService.state());
     }
 

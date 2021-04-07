@@ -22,7 +22,6 @@ import org.elasticsearch.cluster.ClusterStateObserver;
 import org.elasticsearch.cluster.ClusterStateUpdateTask;
 import org.elasticsearch.cluster.SnapshotDeletionsInProgress;
 import org.elasticsearch.cluster.SnapshotsInProgress;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.RepositoriesMetadata;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.routing.allocation.decider.EnableAllocationDecider;
@@ -306,11 +305,6 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
             settings.put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES);
         }
         return settings;
-    }
-
-    protected static Settings.Builder indexSettingsNoReplicas(int shards) {
-        return Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, shards)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0);
     }
 
     /**

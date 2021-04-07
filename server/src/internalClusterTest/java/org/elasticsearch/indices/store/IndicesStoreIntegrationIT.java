@@ -342,9 +342,7 @@ public class IndicesStoreIntegrationIT extends ESIntegTestCase {
         }
 
         logger.debug("--> allowing index to be assigned to node [{}]", node4);
-        assertAcked(client().admin().indices().prepareUpdateSettings("test").setSettings(
-                Settings.builder()
-                        .put(IndexMetadata.INDEX_ROUTING_EXCLUDE_GROUP_SETTING.getKey() + "_name", "NONE")));
+        updateIndexSettings("test", Settings.builder().put(IndexMetadata.INDEX_ROUTING_EXCLUDE_GROUP_SETTING.getKey() + "_name", "NONE"));
 
         assertAcked(client().admin().cluster().prepareUpdateSettings().setTransientSettings(Settings.builder()
                 .put(EnableAllocationDecider.CLUSTER_ROUTING_ALLOCATION_ENABLE_SETTING.getKey(), "all")));
@@ -389,11 +387,7 @@ public class IndicesStoreIntegrationIT extends ESIntegTestCase {
         final String nonMasterId = internalCluster().clusterService(nonMasterNode).localNode().getId();
 
         final int numShards = scaledRandomIntBetween(2, 10);
-        assertAcked(prepareCreate("test")
-                        .setSettings(Settings.builder()
-                            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numShards))
-        );
+        assertAcked(prepareCreate("test").setSettings(indexSettingsNoReplicas(numShards)));
         ensureGreen("test");
 
         waitNoPendingTasksOnAll();

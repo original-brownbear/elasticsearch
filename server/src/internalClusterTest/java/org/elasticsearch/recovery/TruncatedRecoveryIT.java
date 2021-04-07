@@ -13,7 +13,6 @@ import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.elasticsearch.action.admin.cluster.node.stats.NodeStats;
 import org.elasticsearch.action.admin.cluster.node.stats.NodesStatsResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -78,8 +77,7 @@ public class TruncatedRecoveryIT extends ESIntegTestCase {
         // we have no replicas so far and make sure that we allocate the primary on the lucky node
         assertAcked(prepareCreate("test")
             .setMapping("field1", "type=text", "the_id", "type=text")
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numberOfShards())
+            .setSettings(indexSettingsNoReplicas(numberOfShards())
                 .put("index.routing.allocation.include._name", primariesNode.getNode().getName()))); // only allocate on the lucky node
 
         // index some docs and check if they are coming back
@@ -120,10 +118,9 @@ public class TruncatedRecoveryIT extends ESIntegTestCase {
         }
 
         logger.info("--> bumping replicas to 1"); //
-        client().admin().indices().prepareUpdateSettings("test").setSettings(Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-            .put("index.routing.allocation.include._name",  // now allow allocation on all nodes
-                primariesNode.getNode().getName() + "," + unluckyNode.getNode().getName())).get();
+        updateIndexSettings("test", indexSettingsWithReplicas(1).put(
+                // now allow allocation on all nodes
+                "index.routing.allocation.include._name", primariesNode.getNode().getName() + "," + unluckyNode.getNode().getName()));
 
         latch.await();
 

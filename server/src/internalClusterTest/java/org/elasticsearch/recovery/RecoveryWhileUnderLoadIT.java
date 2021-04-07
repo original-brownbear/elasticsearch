@@ -291,8 +291,7 @@ public class RecoveryWhileUnderLoadIT extends ESIntegTestCase {
             logger.info("--> indexing threads stopped");
             logger.info("--> bump up number of replicas to 1 and allow all nodes to hold the index");
             allowNodes("test", 3);
-            assertAcked(client().admin().indices().prepareUpdateSettings("test")
-                    .setSettings(Settings.builder().put("number_of_replicas", 1)).get());
+            updateIndexSettings("test", indexSettingsWithReplicas(1));
             ensureGreen(TimeValue.timeValueMinutes(5));
 
             logger.info("--> refreshing the index");

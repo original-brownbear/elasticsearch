@@ -200,8 +200,7 @@ public class RestoreSnapshotIT extends AbstractSnapshotIntegTestCase {
 
         logger.info("--> delete the index and recreate it with foo field");
         cluster().wipeIndices("test-idx");
-        assertAcked(prepareCreate("test-idx", 2, Settings.builder()
-                .put(SETTING_NUMBER_OF_SHARDS, numShards.numPrimaries).put(SETTING_NUMBER_OF_REPLICAS, between(0, 1))
+        assertAcked(prepareCreate("test-idx", 2, indexSettingsWithShardsAndReplicas(numShards.numPrimaries, between(0, 1))
                 .put("refresh_interval", 5, TimeUnit.SECONDS)));
         assertAcked(client().admin().indices().preparePutMapping("test-idx").setSource("foo", "type=text"));
         ensureGreen();
@@ -602,7 +601,7 @@ public class RestoreSnapshotIT extends AbstractSnapshotIntegTestCase {
 
             if (initialSettings.isEmpty() == false) {
                 logger.info("--> apply initial blocks to index");
-                client().admin().indices().prepareUpdateSettings("test-idx").setSettings(initialSettingsBuilder).get();
+                updateIndexSettings("test-idx", initialSettingsBuilder);
             }
 
             createSnapshot("test-repo", "test-snap", Collections.singletonList("test-idx"));

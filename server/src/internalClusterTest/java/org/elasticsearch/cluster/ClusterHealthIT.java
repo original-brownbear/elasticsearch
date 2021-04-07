@@ -147,9 +147,7 @@ public class ClusterHealthIT extends ESIntegTestCase {
             assertThat(response.getIndices().get("index-2").getStatus(), equalTo(ClusterHealthStatus.GREEN));
         }
 
-        createIndex("index-3", Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 50)
-            .build());
+        createIndex("index-3", indexSettingsWithReplicas(50).build());
         assertAcked(client().admin().indices().prepareClose("index-3"));
 
         {
@@ -218,10 +216,7 @@ public class ClusterHealthIT extends ESIntegTestCase {
             assertThat(response.getIndices().get("index-3").getStatus(), equalTo(ClusterHealthStatus.YELLOW));
         }
 
-        assertAcked(client().admin().indices().prepareUpdateSettings("index-3")
-            .setSettings(Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, numberOfReplicas())
-                .build()));
+        updateIndexSettings("index-3", indexSettingsWithReplicas(numberOfReplicas()));
         {
             ClusterHealthResponse response = client().admin().cluster().prepareHealth()
                 .setWaitForGreenStatus()
@@ -306,9 +301,7 @@ public class ClusterHealthIT extends ESIntegTestCase {
             // Notice that this is set to 0 after the test completed starting a number of health requests and master restarts.
             // This ensures that the cluster is yellow when the health request is made, making the health request wait on the observer,
             // triggering a call to observer.onClusterServiceClose when master is shutdown.
-            createIndex("test",
-                Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, randomIntBetween(0, 10))
+            createIndex("test", indexSettingsWithReplicas(randomIntBetween(0, 10))
                     // avoid full recoveries of index, just wait for replica to reappear
                 .put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), "5m")
                 .build());

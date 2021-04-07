@@ -777,6 +777,24 @@ public abstract class ESIntegTestCase extends ESTestCase {
         return client().admin().indices().prepareCreate(index).setSettings(builder.build());
     }
 
+    public static Settings.Builder indexSettingsWithShardsAndReplicas(int shards, int replicas) {
+        return indexSettingsWithReplicas(replicas).put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, shards);
+    }
+
+    public static Settings.Builder indexSettingsWithReplicas(int replicas) {
+        return Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, replicas);
+    }
+
+    public static Settings.Builder indexSettingsNoReplicas(int shards) {
+        return indexSettingsWithShardsAndReplicas(shards, 0);
+    }
+
+    public void updateIndexSettings(String index, Settings.Builder settings) {
+        final Settings s = settings.build();
+        logger.info("--> updating index settings for [{}] with [{}]", index, s);
+        assertAcked(admin().indices().prepareUpdateSettings(index).setSettings(s).get());
+    }
+
     private Settings.Builder getExcludeSettings(int num, Settings.Builder builder) {
         String exclude = String.join(",", internalCluster().allDataNodesButN(num));
         builder.put("index.routing.allocation.exclude._name", exclude);

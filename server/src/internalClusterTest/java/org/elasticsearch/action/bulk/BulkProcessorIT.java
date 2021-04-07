@@ -31,7 +31,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
@@ -173,8 +172,7 @@ public class BulkProcessorIT extends ESIntegTestCase {
 
     public void testBulkProcessorConcurrentRequestsReadOnlyIndex() throws Exception {
         createIndex("test-ro");
-        assertAcked(client().admin().indices().prepareUpdateSettings("test-ro")
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_BLOCKS_WRITE, true)));
+        updateIndexSettings("test-ro", Settings.builder().put(IndexMetadata.SETTING_BLOCKS_WRITE, true));
         ensureGreen();
 
         int bulkActions = randomIntBetween(10, 100);

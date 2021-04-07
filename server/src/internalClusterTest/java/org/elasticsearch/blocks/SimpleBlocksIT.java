@@ -101,13 +101,9 @@ public class SimpleBlocksIT extends ESIntegTestCase {
     public void testIndexReadWriteMetadataBlocks() {
         canCreateIndex("test1");
         canIndexDocument("test1");
-        client().admin().indices().prepareUpdateSettings("test1")
-                .setSettings(Settings.builder().put(SETTING_BLOCKS_WRITE, true))
-                .execute().actionGet();
+        updateIndexSettings("test1", Settings.builder().put(SETTING_BLOCKS_WRITE, true));
         canNotIndexDocument("test1");
-        client().admin().indices().prepareUpdateSettings("test1")
-                .setSettings(Settings.builder().put(SETTING_BLOCKS_WRITE, false))
-                .execute().actionGet();
+        updateIndexSettings("test1", Settings.builder().put(SETTING_BLOCKS_WRITE, false));
         canIndexDocument("test1");
     }
 

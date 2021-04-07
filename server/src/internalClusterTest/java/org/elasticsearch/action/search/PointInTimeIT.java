@@ -162,8 +162,7 @@ public class PointInTimeIT extends ESIntegTestCase {
             final Set<String> dataNodes = StreamSupport.stream(clusterService().state().nodes().getDataNodes().spliterator(), false)
                 .map(e -> e.value.getId()).collect(Collectors.toSet());
             final List<String> excludedNodes = randomSubsetOf(2, dataNodes);
-            assertAcked(client().admin().indices().prepareUpdateSettings("test")
-                .setSettings(Settings.builder().put("index.routing.allocation.exclude._id", String.join(",", excludedNodes)).build()));
+            updateIndexSettings("test", Settings.builder().put("index.routing.allocation.exclude._id", String.join(",", excludedNodes)));
             if (randomBoolean()) {
                 int moreDocs = randomIntBetween(10, 50);
                 for (int i = 0; i < moreDocs; i++) {

@@ -14,7 +14,6 @@ import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.coordination.NoMasterBlockService;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -84,11 +83,7 @@ public class MasterDisruptionIT extends AbstractDisruptionTestCase {
     public void testIsolateMasterAndVerifyClusterStateConsensus() throws Exception {
         final List<String> nodes = startCluster(3);
 
-        assertAcked(prepareCreate("test")
-                .setSettings(Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1 + randomInt(2))
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, randomInt(2))
-                ));
+        assertAcked(prepareCreate("test").setSettings(indexSettingsWithShardsAndReplicas(1 + randomInt(2), randomInt(2))));
 
         ensureGreen();
         String isolatedNode = internalCluster().getMasterName();
@@ -153,10 +148,7 @@ public class MasterDisruptionIT extends AbstractDisruptionTestCase {
             .putNull(NoMasterBlockService.NO_MASTER_BLOCK_SETTING.getKey()).build());
 
         // Makes sure that the get request can be executed on each node locally:
-        assertAcked(prepareCreate("test").setSettings(Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 2)
-        ));
+        assertAcked(prepareCreate("test").setSettings(indexSettingsWithShardsAndReplicas(1, 2)));
 
         // Everything is stable now, it is now time to simulate evil...
         // but first make sure we have no initializing shards and all is green
@@ -229,9 +221,7 @@ public class MasterDisruptionIT extends AbstractDisruptionTestCase {
 
     public void testMappingTimeout() throws Exception {
         startCluster(3);
-        createIndex("test", Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 1)
+        createIndex("test", indexSettingsWithShardsAndReplicas(1, 1)
             .put("index.routing.allocation.exclude._name", internalCluster().getMasterName())
         .build());
 

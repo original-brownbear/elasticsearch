@@ -15,7 +15,6 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.allocation.AllocationDecision;
 import org.elasticsearch.cluster.routing.allocation.ShardAllocationDecision;
 import org.elasticsearch.cluster.routing.allocation.command.AllocateStalePrimaryAllocationCommand;
@@ -77,9 +76,7 @@ public class AllocationIdIT extends ESIntegTestCase {
         final String indexName = "index42";
         final String master = internalCluster().startMasterOnlyNode();
         String node1 = internalCluster().startNode();
-        createIndex(indexName, Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
+        createIndex(indexName, indexSettingsWithShardsAndReplicas(1, 1)
             .put(IndexSettings.INDEX_CHECK_ON_STARTUP.getKey(), "checksum").build());
         final int numDocs = indexDocs(indexName, "foo", "bar");
         final IndexSettings indexSettings = getIndexSettings(indexName, node1);

@@ -8,7 +8,6 @@
 package org.elasticsearch.cluster.routing.allocation.decider;
 
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -37,10 +36,8 @@ public class UpdateShardAllocationSettingsIT extends ESIntegTestCase {
         // we test with 2 shards since otherwise it's pretty fragile if there are difference in the num or shards such that
         // all shards are relocated to the second node which is not what we want here. It's solely a test for the settings to take effect
         final int numShards = 2;
-        assertAcked(prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numShards)));
-        assertAcked(prepareCreate("test_1").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numShards)));
+        assertAcked(prepareCreate("test").setSettings(indexSettingsNoReplicas(numShards)));
+        assertAcked(prepareCreate("test_1").setSettings(indexSettingsNoReplicas(numShards)));
         ensureGreen();
         assertAllShardsOnNodes("test", firstNode);
         assertAllShardsOnNodes("test_1", firstNode);
@@ -93,10 +90,7 @@ public class UpdateShardAllocationSettingsIT extends ESIntegTestCase {
             Settings.builder().put(CLUSTER_ROUTING_ALLOCATION_SAME_HOST_SETTING.getKey(), true)
         ).get();
         final String indexName = "idx";
-        client().admin().indices().prepareCreate(indexName).setSettings(
-            Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-        ).get();
+        client().admin().indices().prepareCreate(indexName).setSettings(indexSettingsWithShardsAndReplicas(1, 1)).get();
         ClusterState clusterState = client().admin().cluster().prepareState().get().getState();
         assertFalse("replica should be unassigned",
             clusterState.getRoutingTable().index(indexName).shardsWithState(ShardRoutingState.UNASSIGNED).isEmpty());

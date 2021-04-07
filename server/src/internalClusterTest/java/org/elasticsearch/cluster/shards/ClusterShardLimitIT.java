@@ -113,9 +113,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
             .preparePutTemplate("should-fail")
             .setPatterns(Collections.singletonList("should-fail"))
             .setOrder(1)
-            .setSettings(Settings.builder()
-                .put(SETTING_NUMBER_OF_SHARDS, counts.getFailingIndexShards())
-                .put(SETTING_NUMBER_OF_REPLICAS, counts.getFailingIndexReplicas()))
+            .setSettings(indexSettingsWithShardsAndReplicas(counts.getFailingIndexShards(), counts.getFailingIndexReplicas()))
             .get());
 
         final IllegalArgumentException e =

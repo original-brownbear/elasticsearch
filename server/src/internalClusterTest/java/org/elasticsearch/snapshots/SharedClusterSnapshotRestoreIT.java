@@ -533,10 +533,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
 
         Runnable fixupAction =() -> {
             // remove the shard allocation filtering settings and use the Reroute API to retry the failed shards
-            assertAcked(client().admin().indices().prepareUpdateSettings(indexName)
-                                                    .setSettings(Settings.builder()
-                                                                            .putNull("index.routing.allocation.include._name")
-                                                                            .build()));
+            updateIndexSettings(indexName, Settings.builder().putNull("index.routing.allocation.include._name"));
             assertAcked(clusterAdmin().prepareReroute().setRetryFailed(true));
         };
 
@@ -786,7 +783,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
 
         logger.info("--> execution was blocked on node [{}], moving shards away from this node", blockedNode);
         Settings.Builder excludeSettings = Settings.builder().put("index.routing.allocation.exclude._name", blockedNode);
-        client().admin().indices().prepareUpdateSettings("test-idx").setSettings(excludeSettings).get();
+        updateIndexSettings("test-idx", excludeSettings);
 
         unblockNode("test-repo", blockedNode);
         awaitNoMoreRunningOperations();
@@ -1540,8 +1537,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         final String index = "test-idx";
         final String snapshot = "test-snap";
 
-        assertAcked(prepareCreate(index, 1,
-            Settings.builder().put("number_of_shards", numPrimaries).put("number_of_replicas", numReplicas)));
+        assertAcked(prepareCreate(index, 1, indexSettingsWithShardsAndReplicas(numPrimaries, numReplicas)));
 
         indexRandomDocs(index, 100);
 
