@@ -33,13 +33,7 @@ import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotsService;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.snapshots.SnapshotsService.FEATURE_STATES_VERSION;
@@ -49,36 +43,49 @@ import static org.elasticsearch.snapshots.SnapshotsService.FEATURE_STATES_VERSIO
  */
 public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implements Custom {
 
-    public static final SnapshotsInProgress EMPTY = new SnapshotsInProgress(List.of());
+    public static final SnapshotsInProgress EMPTY = new SnapshotsInProgress(Map.of());
 
     public static final String TYPE = "snapshots";
 
     public static final String ABORTED_FAILURE_TEXT = "Snapshot was aborted by deletion";
 
-    private final List<Entry> entries;
+    private final Map<String, List<Entry>> entries;
 
-    public static SnapshotsInProgress of(List<Entry> entries) {
+    public static SnapshotsInProgress of(Map<String, List<Entry>> entries) {
         if (entries.isEmpty()) {
             return EMPTY;
         }
-        return new SnapshotsInProgress(Collections.unmodifiableList(entries));
+        return new SnapshotsInProgress(Collections.unmodifiableMap(entries));
     }
 
-    public SnapshotsInProgress(StreamInput in) throws IOException {
-        this(in.readList(SnapshotsInProgress.Entry::new));
+    public static SnapshotsInProgress read(StreamInput in) throws IOException {
+        final int count = in.readVInt();
+        if (count == 0) {
+            return EMPTY;
+        }
+        final Map<String, List<Entry>> entries = new HashMap<>();
+        for (int i = 0; i < count; i++) {
+            final Entry entry = new Entry(in);
+            entries.computeIfAbsent(entry.repository(), k -> new ArrayList<>()).add(entry);
+        }
+        return of(entries);
     }
 
-    private SnapshotsInProgress(List<Entry> entries) {
+    private SnapshotsInProgress(Map<String, List<Entry>> entries) {
         this.entries = entries;
-        assert assertConsistentEntries(entries);
+        assert assertConsistentEntries(entries());
     }
 
     public List<Entry> entries() {
-        return this.entries;
+        return this.entries.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+    }
+
+    public List<Entry> entries(String repoName) {
+        return entries.getOrDefault(repoName, Collections.emptyList());
     }
 
     public Entry snapshot(final Snapshot snapshot) {
-        for (Entry entry : entries) {
+        for (Entry entry : entries.get(snapshot.getRepository())) {
             final Snapshot curr = entry.snapshot();
             if (curr.equals(snapshot)) {
                 return entry;
@@ -103,13 +110,13 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeList(entries);
+        out.writeList(entries());
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
         builder.startArray("snapshots");
-        for (Entry entry : entries) {
+        for (Entry entry : entries()) {
             entry.toXContent(builder, params);
         }
         builder.endArray();
@@ -131,6 +138,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder("SnapshotsInProgress[");
+        final List<Entry> entries = entries();
         for (int i = 0; i < entries.size(); i++) {
             builder.append(entries.get(i).snapshot().getSnapshotId().getName());
             if (i + 1 < entries.size()) {

@@ -49,7 +49,6 @@ import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -90,7 +89,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                                    final ActionListener<SnapshotsStatusResponse> listener) throws Exception {
         final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
         List<SnapshotsInProgress.Entry> currentSnapshots =
-            SnapshotsService.currentSnapshots(snapshotsInProgress, request.repository(), Arrays.asList(request.snapshots()));
+            SnapshotsService.currentSnapshots(snapshotsInProgress, request.repository(), Set.of(request.snapshots()));
         if (currentSnapshots.isEmpty()) {
             buildResponse(snapshotsInProgress, request, currentSnapshots, null, listener);
             return;
@@ -298,7 +297,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
      */
     private SnapshotInfo snapshot(SnapshotsInProgress snapshotsInProgress, String repositoryName, SnapshotId snapshotId) {
         List<SnapshotsInProgress.Entry> entries =
-            SnapshotsService.currentSnapshots(snapshotsInProgress, repositoryName, Collections.singletonList(snapshotId.getName()));
+            SnapshotsService.currentSnapshots(snapshotsInProgress, repositoryName, Collections.singleton(snapshotId.getName()));
         if (entries.isEmpty() == false) {
             return new SnapshotInfo(entries.iterator().next());
         }

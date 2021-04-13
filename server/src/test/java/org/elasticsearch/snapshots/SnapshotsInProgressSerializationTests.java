@@ -51,7 +51,11 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
         for (int i = 0; i < numberOfSnapshots; i++) {
             entries.add(randomSnapshot());
         }
-        return SnapshotsInProgress.of(entries);
+        return SnapshotsInProgress.of(entries.stream().collect(Collectors.toMap(Entry::repository, Collections::singletonList, (a, b) -> {
+            final ArrayList<Entry> l = new ArrayList<>(a);
+            l.addAll(b);
+            return l;
+        })));
     }
 
     private Entry randomSnapshot() {
@@ -89,7 +93,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
 
     @Override
     protected Writeable.Reader<Custom> instanceReader() {
-        return SnapshotsInProgress::new;
+        return SnapshotsInProgress::read;
     }
 
     @Override
@@ -117,7 +121,11 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
                 }
             }
         }
-        return SnapshotsInProgress.of(entries);
+        return SnapshotsInProgress.of(entries.stream().collect(Collectors.toMap(Entry::repository, Collections::singletonList, (a, b) -> {
+            final ArrayList<Entry> l = new ArrayList<>(a);
+            l.addAll(b);
+            return l;
+        })));
     }
 
     @Override
@@ -147,7 +155,11 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
             Entry entry = entries.get(index);
             entries.set(index, mutateEntry(entry));
         }
-        return SnapshotsInProgress.of(entries);
+        return SnapshotsInProgress.of(entries.stream().collect(Collectors.toMap(Entry::repository, Collections::singletonList, (a, b) -> {
+            final ArrayList<Entry> l = new ArrayList<>(a);
+            l.addAll(b);
+            return l;
+        })));
     }
 
     private Entry mutateEntry(Entry entry) {
@@ -233,13 +245,13 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
 
     public void testXContent() throws IOException {
         SnapshotsInProgress sip =
-            SnapshotsInProgress.of(Collections.singletonList(new Entry(
+            SnapshotsInProgress.of(Collections.singletonMap("repo", List.of(new Entry(
                 new Snapshot("repo", new SnapshotId("name", "uuid")), true, true, State.SUCCESS,
                 Collections.singletonList(new IndexId("index", "uuid")), Collections.emptyList(), Collections.emptyList(), 1234567, 0,
                 ImmutableOpenMap.<ShardId, SnapshotsInProgress.ShardSnapshotStatus>builder()
                     .fPut(new ShardId("index", "uuid", 0),
                         new SnapshotsInProgress.ShardSnapshotStatus("nodeId", ShardState.SUCCESS, "reason", "generation"))
-                    .build(), null, null, Version.CURRENT)));
+                    .build(), null, null, Version.CURRENT))));
 
         try (XContentBuilder builder = jsonBuilder()) {
             builder.humanReadable(true);

@@ -144,7 +144,7 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
     private static List<SnapshotInfo> sortedCurrentSnapshots(SnapshotsInProgress snapshotsInProgress, String repositoryName) {
         List<SnapshotInfo> snapshotList = new ArrayList<>();
         List<SnapshotsInProgress.Entry> entries =
-            SnapshotsService.currentSnapshots(snapshotsInProgress, repositoryName, Collections.emptyList());
+            SnapshotsService.currentSnapshots(snapshotsInProgress, repositoryName, Collections.emptySet());
         for (SnapshotsInProgress.Entry entry : entries) {
             snapshotList.add(new SnapshotInfo(entry));
         }
@@ -223,7 +223,7 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
         final Set<SnapshotId> snapshotIdsToIterate = new HashSet<>(snapshotIds);
         // first, look at the snapshots in progress
         final List<SnapshotsInProgress.Entry> entries = SnapshotsService.currentSnapshots(
-            snapshotsInProgress, repositoryName, snapshotIdsToIterate.stream().map(SnapshotId::getName).collect(Collectors.toList()));
+            snapshotsInProgress, repositoryName, snapshotIdsToIterate.stream().map(SnapshotId::getName).collect(Collectors.toSet()));
         for (SnapshotsInProgress.Entry entry : entries) {
             if (snapshotIdsToIterate.remove(entry.snapshot().getSnapshotId())) {
                 snapshotSet.add(new SnapshotInfo(entry));

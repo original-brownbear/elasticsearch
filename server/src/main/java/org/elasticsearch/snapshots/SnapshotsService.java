@@ -171,7 +171,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     /**
      * Setting that specifies the maximum number of allowed concurrent snapshot create and delete operations in the
      * cluster state. The number of concurrent operations in a cluster state is defined as the sum of the sizes of
-     * {@link SnapshotsInProgress#entries()} and {@link SnapshotDeletionsInProgress#getEntries()}.
+     * {@link SnapshotsInProgress#entries(String)} and {@link SnapshotDeletionsInProgress#getEntries()}.
      */
     public static final Setting<Integer> MAX_CONCURRENT_SNAPSHOT_OPERATIONS_SETTING =
         Setting.intSetting("snapshot.max_concurrent_operations", 1000, 1, Setting.Property.NodeScope, Setting.Property.Dynamic);
@@ -780,46 +780,26 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param snapshots           list of snapshots that will be used as a filter, empty list means no snapshots are filtered
      * @return list of metadata for currently running snapshots
      */
-    public static List<SnapshotsInProgress.Entry> currentSnapshots(@Nullable SnapshotsInProgress snapshotsInProgress, String repository,
-                                                                   List<String> snapshots) {
-        if (snapshotsInProgress == null || snapshotsInProgress.entries().isEmpty()) {
+    public static List<SnapshotsInProgress.Entry> currentSnapshots(SnapshotsInProgress snapshotsInProgress, String repository,
+                                                                   Set<String> snapshots) {
+        if (snapshotsInProgress.entries().isEmpty()) {
             return Collections.emptyList();
         }
         if ("_all".equals(repository)) {
             return snapshotsInProgress.entries();
         }
-        if (snapshotsInProgress.entries().size() == 1) {
-            // Most likely scenario - one snapshot is currently running
-            // Check this snapshot against the query
-            SnapshotsInProgress.Entry entry = snapshotsInProgress.entries().get(0);
-            if (entry.snapshot().getRepository().equals(repository) == false) {
-                return Collections.emptyList();
-            }
-            if (snapshots.isEmpty() == false) {
-                for (String snapshot : snapshots) {
-                    if (entry.snapshot().getSnapshotId().getName().equals(snapshot)) {
-                        return snapshotsInProgress.entries();
-                    }
-                }
-                return Collections.emptyList();
-            } else {
-                return snapshotsInProgress.entries();
-            }
+        final List<SnapshotsInProgress.Entry> entries = snapshotsInProgress.entries(repository);
+        if (entries.isEmpty()) {
+            return Collections.emptyList();
         }
         List<SnapshotsInProgress.Entry> builder = new ArrayList<>();
-        for (SnapshotsInProgress.Entry entry : snapshotsInProgress.entries()) {
-            if (entry.snapshot().getRepository().equals(repository) == false) {
-                continue;
-            }
-            if (snapshots.isEmpty() == false) {
-                for (String snapshot : snapshots) {
-                    if (entry.snapshot().getSnapshotId().getName().equals(snapshot)) {
-                        builder.add(entry);
-                        break;
-                    }
-                }
-            } else {
+        for (SnapshotsInProgress.Entry entry : entries) {
+            if (snapshots.isEmpty()) {
                 builder.add(entry);
+            } else {
+                if (snapshots.contains(entry.snapshot().getSnapshotId().getName())) {
+                    builder.add(entry);
+                }
             }
         }
         return unmodifiableList(builder);

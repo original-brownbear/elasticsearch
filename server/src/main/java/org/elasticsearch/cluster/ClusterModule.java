@@ -115,7 +115,7 @@ public class ClusterModule extends AbstractModule {
     public static List<Entry> getNamedWriteables() {
         List<Entry> entries = new ArrayList<>();
         // Cluster State
-        registerClusterCustom(entries, SnapshotsInProgress.TYPE, SnapshotsInProgress::new, SnapshotsInProgress::readDiffFrom);
+        registerClusterCustom(entries, SnapshotsInProgress.TYPE, SnapshotsInProgress::read, SnapshotsInProgress::readDiffFrom);
         registerClusterCustom(entries, RestoreInProgress.TYPE, RestoreInProgress::new, RestoreInProgress::readDiffFrom);
         registerClusterCustom(entries, SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress::new,
             SnapshotDeletionsInProgress::readDiffFrom);
