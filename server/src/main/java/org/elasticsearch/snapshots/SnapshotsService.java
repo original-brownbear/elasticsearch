@@ -2309,14 +2309,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         }
 
         final Set<Index> indices = new HashSet<>();
-        for (String repoName : snapshots.activeRepositories()) {
-            for (final SnapshotsInProgress.Entry entry : snapshots.entries(repoName)) {
-                if (entry.partial() == false) {
-                    for (IndexId index : entry.indices()) {
-                        IndexMetadata indexMetadata = currentState.metadata().index(index.getName());
-                        if (indexMetadata != null && indicesToCheck.contains(indexMetadata.getIndex())) {
-                            indices.add(indexMetadata.getIndex());
-                        }
+        for (final SnapshotsInProgress.Entry entry : snapshots) {
+            if (entry.partial() == false) {
+                for (IndexId index : entry.indices()) {
+                    IndexMetadata indexMetadata = currentState.metadata().index(index.getName());
+                    if (indexMetadata != null && indicesToCheck.contains(indexMetadata.getIndex())) {
+                        indices.add(indexMetadata.getIndex());
                     }
                 }
             }
