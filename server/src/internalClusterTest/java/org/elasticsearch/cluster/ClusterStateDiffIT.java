@@ -700,10 +700,11 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
 
             @Override
             public ClusterState.Custom randomCreate(String name) {
+                final String repoName = randomName("repo");
                 switch (randomIntBetween(0, 1)) {
                     case 0:
-                        return SnapshotsInProgress.builder().with("repo", List.of(new SnapshotsInProgress.Entry(
-                                new Snapshot(randomName("repo"), new SnapshotId(randomName("snap"), UUIDs.randomBase64UUID())),
+                        return SnapshotsInProgress.builder().with(repoName, List.of(new SnapshotsInProgress.Entry(
+                                new Snapshot(repoName, new SnapshotId(randomName("snap"), UUIDs.randomBase64UUID())),
                                 randomBoolean(),
                                 randomBoolean(),
                                 SnapshotsInProgressSerializationTests.randomState(ImmutableOpenMap.of()),
@@ -719,7 +720,7 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
                         return new RestoreInProgress.Builder().add(
                             new RestoreInProgress.Entry(
                                 UUIDs.randomBase64UUID(),
-                                new Snapshot(randomName("repo"), new SnapshotId(randomName("snap"), UUIDs.randomBase64UUID())),
+                                new Snapshot(repoName, new SnapshotId(randomName("snap"), UUIDs.randomBase64UUID())),
                                 RestoreInProgress.State.fromValue((byte) randomIntBetween(0, 3)),
                                 emptyList(),
                                 ImmutableOpenMap.of())).build();

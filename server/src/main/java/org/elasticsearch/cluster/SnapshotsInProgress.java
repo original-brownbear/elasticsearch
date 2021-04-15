@@ -34,7 +34,6 @@ import org.elasticsearch.snapshots.SnapshotId;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,6 +49,8 @@ import java.util.stream.Collectors;
  */
 public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implements Custom, Iterable<SnapshotsInProgress.Entry> {
 
+    private static final Version COMPACT_SERIALIZATION_VERSION = Version.V_8_0_0;
+
     public static final SnapshotsInProgress EMPTY = new SnapshotsInProgress(Map.of());
 
     public static final String TYPE = "snapshots";
@@ -59,7 +60,24 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     private final Map<String, PerRepo> entries;
 
     public static SnapshotsInProgress readFrom(StreamInput in) throws IOException {
-        final List<Entry> asList = in.readList(SnapshotsInProgress.Entry::new);
+        if (in.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
+            final int size = in.readVInt();
+            final Map<String, PerRepo> map = new HashMap<>(size);
+            for (int i = 0; i < size; i++) {
+                final String repo = in.readString();
+                map.put(repo, PerRepo.readFrom(in, repo));
+            }
+            return new SnapshotsInProgress(Map.copyOf(map));
+        } else {
+            return readBwC(in);
+        }
+    }
+
+    private static SnapshotsInProgress readBwC(StreamInput in) throws IOException {
+        final List<Entry> asList = in.readList(inpt -> {
+            final String repository = inpt.readString();
+            return new Entry(inpt, repository, Map.of());
+        });
         final Map<String, List<Entry>> entryMap = new HashMap<>();
         for (Entry entry : asList) {
             entryMap.computeIfAbsent(entry.repository(), k -> new ArrayList<>()).add(entry);
@@ -76,8 +94,9 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         assert assertConsistentEntries();
     }
 
-    public Collection<String> activeRepositories() {
-        return entries.keySet();
+    public Map<String, IndexId> indexIdLookup(String repository) {
+        final PerRepo perRepo = entries.get(repository);
+        return perRepo == null ? Map.of() : perRepo.inFlightIndexIds;
     }
 
     public int size() {
@@ -91,14 +110,6 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     public List<Entry> entries(String repoName) {
         final PerRepo perRepo = this.entries.get(repoName);
         return perRepo == null ? Collections.emptyList() : perRepo.entries;
-    }
-
-    public static Builder builder() {
-        return new Builder(SnapshotsInProgress.EMPTY);
-    }
-
-    public static Builder builder(SnapshotsInProgress snapshots) {
-        return new Builder(snapshots);
     }
 
     public Entry snapshot(final Snapshot snapshot) {
@@ -127,6 +138,14 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
+        if (out.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
+            out.writeMap(entries, StreamOutput::writeString, (o, v) -> v.writeTo(o));
+        } else {
+            writeBwC(out);
+        }
+    }
+
+    private void writeBwC(StreamOutput out) throws IOException {
         out.writeList(entries.values().stream().flatMap(e -> e.entries.stream()).collect(Collectors.toList()));
     }
 
@@ -216,7 +235,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     }
 
     private boolean assertConsistentEntries() {
-        for (String repoName : activeRepositories()) {
+        for (String repoName : entries.keySet()) {
             final Set<Tuple<String, Integer>> assignedShards = new HashSet<>();
             final Set<Tuple<String, Integer>> queuedShards = new HashSet<>();
             final List<Entry> entriesForRepo = entries(repoName);
@@ -233,11 +252,19 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 }
             }
         }
-        for (String repoName : activeRepositories()) {
+        for (String repoName : entries.keySet()) {
             // make sure in-flight-shard-states can be built cleanly for the entries without tripping assertions
             InFlightShardSnapshotStates.forRepo(repoName, this);
         }
         return true;
+    }
+
+    public static Builder builder() {
+        return new Builder(SnapshotsInProgress.EMPTY);
+    }
+
+    public static Builder builder(SnapshotsInProgress snapshots) {
+        return new Builder(snapshots);
     }
 
     private static boolean assertShardStateConsistent(List<Entry> entries, Set<Tuple<String, Integer>> assignedShards,
@@ -259,18 +286,36 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         return entries.values().stream().flatMap(e -> e.entries.stream()).iterator();
     }
 
-    public static final class PerRepo {
-
-        private static final PerRepo EMPTY = new PerRepo(List.of());
+    private static final class PerRepo implements Writeable {
 
         private final List<Entry> entries;
 
-        private PerRepo(List<Entry> entries) {
+        private final Map<String, IndexId> inFlightIndexIds;
+
+        private static PerRepo readFrom(StreamInput input, String repoName) throws IOException {
+            final int indices = input.readVInt();
+            final Map<String, IndexId> indexLookup = new HashMap<>(indices);
+            for (int i = 0; i < indices; i++) {
+                final String name = input.readString();
+                final String id = input.readString();
+                indexLookup.put(name, new IndexId(name, id));
+            }
+            return new PerRepo(indexLookup, input.readList(in -> new Entry(in, repoName, indexLookup)));
+        }
+
+        private PerRepo(Map<String, IndexId> inFlightIndexIds, List<Entry> entries) {
+            assert entries.isEmpty() == false;
+            this.inFlightIndexIds = Map.copyOf(inFlightIndexIds);
             this.entries = List.copyOf(entries);
         }
 
-        private PerRepo withAddedEntry(Entry entry) {
-            return new PerRepo(CollectionUtils.appendToCopy(entries, entry));
+        private PerRepo withAddedEntry(Entry entry, Map<String, IndexId> entryIdxLookup) {
+            Map<String, IndexId> idxLookup = new HashMap<>(inFlightIndexIds);
+            idxLookup.putAll(entryIdxLookup);
+            if (idxLookup.size() == inFlightIndexIds.size()) {
+                idxLookup = inFlightIndexIds;
+            }
+            return new PerRepo(idxLookup, CollectionUtils.appendToCopy(entries, entry));
         }
 
         @Override
@@ -283,6 +328,16 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         @Override
         public int hashCode() {
             return entries.hashCode();
+        }
+
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {
+            out.writeVInt(inFlightIndexIds.size());
+            for (IndexId idx : inFlightIndexIds.values()) {
+                out.writeString(idx.getName());
+                out.writeString(idx.getId());
+            }
+            out.writeList(entries);
         }
     }
 
@@ -298,13 +353,25 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             if (entries.isEmpty()) {
                 snapshotsByRepo.remove(repo);
             } else {
-                snapshotsByRepo.put(repo, new PerRepo(entries));
+                Map<String, IndexId> idxLookup = new HashMap<>();
+                for (Entry entry : entries) {
+                    for (IndexId index : entry.indices) {
+                        idxLookup.put(index.getName(), index);
+                    }
+                }
+                snapshotsByRepo.put(repo, new PerRepo(idxLookup, entries));
             }
             return this;
         }
 
         public Builder add(Entry entry) {
-            snapshotsByRepo.put(entry.repository(), snapshotsByRepo.getOrDefault(entry.repository(), PerRepo.EMPTY).withAddedEntry(entry));
+            final Map<String, IndexId> entryIdxLookup = new HashMap<>(entry.indices.size());
+            for (IndexId index : entry.indices) {
+                entryIdxLookup.put(index.getName(), index);
+            }
+            snapshotsByRepo.put(entry.repository(), snapshotsByRepo.compute(entry.repository(),
+                    (k, perRepo) -> perRepo == null ? new PerRepo(entryIdxLookup, List.of(entry))
+                            : perRepo.withAddedEntry(entry, entryIdxLookup)));
             return this;
         }
 
@@ -601,12 +668,20 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             assert assertShardsConsistent(this.source, this.state, this.indices, this.shards, this.clones);
         }
 
-        private Entry(StreamInput in) throws IOException {
-            snapshot = new Snapshot(in);
+        private Entry(StreamInput in, String repoName, Map<String, IndexId> idxLookup) throws IOException {
+            snapshot = new Snapshot(repoName, new SnapshotId(in));
             includeGlobalState = in.readBoolean();
             partial = in.readBoolean();
             state = State.fromValue(in.readByte());
-            indices = in.readList(IndexId::new);
+            if (in.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
+                final int indexCount = in.readVInt();
+                indices = new ArrayList<>(indexCount);
+                for (int i = 0; i < indexCount; i++) {
+                    indices.add(Objects.requireNonNull(idxLookup.get(in.readString())));
+                }
+            } else {
+                indices = in.readList(IndexId::new);
+            }
             startTime = in.readLong();
             shards = in.readImmutableMap(ShardId::new, ShardSnapshotStatus::readFrom);
             repositoryStateId = in.readLong();
@@ -916,11 +991,22 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            snapshot.writeTo(out);
+            if (out.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
+                snapshot.getSnapshotId().writeTo(out);
+            } else {
+                snapshot.writeTo(out);
+            }
             out.writeBoolean(includeGlobalState);
             out.writeBoolean(partial);
             out.writeByte(state.value());
-            out.writeList(indices);
+            if (out.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
+                out.writeVInt(indices.size());
+                for (IndexId index : indices) {
+                    out.writeString(index.getName());
+                }
+            } else {
+                out.writeList(indices);
+            }
             out.writeLong(startTime);
             out.writeMap(shards);
             out.writeLong(repositoryStateId);

@@ -201,7 +201,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
                     entry.dataStreams(), entry.featureStates(), entry.startTime(), entry.repositoryStateId(), entry.shards(), failure,
                     entry.userMetadata(), entry.version());
             case 6:
-                List<IndexId> indices = entry.indices();
+                List<IndexId> indices = new ArrayList<>(entry.indices());
                 ImmutableOpenMap<ShardId, SnapshotsInProgress.ShardSnapshotStatus> shards = entry.shards();
                 IndexId indexId = new IndexId(randomAlphaOfLength(10), randomAlphaOfLength(10));
                 indices.add(indexId);
