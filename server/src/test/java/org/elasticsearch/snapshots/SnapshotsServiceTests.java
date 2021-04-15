@@ -361,8 +361,11 @@ public class SnapshotsServiceTests extends ESTestCase {
     }
 
     private static ClusterState stateWithSnapshots(ClusterState state, SnapshotsInProgress.Entry... entries) {
-        return ClusterState.builder(state).version(state.version() + 1L)
-                .putCustom(SnapshotsInProgress.TYPE, SnapshotsInProgress.of(Arrays.asList(entries))).build();
+        final SnapshotsInProgress.Builder builder = SnapshotsInProgress.builder();
+        for (SnapshotsInProgress.Entry entry : entries) {
+            builder.add(entry);
+        }
+        return ClusterState.builder(state).version(state.version() + 1L).putCustom(SnapshotsInProgress.TYPE, builder.build()).build();
     }
 
     private static ClusterState stateWithSnapshots(SnapshotsInProgress.Entry... entries) {

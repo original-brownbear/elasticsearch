@@ -1986,7 +1986,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         final String repoName = metadata.name();
         final SnapshotsInProgress updatedSnapshotsInProgress;
         boolean changedSnapshots = false;
-        final List<SnapshotsInProgress.Entry> snapshotEntries = new ArrayList<>();
+        final SnapshotsInProgress.Builder snapshotEntries = SnapshotsInProgress.builder();
         for (SnapshotsInProgress.Entry entry : state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries()) {
             if (entry.repository().equals(repoName) && entry.repositoryStateId() == oldGen) {
                 snapshotEntries.add(entry.withRepoGen(newGen));
@@ -1995,7 +1995,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 snapshotEntries.add(entry);
             }
         }
-        updatedSnapshotsInProgress = changedSnapshots ? SnapshotsInProgress.of(snapshotEntries) : null;
+        updatedSnapshotsInProgress = changedSnapshots ? snapshotEntries.build() : null;
         final SnapshotDeletionsInProgress updatedDeletionsInProgress;
         boolean changedDeletions = false;
         final List<SnapshotDeletionsInProgress.Entry> deletionEntries = new ArrayList<>();

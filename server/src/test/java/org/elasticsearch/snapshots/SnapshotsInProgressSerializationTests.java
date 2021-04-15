@@ -47,11 +47,11 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
     @Override
     protected Custom createTestInstance() {
         int numberOfSnapshots = randomInt(10);
-        List<Entry> entries = new ArrayList<>();
+        final SnapshotsInProgress.Builder builder = SnapshotsInProgress.builder();
         for (int i = 0; i < numberOfSnapshots; i++) {
-            entries.add(randomSnapshot());
+            builder.add(randomSnapshot());
         }
-        return SnapshotsInProgress.of(entries);
+        return builder.build();
     }
 
     private Entry randomSnapshot() {
@@ -89,7 +89,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
 
     @Override
     protected Writeable.Reader<Custom> instanceReader() {
-        return SnapshotsInProgress::new;
+        return SnapshotsInProgress::readFrom;
     }
 
     @Override
@@ -117,7 +117,11 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
                 }
             }
         }
-        return SnapshotsInProgress.of(entries);
+        final SnapshotsInProgress.Builder builder = SnapshotsInProgress.builder();
+        for (Entry entry : entries) {
+            builder.add(entry);
+        }
+        return builder.build();
     }
 
     @Override
@@ -147,7 +151,11 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
             Entry entry = entries.get(index);
             entries.set(index, mutateEntry(entry));
         }
-        return SnapshotsInProgress.of(entries);
+        final SnapshotsInProgress.Builder builder = SnapshotsInProgress.builder();
+        for (Entry entry : entries) {
+            builder.add(entry);
+        }
+        return builder.build();
     }
 
     private Entry mutateEntry(Entry entry) {
@@ -186,7 +194,7 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
                     entry.dataStreams(), entry.featureStates(), entry.startTime(), entry.repositoryStateId(), entry.shards(), failure,
                     entry.userMetadata(), entry.version());
             case 6:
-                List<IndexId> indices = entry.indices();
+                List<IndexId> indices = new ArrayList<>(entry.indices());
                 ImmutableOpenMap<ShardId, SnapshotsInProgress.ShardSnapshotStatus> shards = entry.shards();
                 IndexId indexId = new IndexId(randomAlphaOfLength(10), randomAlphaOfLength(10));
                 indices.add(indexId);
@@ -233,13 +241,13 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
 
     public void testXContent() throws IOException {
         SnapshotsInProgress sip =
-            SnapshotsInProgress.of(Collections.singletonList(new Entry(
+            SnapshotsInProgress.builder().add(new Entry(
                 new Snapshot("repo", new SnapshotId("name", "uuid")), true, true, State.SUCCESS,
                 Collections.singletonList(new IndexId("index", "uuid")), Collections.emptyList(), Collections.emptyList(), 1234567, 0,
                 ImmutableOpenMap.<ShardId, SnapshotsInProgress.ShardSnapshotStatus>builder()
                     .fPut(new ShardId("index", "uuid", 0),
                         new SnapshotsInProgress.ShardSnapshotStatus("nodeId", ShardState.SUCCESS, "reason", "generation"))
-                    .build(), null, null, Version.CURRENT)));
+                    .build(), null, null, Version.CURRENT)).build();
 
         try (XContentBuilder builder = jsonBuilder()) {
             builder.humanReadable(true);

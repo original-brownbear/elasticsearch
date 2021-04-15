@@ -32,9 +32,11 @@ import org.elasticsearch.snapshots.SnapshotFeatureInfo;
 import org.elasticsearch.snapshots.SnapshotId;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -46,7 +48,9 @@ import java.util.stream.Collectors;
  */
 public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implements Custom {
 
-    public static final SnapshotsInProgress EMPTY = new SnapshotsInProgress(List.of());
+    public static final SnapshotsInProgress EMPTY = new SnapshotsInProgress(List.of(), Map.of());
+
+    private static final Version COMPACT_SERIALIZATION_VERSION = Version.V_8_0_0;
 
     public static final String TYPE = "snapshots";
 
@@ -54,20 +58,47 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     private final List<Entry> entries;
 
-    public static SnapshotsInProgress of(List<Entry> entries) {
-        if (entries.isEmpty()) {
-            return EMPTY;
+    private final Map<String, Map<String, IndexId>> indexIdLookup;
+
+    public static SnapshotsInProgress readFrom(StreamInput input) throws IOException {
+        final boolean compactSerialization = input.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION);
+        final Map<String, Map<String, IndexId>> indexIdLookup;
+        if (compactSerialization) {
+            indexIdLookup = input.readMap(StreamInput::readString, in -> {
+                final int lookupSize = in.readVInt();
+                final Map<String, IndexId> lookup = new HashMap<>(lookupSize);
+                for (int i = 0; i < lookupSize; i++) {
+                    final String name = in.readString();
+                    final String id = in.readString();
+                    lookup.put(name, new IndexId(name, id));
+                }
+                return lookup;
+            });
+        } else {
+            indexIdLookup = Map.of();
         }
-        return new SnapshotsInProgress(Collections.unmodifiableList(entries));
+        final List<Entry> entries = input.readList(inpt -> {
+            Snapshot snapshot = new Snapshot(inpt);
+            return new Entry(inpt, snapshot, indexIdLookup.getOrDefault(snapshot.getRepository(), Map.of()));
+        });
+        // TODO: smarter
+        final Builder builder = new Builder(Collections.emptyList(), Collections.emptyMap());
+        for (Entry entry : entries) {
+            builder.add(entry);
+        }
+        // TODO: this copy is stupid, it's just to make tests happy
+        final SnapshotsInProgress snapshotsInProgress = builder.build();
+        return new SnapshotsInProgress(snapshotsInProgress.entries, snapshotsInProgress.indexIdLookup);
     }
 
-    public SnapshotsInProgress(StreamInput in) throws IOException {
-        this(in.readList(SnapshotsInProgress.Entry::new));
-    }
-
-    private SnapshotsInProgress(List<Entry> entries) {
+    private SnapshotsInProgress(List<Entry> entries, Map<String, Map<String, IndexId>> indexIdLookup) {
         this.entries = entries;
+        this.indexIdLookup = indexIdLookup;
         assert assertConsistentEntries(entries);
+    }
+
+    public Map<String, IndexId> indexIdLookup(String repoName) {
+        return indexIdLookup.getOrDefault(repoName, Collections.emptyMap());
     }
 
     public List<Entry> entries() {
@@ -100,6 +131,10 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
+        if (out.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
+            out.writeMap(indexIdLookup, StreamOutput::writeString, (output, v) ->
+                    output.writeMap(v, StreamOutput::writeString, (oo, vv) -> oo.writeString(vv.getId())));
+        }
         out.writeList(entries);
     }
 
@@ -227,6 +262,89 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             queuedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>()).add(Tuple.tuple(indexName, shardId));
         }
         return true;
+    }
+
+    public static Builder builder() {
+        return builder(EMPTY);
+    }
+
+    public static Builder builder(SnapshotsInProgress snapshots) {
+        return new Builder(snapshots.entries(), snapshots.indexIdLookup);
+    }
+
+    public static final class Builder {
+
+        private List<Entry> entries;
+
+        private Map<String, Map<String, IndexId>> indexIdLookup;
+
+        private Builder(List<Entry> entries, Map<String, Map<String, IndexId>> indexIdLookup) {
+            this.entries = new ArrayList<>(entries);
+            this.indexIdLookup = new HashMap<>(indexIdLookup.size());
+            for (Map.Entry<String, Map<String, IndexId>> kv : indexIdLookup.entrySet()) {
+                this.indexIdLookup.put(kv.getKey(), new HashMap<>(kv.getValue()));
+            }
+        }
+
+        public Builder add(Entry entry) {
+            assert assertMutable();
+            entries.add(entry);
+            for (IndexId index : entry.indices) {
+                indexIdLookup.computeIfAbsent(entry.repository(), k -> new HashMap<>()).put(index.getName(), index);
+            }
+            return this;
+        }
+
+        public Builder remove(Snapshot snapshot) {
+            assert assertMutable();
+            boolean removed = false;
+            for (Iterator<Entry> iterator = entries.iterator(); iterator.hasNext(); ) {
+                Entry entry = iterator.next();
+                if (entry.snapshot().equals(snapshot)) {
+                    iterator.remove();
+                    removed = true;
+                    break;
+                }
+            }
+            if (removed) {
+                final String repoName = snapshot.getRepository();
+                final Map<String, IndexId> idxLookup = indexIdLookup.get(repoName);
+                if (idxLookup != null) {
+                    idxLookup.clear();
+                    for (Entry entry : entries) {
+                        if (entry.repository().equals(repoName)) {
+                            for (IndexId index : entry.indices) {
+                                idxLookup.put(index.getName(), index);
+                            }
+                        }
+                    }
+                }
+            }
+            return this;
+        }
+
+        public SnapshotsInProgress build() {
+            assert assertMutable();
+            if (entries.isEmpty()) {
+                entries = null;
+                indexIdLookup = null;
+                return EMPTY;
+            }
+            for (Map.Entry<String, Map<String, IndexId>> kv : indexIdLookup.entrySet()) {
+                Map<String, IndexId> lookup = kv.getValue();
+                kv.setValue(Map.copyOf(lookup));
+            }
+            final SnapshotsInProgress res = new SnapshotsInProgress(List.copyOf(entries), Map.copyOf(indexIdLookup));
+            entries = null;
+            indexIdLookup = null;
+            return res;
+        }
+
+        private boolean assertMutable() {
+            assert entries != null;
+            assert indexIdLookup != null;
+            return true;
+        }
     }
 
     public enum ShardState {
@@ -498,7 +616,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this.snapshot = snapshot;
             this.includeGlobalState = includeGlobalState;
             this.partial = partial;
-            this.indices = indices;
+            this.indices = List.copyOf(indices);
             this.dataStreams = dataStreams;
             this.featureStates = Collections.unmodifiableList(featureStates);
             this.startTime = startTime;
@@ -517,12 +635,16 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             assert assertShardsConsistent(this.source, this.state, this.indices, this.shards, this.clones);
         }
 
-        private Entry(StreamInput in) throws IOException {
-            snapshot = new Snapshot(in);
+        private Entry(StreamInput in, Snapshot snapshot, Map<String, IndexId> indexIdLookup) throws IOException {
+            this.snapshot = snapshot;
             includeGlobalState = in.readBoolean();
             partial = in.readBoolean();
             state = State.fromValue(in.readByte());
-            indices = in.readList(IndexId::new);
+            if (in.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
+                indices = List.copyOf(in.readList(inpt -> Objects.requireNonNull(indexIdLookup.get(inpt.readString()))));
+            } else {
+                indices = in.readList(IndexId::new);
+            }
             startTime = in.readLong();
             shards = in.readImmutableMap(ShardId::new, ShardSnapshotStatus::readFrom);
             repositoryStateId = in.readLong();
@@ -836,7 +958,14 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             out.writeBoolean(includeGlobalState);
             out.writeBoolean(partial);
             out.writeByte(state.value());
-            out.writeList(indices);
+            if (out.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
+                out.writeVInt(indices.size());
+                for (IndexId index : indices) {
+                    out.writeString(index.getName());
+                }
+            } else {
+                out.writeList(indices);
+            }
             out.writeLong(startTime);
             out.writeMap(shards);
             out.writeLong(repositoryStateId);

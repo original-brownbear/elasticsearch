@@ -87,9 +87,10 @@ public class DeleteDataStreamTransportActionTests extends ESTestCase {
             List.of(new Tuple<>(dataStreamName, 2), new Tuple<>(dataStreamName2, 2)),
             otherIndices
         );
-        SnapshotsInProgress snapshotsInProgress = SnapshotsInProgress.of(
-            List.of(createEntry(dataStreamName, "repo1", false), createEntry(dataStreamName2, "repo2", true))
-        );
+        SnapshotsInProgress snapshotsInProgress = SnapshotsInProgress.builder()
+            .add(createEntry(dataStreamName, "repo1", false))
+            .add(createEntry(dataStreamName2, "repo2", true))
+            .build();
         ClusterState snapshotCs = ClusterState.builder(cs).putCustom(SnapshotsInProgress.TYPE, snapshotsInProgress).build();
 
         DeleteDataStreamAction.Request req = new DeleteDataStreamAction.Request(new String[] { dataStreamName });
