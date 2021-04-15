@@ -189,7 +189,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                                      Map<String, Object> userMetadata, Version version, List<SnapshotFeatureInfo> featureStates) {
         return new SnapshotsInProgress.Entry(snapshot, includeGlobalState, partial,
                 completed(shards.values()) ? State.SUCCESS : State.STARTED,
-                indices, dataStreams, featureStates, startTime, repositoryStateId, shards, null, userMetadata, version);
+                indicesToLookup(indices), dataStreams, featureStates, startTime, repositoryStateId, shards, null, userMetadata, version);
     }
 
     /**
@@ -205,7 +205,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
      */
     public static Entry startClone(Snapshot snapshot, SnapshotId source, List<IndexId> indices, long startTime,
                                    long repositoryStateId, Version version) {
-        return new SnapshotsInProgress.Entry(snapshot, true, false, State.STARTED, indices, Collections.emptyList(),
+        return new SnapshotsInProgress.Entry(snapshot, true, false, State.STARTED, indicesToLookup(indices), Collections.emptyList(),
             Collections.emptyList(), startTime, repositoryStateId, ImmutableOpenMap.of(), null, Collections.emptyMap(), version,
             source, ImmutableOpenMap.of());
     }
@@ -223,6 +223,14 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             }
         }
         return true;
+    }
+
+    private static Map<String, IndexId> indicesToLookup(List<IndexId> list) {
+        final Map<String, IndexId> lookup = new HashMap<>(list.size());
+        for (IndexId index : list) {
+            lookup.put(index.getName(), index);
+        }
+        return Map.copyOf(lookup);
     }
 
     private static boolean hasFailures(ImmutableOpenMap<RepositoryShardId, ShardSnapshotStatus> clones) {
@@ -355,9 +363,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             } else {
                 Map<String, IndexId> idxLookup = new HashMap<>();
                 for (Entry entry : entries) {
-                    for (IndexId index : entry.indices) {
-                        idxLookup.put(index.getName(), index);
-                    }
+                    idxLookup.putAll(entry.indices);
                 }
                 snapshotsByRepo.put(repo, new PerRepo(idxLookup, entries));
             }
@@ -365,13 +371,9 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         }
 
         public Builder add(Entry entry) {
-            final Map<String, IndexId> entryIdxLookup = new HashMap<>(entry.indices.size());
-            for (IndexId index : entry.indices) {
-                entryIdxLookup.put(index.getName(), index);
-            }
             snapshotsByRepo.put(entry.repository(), snapshotsByRepo.compute(entry.repository(),
-                    (k, perRepo) -> perRepo == null ? new PerRepo(entryIdxLookup, List.of(entry))
-                            : perRepo.withAddedEntry(entry, entryIdxLookup)));
+                    (k, perRepo) -> perRepo == null ? new PerRepo(entry.indices, List.of(entry))
+                            : perRepo.withAddedEntry(entry, entry.indices)));
             return this;
         }
 
@@ -609,7 +611,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
          * Map of {@link ShardId} to {@link ShardSnapshotStatus} tracking the state of each shard snapshot operation.
          */
         private final ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards;
-        private final List<IndexId> indices;
+        private final Map<String, IndexId> indices;
         private final List<String> dataStreams;
         private final List<SnapshotFeatureInfo> featureStates;
         private final long startTime;
@@ -632,7 +634,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         @Nullable private final String failure;
 
         // visible for testing, use #startedEntry and copy constructors in production code
-        public Entry(Snapshot snapshot, boolean includeGlobalState, boolean partial, State state, List<IndexId> indices,
+        public Entry(Snapshot snapshot, boolean includeGlobalState, boolean partial, State state, Map<String, IndexId> indices,
                      List<String> dataStreams, List<SnapshotFeatureInfo> featureStates, long startTime, long repositoryStateId,
                      ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, String failure, Map<String, Object> userMetadata,
                      Version version) {
@@ -640,7 +642,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                     failure, userMetadata, version, null, ImmutableOpenMap.of());
         }
 
-        private Entry(Snapshot snapshot, boolean includeGlobalState, boolean partial, State state, List<IndexId> indices,
+        private Entry(Snapshot snapshot, boolean includeGlobalState, boolean partial, State state, Map<String, IndexId> indices,
                       List<String> dataStreams, List<SnapshotFeatureInfo> featureStates, long startTime, long repositoryStateId,
                       ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards, String failure, Map<String, Object> userMetadata,
                       Version version, @Nullable SnapshotId source,
@@ -649,7 +651,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this.snapshot = snapshot;
             this.includeGlobalState = includeGlobalState;
             this.partial = partial;
-            this.indices = indices;
+            this.indices = Map.copyOf(indices);
             this.dataStreams = dataStreams;
             this.featureStates = Collections.unmodifiableList(featureStates);
             this.startTime = startTime;
@@ -665,7 +667,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             } else {
                 this.clones = clones;
             }
-            assert assertShardsConsistent(this.source, this.state, this.indices, this.shards, this.clones);
+            assert assertShardsConsistent(this.source, this.state, this.indices.keySet(), this.shards, this.clones);
         }
 
         private Entry(StreamInput in, String repoName, Map<String, IndexId> idxLookup) throws IOException {
@@ -675,12 +677,18 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             state = State.fromValue(in.readByte());
             if (in.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
                 final int indexCount = in.readVInt();
-                indices = new ArrayList<>(indexCount);
+                indices = new HashMap<>(indexCount);
                 for (int i = 0; i < indexCount; i++) {
-                    indices.add(Objects.requireNonNull(idxLookup.get(in.readString())));
+                    final String name = in.readString();
+                    final IndexId indexId = idxLookup.get(name);
+                    indices.put(indexId.getName(), indexId);
                 }
             } else {
-                indices = in.readList(IndexId::new);
+                final List<IndexId> idxList = in.readList(IndexId::new);
+                indices = new HashMap<>(idxList.size());
+                for (IndexId indexId : idxList) {
+                    indices.put(indexId.getName(), indexId);
+                }
             }
             startTime = in.readLong();
             shards = in.readImmutableMap(ShardId::new, ShardSnapshotStatus::readFrom);
@@ -694,13 +702,12 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             featureStates = Collections.unmodifiableList(in.readList(SnapshotFeatureInfo::new));
         }
 
-        private static boolean assertShardsConsistent(SnapshotId source, State state, List<IndexId> indices,
+        private static boolean assertShardsConsistent(SnapshotId source, State state, Set<String> indexNames,
                                                       ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards,
                                                       ImmutableOpenMap<RepositoryShardId, ShardSnapshotStatus> clones) {
             if ((state == State.INIT || state == State.ABORTED) && shards.isEmpty()) {
                 return true;
             }
-            final Set<String> indexNames = indices.stream().map(IndexId::getName).collect(Collectors.toSet());
             final Set<String> indexNamesInShards = new HashSet<>();
             shards.iterator().forEachRemaining(s -> {
                 indexNamesInShards.add(s.key.getIndexName());
@@ -822,7 +829,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             return state;
         }
 
-        public List<IndexId> indices() {
+        public Map<String, IndexId> indices() {
             return indices;
         }
 
@@ -941,7 +948,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             builder.field("state", state);
             builder.startArray("indices");
             {
-                for (IndexId index : indices) {
+                for (IndexId index : indices.values()) {
                     index.toXContent(builder, params);
                 }
             }
@@ -1001,11 +1008,11 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             out.writeByte(state.value());
             if (out.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
                 out.writeVInt(indices.size());
-                for (IndexId index : indices) {
-                    out.writeString(index.getName());
+                for (String index : indices.keySet()) {
+                    out.writeString(index);
                 }
             } else {
-                out.writeList(indices);
+                out.writeCollection(indices.values());
             }
             out.writeLong(startTime);
             out.writeMap(shards);

@@ -51,6 +51,7 @@ import org.elasticsearch.test.ESIntegTestCase;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.emptyList;
@@ -708,7 +709,7 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
                                 randomBoolean(),
                                 randomBoolean(),
                                 SnapshotsInProgressSerializationTests.randomState(ImmutableOpenMap.of()),
-                                Collections.emptyList(),
+                                Map.of(),
                                 Collections.emptyList(),
                                 Collections.emptyList(),
                                 Math.abs(randomLong()), randomIntBetween(0, 1000),

@@ -462,7 +462,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param cloneEntry     clone operation in the cluster state
      */
     private void startCloning(Repository repository, SnapshotsInProgress.Entry cloneEntry) {
-        final List<IndexId> indices = cloneEntry.indices();
+        final Collection<IndexId> indices = cloneEntry.indices().values();
         final SnapshotId sourceSnapshot = cloneEntry.source();
         final Snapshot targetSnapshot = cloneEntry.snapshot();
 
@@ -673,8 +673,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     private static ShardGenerations buildGenerations(SnapshotsInProgress.Entry snapshot, Metadata metadata) {
         ShardGenerations.Builder builder = ShardGenerations.builder();
-        final Map<String, IndexId> indexLookup = new HashMap<>();
-        snapshot.indices().forEach(idx -> indexLookup.put(idx.getName(), idx));
+        final Map<String, IndexId> indexLookup = snapshot.indices();
         if (snapshot.isClone()) {
             snapshot.clones().forEach(c -> {
                 final IndexId indexId = indexLookup.get(c.key.indexName());
@@ -701,7 +700,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         if (snapshot.includeGlobalState() == false) {
             // Remove global state from the cluster state
             builder = Metadata.builder();
-            for (IndexId index : snapshot.indices()) {
+            for (IndexId index : snapshot.indices().values()) {
                 final IndexMetadata indexMetadata = metadata.index(index.getName());
                 if (indexMetadata == null) {
                     assert snapshot.partial() : "Index [" + index + "] was deleted during a snapshot but snapshot was not partial.";
@@ -715,7 +714,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         // Only keep those data streams in the metadata that were actually requested by the initial snapshot create operation and that have
         // all their indices contained in the snapshot
         final Map<String, DataStream> dataStreams = new HashMap<>();
-        final Set<String> indicesInSnapshot = snapshot.indices().stream().map(IndexId::getName).collect(Collectors.toSet());
+        final Set<String> indicesInSnapshot = snapshot.indices().keySet();
         for (String dataStreamName : snapshot.dataStreams()) {
             DataStream dataStream = metadata.dataStreams().get(dataStreamName);
             if (dataStream == null) {
@@ -1199,7 +1198,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             final Metadata existing = repo.getSnapshotGlobalMetadata(entry.source());
                             final Metadata.Builder metaBuilder = Metadata.builder(existing);
                             final Set<Index> existingIndices = new HashSet<>();
-                            for (IndexId index : entry.indices()) {
+                            for (IndexId index : entry.indices().values()) {
                                 final IndexMetadata indexMetadata = repo.getSnapshotIndexMetaData(repositoryData, entry.source(), index);
                                 existingIndices.add(indexMetadata.getIndex());
                                 metaBuilder.put(indexMetadata, false);
@@ -2105,7 +2104,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         } else {
                             if (shardAssignments == null) {
                                 shardAssignments = shards(snapshotsInProgress,
-                                        updatedDeletions, currentState.metadata(), currentState.routingTable(), entry.indices(),
+                                        updatedDeletions, currentState.metadata(), currentState.routingTable(), entry.indices().values(),
                                         entry.version().onOrAfter(SHARD_GEN_IN_REPO_DATA_VERSION), repositoryData, repoName);
                             }
                             final ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> updatedAssignmentsBuilder =
@@ -2203,7 +2202,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      */
     private static ImmutableOpenMap<ShardId, SnapshotsInProgress.ShardSnapshotStatus> shards(
             SnapshotsInProgress snapshotsInProgress, SnapshotDeletionsInProgress deletionsInProgress,
-            Metadata metadata, RoutingTable routingTable, List<IndexId> indices, boolean useShardGenerations,
+            Metadata metadata, RoutingTable routingTable, Collection<IndexId> indices, boolean useShardGenerations,
             RepositoryData repositoryData, String repoName) {
         ImmutableOpenMap.Builder<ShardId, SnapshotsInProgress.ShardSnapshotStatus> builder = ImmutableOpenMap.builder();
         final ShardGenerations shardGenerations = repositoryData.shardGenerations();
@@ -2302,8 +2301,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         final Set<Index> indices = new HashSet<>();
         for (final SnapshotsInProgress.Entry entry : snapshots) {
             if (entry.partial() == false) {
-                for (IndexId index : entry.indices()) {
-                    IndexMetadata indexMetadata = currentState.metadata().index(index.getName());
+                for (String index : entry.indices().keySet()) {
+                    IndexMetadata indexMetadata = currentState.metadata().index(index);
                     if (indexMetadata != null && indicesToCheck.contains(indexMetadata.getIndex())) {
                         indices.add(indexMetadata.getIndex());
                     }
@@ -2515,14 +2514,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             // We applied the update for a shard snapshot state to its snapshot entry, now check if we can update
                             // either a clone or a snapshot
                             if (entry.isClone()) {
-                                // Since we updated a normal snapshot we need to translate its shard ids to repository shard ids which
-                                // requires a lookup for the index ids
-                                if (indicesLookup == null) {
-                                    indicesLookup =
-                                            entry.indices().stream().collect(Collectors.toMap(IndexId::getName, Function.identity()));
-                                }
                                 // shard snapshot was completed, we check if we can start a clone operation for the same repo shard
-                                final IndexId indexId = indicesLookup.get(finishedShardId.getIndexName());
+                                final IndexId indexId = entry.indices().get(finishedShardId.getIndexName());
                                 // If the lookup finds the index id then at least the entry is concerned with the index id just updated
                                 // so we check on a shard level
                                 if (indexId != null) {

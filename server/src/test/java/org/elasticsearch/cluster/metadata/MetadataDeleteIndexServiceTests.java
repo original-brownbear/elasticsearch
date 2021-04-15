@@ -32,19 +32,18 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
 
 public class MetadataDeleteIndexServiceTests extends ESTestCase {
     private AllocationService allocationService;
@@ -71,7 +70,7 @@ public class MetadataDeleteIndexServiceTests extends ESTestCase {
         String index = randomAlphaOfLength(5);
         Snapshot snapshot = new Snapshot("doesn't matter", new SnapshotId("snapshot name", "snapshot uuid"));
         SnapshotsInProgress snaps = SnapshotsInProgress.builder().add(new SnapshotsInProgress.Entry(snapshot, true, false,
-                SnapshotsInProgress.State.INIT, singletonList(new IndexId(index, "doesn't matter")),
+                SnapshotsInProgress.State.INIT, Map.of(index, new IndexId(index, "doesn't matter")),
                 Collections.emptyList(), Collections.emptyList(), System.currentTimeMillis(), (long) randomIntBetween(0, 1000),
                 ImmutableOpenMap.of(), null, SnapshotInfoTestUtils.randomUserMetadata(), VersionUtils.randomVersion(random()))).build();
         ClusterState state = ClusterState.builder(clusterState(index))

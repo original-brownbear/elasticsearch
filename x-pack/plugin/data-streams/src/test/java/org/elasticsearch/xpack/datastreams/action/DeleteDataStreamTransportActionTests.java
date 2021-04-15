@@ -28,6 +28,7 @@ import org.elasticsearch.xpack.core.action.DeleteDataStreamAction;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -114,7 +115,7 @@ public class DeleteDataStreamTransportActionTests extends ESTestCase {
             false,
             partial,
             SnapshotsInProgress.State.SUCCESS,
-            Collections.emptyList(),
+            Map.of(),
             List.of(dataStreamName),
             Collections.emptyList(),
             0,
