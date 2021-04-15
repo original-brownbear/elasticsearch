@@ -2403,7 +2403,6 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
                 ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> shards = null;
                 ImmutableOpenMap.Builder<RepositoryShardId, ShardSnapshotStatus> clones = null;
-                Map<String, IndexId> indicesLookup = null;
                 // inner loop over all the shard updates that are potentially applicable to the current snapshot entry
                 for (Iterator<ShardSnapshotUpdate> iterator = repoAndTasks.getValue().iterator(); iterator.hasNext(); ) {
                     final ShardSnapshotUpdate updateSnapshotState = iterator.next();
