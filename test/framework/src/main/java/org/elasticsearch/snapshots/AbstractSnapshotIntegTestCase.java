@@ -457,8 +457,8 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
 
     protected void awaitNoMoreRunningOperations(String viaNode) throws Exception {
         logger.info("--> verify no more operations in the cluster state");
-        awaitClusterState(viaNode, state -> state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).allEntries().isEmpty() &&
-                state.custom(SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress.EMPTY).hasDeletionsInProgress() == false);
+        awaitClusterState(viaNode, state -> state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).size() == 0
+            && state.custom(SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress.EMPTY).hasDeletionsInProgress() == false);
     }
 
     protected void awaitClusterState(Predicate<ClusterState> statePredicate) throws Exception {
@@ -512,7 +512,7 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
     protected void awaitNumberOfSnapshotsInProgress(int count) throws Exception {
         logger.info("--> wait for [{}] snapshots to show up in the cluster state", count);
         awaitClusterState(state ->
-                state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).allEntries().size() == count);
+                state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).size() == count);
     }
 
     protected SnapshotInfo assertSuccessful(ActionFuture<CreateSnapshotResponse> future) throws Exception {

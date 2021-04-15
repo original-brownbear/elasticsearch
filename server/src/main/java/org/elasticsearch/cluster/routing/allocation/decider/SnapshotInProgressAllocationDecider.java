@@ -49,7 +49,7 @@ public class SnapshotInProgressAllocationDecider extends AllocationDecider {
             // Only primary shards are snapshotted
 
             SnapshotsInProgress snapshotsInProgress = allocation.custom(SnapshotsInProgress.TYPE);
-            if (snapshotsInProgress == null || snapshotsInProgress.activeRepositories().isEmpty()) {
+            if (snapshotsInProgress == null || snapshotsInProgress.size() == 0) {
                 // Snapshots are not running
                 return allocation.decision(Decision.YES, NAME, "no snapshots are currently running");
             }

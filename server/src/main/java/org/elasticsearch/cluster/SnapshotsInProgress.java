@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -47,7 +48,7 @@ import java.util.stream.Collectors;
 /**
  * Meta data about snapshots that are currently executing
  */
-public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implements Custom {
+public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implements Custom, Iterable<SnapshotsInProgress.Entry> {
 
     public static final SnapshotsInProgress EMPTY = new SnapshotsInProgress(Map.of());
 
@@ -71,16 +72,20 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     }
 
     private SnapshotsInProgress(Map<String, PerRepo> entries) {
-        this.entries = Map.copyOf(entries);
-        assert assertConsistentEntries(this);
+        this.entries = entries;
+        assert assertConsistentEntries();
     }
 
     public Collection<String> activeRepositories() {
         return entries.keySet();
     }
 
-    public List<Entry> allEntries() {
-        return entries.values().stream().flatMap(e -> e.entries.stream()).collect(Collectors.toList());
+    public int size() {
+        int size = 0;
+        for (PerRepo perRepo : entries.values()) {
+            size += perRepo.entries.size();
+        }
+        return size;
     }
 
     public List<Entry> entries(String repoName) {
@@ -128,7 +133,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
         builder.startArray("snapshots");
-        for (Entry entry : allEntries()) {
+        for (Entry entry : this) {
             entry.toXContent(builder, params);
         }
         builder.endArray();
@@ -149,15 +154,10 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("SnapshotsInProgress[");
-        final List<Entry> allEntries = allEntries();
-        for (int i = 0; i < allEntries.size(); i++) {
-            builder.append(allEntries.get(i).snapshot().getSnapshotId().getName());
-            if (i + 1 < allEntries.size()) {
-                builder.append(",");
-            }
-        }
-        return builder.append("]").toString();
+        return "SnapshotsInProgress[" + entries.values().stream()
+                .flatMap(e -> e.entries.stream())
+                .map(entry -> entry.snapshot().getSnapshotId().getName())
+                .collect(Collectors.joining(",")) + "]";
     }
 
     /**
@@ -215,11 +215,11 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         return false;
     }
 
-    private static boolean assertConsistentEntries(SnapshotsInProgress entries) {
-        for (String repoName : entries.activeRepositories()) {
+    private boolean assertConsistentEntries() {
+        for (String repoName : activeRepositories()) {
             final Set<Tuple<String, Integer>> assignedShards = new HashSet<>();
             final Set<Tuple<String, Integer>> queuedShards = new HashSet<>();
-            final List<Entry> entriesForRepo = entries.entries(repoName);
+            final List<Entry> entriesForRepo = entries(repoName);
             for (Entry entry : entriesForRepo) {
                 for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : entry.shards()) {
                     final ShardId sid = shard.key;
@@ -233,9 +233,9 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 }
             }
         }
-        for (String repoName : entries.activeRepositories()) {
+        for (String repoName : activeRepositories()) {
             // make sure in-flight-shard-states can be built cleanly for the entries without tripping assertions
-            InFlightShardSnapshotStates.forRepo(repoName, entries);
+            InFlightShardSnapshotStates.forRepo(repoName, this);
         }
         return true;
     }
@@ -252,6 +252,11 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             queuedShards.add(Tuple.tuple(indexName, shardId));
         }
         return true;
+    }
+
+    @Override
+    public Iterator<Entry> iterator() {
+        return entries.values().stream().flatMap(e -> e.entries.stream()).iterator();
     }
 
     public static final class PerRepo {

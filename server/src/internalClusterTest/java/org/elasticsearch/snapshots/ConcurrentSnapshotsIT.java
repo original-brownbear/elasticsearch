@@ -289,7 +289,8 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         logger.info("--> wait for snapshot on second data node to finish");
         awaitClusterState(state -> {
             final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
-            return snapshotsInProgress.entries(repoName).size() == 2 && snapshotHasCompletedShard(secondSnapshot, snapshotsInProgress);
+            return snapshotsInProgress.entries(repoName).size() == 2
+                && snapshotHasCompletedShard(repoName, secondSnapshot, snapshotsInProgress);
         });
 
         final ActionFuture<AcknowledgedResponse> deleteSnapshotsResponse = startDeleteSnapshot(repoName, firstSnapshot);
@@ -338,7 +339,8 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         logger.info("--> wait for snapshot on second data node to finish");
         awaitClusterState(state -> {
             final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
-            return snapshotsInProgress.entries(repoName).size() == 2 && snapshotHasCompletedShard(secondSnapshot, snapshotsInProgress);
+            return snapshotsInProgress.entries(repoName).size() == 2
+                && snapshotHasCompletedShard(repoName, secondSnapshot, snapshotsInProgress);
         });
 
         final ActionFuture<AcknowledgedResponse> deleteSnapshotsResponse = startDeleteSnapshot(repoName, firstSnapshot);
@@ -401,7 +403,8 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         logger.info("--> wait for snapshot on second data node to finish");
         awaitClusterState(state -> {
             final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
-            return snapshotsInProgress.entries(repoName).size() == 2 && snapshotHasCompletedShard(secondSnapshot, snapshotsInProgress);
+            return snapshotsInProgress.entries(repoName).size() == 2
+                && snapshotHasCompletedShard(repoName, secondSnapshot, snapshotsInProgress);
         });
 
         final ActionFuture<AcknowledgedResponse> firstDeleteFuture = startDeleteFromNonMasterClient(repoName, firstSnapshot);
@@ -461,7 +464,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
             assertThat(client().admin().cluster().prepareGetSnapshots(repoName).get().getSnapshots(repoName), empty());
             final ClusterState state = clusterService().state();
             final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE);
-            assertThat(snapshotsInProgress.activeRepositories(), empty());
+            assertEquals(0, snapshotsInProgress.size());
             final SnapshotDeletionsInProgress snapshotDeletionsInProgress = state.custom(SnapshotDeletionsInProgress.TYPE);
             assertThat(snapshotDeletionsInProgress.getEntries(), empty());
         }, 30L, TimeUnit.SECONDS);
@@ -1293,8 +1296,8 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
                 .put("index.routing.allocation.exclude._name", nodeExclude).build());
     }
 
-    private static boolean snapshotHasCompletedShard(String snapshot, SnapshotsInProgress snapshotsInProgress) {
-        for (SnapshotsInProgress.Entry entry : snapshotsInProgress.allEntries()) {
+    private static boolean snapshotHasCompletedShard(String repoName, String snapshot, SnapshotsInProgress snapshotsInProgress) {
+        for (SnapshotsInProgress.Entry entry : snapshotsInProgress.entries(repoName)) {
             if (entry.snapshot().getSnapshotId().getName().equals(snapshot)) {
                 for (ObjectCursor<SnapshotsInProgress.ShardSnapshotStatus> shard : entry.shards().values()) {
                     if (shard.value.state().completed()) {

@@ -61,13 +61,10 @@ public class TransportGetSnapshotLifecycleAction extends
                     Arrays.toString(request.getLifecycleIds())));
             }
         } else {
-            final Map<String, SnapshotLifecyclePolicyItem.SnapshotInProgress> inProgress;
-            SnapshotsInProgress sip = state.custom(SnapshotsInProgress.TYPE);
-            if (sip == null) {
-                inProgress = Collections.emptyMap();
-            } else {
-                inProgress = new HashMap<>();
-                for (SnapshotsInProgress.Entry entry : sip.allEntries()) {
+            final Map<String, SnapshotLifecyclePolicyItem.SnapshotInProgress> inProgress = new HashMap<>();
+            SnapshotsInProgress sip = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
+            for (String repoName : sip.activeRepositories()) {
+                for (SnapshotsInProgress.Entry entry : sip.entries(repoName)) {
                     Map<String, Object> meta = entry.userMetadata();
                     if (meta == null ||
                         meta.get(SnapshotLifecyclePolicy.POLICY_ID_METADATA_FIELD) == null ||

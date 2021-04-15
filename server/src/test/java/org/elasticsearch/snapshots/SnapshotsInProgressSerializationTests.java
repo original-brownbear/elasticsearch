@@ -95,7 +95,10 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
     @Override
     protected Custom makeTestChanges(Custom testInstance) {
         SnapshotsInProgress snapshots = (SnapshotsInProgress) testInstance;
-        List<Entry> entries = new ArrayList<>(snapshots.allEntries());
+        List<Entry> entries = new ArrayList<>(snapshots.size());
+        for (Entry entry : snapshots) {
+            entries.add(entry);
+        }
         if (randomBoolean() && entries.size() > 1) {
             // remove some elements
             int leaveElements = randomIntBetween(0, entries.size() - 1);
@@ -136,7 +139,11 @@ public class SnapshotsInProgressSerializationTests extends AbstractDiffableWireS
 
     @Override
     protected Custom mutateInstance(Custom instance) {
-        List<Entry> entries = new ArrayList<>(((SnapshotsInProgress) instance).allEntries());
+        final SnapshotsInProgress snapshotsInProgress = (SnapshotsInProgress) instance;
+        List<Entry> entries = new ArrayList<>(snapshotsInProgress.size());
+        for (Entry entry : snapshotsInProgress) {
+            entries.add(entry);
+        }
         if (false || entries.isEmpty()) {
             // add or remove an entry
             boolean addEntry = entries.isEmpty() ? true : randomBoolean();

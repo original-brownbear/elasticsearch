@@ -168,7 +168,7 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                                 + "] - a snapshot is currently being deleted in [" + deletionsInProgress + "]");
                         }
                         SnapshotsInProgress snapshots = currentState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
-                        if (snapshots.activeRepositories().isEmpty() == false) {
+                        if (snapshots.size() > 0) {
                             throw new IllegalStateException(
                                 "Cannot cleanup [" + repositoryName + "] - a snapshot is currently running in [" + snapshots + "]");
                         }
