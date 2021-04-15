@@ -19,7 +19,6 @@ import org.elasticsearch.repositories.ShardGenerations;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,13 +38,10 @@ public final class InFlightShardSnapshotStates {
      * @param snapshots snapshots in progress
      * @return in flight shard states for all snapshot operation running for the given repository name
      */
-    public static InFlightShardSnapshotStates forRepo(String repoName, List<SnapshotsInProgress.Entry> snapshots) {
+    public static InFlightShardSnapshotStates forRepo(String repoName, SnapshotsInProgress snapshots) {
         final Map<String, Map<Integer, String>> generations = new HashMap<>();
         final Map<String, Set<Integer>> busyIds = new HashMap<>();
-        for (SnapshotsInProgress.Entry runningSnapshot : snapshots) {
-            if (runningSnapshot.repository().equals(repoName) == false) {
-                continue;
-            }
+        for (SnapshotsInProgress.Entry runningSnapshot : snapshots.entries(repoName)) {
             if (runningSnapshot.isClone()) {
                 for (ObjectObjectCursor<RepositoryShardId, SnapshotsInProgress.ShardSnapshotStatus> clone : runningSnapshot.clones()) {
                     final RepositoryShardId repoShardId = clone.key;

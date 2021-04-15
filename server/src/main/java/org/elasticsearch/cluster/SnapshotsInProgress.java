@@ -20,6 +20,7 @@ import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.shard.ShardId;
@@ -32,6 +33,8 @@ import org.elasticsearch.snapshots.SnapshotFeatureInfo;
 import org.elasticsearch.snapshots.SnapshotId;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,36 +49,55 @@ import java.util.stream.Collectors;
  */
 public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implements Custom {
 
-    public static final SnapshotsInProgress EMPTY = new SnapshotsInProgress(List.of());
+    public static final SnapshotsInProgress EMPTY = new SnapshotsInProgress(Map.of());
 
     public static final String TYPE = "snapshots";
 
     public static final String ABORTED_FAILURE_TEXT = "Snapshot was aborted by deletion";
 
-    private final List<Entry> entries;
+    private final Map<String, PerRepo> entries;
 
-    public static SnapshotsInProgress of(List<Entry> entries) {
-        if (entries.isEmpty()) {
-            return EMPTY;
+    public static SnapshotsInProgress readFrom(StreamInput in) throws IOException {
+        final List<Entry> asList = in.readList(SnapshotsInProgress.Entry::new);
+        final Map<String, List<Entry>> entryMap = new HashMap<>();
+        for (Entry entry : asList) {
+            entryMap.computeIfAbsent(entry.repository(), k -> new ArrayList<>()).add(entry);
         }
-        return new SnapshotsInProgress(Collections.unmodifiableList(entries));
+        final Builder builder = builder();
+        for (Map.Entry<String, List<Entry>> kv : entryMap.entrySet()) {
+            builder.with(kv.getKey(), kv.getValue());
+        }
+        return builder.build();
     }
 
-    public SnapshotsInProgress(StreamInput in) throws IOException {
-        this(in.readList(SnapshotsInProgress.Entry::new));
+    private SnapshotsInProgress(Map<String, PerRepo> entries) {
+        this.entries = Map.copyOf(entries);
+        assert assertConsistentEntries(this);
     }
 
-    private SnapshotsInProgress(List<Entry> entries) {
-        this.entries = entries;
-        assert assertConsistentEntries(entries);
+    public Collection<String> activeRepositories() {
+        return entries.keySet();
     }
 
-    public List<Entry> entries() {
-        return this.entries;
+    public List<Entry> allEntries() {
+        return entries.values().stream().flatMap(e -> e.entries.stream()).collect(Collectors.toList());
+    }
+
+    public List<Entry> entries(String repoName) {
+        final PerRepo perRepo = this.entries.get(repoName);
+        return perRepo == null ? Collections.emptyList() : perRepo.entries;
+    }
+
+    public static Builder builder() {
+        return new Builder(SnapshotsInProgress.EMPTY);
+    }
+
+    public static Builder builder(SnapshotsInProgress snapshots) {
+        return new Builder(snapshots);
     }
 
     public Entry snapshot(final Snapshot snapshot) {
-        for (Entry entry : entries) {
+        for (Entry entry : entries(snapshot.getRepository())) {
             final Snapshot curr = entry.snapshot();
             if (curr.equals(snapshot)) {
                 return entry;
@@ -100,13 +122,13 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeList(entries);
+        out.writeList(entries.values().stream().flatMap(e -> e.entries.stream()).collect(Collectors.toList()));
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
         builder.startArray("snapshots");
-        for (Entry entry : entries) {
+        for (Entry entry : allEntries()) {
             entry.toXContent(builder, params);
         }
         builder.endArray();
@@ -128,9 +150,10 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder("SnapshotsInProgress[");
-        for (int i = 0; i < entries.size(); i++) {
-            builder.append(entries.get(i).snapshot().getSnapshotId().getName());
-            if (i + 1 < entries.size()) {
+        final List<Entry> allEntries = allEntries();
+        for (int i = 0; i < allEntries.size(); i++) {
+            builder.append(allEntries.get(i).snapshot().getSnapshotId().getName());
+            if (i + 1 < allEntries.size()) {
                 builder.append(",");
             }
         }
@@ -192,41 +215,97 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         return false;
     }
 
-    private static boolean assertConsistentEntries(List<Entry> entries) {
-        final Map<String, Set<Tuple<String, Integer>>> assignedShardsByRepo = new HashMap<>();
-        final Map<String, Set<Tuple<String, Integer>>> queuedShardsByRepo = new HashMap<>();
-        for (Entry entry : entries) {
-            for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : entry.shards()) {
-                final ShardId sid = shard.key;
-                assert assertShardStateConsistent(entries, assignedShardsByRepo, queuedShardsByRepo, entry, sid.getIndexName(), sid.id(),
-                        shard.value);
-            }
-            for (ObjectObjectCursor<RepositoryShardId, ShardSnapshotStatus> shard : entry.clones()) {
-                final RepositoryShardId sid = shard.key;
-                assert assertShardStateConsistent(entries, assignedShardsByRepo, queuedShardsByRepo, entry, sid.indexName(), sid.shardId(),
-                        shard.value);
+    private static boolean assertConsistentEntries(SnapshotsInProgress entries) {
+        for (String repoName : entries.activeRepositories()) {
+            final Set<Tuple<String, Integer>> assignedShards = new HashSet<>();
+            final Set<Tuple<String, Integer>> queuedShards = new HashSet<>();
+            final List<Entry> entriesForRepo = entries.entries(repoName);
+            for (Entry entry : entriesForRepo) {
+                for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shard : entry.shards()) {
+                    final ShardId sid = shard.key;
+                    assert assertShardStateConsistent(entriesForRepo, assignedShards, queuedShards, sid.getIndexName(),
+                            sid.id(), shard.value);
+                }
+                for (ObjectObjectCursor<RepositoryShardId, ShardSnapshotStatus> shard : entry.clones()) {
+                    final RepositoryShardId sid = shard.key;
+                    assert assertShardStateConsistent(entriesForRepo, assignedShards, queuedShards, sid.indexName(),
+                            sid.shardId(), shard.value);
+                }
             }
         }
-        for (String repoName : assignedShardsByRepo.keySet()) {
+        for (String repoName : entries.activeRepositories()) {
             // make sure in-flight-shard-states can be built cleanly for the entries without tripping assertions
             InFlightShardSnapshotStates.forRepo(repoName, entries);
         }
         return true;
     }
 
-    private static boolean assertShardStateConsistent(List<Entry> entries, Map<String, Set<Tuple<String, Integer>>> assignedShardsByRepo,
-                                                      Map<String, Set<Tuple<String, Integer>>> queuedShardsByRepo, Entry entry,
-                                                      String indexName, int shardId, ShardSnapshotStatus shardSnapshotStatus) {
+    private static boolean assertShardStateConsistent(List<Entry> entries, Set<Tuple<String, Integer>> assignedShards,
+                                                      Set<Tuple<String, Integer>> queuedShards, String indexName,
+                                                      int shardId, ShardSnapshotStatus shardSnapshotStatus) {
         if (shardSnapshotStatus.isActive()) {
             Tuple<String, Integer> plainShardId = Tuple.tuple(indexName, shardId);
-            assert assignedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>())
-                    .add(plainShardId) : "Found duplicate shard assignments in " + entries;
-            assert queuedShardsByRepo.getOrDefault(entry.repository(), Collections.emptySet()).contains(plainShardId) == false
+            assert assignedShards.add(plainShardId) : "Found duplicate shard assignments in " + entries;
+            assert queuedShards.contains(plainShardId) == false
                     : "Found active shard assignments after queued shard assignments in " + entries;
         } else if (shardSnapshotStatus.state() == ShardState.QUEUED) {
-            queuedShardsByRepo.computeIfAbsent(entry.repository(), k -> new HashSet<>()).add(Tuple.tuple(indexName, shardId));
+            queuedShards.add(Tuple.tuple(indexName, shardId));
         }
         return true;
+    }
+
+    public static final class PerRepo {
+
+        private static final PerRepo EMPTY = new PerRepo(List.of());
+
+        private final List<Entry> entries;
+
+        private PerRepo(List<Entry> entries) {
+            this.entries = List.copyOf(entries);
+        }
+
+        private PerRepo withAddedEntry(Entry entry) {
+            return new PerRepo(CollectionUtils.appendToCopy(entries, entry));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            return entries.equals(((PerRepo) o).entries);
+        }
+
+        @Override
+        public int hashCode() {
+            return entries.hashCode();
+        }
+    }
+
+    public static final class Builder {
+
+        private final Map<String, PerRepo> snapshotsByRepo;
+
+        private Builder(SnapshotsInProgress snapshots) {
+            this.snapshotsByRepo = new HashMap<>(snapshots.entries);
+        }
+
+        public Builder with(String repo, List<Entry> entries) {
+            if (entries.isEmpty()) {
+                snapshotsByRepo.remove(repo);
+            } else {
+                snapshotsByRepo.put(repo, new PerRepo(entries));
+            }
+            return this;
+        }
+
+        public Builder add(Entry entry) {
+            snapshotsByRepo.put(entry.repository(), snapshotsByRepo.getOrDefault(entry.repository(), PerRepo.EMPTY).withAddedEntry(entry));
+            return this;
+        }
+
+        public SnapshotsInProgress build() {
+            return new SnapshotsInProgress(Map.copyOf(snapshotsByRepo));
+        }
     }
 
     public enum ShardState {

@@ -622,10 +622,8 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
      */
     private static boolean isRepositoryInUse(ClusterState clusterState, String repository) {
         final SnapshotsInProgress snapshots = clusterState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
-        for (SnapshotsInProgress.Entry snapshot : snapshots.entries()) {
-            if (repository.equals(snapshot.snapshot().getRepository())) {
-                return true;
-            }
+        if (snapshots.entries(repository).isEmpty() == false) {
+            return true;
         }
         for (SnapshotDeletionsInProgress.Entry entry :
             clusterState.custom(SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress.EMPTY).getEntries()) {

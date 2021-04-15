@@ -168,7 +168,7 @@ public class SecurityFeatureStateIntegTests extends AbstractPrivilegeTestCase {
             // it to disappear from the cluster state as well
             SnapshotsInProgress snapshotsInProgress =
                 client().admin().cluster().state(new ClusterStateRequest()).get().getState().custom(SnapshotsInProgress.TYPE);
-            assertThat(snapshotsInProgress.entries(), Matchers.empty());
+            assertThat(snapshotsInProgress.entries(repo), Matchers.empty());
         });
     }
 }

@@ -549,7 +549,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         try {
             awaitClusterState(clusterState -> {
                 final List<SnapshotsInProgress.Entry> entries =
-                    clusterState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries();
+                    clusterState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries(repoName);
                 return entries.size() == 2 && entries.get(1).clones().isEmpty() == false;
             });
             assertFalse(blockedSnapshot.isDone());
@@ -586,7 +586,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
         final ActionFuture<AcknowledgedResponse> cloneFuture = startClone(repoName, sourceSnapshot, "target-snapshot", indexName);
         logger.info("--> waiting for snapshot clone to be fully initialized");
         awaitClusterState(state -> {
-            for (SnapshotsInProgress.Entry entry : state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries()) {
+            for (SnapshotsInProgress.Entry entry : state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries(repoName)) {
                 if (entry.clones().isEmpty() == false) {
                     assertEquals(sourceSnapshot, entry.source().getName());
                     for (ObjectCursor<SnapshotsInProgress.ShardSnapshotStatus> value : entry.clones().values()) {
@@ -628,7 +628,7 @@ public class CloneSnapshotIT extends AbstractSnapshotIntegTestCase {
 
         awaitNumberOfSnapshotsInProgress(2);
         awaitClusterState(state -> state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY)
-                .entries().stream().anyMatch(entry -> entry.state().completed()));
+                .entries(repoName).stream().anyMatch(entry -> entry.state().completed()));
         repo.unblock();
 
         assertAcked(clone1.get());

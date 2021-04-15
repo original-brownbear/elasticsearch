@@ -41,7 +41,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -352,7 +351,8 @@ public class MetadataIndexStateServiceTests extends ESTestCase {
                 randomNonNegativeLong(), randomLong(), shardsBuilder.build(), null, SnapshotInfoTestUtils.randomUserMetadata(),
                 VersionUtils.randomVersion(random())
             );
-        return ClusterState.builder(newState).putCustom(SnapshotsInProgress.TYPE, SnapshotsInProgress.of(List.of(entry))).build();
+        return ClusterState.builder(newState).putCustom(
+                SnapshotsInProgress.TYPE, SnapshotsInProgress.builder().add(entry).build()).build();
     }
 
     private static ClusterState addIndex(final ClusterState currentState,

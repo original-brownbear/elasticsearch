@@ -67,7 +67,7 @@ public class TransportGetSnapshotLifecycleAction extends
                 inProgress = Collections.emptyMap();
             } else {
                 inProgress = new HashMap<>();
-                for (SnapshotsInProgress.Entry entry : sip.entries()) {
+                for (SnapshotsInProgress.Entry entry : sip.allEntries()) {
                     Map<String, Object> meta = entry.userMetadata();
                     if (meta == null ||
                         meta.get(SnapshotLifecyclePolicy.POLICY_ID_METADATA_FIELD) == null ||

@@ -490,7 +490,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         }
         if (bestEffortConsistency) {
             final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
-            long bestGenerationFromCS = bestGeneration(snapshotsInProgress.entries());
+            long bestGenerationFromCS = bestGeneration(snapshotsInProgress.entries(metadata.name()));
             // Don't use generation from the delete task if we already found a generation for an in progress snapshot.
             // In this case, the generation points at the generation the repo will be in after the snapshot finishes so it may not yet
             // exist
@@ -1987,15 +1987,17 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         final SnapshotsInProgress updatedSnapshotsInProgress;
         boolean changedSnapshots = false;
         final List<SnapshotsInProgress.Entry> snapshotEntries = new ArrayList<>();
-        for (SnapshotsInProgress.Entry entry : state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries()) {
-            if (entry.repository().equals(repoName) && entry.repositoryStateId() == oldGen) {
+        final SnapshotsInProgress existingSnapshots = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
+        for (SnapshotsInProgress.Entry entry : existingSnapshots.entries(repoName)) {
+            if (entry.repositoryStateId() == oldGen) {
                 snapshotEntries.add(entry.withRepoGen(newGen));
                 changedSnapshots = true;
             } else {
                 snapshotEntries.add(entry);
             }
         }
-        updatedSnapshotsInProgress = changedSnapshots ? SnapshotsInProgress.of(snapshotEntries) : null;
+        updatedSnapshotsInProgress = changedSnapshots ?
+            SnapshotsInProgress.builder(existingSnapshots).with(repoName, snapshotEntries).build() : null;
         final SnapshotDeletionsInProgress updatedDeletionsInProgress;
         boolean changedDeletions = false;
         final List<SnapshotDeletionsInProgress.Entry> deletionEntries = new ArrayList<>();

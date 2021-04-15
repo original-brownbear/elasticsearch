@@ -124,7 +124,7 @@ public abstract class AsyncRetryDuringSnapshotActionStep extends AsyncActionStep
                                     return true;
                                 }
                                 for (SnapshotsInProgress.Entry snapshot :
-                                        state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries()) {
+                                        state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).allEntries()) {
                                     if (snapshot.indices().stream().anyMatch(name -> name.getName().equals(indexName))) {
                                         // There is a snapshot running with this index name
                                         return false;
