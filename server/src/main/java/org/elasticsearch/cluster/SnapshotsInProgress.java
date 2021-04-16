@@ -183,13 +183,13 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
      * Creates the initial {@link Entry} when starting a snapshot, if no shard-level snapshot work is to be done the resulting entry
      * will be in state {@link State#SUCCESS} right away otherwise it will be in state {@link State#STARTED}.
      */
-    public static Entry startedEntry(Snapshot snapshot, boolean includeGlobalState, boolean partial, List<IndexId> indices,
+    public static Entry startedEntry(Snapshot snapshot, boolean includeGlobalState, boolean partial, Map<String, IndexId> indices,
                                      List<String> dataStreams, long startTime, long repositoryStateId,
                                      ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards,
                                      Map<String, Object> userMetadata, Version version, List<SnapshotFeatureInfo> featureStates) {
         return new SnapshotsInProgress.Entry(snapshot, includeGlobalState, partial,
                 completed(shards.values()) ? State.SUCCESS : State.STARTED,
-                indicesToLookup(indices), dataStreams, featureStates, startTime, repositoryStateId, shards, null, userMetadata, version);
+                indices, dataStreams, featureStates, startTime, repositoryStateId, shards, null, userMetadata, version);
     }
 
     /**
@@ -225,7 +225,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         return true;
     }
 
-    private static Map<String, IndexId> indicesToLookup(List<IndexId> list) {
+    public static Map<String, IndexId> indicesToLookup(List<IndexId> list) {
         final Map<String, IndexId> lookup = new HashMap<>(list.size());
         for (IndexId index : list) {
             lookup.put(index.getName(), index);
@@ -675,6 +675,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             includeGlobalState = in.readBoolean();
             partial = in.readBoolean();
             state = State.fromValue(in.readByte());
+            // TODO: make this.indices immutable I guess
             if (in.getVersion().onOrAfter(COMPACT_SERIALIZATION_VERSION)) {
                 final int indexCount = in.readVInt();
                 indices = new HashMap<>(indexCount);
