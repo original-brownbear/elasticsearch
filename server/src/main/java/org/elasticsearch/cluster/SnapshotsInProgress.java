@@ -294,11 +294,58 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         return entries.values().stream().flatMap(e -> e.entries.stream()).iterator();
     }
 
+    private static final class ShardSnapshotTask {
+
+        private final ShardId snapshotSource;
+
+        private final SnapshotId cloneSource;
+
+        private final Set<SnapshotId> snapshots;
+
+        private final ShardSnapshotStatus state;
+
+        private ShardSnapshotTask(ShardId snapshotSource, Set<SnapshotId> snapshots, ShardSnapshotStatus state) {
+            this(null, snapshotSource, snapshots, state);
+        }
+
+        private ShardSnapshotTask(SnapshotId cloneSource, Set<SnapshotId> snapshots, ShardSnapshotStatus state) {
+            this(cloneSource, null, snapshots, state);
+        }
+
+        private ShardSnapshotTask(@Nullable SnapshotId cloneSource, @Nullable ShardId snapshotSource,
+                                  Set<SnapshotId> snapshots, ShardSnapshotStatus state) {
+            this.snapshotSource = snapshotSource;
+            this.cloneSource = cloneSource;
+            this.snapshots = snapshots;
+            this.state = state;
+            assert (cloneSource == null && snapshotSource == null) == false && (snapshotSource != null && cloneSource != null) == false;
+        }
+    }
+
+    private static final class ShardSnapshotTasks {
+
+        private final ShardSnapshotTask currentTask;
+
+        @Nullable
+        private final ShardSnapshotTask queuedTask;
+
+        @Nullable
+        private final ShardSnapshotTask queuedTask2;
+
+        private ShardSnapshotTasks(ShardSnapshotTask currentTask, ShardSnapshotTask queuedTask, ShardSnapshotTask queuedTask2) {
+            this.currentTask = currentTask;
+            this.queuedTask = queuedTask;
+            this.queuedTask2 = queuedTask2;
+        }
+    }
+
     private static final class PerRepo implements Writeable {
 
         private final List<Entry> entries;
 
         private final Map<String, IndexId> inFlightIndexIds;
+
+        private final Map<String, ShardSnapshotTasks[]> tasks;
 
         private static PerRepo readFrom(StreamInput input, String repoName) throws IOException {
             final int indices = input.readVInt();
@@ -308,13 +355,90 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 final String id = input.readString();
                 indexLookup.put(name, new IndexId(name, id));
             }
-            return new PerRepo(indexLookup, input.readList(in -> new Entry(in, repoName, indexLookup)));
+            final List<Entry> entries = input.readList(in -> new Entry(in, repoName, indexLookup));
+            final Map<String, ShardSnapshotTasks[]> tasksBuilder = new HashMap<>(indices);
+            for (Entry entry : entries) {
+                if (entry.isClone()) {
+                    for (ObjectObjectCursor<RepositoryShardId, ShardSnapshotStatus> clone : entry.clones()) {
+                        final int shardId = clone.key.shardId();
+                        if (clone.value.isActive()) {
+                            tasksBuilder.compute(clone.key.indexName(), (k, v) -> {
+                                if (v == null) {
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(entry.source,
+                                            Set.of(entry.snapshot().getSnapshotId()), clone.value), null, null);
+                                } else if (v.length <= shardId) {
+                                    final ShardSnapshotTasks[] tmp = v;
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    System.arraycopy(tmp, 0, v, 0, tmp.length);
+                                    v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(entry.source,
+                                            Set.of(entry.snapshot().getSnapshotId()), clone.value), null, null);
+                                } else {
+                                    final ShardSnapshotTasks existing = v[shardId];
+                                    if (existing == null) {
+                                        v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(entry.source,
+                                                Set.of(entry.snapshot().getSnapshotId()), clone.value), null, null);
+                                    } else {
+                                        assert existing.currentTask.cloneSource != null;
+                                        assert existing.currentTask.state.equals(clone.value);
+                                        final Set<SnapshotId> executingSnapshots = new HashSet<>(existing.currentTask.snapshots);
+                                        executingSnapshots.add(entry.snapshot().getSnapshotId());
+                                        v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(entry.source,
+                                                executingSnapshots, existing.currentTask.state), existing.queuedTask, existing.queuedTask2);
+                                    }
+                                }
+                                return v;
+                            });
+                        } else {
+
+                        }
+                    }
+                } else {
+                    for (ObjectObjectCursor<ShardId, ShardSnapshotStatus> shardSnapshot : entry.shards()) {
+                        final ShardId sid = shardSnapshot.key;
+                        final int shardId = sid.getId();
+                        if (shardSnapshot.value.isActive()) {
+                            tasksBuilder.compute(shardSnapshot.key.getIndexName(), (k, v) -> {
+                                if (v == null) {
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(sid,
+                                            Set.of(entry.snapshot().getSnapshotId()), shardSnapshot.value), null, null);
+                                } else if (v.length <= shardId) {
+                                    final ShardSnapshotTasks[] tmp = v;
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    System.arraycopy(tmp, 0, v, 0, tmp.length);
+                                    v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(sid,
+                                            Set.of(entry.snapshot().getSnapshotId()), shardSnapshot.value), null, null);
+                                } else {
+                                    final ShardSnapshotTasks existing = v[shardId];
+                                    if (existing == null) {
+                                        v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(sid,
+                                                Set.of(entry.snapshot().getSnapshotId()), shardSnapshot.value), null, null);
+                                    } else {
+                                        assert existing.currentTask.snapshotSource != null;
+                                        assert existing.currentTask.state.equals(shardSnapshot.value);
+                                        final Set<SnapshotId> executingSnapshots = new HashSet<>(existing.currentTask.snapshots);
+                                        executingSnapshots.add(entry.snapshot().getSnapshotId());
+                                        v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(sid,
+                                                executingSnapshots, existing.currentTask.state), existing.queuedTask, existing.queuedTask2);
+                                    }
+                                }
+                                return v;
+                            });
+                        } else {
+
+                        }
+                    }
+                }
+            }
+            return new PerRepo(tasksBuilder, indexLookup, entries);
         }
 
-        private PerRepo(Map<String, IndexId> inFlightIndexIds, List<Entry> entries) {
+        private PerRepo(Map<String, ShardSnapshotTasks[]> tasks, Map<String, IndexId> inFlightIndexIds, List<Entry> entries) {
             assert entries.isEmpty() == false;
             this.inFlightIndexIds = Map.copyOf(inFlightIndexIds);
             this.entries = List.copyOf(entries);
+            this.tasks = Map.copyOf(tasks);
         }
 
         private PerRepo withAddedEntry(Entry entry, Map<String, IndexId> entryIdxLookup) {
@@ -323,7 +447,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             if (idxLookup.size() == inFlightIndexIds.size()) {
                 idxLookup = inFlightIndexIds;
             }
-            return new PerRepo(idxLookup, CollectionUtils.appendToCopy(entries, entry));
+            // TODO: compute tasks
+            return new PerRepo(Map.of(), idxLookup, CollectionUtils.appendToCopy(entries, entry));
         }
 
         @Override
@@ -365,14 +490,16 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 for (Entry entry : entries) {
                     idxLookup.putAll(entry.indices);
                 }
-                snapshotsByRepo.put(repo, new PerRepo(idxLookup, entries));
+                // TODO: compute tasks
+                snapshotsByRepo.put(repo, new PerRepo(Map.of(), idxLookup, entries));
             }
             return this;
         }
 
         public Builder add(Entry entry) {
+            // TODO: compute tasks
             snapshotsByRepo.put(entry.repository(), snapshotsByRepo.compute(entry.repository(),
-                    (k, perRepo) -> perRepo == null ? new PerRepo(entry.indices, List.of(entry))
+                    (k, perRepo) -> perRepo == null ? new PerRepo(Map.of(), entry.indices, List.of(entry))
                             : perRepo.withAddedEntry(entry, entry.indices)));
             return this;
         }
