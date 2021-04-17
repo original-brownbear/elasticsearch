@@ -21,6 +21,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.shard.ShardId;
@@ -346,6 +347,14 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
     private static final class ShardSnapshotTasks {
 
+        static final ShardSnapshotTasks EMPTY = new ShardSnapshotTasks(null, null, null, null, null);
+
+        private final Map<SnapshotId, String> failures;
+
+        @Nullable
+        private final ShardSnapshotTask completedTask;
+
+        @Nullable
         private final ShardSnapshotTask currentTask;
 
         @Nullable
@@ -354,24 +363,71 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         @Nullable
         private final ShardSnapshotTask queuedTask2;
 
-        private ShardSnapshotTasks(ShardSnapshotTask currentTask, ShardSnapshotTask queuedTask, ShardSnapshotTask queuedTask2) {
+        private ShardSnapshotTasks(Map<SnapshotId, String> failures, ShardSnapshotTask completedTask, ShardSnapshotTask currentTask,
+                                   ShardSnapshotTask queuedTask, ShardSnapshotTask queuedTask2) {
+            this.failures = failures;
+            this.completedTask = completedTask;
             this.currentTask = currentTask;
             this.queuedTask = queuedTask;
             this.queuedTask2 = queuedTask2;
+            assert currentTask == null || currentTask.state.state().completed == false;
+            assert completedTask == null || completedTask.state.state().completed;
+        }
+
+        public ShardSnapshotTasks queueClone(SnapshotId source, SnapshotId target) {
+            throw new AssertionError("not yet");
         }
 
         public ShardSnapshotTasks queueSnapshot(ShardId shardId, SnapshotId snapshotId) {
-            assert currentTask != null;
-            assert currentTask.snapshots == null || currentTask.snapshots.contains(snapshotId) == false;
+            // TODO: record deletes in this object somehow
+            //assert currentTask != null;
+            assert currentTask == null || currentTask.snapshots == null || currentTask.snapshots.contains(snapshotId) == false;
             if (queuedTask == null) {
-                return new ShardSnapshotTasks(currentTask,
+                assert queuedTask2 == null;
+                return new ShardSnapshotTasks(failures, completedTask, currentTask,
                         new ShardSnapshotTask(shardId, snapshotId, ShardSnapshotStatus.UNASSIGNED_QUEUED), null);
             } else {
-                if (queuedTask.cloneSources != null) {
-                    // goes to queued 2, clone comes first
+                if (queuedTask.cloneSources == null) {
+                    // queued task is not a clone so we can batch into it
+                    return new ShardSnapshotTasks(failures, completedTask, currentTask, queuedTask.withAddedSnapshot(snapshotId),
+                            queuedTask2);
+                } else {
+                    // queued task is a clone so we may not batch into it and have to go to queued2
+                    if (queuedTask2 == null) {
+                        return new ShardSnapshotTasks(failures, completedTask, currentTask,
+                                queuedTask, new ShardSnapshotTask(shardId, snapshotId, ShardSnapshotStatus.UNASSIGNED_QUEUED));
+                    } else {
+                        assert queuedTask2.snapshotSource != null;
+                        return new ShardSnapshotTasks(failures, completedTask, currentTask, queuedTask,
+                                queuedTask2.withAddedSnapshot(snapshotId));
+                    }
                 }
             }
-            throw new AssertionError("not yet");
+        }
+
+        public ShardSnapshotTasks recordSuccess(ShardId shardId, SnapshotId snapshotId, ShardSnapshotStatus status) {
+            assert status.state == ShardState.SUCCESS;
+            final ShardSnapshotTask completedTasks;
+            if (completedTask == null) {
+                completedTasks = new ShardSnapshotTask(shardId, snapshotId, status);
+            } else {
+                final Set<SnapshotId> snapshotIds = new HashSet<>(completedTask.snapshots);
+                final boolean added = snapshotIds.add(snapshotId);
+                assert added;
+                completedTasks = new ShardSnapshotTask(null, shardId, snapshotIds, status);
+            }
+            return new ShardSnapshotTasks(failures, completedTasks, currentTask, queuedTask, queuedTask2);
+        }
+
+        public ShardSnapshotTasks recordFailure(SnapshotId snapshotId, ShardSnapshotStatus status) {
+            assert status.state.failed;
+            final Map<SnapshotId, String> fails;
+            if (failures == null) {
+                fails = Map.of(snapshotId, status.reason);
+            } else {
+                fails = Maps.copyMapWithAddedEntry(failures, snapshotId, status.reason);
+            }
+            return new ShardSnapshotTasks(fails, completedTask, currentTask, queuedTask, queuedTask2);
         }
     }
 
@@ -404,27 +460,31 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                             tasksBuilder.compute(clone.key.indexName(), (k, v) -> {
                                 if (v == null) {
                                     v = new ShardSnapshotTasks[shardId + 1];
-                                    v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(source, snapshotId, status), null, null);
+                                    v[shardId] = new ShardSnapshotTasks(null, null,
+                                            new ShardSnapshotTask(source, snapshotId, status), null, null);
                                 } else if (v.length <= shardId) {
                                     final ShardSnapshotTasks[] tmp = v;
                                     v = new ShardSnapshotTasks[shardId + 1];
                                     System.arraycopy(tmp, 0, v, 0, tmp.length);
-                                    v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(source, snapshotId, status), null, null);
+                                    v[shardId] = new ShardSnapshotTasks(null, null,
+                                            new ShardSnapshotTask(source, snapshotId, status), null, null);
                                 } else {
                                     final ShardSnapshotTasks existing = v[shardId];
                                     if (existing == null) {
-                                        v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(source, snapshotId, status), null, null);
+                                        v[shardId] = new ShardSnapshotTasks(null, null,
+                                                new ShardSnapshotTask(source, snapshotId, status), null, null);
                                     } else {
                                         assert existing.currentTask.cloneSources != null;
                                         assert existing.currentTask.state.equals(status);
-                                        v[shardId] = new ShardSnapshotTasks(existing.currentTask.withAddedClone(source, snapshotId),
+                                        v[shardId] = new ShardSnapshotTasks(existing.failures, existing.completedTask,
+                                                existing.currentTask.withAddedClone(source, snapshotId),
                                                 existing.queuedTask, existing.queuedTask2);
                                     }
                                 }
                                 return v;
                             });
                         } else {
-
+                            throw new AssertionError("not yet");
                         }
                     }
                 } else {
@@ -436,41 +496,93 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                             tasksBuilder.compute(sid.getIndexName(), (k, v) -> {
                                 if (v == null) {
                                     v = new ShardSnapshotTasks[shardId + 1];
-                                    v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(sid,
+                                    v[shardId] = new ShardSnapshotTasks(null, null, new ShardSnapshotTask(sid,
                                             snapshotId, status), null, null);
                                 } else if (v.length <= shardId) {
                                     final ShardSnapshotTasks[] tmp = v;
                                     v = new ShardSnapshotTasks[shardId + 1];
                                     System.arraycopy(tmp, 0, v, 0, tmp.length);
-                                    v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(sid,
+                                    v[shardId] = new ShardSnapshotTasks(null, null, new ShardSnapshotTask(sid,
                                             snapshotId, status), null, null);
                                 } else {
                                     final ShardSnapshotTasks existing = v[shardId];
                                     if (existing == null) {
-                                        v[shardId] = new ShardSnapshotTasks(new ShardSnapshotTask(sid,
+                                        v[shardId] = new ShardSnapshotTasks(null, null, new ShardSnapshotTask(sid,
                                                 snapshotId, status), null, null);
                                     } else {
-                                        assert existing.currentTask.snapshotSource != null;
-                                        assert existing.currentTask.state.equals(status);
-                                        v[shardId] = new ShardSnapshotTasks(existing.currentTask.withAddedSnapshot(snapshotId),
-                                                existing.queuedTask, existing.queuedTask2);
+                                        assert existing.currentTask == null || (existing.currentTask.snapshotSource != null
+                                                && existing.currentTask.state.equals(status));
+                                        final ShardSnapshotTask currentTask;
+                                        if (existing.currentTask == null) {
+                                            currentTask = new ShardSnapshotTask(sid, snapshotId, status);
+                                        } else {
+                                            currentTask = existing.currentTask.withAddedSnapshot(snapshotId);
+                                        }
+                                        v[shardId] = new ShardSnapshotTasks(existing.failures, existing.completedTask,
+                                                currentTask, existing.queuedTask, existing.queuedTask2);
                                     }
                                 }
                                 return v;
                             });
-                        } else {
+                        } else if (status.state() == ShardState.SUCCESS) {
                             tasksBuilder.compute(sid.getIndexName(), (k, v) -> {
                                 if (v == null) {
-                                    throw new AssertionError("no way");
+                                    // this can only come from a delete
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    v[shardId] = new ShardSnapshotTasks(null, new ShardSnapshotTask(sid, snapshotId, status),
+                                            null, null, null);
                                 } else if (v.length <= shardId) {
-                                    throw new AssertionError("no way");
+                                    // this can only come from a delete
+                                    final ShardSnapshotTasks[] tmp = v;
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    System.arraycopy(tmp, 0, v, 0, tmp.length);
+                                    v[shardId] = new ShardSnapshotTasks(null, new ShardSnapshotTask(sid,
+                                            snapshotId, status), null, null, null);
+                                } else {
+                                    // TODO: this is tricky business
+                                    final ShardSnapshotTasks existing = v[shardId];
+                                    v[shardId] = (existing == null ? ShardSnapshotTasks.EMPTY : existing)
+                                            .recordSuccess(sid, snapshotId, status);
+                                }
+                                return v;
+                            });
+                        } else if (status.state == ShardState.QUEUED) {
+                            tasksBuilder.compute(sid.getIndexName(), (k, v) -> {
+                                if (v == null) {
+                                    // this can only come from a delete
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    v[shardId] = new ShardSnapshotTasks(null, null, new ShardSnapshotTask(sid, snapshotId, status),
+                                            null, null);
+                                } else if (v.length <= shardId) {
+                                    // this can only come from a delete
+                                    final ShardSnapshotTasks[] tmp = v;
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    System.arraycopy(tmp, 0, v, 0, tmp.length);
+                                    v[shardId] = new ShardSnapshotTasks(null, null, new ShardSnapshotTask(sid,
+                                            snapshotId, status), null, null);
                                 } else {
                                     final ShardSnapshotTasks existing = v[shardId];
-                                    if (existing == null) {
-                                        throw new AssertionError("no way");
-                                    } else {
-                                        v[shardId] = existing.queueSnapshot(sid, snapshotId);
-                                    }
+                                    v[shardId] = (existing == null ? ShardSnapshotTasks.EMPTY : existing).queueSnapshot(sid, snapshotId);
+                                }
+                                return v;
+                            });
+                        } else {
+                            assert status.state.failed;
+                            tasksBuilder.compute(sid.getIndexName(), (k, v) -> {
+                                if (v == null) {
+                                    // this can only come from a delete
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    v[shardId] = ShardSnapshotTasks.EMPTY.recordFailure(snapshotId, status);
+                                } else if (v.length <= shardId) {
+                                    // this can only come from a delete
+                                    final ShardSnapshotTasks[] tmp = v;
+                                    v = new ShardSnapshotTasks[shardId + 1];
+                                    System.arraycopy(tmp, 0, v, 0, tmp.length);
+                                    v[shardId] = ShardSnapshotTasks.EMPTY.recordFailure(snapshotId, status);
+                                } else {
+                                    final ShardSnapshotTasks existing = v[shardId];
+                                    v[shardId] = (existing == null ? ShardSnapshotTasks.EMPTY : existing)
+                                            .recordFailure(snapshotId, status);
                                 }
                                 return v;
                             });
