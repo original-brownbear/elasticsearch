@@ -9,14 +9,18 @@
 package org.elasticsearch.common.bytes;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 
 public final class BytesArray extends AbstractBytesReference {
+
+    private final boolean unpooled;
 
     public static final BytesArray EMPTY = new BytesArray(BytesRef.EMPTY_BYTES, 0, 0);
     private final byte[] bytes;
@@ -38,16 +42,22 @@ public final class BytesArray extends AbstractBytesReference {
         bytes = bytesRef.bytes;
         offset = bytesRef.offset;
         length = bytesRef.length;
+        unpooled = deepCopy;
     }
 
     public BytesArray(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        this(bytes, 0, bytes.length, true);
     }
 
     public BytesArray(byte[] bytes, int offset, int length) {
+        this(bytes, offset, length, false);
+    }
+
+    public BytesArray(byte[] bytes, int offset, int length, boolean unpooled) {
         this.bytes = bytes;
         this.offset = offset;
         this.length = length;
+        this.unpooled = unpooled;
     }
 
     @Override
@@ -84,7 +94,7 @@ public final class BytesArray extends AbstractBytesReference {
             return this;
         }
         Objects.checkFromIndexSize(from, length, this.length);
-        return new BytesArray(bytes, offset + from, length);
+        return new BytesArray(bytes, offset + from, length, unpooled);
     }
 
     @Override
@@ -114,6 +124,21 @@ public final class BytesArray extends AbstractBytesReference {
 
     @Override
     public StreamInput streamInput() {
+        if (unpooled) {
+            return new ByteBufferStreamInput(ByteBuffer.wrap(bytes, offset, length)) {
+                @Override
+                public BytesReference readBytesReference(int length) {
+                    final int startingOffset = buffer.position();
+                    buffer.position(startingOffset + length);
+                    return slice(startingOffset, length);
+                }
+
+                @Override
+                public BytesRef readBytesRef(int length) throws IOException {
+                    return super.readBytesRef(length);
+                }
+            };
+        }
         return StreamInput.wrap(bytes, offset, length);
     }
 

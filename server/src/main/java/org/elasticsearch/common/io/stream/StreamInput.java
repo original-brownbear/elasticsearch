@@ -160,7 +160,7 @@ public abstract class StreamInput extends InputStream {
         }
         byte[] bytes = new byte[length];
         readBytes(bytes, 0, length);
-        return new BytesArray(bytes, 0, length);
+        return new BytesArray(bytes, 0, length, true);
     }
 
     public BytesRef readBytesRef() throws IOException {
