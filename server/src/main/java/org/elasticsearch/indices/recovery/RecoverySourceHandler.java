@@ -78,6 +78,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 import java.util.stream.StreamSupport;
@@ -106,7 +108,8 @@ public class RecoverySourceHandler {
     private final int maxConcurrentFileChunks;
     private final int maxConcurrentOperations;
     private final ThreadPool threadPool;
-    private final CancellableThreads cancellableThreads = new CancellableThreads();
+    private final AtomicReference<String> cancelled = new AtomicReference<>();
+    private final SetOnce<BiConsumer<String, Exception>> onCancel = new SetOnce<>();
     private final List<Closeable> resources = new CopyOnWriteArrayList<>();
     private final ListenableFuture<RecoveryResponse> future = new ListenableFuture<>();
 
@@ -132,6 +135,13 @@ public class RecoverySourceHandler {
         future.addListener(listener, EsExecutors.newDirectExecutorService());
     }
 
+    private void checkForCancel() {
+        final String reason = cancelled.get();
+        if (reason != null) {
+            throw new CancellableThreads.ExecutionCancelledException("operation was cancelled reason [" + reason + "]");
+        }
+    }
+
     /**
      * performs the recovery from the local engine to the target
      */
@@ -139,7 +149,7 @@ public class RecoverySourceHandler {
         addListener(listener);
         final Closeable releaseResources = () -> IOUtils.close(resources);
         try {
-            cancellableThreads.setOnCancel((reason, beforeCancelEx) -> {
+            onCancel.set((reason, beforeCancelEx) -> {
                 final RuntimeException e;
                 if (shard.state() == IndexShardState.CLOSED) { // check if the shard got closed on us
                     e = new IndexShardClosedException(shard.shardId(), "shard is closed and recovery was canceled reason [" + reason + "]");
@@ -171,7 +181,7 @@ public class RecoverySourceHandler {
                 retentionLeaseRef.set(
                     shard.getRetentionLeases().get(ReplicationTracker.getPeerRecoveryRetentionLeaseId(targetShardRouting)));
             }, shardId + " validating recovery target ["+ request.targetAllocationId() + "] registered ",
-                shard, cancellableThreads, logger);
+                shard, logger);
             final Closeable retentionLock = shard.acquireHistoryRetentionLock();
             resources.add(retentionLock);
             final long startingSeqNo;
@@ -259,7 +269,7 @@ public class RecoverySourceHandler {
                                 deleteRetentionLeaseStep.onResponse(null);
                             }
                         }, shardId + " removing retention lease for [" + request.targetAllocationId() + "]",
-                        shard, cancellableThreads, logger);
+                        shard, logger);
 
                     deleteRetentionLeaseStep.whenComplete(ignored -> {
                         assert Transports.assertNotTransportThread(RecoverySourceHandler.this + "[phase1]");
@@ -287,7 +297,7 @@ public class RecoverySourceHandler {
                  * all documents up to maxSeqNo in phase2.
                  */
                 runUnderPrimaryPermit(() -> shard.initiateTracking(request.targetAllocationId()),
-                    shardId + " initiating tracking of " + request.targetAllocationId(), shard, cancellableThreads, logger);
+                    shardId + " initiating tracking of " + request.targetAllocationId(), shard, logger);
 
                 final long endingSeqNo = shard.seqNoStats().getMaxSeqNo();
                 logger.trace("snapshot for recovery; current size is [{}]", estimateNumberOfHistoryOperations(startingSeqNo));
@@ -342,43 +352,40 @@ public class RecoverySourceHandler {
         }
     }
 
-    static void runUnderPrimaryPermit(CancellableThreads.Interruptible runnable, String reason,
-                                      IndexShard primary, CancellableThreads cancellableThreads, Logger logger) {
-        cancellableThreads.execute(() -> {
-            CompletableFuture<Releasable> permit = new CompletableFuture<>();
-            final ActionListener<Releasable> onAcquired = new ActionListener<Releasable>() {
-                @Override
-                public void onResponse(Releasable releasable) {
-                    if (permit.complete(releasable) == false) {
-                        releasable.close();
-                    }
+    static void runUnderPrimaryPermit(Runnable runnable, String reason, IndexShard primary, Logger logger) {
+        CompletableFuture<Releasable> permit = new CompletableFuture<>();
+        final ActionListener<Releasable> onAcquired = new ActionListener<Releasable>() {
+            @Override
+            public void onResponse(Releasable releasable) {
+                if (permit.complete(releasable) == false) {
+                    releasable.close();
                 }
-
-                @Override
-                public void onFailure(Exception e) {
-                    permit.completeExceptionally(e);
-                }
-            };
-            primary.acquirePrimaryOperationPermit(onAcquired, ThreadPool.Names.SAME, reason);
-            try (Releasable ignored = FutureUtils.get(permit)) {
-                // check that the IndexShard still has the primary authority. This needs to be checked under operation permit to prevent
-                // races, as IndexShard will switch its authority only when it holds all operation permits, see IndexShard.relocated()
-                if (primary.isRelocatedPrimary()) {
-                    throw new IndexShardRelocatedException(primary.shardId());
-                }
-                runnable.run();
-            } finally {
-                // just in case we got an exception (likely interrupted) while waiting for the get
-                permit.whenComplete((r, e) -> {
-                    if (r != null) {
-                        r.close();
-                    }
-                    if (e != null) {
-                        logger.trace("suppressing exception on completion (it was already bubbled up or the operation was aborted)", e);
-                    }
-                });
             }
-        });
+
+            @Override
+            public void onFailure(Exception e) {
+                permit.completeExceptionally(e);
+            }
+        };
+        primary.acquirePrimaryOperationPermit(onAcquired, ThreadPool.Names.SAME, reason);
+        try (Releasable ignored = FutureUtils.get(permit)) {
+            // check that the IndexShard still has the primary authority. This needs to be checked under operation permit to prevent
+            // races, as IndexShard will switch its authority only when it holds all operation permits, see IndexShard.relocated()
+            if (primary.isRelocatedPrimary()) {
+                throw new IndexShardRelocatedException(primary.shardId());
+            }
+            runnable.run();
+        } finally {
+            // just in case we got an exception (likely interrupted) while waiting for the get
+            permit.whenComplete((r, e) -> {
+                if (r != null) {
+                    r.close();
+                }
+                if (e != null) {
+                    logger.trace("suppressing exception on completion (it was already bubbled up or the operation was aborted)", e);
+                }
+            });
+        }
     }
 
     /**
@@ -451,7 +458,7 @@ public class RecoverySourceHandler {
      * checksum can be reused
      */
     void phase1(IndexCommit snapshot, long startingSeqNo, IntSupplier translogOps, ActionListener<SendFileResult> listener) {
-        cancellableThreads.checkForCancel();
+        checkForCancel();
         final Store store = shard.store();
         try {
             StopWatch stopWatch = new StopWatch().start();
@@ -517,7 +524,7 @@ public class RecoverySourceHandler {
                 final StepListener<Void> sendFilesStep = new StepListener<>();
                 final StepListener<RetentionLease> createRetentionLeaseStep = new StepListener<>();
                 final StepListener<Void> cleanFilesStep = new StepListener<>();
-                cancellableThreads.checkForCancel();
+                checkForCancel();
                 recoveryTarget.receiveFileInfo(phase1FileNames, phase1FileSizes, phase1ExistingFileNames,
                         phase1ExistingFileSizes, translogOps.getAsInt(), sendFileInfoStep);
 
@@ -599,7 +606,7 @@ public class RecoverySourceHandler {
                     logger.trace("created retention lease with estimated checkpoint of [{}]", estimatedGlobalCheckpoint);
                 }
             }, shardId + " establishing retention lease for [" + request.targetAllocationId() + "]",
-            shard, cancellableThreads, logger);
+            shard, logger);
     }
 
     boolean canSkipPhase1(Store.MetadataSnapshot source, Store.MetadataSnapshot target) {
@@ -635,7 +642,7 @@ public class RecoverySourceHandler {
         // Send a request preparing the new shard's translog to receive operations. This ensures the shard engine is started and disables
         // garbage collection (not the JVM's GC!) of tombstone deletes.
         logger.trace("recovery [phase1]: prepare remote engine for translog");
-        cancellableThreads.checkForCancel();
+        checkForCancel();
         recoveryTarget.prepareForTranslogOperations(totalTranslogOps, wrappedListener);
     }
 
@@ -733,7 +740,7 @@ public class RecoverySourceHandler {
             // We need to synchronized Snapshot#next() because it's called by different threads through sendBatch.
             // Even though those calls are not concurrent, Snapshot#next() uses non-synchronized state and is not multi-thread-compatible.
             assert Transports.assertNotTransportThread("[phase2]");
-            cancellableThreads.checkForCancel();
+            checkForCancel();
             final List<Translog.Operation> ops = lastBatchCount > 0 ? new ArrayList<>(lastBatchCount) : new ArrayList<>();
             long batchSizeInBytes = 0L;
             Translog.Operation operation;
@@ -761,7 +768,7 @@ public class RecoverySourceHandler {
 
         @Override
         protected void executeChunkRequest(OperationChunkRequest request, ActionListener<Void> listener) {
-            cancellableThreads.checkForCancel();
+            checkForCancel();
             recoveryTarget.indexTranslogOperations(
                 request.operations,
                 snapshot.totalOperations(),
@@ -790,7 +797,7 @@ public class RecoverySourceHandler {
         if (shard.state() == IndexShardState.CLOSED) {
             throw new IndexShardClosedException(request.shardId());
         }
-        cancellableThreads.checkForCancel();
+        checkForCancel();
         StopWatch stopWatch = new StopWatch().start();
         logger.trace("finalizing recovery");
         /*
@@ -799,24 +806,30 @@ public class RecoverySourceHandler {
          * marking the shard as in-sync. If the relocation handoff holds all the permits then after the handoff completes and we acquire
          * the permit then the state of the shard will be relocated and this recovery will fail.
          */
-        runUnderPrimaryPermit(() -> shard.markAllocationIdAsInSync(request.targetAllocationId(), targetLocalCheckpoint),
-            shardId + " marking " + request.targetAllocationId() + " as in sync", shard, cancellableThreads, logger);
+        runUnderPrimaryPermit(() -> {
+                    try {
+                        shard.markAllocationIdAsInSync(request.targetAllocationId(), targetLocalCheckpoint);
+                    } catch (InterruptedException e) {
+                        throw new AssertionError(e);
+                    }
+                },
+            shardId + " marking " + request.targetAllocationId() + " as in sync", shard, logger);
         final long globalCheckpoint = shard.getLastKnownGlobalCheckpoint(); // this global checkpoint is persisted in finalizeRecovery
         final StepListener<Void> finalizeListener = new StepListener<>();
-        cancellableThreads.checkForCancel();
+        checkForCancel();
         recoveryTarget.finalizeRecovery(globalCheckpoint, trimAboveSeqNo, finalizeListener);
         finalizeListener.whenComplete(r -> {
             runUnderPrimaryPermit(() -> shard.updateGlobalCheckpointForShard(request.targetAllocationId(), globalCheckpoint),
-                shardId + " updating " + request.targetAllocationId() + "'s global checkpoint", shard, cancellableThreads, logger);
+                shardId + " updating " + request.targetAllocationId() + "'s global checkpoint", shard, logger);
 
             if (request.isPrimaryRelocation()) {
                 logger.trace("performing relocation hand-off");
                 // this acquires all IndexShard operation permits and will thus delay new recoveries until it is done
-                cancellableThreads.execute(() -> shard.relocated(request.targetAllocationId(), recoveryTarget::handoffPrimaryContext,
+                shard.relocated(request.targetAllocationId(), recoveryTarget::handoffPrimaryContext,
                         ActionListener.wrap(v -> {
-                            cancellableThreads.checkForCancel();
+                            checkForCancel();
                             completeFinalizationListener(listener, stopWatch);
-                        }, listener::onFailure)));
+                        }, listener::onFailure));
                 /*
                  * if the recovery process fails after disabling primary mode on the source shard, both relocation source and
                  * target are failed (see {@link IndexShard#updateRoutingEntry}).
@@ -849,7 +862,8 @@ public class RecoverySourceHandler {
      * Cancels the recovery and interrupts all eligible threads.
      */
     public void cancel(String reason) {
-        cancellableThreads.cancel(reason);
+        final boolean didCancel = this.cancelled.compareAndSet(null, reason);
+        assert didCancel : "should only be called once";
         recoveryTarget.cancel();
     }
 
@@ -910,7 +924,7 @@ public class RecoverySourceHandler {
                     @Override
                     protected FileChunk nextChunkRequest(StoreFileMetadata md) throws IOException {
                         assert Transports.assertNotTransportThread("read file chunk");
-                        cancellableThreads.checkForCancel();
+                        checkForCancel();
                         final byte[] buffer = Objects.requireNonNullElseGet(buffers.pollFirst(), () -> new byte[chunkSizeInBytes]);
                         final int toRead = Math.toIntExact(Math.min(md.length() - offset, buffer.length));
                         currentInput.readBytes(buffer, 0, toRead, false);
@@ -923,7 +937,7 @@ public class RecoverySourceHandler {
 
                     @Override
                     protected void executeChunkRequest(FileChunk request, ActionListener<Void> listener) {
-                        cancellableThreads.checkForCancel();
+                        checkForCancel();
                         final ReleasableBytesReference content = new ReleasableBytesReference(request.content, request);
                         recoveryTarget.writeFileChunk(
                             request.md, request.position, content, request.lastChunk,
@@ -958,7 +972,7 @@ public class RecoverySourceHandler {
         // Once the files have been renamed, any other files that are not
         // related to this recovery (out of date segments, for example)
         // are deleted
-        cancellableThreads.checkForCancel();
+        checkForCancel();
         recoveryTarget.cleanFiles(translogOps.getAsInt(), globalCheckpoint, sourceMetadata,
             listener.delegateResponse((l, e) -> ActionListener.completeWith(l, () -> {
                 StoreFileMetadata[] mds = StreamSupport.stream(sourceMetadata.spliterator(), false).toArray(StoreFileMetadata[]::new);
@@ -974,7 +988,7 @@ public class RecoverySourceHandler {
         if (corruptIndexException != null) {
             Exception localException = null;
             for (StoreFileMetadata md : mds) {
-                cancellableThreads.checkForCancel();
+                checkForCancel();
                 logger.debug("checking integrity for file {} after remove corruption exception", md);
                 if (store.checkIntegrityNoException(md) == false) { // we are corrupted on the primary -- fail!
                     logger.warn("{} Corrupted file detected {} checksum mismatch", shardId, md);

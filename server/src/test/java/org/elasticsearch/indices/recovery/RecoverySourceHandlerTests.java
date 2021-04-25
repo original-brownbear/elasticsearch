@@ -573,7 +573,7 @@ public class RecoverySourceHandlerTests extends ESTestCase {
         Thread cancelingThread = new Thread(() -> cancellableThreads.cancel("test"));
         cancelingThread.start();
         try {
-            RecoverySourceHandler.runUnderPrimaryPermit(() -> {}, "test", shard, cancellableThreads, logger);
+            RecoverySourceHandler.runUnderPrimaryPermit(() -> {}, "test", shard, logger);
         } catch (CancellableThreads.ExecutionCancelledException e) {
             // expected.
         }
