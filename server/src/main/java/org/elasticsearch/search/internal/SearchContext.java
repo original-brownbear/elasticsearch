@@ -16,6 +16,7 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lease.Releasables;
+import org.elasticsearch.common.lease.ReleaseOnce;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.cache.bitset.BitsetFilterCache;
 import org.elasticsearch.index.query.ParsedQuery;
@@ -47,14 +48,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class encapsulates the state needed to execute a search. It holds a reference to the
  * shards point in time snapshot (IndexReader / ContextIndexSearcher) and allows passing on
  * state from one query / fetch phase to another.
  */
-public abstract class SearchContext implements Releasable {
+public abstract class SearchContext extends ReleaseOnce {
 
     public static final int DEFAULT_TERMINATE_AFTER = 0;
     public static final int TRACK_TOTAL_HITS_ACCURATE = Integer.MAX_VALUE;
@@ -62,7 +62,6 @@ public abstract class SearchContext implements Releasable {
     public static final int DEFAULT_TRACK_TOTAL_HITS_UP_TO = 10000;
 
     protected final List<Releasable> releasables = new CopyOnWriteArrayList<>();
-    private final AtomicBoolean closed = new AtomicBoolean(false);
     private InnerHitsContext innerHitsContext;
 
     protected SearchContext() {}
@@ -74,10 +73,8 @@ public abstract class SearchContext implements Releasable {
     public abstract boolean isCancelled();
 
     @Override
-    public final void close() {
-        if (closed.compareAndSet(false, true)) {
-            Releasables.close(releasables);
-        }
+    public final void closeInternal() {
+        Releasables.close(releasables);
     }
 
     /**

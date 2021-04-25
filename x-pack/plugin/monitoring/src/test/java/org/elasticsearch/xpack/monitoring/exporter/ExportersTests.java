@@ -460,7 +460,7 @@ public class ExportersTests extends ESTestCase {
         }
 
         @Override
-        public void doClose() {
+        public void closeInternal() {
         }
     }
 
@@ -499,7 +499,7 @@ public class ExportersTests extends ESTestCase {
         }
 
         @Override
-        public void doClose() {
+        public void closeInternal() {
         }
 
         public int getExportedCount() {

@@ -210,7 +210,7 @@ public class MockNioTransport extends TcpTransport {
             MockSocketChannel nioChannel = new MockSocketChannel(isClient == false, profileName, channel);
             IntFunction<Page> pageSupplier = (length) -> {
                 if (length > PageCacheRecycler.BYTE_PAGE_SIZE) {
-                    return new Page(ByteBuffer.allocate(length), () -> {});
+                    return new Page(ByteBuffer.allocate(length), Releasable.NOOP);
                 } else {
                     Recycler.V<byte[]> bytes = pageCacheRecycler.bytePage(false);
                     return new Page(ByteBuffer.wrap(bytes.v(), 0, length), bytes);

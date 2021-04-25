@@ -8,6 +8,7 @@
 
 package org.elasticsearch.transport.nio;
 
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.nio.Page;
@@ -31,7 +32,7 @@ public class PageAllocator implements IntFunction<Page> {
             Recycler.V<byte[]> bytePage = recycler.bytePage(false);
             return new Page(ByteBuffer.wrap(bytePage.v(), 0, length), bytePage);
         } else {
-            return new Page(ByteBuffer.allocate(length), () -> {});
+            return new Page(ByteBuffer.allocate(length), Releasable.NOOP);
         }
     }
 }

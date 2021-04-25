@@ -650,7 +650,7 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
     private Snapshot newMultiSnapshot(TranslogSnapshot[] snapshots) throws IOException {
         final Closeable onClose;
         if (snapshots.length == 0) {
-            onClose = () -> {};
+            onClose = Releasable.NOOP;
         } else {
             assert Arrays.stream(snapshots).map(BaseTranslogReader::getGeneration).min(Long::compareTo).get()
                 == snapshots[0].generation : "first reader generation of " + snapshots + " is not the smallest";

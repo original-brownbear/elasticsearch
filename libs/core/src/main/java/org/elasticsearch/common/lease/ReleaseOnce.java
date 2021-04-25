@@ -5,19 +5,18 @@
  * in compliance with, at your election, the Elastic License 2.0 or the Server
  * Side Public License, v 1.
  */
-
 package org.elasticsearch.common.lease;
 
-import java.io.Closeable;
+import org.elasticsearch.core.internal.io.CloseOnce;
 
-/**
- * Specialization of {@link Closeable} that may only throw a {@link RuntimeException}.
- */
-public interface Releasable extends Closeable {
+public abstract class ReleaseOnce extends CloseOnce implements Releasable {
 
-    Releasable NOOP = () -> {};
+    protected abstract void closeInternal();
 
     @Override
-    void close();
-
+    public final void close() {
+        if (closed.compareAndSet(false, true)) {
+            closeInternal();
+        }
+    }
 }

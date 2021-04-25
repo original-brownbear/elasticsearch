@@ -8,6 +8,7 @@
 
 package org.elasticsearch.nio;
 
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.test.ESTestCase;
 
 import java.nio.ByteBuffer;
@@ -22,7 +23,7 @@ public class InboundChannelBufferTests extends ESTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        defaultPageAllocator = (n) -> new Page(ByteBuffer.allocate(n), () -> {});
+        defaultPageAllocator = (n) -> new Page(ByteBuffer.allocate(n), Releasable.NOOP);
     }
 
     public void testNewBufferNoPages() {

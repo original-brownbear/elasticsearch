@@ -280,7 +280,7 @@ public abstract class TransportReplicationAction<
     }
 
     protected Releasable checkOperationLimits(final Request request) {
-        return () -> {};
+        return Releasable.NOOP;
     }
 
     protected void handlePrimaryRequest(final ConcreteShardRequest<Request> request, final TransportChannel channel, final Task task) {
@@ -297,7 +297,7 @@ public abstract class TransportReplicationAction<
     }
 
     protected Releasable checkPrimaryLimits(final Request request, boolean rerouteWasLocal, boolean localRerouteInitiatedByNodeClient) {
-        return () -> {};
+        return Releasable.NOOP;
     }
 
     class AsyncPrimaryAction extends AbstractRunnable {
@@ -521,7 +521,7 @@ public abstract class TransportReplicationAction<
     }
 
     protected Releasable checkReplicaLimits(final ReplicaRequest request) {
-        return () -> {};
+        return Releasable.NOOP;
     }
 
     public static class RetryOnReplicaException extends ElasticsearchException {

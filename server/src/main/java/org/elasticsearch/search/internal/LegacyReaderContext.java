@@ -8,6 +8,7 @@
 
 package org.elasticsearch.search.internal;
 
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
@@ -40,7 +41,7 @@ public class LegacyReaderContext extends ReaderContext {
             addOnClose(delegate);
             // wrap the searcher so that closing is a noop, the actual closing happens when this context is closed
             this.searcher = new Engine.Searcher(delegate.source(), delegate.getDirectoryReader(),
-                delegate.getSimilarity(), delegate.getQueryCache(), delegate.getQueryCachingPolicy(), () -> {});
+                delegate.getSimilarity(), delegate.getQueryCache(), delegate.getQueryCachingPolicy(), Releasable.NOOP);
             this.scrollContext = new ScrollContext();
         } else {
             this.scrollContext = null;

@@ -33,6 +33,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.io.FileSystemUtils;
 import org.elasticsearch.common.lease.Releasable;
+import org.elasticsearch.common.lease.ReleaseOnce;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
@@ -52,7 +53,6 @@ import org.elasticsearch.monitor.fs.FsInfo;
 import org.elasticsearch.monitor.fs.FsProbe;
 import org.elasticsearch.monitor.jvm.JvmInfo;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -75,7 +75,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -85,7 +84,7 @@ import java.util.stream.Stream;
 /**
  * A component that holds all data paths for a single node.
  */
-public final class NodeEnvironment  implements Closeable {
+public final class NodeEnvironment extends ReleaseOnce {
     public static class NodePath {
         /* ${data.paths} */
         public final Path path;
@@ -148,7 +147,6 @@ public final class NodeEnvironment  implements Closeable {
     private final Path sharedDataPath;
     private final Lock[] locks;
 
-    private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Map<ShardId, InternalShardLock> shardLocks = new HashMap<>();
 
     private final NodeMetadata nodeMetadata;
@@ -1118,8 +1116,8 @@ public final class NodeEnvironment  implements Closeable {
     }
 
     @Override
-    public void close() {
-        if (closed.compareAndSet(false, true) && locks != null) {
+    protected void closeInternal() {
+        if (locks != null) {
             for (Lock lock : locks) {
                 try {
                     logger.trace("releasing lock [{}]", lock);

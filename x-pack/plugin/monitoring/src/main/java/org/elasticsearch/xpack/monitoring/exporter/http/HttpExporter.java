@@ -974,7 +974,7 @@ public class HttpExporter extends Exporter {
     }
 
     @Override
-    public void doClose() {
+    public void closeInternal() {
         try {
             config.clusterService().removeListener(onLocalMasterListener);
             if (sniffer != null) {

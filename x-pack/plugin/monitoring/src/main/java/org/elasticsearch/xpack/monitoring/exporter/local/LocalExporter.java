@@ -247,7 +247,7 @@ public class LocalExporter extends Exporter implements ClusterStateListener, Cle
     }
 
     @Override
-    public void doClose() {
+    public void closeInternal() {
         if (state.getAndSet(State.TERMINATED) != State.TERMINATED) {
             logger.trace("stopped");
             // we also remove the listener in resolveBulk after we get to RUNNING, but it's okay to double-remove

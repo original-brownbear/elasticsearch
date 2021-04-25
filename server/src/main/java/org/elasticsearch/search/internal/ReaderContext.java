@@ -10,6 +10,7 @@ package org.elasticsearch.search.internal;
 
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lease.Releasables;
+import org.elasticsearch.common.lease.ReleaseOnce;
 import org.elasticsearch.common.util.concurrent.AbstractRefCounted;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.Engine;
@@ -23,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,12 +33,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * ie. when an index gets removed. To prevent accessing closed IndexReader / IndexSearcher instances the SearchContext
  * can be guarded by a reference count and fail if it's been closed by an external event.
  */
-public class ReaderContext implements Releasable {
+public class ReaderContext extends ReleaseOnce {
     private final ShardSearchContextId id;
     private final IndexService indexService;
     private final IndexShard indexShard;
     protected final Engine.SearcherSupplier searcherSupplier;
-    private final AtomicBoolean closed = new AtomicBoolean(false);
     private final boolean singleSession;
 
     private final AtomicLong keepAlive;
@@ -82,10 +81,8 @@ public class ReaderContext implements Releasable {
     }
 
     @Override
-    public final void close() {
-        if (closed.compareAndSet(false, true)) {
-            refCounted.decRef();
-        }
+    public final void closeInternal() {
+        refCounted.decRef();
     }
 
     void doClose() {

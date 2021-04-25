@@ -8,6 +8,8 @@
 
 package org.elasticsearch.nio;
 
+import org.elasticsearch.common.lease.Releasable;
+import org.elasticsearch.common.lease.ReleaseOnce;
 import org.elasticsearch.nio.utils.ExceptionsHelper;
 
 import java.nio.ByteBuffer;
@@ -15,7 +17,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntFunction;
 
 /**
@@ -24,7 +25,7 @@ import java.util.function.IntFunction;
  * the pages internally. If more space is needed at the end of the buffer {@link #ensureCapacity(long)} can
  * be called and the buffer will expand using the supplier provided.
  */
-public final class InboundChannelBuffer implements AutoCloseable {
+public final class InboundChannelBuffer extends ReleaseOnce {
 
     public static final int PAGE_SIZE = 1 << 14;
     private static final int PAGE_MASK = PAGE_SIZE - 1;
@@ -34,7 +35,6 @@ public final class InboundChannelBuffer implements AutoCloseable {
 
     private final IntFunction<Page> pageAllocator;
     private final ArrayDeque<Page> pages = new ArrayDeque<>();
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
     private long capacity = 0;
     private long internalIndex = 0;
@@ -46,27 +46,25 @@ public final class InboundChannelBuffer implements AutoCloseable {
     }
 
     public static InboundChannelBuffer allocatingInstance() {
-        return new InboundChannelBuffer((n) -> new Page(ByteBuffer.allocate(n), () -> {}));
+        return new InboundChannelBuffer((n) -> new Page(ByteBuffer.allocate(n), Releasable.NOOP));
     }
 
     @Override
-    public void close() {
-        if (isClosed.compareAndSet(false, true)) {
-            Page page;
-            List<RuntimeException> closingExceptions = new ArrayList<>();
-            while ((page = pages.pollFirst()) != null) {
-                try {
-                    page.close();
-                } catch (RuntimeException e) {
-                    closingExceptions.add(e);
-                }
+    public void closeInternal() {
+        Page page;
+        List<RuntimeException> closingExceptions = new ArrayList<>();
+        while ((page = pages.pollFirst()) != null) {
+            try {
+                page.close();
+            } catch (RuntimeException e) {
+                closingExceptions.add(e);
             }
-            ExceptionsHelper.rethrowAndSuppress(closingExceptions);
         }
+        ExceptionsHelper.rethrowAndSuppress(closingExceptions);
     }
 
     public void ensureCapacity(long requiredCapacity) {
-        if (isClosed.get()) {
+        if (closed.get()) {
             throw new IllegalStateException("Cannot allocate new pages if the buffer is closed.");
         }
         if (capacity < requiredCapacity) {

@@ -23,21 +23,20 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.util.ArrayUtil;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.lease.Releasable;
+import org.elasticsearch.common.lease.Releasables;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.lucene.index.SequentialStoredFieldsLeafReader;
 import org.elasticsearch.common.lucene.search.Queries;
-import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.index.fieldvisitor.FieldsVisitor;
 import org.elasticsearch.index.mapper.SeqNoFieldMapper;
 import org.elasticsearch.index.mapper.SourceFieldMapper;
 import org.elasticsearch.index.translog.Translog;
 import org.elasticsearch.transport.Transports;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A {@link Translog.Snapshot} from changes in a Lucene index
@@ -57,7 +56,7 @@ final class LuceneChangesSnapshot implements Translog.Snapshot {
     private final int totalHits;
     private ScoreDoc[] scoreDocs;
     private final ParallelArray parallelArray;
-    private final Closeable onClose;
+    private final Releasable onClose;
 
     private int storedFieldsReaderOrd = -1;
     private StoredFieldsReader storedFieldsReader = null;
@@ -83,12 +82,7 @@ final class LuceneChangesSnapshot implements Translog.Snapshot {
         if (searchBatchSize <= 0) {
             throw new IllegalArgumentException("Search_batch_size must be positive [" + searchBatchSize + "]");
         }
-        final AtomicBoolean closed = new AtomicBoolean();
-        this.onClose = () -> {
-            if (closed.compareAndSet(false, true)) {
-                IOUtils.close(engineSearcher);
-            }
-        };
+        this.onClose = Releasables.releaseOnce(engineSearcher);
         final long requestingSize = (toSeqNo - fromSeqNo) == Long.MAX_VALUE ? Long.MAX_VALUE : (toSeqNo - fromSeqNo + 1L);
         this.creationThread = Thread.currentThread();
         this.searchBatchSize = requestingSize < searchBatchSize ? Math.toIntExact(requestingSize) : searchBatchSize;

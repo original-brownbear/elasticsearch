@@ -30,7 +30,6 @@ import org.apache.lucene.util.Accountables;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.common.CheckedRunnable;
 import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
@@ -45,6 +44,7 @@ import org.elasticsearch.common.lucene.uid.VersionsAndSeqNoResolver.DocIdAndVers
 import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.ReleasableLock;
+import org.elasticsearch.core.internal.io.CloseOnce;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.mapper.DocumentMapper;
 import org.elasticsearch.index.mapper.IdFieldMapper;
@@ -609,7 +609,7 @@ public abstract class Engine implements Closeable {
                 public Searcher acquireSearcherInternal(String source) {
                     assert assertSearcherIsWarmedUp(source, scope);
                     return new Searcher(source, acquire, engineConfig.getSimilarity(), engineConfig.getQueryCache(),
-                        engineConfig.getQueryCachingPolicy(), () -> {});
+                        engineConfig.getQueryCachingPolicy(), Releasable.NOOP);
                 }
 
                 @Override
@@ -1658,21 +1658,18 @@ public abstract class Engine implements Closeable {
         }
     }
 
-    public static class IndexCommitRef implements Closeable {
-        private final AtomicBoolean closed = new AtomicBoolean();
-        private final CheckedRunnable<IOException> onClose;
+    public static class IndexCommitRef extends CloseOnce {
+        private final Closeable onClose;
         private final IndexCommit indexCommit;
 
-        public IndexCommitRef(IndexCommit indexCommit, CheckedRunnable<IOException> onClose) {
+        public IndexCommitRef(IndexCommit indexCommit, Closeable onClose) {
             this.indexCommit = indexCommit;
             this.onClose = onClose;
         }
 
         @Override
-        public void close() throws IOException {
-            if (closed.compareAndSet(false, true)) {
-                onClose.run();
-            }
+        protected void closeInternal() throws IOException {
+            onClose.close();
         }
 
         public IndexCommit getIndexCommit() {

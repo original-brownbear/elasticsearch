@@ -98,7 +98,7 @@ public abstract class TransportWriteAction<
                 return indexingPressure.markPrimaryOperationLocalToCoordinatingNodeStarted(primaryOperationCount(request),
                     primaryOperationSize(request));
             } else {
-                return () -> {};
+                return Releasable.NOOP;
             }
         } else {
             // If this primary request was received directly from the network, we must mark a new primary

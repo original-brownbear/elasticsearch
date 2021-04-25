@@ -9,6 +9,7 @@
 package org.elasticsearch.transport;
 
 import org.elasticsearch.Version;
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -18,6 +19,6 @@ public class TestTransportChannels {
                                                                  String action, long requestId, Version version) {
         return new TcpTransportChannel(
             new OutboundHandler(nodeName, version, new StatsTracker(), threadPool, BigArrays.NON_RECYCLING_INSTANCE),
-            channel, action, requestId, version, false, false, () -> {});
+            channel, action, requestId, version, false, false, Releasable.NOOP);
     }
 }

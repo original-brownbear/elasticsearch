@@ -10,9 +10,9 @@ package org.elasticsearch.common.util.concurrent;
 
 
 import org.elasticsearch.common.lease.Releasable;
+import org.elasticsearch.common.lease.ReleaseOnce;
 
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -122,10 +122,9 @@ public final class KeyedLock<T> {
     }
 
 
-    private final class ReleasableLock implements Releasable {
+    private final class ReleasableLock extends ReleaseOnce {
         final T key;
         final KeyLock lock;
-        final AtomicBoolean closed = new AtomicBoolean();
 
         private ReleasableLock(T key, KeyLock lock) {
             this.key = key;
@@ -133,10 +132,8 @@ public final class KeyedLock<T> {
         }
 
         @Override
-        public void close() {
-            if (closed.compareAndSet(false, true)) {
-                release(key, lock);
-            }
+        protected void closeInternal() {
+            release(key, lock);
         }
     }
 

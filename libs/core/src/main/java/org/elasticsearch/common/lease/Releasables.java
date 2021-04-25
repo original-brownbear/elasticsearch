@@ -14,7 +14,6 @@ import org.elasticsearch.core.internal.io.IOUtils;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Utility methods to work with {@link Releasable}s. */
 public enum Releasables {
@@ -109,9 +108,12 @@ public enum Releasables {
      * Wraps a {@link Releasable} such that its {@link Releasable#close()} method can be called multiple times without double releasing.
      */
     public static Releasable releaseOnce(final Releasable releasable) {
-        final AtomicBoolean released = new AtomicBoolean(false);
-        return () -> {
-            if (released.compareAndSet(false, true)) {
+        if (releasable instanceof ReleaseOnce || releasable == Releasable.NOOP) {
+            return releasable;
+        }
+        return new ReleaseOnce() {
+            @Override
+            protected void closeInternal() {
                 releasable.close();
             }
         };

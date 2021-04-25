@@ -8,7 +8,8 @@
 
 package org.elasticsearch.nio;
 
-import java.io.Closeable;
+import org.elasticsearch.core.internal.io.CloseOnce;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
  * of channels. Users should call {@link #queueChannelClose(NioChannel)} to schedule a channel for close by
  * this selector.
  */
-public class NioSelector implements Closeable {
+public class NioSelector extends CloseOnce {
 
     private final ConcurrentLinkedQueue<WriteOperation> queuedWrites = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<ChannelContext<?>> channelsToClose = new ConcurrentLinkedQueue<>();
@@ -48,7 +49,6 @@ public class NioSelector implements Closeable {
     private final TaskScheduler taskScheduler = new TaskScheduler();
     private final ReentrantLock runLock = new ReentrantLock();
     private final CountDownLatch exitedLoop = new CountDownLatch(1);
-    private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final CompletableFuture<Void> isRunningFuture = new CompletableFuture<>();
     private final AtomicReference<Thread> thread = new AtomicReference<>(null);
     private final AtomicBoolean wokenUp = new AtomicBoolean(false);
@@ -83,7 +83,7 @@ public class NioSelector implements Closeable {
     }
 
     public boolean isOpen() {
-        return isClosed.get() == false;
+        return closed.get() == false;
     }
 
     public boolean isRunning() {
@@ -192,19 +192,17 @@ public class NioSelector implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
-        if (isClosed.compareAndSet(false, true)) {
-            wakeup();
-            if (isRunning()) {
-                try {
-                    exitedLoop.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Thread was interrupted while waiting for selector to close", e);
-                }
-            } else if (selector.isOpen()) {
-                selector.close();
+    public void closeInternal() throws IOException {
+        wakeup();
+        if (isRunning()) {
+            try {
+                exitedLoop.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Thread was interrupted while waiting for selector to close", e);
             }
+        } else if (selector.isOpen()) {
+            selector.close();
         }
     }
 

@@ -77,7 +77,7 @@ public class InboundMessage implements Releasable {
     public Releasable takeBreakerReleaseControl() {
         final Releasable toReturn = breakerRelease;
         breakerRelease = null;
-        return Objects.requireNonNullElse(toReturn, () -> {});
+        return Objects.requireNonNullElse(toReturn, Releasable.NOOP);
     }
 
     public StreamInput openOrGetStreamInput() throws IOException {

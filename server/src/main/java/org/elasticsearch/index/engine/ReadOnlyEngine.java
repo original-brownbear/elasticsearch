@@ -22,6 +22,7 @@ import org.apache.lucene.store.Lock;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.common.hash.MessageDigests;
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.lucene.index.ElasticsearchDirectoryReader;
 import org.elasticsearch.common.util.concurrent.ReleasableLock;
@@ -314,7 +315,7 @@ public class ReadOnlyEngine extends Engine {
 
     @Override
     public Closeable acquireHistoryRetentionLock() {
-        return () -> {};
+        return Releasable.NOOP;
     }
 
     @Override

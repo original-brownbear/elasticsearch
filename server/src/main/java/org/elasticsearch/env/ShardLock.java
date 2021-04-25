@@ -8,10 +8,8 @@
 
 package org.elasticsearch.env;
 
+import org.elasticsearch.common.lease.ReleaseOnce;
 import org.elasticsearch.index.shard.ShardId;
-
-import java.io.Closeable;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A shard lock guarantees exclusive access to a shards data
@@ -20,10 +18,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @see NodeEnvironment
  */
-public abstract class ShardLock implements Closeable {
+public abstract class ShardLock extends ReleaseOnce {
 
     private final ShardId shardId;
-    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     public ShardLock(ShardId id) {
         this.shardId = id;
@@ -35,15 +32,6 @@ public abstract class ShardLock implements Closeable {
     public final ShardId getShardId() {
         return shardId;
     }
-
-    @Override
-    public final void close() {
-        if (this.closed.compareAndSet(false, true)) {
-           closeInternal();
-        }
-    }
-
-    protected abstract void closeInternal();
 
     /**
      * Update the details of the holder of this lock. These details are displayed alongside a {@link ShardLockObtainFailedException}. Must

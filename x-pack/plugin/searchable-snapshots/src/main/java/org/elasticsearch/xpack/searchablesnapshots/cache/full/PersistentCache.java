@@ -44,6 +44,7 @@ import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.internal.io.CloseOnce;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.Index;
@@ -83,7 +84,7 @@ import static java.util.Collections.unmodifiableSortedSet;
 import static org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService.getShardCachePath;
 import static org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService.resolveSnapshotCache;
 
-public class PersistentCache implements Closeable {
+public class PersistentCache extends CloseOnce {
 
     private static final Logger logger = LogManager.getLogger(PersistentCache.class);
 
@@ -93,14 +94,12 @@ public class PersistentCache implements Closeable {
     private final Map<String, Document> documents;
     private final List<CacheIndexWriter> writers;
     private final AtomicBoolean started;
-    private final AtomicBoolean closed;
 
     public PersistentCache(NodeEnvironment nodeEnvironment) {
         this.documents = synchronizedMap(loadDocuments(nodeEnvironment));
         this.writers = createWriters(nodeEnvironment);
         this.nodeEnvironment = nodeEnvironment;
         this.started = new AtomicBoolean();
-        this.closed = new AtomicBoolean();
     }
 
     private void ensureOpen() {
@@ -317,13 +316,11 @@ public class PersistentCache implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
-        if (closed.compareAndSet(false, true)) {
-            try {
-                IOUtils.close(writers);
-            } finally {
-                documents.clear();
-            }
+    public void closeInternal() throws IOException {
+        try {
+            IOUtils.close(writers);
+        } finally {
+            documents.clear();
         }
     }
 

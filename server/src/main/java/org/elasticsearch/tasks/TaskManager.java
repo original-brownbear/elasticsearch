@@ -151,7 +151,7 @@ public class TaskManager implements ClusterStateApplier {
         if (request.getParentTask().isSet()) {
             unregisterChildNode = registerChildConnection(request.getParentTask().getId(), localConnection);
         } else {
-            unregisterChildNode = () -> {};
+            unregisterChildNode = Releasable.NOOP;
         }
         final Task task;
         try {
@@ -254,7 +254,7 @@ public class TaskManager implements ClusterStateApplier {
                 holder.unregisterChildConnection(childConnection);
             });
         }
-        return () -> {};
+        return Releasable.NOOP;
     }
 
     /**

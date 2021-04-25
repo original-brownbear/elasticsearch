@@ -10,6 +10,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.lease.ReleaseOnce;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
@@ -23,11 +24,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public abstract class Exporter implements AutoCloseable {
+public abstract class Exporter extends ReleaseOnce {
 
     public static Setting.AffixSettingDependency TYPE_DEPENDENCY = () -> Exporter.TYPE_SETTING;
 
@@ -121,8 +121,6 @@ public abstract class Exporter implements AutoCloseable {
 
     protected final Config config;
 
-    private AtomicBoolean closed = new AtomicBoolean(false);
-
     public Exporter(Config config) {
         this.config = config;
     }
@@ -162,15 +160,6 @@ public abstract class Exporter implements AutoCloseable {
     protected final boolean isClosed() {
         return closed.get();
     }
-
-    @Override
-    public void close() {
-        if (closed.compareAndSet(false, true)) {
-            doClose();
-        }
-    }
-
-    protected abstract void doClose();
 
     protected static DateFormatter dateTimeFormatter(final Config config) {
         Setting<DateFormatter> setting = INDEX_NAME_TIME_FORMAT_SETTING.getConcreteSettingForNamespace(config.name);

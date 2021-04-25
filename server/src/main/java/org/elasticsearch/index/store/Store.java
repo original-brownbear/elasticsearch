@@ -46,6 +46,7 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.lucene.store.ByteArrayIndexInput;
@@ -264,7 +265,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
         // on this store at the same time.
         java.util.concurrent.locks.Lock lock = lockDirectory ? metadataLock.writeLock() : metadataLock.readLock();
         lock.lock();
-        try (Closeable ignored = lockDirectory ? directory.obtainLock(IndexWriter.WRITE_LOCK_NAME) : () -> {} ) {
+        try (Closeable ignored = lockDirectory ? directory.obtainLock(IndexWriter.WRITE_LOCK_NAME) : Releasable.NOOP) {
             return new MetadataSnapshot(commit, directory, logger);
         } catch (CorruptIndexException | IndexFormatTooOldException | IndexFormatTooNewException ex) {
             markStoreCorrupted(ex);
