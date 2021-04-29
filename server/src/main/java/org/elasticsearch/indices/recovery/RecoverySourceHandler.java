@@ -892,6 +892,7 @@ public class RecoverySourceHandler {
             final MultiChunkTransfer<StoreFileMetadata, FileChunk> multiFileSender =
                 new MultiChunkTransfer<>(logger, threadPool.getThreadContext(), listener, maxConcurrentFileChunks, Arrays.asList(files)) {
 
+                    final AtomicInteger bufferBalance = new AtomicInteger(0);
                     final Deque<byte[]> buffers = new ConcurrentLinkedDeque<>();
                     IndexInput currentInput = null;
                     long offset = 0;
@@ -907,15 +908,30 @@ public class RecoverySourceHandler {
                     protected FileChunk nextChunkRequest(StoreFileMetadata md) throws IOException {
                         assert Transports.assertNotTransportThread("read file chunk");
                         cancellableThreads.checkForCancel();
-                        final byte[] buffer = Objects.requireNonNullElseGet(buffers.pollFirst(), () -> new byte[chunkSizeInBytes]);
+                        final byte[] buffer = acquireBuffer();
                         final int toRead = Math.toIntExact(Math.min(md.length() - offset, buffer.length));
                         currentInput.readBytes(buffer, 0, toRead, false);
                         final boolean lastChunk = offset + toRead == md.length();
-                        final FileChunk chunk = new FileChunk(md,
-                            new ReleasableBytesReference(new BytesArray(buffer, 0, toRead), () -> buffers.addFirst(buffer)), offset,
-                            lastChunk);
+                        // TODO: retries suck, forcing us to keep messages around until we receive a successful response
+                        final FileChunk chunk = new FileChunk(md, new ReleasableBytesReference(new BytesArray(buffer, 0, toRead),
+                                () -> returnBuffer(buffer)), offset, lastChunk);
                         offset += toRead;
                         return chunk;
+                    }
+
+                    private byte[] acquireBuffer() {
+                        bufferBalance.incrementAndGet();
+                        return Objects.requireNonNullElseGet(buffers.pollFirst(), () -> new byte[chunkSizeInBytes]);
+                    }
+
+                    private void returnBuffer(byte[] buffer) {
+                        bufferBalance.decrementAndGet();
+                        buffers.add(buffer);
+                    }
+
+                    @Override
+                    protected void afterComplete() {
+                        assert bufferBalance.get() == 0 : "[" + bufferBalance + "] buffers have not been released";
                     }
 
                     @Override

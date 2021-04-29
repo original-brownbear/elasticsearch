@@ -135,6 +135,10 @@ public abstract class MultiChunkTransfer<Source, Request extends MultiChunkTrans
             return;
         }
         listener.onResponse(null);
+        afterComplete();
+    }
+
+    protected void afterComplete() {
     }
 
     private Tuple<Source, Request> getNextRequest() throws Exception {
