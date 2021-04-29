@@ -733,6 +733,7 @@ public class TransportService extends AbstractLifecycleComponent
             // usually happen either because we failed to connect to the node
             // or because we failed serializing the message
             final Transport.ResponseContext<? extends TransportResponse> contextToNotify = responseHandlers.remove(requestId);
+            request.decRef();
             // If holderToNotify == null then handler has already been taken care of.
             if (contextToNotify != null) {
                 if (timeoutHandler != null) {

@@ -232,6 +232,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
 
             @Override
             public void tryAction(ActionListener<T> listener) {
+                request.incRef();
                 transportService.sendRequest(targetNode, action, request, options,
                     new ActionListenerResponseHandler<>(listener, reader, ThreadPool.Names.GENERIC));
             }
@@ -243,6 +244,7 @@ public class RemoteRecoveryTargetHandler implements RecoveryTargetHandler {
         };
         onGoingRetryableActions.put(key, retryableAction);
         retryableAction.run();
+        request.decRef();
         if (isCancelled) {
             retryableAction.cancel(new CancellableThreads.ExecutionCancelledException("recovery was cancelled"));
         }
