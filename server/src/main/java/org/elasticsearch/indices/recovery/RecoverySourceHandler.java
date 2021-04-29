@@ -32,7 +32,6 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.CheckedRunnable;
 import org.elasticsearch.common.StopWatch;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.lease.Releasables;
@@ -863,17 +862,15 @@ public class RecoverySourceHandler {
 
     private static class FileChunk implements MultiChunkTransfer.ChunkRequest, Releasable {
         final StoreFileMetadata md;
-        final BytesReference content;
+        final ReleasableBytesReference content;
         final long position;
         final boolean lastChunk;
-        final Releasable onClose;
 
-        FileChunk(StoreFileMetadata md, BytesReference content, long position, boolean lastChunk, Releasable onClose) {
+        FileChunk(StoreFileMetadata md, ReleasableBytesReference content, long position, boolean lastChunk) {
             this.md = md;
             this.content = content;
             this.position = position;
             this.lastChunk = lastChunk;
-            this.onClose = onClose;
         }
 
         @Override
@@ -883,7 +880,7 @@ public class RecoverySourceHandler {
 
         @Override
         public void close() {
-            onClose.close();
+            content.close();
         }
     }
 
@@ -914,19 +911,20 @@ public class RecoverySourceHandler {
                         final int toRead = Math.toIntExact(Math.min(md.length() - offset, buffer.length));
                         currentInput.readBytes(buffer, 0, toRead, false);
                         final boolean lastChunk = offset + toRead == md.length();
-                        final FileChunk chunk = new FileChunk(md, new BytesArray(buffer, 0, toRead), offset, lastChunk,
-                            () -> buffers.addFirst(buffer));
+                        final FileChunk chunk = new FileChunk(md,
+                            new ReleasableBytesReference(new BytesArray(buffer, 0, toRead), () -> buffers.addFirst(buffer)), offset,
+                            lastChunk);
                         offset += toRead;
                         return chunk;
                     }
 
                     @Override
                     protected void executeChunkRequest(FileChunk request, ActionListener<Void> listener) {
-                        cancellableThreads.checkForCancel();
-                        final ReleasableBytesReference content = new ReleasableBytesReference(request.content, request);
-                        recoveryTarget.writeFileChunk(
-                            request.md, request.position, content, request.lastChunk,
-                                translogOps.getAsInt(), ActionListener.runBefore(listener, content::close));
+                        try (request) {
+                            cancellableThreads.checkForCancel();
+                            recoveryTarget.writeFileChunk(request.md, request.position, request.content, request.lastChunk,
+                                    translogOps.getAsInt(), listener);
+                        }
                     }
 
                     @Override

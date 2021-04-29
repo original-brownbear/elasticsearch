@@ -68,8 +68,13 @@ final class OutboundHandler {
         Version version = Version.min(this.version, channelVersion);
         OutboundMessage.Request message =
             new OutboundMessage.Request(threadPool.getThreadContext(), request, version, action, requestId, isHandshake, compressRequest);
-        ActionListener<Void> listener = ActionListener.wrap(() ->
-            messageListener.onRequestSent(node, requestId, action, request, options));
+        ActionListener<Void> listener = ActionListener.wrap(() -> {
+            try {
+                messageListener.onRequestSent(node, requestId, action, request, options);
+            } finally {
+                request.decRef();
+            }
+        });
         sendMessage(channel, message, listener);
     }
 
@@ -84,7 +89,13 @@ final class OutboundHandler {
         Version version = Version.min(this.version, nodeVersion);
         OutboundMessage.Response message = new OutboundMessage.Response(threadPool.getThreadContext(), response, version,
             requestId, isHandshake, compress);
-        ActionListener<Void> listener = ActionListener.wrap(() -> messageListener.onResponseSent(requestId, action, response));
+        ActionListener<Void> listener = ActionListener.wrap(() -> {
+            try {
+                messageListener.onResponseSent(requestId, action, response);
+            } finally {
+                response.decRef();
+            }
+        });
         sendMessage(channel, message, listener);
     }
 

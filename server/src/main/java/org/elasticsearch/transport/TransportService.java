@@ -783,8 +783,12 @@ public class TransportService extends AbstractLifecycleComponent
             }
             final String executor = reg.getExecutor();
             if (ThreadPool.Names.SAME.equals(executor)) {
-                //noinspection unchecked
-                reg.processMessageReceived(request, channel);
+                try {
+                    //noinspection unchecked
+                    reg.processMessageReceived(request, channel);
+                } finally {
+                    request.decRef();
+                }
             } else {
                 threadPool.executor(executor).execute(new AbstractRunnable() {
                     @Override
@@ -807,6 +811,11 @@ public class TransportService extends AbstractLifecycleComponent
                             logger.warn(() -> new ParameterizedMessage(
                                     "failed to notify channel of error message for action [{}]", action), inner);
                         }
+                    }
+
+                    @Override
+                    public void onAfter() {
+                        request.decRef();
                     }
 
                     @Override
