@@ -21,6 +21,7 @@ import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.lease.Releasable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.internal.io.Streams;
@@ -120,7 +121,7 @@ public class InboundPipelineTests extends ESTestCase {
                     }
 
                     expected.add(new Tuple<>(messageData, expectedExceptionClass));
-                    final BytesReference reference = message.serialize(new BytesStreamOutput());
+                    final BytesReference reference = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
                     Streams.copy(reference.streamInput(), streamOutput);
                 }
 
@@ -190,7 +191,7 @@ public class InboundPipelineTests extends ESTestCase {
                     invalidVersion, requestId, false, false);
             }
 
-            final BytesReference reference = message.serialize(streamOutput);
+            final BytesReference reference = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
             try (ReleasableBytesReference releasable = ReleasableBytesReference.wrap(reference)) {
                 expectThrows(IllegalStateException.class, () -> pipeline.handleBytes(new FakeTcpChannel(), releasable));
             }
@@ -227,7 +228,7 @@ public class InboundPipelineTests extends ESTestCase {
                     version, requestId, false, false);
             }
 
-            final BytesReference reference = message.serialize(streamOutput);
+            final BytesReference reference = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
             final int fixedHeaderSize = TcpHeader.headerSize(Version.CURRENT);
             final int variableHeaderSize = reference.getInt(fixedHeaderSize - 4);
             final int totalHeaderSize = fixedHeaderSize + variableHeaderSize;

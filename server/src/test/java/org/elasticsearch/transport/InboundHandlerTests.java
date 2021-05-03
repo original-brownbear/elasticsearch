@@ -18,7 +18,6 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.collect.Tuple;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -127,7 +126,7 @@ public class InboundHandlerTests extends ESTestCase {
         OutboundMessage.Request request = new OutboundMessage.Request(threadPool.getThreadContext(),
             new TestRequest(requestValue), version, action, requestId, false, false);
 
-        BytesReference fullRequestBytes = request.serialize(new BytesStreamOutput());
+        BytesReference fullRequestBytes = request.serialize(BigArrays.NON_RECYCLING_INSTANCE);
         BytesReference requestContent = fullRequestBytes.slice(headerSize, fullRequestBytes.length() - headerSize);
         Header requestHeader = new Header(fullRequestBytes.length() - 6, requestId, TransportStatus.setRequest((byte) 0), version);
         InboundMessage requestMessage = new InboundMessage(requestHeader, ReleasableBytesReference.wrap(requestContent), () -> {});

@@ -13,9 +13,9 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsAction;
 import org.elasticsearch.action.admin.cluster.stats.ClusterStatsRequest;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.MockLogAppender;
@@ -79,10 +79,8 @@ public class TransportLoggerTests extends ESTestCase {
 
     private BytesReference buildRequest() throws IOException {
         boolean compress = randomBoolean();
-        try (BytesStreamOutput bytesStreamOutput = new BytesStreamOutput()) {
-            OutboundMessage.Request request = new OutboundMessage.Request(new ThreadContext(Settings.EMPTY), new ClusterStatsRequest(),
+        OutboundMessage.Request request = new OutboundMessage.Request(new ThreadContext(Settings.EMPTY), new ClusterStatsRequest(),
                 Version.CURRENT, ClusterStatsAction.NAME, randomInt(30), false, compress);
-            return request.serialize(bytesStreamOutput);
-        }
+        return request.serialize(BigArrays.NON_RECYCLING_INSTANCE);
     }
 }

@@ -13,6 +13,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.test.ESTestCase;
@@ -53,7 +54,7 @@ public class InboundDecoderTests extends ESTestCase {
                 Version.CURRENT, requestId, false, false);
         }
 
-        final BytesReference totalBytes = message.serialize(new BytesStreamOutput());
+        final BytesReference totalBytes = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
         int totalHeaderSize = TcpHeader.headerSize(Version.CURRENT) + totalBytes.getInt(TcpHeader.VARIABLE_HEADER_SIZE_POSITION);
         final BytesReference messageBytes = totalBytes.slice(totalHeaderSize, totalBytes.length() - totalHeaderSize);
 
@@ -105,7 +106,7 @@ public class InboundDecoderTests extends ESTestCase {
         final OutboundMessage message = new OutboundMessage.Request(threadContext, new TestRequest(contentValue),
             preHeaderVariableInt, action, requestId, true, isCompressed);
 
-        final BytesReference totalBytes = message.serialize(new BytesStreamOutput());
+        final BytesReference totalBytes = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
         int partialHeaderSize = TcpHeader.headerSize(preHeaderVariableInt);
 
         InboundDecoder decoder = new InboundDecoder(Version.CURRENT, PageCacheRecycler.NON_RECYCLING_INSTANCE);
@@ -142,7 +143,7 @@ public class InboundDecoderTests extends ESTestCase {
         OutboundMessage message = new OutboundMessage.Request(threadContext, new TestRequest(randomAlphaOfLength(100)),
             handshakeCompat, action, requestId, true, false);
 
-        final BytesReference bytes = message.serialize(new BytesStreamOutput());
+        final BytesReference bytes = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
         int totalHeaderSize = TcpHeader.headerSize(handshakeCompat);
 
         InboundDecoder decoder = new InboundDecoder(Version.CURRENT, PageCacheRecycler.NON_RECYCLING_INSTANCE);
@@ -184,7 +185,7 @@ public class InboundDecoderTests extends ESTestCase {
             message = new OutboundMessage.Response(threadContext, transportMessage, Version.CURRENT, requestId, false, true);
         }
 
-        final BytesReference totalBytes = message.serialize(new BytesStreamOutput());
+        final BytesReference totalBytes = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
         final BytesStreamOutput out = new BytesStreamOutput();
         transportMessage.writeTo(out);
         final BytesReference uncompressedBytes =out.bytes();
@@ -237,7 +238,7 @@ public class InboundDecoderTests extends ESTestCase {
         OutboundMessage message = new OutboundMessage.Request(threadContext, new TestRequest(randomAlphaOfLength(100)),
             handshakeCompat, action, requestId, true, true);
 
-        final BytesReference bytes = message.serialize(new BytesStreamOutput());
+        final BytesReference bytes = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
         int totalHeaderSize = TcpHeader.headerSize(handshakeCompat);
 
         InboundDecoder decoder = new InboundDecoder(Version.CURRENT, PageCacheRecycler.NON_RECYCLING_INSTANCE);
@@ -265,7 +266,7 @@ public class InboundDecoderTests extends ESTestCase {
         OutboundMessage message = new OutboundMessage.Request(threadContext, new TestRequest(randomAlphaOfLength(100)),
             incompatibleVersion, action, requestId, false, true);
 
-        final BytesReference bytes = message.serialize(new BytesStreamOutput());
+        final BytesReference bytes = message.serialize(BigArrays.NON_RECYCLING_INSTANCE);
 
         InboundDecoder decoder = new InboundDecoder(Version.CURRENT, PageCacheRecycler.NON_RECYCLING_INSTANCE);
         final ArrayList<Object> fragments = new ArrayList<>();

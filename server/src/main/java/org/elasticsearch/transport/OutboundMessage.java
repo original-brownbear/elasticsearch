@@ -12,12 +12,15 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
+import org.elasticsearch.common.io.stream.ReleasableBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 
 import java.io.IOException;
@@ -31,7 +34,21 @@ abstract class OutboundMessage extends NetworkMessage {
         this.message = message;
     }
 
-    BytesReference serialize(BytesStreamOutput bytesStream) throws IOException {
+    ReleasableBytesReference serialize(BigArrays bigArrays) throws IOException {
+        final BytesStreamOutput bytesStream = new ReleasableBytesStreamOutput(bigArrays);
+        boolean success = false;
+        try {
+            BytesReference reference = doSerialize(bytesStream);
+            success = true;
+            return new ReleasableBytesReference(reference, bytesStream::close);
+        } finally {
+            if (success == false) {
+                bytesStream.close();
+            }
+        }
+    }
+
+    private BytesReference doSerialize(BytesStreamOutput bytesStream) throws IOException {
         bytesStream.setVersion(version);
         bytesStream.skip(TcpHeader.headerSize(version));
 
