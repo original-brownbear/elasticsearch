@@ -245,7 +245,7 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
             }
         } else {
             seenSequenceNumbers.put(seqNo,
-                new Tuple<>(new BytesArray(data.toBytesRef(), true), new RuntimeException("stack capture previous op")));
+                new Tuple<>(BytesArray.copy(data.toBytesRef()), new RuntimeException("stack capture previous op")));
         }
         return true;
     }

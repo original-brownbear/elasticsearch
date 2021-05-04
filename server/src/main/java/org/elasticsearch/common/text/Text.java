@@ -59,7 +59,7 @@ public final class Text implements Comparable<Text>, ToXContentFragment {
      */
     public BytesReference bytes() {
         if (bytes == null) {
-            bytes = new BytesArray(text.getBytes(StandardCharsets.UTF_8));
+            bytes = new BytesArray(text.getBytes(StandardCharsets.UTF_8), true);
         }
         return bytes;
     }

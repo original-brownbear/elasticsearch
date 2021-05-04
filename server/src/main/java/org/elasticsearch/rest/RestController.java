@@ -65,7 +65,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
         try (InputStream stream = RestController.class.getResourceAsStream("/config/favicon.ico")) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Streams.copy(stream, out);
-            FAVICON_RESPONSE = new BytesArray(out.toByteArray());
+            FAVICON_RESPONSE = new BytesArray(out.toByteArray(), true);
         } catch (IOException e) {
             throw new AssertionError(e);
         }

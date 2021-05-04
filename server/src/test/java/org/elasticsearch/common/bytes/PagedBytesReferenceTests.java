@@ -45,8 +45,8 @@ public class PagedBytesReferenceTests extends AbstractBytesReferenceTestCase {
             length = randomIntBetween(PAGE_SIZE, PAGE_SIZE * randomIntBetween(2, 5));
         }
         BytesReference pbr = newBytesReference(length);
-        BytesArray ba = new BytesArray(pbr.toBytesRef());
-        BytesArray ba2 = new BytesArray(pbr.toBytesRef());
+        BytesArray ba = BytesArray.wrap(pbr.toBytesRef());
+        BytesArray ba2 = BytesArray.wrap(pbr.toBytesRef());
         assertNotNull(ba);
         assertNotNull(ba2);
         assertEquals(pbr.length(), ba.length());

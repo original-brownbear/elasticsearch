@@ -612,7 +612,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
         } else if (e instanceof HttpRequestOnTransportException) {
             // in case we are able to return data, serialize the exception content and sent it back to the client
             if (channel.isOpen()) {
-                BytesArray message = new BytesArray(e.getMessage().getBytes(StandardCharsets.UTF_8));
+                BytesArray message = new BytesArray(e.getMessage().getBytes(StandardCharsets.UTF_8), true);
                 outboundHandler.sendBytes(channel, message, ActionListener.wrap(() -> CloseableChannel.closeChannel(channel)));
             }
         } else if (e instanceof StreamCorruptedException) {

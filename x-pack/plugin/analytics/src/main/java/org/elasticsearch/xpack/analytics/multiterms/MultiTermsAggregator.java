@@ -175,7 +175,7 @@ class MultiTermsAggregator extends DeferableBucketAggregator {
      * TODO: this is a temporary solution, we should replace it with a more optimal mechanism instead of relying on BytesKeyedBucketOrds
      */
     static List<Object> unpackTerms(BytesRef termsBytes) {
-        try (StreamInput input = new BytesArray(termsBytes).streamInput()) {
+        try (StreamInput input = BytesArray.wrap(termsBytes).streamInput()) {
             return input.readList(StreamInput::readGenericValue);
         } catch (IOException ex) {
             throw ExceptionsHelper.convertToRuntime(ex);

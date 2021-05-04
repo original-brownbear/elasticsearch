@@ -109,12 +109,12 @@ public class IpScriptFieldTermsQueryTests extends AbstractIpScriptFieldQueryTest
         query.terms().get(0, spare);
         assertThat(
             toString,
-            containsString(InetAddresses.toAddrString(InetAddressPoint.decode(BytesReference.toBytes(new BytesArray(spare)))))
+            containsString(InetAddresses.toAddrString(InetAddressPoint.decode(BytesReference.toBytes(BytesArray.wrap(spare)))))
         );
         query.terms().get(query.terms().size() - 1, spare);
         assertThat(
             toString,
-            not(containsString(InetAddresses.toAddrString(InetAddressPoint.decode(BytesReference.toBytes(new BytesArray(spare))))))
+            not(containsString(InetAddresses.toAddrString(InetAddressPoint.decode(BytesReference.toBytes(BytesArray.wrap(spare))))))
         );
         assertThat(toString, endsWith("...]"));
     }
@@ -127,7 +127,7 @@ public class IpScriptFieldTermsQueryTests extends AbstractIpScriptFieldQueryTest
             query.terms().get(i, spare);
             assertThat(
                 toString,
-                containsString(InetAddresses.toAddrString(InetAddressPoint.decode(BytesReference.toBytes(new BytesArray(spare)))))
+                containsString(InetAddresses.toAddrString(InetAddressPoint.decode(BytesReference.toBytes(BytesArray.wrap(spare)))))
             );
         }
         assertThat(toString, endsWith("]"));

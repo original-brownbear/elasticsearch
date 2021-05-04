@@ -37,7 +37,7 @@ public interface BytesReference extends Comparable<BytesReference>, ToXContentFr
         xContentBuilder.close();
         OutputStream stream = xContentBuilder.getOutputStream();
         if (stream instanceof ByteArrayOutputStream) {
-            return new BytesArray(((ByteArrayOutputStream) stream).toByteArray());
+            return new BytesArray(((ByteArrayOutputStream) stream).toByteArray(), true);
         } else {
             return ((BytesStream) stream).bytes();
         }
@@ -106,13 +106,21 @@ public interface BytesReference extends Comparable<BytesReference>, ToXContentFr
      * that backing array directly.
      */
     static BytesReference fromByteArray(ByteArray byteArray, int length) {
+        return fromByteArray(byteArray, length, false);
+    }
+
+    /**
+     * Returns BytesReference either wrapping the provided {@link ByteArray} or in case the has a backing raw byte array one that wraps
+     * that backing array directly.
+     */
+    static BytesReference fromByteArray(ByteArray byteArray, int length, boolean unpooled) {
         if (length == 0) {
             return BytesArray.EMPTY;
         }
         if (byteArray.hasArray()) {
-            return new BytesArray(byteArray.array(), 0, length);
+            return new BytesArray(byteArray.array(), 0, length, unpooled);
         }
-        return new PagedBytesReference(byteArray, 0, length);
+        return new PagedBytesReference(byteArray, 0, length, unpooled);
     }
 
     /**
@@ -194,5 +202,12 @@ public interface BytesReference extends Comparable<BytesReference>, ToXContentFr
      */
     default int arrayOffset() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * @return {@code true} if this reference is backed by unpooled buffers and can safely be shared
+     */
+    default boolean unpooled() {
+        return false;
     }
 }

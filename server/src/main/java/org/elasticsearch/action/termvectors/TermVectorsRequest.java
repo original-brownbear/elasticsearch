@@ -182,7 +182,7 @@ public class TermVectorsRequest extends SingleShardRequest<TermVectorsRequest> i
         super(other.index());
         this.id = other.id();
         if (other.doc != null) {
-            this.doc = new BytesArray(other.doc().toBytesRef(), true);
+            this.doc = BytesArray.copy(other.doc().toBytesRef());
             this.xContentType = other.xContentType;
         }
         this.flagsEnum = other.getFlags().clone();

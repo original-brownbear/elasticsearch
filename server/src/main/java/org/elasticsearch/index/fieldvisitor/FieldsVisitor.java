@@ -93,7 +93,7 @@ public class FieldsVisitor extends StoredFieldVisitor {
 
     public void binaryField(FieldInfo fieldInfo, BytesRef value) {
         if (sourceFieldName.equals(fieldInfo.name)) {
-            source = new BytesArray(value);
+            source = BytesArray.wrap(value);
         } else if (IdFieldMapper.NAME.equals(fieldInfo.name)) {
             id = Uid.decodeId(value.bytes, value.offset, value.length);
         } else {

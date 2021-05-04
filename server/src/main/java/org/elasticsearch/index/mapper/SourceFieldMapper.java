@@ -176,7 +176,7 @@ public class SourceFieldMapper extends MetadataFieldMapper {
                 XContentType actualContentType = mapTuple.v1();
                 XContentBuilder builder = XContentFactory.contentBuilder(actualContentType, bStream).map(filteredSource);
                 builder.close();
-                return bStream.bytes();
+                return bStream.unpooledBytes();
             } else {
                 return originalSource;
             }

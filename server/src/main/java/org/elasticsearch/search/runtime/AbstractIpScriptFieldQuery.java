@@ -39,6 +39,6 @@ abstract class AbstractIpScriptFieldQuery extends AbstractScriptFieldQuery<IpFie
     protected abstract boolean matches(BytesRef[] values, int conut);
 
     protected static InetAddress decode(BytesRef ref) {
-        return InetAddressPoint.decode(BytesReference.toBytes(new BytesArray(ref)));
+        return InetAddressPoint.decode(BytesReference.toBytes(BytesArray.wrap(ref)));
     }
 }

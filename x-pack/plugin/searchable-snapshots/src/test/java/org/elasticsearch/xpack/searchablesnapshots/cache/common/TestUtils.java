@@ -371,7 +371,7 @@ public final class TestUtils {
                 repository,
                 name,
                 path,
-                new BytesArray(content.toBytesRef(), true),
+                BytesArray.copy(content.toBytesRef()),
                 offset
             );
             blobs.put(cachedBlob.generatedId(), cachedBlob);

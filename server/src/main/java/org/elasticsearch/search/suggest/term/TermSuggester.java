@@ -12,7 +12,6 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.spell.DirectSpellChecker;
 import org.apache.lucene.search.spell.SuggestWord;
-import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.CharsRefBuilder;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -45,7 +44,7 @@ public final class TermSuggester extends Suggester<TermSuggestionContext> {
             SuggestWord[] suggestedWords = directSpellChecker.suggestSimilar(
                     token.term, suggestion.getShardSize(), indexReader, suggestion.getDirectSpellCheckerSettings().suggestMode()
             );
-            Text key = new Text(new BytesArray(token.term.bytes()));
+            Text key = new Text(BytesArray.wrap(token.term.bytes()));
             TermSuggestion.Entry resultEntry = new TermSuggestion.Entry(key, token.startOffset, token.endOffset - token.startOffset);
             for (SuggestWord suggestWord : suggestedWords) {
                 Text word = new Text(suggestWord.string);
@@ -63,7 +62,7 @@ public final class TermSuggester extends Suggester<TermSuggestionContext> {
                 new DirectCandidateGenerator.TokenConsumer() {
             @Override
             public void nextToken() {
-                Term term = new Term(field, BytesRef.deepCopyOf(fillBytesRef(new BytesRefBuilder())));
+                Term term = new Term(field, fillBytesRef(new BytesRefBuilder()));
                 result.add(new Token(term, offsetAttr.startOffset(), offsetAttr.endOffset()));
             }
         }, spare);
@@ -89,7 +88,7 @@ public final class TermSuggester extends Suggester<TermSuggestionContext> {
         TermSuggestion termSuggestion = new TermSuggestion(name, suggestion.getSize(), suggestion.getDirectSpellCheckerSettings().sort());
         List<Token> tokens = queryTerms(suggestion, spare);
         for (Token token : tokens) {
-            Text key = new Text(new BytesArray(token.term.bytes()));
+            Text key = new Text(BytesArray.wrapUnpooled(token.term.bytes()));
             TermSuggestion.Entry resultEntry = new TermSuggestion.Entry(key, token.startOffset, token.endOffset - token.startOffset);
             termSuggestion.addTerm(resultEntry);
         }

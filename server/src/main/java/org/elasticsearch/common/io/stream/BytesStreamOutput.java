@@ -141,6 +141,13 @@ public class BytesStreamOutput extends BytesStream {
         return BytesReference.fromByteArray(bytes, count);
     }
 
+    public BytesReference unpooledBytes() {
+        if (bytes == null) {
+            return BytesArray.EMPTY;
+        }
+        return BytesReference.fromByteArray(bytes, count, true);
+    }
+
     /**
      * Like {@link #bytes()} but copies the bytes to a freshly allocated buffer.
      *
@@ -159,7 +166,7 @@ public class BytesStreamOutput extends BytesStream {
         } catch (IOException e) {
             throw new AssertionError(e);
         }
-        return new BytesArray(keyBytes);
+        return new BytesArray(keyBytes, true);
     }
 
     /**

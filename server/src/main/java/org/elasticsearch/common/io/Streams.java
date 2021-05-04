@@ -241,7 +241,7 @@ public abstract class Streams {
     public static BytesReference readFully(InputStream in) throws IOException {
         BytesStreamOutput out = new BytesStreamOutput();
         org.elasticsearch.core.internal.io.Streams.copy(in, out);
-        return out.bytes();
+        return out.unpooledBytes();
     }
 
     /**

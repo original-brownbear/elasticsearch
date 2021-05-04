@@ -80,7 +80,7 @@ public class CompositeBytesReferenceTests extends AbstractBytesReferenceTestCase
             offset += reference.length();
         }
 
-        BytesArray array = new BytesArray(builder.toBytesRef());
+        BytesArray array = BytesArray.wrap(builder.toBytesRef());
         assertEquals(array, ref);
         assertEquals(array.hashCode(), ref.hashCode());
 

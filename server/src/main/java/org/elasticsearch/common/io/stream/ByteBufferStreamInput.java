@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 
 public class ByteBufferStreamInput extends StreamInput {
 
-    private final ByteBuffer buffer;
+    protected final ByteBuffer buffer;
 
     public ByteBufferStreamInput(ByteBuffer buffer) {
         this.buffer = buffer.mark();

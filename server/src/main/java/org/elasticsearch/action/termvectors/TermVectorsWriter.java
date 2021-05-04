@@ -134,7 +134,7 @@ final class TermVectorsWriter {
             header.writeVLong(fieldOffset.get(i));
         }
         header.close();
-        return header.bytes();
+        return header.unpooledBytes();
     }
 
     private PostingsEnum writeTermWithDocsOnly(TermsEnum iterator, PostingsEnum docsEnum) throws IOException {

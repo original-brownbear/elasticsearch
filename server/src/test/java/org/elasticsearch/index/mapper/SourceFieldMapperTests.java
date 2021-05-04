@@ -68,7 +68,7 @@ public class SourceFieldMapperTests extends MetadataMapperTestCase {
 
         IndexableField sourceField = doc.rootDoc().getField("_source");
         Map<String, Object> sourceAsMap;
-        try (XContentParser parser = createParser(JsonXContent.jsonXContent, new BytesArray(sourceField.binaryValue()))) {
+        try (XContentParser parser = createParser(JsonXContent.jsonXContent, BytesArray.wrap(sourceField.binaryValue()))) {
             sourceAsMap = parser.map();
         }
         assertThat(sourceAsMap.containsKey("path1"), equalTo(true));
@@ -87,7 +87,7 @@ public class SourceFieldMapperTests extends MetadataMapperTestCase {
 
         IndexableField sourceField = doc.rootDoc().getField("_source");
         Map<String, Object> sourceAsMap;
-        try (XContentParser parser = createParser(JsonXContent.jsonXContent, new BytesArray(sourceField.binaryValue()))) {
+        try (XContentParser parser = createParser(JsonXContent.jsonXContent, BytesArray.wrap(sourceField.binaryValue()))) {
             sourceAsMap = parser.map();
         }
         assertThat(sourceAsMap.containsKey("path1"), equalTo(false));

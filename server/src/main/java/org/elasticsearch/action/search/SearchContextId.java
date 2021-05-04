@@ -70,7 +70,7 @@ public final class SearchContextId {
             Version.writeVersion(version, out);
             out.writeMap(shards, (o, k) -> k.writeTo(o), (o, v) -> v.writeTo(o));
             out.writeMap(aliasFilter, StreamOutput::writeString, (o, v) -> v.writeTo(o));
-            return Base64.getUrlEncoder().encodeToString(BytesReference.toBytes(out.bytes()));
+            return Base64.getUrlEncoder().encodeToString(BytesReference.toBytes(out.copyBytes()));
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }

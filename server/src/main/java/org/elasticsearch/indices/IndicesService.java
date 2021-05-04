@@ -1472,7 +1472,7 @@ public class IndicesService extends AbstractLifecycleComponent
                 loader.accept(out);
                 // for now, keep the paged data structure, which might have unused bytes to fill a page, but better to keep
                 // the memory properly paged instead of having varied sized bytes
-                return out.bytes();
+                return out.unpooledBytes();
             }
         };
         return indicesRequestCache.getOrCompute(cacheEntity, supplier, mappingCacheKey, reader, cacheKey);

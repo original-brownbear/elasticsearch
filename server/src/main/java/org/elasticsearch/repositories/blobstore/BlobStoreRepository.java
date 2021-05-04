@@ -1278,7 +1278,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 String seed = UUIDs.randomBase64UUID();
                 byte[] testBytes = Strings.toUTF8Bytes(seed);
                 BlobContainer testContainer = blobStore().blobContainer(basePath().add(testBlobPrefix(seed)));
-                testContainer.writeBlobAtomic("master.dat", new BytesArray(testBytes), true);
+                testContainer.writeBlobAtomic("master.dat", new BytesArray(testBytes, true), true);
                 return seed;
             }
         } catch (Exception exp) {
@@ -1937,7 +1937,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         if (supportURLRepo) {
             logger.debug("Repository [{}] updating index.latest with generation [{}]", metadata.name(), newGen);
             try {
-                writeAtomic(blobContainer(), INDEX_LATEST_BLOB, new BytesArray(Numbers.longToBytes(newGen)), false);
+                writeAtomic(blobContainer(), INDEX_LATEST_BLOB, new BytesArray(Numbers.longToBytes(newGen), true), false);
             } catch (Exception e) {
                 logger.warn(() -> new ParameterizedMessage("Failed to write index.latest blob. If you do not intend to use this " +
                         "repository as the basis for a URL repository you may turn off attempting to write the index.latest blob by " +

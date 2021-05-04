@@ -9,7 +9,10 @@
 package org.elasticsearch.index.translog;
 
 import org.apache.lucene.store.BufferedChecksum;
+import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.Numbers;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.FilterStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
@@ -58,6 +61,17 @@ public final class BufferedChecksumStreamInput extends FilterStreamInput {
     public void readBytes(byte[] b, int offset, int len) throws IOException {
         delegate.readBytes(b, offset, len);
         digest.update(b, offset, len);
+    }
+
+    @Override
+    public BytesReference readBytesReference(int length) throws IOException {
+        BytesReference result = delegate.readBytesReference(length);
+        final BytesRefIterator iterator = result.iterator();
+        BytesRef ref;
+        while ((ref = iterator.next()) != null) {
+            digest.update(ref.bytes, ref.offset, ref.length);
+        }
+        return result;
     }
 
     private static final ThreadLocal<byte[]> buffer = ThreadLocal.withInitial(() -> new byte[8]);

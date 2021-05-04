@@ -1358,7 +1358,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
                 CodecUtil.writeHeader(output, CODEC, CORRUPTED_MARKER_CODEC_VERSION);
                 BytesStreamOutput out = new BytesStreamOutput();
                 out.writeException(exception);
-                BytesReference bytes = out.bytes();
+                BytesReference bytes = out.unpooledBytes();
                 output.writeVInt(bytes.length());
                 BytesRef ref = bytes.toBytesRef();
                 output.writeBytes(ref.bytes, ref.offset, ref.length);

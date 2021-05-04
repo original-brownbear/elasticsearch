@@ -74,7 +74,7 @@ public class Netty4UtilsTests extends ESTestCase {
         BytesReference ref = out.bytes();
         assertEquals(ref.length(), length);
         if (randomBoolean()) {
-            return new BytesArray(ref.toBytesRef());
+            return BytesArray.wrap(ref.toBytesRef());
         } else if (randomBoolean()) {
             BytesRef bytesRef = ref.toBytesRef();
             return Netty4Utils.toBytesReference(Unpooled.wrappedBuffer(bytesRef.bytes, bytesRef.offset,

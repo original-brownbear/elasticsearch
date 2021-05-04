@@ -30,6 +30,7 @@ public final class CompositeBytesReference extends AbstractBytesReference {
     private final int[] offsets;
     private final int length;
     private final long ramBytesUsed;
+    private final boolean unpooled;
 
     public static BytesReference of(BytesReference... references) {
         switch (references.length) {
@@ -49,6 +50,7 @@ public final class CompositeBytesReference extends AbstractBytesReference {
         this.offsets = new int[references.length];
         long ramBytesUsed = 0;
         int offset = 0;
+        boolean unpooled = true;
         for (int i = 0; i < references.length; i++) {
             BytesReference reference = references[i];
             if (reference == null) {
@@ -57,7 +59,9 @@ public final class CompositeBytesReference extends AbstractBytesReference {
             offsets[i] = offset; // we use the offsets to seek into the right BytesReference for random access and slicing
             offset += reference.length();
             ramBytesUsed += reference.ramBytesUsed();
+            unpooled &= reference.unpooled();
         }
+        this.unpooled = unpooled;
         this.ramBytesUsed = ramBytesUsed
             + (Integer.BYTES * offsets.length + RamUsageEstimator.NUM_BYTES_ARRAY_HEADER) // offsets
             + (references.length * RamUsageEstimator.NUM_BYTES_OBJECT_REF + RamUsageEstimator.NUM_BYTES_ARRAY_HEADER) // references
@@ -190,5 +194,10 @@ public final class CompositeBytesReference extends AbstractBytesReference {
     @Override
     public long ramBytesUsed() {
        return ramBytesUsed;
+    }
+
+    @Override
+    public boolean unpooled() {
+        return unpooled;
     }
 }

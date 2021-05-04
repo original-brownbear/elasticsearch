@@ -103,13 +103,13 @@ public class BinaryFieldMapper extends FieldMapper {
 
             BytesReference bytes;
             if (value instanceof BytesRef) {
-                bytes = new BytesArray((BytesRef) value);
+                bytes = BytesArray.wrap((BytesRef) value);
             } else if (value instanceof BytesReference) {
                 bytes = (BytesReference) value;
             } else if (value instanceof byte[]) {
                 bytes = new BytesArray((byte[]) value);
             } else {
-                bytes = new BytesArray(Base64.getDecoder().decode(value.toString()));
+                bytes = new BytesArray(Base64.getDecoder().decode(value.toString()), true);
             }
             return bytes;
         }

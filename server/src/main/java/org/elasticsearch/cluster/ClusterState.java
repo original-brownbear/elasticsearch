@@ -28,6 +28,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
@@ -581,7 +582,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         public static byte[] toBytes(ClusterState state) throws IOException {
             BytesStreamOutput os = new BytesStreamOutput();
             state.writeTo(os);
-            return BytesReference.toBytes(os.bytes());
+            return BytesReference.toBytes(os.copyBytes());
         }
 
         /**
@@ -589,7 +590,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
          * @param localNode used to set the local node in the cluster state.
          */
         public static ClusterState fromBytes(byte[] data, DiscoveryNode localNode, NamedWriteableRegistry registry) throws IOException {
-            StreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(data), registry);
+            StreamInput in = new NamedWriteableAwareStreamInput(new BytesArray(data, true).streamInput(), registry);
             return readFrom(in, localNode);
 
         }

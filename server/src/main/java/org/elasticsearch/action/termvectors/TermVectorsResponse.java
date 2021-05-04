@@ -135,8 +135,8 @@ public class TermVectorsResponse extends ActionResponse implements ToXContentObj
     public Fields getFields() throws IOException {
         if (hasTermVectors() && isExists()) {
             if (sourceCopied == false) { // make the bytes safe
-                headerRef = new BytesArray(headerRef.toBytesRef(), true);
-                termVectors = new BytesArray(termVectors.toBytesRef(), true);
+                headerRef = BytesArray.copy(headerRef.toBytesRef());
+                termVectors = BytesArray.copy(termVectors.toBytesRef());
             }
             TermVectorsFields termVectorsFields = new TermVectorsFields(headerRef, termVectors);
             hasScores = termVectorsFields.hasScores;

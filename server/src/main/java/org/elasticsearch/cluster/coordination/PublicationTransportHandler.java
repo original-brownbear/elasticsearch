@@ -212,7 +212,7 @@ public class PublicationTransportHandler {
             stream.writeBoolean(true);
             clusterState.writeTo(stream);
         }
-        final BytesReference serializedState = bStream.bytes();
+        final BytesReference serializedState = bStream.unpooledBytes();
         logger.trace("serialized full cluster state version [{}] for node version [{}] with size [{}]",
             clusterState.version(), nodeVersion, serializedState.length());
         return serializedState;
@@ -225,7 +225,7 @@ public class PublicationTransportHandler {
             stream.writeBoolean(false);
             diff.writeTo(stream);
         }
-        return bStream.bytes();
+        return bStream.unpooledBytes();
     }
 
     /**

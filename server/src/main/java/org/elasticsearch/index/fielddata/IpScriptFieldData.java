@@ -78,7 +78,7 @@ public class IpScriptFieldData extends BinaryScriptFieldData {
 
         @Override
         protected String bytesToString(BytesRef bytes) {
-            InetAddress addr = InetAddressPoint.decode(BytesReference.toBytes(new BytesArray(bytes)));
+            InetAddress addr = InetAddressPoint.decode(BytesReference.toBytes(BytesArray.wrap(bytes)));
             return InetAddresses.toAddrString(addr);
         }
     }

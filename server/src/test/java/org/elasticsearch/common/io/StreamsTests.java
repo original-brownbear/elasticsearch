@@ -61,7 +61,7 @@ public class StreamsTests extends ESTestCase {
     public void testBytesStreamInput() throws IOException {
         byte stuff[] = new byte[] { 0, 1, 2, 3 };
         BytesRef stuffRef = new BytesRef(stuff, 2, 2);
-        BytesArray stuffArray = new BytesArray(stuffRef);
+        BytesArray stuffArray = BytesArray.wrap(stuffRef);
         StreamInput input = stuffArray.streamInput();
         assertEquals(2, input.read());
         assertEquals(3, input.read());

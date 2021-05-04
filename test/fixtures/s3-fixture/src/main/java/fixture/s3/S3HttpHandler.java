@@ -134,7 +134,7 @@ public class S3HttpHandler implements HttpHandler {
                     }
                     part.writeTo(blob);
                 }
-                blobs.put(exchange.getRequestURI().getPath(), new BytesArray(blob.toByteArray()));
+                blobs.put(exchange.getRequestURI().getPath(), new BytesArray(blob.toByteArray(), true));
 
                 byte[] response = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                     "<CompleteMultipartUploadResult>\n" +

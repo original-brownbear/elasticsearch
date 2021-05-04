@@ -24,15 +24,17 @@ public class PagedBytesReference extends AbstractBytesReference {
 
     private static final int PAGE_SIZE = PageCacheRecycler.BYTE_PAGE_SIZE;
 
+    private final boolean unpooled;
     private final ByteArray byteArray;
     private final int offset;
     private final int length;
 
-    PagedBytesReference(ByteArray byteArray, int from, int length) {
+    PagedBytesReference(ByteArray byteArray, int from, int length, boolean unpooled) {
         assert byteArray.hasArray() == false : "use BytesReference#fromByteArray";
         this.byteArray = byteArray;
         this.offset = from;
         this.length = length;
+        this.unpooled = unpooled;
     }
 
     @Override
@@ -51,7 +53,7 @@ public class PagedBytesReference extends AbstractBytesReference {
             return this;
         }
         Objects.checkFromIndexSize(from, length, this.length);
-        return new PagedBytesReference(byteArray, offset + from, length);
+        return new PagedBytesReference(byteArray, offset + from, length, unpooled);
     }
 
     @Override

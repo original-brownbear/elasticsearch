@@ -429,7 +429,7 @@ public class TermsQueryBuilder extends AbstractQueryBuilder<TermsQueryBuilder> {
                     list = list.stream().map(AbstractQueryBuilder::maybeConvertToBytesRef).collect(Collectors.toList());
                 }
                 output.writeGenericValue(list);
-                return output.bytes();
+                return output.unpooledBytes();
             } catch (IOException e) {
                 throw new UncheckedIOException("failed to serialize TermsQueryBuilder", e);
             }
