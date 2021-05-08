@@ -9,9 +9,8 @@
 package org.elasticsearch.percolator;
 
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
-import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -24,8 +23,8 @@ public class PercolateWithNestedQueryBuilderTests extends PercolateQueryBuilderT
     @Override
     protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
         super.initializeAdditionalMappings(mapperService);
-        mapperService.merge("_doc", new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
-                "some_nested_object", "type=nested"))), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("_doc", BytesReference.bytes(PutMappingRequest.simpleMapping(
+                "some_nested_object", "type=nested")), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     public void testDetectsNestedDocuments() throws IOException {

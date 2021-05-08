@@ -15,8 +15,7 @@ import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.query.SearchExecutionContext;
@@ -83,8 +82,7 @@ public class ParentIdQueryBuilderTests extends AbstractQueryTestCase<ParentIdQue
             .endObject()
             .endObject().endObject().endObject();
 
-        mapperService.merge(TYPE,
-            new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(TYPE, BytesReference.bytes(mapping), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

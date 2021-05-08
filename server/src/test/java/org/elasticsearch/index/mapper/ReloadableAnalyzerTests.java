@@ -11,7 +11,6 @@ package org.elasticsearch.index.mapper;
 import org.apache.lucene.analysis.TokenStream;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.analysis.AnalysisMode;
@@ -46,7 +45,7 @@ public class ReloadableAnalyzerTests extends ESSingleNodeTestCase {
             .putList("index.analysis.analyzer.reloadableAnalyzer.filter", "myReloadableFilter").build();
 
         MapperService mapperService = createIndex("test_index", settings).mapperService();
-        CompressedXContent mapping = new CompressedXContent(BytesReference.bytes(
+        BytesReference mapping = BytesReference.bytes(
             XContentFactory.jsonBuilder().startObject().startObject("_doc")
                 .startObject("properties")
                 .startObject("field")
@@ -62,7 +61,7 @@ public class ReloadableAnalyzerTests extends ESSingleNodeTestCase {
                 .field("search_quote_analyzer", "reloadableAnalyzer")
                 .endObject()
                 .endObject()
-                .endObject().endObject()));
+                .endObject().endObject());
 
         mapperService.merge("_doc", mapping, MapperService.MergeReason.MAPPING_UPDATE);
         IndexAnalyzers current = mapperService.getIndexAnalyzers();

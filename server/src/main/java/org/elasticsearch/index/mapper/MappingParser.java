@@ -9,6 +9,7 @@
 package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -71,10 +72,18 @@ public final class MappingParser {
         return remainingFields.toString();
     }
 
-    @SuppressWarnings("unchecked")
-    Mapping parse(@Nullable String type, CompressedXContent source) throws MapperParsingException {
+    Mapping parse(@Nullable String type, String source) throws MapperParsingException {
         Objects.requireNonNull(source, "source cannot be null");
-        Map<String, Object> mapping = XContentHelper.convertToMap(source.compressedReference(), true, XContentType.JSON).v2();
+        return parse(type, XContentHelper.convertToMap(XContentType.JSON.xContent(), source, true));
+    }
+
+    Mapping parse(@Nullable String type, BytesReference source) throws MapperParsingException {
+        Objects.requireNonNull(source, "source cannot be null");
+        return parse(type, XContentHelper.convertToMap(source, true, XContentType.JSON).v2());
+    }
+
+    @SuppressWarnings("unchecked")
+    public Mapping parse(String type, Map<String, Object> mapping) throws MapperParsingException {
         if (mapping.isEmpty()) {
             if (type == null) {
                 throw new MapperParsingException("malformed mapping, no type name found");
@@ -89,10 +98,6 @@ public final class MappingParser {
         if (type == null) {
             throw new MapperParsingException("Failed to derive type");
         }
-        return parse(type, mapping);
-    }
-
-    private Mapping parse(String type, Map<String, Object> mapping) throws MapperParsingException {
         ContentPath contentPath = new ContentPath(1);
         Mapper.TypeParser.ParserContext parserContext = parserContextSupplier.get();
         RootObjectMapper rootObjectMapper = rootObjectTypeParser.parse(type, mapping, parserContext).build(contentPath);

@@ -8,8 +8,7 @@ package org.elasticsearch.xpack.spatial.index.query;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.geometry.Geometry;
 import org.elasticsearch.geometry.ShapeType;
@@ -17,14 +16,12 @@ import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.xpack.spatial.util.ShapeTestUtils;
 
-import java.io.IOException;
-
 public class ShapeQueryBuilderOverShapeTests extends ShapeQueryBuilderTests {
 
     @Override
-    protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
-        mapperService.merge(docType, new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
-            fieldName(), "type=shape"))), MapperService.MergeReason.MAPPING_UPDATE);
+    protected void initializeAdditionalMappings(MapperService mapperService) {
+        mapperService.merge(docType, BytesReference.bytes(PutMappingRequest.simpleMapping(
+            fieldName(), "type=shape")), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

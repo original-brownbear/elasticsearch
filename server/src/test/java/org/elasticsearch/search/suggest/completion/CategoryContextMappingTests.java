@@ -19,7 +19,6 @@ import org.apache.lucene.search.suggest.document.ContextSuggestField;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParseException;
@@ -63,7 +62,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         Mapper fieldMapper = defaultMapper.mappers().getMapper("completion");
         ParsedDocument parsedDocument = defaultMapper.parse(new SourceToParse("test", "1", BytesReference
@@ -102,7 +101,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         Mapper fieldMapper = defaultMapper.mappers().getMapper("completion");
         ParsedDocument parsedDocument = defaultMapper.parse(new SourceToParse("test", "1", BytesReference
@@ -136,7 +135,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         Mapper fieldMapper = defaultMapper.mappers().getMapper("completion");
         ParsedDocument parsedDocument = defaultMapper.parse(new SourceToParse("test", "1", BytesReference
@@ -170,7 +169,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         Mapper fieldMapper = defaultMapper.mappers().getMapper("completion");
         ParsedDocument parsedDocument = defaultMapper.parse(new SourceToParse("test", "1", BytesReference
@@ -204,7 +203,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         XContentBuilder builder = jsonBuilder()
                 .startObject()
@@ -238,7 +237,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         Mapper fieldMapper = defaultMapper.mappers().getMapper("completion");
         ParsedDocument parsedDocument = defaultMapper.parse(new SourceToParse("test", "1", BytesReference
@@ -270,7 +269,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         Mapper fieldMapper = defaultMapper.mappers().getMapper("completion");
         ParsedDocument parsedDocument = defaultMapper.parse(new SourceToParse("test", "1", BytesReference
@@ -302,7 +301,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         XContentBuilder builder = jsonBuilder()
                 .startObject()
@@ -337,7 +336,7 @@ public class CategoryContextMappingTests extends ESSingleNodeTestCase {
                 .endObject().endObject()
                 .endObject().endObject());
 
-        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", new CompressedXContent(mapping),
+        DocumentMapper defaultMapper = createIndex("test").mapperService().merge("type1", mapping,
             MapperService.MergeReason.MAPPING_UPDATE);
         Mapper fieldMapper = defaultMapper.mappers().getMapper("completion");
         XContentBuilder builder = jsonBuilder()

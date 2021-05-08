@@ -10,9 +10,7 @@ package org.elasticsearch.index.fielddata;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -31,7 +29,7 @@ public class BinaryDVFieldDataTests extends AbstractFieldDataTestCase {
     }
 
     public void testDocValue() throws Exception {
-        String mapping = Strings.toString(XContentFactory.jsonBuilder().startObject().startObject("test")
+        BytesReference mapping = BytesReference.bytes(XContentFactory.jsonBuilder().startObject().startObject("test")
                 .startObject("properties")
                 .startObject("field")
                 .field("type", "binary")
@@ -40,7 +38,7 @@ public class BinaryDVFieldDataTests extends AbstractFieldDataTestCase {
                 .endObject()
                 .endObject().endObject());
 
-        DocumentMapper mapper = mapperService.merge("test", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        DocumentMapper mapper = mapperService.merge("test", mapping, MapperService.MergeReason.MAPPING_UPDATE);
 
         List<BytesRef> bytesList1 = new ArrayList<>(2);
         bytesList1.add(randomBytes());

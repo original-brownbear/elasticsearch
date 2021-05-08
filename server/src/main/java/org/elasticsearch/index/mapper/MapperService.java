@@ -11,8 +11,9 @@ package org.elasticsearch.index.mapper;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
-import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
@@ -20,7 +21,6 @@ import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContent;
-import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.AbstractIndexComponent;
@@ -163,6 +163,24 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     /**
      * Parses the mappings (formatted as JSON) into a map
      */
+    public static Map<String, Object> parseMapping(NamedXContentRegistry xContentRegistry,
+                                                   BytesReference mappingSource) throws IOException {
+        if (CompressorFactory.isCompressed(mappingSource) == false && mappingSource.hasArray()) {
+            try (XContentParser parser = XContentType.JSON.xContent()
+                    .createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE, mappingSource.array(), mappingSource.arrayOffset(),
+                            mappingSource.length())) {
+                return parser.map();
+            }
+        }
+        try (XContentParser parser = XContentType.JSON.xContent()
+                .createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE, mappingSource.streamInput())) {
+            return parser.map();
+        }
+    }
+
+    /**
+     * Parses the mappings (formatted as JSON) into a map
+     */
     public static Map<String, Object> parseMapping(NamedXContentRegistry xContentRegistry, String mappingSource) throws IOException {
         try (XContentParser parser = XContentType.JSON.xContent()
                 .createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE, mappingSource)) {
@@ -186,7 +204,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         if (newMappingMetadata != null) {
             String type = newMappingMetadata.type();
             CompressedXContent incomingMappingSource = newMappingMetadata.source();
-            Mapping incomingMapping = parseMapping(type, incomingMappingSource);
+            Mapping incomingMapping = parseMapping(type, incomingMappingSource.compressedReference());
             DocumentMapper previousMapper;
             synchronized (this) {
                 previousMapper = this.mapper;
@@ -238,7 +256,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
             // that the incoming mappings are the same as the current ones: we need to
             // parse the incoming mappings into a DocumentMapper and check that its
             // serialization is the same as the existing mapper
-            Mapping newMapping = parseMapping(mapping.type(), mapping.source());
+            Mapping newMapping = parseMapping(mapping.type(), mapping.source().compressedReference());
             final CompressedXContent currentSource = this.mapper.mappingSource();
             final CompressedXContent newSource = newMapping.toCompressedXContent();
             if (Objects.equals(currentSource, newSource) == false) {
@@ -250,24 +268,44 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     }
 
     public void merge(String type, Map<String, Object> mappings, MergeReason reason) throws IOException {
-        CompressedXContent content = new CompressedXContent(Strings.toString(XContentFactory.jsonBuilder().map(mappings)));
-        mergeAndApplyMappings(type, content, reason);
+        mergeAndApplyMappings(type, mappings, reason);
     }
 
     public void merge(IndexMetadata indexMetadata, MergeReason reason) {
         assert reason != MergeReason.MAPPING_UPDATE_PREFLIGHT;
         MappingMetadata mappingMetadata = indexMetadata.mapping();
         if (mappingMetadata != null) {
-            mergeAndApplyMappings(mappingMetadata.type(), mappingMetadata.source(), reason);
+            mergeAndApplyMappings(mappingMetadata.type(), mappingMetadata.source().compressedReference(), reason);
         }
     }
 
-    public DocumentMapper merge(String type, CompressedXContent mappingSource, MergeReason reason) {
+    public DocumentMapper merge(String type, String mappingSource, MergeReason reason) {
+        return mergeAndApplyMappings(parseMapping(type, mappingSource), reason);
+    }
+
+    public DocumentMapper merge(String type, BytesReference mappingSource, MergeReason reason) {
         return mergeAndApplyMappings(type, mappingSource, reason);
     }
 
-    private synchronized DocumentMapper mergeAndApplyMappings(String mappingType, CompressedXContent mappingSource, MergeReason reason) {
+    public DocumentMapper merge(String type, CompressedXContent mappingSource, MergeReason reason) {
+        return mergeAndApplyMappings(type, mappingSource.compressedReference(), reason);
+    }
+
+    public DocumentMapper merge(Mapping incomingMapping, MergeReason reason) {
+        return mergeAndApplyMappings(incomingMapping, reason);
+    }
+
+    private synchronized DocumentMapper mergeAndApplyMappings(String mappingType, Map<String, Object> mappingSource, MergeReason reason) {
         Mapping incomingMapping = parseMapping(mappingType, mappingSource);
+        return mergeAndApplyMappings(incomingMapping, reason);
+    }
+
+    private synchronized DocumentMapper mergeAndApplyMappings(String mappingType, BytesReference mappingSource, MergeReason reason) {
+        Mapping incomingMapping = parseMapping(mappingType, mappingSource);
+        return mergeAndApplyMappings(incomingMapping, reason);
+    }
+
+    private synchronized DocumentMapper mergeAndApplyMappings(Mapping incomingMapping, MergeReason reason) {
         Mapping mapping = mergeMappings(this.mapper, incomingMapping, reason);
         DocumentMapper newMapper = newDocumentMapper(mapping, reason);
         if (reason == MergeReason.MAPPING_UPDATE_PREFLIGHT) {
@@ -285,7 +323,23 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         return newMapper;
     }
 
-    public Mapping parseMapping(String mappingType, CompressedXContent mappingSource) {
+    public Mapping parseMapping(String mappingType, String mappingSource) {
+        try {
+            return mappingParser.parse(mappingType, mappingSource);
+        } catch (Exception e) {
+            throw new MapperParsingException("Failed to parse mapping: {}", e, e.getMessage());
+        }
+    }
+
+    public Mapping parseMapping(String mappingType, Map<String, Object> mappingSource) {
+        try {
+            return mappingParser.parse(mappingType, mappingSource);
+        } catch (Exception e) {
+            throw new MapperParsingException("Failed to parse mapping: {}", e, e.getMessage());
+        }
+    }
+
+    public Mapping parseMapping(String mappingType, BytesReference mappingSource) {
         try {
             return mappingParser.parse(mappingType, mappingSource);
         } catch (Exception e) {
@@ -306,7 +360,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     private boolean assertSerialization(DocumentMapper mapper) {
         // capture the source now, it may change due to concurrent parsing
         final CompressedXContent mappingSource = mapper.mappingSource();
-        Mapping newMapping = parseMapping(mapper.type(), mappingSource);
+        Mapping newMapping = parseMapping(mapper.type(), mappingSource.compressedReference());
         if (newMapping.toCompressedXContent().equals(mappingSource) == false) {
             throw new IllegalStateException("Mapping serialization result is different from source. \n--> Source ["
                 + mappingSource + "]\n--> Result ["

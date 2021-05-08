@@ -14,10 +14,8 @@ import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -83,12 +81,11 @@ public class PercolateQueryBuilderTests extends AbstractQueryTestCase<PercolateQ
         aliasField = randomAlphaOfLength(4);
 
         docType = "_doc";
-        mapperService.merge(docType, new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
+        mapperService.merge(docType, BytesReference.bytes(PutMappingRequest.simpleMapping(
                 queryField, "type=percolator", aliasField, "type=alias,path=" + queryField
-        ))), MapperService.MergeReason.MAPPING_UPDATE);
-        mapperService.merge(docType, new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
-                TEXT_FIELD_NAME, "type=text"
-        ))), MapperService.MergeReason.MAPPING_UPDATE);
+        )), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(docType, BytesReference.bytes(PutMappingRequest.simpleMapping(TEXT_FIELD_NAME, "type=text")),
+                MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

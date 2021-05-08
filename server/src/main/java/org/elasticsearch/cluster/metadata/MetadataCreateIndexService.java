@@ -471,8 +471,7 @@ public class MetadataCreateIndexService {
         logger.debug("applying create index request using legacy templates {}",
             templates.stream().map(IndexTemplateMetadata::name).collect(Collectors.toList()));
 
-        final Map<String, Object> mappings = Collections.unmodifiableMap(parseV1Mappings(request.mappings(),
-            templates.stream().map(IndexTemplateMetadata::getMappings).collect(toList()), xContentRegistry));
+        final Map<String, Object> mappings = Collections.unmodifiableMap(parseV1Mappings(request.mappings(), templates, xContentRegistry));
 
         final Settings aggregatedIndexSettings =
             aggregateIndexSettings(currentState, request, resolveSettings(templates),
@@ -590,7 +589,7 @@ public class MetadataCreateIndexService {
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (CompressedXContent templateMapping : templateMappings) {
-            Map<String, Object> parsedTemplateMapping = MapperService.parseMapping(xContentRegistry, templateMapping.string());
+            Map<String, Object> parsedTemplateMapping = MapperService.parseMapping(xContentRegistry, templateMapping.compressedReference());
             result.add(parsedTemplateMapping);
         }
 
@@ -637,13 +636,14 @@ public class MetadataCreateIndexService {
      * {@link IndexTemplateMetadata#order()}). This merging makes no distinction between field
      * definitions, as may result in an invalid field definition
      */
-    static Map<String, Object> parseV1Mappings(String mappingsJson, List<CompressedXContent> templateMappings,
+    static Map<String, Object> parseV1Mappings(String mappingsJson, List<IndexTemplateMetadata> templateMappings,
                                                NamedXContentRegistry xContentRegistry) throws Exception {
         Map<String, Object> mappings = MapperService.parseMapping(xContentRegistry, mappingsJson);
         // apply templates, merging the mappings into the request mapping if exists
-        for (CompressedXContent mapping : templateMappings) {
+        for (IndexTemplateMetadata mapping : templateMappings) {
             if (mapping != null) {
-                Map<String, Object> templateMapping = MapperService.parseMapping(xContentRegistry, mapping.string());
+                Map<String, Object> templateMapping =
+                        MapperService.parseMapping(xContentRegistry, mapping.mappings().compressedReference());
                 if (templateMapping.isEmpty()) {
                     // Someone provided an empty '{}' for mappings, which is okay, but to avoid
                     // tripping the below assertion, we can safely ignore it

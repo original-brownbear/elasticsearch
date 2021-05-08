@@ -23,7 +23,6 @@ import org.elasticsearch.action.termvectors.MultiTermVectorsResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.IndexScopedSettings;
@@ -363,7 +362,7 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
             });
 
             if (registerType) {
-                mapperService.merge("_doc", new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
+                mapperService.merge("_doc", Strings.toString(PutMappingRequest.simpleMapping(
                     TEXT_FIELD_NAME, "type=text",
                     KEYWORD_FIELD_NAME, "type=keyword",
                     TEXT_ALIAS_FIELD_NAME, "type=alias,path=" + TEXT_FIELD_NAME,
@@ -381,11 +380,11 @@ public abstract class AbstractBuilderTestCase extends ESTestCase {
                     GEO_POINT_ALIAS_FIELD_NAME, "type=alias,path=" + GEO_POINT_FIELD_NAME,
                     GEO_SHAPE_FIELD_NAME, "type=geo_shape",
                     BINARY_FIELD_NAME, "type=binary"
-                ))), MapperService.MergeReason.MAPPING_UPDATE);
+                )), MapperService.MergeReason.MAPPING_UPDATE);
                 // also add mappings for two inner field in the object field
-                mapperService.merge("_doc", new CompressedXContent("{\"properties\":{\"" + OBJECT_FIELD_NAME + "\":{\"type\":\"object\","
+                mapperService.merge("_doc", "{\"properties\":{\"" + OBJECT_FIELD_NAME + "\":{\"type\":\"object\","
                         + "\"properties\":{\"" + DATE_FIELD_NAME + "\":{\"type\":\"date\"},\"" +
-                        INT_FIELD_NAME + "\":{\"type\":\"integer\"}}}}}"),
+                        INT_FIELD_NAME + "\":{\"type\":\"integer\"}}}}}",
                     MapperService.MergeReason.MAPPING_UPDATE);
                 testCase.initializeAdditionalMappings(mapperService);
             }

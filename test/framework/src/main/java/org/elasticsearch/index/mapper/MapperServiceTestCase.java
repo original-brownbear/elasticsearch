@@ -24,7 +24,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.MockBigArrays;
@@ -260,11 +259,11 @@ public abstract class MapperServiceTestCase extends ESTestCase {
      * Merge a new mapping into the one in the provided {@link MapperService}.
      */
     protected final void merge(MapperService mapperService, String mapping) throws IOException {
-        mapperService.merge(null, new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge(null, mapping, MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     protected final void merge(MapperService mapperService, MapperService.MergeReason reason, String mapping) throws IOException {
-        mapperService.merge(null, new CompressedXContent(mapping), reason);
+        mapperService.merge(null, mapping, reason);
     }
 
     /**
@@ -273,7 +272,7 @@ public abstract class MapperServiceTestCase extends ESTestCase {
     protected final void merge(MapperService mapperService,
                                MapperService.MergeReason reason,
                                XContentBuilder mapping) throws IOException {
-        mapperService.merge(null, new CompressedXContent(BytesReference.bytes(mapping)), reason);
+        mapperService.merge(null, BytesReference.bytes(mapping), reason);
     }
 
     protected final XContentBuilder topMapping(CheckedConsumer<XContentBuilder, IOException> buildFields) throws IOException {

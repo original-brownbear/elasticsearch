@@ -11,8 +11,7 @@ import org.apache.lucene.search.ConstantScoreQuery;
 import org.apache.lucene.search.IndexOrDocValuesQuery;
 import org.apache.lucene.search.Query;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.geo.GeometryTestUtils;
 import org.elasticsearch.geometry.Geometry;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -23,7 +22,6 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.test.AbstractQueryTestCase;
 import org.elasticsearch.xpack.spatial.LocalStateSpatialPlugin;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -37,13 +35,13 @@ public class GeoShapeWithDocValuesQueryBuilderTests extends AbstractQueryTestCas
     }
 
     @Override
-    protected void initializeAdditionalMappings(MapperService mapperService) throws IOException {
+    protected void initializeAdditionalMappings(MapperService mapperService) {
         if (randomBoolean()) {
-            mapperService.merge("_doc", new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
-                "test", "type=geo_shape"))), MapperService.MergeReason.MAPPING_UPDATE);
+            mapperService.merge("_doc", BytesReference.bytes(PutMappingRequest.simpleMapping(
+                "test", "type=geo_shape")), MapperService.MergeReason.MAPPING_UPDATE);
         } else {
-            mapperService.merge("_doc", new CompressedXContent(Strings.toString(PutMappingRequest.simpleMapping(
-                "test", "type=geo_shape,doc_values=false"))), MapperService.MergeReason.MAPPING_UPDATE);
+            mapperService.merge("_doc", BytesReference.bytes(PutMappingRequest.simpleMapping(
+                "test", "type=geo_shape,doc_values=false")), MapperService.MergeReason.MAPPING_UPDATE);
         }
     }
 

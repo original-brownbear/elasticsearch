@@ -553,7 +553,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
         request.mappings(createMapping("mapping_from_request", "text").string());
 
         Map<String, Object> parsedMappings = MetadataCreateIndexService.parseV1Mappings(request.mappings(),
-            List.of(templateMetadata.getMappings()), NamedXContentRegistry.EMPTY);
+            List.of(templateMetadata), NamedXContentRegistry.EMPTY);
 
         assertThat(parsedMappings, hasKey("_doc"));
         Map<String, Object> doc = (Map<String, Object>) parsedMappings.get("_doc");
@@ -622,7 +622,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
         request.settings(Settings.builder().put("key1", "requestValue").build());
 
         Map<String, Object> parsedMappings = MetadataCreateIndexService.parseV1Mappings(request.mappings(),
-            List.of(templateMetadata.mappings()), xContentRegistry());
+            List.of(templateMetadata), xContentRegistry());
         List<AliasMetadata> resolvedAliases = resolveAndValidateAliases(request.index(), request.aliases(),
             MetadataIndexTemplateService.resolveAliases(List.of(templateMetadata)),
             Metadata.builder().build(), aliasValidator, xContentRegistry(), searchExecutionContext,
@@ -828,7 +828,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             }
         });
 
-        Map<String, Object> mappings = parseV1Mappings("{\"_doc\":{}}", List.of(templateMetadata.mappings()), xContentRegistry());
+        Map<String, Object> mappings = parseV1Mappings("{\"_doc\":{}}", List.of(templateMetadata), xContentRegistry());
         assertThat(mappings, Matchers.hasKey(MapperService.SINGLE_MAPPING_NAME));
     }
 
@@ -841,7 +841,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
                 ExceptionsHelper.reThrowIfNotNull(e);
             }
         });
-        Map<String, Object> mappings = parseV1Mappings("", List.of(templateMetadata.mappings()), xContentRegistry());
+        Map<String, Object> mappings = parseV1Mappings("", List.of(templateMetadata), xContentRegistry());
         assertThat(mappings, Matchers.hasKey(MapperService.SINGLE_MAPPING_NAME));
     }
 
@@ -853,7 +853,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
                 ExceptionsHelper.reThrowIfNotNull(e);
             }
         });
-        Map<String, Object> mappings = parseV1Mappings("", List.of(templateMetadata.mappings()), xContentRegistry());
+        Map<String, Object> mappings = parseV1Mappings("", List.of(templateMetadata), xContentRegistry());
         assertThat(mappings, Matchers.hasKey(MapperService.SINGLE_MAPPING_NAME));
     }
 

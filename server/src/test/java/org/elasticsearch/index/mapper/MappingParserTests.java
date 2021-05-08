@@ -10,7 +10,6 @@ package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.IndexSettings;
@@ -53,7 +52,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             b.startObject("foo.bar").field("type", "text").endObject();
             b.startObject("foo.baz").field("type", "keyword").endObject();
         });
-        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", BytesReference.bytes(builder));
 
         Mapper object = mapping.getRoot().getMapper("foo");
         assertThat(object, CoreMatchers.instanceOf(ObjectMapper.class));
@@ -75,7 +74,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             }
             b.endObject();
         });
-        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
+        Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", BytesReference.bytes(builder));
         MappingLookup mappingLookup = MappingLookup.fromMapping(mapping);
         assertNotNull(mappingLookup.getMapper("foo.bar"));
         assertNotNull(mappingLookup.getMapper("foo.baz.deep.field"));
@@ -88,7 +87,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             b.startObject("foo.baz").field("type", "keyword").endObject();
         });
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder))));
+            () -> createMappingParser(Settings.EMPTY).parse("_doc", BytesReference.bytes(builder)));
         assertTrue(e.getMessage(), e.getMessage().contains("mapper [foo] cannot be changed from type [text] to [ObjectMapper]"));
     }
 
@@ -112,7 +111,7 @@ public class MappingParserTests extends MapperServiceTestCase {
             b.startObject("other-field").field("type", "keyword").endObject();
         });
         MapperParsingException e = expectThrows(MapperParsingException.class,
-            () -> createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder))));
+            () -> createMappingParser(Settings.EMPTY).parse("_doc", BytesReference.bytes(builder)));
         assertEquals("Type [alias] cannot be used in multi field", e.getMessage());
     }
 }

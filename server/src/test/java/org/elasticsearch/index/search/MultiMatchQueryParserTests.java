@@ -22,7 +22,6 @@ import org.apache.lucene.search.SynonymQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.lucene.search.Queries;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -87,7 +86,7 @@ public class MultiMatchQueryParserTests extends ESSingleNodeTestCase {
                 "        }\n" +
                 "    }\n" +
                 "}";
-        mapperService.merge("person", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("person", mapping, MapperService.MergeReason.MAPPING_UPDATE);
         this.indexService = indexService;
     }
 
@@ -361,7 +360,7 @@ public class MultiMatchQueryParserTests extends ESSingleNodeTestCase {
                     .endObject()
                 .endObject()
             .endObject().endObject());
-        mapperService.merge("type", new CompressedXContent(mapping), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("type", mapping, MapperService.MergeReason.MAPPING_UPDATE);
         SearchExecutionContext searchExecutionContext = indexService.newSearchExecutionContext(
             randomInt(20),
             0,

@@ -43,8 +43,7 @@ import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -90,8 +89,7 @@ public class QueryStringQueryBuilderTests extends AbstractQueryTestCase<QueryStr
             .endObject()
             .endObject().endObject().endObject();
 
-        mapperService.merge("_doc",
-            new CompressedXContent(Strings.toString(mapping)), MapperService.MergeReason.MAPPING_UPDATE);
+        mapperService.merge("_doc", BytesReference.bytes(mapping), MapperService.MergeReason.MAPPING_UPDATE);
     }
 
     @Override

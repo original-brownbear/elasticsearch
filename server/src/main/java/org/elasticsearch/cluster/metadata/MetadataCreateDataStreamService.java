@@ -242,8 +242,8 @@ public class MetadataCreateDataStreamService {
         MetadataFieldMapper fieldMapper = (MetadataFieldMapper) mappingLookup.getMapper("_data_stream_timestamp");
         assert fieldMapper != null : "[_data_stream_timestamp] meta field mapper must exist";
 
-        Map<String, Object> parsedTemplateMapping =
-            MapperService.parseMapping(NamedXContentRegistry.EMPTY, mappingLookup.getMapping().toCompressedXContent().string());
+        Map<String, Object> parsedTemplateMapping = MapperService.parseMapping(
+                NamedXContentRegistry.EMPTY, mappingLookup.getMapping().toCompressedXContent().compressedReference());
         Boolean enabled = ObjectPath.eval("_doc._data_stream_timestamp.enabled", parsedTemplateMapping);
         // Sanity check: if this fails then somehow the mapping for _data_stream_timestamp has been overwritten and
         // that would be a bug.

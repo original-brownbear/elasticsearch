@@ -11,7 +11,6 @@ package org.elasticsearch.xpack.vectors.mapper;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -73,7 +72,7 @@ public class SparseVectorFieldMapperTests extends ESSingleNodeTestCase {
             .endObject());
 
         MapperParsingException e = expectThrows(MapperParsingException.class, () ->
-            mapperService.parseMapping(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping)));
+            mapperService.parseMapping(MapperService.SINGLE_MAPPING_NAME, mapping));
         assertThat(e.getMessage(), containsString(SparseVectorFieldMapper.ERROR_MESSAGE));
     }
 
@@ -96,8 +95,7 @@ public class SparseVectorFieldMapperTests extends ESSingleNodeTestCase {
                 .endObject()
             .endObject());
 
-        DocumentMapper mapper = mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping),
-            MapperService.MergeReason.MAPPING_UPDATE);
+        DocumentMapper mapper = mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mapping, MapperService.MergeReason.MAPPING_UPDATE);
         assertWarnings(SparseVectorFieldMapper.ERROR_MESSAGE_7X);
 
         // Check that new vectors cannot be indexed.

@@ -12,7 +12,6 @@ import org.apache.lucene.index.IndexableField;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -397,7 +396,7 @@ public class NestedObjectMapperTests extends MapperServiceTestCase {
             .endObject().endObject().endObject());
         MergeReason mergeReason = randomFrom(MergeReason.MAPPING_UPDATE, MergeReason.INDEX_TEMPLATE);
 
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping), mergeReason);
+        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mapping, mergeReason);
         DocumentMapper docMapper = mapperService.documentMapper();
 
         ParsedDocument doc = docMapper.parse(new SourceToParse("test", "1",
@@ -436,7 +435,7 @@ public class NestedObjectMapperTests extends MapperServiceTestCase {
             .endObject().endObject().endObject());
         MergeReason mergeReason = randomFrom(MergeReason.MAPPING_UPDATE, MergeReason.INDEX_TEMPLATE);
 
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(mapping), mergeReason);
+        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mapping, mergeReason);
         DocumentMapper docMapper = mapperService.documentMapper();
 
         ParsedDocument doc = docMapper.parse(new SourceToParse("test", "1",
@@ -478,7 +477,7 @@ public class NestedObjectMapperTests extends MapperServiceTestCase {
             .endObject()
             .endObject()
             .endObject());
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(firstMapping), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, firstMapping, MergeReason.INDEX_TEMPLATE);
 
         String secondMapping = Strings.toString(XContentFactory.jsonBuilder().startObject()
             .startObject(MapperService.SINGLE_MAPPING_NAME)
@@ -498,7 +497,7 @@ public class NestedObjectMapperTests extends MapperServiceTestCase {
             .endObject()
             .endObject());
 
-        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, new CompressedXContent(secondMapping), MergeReason.INDEX_TEMPLATE);
+        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, secondMapping, MergeReason.INDEX_TEMPLATE);
         DocumentMapper docMapper = mapperService.documentMapper();
 
         ParsedDocument doc = docMapper.parse(new SourceToParse("test", "1",
