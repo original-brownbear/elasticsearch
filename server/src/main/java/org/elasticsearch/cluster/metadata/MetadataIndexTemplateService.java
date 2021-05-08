@@ -1244,15 +1244,6 @@ public class MetadataIndexTemplateService {
 
     private static void validateTemplate(Settings validateSettings, String mappings,
                                          IndicesService indicesService, NamedXContentRegistry xContentRegistry) throws Exception {
-        // First check to see if mappings are valid XContent
-        if (mappings != null) {
-            try {
-                new CompressedXContent(mappings);
-            } catch (Exception e) {
-                throw new MapperParsingException("Failed to parse mapping: {}", e, mappings);
-            }
-        }
-
         // Hard to validate settings if they're non-existent, so used empty ones if none were provided
         Settings settings = validateSettings;
         if (settings == null) {
