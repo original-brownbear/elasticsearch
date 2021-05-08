@@ -642,8 +642,11 @@ public class MetadataCreateIndexService {
         // apply templates, merging the mappings into the request mapping if exists
         for (IndexTemplateMetadata mapping : templateMappings) {
             if (mapping != null) {
-                Map<String, Object> templateMapping =
-                        MapperService.parseMapping(xContentRegistry, mapping.mappings().compressedReference());
+                final CompressedXContent source = mapping.getMappings();
+                if (source == null) {
+                    continue;
+                }
+                Map<String, Object> templateMapping = MapperService.parseMapping(xContentRegistry, source.compressedReference());
                 if (templateMapping.isEmpty()) {
                     // Someone provided an empty '{}' for mappings, which is okay, but to avoid
                     // tripping the below assertion, we can safely ignore it

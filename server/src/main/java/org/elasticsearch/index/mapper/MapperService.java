@@ -13,7 +13,6 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
-import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
@@ -21,6 +20,7 @@ import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.AbstractIndexComponent;
@@ -165,15 +165,8 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
      */
     public static Map<String, Object> parseMapping(NamedXContentRegistry xContentRegistry,
                                                    BytesReference mappingSource) throws IOException {
-        if (CompressorFactory.isCompressed(mappingSource) == false && mappingSource.hasArray()) {
-            try (XContentParser parser = XContentType.JSON.xContent()
-                    .createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE, mappingSource.array(), mappingSource.arrayOffset(),
-                            mappingSource.length())) {
-                return parser.map();
-            }
-        }
-        try (XContentParser parser = XContentType.JSON.xContent()
-                .createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE, mappingSource.streamInput())) {
+        try (XContentParser parser = XContentHelper.createParser(
+                xContentRegistry, LoggingDeprecationHandler.INSTANCE, mappingSource, XContentType.JSON)) {
             return parser.map();
         }
     }
