@@ -11,19 +11,18 @@ import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
-import org.apache.lucene.store.ByteBuffersDataInput;
-import org.apache.lucene.store.ByteBuffersIndexInput;
-import org.apache.lucene.store.IndexInput;
+import org.apache.lucene.store.DataInput;
+import org.apache.lucene.store.InputStreamDataInput;
 import org.apache.lucene.store.OutputStreamIndexOutput;
-import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.CheckedConsumer;
 import org.elasticsearch.common.CheckedFunction;
 import org.elasticsearch.common.blobstore.BlobContainer;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressorFactory;
+import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.io.stream.ReleasableBytesStreamOutput;
-import org.elasticsearch.common.lucene.store.ByteArrayIndexInput;
 import org.elasticsearch.common.lucene.store.IndexOutputOutputStream;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
@@ -31,20 +30,17 @@ import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.core.internal.io.Streams;
 import org.elasticsearch.gateway.CorruptStateException;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Arrays;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
 
 /**
  * Snapshot metadata file format used in v2.0 and above
@@ -93,13 +89,10 @@ public final class ChecksumBlobStoreFormat<T extends ToXContent> {
      * @param name          name to be translated into
      * @return parsed blob object
      */
-    public T read(BlobContainer blobContainer, String name, NamedXContentRegistry namedXContentRegistry,
-                  BigArrays bigArrays) throws IOException {
+    public T read(BlobContainer blobContainer, String name, NamedXContentRegistry namedXContentRegistry) throws IOException {
         String blobName = blobName(name);
-        try (ReleasableBytesStreamOutput out = new ReleasableBytesStreamOutput(bigArrays);
-             InputStream in = blobContainer.readBlob(blobName)) {
-            Streams.copy(in, out, false);
-            return deserialize(blobName, namedXContentRegistry, out.bytes());
+        try (InputStream in = blobContainer.readBlob(blobName)) {
+            return deserialize(namedXContentRegistry, in);
         }
     }
 
@@ -107,23 +100,71 @@ public final class ChecksumBlobStoreFormat<T extends ToXContent> {
         return String.format(Locale.ROOT, blobNameFormat, name);
     }
 
-    public T deserialize(String blobName, NamedXContentRegistry namedXContentRegistry, BytesReference bytes) throws IOException {
-        final String resourceDesc = "ChecksumBlobStoreFormat.readBlob(blob=\"" + blobName + "\")";
+    public T deserialize(NamedXContentRegistry namedXContentRegistry, InputStream inputStream) throws IOException {
         try {
-            final IndexInput indexInput = bytes.length() > 0 ? new ByteBuffersIndexInput(
-                    new ByteBuffersDataInput(Arrays.asList(BytesReference.toByteBuffers(bytes))), resourceDesc)
-                    : new ByteArrayIndexInput(resourceDesc, BytesRef.EMPTY_BYTES);
-            CodecUtil.checksumEntireFile(indexInput);
-            CodecUtil.checkHeader(indexInput, codec, VERSION, VERSION);
-            long filePointer = indexInput.getFilePointer();
-            long contentSize = indexInput.length() - CodecUtil.footerLength() - filePointer;
-            try (XContentParser parser = XContentHelper.createParser(namedXContentRegistry, LoggingDeprecationHandler.INSTANCE,
-                bytes.slice((int) filePointer, (int) contentSize), XContentType.SMILE)) {
-                return reader.apply(parser);
+            CodecUtil.checkHeader(new InputStreamDataInput(inputStream), codec, VERSION, VERSION);
+            if (inputStream.markSupported() == false) {
+                inputStream = new BufferedInputStream(inputStream);
             }
+            inputStream.mark(4);
+            final byte[] maybeCompressorHeader = new byte[4];
+            Streams.readFully(inputStream, maybeCompressorHeader);
+            boolean compressed = CompressorFactory.COMPRESSOR.isCompressed(new BytesArray(maybeCompressorHeader));
+            inputStream.reset();
+            final T result;
+            try (InputStream wrappedInputStream = compressed ? CompressorFactory.COMPRESSOR.threadLocalInputStream(inputStream) : inputStream) {
+                final CheckedInputStream checkedInputStream = new CheckedInputStream(wrappedInputStream, new CRC32());
+                try (XContentParser parser = XContentType.SMILE.xContent().createParser(
+                        namedXContentRegistry, LoggingDeprecationHandler.INSTANCE, Streams.noCloseStream(checkedInputStream))) {
+                    result = reader.apply(parser);
+                }
+                final long checksum = checkedInputStream.getChecksum().getValue();
+                final DataInput footerInput = new InputStreamDataInput(inputStream);
+                if (footerInput.readInt() != CodecUtil.FOOTER_MAGIC) {
+                    throw new CorruptStateException("invalid footer magic");
+                }
+                if (footerInput.readInt() != 0) {
+                    throw new CorruptStateException("invalid codec version");
+                }
+                final long checksumRead = footerInput.readLong();
+                if (checksumRead != checksum) {
+                    throw new CorruptStateException("checksum does not match");
+                }
+            }
+            return result;
         } catch (CorruptIndexException | IndexFormatTooOldException | IndexFormatTooNewException ex) {
             // we trick this into a dedicated exception with the original stacktrace
             throw new CorruptStateException(ex);
+        }
+    }
+
+    private static final class FooterAwareInputStream extends FilterInputStream {
+
+        private final CRC32 crc32 = new CRC32();
+
+        private final byte[] footerBytes = new byte[16];
+
+        int footerOffset = 0;
+
+        FooterAwareInputStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read() throws IOException {
+            int read = super.read();
+            if (footerOffset < footerBytes.length) {
+                footerBytes[footerOffset++] = (byte) read;
+            } else {
+                System.arraycopy(footerBytes, 1, footerBytes, 0, 15);
+                footerBytes[15] = (byte) read;
+            }
+            return read;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return super.read(b, off, len);
         }
     }
 
