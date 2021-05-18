@@ -137,34 +137,32 @@ public final class ChecksumBlobStoreFormat<T extends ToXContent> {
      * @param name                blob name
      * @param compress            whether to use compression
      */
-    public void write(T obj, BlobContainer blobContainer, String name, boolean compress, BigArrays bigArrays) throws IOException {
+    public void write(T obj, BlobContainer blobContainer, String name, boolean compress) throws IOException {
         final String blobName = blobName(name);
-        serialize(obj, blobName, compress, bigArrays, bytes -> blobContainer.writeBlob(blobName, bytes, false));
+            try (OutputStream out = blobContainer.writeBlob(blobName, false)) {
+                serialize(obj, blobName, compress, out);
+            }
     }
 
-    public void serialize(final T obj, final String blobName, final boolean compress, BigArrays bigArrays,
-                          CheckedConsumer<BytesReference, IOException> consumer) throws IOException {
-        try (ReleasableBytesStreamOutput outputStream = new ReleasableBytesStreamOutput(bigArrays)) {
-            try (OutputStreamIndexOutput indexOutput = new OutputStreamIndexOutput(
-                    "ChecksumBlobStoreFormat.writeBlob(blob=\"" + blobName + "\")", blobName,
-                    org.elasticsearch.common.io.Streams.noCloseStream(outputStream), BUFFER_SIZE)) {
-                CodecUtil.writeHeader(indexOutput, codec, VERSION);
-                try (OutputStream indexOutputOutputStream = new IndexOutputOutputStream(indexOutput) {
-                    @Override
-                    public void close() {
-                        // this is important since some of the XContentBuilders write bytes on close.
-                        // in order to write the footer we need to prevent closing the actual index input.
-                    }
-                }; XContentBuilder builder = XContentFactory.contentBuilder(XContentType.SMILE,
-                        compress ? CompressorFactory.COMPRESSOR.threadLocalOutputStream(indexOutputOutputStream)
-                                : indexOutputOutputStream)) {
-                    builder.startObject();
-                    obj.toXContent(builder, SNAPSHOT_ONLY_FORMAT_PARAMS);
-                    builder.endObject();
+    public void serialize(final T obj, final String blobName, final boolean compress, OutputStream outputStream) throws IOException {
+        try (OutputStreamIndexOutput indexOutput = new OutputStreamIndexOutput(
+                "ChecksumBlobStoreFormat.writeBlob(blob=\"" + blobName + "\")", blobName,
+                org.elasticsearch.common.io.Streams.noCloseStream(outputStream), BUFFER_SIZE)) {
+            CodecUtil.writeHeader(indexOutput, codec, VERSION);
+            try (OutputStream indexOutputOutputStream = new IndexOutputOutputStream(indexOutput) {
+                @Override
+                public void close() {
+                    // this is important since some of the XContentBuilders write bytes on close.
+                    // in order to write the footer we need to prevent closing the actual index input.
                 }
-                CodecUtil.writeFooter(indexOutput);
+            }; XContentBuilder builder = XContentFactory.contentBuilder(XContentType.SMILE,
+                    compress ? CompressorFactory.COMPRESSOR.threadLocalOutputStream(indexOutputOutputStream)
+                            : indexOutputOutputStream)) {
+                builder.startObject();
+                obj.toXContent(builder, SNAPSHOT_ONLY_FORMAT_PARAMS);
+                builder.endObject();
             }
-            consumer.accept(outputStream.bytes());
+            CodecUtil.writeFooter(indexOutput);
         }
     }
 }

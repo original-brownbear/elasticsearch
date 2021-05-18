@@ -40,6 +40,7 @@ import org.elasticsearch.repositories.fs.FsRepository;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.security.MessageDigest;
@@ -499,6 +500,16 @@ public class MockRepository extends FsRepository {
                     // get an error with the client connection, so an IOException here simulates this
                     maybeIOExceptionOrBlock(blobName);
                 }
+            }
+
+            @Override
+            public OutputStream writeBlob(String blobName, boolean failIfAlreadyExists) throws IOException {
+                maybeIOExceptionOrBlock(blobName);
+                if (blockOnWriteShardLevelMeta && blobName.startsWith(BlobStoreRepository.SNAPSHOT_PREFIX)
+                        && path().equals(basePath()) == false) {
+                    blockExecutionAndMaybeWait(blobName);
+                }
+                return super.writeBlob(blobName, failIfAlreadyExists);
             }
 
             @Override

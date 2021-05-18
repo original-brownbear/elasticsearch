@@ -9,9 +9,12 @@
 package org.elasticsearch.common.blobstore;
 
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.NoSuchFileException;
 import java.util.Iterator;
@@ -114,6 +117,32 @@ public interface BlobContainer {
      */
     default void writeBlob(String blobName, BytesReference bytes, boolean failIfAlreadyExists) throws IOException {
         writeBlob(blobName, bytes.streamInput(), bytes.length(), failIfAlreadyExists);
+    }
+
+    default OutputStream writeBlob(String blobName, boolean failIfAlreadyExists) throws IOException {
+        return new BytesStreamOutput() {
+            @Override
+            public void close() {
+                try {
+                    writeBlob(blobName, bytes(), failIfAlreadyExists);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        };
+    }
+
+    default OutputStream writeBlobAtomic(String blobName, boolean failIfAlreadyExists) throws IOException {
+        return new BytesStreamOutput() {
+            @Override
+            public void close() {
+                try {
+                    writeBlob(blobName, bytes(), failIfAlreadyExists);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        };
     }
 
     /**
