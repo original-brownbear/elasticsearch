@@ -18,6 +18,7 @@ import org.elasticsearch.action.StepListener;
 import org.elasticsearch.action.admin.cluster.repositories.get.TransportGetRepositoriesAction;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.GroupedActionListener;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.SnapshotsInProgress;
@@ -326,7 +327,10 @@ public class TransportGetSnapshotsAction extends TransportMasterNodeAction<GetSn
                 return;
             }
             try {
-                snapshotInfos.add(repository.getSnapshotInfo(snapshotId));
+                // TODO: meh this sucks
+                final SnapshotInfo snapshotInfo = PlainActionFuture.get(
+                        f -> repository.getSnapshotInfo(List.of(snapshotId), ignoreUnavailable, null, f));
+                snapshotInfos.add(snapshotInfo);
             } catch (Exception ex) {
                 if (ignoreUnavailable) {
                     logger.warn(() -> new ParameterizedMessage("failed to get snapshot [{}]", snapshotId), ex);

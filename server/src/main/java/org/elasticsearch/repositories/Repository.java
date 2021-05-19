@@ -25,9 +25,11 @@ import org.elasticsearch.index.store.Store;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
+import org.elasticsearch.tasks.CancellableTask;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -70,12 +72,19 @@ public interface Repository extends LifecycleComponent {
     RepositoryMetadata getMetadata();
 
     /**
-     * Reads snapshot description from repository.
+     * Reads snapshot descriptions from repository.
      *
-     * @param snapshotId  snapshot id
-     * @return information about snapshot
+     * @param snapshotIds     snapshot ids to fetch {@link SnapshotInfo} for
+     * @param failFast        if set to true stop fetching additional {@link SnapshotInfo} on failure, callers should not expect additional
+     *                        invocations of the {@code listener} once it received an exception if this parameter is true. If set to false,
+     *                        the {@code listener} will be invoked once for each of the given {@code snapshotIds}.
+     * @param cancellableTask optional cancellable task that implementations can check to break out early from long running fetches
+     * @param listener        listener that is repeatedly invoked with each snapshot's {@link SnapshotInfo}
      */
-    SnapshotInfo getSnapshotInfo(SnapshotId snapshotId);
+    void getSnapshotInfo(List<SnapshotId> snapshotIds,
+                         boolean failFast,
+                         @Nullable CancellableTask cancellableTask,
+                         ActionListener<SnapshotInfo> listener);
 
     /**
      * Returns global metadata associated with the snapshot.

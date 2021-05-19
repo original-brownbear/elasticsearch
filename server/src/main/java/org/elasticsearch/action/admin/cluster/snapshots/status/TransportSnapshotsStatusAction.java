@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.ActionFilters;
+import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.TransportMasterNodeAction;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.ClusterState;
@@ -246,7 +247,8 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                         throw new SnapshotMissingException(repositoryName, snapshotName);
                     }
                 }
-                SnapshotInfo snapshotInfo = snapshot(snapshotsInProgress, repositoryName, snapshotId);
+                // TODO: obviously fix
+                SnapshotInfo snapshotInfo = PlainActionFuture.get(f -> snapshot(snapshotsInProgress, repositoryName, snapshotId, f));
                 List<SnapshotIndexShardStatus> shardStatusBuilder = new ArrayList<>();
                 if (snapshotInfo.state().completed()) {
                     Map<ShardId, IndexShardSnapshotStatus> shardStatuses = snapshotShards(repositoryName, repositoryData, snapshotInfo);
@@ -289,16 +291,22 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
      * @param snapshotsInProgress snapshots in progress in the cluster state
      * @param repositoryName      repository name
      * @param snapshotId          snapshot id
-     * @return snapshot
-     * @throws SnapshotMissingException if snapshot is not found
+     * @param listener            listener to resolve with snapshot info
      */
-    private SnapshotInfo snapshot(SnapshotsInProgress snapshotsInProgress, String repositoryName, SnapshotId snapshotId) {
+    private void snapshot(SnapshotsInProgress snapshotsInProgress, String repositoryName, SnapshotId snapshotId,
+                          ActionListener<SnapshotInfo> listener) {
         List<SnapshotsInProgress.Entry> entries =
             SnapshotsService.currentSnapshots(snapshotsInProgress, repositoryName, Collections.singletonList(snapshotId.getName()));
         if (entries.isEmpty() == false) {
-            return new SnapshotInfo(entries.iterator().next());
+            listener.onResponse(new SnapshotInfo(entries.iterator().next()));
+        } else {
+            repositoriesService.repository(repositoryName).getSnapshotInfo(
+                    List.of(snapshotId),
+                    false,
+                    null, // TODO: make cancellable?
+                    listener
+            );
         }
-        return repositoriesService.repository(repositoryName).getSnapshotInfo(snapshotId);
     }
 
     /**

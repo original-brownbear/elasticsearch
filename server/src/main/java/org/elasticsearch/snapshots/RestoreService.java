@@ -249,88 +249,124 @@ public class RestoreService implements ClusterStateApplier {
                         "snapshot UUID mismatch: expected [" + request.snapshotUuid() + "] but got [" + snapshotId.getUUID() + "]");
                 }
 
-                final SnapshotInfo snapshotInfo = repository.getSnapshotInfo(snapshotId);
-                final Snapshot snapshot = new Snapshot(repositoryName, snapshotId);
+                repository.getSnapshotInfo(List.of(snapshotId), false, null,
+                        ActionListener.wrap(
+                                snapshotInfo -> doRestore(
+                                        new Snapshot(repositoryName, snapshotId),
+                                        snapshotInfo,
+                                        repository,
+                                        request,
+                                        repositoryData,
+                                        updater,
+                                        listener),
+                                listener::onFailure
+                        )
+                );
+            };
 
-                // Make sure that we can restore from this snapshot
-                validateSnapshotRestorable(repositoryName, snapshotInfo);
+            // fork handling the above consumer to the generic pool since it loads various pieces of metadata from the repository over a
+            // longer period of time
+            repositoryDataListener.whenComplete(repositoryData -> repositoryUuidRefreshListener.whenComplete(ignored ->
+                    clusterService.getClusterApplierService().threadPool().generic().execute(
+                            ActionRunnable.wrap(listener, l -> onRepositoryDataReceived.accept(repositoryData))
+                    ), listener::onFailure), listener::onFailure);
 
-                // Get the global state if necessary
-                Metadata globalMetadata = null;
-                final Metadata.Builder metadataBuilder;
-                if (request.includeGlobalState()) {
-                    globalMetadata = repository.getSnapshotGlobalMetadata(snapshotId);
-                    metadataBuilder = Metadata.builder(globalMetadata);
-                } else {
-                    metadataBuilder = Metadata.builder();
-                }
+        } catch (Exception e) {
+            logger.warn(() -> new ParameterizedMessage("[{}] failed to restore snapshot",
+                request.repository() + ":" + request.snapshot()), e);
+            listener.onFailure(e);
+        }
+    }
 
-                List<String> requestIndices = new ArrayList<>(Arrays.asList(request.indices()));
+    private void doRestore(Snapshot snapshot,
+                           SnapshotInfo snapshotInfo,
+                           Repository repository,
+                           RestoreSnapshotRequest request,
+                           RepositoryData repositoryData,
+                           BiConsumer<ClusterState, Metadata.Builder> updater,
+                           ActionListener<RestoreCompletionResponse> listener) throws IOException {
+        final String repositoryName = snapshot.getRepository();
+        final SnapshotId snapshotId = snapshot.getSnapshotId();
+        final String snapshotName = snapshotId.getName();
+        // Make sure that we can restore from this snapshot
+        validateSnapshotRestorable(repositoryName, snapshotInfo);
 
-                // Get data stream metadata for requested data streams
-                Tuple<Map<String, DataStream>, Map<String, DataStreamAlias>> result =
+        // Get the global state if necessary
+        Metadata globalMetadata = null;
+        final Metadata.Builder metadataBuilder;
+        if (request.includeGlobalState()) {
+            globalMetadata = repository.getSnapshotGlobalMetadata(snapshotId);
+            metadataBuilder = Metadata.builder(globalMetadata);
+        } else {
+            metadataBuilder = Metadata.builder();
+        }
+
+        List<String> requestIndices = new ArrayList<>(Arrays.asList(request.indices()));
+
+        // Get data stream metadata for requested data streams
+        Tuple<Map<String, DataStream>, Map<String, DataStreamAlias>> result =
                     getDataStreamsToRestore(repository, snapshotId, snapshotInfo, globalMetadata, requestIndices);
-                Map<String, DataStream> dataStreamsToRestore = result.v1();
-                Map<String, DataStreamAlias> dataStreamAliasesToRestore = result.v2();
+        Map<String, DataStream> dataStreamsToRestore = result.v1();
+        Map<String, DataStreamAlias> dataStreamAliasesToRestore = result.v2();
 
 
-                // Remove the data streams from the list of requested indices
-                requestIndices.removeAll(dataStreamsToRestore.keySet());
+        // Remove the data streams from the list of requested indices
+        requestIndices.removeAll(dataStreamsToRestore.keySet());
 
-                // And add the backing indices
-                Set<String> dataStreamIndices = dataStreamsToRestore.values().stream()
+        // And add the backing indices
+        Set<String> dataStreamIndices = dataStreamsToRestore.values().stream()
                     .flatMap(ds -> ds.getIndices().stream())
                     .map(Index::getName)
                     .collect(Collectors.toSet());
-                requestIndices.addAll(dataStreamIndices);
+        requestIndices.addAll(dataStreamIndices);
 
-                // Determine system indices to restore from requested feature states
-                final Map<String, List<String>> featureStatesToRestore = getFeatureStatesToRestore(request, snapshotInfo, snapshot);
-                final Set<String> featureStateIndices = featureStatesToRestore.values().stream()
+        // Determine system indices to restore from requested feature states
+        final Map<String, List<String>> featureStatesToRestore = getFeatureStatesToRestore(request, snapshotInfo, snapshot);
+        final Set<String> featureStateIndices = featureStatesToRestore.values().stream()
                     .flatMap(Collection::stream)
                     .collect(Collectors.toSet());
 
-                // Resolve the indices that were directly requested
-                final List<String> requestedIndicesInSnapshot = filterIndices(snapshotInfo.indices(), requestIndices.toArray(String[]::new),
+        // Resolve the indices that were directly requested
+        final List<String> requestedIndicesInSnapshot = filterIndices(snapshotInfo.indices(), requestIndices.toArray(String[]::new),
                     request.indicesOptions());
 
-                // Combine into the final list of indices to be restored
-                final List<String> requestedIndicesIncludingSystem = Stream.concat(
-                    requestedIndicesInSnapshot.stream(),
-                    featureStateIndices.stream()
-                ).distinct().collect(Collectors.toList());
+        // Combine into the final list of indices to be restored
+        final List<String> requestedIndicesIncludingSystem = Stream.concat(
+                requestedIndicesInSnapshot.stream(),
+                featureStateIndices.stream()
+        ).distinct().collect(Collectors.toList());
 
-                final Set<String> explicitlyRequestedSystemIndices = new HashSet<>();
-                for (IndexId indexId : repositoryData.resolveIndices(requestedIndicesIncludingSystem).values()) {
-                    IndexMetadata snapshotIndexMetaData = repository.getSnapshotIndexMetaData(repositoryData, snapshotId, indexId);
-                    if (snapshotIndexMetaData.isSystem()) {
-                        if (requestedIndicesInSnapshot.contains(indexId.getName())) {
-                            explicitlyRequestedSystemIndices.add(indexId.getName());
-                        }
-                    }
-                    metadataBuilder.put(snapshotIndexMetaData, false);
+        final Set<String> explicitlyRequestedSystemIndices = new HashSet<>();
+        for (IndexId indexId : repositoryData.resolveIndices(requestedIndicesIncludingSystem).values()) {
+            IndexMetadata snapshotIndexMetaData = repository.getSnapshotIndexMetaData(repositoryData, snapshotId, indexId);
+            if (snapshotIndexMetaData.isSystem()) {
+                if (requestedIndicesInSnapshot.contains(indexId.getName())) {
+                    explicitlyRequestedSystemIndices.add(indexId.getName());
                 }
+            }
+            metadataBuilder.put(snapshotIndexMetaData, false);
+        }
 
-                // log a deprecation warning if the any of the indexes to delete were included in the request and the snapshot
-                // is from a version that should have feature states
-                if (snapshotInfo.version().onOrAfter(Version.V_7_12_0) && explicitlyRequestedSystemIndices.isEmpty() == false) {
-                    deprecationLogger.deprecate(DeprecationCategory.API, "restore-system-index-from-snapshot",
-                        "Restoring system indices by name is deprecated. Use feature states instead. System indices: "
+        // log a deprecation warning if the any of the indexes to delete were included in the request and the snapshot
+        // is from a version that should have feature states
+        if (snapshotInfo.version().onOrAfter(Version.V_7_12_0) && explicitlyRequestedSystemIndices.isEmpty() == false) {
+            deprecationLogger.deprecate(DeprecationCategory.API, "restore-system-index-from-snapshot",
+                    "Restoring system indices by name is deprecated. Use feature states instead. System indices: "
                             + explicitlyRequestedSystemIndices);
-                }
+        }
 
-                final Metadata metadata = metadataBuilder
+        final Metadata metadata = metadataBuilder
                     .dataStreams(dataStreamsToRestore, dataStreamAliasesToRestore)
                     .build();
 
-                // Apply renaming on index names, returning a map of names where
-                // the key is the renamed index and the value is the original name
-                final Map<String, String> indices = renamedIndices(request, requestedIndicesIncludingSystem, dataStreamIndices,
+        // Apply renaming on index names, returning a map of names where
+        // the key is the renamed index and the value is the original name
+        final Map<String, String> indices = renamedIndices(request, requestedIndicesIncludingSystem, dataStreamIndices,
                     featureStateIndices);
 
-                // Now we can start the actual restore process by adding shards to be recovered in the cluster state
-                // and updating cluster metadata (global and index) as needed
-                clusterService.submitStateUpdateTask(
+        // Now we can start the actual restore process by adding shards to be recovered in the cluster state
+        // and updating cluster metadata (global and index) as needed
+        clusterService.submitStateUpdateTask(
                         "restore_snapshot[" + snapshotName + ']', new ClusterStateUpdateTask(request.masterNodeTimeout()) {
                     final String restoreUUID = UUIDs.randomBase64UUID();
                     RestoreInfo restoreInfo = null;
@@ -364,7 +400,7 @@ public class RestoreService implements ClusterStateApplier {
                         if (indices.isEmpty() == false) {
                             // We have some indices to restore
                             ImmutableOpenMap.Builder<ShardId, RestoreInProgress.ShardRestoreStatus> shardsBuilder =
-                                ImmutableOpenMap.builder();
+                            ImmutableOpenMap.builder();
                             final Version minIndexCompatibilityVersion = currentState.getNodes().getMaxNodeVersion()
                                 .minimumIndexCompatibilityVersion();
                             for (Map.Entry<String, String> indexEntry : indices.entrySet()) {
@@ -705,20 +741,6 @@ public class RestoreService implements ClusterStateApplier {
                         listener.onResponse(new RestoreCompletionResponse(restoreUUID, snapshot, restoreInfo));
                     }
                 });
-            };
-
-            // fork handling the above consumer to the generic pool since it loads various pieces of metadata from the repository over a
-            // longer period of time
-            repositoryDataListener.whenComplete(repositoryData -> repositoryUuidRefreshListener.whenComplete(ignored ->
-                    clusterService.getClusterApplierService().threadPool().generic().execute(
-                            ActionRunnable.wrap(listener, l -> onRepositoryDataReceived.accept(repositoryData))
-                    ), listener::onFailure), listener::onFailure);
-
-        } catch (Exception e) {
-            logger.warn(() -> new ParameterizedMessage("[{}] failed to restore snapshot",
-                request.repository() + ":" + request.snapshot()), e);
-            listener.onFailure(e);
-        }
     }
 
     private void setRefreshRepositoryUuidOnRestore(boolean refreshRepositoryUuidOnRestore) {

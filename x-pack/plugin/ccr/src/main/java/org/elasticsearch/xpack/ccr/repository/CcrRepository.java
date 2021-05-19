@@ -35,6 +35,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
@@ -74,6 +75,7 @@ import org.elasticsearch.repositories.blobstore.FileRestoreContext;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotState;
+import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.threadpool.Scheduler;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xpack.ccr.Ccr;
@@ -172,8 +174,12 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
     }
 
     @Override
-    public SnapshotInfo getSnapshotInfo(SnapshotId snapshotId) {
-        assert SNAPSHOT_ID.equals(snapshotId) : "RemoteClusterRepository only supports " + SNAPSHOT_ID + " as the SnapshotId";
+    public void getSnapshotInfo(List<SnapshotId> snapshotIds,
+                                boolean ignoreUnavailable,
+                                @Nullable CancellableTask cancellableTask,
+                                ActionListener<SnapshotInfo> listener) {
+        assert List.of(SNAPSHOT_ID).equals(snapshotIds)
+                : "RemoteClusterRepository only supports " + SNAPSHOT_ID + " as the SnapshotId but saw " + snapshotIds;
         Client remoteClient = getRemoteClusterClient();
         ClusterStateResponse response = remoteClient.admin().cluster().prepareState().clear().setMetadata(true).setNodes(true)
             .get(ccrSettings.getRecoveryActionTimeout());
@@ -182,8 +188,15 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
         ArrayList<String> indices = new ArrayList<>(indicesMap.size());
         indicesMap.keysIt().forEachRemaining(indices::add);
 
-        return new SnapshotInfo(snapshotId, indices, new ArrayList<>(metadata.dataStreams().keySet()), Collections.emptyList(),
-            response.getState().getNodes().getMaxNodeVersion(), SnapshotState.SUCCESS
+        listener.onResponse(
+                new SnapshotInfo(
+                        snapshotIds.get(0),
+                        indices,
+                        new ArrayList<>(metadata.dataStreams().keySet()),
+                        Collections.emptyList(),
+                        response.getState().getNodes().getMaxNodeVersion(),
+                        SnapshotState.SUCCESS
+                )
         );
     }
 

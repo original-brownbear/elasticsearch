@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.component.LifecycleListener;
 import org.elasticsearch.common.settings.Settings;
@@ -24,9 +25,11 @@ import org.elasticsearch.index.store.Store;
 import org.elasticsearch.indices.recovery.RecoveryState;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
+import org.elasticsearch.tasks.CancellableTask;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -49,8 +52,11 @@ public class FilterRepository implements Repository {
     }
 
     @Override
-    public SnapshotInfo getSnapshotInfo(SnapshotId snapshotId) {
-        return in.getSnapshotInfo(snapshotId);
+    public void getSnapshotInfo(List<SnapshotId> snapshotIds,
+                                boolean failFast,
+                                @Nullable CancellableTask cancellableTask,
+                                ActionListener<SnapshotInfo> listener) {
+        in.getSnapshotInfo(snapshotIds, failFast, cancellableTask, listener);
     }
 
     @Override
