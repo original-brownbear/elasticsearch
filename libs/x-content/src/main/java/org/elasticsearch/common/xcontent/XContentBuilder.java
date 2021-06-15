@@ -22,19 +22,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -685,6 +673,14 @@ public final class XContentBuilder implements Closeable, Flushable {
 
     public XContentBuilder array(String name, String... values) throws IOException {
         return field(name).values(values);
+    }
+
+    public XContentBuilder array(String name, Collection<String> values) throws IOException {
+        startArray(name);
+        for (String value : values) {
+            value(value);
+        }
+        return endArray();
     }
 
     private XContentBuilder values(String[] values) throws IOException {

@@ -707,38 +707,18 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
             builder.field(VERSION_ID, version.id);
             builder.field(VERSION, version.toString());
         }
-        builder.startArray(INDICES);
-        for (String index : indices) {
-            builder.value(index);
-        }
-        builder.endArray();
+        builder.array(INDICES, indices);
 
         if (params.paramAsBoolean(INDEX_DETAILS_XCONTENT_PARAM, false) && indexSnapshotDetails.isEmpty() == false) {
-            builder.startObject(INDEX_DETAILS);
-            for (Map.Entry<String, IndexSnapshotDetails> entry : indexSnapshotDetails.entrySet()) {
-                builder.field(entry.getKey());
-                entry.getValue().toXContent(builder, params);
-            }
-            builder.endObject();
+            indexDetailsToXContent(builder, params);
         }
 
-        builder.startArray(DATA_STREAMS);
-        for (String dataStream : dataStreams) {
-            builder.value(dataStream);
-        }
-        builder.endArray();
-        if (includeGlobalState != null) {
-            builder.field(INCLUDE_GLOBAL_STATE, includeGlobalState);
-        }
-        if (userMetadata != null) {
-            builder.field(USER_METADATA, userMetadata);
-        }
+        builder.array(DATA_STREAMS, dataStreams);
+        metaToXContent(builder);
         if (verbose || state != null) {
             builder.field(STATE, state);
         }
-        if (reason != null) {
-            builder.field(REASON, reason);
-        }
+        reasonToXContent(builder);
         if (verbose || startTime != 0) {
             builder.field(START_TIME, DATE_TIME_FORMATTER.format(Instant.ofEpochMilli(startTime).atZone(ZoneOffset.UTC)));
             builder.field(START_TIME_IN_MILLIS, startTime);
@@ -749,11 +729,7 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
             builder.humanReadableField(DURATION_IN_MILLIS, DURATION, new TimeValue(Math.max(0L, endTime - startTime)));
         }
         if (verbose || shardFailures.isEmpty() == false) {
-            builder.startArray(FAILURES);
-            for (SnapshotShardFailure shardFailure : shardFailures) {
-                shardFailure.toXContent(builder, params);
-            }
-            builder.endArray();
+            shardFailuresToXContent(builder, params);
         }
         if (verbose || totalShards != 0) {
             builder.startObject(SHARDS);
@@ -763,15 +739,16 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
             builder.endObject();
         }
         if (verbose || featureStates.isEmpty() == false) {
-            builder.startArray(FEATURE_STATES);
-            for (SnapshotFeatureInfo snapshotFeatureInfo : featureStates) {
-                builder.value(snapshotFeatureInfo);
-            }
-            builder.endArray();
-
+            featureStatesToXContent(builder);
         }
         builder.endObject();
         return builder;
+    }
+
+    private void reasonToXContent(XContentBuilder builder) throws IOException {
+        if (reason != null) {
+            builder.field(REASON, reason);
+        }
     }
 
     private XContentBuilder toXContentInternal(final XContentBuilder builder, final ToXContent.Params params) throws IOException {
@@ -780,50 +757,55 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
         builder.field(UUID, snapshotId.getUUID());
         assert version != null : "version must always be known when writing a snapshot metadata blob";
         builder.field(VERSION_ID, version.id);
-        builder.startArray(INDICES);
-        for (String index : indices) {
-            builder.value(index);
-        }
-        builder.endArray();
-        builder.startArray(DATA_STREAMS);
-        for (String dataStream : dataStreams) {
-            builder.value(dataStream);
-        }
-        builder.endArray();
+        builder.array(INDICES, indices);
+        builder.array(DATA_STREAMS, dataStreams);
         builder.field(STATE, state);
-        if (reason != null) {
-            builder.field(REASON, reason);
-        }
-        if (includeGlobalState != null) {
-            builder.field(INCLUDE_GLOBAL_STATE, includeGlobalState);
-        }
-        if (userMetadata != null) {
-            builder.field(USER_METADATA, userMetadata);
-        }
+        reasonToXContent(builder);
+        metaToXContent(builder);
         builder.field(START_TIME, startTime);
         builder.field(END_TIME, endTime);
         builder.field(TOTAL_SHARDS, totalShards);
         builder.field(SUCCESSFUL_SHARDS, successfulShards);
-        builder.startArray(FAILURES);
-        for (SnapshotShardFailure shardFailure : shardFailures) {
-            shardFailure.toXContent(builder, params);
-        }
-        builder.endArray();
-        builder.startArray(FEATURE_STATES);
-        for (SnapshotFeatureInfo snapshotFeatureInfo : featureStates) {
-            builder.value(snapshotFeatureInfo);
-        }
-        builder.endArray();
+        shardFailuresToXContent(builder, params);
+        featureStatesToXContent(builder);
+        indexDetailsToXContent(builder, params);
 
+        builder.endObject();
+        return builder;
+    }
+
+    private void indexDetailsToXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject(INDEX_DETAILS);
         for (Map.Entry<String, IndexSnapshotDetails> entry : indexSnapshotDetails.entrySet()) {
             builder.field(entry.getKey());
             entry.getValue().toXContent(builder, params);
         }
         builder.endObject();
+    }
 
-        builder.endObject();
-        return builder;
+    private void metaToXContent(XContentBuilder builder) throws IOException {
+        if (includeGlobalState != null) {
+            builder.field(INCLUDE_GLOBAL_STATE, includeGlobalState);
+        }
+        if (userMetadata != null) {
+            builder.field(USER_METADATA, userMetadata);
+        }
+    }
+
+    private void shardFailuresToXContent(XContentBuilder builder, Params params) throws IOException {
+        builder.startArray(FAILURES);
+        for (SnapshotShardFailure shardFailure : shardFailures) {
+            shardFailure.toXContent(builder, params);
+        }
+        builder.endArray();
+    }
+
+    private void featureStatesToXContent(XContentBuilder builder) throws IOException {
+        builder.startArray(FEATURE_STATES);
+        for (SnapshotFeatureInfo snapshotFeatureInfo : featureStates) {
+            builder.value(snapshotFeatureInfo);
+        }
+        builder.endArray();
     }
 
     /**
