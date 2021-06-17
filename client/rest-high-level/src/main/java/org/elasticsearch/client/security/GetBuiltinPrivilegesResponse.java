@@ -8,6 +8,7 @@
 
 package org.elasticsearch.client.security;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.XContentParser;
@@ -28,8 +29,8 @@ public final class GetBuiltinPrivilegesResponse {
     private final Set<String> indexPrivileges;
 
     public GetBuiltinPrivilegesResponse(Collection<String> cluster, Collection<String> index) {
-        this.clusterPrivileges = Set.copyOf(cluster);
-        this.indexPrivileges = Set.copyOf(index);
+        this.clusterPrivileges = CollectionUtils.asImmutableSet(cluster);
+        this.indexPrivileges = CollectionUtils.asImmutableSet(index);
     }
 
     public Set<String> getClusterPrivileges() {

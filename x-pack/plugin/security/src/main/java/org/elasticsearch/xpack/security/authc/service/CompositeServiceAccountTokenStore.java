@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.xpack.core.common.IteratingActionListener;
 import org.elasticsearch.xpack.core.security.action.service.TokenInfo;
@@ -90,7 +91,7 @@ public final class CompositeServiceAccountTokenStore implements ServiceAccountTo
         public void onResponse(Collection<TokenInfo> response) {
             result.addAll(response);
             if (position == stores.size()) {
-                delegate.onResponse(List.copyOf(result));
+                delegate.onResponse(CollectionUtils.asImmutableList(result));
             } else {
                 stores.get(position++).findTokensFor(accountId, this);
             }

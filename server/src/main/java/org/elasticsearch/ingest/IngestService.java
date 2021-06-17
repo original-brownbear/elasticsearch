@@ -33,6 +33,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.MetadataIndexTemplateService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
@@ -771,7 +772,7 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
 
         if (newPipelines != null) {
             // Update the pipelines:
-            this.pipelines = Map.copyOf(newPipelines);
+            this.pipelines = CollectionUtils.asImmutableMap(newPipelines);
 
             // Rethrow errors that may have occurred during creating new pipeline instances:
             if (exceptions != null) {

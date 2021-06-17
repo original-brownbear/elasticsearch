@@ -10,6 +10,7 @@ package org.elasticsearch.snapshots;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.common.regex.Regex;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.index.IndexNotFoundException;
 
 import java.util.Arrays;
@@ -105,7 +106,7 @@ public class SnapshotUtils {
         if (result == null) {
             return List.of(selectedIndices);
         }
-        return List.copyOf(result);
+        return CollectionUtils.asImmutableList(result);
     }
 
 }

@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.idp.saml.sp;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -71,7 +72,7 @@ class WildcardServiceProvider {
     WildcardServiceProvider(String matchEntityId, String matchAcs, Collection<String> tokens, Map<String, Object> serviceTemplate) {
         this(Pattern.compile(Objects.requireNonNull(matchEntityId, "EntityID to match cannot be null")),
             Pattern.compile(Objects.requireNonNull(matchAcs, "ACS to match cannot be null")),
-            Set.copyOf(Objects.requireNonNull(tokens, "Tokens collection may not be null")),
+            CollectionUtils.asImmutableSet(Objects.requireNonNull(tokens, "Tokens collection may not be null")),
             toMustacheScript(Objects.requireNonNull(serviceTemplate, "Service definition may not be null")));
     }
 

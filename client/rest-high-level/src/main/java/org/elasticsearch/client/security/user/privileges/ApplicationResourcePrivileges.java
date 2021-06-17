@@ -8,6 +8,7 @@
 
 package org.elasticsearch.client.security.user.privileges;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
@@ -82,8 +83,8 @@ public final class ApplicationResourcePrivileges implements ToXContentObject {
             throw new IllegalArgumentException("application privileges must refer to at least one resource");
         }
         this.application = application;
-        this.privileges = List.copyOf(privileges);
-        this.resources = List.copyOf(resources);
+        this.privileges = CollectionUtils.asImmutableList(privileges);
+        this.resources = CollectionUtils.asImmutableList(resources);
     }
 
     public String getApplication() {

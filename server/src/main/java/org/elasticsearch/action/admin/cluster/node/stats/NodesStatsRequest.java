@@ -12,6 +12,7 @@ import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.support.nodes.BaseNodesRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskId;
@@ -108,7 +109,7 @@ public class NodesStatsRequest extends BaseNodesRequest<NodesStatsRequest> {
      * handled separately.
      */
     public Set<String> requestedMetrics() {
-        return Set.copyOf(requestedMetrics);
+        return CollectionUtils.asImmutableSet(requestedMetrics);
     }
 
     /**

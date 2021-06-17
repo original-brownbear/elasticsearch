@@ -8,6 +8,7 @@
 
 package org.elasticsearch.client.security.user.privileges;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
@@ -58,12 +59,12 @@ public final class ApplicationPrivilege implements ToXContentObject {
         if (actions == null || actions.isEmpty()) {
             throw new IllegalArgumentException("actions must be provided");
         } else {
-            this.actions = List.copyOf(actions);
+            this.actions = CollectionUtils.asImmutableList(actions);
         }
         if (metadata == null || metadata.isEmpty()) {
             this.metadata = Collections.emptyMap();
         } else {
-            this.metadata = Map.copyOf(metadata);
+            this.metadata = CollectionUtils.asImmutableMap(metadata);
         }
     }
 

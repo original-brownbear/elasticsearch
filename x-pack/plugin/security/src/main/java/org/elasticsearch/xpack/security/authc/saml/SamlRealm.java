@@ -476,7 +476,7 @@ public final class SamlRealm extends Realm implements Releasable {
                 userMetaBuilder.put(USER_METADATA_NAMEID_FORMAT, attributes.name().format);
             }
         }
-        final Map<String, Object> userMeta = Map.copyOf(userMetaBuilder);
+        final Map<String, Object> userMeta = CollectionUtils.asImmutableMap(userMetaBuilder);
 
         final List<String> groups = groupsAttribute.getAttribute(attributes);
         final String dn = resolveSingleValueAttribute(attributes, dnAttribute, DN_ATTRIBUTE.name(config));

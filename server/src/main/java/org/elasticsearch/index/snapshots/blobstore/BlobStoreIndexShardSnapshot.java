@@ -12,6 +12,7 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -371,7 +372,7 @@ public class BlobStoreIndexShardSnapshot implements ToXContentFragment {
         assert indexVersion >= 0;
         this.snapshot = snapshot;
         this.indexVersion = indexVersion;
-        this.indexFiles = List.copyOf(indexFiles);
+        this.indexFiles = CollectionUtils.asImmutableList(indexFiles);
         this.startTime = startTime;
         this.time = time;
         this.incrementalFileCount = incrementalFileCount;

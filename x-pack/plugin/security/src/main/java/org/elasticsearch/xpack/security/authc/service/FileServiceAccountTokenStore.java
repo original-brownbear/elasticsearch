@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.Maps;
@@ -165,7 +166,7 @@ public class FileServiceAccountTokenStore extends CachingServiceAccountTokenStor
             }
         });
         thisLogger.debug("parsed [{}] tokens from file [{}]", parsedTokenHashes.size(), path.toAbsolutePath());
-        return Map.copyOf(parsedTokenHashes);
+        return CollectionUtils.asImmutableMap(parsedTokenHashes);
     }
 
     static void writeFile(Path path, Map<String, char[]> tokenHashes) {

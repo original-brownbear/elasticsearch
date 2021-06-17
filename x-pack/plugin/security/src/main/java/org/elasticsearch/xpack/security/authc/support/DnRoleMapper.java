@@ -16,6 +16,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsException;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.watcher.FileChangesListener;
 import org.elasticsearch.watcher.FileWatcher;
 import org.elasticsearch.watcher.ResourceWatcherService;
@@ -155,7 +156,7 @@ public class DnRoleMapper implements UserRoleMapper {
                     realmName);
             Map<String, List<String>> normalizedMap = dnToRoles.entrySet().stream().collect(Collectors.toMap(
                 entry -> entry.getKey().toNormalizedString(),
-                entry -> List.copyOf(entry.getValue())));
+                entry -> CollectionUtils.asImmutableList(entry.getValue())));
             return unmodifiableMap(normalizedMap);
         } catch (IOException | SettingsException e) {
             throw new ElasticsearchException("could not read realm [" + realmType + "/" + realmName + "] role mappings file [" +

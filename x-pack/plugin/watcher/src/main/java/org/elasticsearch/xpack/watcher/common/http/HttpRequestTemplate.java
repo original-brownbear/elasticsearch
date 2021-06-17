@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.watcher.common.http;
 
 import io.netty.handler.codec.http.HttpHeaders;
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.MapBuilder;
@@ -460,8 +461,8 @@ public class HttpRequestTemplate implements ToXContentObject {
         }
 
         public HttpRequestTemplate build() {
-            return new HttpRequestTemplate(host, port, scheme, method, path, Map.copyOf(params),
-                    Map.copyOf(headers), auth, body, connectionTimeout, readTimeout, proxy);
+            return new HttpRequestTemplate(host, port, scheme, method, path, CollectionUtils.asImmutableMap(params),
+                    CollectionUtils.asImmutableMap(headers), auth, body, connectionTimeout, readTimeout, proxy);
         }
 
         public Builder fromUrl(String supposedUrl) {

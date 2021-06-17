@@ -9,6 +9,7 @@
 package org.elasticsearch.client.security.user.privileges;
 
 import org.elasticsearch.client.security.GetUserPrivilegesResponse;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.XContentParser;
 
@@ -62,8 +63,8 @@ public class UserIndicesPrivileges extends AbstractIndicesPrivileges {
     public UserIndicesPrivileges(Collection<String> indices, Collection<String> privileges, boolean allowRestrictedIndices,
                                  List<IndicesPrivileges.FieldSecurity> fieldSecurity, List<String> query) {
         super(indices, privileges, allowRestrictedIndices);
-        this.fieldSecurity = fieldSecurity == null ? Collections.emptyList() : List.copyOf(fieldSecurity);
-        this.query = query == null ? Collections.emptyList() : List.copyOf(query);
+        this.fieldSecurity = fieldSecurity == null ? Collections.emptyList() : CollectionUtils.asImmutableList(fieldSecurity);
+        this.query = query == null ? Collections.emptyList() : CollectionUtils.asImmutableList(query);
     }
 
     public List<IndicesPrivileges.FieldSecurity> getFieldSecurity() {

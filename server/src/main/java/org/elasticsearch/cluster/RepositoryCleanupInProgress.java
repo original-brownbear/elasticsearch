@@ -12,6 +12,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.repositories.RepositoryOperation;
 
@@ -48,7 +49,7 @@ public final class RepositoryCleanupInProgress extends AbstractNamedDiffable<Clu
     }
 
     public List<Entry> entries() {
-        return List.copyOf(entries);
+        return CollectionUtils.asImmutableList(entries);
     }
 
     @Override

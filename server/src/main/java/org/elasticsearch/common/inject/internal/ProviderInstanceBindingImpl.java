@@ -25,6 +25,7 @@ import org.elasticsearch.common.inject.spi.Dependency;
 import org.elasticsearch.common.inject.spi.HasDependencies;
 import org.elasticsearch.common.inject.spi.InjectionPoint;
 import org.elasticsearch.common.inject.spi.ProviderInstanceBinding;
+import org.elasticsearch.common.util.CollectionUtils;
 
 import java.util.Set;
 
@@ -68,7 +69,7 @@ public final class ProviderInstanceBindingImpl<T> extends BindingImpl<T>
     @Override
     public Set<Dependency<?>> getDependencies() {
         return providerInstance instanceof HasDependencies
-                ? Set.copyOf(((HasDependencies) providerInstance).getDependencies())
+                ? CollectionUtils.asImmutableSet(((HasDependencies) providerInstance).getDependencies())
                 : Dependency.forInjectionPoints(injectionPoints);
     }
 

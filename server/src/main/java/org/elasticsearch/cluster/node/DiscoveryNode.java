@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.node.Node;
@@ -215,7 +216,7 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
 
     /** extract node roles from the given settings */
     public static Set<DiscoveryNodeRole> getRolesFromSettings(final Settings settings) {
-        return Set.copyOf(NODE_ROLES_SETTING.get(settings));
+        return CollectionUtils.asImmutableSet(NODE_ROLES_SETTING.get(settings));
     }
 
     /**

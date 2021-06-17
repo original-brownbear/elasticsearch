@@ -8,6 +8,7 @@
 
 package org.elasticsearch.indices.store;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.shard.ShardId;
@@ -26,7 +27,7 @@ public class CompositeIndexFoldersDeletionListener implements IndexStorePlugin.I
                 throw new IllegalArgumentException("listeners must be non-null");
             }
         }
-        this.listeners = List.copyOf(listeners);
+        this.listeners = CollectionUtils.asImmutableList(listeners);
     }
 
     @Override

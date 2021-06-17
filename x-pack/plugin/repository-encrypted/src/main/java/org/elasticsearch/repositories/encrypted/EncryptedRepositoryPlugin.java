@@ -18,6 +18,7 @@ import org.elasticsearch.common.settings.SecureSetting;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.indices.recovery.RecoverySettings;
@@ -107,7 +108,7 @@ public class EncryptedRepositoryPlugin extends Plugin implements RepositoryPlugi
             repositoryPasswordsMapBuilder.put(passwordName, passwordSetting.get(env.settings()));
             logger.debug("Loaded repository password [{}] from the node keystore", passwordName);
         }
-        final Map<String, SecureString> repositoryPasswordsMap = Map.copyOf(repositoryPasswordsMapBuilder);
+        final Map<String, SecureString> repositoryPasswordsMap = CollectionUtils.asImmutableMap(repositoryPasswordsMapBuilder);
         return Collections.singletonMap(REPOSITORY_TYPE_NAME, new Repository.Factory() {
 
             @Override

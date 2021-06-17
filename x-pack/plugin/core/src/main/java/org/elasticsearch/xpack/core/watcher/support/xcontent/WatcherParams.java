@@ -6,6 +6,7 @@
  */
 package org.elasticsearch.xpack.core.watcher.support.xcontent;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.xpack.core.watcher.watch.Watch;
 
@@ -99,7 +100,7 @@ public class WatcherParams extends ToXContent.DelegatingMapParams {
         }
 
         public WatcherParams build() {
-            return new WatcherParams(Map.copyOf(params), delegate);
+            return new WatcherParams(CollectionUtils.asImmutableMap(params), delegate);
         }
     }
 }

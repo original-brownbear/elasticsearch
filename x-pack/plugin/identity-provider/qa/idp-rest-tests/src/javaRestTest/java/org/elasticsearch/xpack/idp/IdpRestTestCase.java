@@ -25,6 +25,7 @@ import org.elasticsearch.client.security.user.privileges.Role;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.ObjectPath;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -110,7 +111,7 @@ public abstract class IdpRestTestCase extends ESRestTestCase {
     protected void createApplicationPrivileges(String applicationName, Map<String, Collection<String>> privileges) throws IOException {
         final RestHighLevelClient client = getHighLevelAdminClient();
         final List<ApplicationPrivilege> applicationPrivileges = privileges.entrySet().stream()
-            .map(e -> new ApplicationPrivilege(applicationName, e.getKey(), List.copyOf(e.getValue()), null))
+            .map(e -> new ApplicationPrivilege(applicationName, e.getKey(), CollectionUtils.asImmutableList(e.getValue()), null))
             .collect(Collectors.toUnmodifiableList());
         final PutPrivilegesRequest request = new PutPrivilegesRequest(applicationPrivileges, RefreshPolicy.IMMEDIATE);
         client.security().putPrivileges(request, RequestOptions.DEFAULT);

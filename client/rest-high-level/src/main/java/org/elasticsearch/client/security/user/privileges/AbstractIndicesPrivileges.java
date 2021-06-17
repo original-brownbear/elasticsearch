@@ -8,6 +8,7 @@
 
 package org.elasticsearch.client.security.user.privileges;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.ToXContentObject;
@@ -43,8 +44,8 @@ public abstract class AbstractIndicesPrivileges {
         if (null == privileges || privileges.isEmpty()) {
             throw new IllegalArgumentException("indices privileges must define at least one privilege");
         }
-        this.indices = List.copyOf(indices);
-        this.privileges = List.copyOf(privileges);
+        this.indices = CollectionUtils.asImmutableList(indices);
+        this.privileges = CollectionUtils.asImmutableList(privileges);
         this.allowRestrictedIndices = allowRestrictedIndices;
     }
 
@@ -115,9 +116,9 @@ public abstract class AbstractIndicesPrivileges {
 
         FieldSecurity(Collection<String> grantedFields, Collection<String> deniedFields) {
             // unspecified granted fields means no restriction
-            this.grantedFields = grantedFields == null ? null : List.copyOf(grantedFields);
+            this.grantedFields = grantedFields == null ? null : CollectionUtils.asImmutableList(grantedFields);
             // unspecified denied fields means no restriction
-            this.deniedFields = deniedFields == null ? null : List.copyOf(deniedFields);
+            this.deniedFields = deniedFields == null ? null : CollectionUtils.asImmutableList(deniedFields);
         }
 
         /**

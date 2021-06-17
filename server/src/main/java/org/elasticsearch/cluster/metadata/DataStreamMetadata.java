@@ -12,6 +12,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.cluster.DiffableUtils;
 import org.elasticsearch.cluster.NamedDiff;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -71,8 +72,8 @@ public class DataStreamMetadata implements Metadata.Custom {
 
     public DataStreamMetadata(Map<String, DataStream> dataStreams,
                               Map<String, DataStreamAlias> dataStreamAliases) {
-        this.dataStreams = Map.copyOf(dataStreams);
-        this.dataStreamAliases = Map.copyOf(dataStreamAliases);
+        this.dataStreams = CollectionUtils.asImmutableMap(dataStreams);
+        this.dataStreamAliases = CollectionUtils.asImmutableMap(dataStreamAliases);
     }
 
     public DataStreamMetadata(StreamInput in) throws IOException {

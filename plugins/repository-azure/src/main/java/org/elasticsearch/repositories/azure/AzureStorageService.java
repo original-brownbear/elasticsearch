@@ -17,6 +17,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsException;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.monitor.jvm.JvmInfo;
 
@@ -173,7 +174,7 @@ public class AzureStorageService {
      * @param clientsSettings the settings for new clients
      */
     public void refreshSettings(Map<String, AzureStorageSettings> clientsSettings) {
-        this.storageSettings = Map.copyOf(clientsSettings);
+        this.storageSettings = CollectionUtils.asImmutableMap(clientsSettings);
         // clients are built lazily by {@link client(String, LocationMode)}
     }
 }

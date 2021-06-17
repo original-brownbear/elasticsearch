@@ -11,6 +11,7 @@ package org.elasticsearch.indices;
 import org.elasticsearch.cluster.metadata.ComponentTemplate;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
 import org.elasticsearch.cluster.metadata.DataStream;
+import org.elasticsearch.common.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class SystemDataStreamDescriptor {
         this.description = Objects.requireNonNull(description, "description must be specified");
         this.type = Objects.requireNonNull(type, "type must be specified");
         this.composableIndexTemplate = Objects.requireNonNull(composableIndexTemplate, "composableIndexTemplate must be provided");
-        this.componentTemplates = componentTemplates == null ? Map.of() : Map.copyOf(componentTemplates);
+        this.componentTemplates = componentTemplates == null ? Map.of() : CollectionUtils.asImmutableMap(componentTemplates);
         this.allowedElasticProductOrigins =
             Objects.requireNonNull(allowedElasticProductOrigins, "allowedElasticProductOrigins must not be null");
         if (type == Type.EXTERNAL && allowedElasticProductOrigins.isEmpty()) {

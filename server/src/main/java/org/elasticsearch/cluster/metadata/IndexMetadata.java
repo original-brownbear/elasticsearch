@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.block.ClusterBlock;
 import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.node.DiscoveryNodeFilters;
 import org.elasticsearch.cluster.routing.allocation.IndexMetadataUpdater;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.collect.ImmutableOpenIntMap;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
@@ -1230,7 +1231,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             ImmutableOpenIntMap.Builder<Set<String>> filledInSyncAllocationIds = ImmutableOpenIntMap.builder();
             for (int i = 0; i < numberOfShards; i++) {
                 if (inSyncAllocationIds.containsKey(i)) {
-                    filledInSyncAllocationIds.put(i, Set.copyOf(inSyncAllocationIds.get(i)));
+                    filledInSyncAllocationIds.put(i, CollectionUtils.asImmutableSet(inSyncAllocationIds.get(i)));
                 } else {
                     filledInSyncAllocationIds.put(i, Collections.emptySet());
                 }

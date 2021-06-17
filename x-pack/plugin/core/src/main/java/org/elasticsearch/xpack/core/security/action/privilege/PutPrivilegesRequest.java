@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.xpack.core.security.authz.privilege.ApplicationPrivilege;
 import org.elasticsearch.xpack.core.security.authz.privilege.ApplicationPrivilegeDescriptor;
 import org.elasticsearch.xpack.core.security.support.MetadataUtils;
@@ -102,7 +103,7 @@ public final class PutPrivilegesRequest extends ActionRequest implements Applica
     }
 
     public void setPrivileges(Collection<ApplicationPrivilegeDescriptor> privileges) {
-        this.privileges = List.copyOf(privileges);
+        this.privileges = CollectionUtils.asImmutableList(privileges);
     }
 
     @Override

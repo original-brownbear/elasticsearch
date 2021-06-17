@@ -22,6 +22,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
@@ -475,7 +476,7 @@ public class SystemIndices {
                     "] as a built-in system index");
             }
         });
-        return Map.copyOf(map);
+        return CollectionUtils.asImmutableMap(map);
     }
 
     Collection<SystemIndexDescriptor> getSystemIndexDescriptors() {

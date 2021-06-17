@@ -21,6 +21,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.AbstractAsyncTask;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
@@ -462,7 +463,7 @@ public class CacheService extends AbstractLifecycleComponent {
     // used in tests
     Map<ShardEviction, Future<?>> pendingShardsEvictions() {
         synchronized (shardsEvictionsMutex) {
-            return Map.copyOf(pendingShardsEvictions);
+            return CollectionUtils.asImmutableMap(pendingShardsEvictions);
         }
     }
 

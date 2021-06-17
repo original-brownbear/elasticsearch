@@ -17,6 +17,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ParseField;
@@ -361,7 +362,7 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
     public SnapshotInfo(SnapshotsInProgress.Entry entry) {
         this(
             entry.snapshot().getSnapshotId(),
-            List.copyOf(entry.indices().keySet()),
+            CollectionUtils.asImmutableList(entry.indices().keySet()),
             entry.dataStreams(),
             entry.featureStates(),
             null,
@@ -429,9 +430,9 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
         Map<String, IndexSnapshotDetails> indexSnapshotDetails
     ) {
         this.snapshotId = Objects.requireNonNull(snapshotId);
-        this.indices = List.copyOf(indices);
-        this.dataStreams = List.copyOf(dataStreams);
-        this.featureStates = List.copyOf(featureStates);
+        this.indices = CollectionUtils.asImmutableList(indices);
+        this.dataStreams = CollectionUtils.asImmutableList(dataStreams);
+        this.featureStates = CollectionUtils.asImmutableList(featureStates);
         this.state = state;
         this.reason = reason;
         this.version = version;
@@ -439,10 +440,10 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent,
         this.endTime = endTime;
         this.totalShards = totalShards;
         this.successfulShards = successfulShards;
-        this.shardFailures = List.copyOf(shardFailures);
+        this.shardFailures = CollectionUtils.asImmutableList(shardFailures);
         this.includeGlobalState = includeGlobalState;
         this.userMetadata = userMetadata;
-        this.indexSnapshotDetails = Map.copyOf(indexSnapshotDetails);
+        this.indexSnapshotDetails = CollectionUtils.asImmutableMap(indexSnapshotDetails);
     }
 
     /**

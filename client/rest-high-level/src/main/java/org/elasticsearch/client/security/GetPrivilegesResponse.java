@@ -9,6 +9,7 @@
 package org.elasticsearch.client.security;
 
 import org.elasticsearch.client.security.user.privileges.ApplicationPrivilege;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 
@@ -32,7 +33,7 @@ public final class GetPrivilegesResponse {
     }
 
     public GetPrivilegesResponse(Collection<ApplicationPrivilege> privileges) {
-        this.privileges = Set.copyOf(privileges);
+        this.privileges = CollectionUtils.asImmutableSet(privileges);
     }
 
     public static GetPrivilegesResponse fromXContent(XContentParser parser) throws IOException {

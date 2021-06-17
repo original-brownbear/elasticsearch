@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.ml.utils;
 
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 
 import java.util.ArrayList;
@@ -123,6 +124,6 @@ public class TypedChainTaskExecutor<T> {
     }
 
     public synchronized List<T> getCollectedResponses() {
-        return List.copyOf(collectedResponses);
+        return CollectionUtils.asImmutableList(collectedResponses);
     }
 }

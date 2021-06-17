@@ -28,6 +28,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.component.Lifecycle;
@@ -482,7 +483,7 @@ public class TestPersistentTasksPlugin extends Plugin implements ActionPlugin, P
         public TestTasksResponse(List<TestTaskResponse> tasks, List<TaskOperationFailure> taskFailures,
                                  List<? extends FailedNodeException> nodeFailures) {
             super(taskFailures, nodeFailures);
-            this.tasks = tasks == null ? Collections.emptyList() : List.copyOf(tasks);
+            this.tasks = tasks == null ? Collections.emptyList() : CollectionUtils.asImmutableList(tasks);
         }
 
         public TestTasksResponse(StreamInput in) throws IOException {

@@ -19,6 +19,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.ingest.PutPipelineRequest;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.geo.GeoPlugin;
 import org.elasticsearch.index.reindex.ReindexPlugin;
@@ -356,6 +357,6 @@ public class BasicEnrichTests extends ESSingleNodeTestCase {
             }
         }
         client().admin().indices().refresh(new RefreshRequest(SOURCE_INDEX_NAME)).actionGet();
-        return List.copyOf(keys);
+        return CollectionUtils.asImmutableList(keys);
     }
 }

@@ -32,6 +32,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -348,7 +349,7 @@ public class TestTaskPlugin extends Plugin implements ActionPlugin, NetworkPlugi
         UnblockTestTasksResponse(List<UnblockTestTaskResponse> tasks, List<TaskOperationFailure> taskFailures, List<? extends
             FailedNodeException> nodeFailures) {
             super(taskFailures, nodeFailures);
-            this.tasks = tasks == null ? Collections.emptyList() : List.copyOf(tasks);
+            this.tasks = tasks == null ? Collections.emptyList() : CollectionUtils.asImmutableList(tasks);
         }
 
         UnblockTestTasksResponse(StreamInput in) throws IOException {

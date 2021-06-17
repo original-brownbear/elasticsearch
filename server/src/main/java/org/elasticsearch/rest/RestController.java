@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.breaker.CircuitBreaker;
@@ -399,7 +400,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
         } else {
             // Between retrieving the correct path, we need to reset the parameters,
             // otherwise parameters are parsed out of the URI that aren't actually handled.
-            final Map<String, String> originalParams = Map.copyOf(requestParamsRef);
+            final Map<String, String> originalParams = CollectionUtils.asImmutableMap(requestParamsRef);
             paramsSupplier = () -> {
                 // PathTrie modifies the request, so reset the params between each iteration
                 requestParamsRef.clear();

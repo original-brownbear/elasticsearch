@@ -12,6 +12,7 @@ import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
@@ -54,7 +55,7 @@ public class RepositoryDataTests extends ESTestCase {
 
     public void testIndicesToUpdateAfterRemovingSnapshot() {
         final RepositoryData repositoryData = generateRandomRepoData();
-        final List<IndexId> indicesBefore = List.copyOf(repositoryData.getIndices().values());
+        final List<IndexId> indicesBefore = CollectionUtils.asImmutableList(repositoryData.getIndices().values());
         final SnapshotId randomSnapshot = randomFrom(repositoryData.getSnapshotIds());
         final IndexId[] indicesToUpdate = indicesBefore.stream().filter(index -> {
             final List<SnapshotId> snapshotIds = repositoryData.getSnapshots(index);
@@ -473,7 +474,7 @@ public class RepositoryDataTests extends ESTestCase {
             for (int j = 0; j < numIndicesForSnapshot; j++) {
                 indexSnapshots.add(snapshotIds.get(randomIntBetween(0, totalSnapshots - 1)));
             }
-            indices.put(indexId, List.copyOf(indexSnapshots));
+            indices.put(indexId, CollectionUtils.asImmutableList(indexSnapshots));
         }
         return indices;
     }

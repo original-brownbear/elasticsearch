@@ -14,6 +14,7 @@ import org.elasticsearch.action.support.tasks.BaseTasksResponse;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.TriFunction;
@@ -51,7 +52,7 @@ public class ListTasksResponse extends BaseTasksResponse implements ToXContentOb
     public ListTasksResponse(List<TaskInfo> tasks, List<TaskOperationFailure> taskFailures,
             List<? extends ElasticsearchException> nodeFailures) {
         super(taskFailures, nodeFailures);
-        this.tasks = tasks == null ? Collections.emptyList() : List.copyOf(tasks);
+        this.tasks = tasks == null ? Collections.emptyList() : CollectionUtils.asImmutableList(tasks);
     }
 
     public ListTasksResponse(StreamInput in) throws IOException {

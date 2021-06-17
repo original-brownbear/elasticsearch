@@ -19,6 +19,7 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.TriFunction;
@@ -277,7 +278,7 @@ public class SearchExecutionContext extends QueryRewriteContext {
 
     public Map<String, Query> copyNamedQueries() {
         // This might be a good use case for CopyOnWriteHashMap
-        return Map.copyOf(namedQueries);
+        return CollectionUtils.asImmutableMap(namedQueries);
     }
 
     /**

@@ -8,6 +8,7 @@
 package org.elasticsearch.cluster.coordination;
 
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -83,7 +84,7 @@ public class CoordinationMetadata implements Writeable, ToXContentFragment {
         this.term = term;
         this.lastCommittedConfiguration = lastCommittedConfiguration;
         this.lastAcceptedConfiguration = lastAcceptedConfiguration;
-        this.votingConfigExclusions = Set.copyOf(votingConfigExclusions);
+        this.votingConfigExclusions = CollectionUtils.asImmutableSet(votingConfigExclusions);
     }
 
     public CoordinationMetadata(StreamInput in) throws IOException {
@@ -321,7 +322,7 @@ public class CoordinationMetadata implements Writeable, ToXContentFragment {
         private final Set<String> nodeIds;
 
         public VotingConfiguration(Set<String> nodeIds) {
-            this.nodeIds = Set.copyOf(nodeIds);
+            this.nodeIds = CollectionUtils.asImmutableSet(nodeIds);
         }
 
         public VotingConfiguration(StreamInput in) throws IOException {

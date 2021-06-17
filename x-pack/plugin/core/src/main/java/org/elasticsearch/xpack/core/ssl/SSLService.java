@@ -22,6 +22,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.ssl.DiagnosticTrustManager;
 import org.elasticsearch.common.ssl.SslDiagnostics;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.common.socket.SocketAccess;
@@ -388,7 +389,7 @@ public class SSLService {
      * Accessor to the loaded ssl configuration objects at the current point in time. This is useful for testing
      */
     Collection<SSLConfiguration> getLoadedSSLConfigurations() {
-        return Set.copyOf(sslContexts.keySet());
+        return CollectionUtils.asImmutableSet(sslContexts.keySet());
     }
 
     /**

@@ -19,6 +19,7 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.network.InetAddresses;
@@ -355,7 +356,7 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
         }
 
         synchronized Map<String, Long> getOperationsCount() {
-            return Map.copyOf(operationCount);
+            return CollectionUtils.asImmutableMap(operationCount);
         }
 
         protected synchronized void trackRequest(final String requestType) {

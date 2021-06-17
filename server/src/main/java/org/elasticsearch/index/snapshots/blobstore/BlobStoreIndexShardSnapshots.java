@@ -41,7 +41,7 @@ public class BlobStoreIndexShardSnapshots implements Iterable<SnapshotFiles>, To
     private final Map<String, List<FileInfo>> physicalFiles;
 
     public BlobStoreIndexShardSnapshots(List<SnapshotFiles> shardSnapshots) {
-        this.shardSnapshots = List.copyOf(shardSnapshots);
+        this.shardSnapshots = CollectionUtils.asImmutableList(shardSnapshots);
         // Map between blob names and file info
         Map<String, FileInfo> newFiles = new HashMap<>();
         // Map between original physical names and file info
@@ -62,7 +62,7 @@ public class BlobStoreIndexShardSnapshots implements Iterable<SnapshotFiles>, To
         }
         Map<String, List<FileInfo>> mapBuilder = new HashMap<>();
         for (Map.Entry<String, List<FileInfo>> entry : physicalFiles.entrySet()) {
-            mapBuilder.put(entry.getKey(), List.copyOf(entry.getValue()));
+            mapBuilder.put(entry.getKey(), CollectionUtils.asImmutableList(entry.getValue()));
         }
         this.physicalFiles = unmodifiableMap(mapBuilder);
         this.files = unmodifiableMap(newFiles);
@@ -79,7 +79,7 @@ public class BlobStoreIndexShardSnapshots implements Iterable<SnapshotFiles>, To
         }
         Map<String, List<FileInfo>> mapBuilder = new HashMap<>();
         for (Map.Entry<String, List<FileInfo>> entry : physicalFiles.entrySet()) {
-            mapBuilder.put(entry.getKey(), List.copyOf(entry.getValue()));
+            mapBuilder.put(entry.getKey(), CollectionUtils.asImmutableList(entry.getValue()));
         }
         this.physicalFiles = unmodifiableMap(mapBuilder);
     }

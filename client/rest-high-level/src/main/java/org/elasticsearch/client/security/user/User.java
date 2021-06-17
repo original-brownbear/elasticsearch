@@ -8,6 +8,7 @@
 
 package org.elasticsearch.client.security.user;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 
@@ -40,7 +41,8 @@ public final class User {
     public User(String username, List<String> roles, Map<String, Object> metadata, @Nullable String fullName,
             @Nullable String email) {
         this.username = Objects.requireNonNull(username, "`username` is required, cannot be null");
-        this.roles = List.copyOf(Objects.requireNonNull(roles, "`roles` is required, cannot be null. Pass an empty list instead."));
+        this.roles = CollectionUtils.asImmutableList(
+                Objects.requireNonNull(roles, "`roles` is required, cannot be null. Pass an empty list instead."));
         this.metadata = Collections.unmodifiableMap(
                 Objects.requireNonNull(metadata, "`metadata` is required, cannot be null. Pass an empty map instead."));
         this.fullName = fullName;

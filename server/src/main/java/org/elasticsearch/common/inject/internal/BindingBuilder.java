@@ -25,6 +25,7 @@ import org.elasticsearch.common.inject.binder.AnnotatedBindingBuilder;
 import org.elasticsearch.common.inject.spi.Element;
 import org.elasticsearch.common.inject.spi.InjectionPoint;
 import org.elasticsearch.common.inject.spi.Message;
+import org.elasticsearch.common.util.CollectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.util.List;
@@ -90,7 +91,7 @@ public class BindingBuilder<T> extends AbstractBindingBuilder<T>
                 for (Message message : e.getErrorMessages()) {
                     binder.addError(message);
                 }
-                injectionPoints = Set.copyOf(e.getPartialValue());
+                injectionPoints = CollectionUtils.asImmutableSet(e.getPartialValue());
             }
         } else {
             binder.addError(BINDING_TO_NULL);
@@ -115,7 +116,7 @@ public class BindingBuilder<T> extends AbstractBindingBuilder<T>
             for (Message message : e.getErrorMessages()) {
                 binder.addError(message);
             }
-            injectionPoints = Set.copyOf(e.getPartialValue());
+            injectionPoints = CollectionUtils.asImmutableSet(e.getPartialValue());
         }
 
         BindingImpl<T> base = getBinding();

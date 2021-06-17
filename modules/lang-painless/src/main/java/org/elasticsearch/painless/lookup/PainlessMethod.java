@@ -8,6 +8,8 @@
 
 package org.elasticsearch.painless.lookup;
 
+import org.elasticsearch.common.util.CollectionUtils;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
@@ -31,7 +33,7 @@ public class PainlessMethod {
         this.javaMethod = javaMethod;
         this.targetClass = targetClass;
         this.returnType = returnType;
-        this.typeParameters = List.copyOf(typeParameters);
+        this.typeParameters = CollectionUtils.asImmutableList(typeParameters);
         this.methodHandle = methodHandle;
         this.methodType = methodType;
         this.annotations = annotations;

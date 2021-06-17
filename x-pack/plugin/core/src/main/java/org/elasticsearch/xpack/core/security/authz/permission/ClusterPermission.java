@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.core.security.authz.permission;
 
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.Operations;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.xpack.core.security.authc.Authentication;
 import org.elasticsearch.xpack.core.security.authz.privilege.ClusterPrivilege;
@@ -30,8 +31,8 @@ public class ClusterPermission {
 
     private ClusterPermission(final Set<ClusterPrivilege> clusterPrivileges,
                               final List<PermissionCheck> checks) {
-        this.clusterPrivileges = Set.copyOf(clusterPrivileges);
-        this.checks = List.copyOf(checks);
+        this.clusterPrivileges = CollectionUtils.asImmutableSet(clusterPrivileges);
+        this.checks = CollectionUtils.asImmutableList(checks);
     }
 
     /**

@@ -335,7 +335,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             indexNames.addAll(aid.getMatchingIndices(currentState.metadata()));
                         }
                     }
-                    indices = List.copyOf(indexNames);
+                    indices = CollectionUtils.asImmutableList(indexNames);
                 }
 
                 final List<String> dataStreams = indexNameExpressionResolver.dataStreamNames(
@@ -966,7 +966,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 // We have snapshot listeners but are not the master any more. Fail all waiting listeners except for those that already
                 // have their snapshots finalizing (those that are already finalizing will fail on their own from to update the cluster
                 // state).
-                for (Snapshot snapshot : Set.copyOf(snapshotCompletionListeners.keySet())) {
+                for (Snapshot snapshot : CollectionUtils.asImmutableSet(snapshotCompletionListeners.keySet())) {
                     if (endingSnapshots.add(snapshot)) {
                         failSnapshotCompletionListeners(snapshot, new SnapshotException(snapshot, "no longer master"));
                     }
@@ -1947,7 +1947,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         return currentState;
                     }
                     newDelete = new SnapshotDeletionsInProgress.Entry(
-                        List.copyOf(snapshotIdsRequiringCleanup),
+                        CollectionUtils.asImmutableList(snapshotIdsRequiringCleanup),
                         repoName,
                         threadPool.absoluteTimeInMillis(),
                         repositoryData.getGenId(),
@@ -2035,7 +2035,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 }
             }
         }
-        return List.copyOf(foundSnapshots);
+        return CollectionUtils.asImmutableList(foundSnapshots);
     }
 
     // Return in-progress snapshot entries by name and repository in the given cluster state or null if none is found
@@ -2264,7 +2264,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         synchronized (currentlyFinalizing) {
             if (ExceptionsHelper.unwrap(e, NotMasterException.class, FailedToCommitClusterStateException.class) != null) {
                 repositoryOperations.clear();
-                for (Snapshot snapshot : Set.copyOf(snapshotCompletionListeners.keySet())) {
+                for (Snapshot snapshot : CollectionUtils.asImmutableSet(snapshotCompletionListeners.keySet())) {
                     failSnapshotCompletionListeners(snapshot, new SnapshotException(snapshot, "no longer master"));
                 }
                 final Exception wrapped = new RepositoryException("_all", "Failed to update cluster state during repository operation", e);

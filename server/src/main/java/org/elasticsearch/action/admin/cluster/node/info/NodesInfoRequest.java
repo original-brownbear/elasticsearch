@@ -11,6 +11,7 @@ package org.elasticsearch.action.admin.cluster.node.info;
 import org.elasticsearch.action.support.nodes.BaseNodesRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.CollectionUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -67,7 +68,7 @@ public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
      * Get the names of requested metrics
      */
     public Set<String> requestedMetrics() {
-        return Set.copyOf(requestedMetrics);
+        return CollectionUtils.asImmutableSet(requestedMetrics);
     }
 
     /**

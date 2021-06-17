@@ -9,6 +9,7 @@
 package org.elasticsearch.action.fieldcaps;
 
 import org.elasticsearch.Version;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -184,7 +185,7 @@ public class FieldCapabilities implements Writeable, ToXContentObject {
         PARSER.declareStringArray(ConstructingObjectParser.optionalConstructorArg(), NON_SEARCHABLE_INDICES_FIELD);
         PARSER.declareStringArray(ConstructingObjectParser.optionalConstructorArg(), NON_AGGREGATABLE_INDICES_FIELD);
         PARSER.declareObject(ConstructingObjectParser.optionalConstructorArg(),
-                (parser, context) -> parser.map(HashMap::new, p -> Set.copyOf(p.list())), META_FIELD);
+                (parser, context) -> parser.map(HashMap::new, p -> CollectionUtils.asImmutableSet(p.list())), META_FIELD);
     }
 
     /**
@@ -359,7 +360,7 @@ public class FieldCapabilities implements Writeable, ToXContentObject {
             final Function<Map.Entry<String, Set<String>>, Set<String>> entryValueFunction = Map.Entry::getValue;
             Map<String, Set<String>> immutableMeta = meta.entrySet().stream()
                     .collect(Collectors.toUnmodifiableMap(
-                            Map.Entry::getKey, entryValueFunction.andThen(Set::copyOf)));
+                            Map.Entry::getKey, entryValueFunction.andThen(CollectionUtils::asImmutableSet)));
             return new FieldCapabilities(name, type, isMetadataField, isSearchable, isAggregatable,
                 indices, nonSearchableIndices, nonAggregatableIndices, immutableMeta);
         }

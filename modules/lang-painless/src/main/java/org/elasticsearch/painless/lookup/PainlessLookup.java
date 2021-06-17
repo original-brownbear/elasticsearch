@@ -8,6 +8,8 @@
 
 package org.elasticsearch.painless.lookup;
 
+import org.elasticsearch.common.util.CollectionUtils;
+
 import java.lang.invoke.MethodHandle;
 import java.util.Map;
 import java.util.Objects;
@@ -47,12 +49,12 @@ public final class PainlessLookup {
         Objects.requireNonNull(painlessMethodKeysToPainlessInstanceBindings);
 
         this.javaClassNamesToClasses = javaClassNamesToClasses;
-        this.canonicalClassNamesToClasses = Map.copyOf(canonicalClassNamesToClasses);
-        this.classesToPainlessClasses = Map.copyOf(classesToPainlessClasses);
+        this.canonicalClassNamesToClasses = CollectionUtils.asImmutableMap(canonicalClassNamesToClasses);
+        this.classesToPainlessClasses = CollectionUtils.asImmutableMap(classesToPainlessClasses);
 
-        this.painlessMethodKeysToImportedPainlessMethods = Map.copyOf(painlessMethodKeysToImportedPainlessMethods);
-        this.painlessMethodKeysToPainlessClassBindings = Map.copyOf(painlessMethodKeysToPainlessClassBindings);
-        this.painlessMethodKeysToPainlessInstanceBindings = Map.copyOf(painlessMethodKeysToPainlessInstanceBindings);
+        this.painlessMethodKeysToImportedPainlessMethods = CollectionUtils.asImmutableMap(painlessMethodKeysToImportedPainlessMethods);
+        this.painlessMethodKeysToPainlessClassBindings = CollectionUtils.asImmutableMap(painlessMethodKeysToPainlessClassBindings);
+        this.painlessMethodKeysToPainlessInstanceBindings = CollectionUtils.asImmutableMap(painlessMethodKeysToPainlessInstanceBindings);
     }
 
     public Class<?> javaClassNameToClass(String javaClassName) {

@@ -14,6 +14,7 @@ import org.elasticsearch.action.FailedNodeException;
 import org.elasticsearch.action.TaskOperationFailure;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.tasks.TaskId;
@@ -40,8 +41,8 @@ public class BaseTasksResponse extends ActionResponse {
     private List<ElasticsearchException> nodeFailures;
 
     public BaseTasksResponse(List<TaskOperationFailure> taskFailures, List<? extends ElasticsearchException> nodeFailures) {
-        this.taskFailures = taskFailures == null ? Collections.emptyList() : List.copyOf(taskFailures);
-        this.nodeFailures = nodeFailures == null ? Collections.emptyList() : List.copyOf(nodeFailures);
+        this.taskFailures = taskFailures == null ? Collections.emptyList() : CollectionUtils.asImmutableList(taskFailures);
+        this.nodeFailures = nodeFailures == null ? Collections.emptyList() : CollectionUtils.asImmutableList(nodeFailures);
     }
 
     public BaseTasksResponse(StreamInput in) throws IOException {

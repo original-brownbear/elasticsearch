@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.xpack.core.security.SecurityContext;
 import org.elasticsearch.xpack.core.security.action.user.HasPrivilegesAction;
 import org.elasticsearch.xpack.core.security.action.user.HasPrivilegesRequest;
@@ -40,7 +41,7 @@ public class UserPrivilegeResolver {
                 throw new IllegalArgumentException("a user without access may not have roles ([" + roles + "])");
             }
             this.hasAccess = hasAccess;
-            this.roles = Set.copyOf(Objects.requireNonNull(roles, "roles may not be null"));
+            this.roles = CollectionUtils.asImmutableSet(Objects.requireNonNull(roles, "roles may not be null"));
         }
 
         @Override

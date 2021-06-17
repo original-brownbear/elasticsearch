@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.support.ContextPreservingActionListener;
 import org.elasticsearch.client.OriginSettingClient;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -340,7 +341,7 @@ public final class ThreadContext implements Writeable {
         HashMap<String, List<String>> map = new HashMap<>(responseHeaders.size());
 
         for (Map.Entry<String, Set<String>> entry : responseHeaders.entrySet()) {
-            map.put(entry.getKey(), List.copyOf(entry.getValue()));
+            map.put(entry.getKey(), CollectionUtils.asImmutableList(entry.getValue()));
         }
 
         return Collections.unmodifiableMap(map);

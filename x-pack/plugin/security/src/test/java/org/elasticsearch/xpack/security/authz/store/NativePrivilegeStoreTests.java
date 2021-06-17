@@ -276,7 +276,7 @@ public class NativePrivilegeStoreTests extends ESTestCase {
             "_scrollId1", 1, 1, 0, 1, null, null));
 
         assertEquals(Set.of("myapp"), store.getApplicationNamesCache().get(Set.of("myapp", "yourapp")));
-        assertEquals(Set.copyOf(sourcePrivileges), store.getDescriptorsCache().get("myapp"));
+        assertEquals(CollectionUtils.asImmutableSet(sourcePrivileges), store.getDescriptorsCache().get("myapp"));
         assertResult(sourcePrivileges, future);
 
         // The 2nd call should use cache and success
@@ -313,7 +313,7 @@ public class NativePrivilegeStoreTests extends ESTestCase {
         // Not caching names with no wildcard
         assertNull(store.getApplicationNamesCache().get(singleton("myapp")));
         // All privileges are cached
-        assertEquals(Set.copyOf(sourcePrivileges), store.getDescriptorsCache().get("myapp"));
+        assertEquals(CollectionUtils.asImmutableSet(sourcePrivileges), store.getDescriptorsCache().get("myapp"));
         assertResult(sourcePrivileges.subList(1, 2), future);
 
         // 2nd call with more privilege names can still use the cache

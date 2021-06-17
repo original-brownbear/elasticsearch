@@ -9,6 +9,7 @@
 package org.elasticsearch.action.admin.cluster.storedscripts;
 
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.script.ScriptContextInfo.ScriptMethodInfo;
 import org.elasticsearch.test.AbstractSerializingTestCase;
@@ -132,7 +133,7 @@ public class ScriptMethodInfoSerializingTests extends AbstractSerializingTestCas
         ArrayList<ScriptMethodInfo> mutated = new ArrayList<>(instances);
         int mutateIndex = randomIntBetween(0, instances.size() - 1);
         mutated.set(mutateIndex, mutate(mutated.get(mutateIndex)));
-        return Set.copyOf(mutated);
+        return CollectionUtils.asImmutableSet(mutated);
     }
 
     static Set<ScriptMethodInfo> randomGetterInstances() {

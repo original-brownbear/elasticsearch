@@ -11,6 +11,7 @@ package org.elasticsearch.index;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.cluster.routing.ShardRouting;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
@@ -37,7 +38,7 @@ final class CompositeIndexEventListener implements IndexEventListener {
                 throw new IllegalArgumentException("listeners must be non-null");
             }
         }
-        this.listeners = List.copyOf(listeners);
+        this.listeners = CollectionUtils.asImmutableList(listeners);
         this.logger = Loggers.getLogger(getClass(), indexSettings.getIndex());
     }
 

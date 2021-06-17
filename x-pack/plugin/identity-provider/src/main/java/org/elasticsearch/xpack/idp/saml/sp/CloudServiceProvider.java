@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.idp.saml.sp;
 
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.xpack.idp.privileges.ServiceProviderPrivileges;
 import org.joda.time.ReadableDuration;
 import org.opensaml.security.x509.X509Credential;
@@ -44,7 +45,7 @@ public class CloudServiceProvider implements SamlServiceProvider {
         this.authnExpiry = authnExpiry;
         this.privileges = privileges;
         this.attributeNames = attributeNames;
-        this.spSigningCredentials = spSigningCredentials == null ? Set.of() : Set.copyOf(spSigningCredentials);
+        this.spSigningCredentials = spSigningCredentials == null ? Set.of() : CollectionUtils.asImmutableSet(spSigningCredentials);
         this.signLogoutRequests = signLogoutRequests;
         this.signAuthnRequests = signAuthnRequests;
     }

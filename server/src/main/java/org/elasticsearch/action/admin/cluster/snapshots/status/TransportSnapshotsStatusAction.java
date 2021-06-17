@@ -371,7 +371,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                                 (endTime == 0 ? threadPool.absoluteTimeInMillis() : endTime) - startTime
                             )
                         );
-                    }, listener.map(v -> new SnapshotsStatusResponse(List.copyOf(threadSafeBuilder)))));
+                    }, listener.map(v -> new SnapshotsStatusResponse(CollectionUtils.asImmutableList(threadSafeBuilder)))));
             }
         }, listener::onFailure);
     }

@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -295,11 +296,11 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
 
         final List<SystemIndexDescriptor> sortedPriorSystemIndexDescriptors;
         if (priorSystemIndexDescriptors.isEmpty() || priorSystemIndexDescriptors.size() == 1) {
-            sortedPriorSystemIndexDescriptors = List.copyOf(priorSystemIndexDescriptors);
+            sortedPriorSystemIndexDescriptors = CollectionUtils.asImmutableList(priorSystemIndexDescriptors);
         } else {
             List<SystemIndexDescriptor> copy = new ArrayList<>(priorSystemIndexDescriptors);
             Collections.sort(copy);
-            sortedPriorSystemIndexDescriptors = List.copyOf(copy);
+            sortedPriorSystemIndexDescriptors = CollectionUtils.asImmutableList(copy);
         }
         this.priorSystemIndexDescriptors = sortedPriorSystemIndexDescriptors;
         this.executorNames = Objects.nonNull(executorNames)

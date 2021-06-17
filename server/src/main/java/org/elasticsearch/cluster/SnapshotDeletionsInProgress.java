@@ -237,11 +237,12 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
             if (updatedSnapshots.addAll(newSnapshots) == false) {
                 return this;
             }
-            return new Entry(List.copyOf(updatedSnapshots), repository(), startTime, repositoryStateId, State.WAITING, uuid);
+            return new Entry(
+                    CollectionUtils.asImmutableList(updatedSnapshots), repository(), startTime, repositoryStateId, State.WAITING, uuid);
         }
 
         public Entry withSnapshots(Collection<SnapshotId> snapshots) {
-            return new Entry(List.copyOf(snapshots), repository(), startTime, repositoryStateId, state, uuid);
+            return new Entry(CollectionUtils.asImmutableList(snapshots), repository(), startTime, repositoryStateId, state, uuid);
         }
 
         public Entry withRepoGen(long repoGen) {

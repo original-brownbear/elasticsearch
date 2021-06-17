@@ -13,6 +13,7 @@ import org.apache.lucene.search.LeafCollector;
 import org.apache.lucene.search.Scorable;
 import org.apache.lucene.util.Bits;
 import org.elasticsearch.common.CheckedSupplier;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -227,7 +228,7 @@ public abstract class FiltersAggregator extends BucketsAggregator {
             String otherBucketKey, AggregationContext context, Aggregator parent, CardinalityUpperBound cardinality,
             Map<String, Object> metadata) throws IOException {
         super(name, factories, context, parent, cardinality.multiply(filters.size() + (otherBucketKey == null ? 0 : 1)), metadata);
-        this.filters = List.copyOf(filters);
+        this.filters = CollectionUtils.asImmutableList(filters);
         this.keyed = keyed;
         this.otherBucketKey = otherBucketKey;
     }

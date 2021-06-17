@@ -9,6 +9,7 @@
 package org.elasticsearch.ingest.geoip;
 
 import org.elasticsearch.Version;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -56,7 +57,7 @@ class GeoIpTaskState implements PersistentTaskState, VersionedNamedWriteable {
     private final Map<String, Metadata> databases;
 
     GeoIpTaskState(Map<String, Metadata> databases) {
-        this.databases = Map.copyOf(databases);
+        this.databases = CollectionUtils.asImmutableMap(databases);
     }
 
     GeoIpTaskState(StreamInput input) throws IOException {

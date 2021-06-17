@@ -481,7 +481,7 @@ public class IndexNameExpressionResolver {
         for (ExpressionResolver expressionResolver : expressionResolvers) {
             resolvedExpressions = expressionResolver.resolve(context, resolvedExpressions);
         }
-        return Set.copyOf(resolvedExpressions);
+        return CollectionUtils.asImmutableSet(resolvedExpressions);
     }
 
     /**

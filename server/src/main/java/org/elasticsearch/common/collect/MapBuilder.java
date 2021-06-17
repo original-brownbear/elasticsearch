@@ -8,6 +8,8 @@
 
 package org.elasticsearch.common.collect;
 
+import org.elasticsearch.common.util.CollectionUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,6 +76,6 @@ public class MapBuilder<K, V> {
      */
     public Map<K, V> immutableMap() {
         // TODO: follow the directions in the Javadoc for this method
-        return Map.copyOf(map);
+        return CollectionUtils.asImmutableMap(map);
     }
 }

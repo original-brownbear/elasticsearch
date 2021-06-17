@@ -19,6 +19,7 @@ import org.elasticsearch.action.support.nodes.BaseNodesResponse;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
@@ -143,7 +144,7 @@ public abstract class AsyncShardFetch<T extends BaseNodeResponse> implements Rel
                     }
                 }
             }
-            Set<String> allIgnoreNodes = Set.copyOf(nodesToIgnore);
+            Set<String> allIgnoreNodes = CollectionUtils.asImmutableSet(nodesToIgnore);
             // clear the nodes to ignore, we had a successful run in fetching everything we can
             // we need to try them if another full run is needed
             nodesToIgnore.clear();

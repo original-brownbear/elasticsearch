@@ -12,6 +12,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.ToXContentFragment;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -33,7 +34,7 @@ public final class CommitStats implements Writeable, ToXContentFragment {
 
     public CommitStats(SegmentInfos segmentInfos) {
         // clone the map to protect against concurrent changes
-        userData = Map.copyOf(segmentInfos.getUserData());
+        userData = CollectionUtils.asImmutableMap(segmentInfos.getUserData());
         // lucene calls the current generation, last generation.
         generation = segmentInfos.getLastGeneration();
         id = Base64.getEncoder().encodeToString(segmentInfos.getId());

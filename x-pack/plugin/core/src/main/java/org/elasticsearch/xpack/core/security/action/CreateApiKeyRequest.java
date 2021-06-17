@@ -11,6 +11,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
@@ -62,7 +63,7 @@ public final class CreateApiKeyRequest extends ActionRequest {
                                @Nullable Map<String, Object> metadata) {
         this();
         this.name = name;
-        this.roleDescriptors = (roleDescriptors == null) ? List.of() : List.copyOf(roleDescriptors);
+        this.roleDescriptors = (roleDescriptors == null) ? List.of() : CollectionUtils.asImmutableList(roleDescriptors);
         this.expiration = expiration;
         this.metadata = metadata;
     }
@@ -80,7 +81,7 @@ public final class CreateApiKeyRequest extends ActionRequest {
             this.name = in.readString();
         }
         this.expiration = in.readOptionalTimeValue();
-        this.roleDescriptors = List.copyOf(in.readList(RoleDescriptor::new));
+        this.roleDescriptors = CollectionUtils.asImmutableList(in.readList(RoleDescriptor::new));
         this.refreshPolicy = WriteRequest.RefreshPolicy.readFrom(in);
         if (in.getVersion().onOrAfter(Version.V_8_0_0)) {
             this.metadata = in.readMap();
@@ -118,7 +119,7 @@ public final class CreateApiKeyRequest extends ActionRequest {
     }
 
     public void setRoleDescriptors(@Nullable List<RoleDescriptor> roleDescriptors) {
-        this.roleDescriptors = (roleDescriptors == null) ? List.of() : List.copyOf(roleDescriptors);
+        this.roleDescriptors = (roleDescriptors == null) ? List.of() : CollectionUtils.asImmutableList(roleDescriptors);
     }
 
     public WriteRequest.RefreshPolicy getRefreshPolicy() {

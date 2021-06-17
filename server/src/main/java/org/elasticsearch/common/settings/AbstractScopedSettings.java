@@ -14,6 +14,7 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.search.spell.LevenshteinDistance;
 import org.apache.lucene.util.CollectionUtil;
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.regex.Regex;
 
@@ -107,7 +108,7 @@ public abstract class AbstractScopedSettings {
         this.scope = other.scope;
         complexMatchers = other.complexMatchers;
         keySettings = other.keySettings;
-        settingUpgraders = Map.copyOf(other.settingUpgraders);
+        settingUpgraders = CollectionUtils.asImmutableMap(other.settingUpgraders);
         settingUpdaters.addAll(other.settingUpdaters);
     }
 

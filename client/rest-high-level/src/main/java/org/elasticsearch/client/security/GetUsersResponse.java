@@ -8,6 +8,7 @@
 package org.elasticsearch.client.security;
 
 import org.elasticsearch.client.security.user.User;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
@@ -38,16 +39,16 @@ public class GetUsersResponse {
     private final Map<String, User> enabledUsers;
 
     GetUsersResponse(final Map<String, User> users, final Map<String, User> enabledUsers) {
-        this.users = Map.copyOf(users);
-        this.enabledUsers = Map.copyOf(enabledUsers);
+        this.users = CollectionUtils.asImmutableMap(users);
+        this.enabledUsers = CollectionUtils.asImmutableMap(enabledUsers);
     }
 
     public List<User> getUsers() {
-        return List.copyOf(users.values());
+        return CollectionUtils.asImmutableList(users.values());
     }
 
     public List<User> getEnabledUsers() {
-        return List.copyOf(enabledUsers.values());
+        return CollectionUtils.asImmutableList(enabledUsers.values());
     }
 
     public static GetUsersResponse fromXContent(XContentParser parser) throws IOException {
@@ -119,8 +120,8 @@ public class GetUsersResponse {
         public ParsedUser(String username, List<String> roles, Map<String, Object> metadata, Boolean enabled,
                           @Nullable String fullName, @Nullable String email) {
             String checkedUsername = Objects.requireNonNull(username, "`username` is required, cannot be null");
-            List<String> checkedRoles =
-                    List.copyOf(Objects.requireNonNull(roles, "`roles` is required, cannot be null. Pass an empty list instead."));
+            List<String> checkedRoles = CollectionUtils.asImmutableList(
+                    Objects.requireNonNull(roles, "`roles` is required, cannot be null. Pass an empty list instead."));
             Map<String, Object> checkedMetadata = Collections.unmodifiableMap(
                     Objects.requireNonNull(metadata, "`metadata` is required, cannot be null. Pass an empty map instead."));
             this.user = new User(checkedUsername, checkedRoles, checkedMetadata, fullName, email);

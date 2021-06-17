@@ -60,7 +60,7 @@ public class BlobPath {
             case 1:
                 return EMPTY;
             default:
-                return new BlobPath(List.copyOf(paths.subList(0, size - 1)));
+                return new BlobPath(CollectionUtils.asImmutableList(paths.subList(0, size - 1)));
         }
     }
 

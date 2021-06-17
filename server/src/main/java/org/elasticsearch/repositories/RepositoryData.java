@@ -179,7 +179,9 @@ public final class RepositoryData {
                 + shardGenerations.indices()
                 + " but snapshots only reference indices "
                 + indices.values();
-        assert indexSnapshots.values().stream().noneMatch(snapshotIdList -> Set.copyOf(snapshotIdList).size() != snapshotIdList.size())
+        assert indexSnapshots.values()
+            .stream()
+            .noneMatch(snapshotIdList -> CollectionUtils.asImmutableSet(snapshotIdList).size() != snapshotIdList.size())
             : "Found duplicate snapshot ids per index in [" + indexSnapshots + "]";
     }
 

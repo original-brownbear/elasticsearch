@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.reindex.ReindexPlugin;
 import org.elasticsearch.ingest.common.IngestCommonPlugin;
@@ -199,7 +200,7 @@ public class EnrichMultiNodeIT extends ESIntegTestCase {
             client().index(indexRequest).actionGet();
         }
         client().admin().indices().refresh(new RefreshRequest(SOURCE_INDEX_NAME)).actionGet();
-        return List.copyOf(keys);
+        return CollectionUtils.asImmutableList(keys);
     }
 
     private static void createAndExecutePolicy() {

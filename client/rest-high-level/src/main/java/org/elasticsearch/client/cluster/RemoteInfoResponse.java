@@ -7,6 +7,7 @@
  */
 package org.elasticsearch.client.cluster;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentParser;
 
 import java.io.IOException;
@@ -24,7 +25,7 @@ public final class RemoteInfoResponse {
     private List<RemoteConnectionInfo> infos;
 
     RemoteInfoResponse(Collection<RemoteConnectionInfo> infos) {
-        this.infos = List.copyOf(infos);
+        this.infos = CollectionUtils.asImmutableList(infos);
     }
 
     public List<RemoteConnectionInfo> getInfos() {

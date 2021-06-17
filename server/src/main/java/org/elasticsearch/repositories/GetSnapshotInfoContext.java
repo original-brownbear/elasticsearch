@@ -10,6 +10,7 @@ package org.elasticsearch.repositories;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.snapshots.SnapshotInfo;
@@ -69,7 +70,7 @@ public final class GetSnapshotInfoContext implements ActionListener<SnapshotInfo
         if (snapshotIds.isEmpty()) {
             throw new IllegalArgumentException("no snapshot ids to fetch given");
         }
-        this.snapshotIds = List.copyOf(snapshotIds);
+        this.snapshotIds = CollectionUtils.asImmutableList(snapshotIds);
         this.counter = new CountDown(snapshotIds.size());
         this.abortOnFailure = abortOnFailure;
         this.isCancelled = isCancelled;

@@ -11,6 +11,7 @@ package org.elasticsearch.action.admin.cluster.remote;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.transport.RemoteConnectionInfo;
@@ -29,7 +30,7 @@ public final class RemoteInfoResponse extends ActionResponse implements ToXConte
     }
 
     public RemoteInfoResponse(Collection<RemoteConnectionInfo> infos) {
-        this.infos = List.copyOf(infos);
+        this.infos = CollectionUtils.asImmutableList(infos);
     }
 
     public List<RemoteConnectionInfo> getInfos() {

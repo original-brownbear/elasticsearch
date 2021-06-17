@@ -11,6 +11,7 @@ package org.elasticsearch.common.lucene;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
 import org.elasticsearch.Assertions;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.ShardUtils;
 
@@ -130,7 +131,7 @@ public final class ShardCoreKeyMap {
             return Collections.emptySet();
         }
         // we have to copy otherwise we risk ConcurrentModificationException
-        return Set.copyOf(objects);
+        return CollectionUtils.asImmutableSet(objects);
     }
 
     /**

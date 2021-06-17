@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.idp.saml.sp;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
@@ -129,16 +130,18 @@ public class SamlServiceProviderDocument implements ToXContentObject, Writeable 
         public List<String> identityProviderMetadataSigning = List.of();
 
         public void setServiceProviderSigning(Collection<String> serviceProviderSigning) {
-            this.serviceProviderSigning = serviceProviderSigning == null ? List.of() : List.copyOf(serviceProviderSigning);
+            this.serviceProviderSigning =
+                serviceProviderSigning == null ? List.of() : CollectionUtils.asImmutableList(serviceProviderSigning);
         }
 
         public void setIdentityProviderSigning(Collection<String> identityProviderSigning) {
-            this.identityProviderSigning = identityProviderSigning == null ? List.of() : List.copyOf(identityProviderSigning);
+            this.identityProviderSigning =
+                identityProviderSigning == null ? List.of() : CollectionUtils.asImmutableList(identityProviderSigning);
         }
 
         public void setIdentityProviderMetadataSigning(Collection<String> identityProviderMetadataSigning) {
             this.identityProviderMetadataSigning
-                = identityProviderMetadataSigning == null ? List.of() : List.copyOf(identityProviderMetadataSigning);
+                = identityProviderMetadataSigning == null ? List.of() : CollectionUtils.asImmutableList(identityProviderMetadataSigning);
         }
 
         public void setServiceProviderX509SigningCertificates(Collection<X509Certificate> certificates) {
@@ -344,7 +347,7 @@ public class SamlServiceProviderDocument implements ToXContentObject, Writeable 
     }
 
     public void setSignMessages(Collection<String> signMessages) {
-        this.signMessages = signMessages == null ? Set.of() : Set.copyOf(signMessages);
+        this.signMessages = signMessages == null ? Set.of() : CollectionUtils.asImmutableSet(signMessages);
     }
 
     public void setAuthenticationExpiryMillis(Long authenticationExpiryMillis) {

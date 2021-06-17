@@ -25,6 +25,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.CheckedRunnable;
 import org.elasticsearch.common.Randomness;
@@ -780,7 +781,7 @@ public final class NodeEnvironment  implements Closeable {
      */
     public Set<ShardId> lockedShards() {
         synchronized (shardLocks) {
-            return Set.copyOf(shardLocks.keySet());
+            return CollectionUtils.asImmutableSet(shardLocks.keySet());
         }
     }
 

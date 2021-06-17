@@ -32,6 +32,7 @@ import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.io.stream.ReleasableBytesStreamOutput;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.Tuple;
@@ -197,7 +198,7 @@ public class EncryptedRepository extends BlobStoreRepository {
             localRepositoryPasswordSalt,
             localRepositoryPasswordHash
         );
-        return Map.copyOf(snapshotUserMetadata);
+        return CollectionUtils.asImmutableMap(snapshotUserMetadata);
     }
 
     @Override
@@ -696,7 +697,7 @@ public class EncryptedRepository extends BlobStoreRepository {
                     )
                 );
             }
-            return Map.copyOf(resultBuilder);
+            return CollectionUtils.asImmutableMap(resultBuilder);
         }
     }
 }

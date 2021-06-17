@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.tasks.Task;
@@ -87,7 +88,7 @@ public class GetTransformStatsAction extends ActionType<GetTransformStatsAction.
         }
 
         public void setExpandedIds(List<String> expandedIds) {
-            this.expandedIds = List.copyOf(expandedIds);
+            this.expandedIds = CollectionUtils.asImmutableList(expandedIds);
         }
 
         public final void setPageParams(PageParams pageParams) {

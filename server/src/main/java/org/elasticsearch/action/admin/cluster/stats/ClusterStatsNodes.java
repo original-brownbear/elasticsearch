@@ -16,6 +16,7 @@ import org.elasticsearch.action.admin.cluster.node.info.PluginsAndModules;
 import org.elasticsearch.action.admin.cluster.node.stats.NodeStats;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.Settings;
@@ -205,7 +206,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
                 }
             }
             this.total = total;
-            this.roles = Map.copyOf(roles);
+            this.roles = CollectionUtils.asImmutableMap(roles);
         }
 
         public int getTotal() {

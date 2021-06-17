@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.idp.saml.authn;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.xpack.idp.authc.AuthenticationMethod;
 import org.elasticsearch.xpack.idp.authc.NetworkControl;
 import org.elasticsearch.xpack.idp.saml.sp.SamlServiceProvider;
@@ -33,7 +34,7 @@ public class UserServiceAuthentication {
         this.principal = principal;
         this.name = name;
         this.email = email;
-        this.roles = Set.copyOf(roles);
+        this.roles = CollectionUtils.asImmutableSet(roles);
         this.serviceProvider = serviceProvider;
         this.authenticationMethods = authenticationMethods;
         this.networkControls = networkControls;

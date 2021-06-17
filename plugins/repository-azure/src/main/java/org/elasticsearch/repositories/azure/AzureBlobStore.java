@@ -33,6 +33,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
@@ -342,7 +343,7 @@ public class AzureBlobStore implements BlobStore {
         } catch (Exception e) {
             throw new IOException("Unable to list blobs by prefix [" + prefix + "] for path " + keyPath, e);
         }
-        return Map.copyOf(blobsBuilder);
+        return CollectionUtils.asImmutableMap(blobsBuilder);
     }
 
     public Map<String, BlobContainer> children(BlobPath path) throws IOException {

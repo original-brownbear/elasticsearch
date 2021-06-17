@@ -8,6 +8,7 @@
 
 package org.elasticsearch.client.security.user.privileges;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.ToXContentObject;
@@ -70,7 +71,7 @@ public final class GlobalPrivileges implements ToXContentObject {
             throw new IllegalArgumentException("Privileges cannot be empty or null");
         }
         // duplicates are just ignored
-        this.privileges = Set.copyOf(Objects.requireNonNull(privileges));
+        this.privileges = CollectionUtils.asImmutableSet(Objects.requireNonNull(privileges));
         this.privilegesByCategoryMap = Collections
                 .unmodifiableMap(this.privileges.stream().collect(Collectors.groupingBy(GlobalOperationPrivilege::getCategory)));
         for (final Map.Entry<String, List<GlobalOperationPrivilege>> privilegesByCategory : privilegesByCategoryMap.entrySet()) {

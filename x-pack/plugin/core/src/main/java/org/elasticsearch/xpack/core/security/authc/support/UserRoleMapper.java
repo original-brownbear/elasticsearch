@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.xpack.core.security.authc.RealmConfig;
 import org.elasticsearch.xpack.core.security.authc.support.mapper.expressiondsl.ExpressionModel;
@@ -61,8 +62,8 @@ public interface UserRoleMapper {
                         Map<String, Object> metadata, RealmConfig realm) {
             this.username = username;
             this.dn = dn;
-            this.groups = Set.copyOf(groups);
-            this.metadata = Map.copyOf(metadata);
+            this.groups = CollectionUtils.asImmutableSet(groups);
+            this.metadata = CollectionUtils.asImmutableMap(metadata);
             this.realm = realm;
         }
 

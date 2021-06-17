@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.admin.cluster.node.tasks;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.tasks.Task;
@@ -53,7 +54,7 @@ public class RecordingTaskManagerListener implements MockTaskManagerListener {
     }
 
     public synchronized List<Tuple<Boolean, TaskInfo>> getEvents() {
-        return List.copyOf(events);
+        return CollectionUtils.asImmutableList(events);
     }
 
     public synchronized List<TaskInfo> getRegistrationEvents() {

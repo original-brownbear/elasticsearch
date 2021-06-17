@@ -12,6 +12,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.ValidationException;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.xpack.core.ssl.CertParsingUtils;
 import org.elasticsearch.xpack.core.ssl.X509KeyPairSettings;
@@ -139,9 +140,9 @@ public class SamlIdentityProviderBuilder {
 
         return new SamlIdentityProvider(
             entityId,
-            Map.copyOf(ssoEndpoints),
-            sloEndpoints == null ? Map.of() : Map.copyOf(sloEndpoints),
-            Set.copyOf(allowedNameIdFormats),
+            CollectionUtils.asImmutableMap(ssoEndpoints),
+            sloEndpoints == null ? Map.of() : CollectionUtils.asImmutableMap(sloEndpoints),
+            CollectionUtils.asImmutableSet(allowedNameIdFormats),
             signingCredential, metadataSigningCredential,
             technicalContact, organization,
             serviceProviderDefaults,

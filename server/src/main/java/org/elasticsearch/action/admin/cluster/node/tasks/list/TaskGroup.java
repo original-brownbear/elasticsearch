@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.admin.cluster.node.tasks.list;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.tasks.TaskInfo;
@@ -29,7 +30,7 @@ public class TaskGroup implements ToXContentObject {
 
     public TaskGroup(TaskInfo task, List<TaskGroup> childTasks) {
         this.task = task;
-        this.childTasks = List.copyOf(childTasks);
+        this.childTasks = CollectionUtils.asImmutableList(childTasks);
     }
 
     public static Builder builder(TaskInfo taskInfo) {

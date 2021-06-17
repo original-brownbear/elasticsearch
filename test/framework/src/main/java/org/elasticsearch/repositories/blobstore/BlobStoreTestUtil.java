@@ -29,6 +29,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetadata;
 import org.elasticsearch.common.blobstore.BlobPath;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
@@ -232,7 +233,7 @@ public final class BlobStoreTestUtil {
         final List<SnapshotInfo> snapshotInfos = Collections.synchronizedList(new ArrayList<>());
         repository.getSnapshotInfo(
                 new GetSnapshotInfoContext(
-                        List.copyOf(snapshotIds),
+                        CollectionUtils.asImmutableList(snapshotIds),
                         true,
                         () -> false,
                         (ctx, sni) -> snapshotInfos.add(sni),

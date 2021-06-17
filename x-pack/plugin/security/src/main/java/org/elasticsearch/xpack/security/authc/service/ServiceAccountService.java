@@ -13,6 +13,7 @@ import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.settings.SecureString;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xpack.core.security.action.service.GetServiceAccountCredentialsResponse;
 import org.elasticsearch.xpack.core.security.action.service.TokenInfo.TokenSource;
@@ -53,7 +54,7 @@ public class ServiceAccountService {
     }
 
     public static Map<String, ServiceAccount> getServiceAccounts() {
-        return Map.copyOf(ACCOUNTS);
+        return CollectionUtils.asImmutableMap(ACCOUNTS);
     }
 
     /**

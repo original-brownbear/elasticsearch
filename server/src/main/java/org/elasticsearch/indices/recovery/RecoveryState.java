@@ -11,6 +11,7 @@ package org.elasticsearch.indices.recovery;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.ShardRouting;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -823,7 +824,7 @@ public class RecoveryState implements ToXContentFragment, Writeable {
         }
 
         public synchronized List<FileDetail> fileDetails() {
-            return List.copyOf(fileDetails.values());
+            return CollectionUtils.asImmutableList(fileDetails.values());
         }
 
         public synchronized void reset() {

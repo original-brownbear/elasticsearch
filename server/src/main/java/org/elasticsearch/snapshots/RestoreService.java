@@ -60,6 +60,7 @@ import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
@@ -1242,7 +1243,7 @@ public class RestoreService implements ClusterStateApplier {
                             restoreUUID,
                             snapshot,
                             overallState(RestoreInProgress.State.INIT, shards),
-                            List.copyOf(indicesToRestore.keySet()),
+                            CollectionUtils.asImmutableList(indicesToRestore.keySet()),
                             shards
                         )
                     ).build()
@@ -1260,7 +1261,7 @@ public class RestoreService implements ClusterStateApplier {
                 // We don't have any indices to restore - we are done
                 restoreInfo = new RestoreInfo(
                     snapshot.getSnapshotId().getName(),
-                    List.copyOf(indicesToRestore.keySet()),
+                    CollectionUtils.asImmutableList(indicesToRestore.keySet()),
                     shards.size(),
                     shards.size() - failedShards(shards)
                 );

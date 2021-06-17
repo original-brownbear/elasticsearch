@@ -10,6 +10,7 @@ package org.elasticsearch.common.settings;
 
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.regex.Regex;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContent.Params;
 import org.elasticsearch.rest.RestRequest;
 
@@ -37,7 +38,7 @@ public final class SettingsFilter {
                 throw new IllegalArgumentException("invalid pattern: " + pattern);
             }
         }
-        this.patterns = Set.copyOf(patterns);
+        this.patterns = CollectionUtils.asImmutableSet(patterns);
         patternString = Strings.collectionToDelimitedString(patterns, ",");
     }
 

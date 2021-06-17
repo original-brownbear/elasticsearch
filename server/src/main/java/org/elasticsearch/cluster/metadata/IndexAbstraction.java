@@ -7,6 +7,7 @@
  */
 package org.elasticsearch.cluster.metadata;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 
@@ -288,7 +289,7 @@ public interface IndexAbstraction {
 
         public DataStream(org.elasticsearch.cluster.metadata.DataStream dataStream, List<IndexMetadata> dataStreamIndices) {
             this.dataStream = dataStream;
-            this.dataStreamIndices = List.copyOf(dataStreamIndices);
+            this.dataStreamIndices = CollectionUtils.asImmutableList(dataStreamIndices);
             this.writeIndex =  dataStreamIndices.get(dataStreamIndices.size() - 1);
         }
 

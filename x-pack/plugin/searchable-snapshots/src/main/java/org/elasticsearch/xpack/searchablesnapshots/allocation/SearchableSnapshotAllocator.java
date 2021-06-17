@@ -36,6 +36,7 @@ import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
@@ -536,7 +537,7 @@ public class SearchableSnapshotAllocator implements ExistingShardsAllocator {
 
         @Nullable
         synchronized Map<DiscoveryNode, NodeCacheFilesMetadata> data() {
-            return fetchingDataNodes.size() > 0 ? null : Map.copyOf(data);
+            return fetchingDataNodes.size() > 0 ? null : CollectionUtils.asImmutableMap(data);
         }
 
         synchronized int numberOfInFlightFetches() {

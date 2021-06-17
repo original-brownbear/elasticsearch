@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.AbstractDiffable;
 import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.MetadataIndexStateService;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -429,9 +430,9 @@ public class ClusterBlocks extends AbstractDiffable<ClusterBlocks> {
             // We copy the block sets here in case of the builder is modified after build is called
             ImmutableOpenMap.Builder<String, Set<ClusterBlock>> indicesBuilder = ImmutableOpenMap.builder(indices.size());
             for (Map.Entry<String, Set<ClusterBlock>> entry : indices.entrySet()) {
-                indicesBuilder.put(entry.getKey(), Set.copyOf(entry.getValue()));
+                indicesBuilder.put(entry.getKey(), CollectionUtils.asImmutableSet(entry.getValue()));
             }
-            return new ClusterBlocks(Set.copyOf(global), indicesBuilder.build());
+            return new ClusterBlocks(CollectionUtils.asImmutableSet(global), indicesBuilder.build());
         }
     }
 }

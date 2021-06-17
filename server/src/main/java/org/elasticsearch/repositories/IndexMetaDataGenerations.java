@@ -9,6 +9,7 @@
 package org.elasticsearch.repositories;
 
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.snapshots.SnapshotId;
 
@@ -45,8 +46,8 @@ public final class IndexMetaDataGenerations {
         assert identifiers.keySet().equals(lookup.values().stream().flatMap(m -> m.values().stream()).collect(Collectors.toSet()))
             : "identifier mappings " + identifiers + " don't track the same blob ids as the lookup map " + lookup;
         assert lookup.values().stream().noneMatch(Map::isEmpty) : "Lookup contained empty map [" + lookup + "]";
-        this.lookup = Map.copyOf(lookup);
-        this.identifiers = Map.copyOf(identifiers);
+        this.lookup = CollectionUtils.asImmutableMap(lookup);
+        this.identifiers = CollectionUtils.asImmutableMap(identifiers);
     }
 
     public boolean isEmpty() {
@@ -110,7 +111,7 @@ public final class IndexMetaDataGenerations {
                 final String generation = entry.getValue();
                 fixedLookup.put(entry.getKey(), identifierDeduplicator.getOrDefault(generation, generation));
             }
-            final Map<IndexId, String> existing = updatedIndexMetaLookup.put(snapshotId, Map.copyOf(fixedLookup));
+            final Map<IndexId, String> existing = updatedIndexMetaLookup.put(snapshotId, CollectionUtils.asImmutableMap(fixedLookup));
             assert existing == null : "unexpected existing index generation mappings " + existing;
         }
         return new IndexMetaDataGenerations(updatedIndexMetaLookup, updatedIndexMetaIdentifiers);

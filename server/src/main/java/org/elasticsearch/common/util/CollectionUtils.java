@@ -350,4 +350,25 @@ public class CollectionUtils {
 
         return result;
     }
+
+    /**
+     * Wrapper for {@link Map#copyOf(Map)} to enable transparent use of the method across pre- and post JDK-10 environments.
+     */
+    public static <K, V> Map<K, V> asImmutableMap(Map<K, V> m) {
+        return Map.copyOf(m);
+    }
+
+    /**
+     * Wrapper for {@link List#copyOf(Collection)} to enable transparent use of the method across pre- and post JDK-10 environments.
+     */
+    public static <V> List<V> asImmutableList(Collection<? extends V> l) {
+        return List.copyOf(l);
+    }
+
+    /**
+     * Wrapper for {@link Set#copyOf(Collection)} to enable transparent use of the method across pre- and post JDK-10 environments.
+     */
+    public static <V> Set<V> asImmutableSet(Collection<? extends V> s) {
+        return Set.copyOf(s);
+    }
 }

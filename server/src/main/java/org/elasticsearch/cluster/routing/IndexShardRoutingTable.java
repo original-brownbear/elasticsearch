@@ -10,6 +10,7 @@ package org.elasticsearch.cluster.routing;
 
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.ExponentiallyWeightedMovingAverage;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -594,7 +595,7 @@ public class IndexShardRoutingTable implements Iterable<ShardRouting> {
         public IndexShardRoutingTable build() {
             // don't allow more than one shard copy with same id to be allocated to same node
             assert distinctNodes(shards) : "more than one shard with same id assigned to same node (shards: " + shards + ")";
-            return new IndexShardRoutingTable(shardId, List.copyOf(shards));
+            return new IndexShardRoutingTable(shardId, CollectionUtils.asImmutableList(shards));
         }
 
         static boolean distinctNodes(List<ShardRouting> shards) {

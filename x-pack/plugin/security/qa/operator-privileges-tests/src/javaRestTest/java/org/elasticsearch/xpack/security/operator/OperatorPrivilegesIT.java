@@ -12,6 +12,7 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -88,7 +89,7 @@ public class OperatorPrivilegesIT extends ESRestTestCase {
 
         final Request request = new Request("GET", "/_test/get_actions");
         final Map<String, Object> response = responseAsMap(client().performRequest(request));
-        Set<String> allActions = Set.copyOf((List<String>) response.get("actions"));
+        Set<String> allActions = CollectionUtils.asImmutableSet((List<String>) response.get("actions"));
         final HashSet<String> labelledActions = new HashSet<>(OperatorOnlyRegistry.SIMPLE_ACTIONS);
         labelledActions.addAll(Constants.NON_OPERATOR_ACTIONS);
 

@@ -10,6 +10,7 @@ package org.elasticsearch.xpack.idp.saml.sp;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.Strings;
@@ -175,7 +176,7 @@ public class WildcardServiceProviderResolver {
 
     // Accessible for testing
     void reload(XContentParser parser) throws IOException {
-        final Map<String, WildcardServiceProvider> newServices = Map.copyOf(parse(parser));
+        final Map<String, WildcardServiceProvider> newServices = CollectionUtils.asImmutableMap(parse(parser));
         final State oldState = this.stateRef.get();
         if (newServices.equals(oldState.services) == false) {
             // Services have changed

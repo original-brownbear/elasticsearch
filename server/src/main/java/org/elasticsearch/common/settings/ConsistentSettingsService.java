@@ -18,6 +18,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.hash.MessageDigests;
+import org.elasticsearch.common.util.CollectionUtils;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -201,7 +202,7 @@ public final class ConsistentSettingsService {
         final ClusterService clusterService;
 
         HashesPublisher(Map<String, String> computedHashesOfConsistentSettings, ClusterService clusterService) {
-            this.computedHashesOfConsistentSettings = Map.copyOf(computedHashesOfConsistentSettings);
+            this.computedHashesOfConsistentSettings = CollectionUtils.asImmutableMap(computedHashesOfConsistentSettings);
             this.clusterService = clusterService;
         }
 

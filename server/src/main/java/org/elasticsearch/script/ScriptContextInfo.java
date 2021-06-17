@@ -8,6 +8,7 @@
 
 package org.elasticsearch.script;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -79,7 +80,7 @@ public class ScriptContextInfo implements ToXContentObject, Writeable {
         this.execute = methodTypes.get(executeName).get(0);
 
         if (methodTypes.containsKey(getName)) {
-            this.getters = Set.copyOf(methodTypes.get(getName));
+            this.getters = CollectionUtils.asImmutableSet(methodTypes.get(getName));
         } else {
             this.getters = Collections.emptySet();
         }

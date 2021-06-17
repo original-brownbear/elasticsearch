@@ -9,6 +9,7 @@ package org.elasticsearch.cluster.metadata;
 
 import org.elasticsearch.cluster.AbstractDiffable;
 import org.elasticsearch.cluster.Diff;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -49,7 +50,7 @@ public class DataStreamAlias extends AbstractDiffable<DataStreamAlias> implement
 
     public DataStreamAlias(String name, List<String> dataStreams, String writeDataStream) {
         this.name = Objects.requireNonNull(name);
-        this.dataStreams = List.copyOf(dataStreams);
+        this.dataStreams = CollectionUtils.asImmutableList(dataStreams);
         this.writeDataStream = writeDataStream;
         assert writeDataStream == null || dataStreams.contains(writeDataStream);
     }
@@ -108,7 +109,7 @@ public class DataStreamAlias extends AbstractDiffable<DataStreamAlias> implement
         Set<String> dataStreams = new HashSet<>(this.dataStreams);
         boolean added = dataStreams.add(dataStream);
         if (added || Objects.equals(this.writeDataStream, writeDataStream) == false) {
-            return new DataStreamAlias(name, List.copyOf(dataStreams), writeDataStream);
+            return new DataStreamAlias(name, CollectionUtils.asImmutableList(dataStreams), writeDataStream);
         } else {
             return this;
         }
@@ -133,7 +134,7 @@ public class DataStreamAlias extends AbstractDiffable<DataStreamAlias> implement
             if (dataStream.equals(writeDataStream)) {
                 writeDataStream = null;
             }
-            return new DataStreamAlias(name, List.copyOf(dataStreams), writeDataStream);
+            return new DataStreamAlias(name, CollectionUtils.asImmutableList(dataStreams), writeDataStream);
         }
     }
 
@@ -171,7 +172,7 @@ public class DataStreamAlias extends AbstractDiffable<DataStreamAlias> implement
             }
         }
 
-        return new DataStreamAlias(this.name, List.copyOf(mergedDataStreams), writeDataStream);
+        return new DataStreamAlias(this.name, CollectionUtils.asImmutableList(mergedDataStreams), writeDataStream);
     }
 
     /**

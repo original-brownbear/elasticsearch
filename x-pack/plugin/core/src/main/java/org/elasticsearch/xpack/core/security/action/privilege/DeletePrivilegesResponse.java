@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.core.security.action.privilege;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -31,7 +32,7 @@ public final class DeletePrivilegesResponse extends ActionResponse implements To
     }
 
     public DeletePrivilegesResponse(Collection<String> found) {
-        this.found = Set.copyOf(found);
+        this.found = CollectionUtils.asImmutableSet(found);
     }
 
     @Override

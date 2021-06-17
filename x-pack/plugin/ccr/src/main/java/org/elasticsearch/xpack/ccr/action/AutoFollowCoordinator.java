@@ -27,6 +27,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.CopyOnWriteHashMap;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.component.Lifecycle;
@@ -410,7 +411,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
             // order to avoid timeouts when waiting for the next remote cluster state
             // version that might never arrive
             final long nextMetadataVersion = Objects.equals(patterns, lastActivePatterns) ? metadataVersion + 1 : metadataVersion;
-            this.lastActivePatterns = List.copyOf(patterns);
+            this.lastActivePatterns = CollectionUtils.asImmutableList(patterns);
 
             final Thread thread = Thread.currentThread();
             getRemoteClusterState(remoteCluster, Math.max(1L, nextMetadataVersion), (remoteClusterStateResponse, remoteError) -> {

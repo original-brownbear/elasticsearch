@@ -32,6 +32,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -185,7 +186,7 @@ public class TransportTasksActionTests extends TaskManagerTestCase {
         TestTasksResponse(List<TestTaskResponse> tasks, List<TaskOperationFailure> taskFailures,
                 List<? extends FailedNodeException> nodeFailures) {
             super(taskFailures, nodeFailures);
-            this.tasks = tasks == null ? Collections.emptyList() : List.copyOf(tasks);
+            this.tasks = tasks == null ? Collections.emptyList() : CollectionUtils.asImmutableList(tasks);
         }
 
         TestTasksResponse(StreamInput in) throws IOException {

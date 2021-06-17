@@ -12,6 +12,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.codecs.Codec;
 import org.apache.lucene.codecs.lucene87.Lucene87Codec;
 import org.apache.lucene.codecs.lucene87.Lucene87Codec.Mode;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.mapper.MapperService;
 
@@ -48,7 +49,7 @@ public class CodecService {
         for (String codec : Codec.availableCodecs()) {
             codecs.put(codec, Codec.forName(codec));
         }
-        this.codecs = Map.copyOf(codecs);
+        this.codecs = CollectionUtils.asImmutableMap(codecs);
     }
 
     public Codec codec(String name) {

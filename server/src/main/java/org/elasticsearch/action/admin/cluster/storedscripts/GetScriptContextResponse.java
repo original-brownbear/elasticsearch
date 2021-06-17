@@ -9,6 +9,7 @@
 package org.elasticsearch.action.admin.cluster.storedscripts;
 
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -64,14 +65,14 @@ public class GetScriptContextResponse extends ActionResponse implements StatusTo
 
     // TransportAction constructor
     GetScriptContextResponse(Set<ScriptContextInfo> contexts) {
-        this.contexts = Map.copyOf(contexts.stream().collect(
+        this.contexts = CollectionUtils.asImmutableMap(contexts.stream().collect(
             Collectors.toMap(ScriptContextInfo::getName, Function.identity())
         ));
     }
 
     // Parser constructor
     private GetScriptContextResponse(Map<String,ScriptContextInfo> contexts) {
-        this.contexts = Map.copyOf(contexts);
+        this.contexts = CollectionUtils.asImmutableMap(contexts);
     }
 
     private List<ScriptContextInfo> byName() {

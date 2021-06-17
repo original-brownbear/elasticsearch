@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.Operations;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.xpack.core.security.authz.privilege.ApplicationPrivilege;
@@ -54,7 +55,7 @@ public final class ApplicationPermission {
                     Automatons.unionAndMinimize(Arrays.asList(existing.resourceAutomaton, patterns)));
             }
         }));
-        this.permissions = List.copyOf(permissionsByPrivilege.values());
+        this.permissions = CollectionUtils.asImmutableList(permissionsByPrivilege.values());
     }
 
     /**

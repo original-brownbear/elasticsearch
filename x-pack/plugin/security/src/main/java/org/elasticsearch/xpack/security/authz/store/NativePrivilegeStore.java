@@ -118,7 +118,7 @@ public class NativePrivilegeStore {
                               ActionListener<Collection<ApplicationPrivilegeDescriptor>> listener) {
 
         final Set<String> applicationNamesCacheKey = (isEmpty(applications) || applications.contains("*")) ?
-            Set.of("*") : Set.copyOf(applications);
+            Set.of("*") : CollectionUtils.asImmutableSet(applications);
 
         // Always fetch for the concrete application names even when the passed-in application names has no wildcard.
         // This serves as a negative lookup, i.e. when a passed-in non-wildcard application does not exist.
@@ -464,7 +464,6 @@ public class NativePrivilegeStore {
         public void invalidate(Collection<String> updatedApplicationNames) {
             lockingAtomicCounter.increment();
             logger.debug("Invalidating application privileges caches for: {}", updatedApplicationNames);
-            final Set<String> uniqueNames = Set.copyOf(updatedApplicationNames);
             // Always completely invalidate application names cache due to wildcard
             applicationNamesCache.invalidateAll();
             updatedApplicationNames.forEach(descriptorsCache::invalidate);

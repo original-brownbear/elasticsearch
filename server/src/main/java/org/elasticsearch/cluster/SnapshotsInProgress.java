@@ -13,6 +13,7 @@ import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState.Custom;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
@@ -539,14 +540,14 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this.snapshot = snapshot;
             this.includeGlobalState = includeGlobalState;
             this.partial = partial;
-            this.indices = Map.copyOf(indices);
-            this.dataStreams = List.copyOf(dataStreams);
+            this.indices = CollectionUtils.asImmutableMap(indices);
+            this.dataStreams = CollectionUtils.asImmutableList(dataStreams);
             this.featureStates = Collections.unmodifiableList(featureStates);
             this.startTime = startTime;
             this.shards = shards;
             this.repositoryStateId = repositoryStateId;
             this.failure = failure;
-            this.userMetadata = userMetadata == null ? null : Map.copyOf(userMetadata);
+            this.userMetadata = userMetadata == null ? null : CollectionUtils.asImmutableMap(userMetadata);
             this.version = version;
             this.source = source;
             if (source == null) {

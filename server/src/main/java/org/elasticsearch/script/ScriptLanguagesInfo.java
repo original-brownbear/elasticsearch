@@ -8,6 +8,7 @@
 
 package org.elasticsearch.script;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -77,8 +78,8 @@ public class ScriptLanguagesInfo implements ToXContentObject, Writeable {
     public final Map<String,Set<String>> languageContexts;
 
     public ScriptLanguagesInfo(Set<String> typesAllowed, Map<String,Set<String>> languageContexts) {
-        this.typesAllowed = typesAllowed != null ? Set.copyOf(typesAllowed): Collections.emptySet();
-        this.languageContexts = languageContexts != null ? Map.copyOf(languageContexts): Collections.emptyMap();
+        this.typesAllowed = typesAllowed != null ? CollectionUtils.asImmutableSet(typesAllowed): Collections.emptySet();
+        this.languageContexts = languageContexts != null ? CollectionUtils.asImmutableMap(languageContexts): Collections.emptyMap();
     }
 
     public ScriptLanguagesInfo(StreamInput in) throws IOException {
@@ -98,7 +99,7 @@ public class ScriptLanguagesInfo implements ToXContentObject, Writeable {
     @SuppressWarnings("unchecked")
     private static final ConstructingObjectParser<Tuple<String,Set<String>>,Void> LANGUAGE_CONTEXT_PARSER =
         new ConstructingObjectParser<>("language_contexts", true,
-            (m, name) -> new Tuple<>((String)m[0], Set.copyOf((List<String>)m[1]))
+            (m, name) -> new Tuple<>((String)m[0], CollectionUtils.asImmutableSet((List<String>)m[1]))
         );
 
     static {

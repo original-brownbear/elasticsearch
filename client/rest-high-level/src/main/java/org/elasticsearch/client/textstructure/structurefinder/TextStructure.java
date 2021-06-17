@@ -7,6 +7,7 @@
  */
 package org.elasticsearch.client.textstructure.structurefinder;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ToXContentObject;
@@ -136,20 +137,20 @@ public class TextStructure implements ToXContentObject {
         this.format = Objects.requireNonNull(format);
         this.multilineStartPattern = multilineStartPattern;
         this.excludeLinesPattern = excludeLinesPattern;
-        this.columnNames = (columnNames == null) ? null : List.copyOf(columnNames);
+        this.columnNames = (columnNames == null) ? null : CollectionUtils.asImmutableList(columnNames);
         this.hasHeaderRow = hasHeaderRow;
         this.delimiter = delimiter;
         this.quote = quote;
         this.shouldTrimFields = shouldTrimFields;
         this.grokPattern = grokPattern;
         this.timestampField = timestampField;
-        this.jodaTimestampFormats = (jodaTimestampFormats == null) ? null : List.copyOf(jodaTimestampFormats);
-        this.javaTimestampFormats = (javaTimestampFormats == null) ? null : List.copyOf(javaTimestampFormats);
+        this.jodaTimestampFormats = (jodaTimestampFormats == null) ? null : CollectionUtils.asImmutableList(jodaTimestampFormats);
+        this.javaTimestampFormats = (javaTimestampFormats == null) ? null : CollectionUtils.asImmutableList(javaTimestampFormats);
         this.needClientTimezone = needClientTimezone;
         this.mappings = Collections.unmodifiableSortedMap(new TreeMap<>(mappings));
         this.ingestPipeline = (ingestPipeline == null) ? null : Collections.unmodifiableMap(new LinkedHashMap<>(ingestPipeline));
         this.fieldStats = Collections.unmodifiableSortedMap(new TreeMap<>(fieldStats));
-        this.explanation = (explanation == null) ? null : List.copyOf(explanation);
+        this.explanation = (explanation == null) ? null : CollectionUtils.asImmutableList(explanation);
     }
 
     public int getNumLinesAnalyzed() {

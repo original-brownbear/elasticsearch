@@ -9,6 +9,7 @@
 package org.elasticsearch.action.admin.cluster.storedscripts;
 
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.script.ScriptContextInfo;
 import org.elasticsearch.test.AbstractSerializingTestCase;
@@ -73,12 +74,12 @@ public class ScriptContextInfoSerializingTests extends AbstractSerializingTestCa
 
     static Set<ScriptContextInfo> mutateOne(Collection<ScriptContextInfo> instances) {
         if (instances.size() == 0) {
-            return Collections.unmodifiableSet(Set.of(randomInstance()));
+            return Set.of(randomInstance());
         }
         ArrayList<ScriptContextInfo> mutated = new ArrayList<>(instances);
         int mutateIndex = randomIntBetween(0, instances.size() - 1);
         mutated.set(mutateIndex, mutate(mutated.get(mutateIndex), instances.stream().map(i -> i.name).collect(Collectors.toSet())));
-        return Set.copyOf(mutated);
+        return CollectionUtils.asImmutableSet(mutated);
     }
 
     static ScriptContextInfo randomInstance() {

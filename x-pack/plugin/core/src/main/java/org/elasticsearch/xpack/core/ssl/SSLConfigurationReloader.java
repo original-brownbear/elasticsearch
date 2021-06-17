@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.core.ssl;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.watcher.FileChangesListener;
 import org.elasticsearch.watcher.FileWatcher;
@@ -97,7 +98,8 @@ public final class SSLConfigurationReloader {
         }
 
         pathToConfigurationsMap.forEach((path, configurations) -> {
-            ChangeListener changeListener = new ChangeListener(environment, List.copyOf(configurations), reloadConsumer);
+            ChangeListener changeListener =
+                new ChangeListener(environment, CollectionUtils.asImmutableList(configurations), reloadConsumer);
             FileWatcher fileWatcher = new FileWatcher(path);
             fileWatcher.addListener(changeListener);
             try {

@@ -6,6 +6,7 @@
  */
 package org.elasticsearch.xpack.textstructure.structurefinder;
 
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.xpack.core.textstructure.action.FindStructureAction;
 import org.elasticsearch.xpack.core.textstructure.structurefinder.TextStructure;
 
@@ -65,7 +66,7 @@ public class TextStructureOverrides {
     ) {
         this.charset = charset;
         this.format = format;
-        this.columnNames = (columnNames == null) ? null : List.copyOf(columnNames);
+        this.columnNames = (columnNames == null) ? null : CollectionUtils.asImmutableList(columnNames);
         this.hasHeaderRow = hasHeaderRow;
         this.delimiter = delimiter;
         this.quote = quote;

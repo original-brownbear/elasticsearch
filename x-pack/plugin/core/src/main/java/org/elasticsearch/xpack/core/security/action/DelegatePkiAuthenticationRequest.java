@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.core.security.action;
 
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionRequestValidationException;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -64,14 +65,14 @@ public final class DelegatePkiAuthenticationRequest extends ActionRequest implem
     private List<X509Certificate> certificateChain;
 
     public DelegatePkiAuthenticationRequest(List<X509Certificate> certificateChain) {
-        this.certificateChain = List.copyOf(certificateChain);
+        this.certificateChain = CollectionUtils.asImmutableList(certificateChain);
     }
 
     public DelegatePkiAuthenticationRequest(StreamInput input) throws IOException {
         super(input);
         try {
             final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-            certificateChain = List.copyOf(input.readList(in -> {
+            certificateChain = CollectionUtils.asImmutableList(input.readList(in -> {
                 try (ByteArrayInputStream bis = new ByteArrayInputStream(in.readByteArray())) {
                     return (X509Certificate) certificateFactory.generateCertificate(bis);
                 } catch (CertificateException e) {
