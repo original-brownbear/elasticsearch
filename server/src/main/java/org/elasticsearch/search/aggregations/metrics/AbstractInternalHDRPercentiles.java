@@ -9,6 +9,8 @@
 package org.elasticsearch.search.aggregations.metrics;
 
 import org.HdrHistogram.DoubleHistogram;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -47,14 +49,22 @@ abstract class AbstractInternalHDRPercentiles extends InternalNumericMetricsAggr
         format = in.readNamedWriteable(DocValueFormat.class);
         keys = in.readDoubleArray();
         long minBarForHighestToLowestValueRatio = in.readLong();
-        final int serializedLen = in.readVInt();
-        byte[] bytes = new byte[serializedLen];
-        in.readBytes(bytes, 0, serializedLen);
-        ByteBuffer stateBuffer = ByteBuffer.wrap(bytes);
-        try {
-            state = DoubleHistogram.decodeFromCompressedByteBuffer(stateBuffer, minBarForHighestToLowestValueRatio);
-        } catch (DataFormatException e) {
-            throw new IOException("Failed to decode DoubleHistogram for aggregation [" + name + "]", e);
+        try (ReleasableBytesReference releasableBytesReference = in.readReleasableBytesReference()) {
+            final ByteBuffer stateBuffer;
+            if (releasableBytesReference.hasArray()) {
+                stateBuffer = ByteBuffer.wrap(
+                        releasableBytesReference.array(),
+                        releasableBytesReference.arrayOffset(),
+                        releasableBytesReference.length()
+                );
+            } else {
+                stateBuffer = ByteBuffer.wrap(BytesReference.toBytes(releasableBytesReference));
+            }
+            try {
+                state = DoubleHistogram.decodeFromCompressedByteBuffer(stateBuffer, minBarForHighestToLowestValueRatio);
+            } catch (DataFormatException e) {
+                throw new IOException("Failed to decode DoubleHistogram for aggregation [" + name + "]", e);
+            }
         }
         keyed = in.readBoolean();
     }
