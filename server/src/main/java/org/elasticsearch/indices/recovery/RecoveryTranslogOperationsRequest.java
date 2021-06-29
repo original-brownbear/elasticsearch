@@ -10,6 +10,7 @@ package org.elasticsearch.indices.recovery;
 
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.index.seqno.RetentionLeases;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.translog.Translog;
@@ -27,6 +28,15 @@ public class RecoveryTranslogOperationsRequest extends RecoveryTransportRequest 
     private final long maxSeqNoOfUpdatesOrDeletesOnPrimary;
     private final RetentionLeases retentionLeases;
     private final long mappingVersionOnPrimary;
+
+    private final AbstractRefCounted refCounted = new AbstractRefCounted("recovery-translog-operations-request") {
+        @Override
+        protected void closeInternal() {
+            for (Translog.Operation operation : operations) {
+                operation.decRef();
+            }
+        }
+    };
 
     RecoveryTranslogOperationsRequest(
             final long recoveryId,
@@ -109,5 +119,20 @@ public class RecoveryTranslogOperationsRequest extends RecoveryTransportRequest 
         out.writeZLong(maxSeqNoOfUpdatesOrDeletesOnPrimary);
         retentionLeases.writeTo(out);
         out.writeVLong(mappingVersionOnPrimary);
+    }
+
+    @Override
+    public void incRef() {
+        refCounted.incRef();
+    }
+
+    @Override
+    public boolean tryIncRef() {
+        return refCounted.tryIncRef();
+    }
+
+    @Override
+    public boolean decRef() {
+        return refCounted.decRef();
     }
 }
