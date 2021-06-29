@@ -1512,8 +1512,11 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
      * Reads a list of operations written with {@link #writeOperations(StreamOutput, List)}
      */
     public static List<Operation> readOperations(StreamInput input, String source) throws IOException {
-        ArrayList<Operation> operations = new ArrayList<>();
         int numOps = input.readInt();
+        if (numOps == 0) {
+            return Collections.emptyList();
+        }
+        ArrayList<Operation> operations = new ArrayList<>(numOps);
         final BufferedChecksumStreamInput checksumStreamInput = new BufferedChecksumStreamInput(input, source);
         for (int i = 0; i < numOps; i++) {
             operations.add(readOperation(checksumStreamInput));
