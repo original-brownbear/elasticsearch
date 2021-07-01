@@ -36,6 +36,7 @@ public class ReleasableBytesStreamOutput extends BytesStreamOutput implements Re
     @Override
     public void close() {
         Releasables.close(bytes);
+        bytes = null;
     }
 
     @Override
