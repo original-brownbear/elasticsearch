@@ -57,8 +57,11 @@ public abstract class AbstractBytesReference implements BytesReference {
 
     @Override
     public BytesRefIterator iterator() {
+        if (length() == 0) {
+            return BytesRefIterator.EMPTY;
+        }
         return new BytesRefIterator() {
-            BytesRef ref = length() == 0 ? null : toBytesRef();
+            BytesRef ref = toBytesRef();
             @Override
             public BytesRef next() {
                 BytesRef r = ref;

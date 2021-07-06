@@ -74,6 +74,25 @@ public final class CompositeBytesReference extends AbstractBytesReference {
     }
 
     @Override
+    public int getInt(int index) {
+        int offsetIndex = getOffsetIndex(index);
+        BytesReference ref = references[offsetIndex];
+        int indexInRef = index - offsets[offsetIndex];
+        if (ref.length() - indexInRef >= Integer.BYTES) {
+            return ref.getInt(indexInRef);
+        }
+        int res = (ref.get(indexInRef++) & 0xFF) << 24;
+        for (int i = 0; i < 3; ++i) {
+            while (indexInRef < 0 || ref.length() - indexInRef <= 0) {
+                ref = references[++offsetIndex];
+                indexInRef = (index + i + 1) - offsets[offsetIndex];
+            }
+            res |= (ref.get(indexInRef++) & 0xFF) << (16 - (i * 8));
+        }
+        return res;
+    }
+
+    @Override
     public int indexOf(byte marker, int from) {
         final int remainingBytes = Math.max(length - from, 0);
         Objects.checkFromIndexSize(from, remainingBytes, length);
@@ -122,13 +141,13 @@ public final class CompositeBytesReference extends AbstractBytesReference {
         final int to = from + length;
         final int limit = getOffsetIndex(to - 1);
         final int start = getOffsetIndex(from);
+        final int inSliceOffset = from - offsets[start];
+        if (limit == start) {
+            return references[start].slice(inSliceOffset, length);
+        }
         final BytesReference[] inSlice = new BytesReference[1 + (limit - start)];
         for (int i = 0, j = start; i < inSlice.length; i++) {
             inSlice[i] = references[j++];
-        }
-        int inSliceOffset = from - offsets[start];
-        if (inSlice.length == 1) {
-            return inSlice[0].slice(inSliceOffset, length);
         }
         // now adjust slices in front and at the end
         inSlice[0] = inSlice[0].slice(inSliceOffset, inSlice[0].length() - inSliceOffset);
