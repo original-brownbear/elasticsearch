@@ -168,7 +168,7 @@ public class Role {
      * specified action with the requested indices/aliases. At the same time if field and/or document level security
      * is configured for any group also the allowed fields and role queries are resolved.
      */
-    public IndicesAccessControl authorize(String action, Set<String> requestedIndicesOrAliases,
+    public IndicesAccessControl authorize(String action, Iterable<String> requestedIndicesOrAliases,
                                           Map<String, IndexAbstraction> aliasAndIndexLookup,
                                           FieldPermissionsCache fieldPermissionsCache) {
         Map<String, IndicesAccessControl.IndexAccessControl> indexPermissions = indices.authorize(
@@ -191,8 +191,8 @@ public class Role {
         private final String[] names;
         private ClusterPermission cluster = ClusterPermission.NONE;
         private RunAsPermission runAs = RunAsPermission.NONE;
-        private List<IndicesPermission.Group> groups = new ArrayList<>();
-        private List<Tuple<ApplicationPrivilege, Set<String>>> applicationPrivs = new ArrayList<>();
+        private final List<IndicesPermission.Group> groups = new ArrayList<>();
+        private final List<Tuple<ApplicationPrivilege, Set<String>>> applicationPrivs = new ArrayList<>();
 
         private Builder(String[] names) {
             this.names = names;
@@ -205,7 +205,7 @@ public class Role {
 
             final RoleDescriptor.ApplicationResourcePrivileges[] applicationPrivileges = rd.getApplicationPrivileges();
             for (int i = 0; i < applicationPrivileges.length; i++) {
-                applicationPrivs.add(convertApplicationPrivilege(rd.getName(), i, applicationPrivileges[i]));
+                applicationPrivs.add(convertApplicationPrivilege(applicationPrivileges[i]));
             }
 
             String[] rdRunAs = rd.getRunAs();
@@ -216,7 +216,6 @@ public class Role {
 
         public Builder cluster(Set<String> privilegeNames, Iterable<ConfigurableClusterPrivilege> configurableClusterPrivileges) {
             ClusterPermission.Builder builder = ClusterPermission.builder();
-            List<ClusterPermission> clusterPermissions = new ArrayList<>();
             if (privilegeNames.isEmpty() == false) {
                 for (String name : privilegeNames) {
                     builder = ClusterPrivilegeResolver.resolve(name).buildPermission(builder);
@@ -276,8 +275,7 @@ public class Role {
             return list;
         }
 
-        static Tuple<ApplicationPrivilege, Set<String>> convertApplicationPrivilege(String role, int index,
-                                                                                    RoleDescriptor.ApplicationResourcePrivileges arp) {
+        static Tuple<ApplicationPrivilege, Set<String>> convertApplicationPrivilege(RoleDescriptor.ApplicationResourcePrivileges arp) {
             return new Tuple<>(new ApplicationPrivilege(arp.getApplication(),
                 Sets.newHashSet(arp.getPrivileges()),
                 arp.getPrivileges()

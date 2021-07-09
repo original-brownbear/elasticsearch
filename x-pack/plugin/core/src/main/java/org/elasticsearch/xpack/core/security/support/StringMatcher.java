@@ -34,7 +34,41 @@ import java.util.stream.Collectors;
  */
 public class StringMatcher implements Predicate<String> {
 
-    private static final StringMatcher MATCH_NOTHING = new StringMatcher("(empty)", s -> false);
+    public static final StringMatcher MATCH_NOTHING = new StringMatcher("(empty)", s -> false) {
+
+        @Override
+        public StringMatcher or(Predicate<? super String> other) {
+            return new StringMatcher(String.valueOf(other), (Predicate<String>) other);
+        }
+
+        @Override
+        public StringMatcher and(Predicate<? super String> other) {
+            return this;
+        }
+
+        @Override
+        public StringMatcher and(String otherDescription, Predicate<? super String> otherPredicate) {
+            return this;
+        }
+    };
+
+    public static final StringMatcher MATCH_ALL = new StringMatcher("*", s -> true) {
+
+        @Override
+        public StringMatcher or(Predicate<? super String> other) {
+            return this;
+        }
+
+        @Override
+        public StringMatcher and(Predicate<? super String> other) {
+            return new StringMatcher(String.valueOf(other), (Predicate<String>) Objects.requireNonNull(other));
+        }
+
+        @Override
+        public StringMatcher and(String otherDescription, Predicate<? super String> otherPredicate) {
+            return new StringMatcher(otherDescription, (Predicate<String>) Objects.requireNonNull(otherPredicate));
+        }
+    };
 
     private final String description;
     private final Predicate<String> predicate;
@@ -119,6 +153,9 @@ public class StringMatcher implements Predicate<String> {
 
             final String description = describe(allText);
             if (exactMatch.isEmpty()) {
+                if (nonExactMatch.size() == 1 && nonExactMatch.contains("*")) {
+                    return StringMatcher.MATCH_ALL;
+                }
                 return new StringMatcher(description, buildAutomataPredicate(nonExactMatch));
             }
             if (nonExactMatch.isEmpty()) {

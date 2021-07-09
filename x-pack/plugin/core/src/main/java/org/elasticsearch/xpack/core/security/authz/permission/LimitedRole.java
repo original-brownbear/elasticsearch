@@ -57,7 +57,7 @@ public final class LimitedRole extends Role {
     }
 
     @Override
-    public IndicesAccessControl authorize(String action, Set<String> requestedIndicesOrAliases,
+    public IndicesAccessControl authorize(String action, Iterable<String> requestedIndicesOrAliases,
                                           Map<String, IndexAbstraction> aliasAndIndexLookup,
                                           FieldPermissionsCache fieldPermissionsCache) {
         IndicesAccessControl indicesAccessControl =

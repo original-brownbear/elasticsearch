@@ -170,7 +170,7 @@ public final class IndicesPermission {
     /**
      * Authorizes the provided action against the provided indices, given the current cluster metadata
      */
-    public Map<String, IndicesAccessControl.IndexAccessControl> authorize(String action, Set<String> requestedIndicesOrAliases,
+    public Map<String, IndicesAccessControl.IndexAccessControl> authorize(String action, Iterable<String> requestedIndicesOrAliases,
                                                                           Map<String, IndexAbstraction> lookup,
                                                                           FieldPermissionsCache fieldPermissionsCache) {
         // now... every index that is associated with the request, must be granted
@@ -184,16 +184,19 @@ public final class IndicesPermission {
         for (String indexOrAlias : requestedIndicesOrAliases) {
             final boolean isBackingIndex;
             final boolean isDataStream;
-            final Set<String> concreteIndices = new HashSet<>();
+            final Set<String> concreteIndices;
             final IndexAbstraction indexAbstraction = lookup.get(indexOrAlias);
             if (indexAbstraction != null) {
-                for (IndexMetadata indexMetadata : indexAbstraction.getIndices()) {
+                final List<IndexMetadata> metas = indexAbstraction.getIndices();
+                concreteIndices = new HashSet<>(metas.size());
+                for (IndexMetadata indexMetadata : metas) {
                     concreteIndices.add(indexMetadata.getIndex().getName());
                 }
                 isBackingIndex = indexAbstraction.getType() == IndexAbstraction.Type.CONCRETE_INDEX &&
                         indexAbstraction.getParentDataStream() != null;
                 isDataStream = indexAbstraction.getType() == IndexAbstraction.Type.DATA_STREAM;
             } else {
+                concreteIndices = Collections.emptySet();
                 isBackingIndex = isDataStream = false;
             }
 
@@ -255,20 +258,16 @@ public final class IndicesPermission {
             if (false == granted && bwcGrantMappingUpdate) {
                 // the action is granted only due to the deprecated behaviour of certain privileges
                 granted = true;
-                bwcDeprecationLogActions.forEach(deprecationLogAction -> deprecationLogAction.run());
+                bwcDeprecationLogActions.forEach(Runnable::run);
             }
 
-            if (concreteIndices.isEmpty()) {
-                grantedBuilder.put(indexOrAlias, granted);
-            } else {
-                grantedBuilder.put(indexOrAlias, granted);
-                for (String concreteIndex : concreteIndices) {
-                    grantedBuilder.put(concreteIndex, granted);
-                }
+            grantedBuilder.put(indexOrAlias, granted);
+            for (String concreteIndex : concreteIndices) {
+                grantedBuilder.put(concreteIndex, granted);
             }
         }
 
-        Map<String, IndicesAccessControl.IndexAccessControl> indexPermissions = new HashMap<>();
+        Map<String, IndicesAccessControl.IndexAccessControl> indexPermissions = new HashMap<>(grantedBuilder.size());
         for (Map.Entry<String, Boolean> entry : grantedBuilder.entrySet()) {
             String index = entry.getKey();
             DocumentLevelPermissions permissions = roleQueriesByIndex.get(index);
@@ -401,12 +400,13 @@ public final class IndicesPermission {
             final StringMatcher nameMatcher = indexMatcher(ordinaryIndices, restrictedIndices);
             final StringMatcher bwcSpecialCaseMatcher = indexMatcher(grantMappingUpdatesOnIndices,
                     grantMappingUpdatesOnRestrictedIndices);
-            return indexAbstraction -> {
-                return nameMatcher.test(indexAbstraction.getName()) ||
-                        (indexAbstraction.getType() != IndexAbstraction.Type.DATA_STREAM &&
-                                (indexAbstraction.getParentDataStream() == null) &&
-                                bwcSpecialCaseMatcher.test(indexAbstraction.getName()));
-            };
+            if (bwcSpecialCaseMatcher == StringMatcher.MATCH_NOTHING) {
+                return indexAbstraction -> nameMatcher.test(indexAbstraction.getName());
+            }
+            return indexAbstraction -> nameMatcher.test(indexAbstraction.getName()) ||
+                    (indexAbstraction.getType() != IndexAbstraction.Type.DATA_STREAM &&
+                            (indexAbstraction.getParentDataStream() == null) &&
+                            bwcSpecialCaseMatcher.test(indexAbstraction.getName()));
         }
     }
 

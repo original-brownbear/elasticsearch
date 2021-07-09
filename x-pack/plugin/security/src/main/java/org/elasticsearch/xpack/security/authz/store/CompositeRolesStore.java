@@ -137,7 +137,7 @@ public class CompositeRolesStore {
             builder.setMaximumWeight(cacheSize);
         }
         this.roleCache = builder.build();
-        this.roleCacheHelper = new CacheIteratorHelper(roleCache);
+        this.roleCacheHelper = new CacheIteratorHelper<>(roleCache);
         this.threadContext = threadContext;
         CacheBuilder<String, Boolean> nlcBuilder = CacheBuilder.builder();
         final int nlcCacheSize = NEGATIVE_LOOKUP_CACHE_SIZE_SETTING.get(settings);
@@ -171,8 +171,7 @@ public class CompositeRolesStore {
                         logDeprecatedRoles(rolesRetrievalResult.roleDescriptors);
                         final boolean missingRoles = rolesRetrievalResult.getMissingRoles().isEmpty() == false;
                         if (missingRoles) {
-                            logger.debug(() -> new ParameterizedMessage("Could not find roles with names {}",
-                                    rolesRetrievalResult.getMissingRoles()));
+                            logger.debug("Could not find roles with names {}", rolesRetrievalResult.getMissingRoles());
                         }
                         final Set<RoleDescriptor> effectiveDescriptors;
                         Set<RoleDescriptor> roleDescriptors = rolesRetrievalResult.getRoleDescriptors();
@@ -184,11 +183,9 @@ public class CompositeRolesStore {
                         } else {
                             effectiveDescriptors = roleDescriptors;
                         }
-                        logger.trace(() -> new ParameterizedMessage("Exposing effective role descriptors [{}] for role names [{}]",
-                                effectiveDescriptors, roleNames));
+                        logger.trace("Exposing effective role descriptors [{}] for role names [{}]", effectiveDescriptors, roleNames);
                         effectiveRoleDescriptorsConsumer.accept(Collections.unmodifiableCollection(effectiveDescriptors));
-                        logger.trace(() -> new ParameterizedMessage("Building role from descriptors [{}] for role names [{}]",
-                                effectiveDescriptors, roleNames));
+                        logger.trace("Building role from descriptors [{}] for role names [{}]", effectiveDescriptors, roleNames);
                         buildThenMaybeCacheRole(roleKey, effectiveDescriptors, rolesRetrievalResult.getMissingRoles(),
                             rolesRetrievalResult.isSuccess(), invalidationCounter, roleActionListener);
                     },
@@ -235,7 +232,7 @@ public class CompositeRolesStore {
         } else if (ApiKeyService.isApiKeyAuthentication(authentication)) {
             getRolesForApiKey(authentication, roleActionListener);
         } else {
-            Set<String> roleNames = new HashSet<>(Arrays.asList(user.roles()));
+            Set<String> roleNames = newHashSet(user.roles());
             if (isAnonymousEnabled && anonymousUser.equals(user) == false) {
                 if (anonymousUser.roles().length == 0) {
                     throw new IllegalStateException("anonymous is only enabled when the anonymous user has roles");
@@ -370,14 +367,14 @@ public class CompositeRolesStore {
     }
 
     private void roleDescriptors(Set<String> roleNames, ActionListener<RolesRetrievalResult> rolesResultListener) {
-        final Set<String> filteredRoleNames = roleNames.stream().filter((s) -> {
-            if (negativeLookupCache.get(s) != null) {
-                logger.debug(() -> new ParameterizedMessage("Requested role [{}] does not exist (cached)", s));
-                return false;
+        final Set<String> filteredRoleNames = new HashSet<>(roleNames.size());
+        for (String roleName : roleNames) {
+            if (negativeLookupCache.get(roleName) != null) {
+                logger.debug("Requested role [{}] does not exist (cached)", roleName);
             } else {
-                return true;
+                filteredRoleNames.add(roleName);
             }
-        }).collect(Collectors.toSet());
+        }
 
         loadRoleDescriptorsAsync(filteredRoleNames, rolesResultListener);
     }
@@ -439,13 +436,13 @@ public class CompositeRolesStore {
         for (RoleDescriptor descriptor : roleDescriptors) {
             roleNames.add(descriptor.getName());
             if (descriptor.getClusterPrivileges() != null) {
-                clusterPrivileges.addAll(Arrays.asList(descriptor.getClusterPrivileges()));
+                Collections.addAll(clusterPrivileges, descriptor.getClusterPrivileges());
             }
             if (descriptor.getConditionalClusterPrivileges() != null) {
-                configurableClusterPrivileges.addAll(Arrays.asList(descriptor.getConditionalClusterPrivileges()));
+                Collections.addAll(configurableClusterPrivileges, descriptor.getConditionalClusterPrivileges());
             }
             if (descriptor.getRunAs() != null) {
-                runAs.addAll(Arrays.asList(descriptor.getRunAs()));
+                Collections.addAll(runAs, descriptor.getRunAs());
             }
             MergeableIndicesPrivilege.collatePrivilegesByIndices(descriptor.getIndicesPrivileges(), true, restrictedIndicesPrivilegesMap);
             MergeableIndicesPrivilege.collatePrivilegesByIndices(descriptor.getIndicesPrivileges(), false, indicesPrivilegesMap);
@@ -455,7 +452,7 @@ public class CompositeRolesStore {
                     if (v == null) {
                         return newHashSet(appPrivilege.getPrivileges());
                     } else {
-                        v.addAll(Arrays.asList(appPrivilege.getPrivileges()));
+                        Collections.addAll(v, appPrivilege.getPrivileges());
                         return v;
                     }
                 });
@@ -463,19 +460,21 @@ public class CompositeRolesStore {
         }
 
         final Privilege runAsPrivilege = runAs.isEmpty() ? Privilege.NONE : new Privilege(runAs, runAs.toArray(Strings.EMPTY_ARRAY));
-        final Role.Builder builder = Role.builder(roleNames.toArray(new String[roleNames.size()]))
+        final Role.Builder builder = Role.builder(roleNames.toArray(Strings.EMPTY_ARRAY))
                 .cluster(clusterPrivileges, configurableClusterPrivileges)
                 .runAs(runAsPrivilege);
-        indicesPrivilegesMap.entrySet().forEach((entry) -> {
-            MergeableIndicesPrivilege privilege = entry.getValue();
-            builder.add(fieldPermissionsCache.getFieldPermissions(privilege.fieldPermissionsDefinition), privilege.query,
-                    IndexPrivilege.get(privilege.privileges), false, privilege.indices.toArray(Strings.EMPTY_ARRAY));
-        });
-        restrictedIndicesPrivilegesMap.entrySet().forEach((entry) -> {
-            MergeableIndicesPrivilege privilege = entry.getValue();
-            builder.add(fieldPermissionsCache.getFieldPermissions(privilege.fieldPermissionsDefinition), privilege.query,
-                    IndexPrivilege.get(privilege.privileges), true, privilege.indices.toArray(Strings.EMPTY_ARRAY));
-        });
+        for (MergeableIndicesPrivilege value : indicesPrivilegesMap.values()) {
+            builder.add(
+                    fieldPermissionsCache.getFieldPermissions(value.fieldPermissionsDefinition), value.query,
+                    IndexPrivilege.get(value.privileges), false, value.indices.toArray(Strings.EMPTY_ARRAY)
+            );
+        }
+        for (MergeableIndicesPrivilege privilege : restrictedIndicesPrivilegesMap.values()) {
+            builder.add(
+                fieldPermissionsCache.getFieldPermissions(privilege.fieldPermissionsDefinition), privilege.query,
+                IndexPrivilege.get(privilege.privileges), true, privilege.indices.toArray(Strings.EMPTY_ARRAY)
+            );
+        }
 
         if (applicationPrivilegesMap.isEmpty()) {
             listener.onResponse(builder.build());
@@ -544,8 +543,8 @@ public class CompositeRolesStore {
      * A mutable class that can be used to represent the combination of one or more {@link IndicesPrivileges}
      */
     private static class MergeableIndicesPrivilege {
-        private Set<String> indices;
-        private Set<String> privileges;
+        private final Set<String> indices;
+        private final Set<String> privileges;
         private FieldPermissionsDefinition fieldPermissionsDefinition;
         private Set<BytesReference> query = null;
 
