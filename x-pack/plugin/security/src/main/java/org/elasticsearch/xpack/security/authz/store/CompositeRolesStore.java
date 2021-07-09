@@ -137,7 +137,7 @@ public class CompositeRolesStore {
             builder.setMaximumWeight(cacheSize);
         }
         this.roleCache = builder.build();
-        this.roleCacheHelper = new CacheIteratorHelper(roleCache);
+        this.roleCacheHelper = new CacheIteratorHelper<>(roleCache);
         this.threadContext = threadContext;
         CacheBuilder<String, Boolean> nlcBuilder = CacheBuilder.builder();
         final int nlcCacheSize = NEGATIVE_LOOKUP_CACHE_SIZE_SETTING.get(settings);
@@ -463,19 +463,14 @@ public class CompositeRolesStore {
         }
 
         final Privilege runAsPrivilege = runAs.isEmpty() ? Privilege.NONE : new Privilege(runAs, runAs.toArray(Strings.EMPTY_ARRAY));
-        final Role.Builder builder = Role.builder(roleNames.toArray(new String[roleNames.size()]))
+        final Role.Builder builder = Role.builder(roleNames.toArray(Strings.EMPTY_ARRAY))
                 .cluster(clusterPrivileges, configurableClusterPrivileges)
                 .runAs(runAsPrivilege);
-        indicesPrivilegesMap.entrySet().forEach((entry) -> {
-            MergeableIndicesPrivilege privilege = entry.getValue();
-            builder.add(fieldPermissionsCache.getFieldPermissions(privilege.fieldPermissionsDefinition), privilege.query,
-                    IndexPrivilege.get(privilege.privileges), false, privilege.indices.toArray(Strings.EMPTY_ARRAY));
-        });
-        restrictedIndicesPrivilegesMap.entrySet().forEach((entry) -> {
-            MergeableIndicesPrivilege privilege = entry.getValue();
-            builder.add(fieldPermissionsCache.getFieldPermissions(privilege.fieldPermissionsDefinition), privilege.query,
-                    IndexPrivilege.get(privilege.privileges), true, privilege.indices.toArray(Strings.EMPTY_ARRAY));
-        });
+        indicesPrivilegesMap.forEach((key, privilege) -> builder.add(fieldPermissionsCache.getFieldPermissions(privilege.fieldPermissionsDefinition), privilege.query,
+                IndexPrivilege.get(privilege.privileges), false, privilege.indices.toArray(Strings.EMPTY_ARRAY)));
+        restrictedIndicesPrivilegesMap.forEach((key, privilege) -> builder.add(
+                fieldPermissionsCache.getFieldPermissions(privilege.fieldPermissionsDefinition), privilege.query,
+                IndexPrivilege.get(privilege.privileges), true, privilege.indices.toArray(Strings.EMPTY_ARRAY)));
 
         if (applicationPrivilegesMap.isEmpty()) {
             listener.onResponse(builder.build());
@@ -544,8 +539,8 @@ public class CompositeRolesStore {
      * A mutable class that can be used to represent the combination of one or more {@link IndicesPrivileges}
      */
     private static class MergeableIndicesPrivilege {
-        private Set<String> indices;
-        private Set<String> privileges;
+        private final Set<String> indices;
+        private final Set<String> privileges;
         private FieldPermissionsDefinition fieldPermissionsDefinition;
         private Set<BytesReference> query = null;
 

@@ -191,8 +191,8 @@ public class Role {
         private final String[] names;
         private ClusterPermission cluster = ClusterPermission.NONE;
         private RunAsPermission runAs = RunAsPermission.NONE;
-        private List<IndicesPermission.Group> groups = new ArrayList<>();
-        private List<Tuple<ApplicationPrivilege, Set<String>>> applicationPrivs = new ArrayList<>();
+        private final List<IndicesPermission.Group> groups = new ArrayList<>();
+        private final List<Tuple<ApplicationPrivilege, Set<String>>> applicationPrivs = new ArrayList<>();
 
         private Builder(String[] names) {
             this.names = names;

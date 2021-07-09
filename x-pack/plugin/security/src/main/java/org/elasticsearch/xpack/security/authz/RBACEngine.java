@@ -243,7 +243,6 @@ public class RBACEngine implements AuthorizationEngine {
                                      ActionListener<IndexAuthorizationResult> listener) {
         final String action = requestInfo.getAction();
         final TransportRequest request = requestInfo.getRequest();
-        final Authentication authentication = requestInfo.getAuthentication();
         if (TransportActionProxy.isProxyAction(action) || shouldAuthorizeIndexActionNameOnly(action, request)) {
             // we've already validated that the request is a proxy request so we can skip that but we still
             // need to validate that the action is allowed and then move on
@@ -316,7 +315,7 @@ public class RBACEngine implements AuthorizationEngine {
                     // check action name
                     authorizeIndexActionName(action, authorizationInfo, IndicesAccessControl.ALLOW_NO_INDICES, listener);
                 } else {
-                    buildIndicesAccessControl(authentication, action, authorizationInfo,
+                    buildIndicesAccessControl(action, authorizationInfo,
                         Sets.newHashSet(resolvedIndices.getLocal()), aliasOrIndexLookup, listener);
                 }
             }, listener::onFailure));
@@ -332,7 +331,7 @@ public class RBACEngine implements AuthorizationEngine {
                             if (resolvedIndices.isNoIndicesPlaceholder()) {
                                 listener.onResponse(new IndexAuthorizationResult(true, IndicesAccessControl.ALLOW_NO_INDICES));
                             } else {
-                                buildIndicesAccessControl(authentication, action, authorizationInfo,
+                                buildIndicesAccessControl(action, authorizationInfo,
                                     Sets.newHashSet(resolvedIndices.getLocal()), aliasOrIndexLookup, listener);
                             }
                         }, listener::onFailure));
@@ -558,7 +557,7 @@ public class RBACEngine implements AuthorizationEngine {
         return Collections.unmodifiableSet(indicesAndAliases);
     }
 
-    private void buildIndicesAccessControl(Authentication authentication, String action,
+    private void buildIndicesAccessControl(String action,
                                            AuthorizationInfo authorizationInfo, Set<String> indices,
                                            Map<String, IndexAbstraction> aliasAndIndexLookup,
                                            ActionListener<IndexAuthorizationResult> listener) {
