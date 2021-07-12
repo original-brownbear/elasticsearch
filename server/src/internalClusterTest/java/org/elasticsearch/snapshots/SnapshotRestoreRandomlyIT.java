@@ -10,16 +10,17 @@ package org.elasticsearch.snapshots;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.ElasticsearchTimeoutException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.StepListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequestBuilder;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Priority;
@@ -43,9 +44,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
+import static org.hamcrest.Matchers.equalTo;
 
 public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
 
@@ -58,7 +61,7 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
 
         trackedCluster.stop();
 
-        disableRepoConsistencyCheck("have not written to all repositories");
+        disableRepoConsistencyCheck("have not necessarily written to all repositories");
     }
 
     static class TrackedCluster {
@@ -74,6 +77,8 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
         private final Map<String, TrackedNode> nodes = ConcurrentCollections.newConcurrentMap();
         private final Map<String, TrackedRepository> repositories = ConcurrentCollections.newConcurrentMap();
         private final Map<String, TrackedIndex> indices = ConcurrentCollections.newConcurrentMap();
+
+        private final AtomicInteger snapshotCounter = new AtomicInteger();
 
         TrackedCluster(InternalTestCluster cluster) {
             this.cluster = cluster;
@@ -92,7 +97,6 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                 final String indexName = "index-" + i;
                 indices.put(indexName, new TrackedIndex(indexName));
             }
-
         }
 
         void start() {
@@ -107,6 +111,170 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
             for (TrackedRepository trackedRepository : repositories.values()) {
                 trackedRepository.start();
             }
+
+            final int snapshotterCount = between(1, 5);
+            for (int i = 0; i < snapshotterCount; i++) {
+                startSnapshotter();
+            }
+
+        }
+
+        private void startSnapshotter() {
+            threadPool.scheduleUnlessShuttingDown(TimeValue.timeValueMillis(between(1, 500)), CLIENT, mustSucceed(() -> {
+                final List<Releasable> localReleasables = new ArrayList<>();
+
+                try {
+                    final Releasable nodeRestartBlock = blockNodeRestarts();
+                    if (nodeRestartBlock == null) {
+                        startSnapshotter();
+                        return;
+                    }
+                    localReleasables.add(nodeRestartBlock);
+
+                    final TrackedRepository trackedRepository = randomFrom(repositories.values());
+                    final Semaphore repositoryPermits = trackedRepository.permits;
+                    if (repositoryPermits.tryAcquire() == false) {
+                        startSnapshotter();
+                        return;
+                    }
+                    localReleasables.add(Releasables.releaseOnce(repositoryPermits::release));
+
+                    boolean snapshotSpecificIndicesTmp = randomBoolean();
+                    final List<String> targetIndexNames = new ArrayList<>(indices.size());
+                    for (TrackedIndex trackedIndex : indices.values()) {
+                        final Semaphore indexPermits = trackedIndex.permits;
+                        if (usually() && indexPermits.tryAcquire()) {
+                            targetIndexNames.add(trackedIndex.indexName);
+                            localReleasables.add(Releasables.releaseOnce(indexPermits::release));
+                        } else {
+                            snapshotSpecificIndicesTmp = true;
+                        }
+                    }
+                    final boolean snapshotSpecificIndices = snapshotSpecificIndicesTmp;
+
+                    final Releasable[] finalReleasables = localReleasables.toArray(new Releasable[0]);
+                    final Releasable releaseAll = () -> Releasables.close(finalReleasables);
+
+                    final StepListener<ClusterHealthResponse> ensureYellowStep = new StepListener<>();
+
+                    final String snapshotName = "snapshot-" + snapshotCounter.incrementAndGet();
+
+                    logger.info(
+                        "--> waiting for yellow health of [{}] before creating snapshot [{}:{}]",
+                        targetIndexNames,
+                        trackedRepository.repositoryName,
+                        snapshotName);
+
+                    client().admin().cluster().prepareHealth(targetIndexNames.toArray(new String[0]))
+                        .setWaitForEvents(Priority.LANGUID)
+                        .setWaitForYellowStatus()
+                        .setWaitForNodes(Integer.toString(internalCluster().getNodeNames().length))
+                        .execute(ensureYellowStep);
+
+                    ensureYellowStep.whenComplete(clusterHealthResponse -> {
+                        Releasable localReleasable = releaseAll;
+
+                        try {
+                            assertFalse("timed out waiting for yellow state of " + targetIndexNames, clusterHealthResponse.isTimedOut());
+
+                            logger.info(
+                                "--> take snapshot [{}:{}] with indices [{}{}]",
+                                trackedRepository.repositoryName,
+                                snapshotName,
+                                snapshotSpecificIndices ? "*=" : "",
+                                targetIndexNames);
+
+                            final CreateSnapshotRequestBuilder createSnapshotRequestBuilder
+                                = client().admin().cluster().prepareCreateSnapshot(trackedRepository.repositoryName, snapshotName);
+
+                            if (snapshotSpecificIndices) {
+                                createSnapshotRequestBuilder.setIndices(targetIndexNames.toArray(new String[0]));
+                            }
+
+                            if (randomBoolean()) {
+                                createSnapshotRequestBuilder.setWaitForCompletion(true);
+                                createSnapshotRequestBuilder.execute(new ActionListener<>() {
+                                    @Override
+                                    public void onResponse(CreateSnapshotResponse createSnapshotResponse) {
+                                        logger.info("--> completed snapshot [{}:{}]", trackedRepository.repositoryName, snapshotName);
+                                        assertThat(createSnapshotResponse.getSnapshotInfo().state(), equalTo(SnapshotState.SUCCESS));
+                                        Releasables.close(releaseAll);
+                                        startSnapshotter();
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        Releasables.close(releaseAll);
+                                        throw new AssertionError(e);
+                                    }
+                                });
+                            } else {
+                                createSnapshotRequestBuilder.execute(new ActionListener<>() {
+                                    @Override
+                                    public void onResponse(CreateSnapshotResponse createSnapshotResponse) {
+                                        logger.info("--> started snapshot [{}:{}]", trackedRepository.repositoryName, snapshotName);
+                                        pollForSnapshotCompletion(
+                                            trackedRepository.repositoryName,
+                                            snapshotName,
+                                            releaseAll,
+                                            TrackedCluster.this::startSnapshotter);
+                                    }
+
+                                    @Override
+                                    public void onFailure(Exception e) {
+                                        Releasables.close(releaseAll);
+                                        throw new AssertionError(e);
+                                    }
+                                });
+                            }
+
+                            localReleasable = null;
+                        } finally {
+                            Releasables.close(localReleasable);
+                        }
+                    }, e -> {
+                        Releasables.close(releaseAll);
+                        throw new AssertionError(e);
+                    });
+
+                    localReleasables.clear();
+                } finally {
+                    Releasables.close(localReleasables);
+                }
+            }));
+        }
+
+        private void pollForSnapshotCompletion(String repositoryName, String snapshotName, Releasable onCompletion, Runnable onSuccess) {
+            threadPool.executor(CLIENT).execute(mustSucceed(() -> {
+                Releasable localReleasable = onCompletion;
+                try {
+                    client().admin().cluster().prepareGetSnapshots(repositoryName).setCurrentSnapshot().execute(new ActionListener<>() {
+                        @Override
+                        public void onResponse(GetSnapshotsResponse getSnapshotsResponse) {
+                            if (getSnapshotsResponse.getSnapshots().stream()
+                                .noneMatch(snapshotInfo -> snapshotInfo.snapshotId().getName().equals(snapshotName))) {
+
+                                logger.info("--> snapshot [{}:{}] no longer running", repositoryName, snapshotName);
+                                Releasables.close(onCompletion);
+                                onSuccess.run();
+                            } else {
+                                pollForSnapshotCompletion(repositoryName, snapshotName, onCompletion, onSuccess);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Releasables.close(onCompletion);
+                            throw new AssertionError(e);
+                        }
+                    });
+
+                    localReleasable = null;
+                } finally {
+                    Releasables.close(localReleasable);
+                }
+            }));
+
         }
 
         void stop() {
@@ -376,6 +544,12 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                             final StepListener<BulkResponse> bulkStep = new StepListener<>();
 
                             ensureYellowStep.whenComplete(clusterHealthResponse -> {
+
+                                if (clusterHealthResponse.isTimedOut()) {
+                                    Releasables.close(releaseAll);
+                                    throw new AssertionError("timed out waiting for yellow state of [" + indexName + "]");
+                                }
+
                                 final int docCount = between(1, 1000);
                                 final BulkRequestBuilder bulkRequestBuilder = client().prepareBulk(indexName);
 
