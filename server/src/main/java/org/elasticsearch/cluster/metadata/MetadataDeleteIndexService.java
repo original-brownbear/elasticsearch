@@ -16,13 +16,11 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.cluster.AckedClusterStateUpdateTask;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.RestoreInProgress;
-import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.cluster.block.ClusterBlocks;
 import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Priority;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
@@ -95,9 +93,8 @@ public class MetadataDeleteIndexService {
         // Check if index deletion conflicts with any running snapshots
         Set<Index> snapshottingIndices = SnapshotsService.snapshottingIndices(currentState, indicesToDelete);
         if (snapshottingIndices.isEmpty() == false) {
-            final SnapshotsInProgress snapshotsInProgress = currentState.custom(SnapshotsInProgress.TYPE); // nocommit
             throw new SnapshotInProgressException("Cannot delete indices that are being snapshotted: " + snapshottingIndices +
-                ". Try again after snapshot finishes or cancel the currently running snapshot.\n" + Strings.toString(snapshotsInProgress));
+                ". Try again after snapshot finishes or cancel the currently running snapshot.");
         }
 
         RoutingTable.Builder routingTableBuilder = RoutingTable.builder(currentState.routingTable());
