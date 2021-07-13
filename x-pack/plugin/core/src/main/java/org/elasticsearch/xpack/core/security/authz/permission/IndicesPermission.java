@@ -305,7 +305,12 @@ public final class IndicesPermission {
     }
 
     private static boolean containsPrivilegeThatGrantsMappingUpdatesForBwc(Group group) {
-        return group.privilege().name().stream().anyMatch(PRIVILEGE_NAME_SET_BWC_ALLOW_MAPPING_UPDATE::contains);
+        for (String s : group.privilege().name()) {
+            if (PRIVILEGE_NAME_SET_BWC_ALLOW_MAPPING_UPDATE.contains(s)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static class Group {

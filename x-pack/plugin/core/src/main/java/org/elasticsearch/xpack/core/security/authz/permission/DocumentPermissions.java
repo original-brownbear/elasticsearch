@@ -53,7 +53,7 @@ public final class DocumentPermissions implements CacheKey {
     private List<String> evaluatedLimitedByQueries;
 
 
-    private static DocumentPermissions ALLOW_ALL = new DocumentPermissions();
+    private static final DocumentPermissions ALLOW_ALL = new DocumentPermissions();
 
     DocumentPermissions() {
         this.queries = null;

@@ -13,7 +13,6 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.util.automaton.Automaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.CompositeIndicesRequest;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
@@ -23,6 +22,7 @@ import org.elasticsearch.action.delete.DeleteAction;
 import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.index.IndexAction;
 import org.elasticsearch.action.search.ClearScrollAction;
+import org.elasticsearch.action.search.ClosePointInTimeAction;
 import org.elasticsearch.action.search.MultiSearchAction;
 import org.elasticsearch.action.search.SearchScrollAction;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -38,7 +38,6 @@ import org.elasticsearch.transport.TransportActionProxy;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.xpack.core.async.DeleteAsyncResultAction;
 import org.elasticsearch.xpack.core.eql.EqlAsyncActionNames;
-import org.elasticsearch.action.search.ClosePointInTimeAction;
 import org.elasticsearch.xpack.core.search.action.GetAsyncSearchAction;
 import org.elasticsearch.xpack.core.search.action.SubmitAsyncSearchAction;
 import org.elasticsearch.xpack.core.security.action.GetApiKeyAction;
@@ -58,7 +57,6 @@ import org.elasticsearch.xpack.core.security.authc.esnative.NativeRealmSettings;
 import org.elasticsearch.xpack.core.security.authz.AuthorizationEngine;
 import org.elasticsearch.xpack.core.security.authz.ResolvedIndices;
 import org.elasticsearch.xpack.core.security.authz.RoleDescriptor;
-import org.elasticsearch.xpack.core.security.authz.accesscontrol.IndicesAccessControl;
 import org.elasticsearch.xpack.core.security.authz.permission.FieldPermissionsCache;
 import org.elasticsearch.xpack.core.security.authz.permission.FieldPermissionsDefinition;
 import org.elasticsearch.xpack.core.security.authz.permission.IndicesPermission;
@@ -138,7 +136,9 @@ public class RBACEngine implements AuthorizationEngine {
         if (authorizationInfo instanceof RBACAuthorizationInfo) {
             final Role role = ((RBACAuthorizationInfo) authorizationInfo).getAuthenticatedUserAuthorizationInfo().getRole();
             listener.onResponse(
-                new AuthorizationResult(role.checkRunAs(requestInfo.getAuthentication().getUser().principal())));
+                role.checkRunAs(requestInfo.getAuthentication().getUser().principal())
+                    ? AuthorizationResult.granted() : AuthorizationResult.deny()
+            );
         } else {
             listener.onFailure(new IllegalArgumentException("unsupported authorization info:" +
                 authorizationInfo.getClass().getSimpleName()));
@@ -243,11 +243,19 @@ public class RBACEngine implements AuthorizationEngine {
                                      ActionListener<IndexAuthorizationResult> listener) {
         final String action = requestInfo.getAction();
         final TransportRequest request = requestInfo.getRequest();
-        final Authentication authentication = requestInfo.getAuthentication();
+        final RBACAuthorizationInfo rbacAuthorizationInfo;
+        if (authorizationInfo instanceof RBACAuthorizationInfo) {
+            rbacAuthorizationInfo = (RBACAuthorizationInfo) authorizationInfo;
+        } else {
+            listener.onFailure(new IllegalArgumentException("unsupported authorization info:" +
+                authorizationInfo.getClass().getSimpleName()));
+            return;
+        }
+        final Role role = rbacAuthorizationInfo.getRole();
         if (TransportActionProxy.isProxyAction(action) || shouldAuthorizeIndexActionNameOnly(action, request)) {
             // we've already validated that the request is a proxy request so we can skip that but we still
             // need to validate that the action is allowed and then move on
-            authorizeIndexActionName(action, authorizationInfo, null, listener);
+            listener.onResponse(role.checkIndicesAction(action) ? IndexAuthorizationResult.NULL : IndexAuthorizationResult.DENIED);
         } else if (request instanceof IndicesRequest == false && request instanceof IndicesAliasesRequest == false) {
             if (isScrollRelatedAction(action)) {
                 // scroll is special
@@ -265,16 +273,16 @@ public class RBACEngine implements AuthorizationEngine {
                 // index and if they cannot, we can fail the request early before we allow the execution of the action and in
                 // turn the shard actions
                 if (SearchScrollAction.NAME.equals(action)) {
-                    ActionRunnable.supply(
-                        ActionListener.wrap(parsedScrollId -> {
-                            if (parsedScrollId.hasLocalIndices()) {
-                                authorizeIndexActionName(action, authorizationInfo, null, listener);
-                            } else {
-                                listener.onResponse(new IndexAuthorizationResult(true, null));
-                            }
-                        }, listener::onFailure),
-                        ((SearchScrollRequest) request)::parseScrollId
-                    ).run();
+                    try {
+                        if (((SearchScrollRequest) request).parseScrollId().hasLocalIndices()) {
+                            listener.onResponse(
+                                role.checkIndicesAction(action) ? IndexAuthorizationResult.NULL : IndexAuthorizationResult.DENIED);
+                        } else {
+                            listener.onResponse(IndexAuthorizationResult.NULL);
+                        }
+                    } catch (Exception e) {
+                        listener.onFailure(e);
+                    }
                 } else {
                     // RBACEngine simply authorizes scroll related actions without filling in any DLS/FLS permissions.
                     // Scroll related actions have special security logic, where the security context of the initial search
@@ -284,21 +292,21 @@ public class RBACEngine implements AuthorizationEngine {
                     // The DLS/FLS permissions are used inside the {@code DirectoryReader} that {@code SecurityIndexReaderWrapper}
                     // built while handling the initial search request. In addition, for consistency, the DLS/FLS permissions from
                     // the originating search request are attached to the thread context upon validating the scroll.
-                    listener.onResponse(new IndexAuthorizationResult(true, null));
+                    listener.onResponse(IndexAuthorizationResult.NULL);
                 }
             } else if (isAsyncRelatedAction(action)) {
                 if (SubmitAsyncSearchAction.NAME.equals(action)) {
                     // authorize submit async search but don't fill in the DLS/FLS permissions
                     // the `null` IndicesAccessControl parameter indicates that this action has *not* determined
                     // which DLS/FLS controls should be applied to this action
-                    listener.onResponse(new IndexAuthorizationResult(true, null));
+                    listener.onResponse(IndexAuthorizationResult.NULL);
                 } else {
                     // async-search actions other than submit have a custom security layer that checks if the current user is
                     // the same as the user that submitted the original request so no additional checks are needed here.
-                    listener.onResponse(new IndexAuthorizationResult(true, IndicesAccessControl.ALLOW_NO_INDICES));
+                    listener.onResponse(IndexAuthorizationResult.ALLOW_NO_INDICES);
                 }
             } else if (action.equals(ClosePointInTimeAction.NAME)) {
-                    listener.onResponse(new IndexAuthorizationResult(true, IndicesAccessControl.ALLOW_NO_INDICES));
+                    listener.onResponse(IndexAuthorizationResult.ALLOW_NO_INDICES);
             } else {
                 assert false : "only scroll and async-search related requests are known indices api that don't " +
                     "support retrieving the indices they relate to";
@@ -314,47 +322,34 @@ public class RBACEngine implements AuthorizationEngine {
                 //'-*' matches no indices so we allow the request to go through, which will yield an empty response
                 if (resolvedIndices.isNoIndicesPlaceholder()) {
                     // check action name
-                    authorizeIndexActionName(action, authorizationInfo, IndicesAccessControl.ALLOW_NO_INDICES, listener);
+                    listener.onResponse(
+                        role.checkIndicesAction(action) ? IndexAuthorizationResult.ALLOW_NO_INDICES : IndexAuthorizationResult.DENIED);
                 } else {
-                    buildIndicesAccessControl(authentication, action, authorizationInfo,
-                        Sets.newHashSet(resolvedIndices.getLocal()), aliasOrIndexLookup, listener);
+                    listener.onResponse(buildIndicesAccessControl(action, role, resolvedIndices, aliasOrIndexLookup));
                 }
             }, listener::onFailure));
         } else {
-            authorizeIndexActionName(action, authorizationInfo, IndicesAccessControl.ALLOW_NO_INDICES,
-                ActionListener.wrap(indexAuthorizationResult -> {
-                    if (indexAuthorizationResult.isGranted()) {
-                        indicesAsyncSupplier.getAsync(ActionListener.wrap(resolvedIndices -> {
-                            assert resolvedIndices.isEmpty() == false
+            try {
+                final IndexAuthorizationResult indexAuthorizationResult =
+                        role.checkIndicesAction(action) ? IndexAuthorizationResult.ALLOW_NO_INDICES : IndexAuthorizationResult.DENIED;
+                if (indexAuthorizationResult.isGranted()) {
+                    indicesAsyncSupplier.getAsync(ActionListener.wrap(resolvedIndices -> {
+                        assert resolvedIndices.isEmpty() == false
                                 : "every indices request needs to have its indices set thus the resolved indices must not be empty";
-                            //all wildcard expressions have been resolved and only the security plugin could have set '-*' here.
-                            //'-*' matches no indices so we allow the request to go through, which will yield an empty response
-                            if (resolvedIndices.isNoIndicesPlaceholder()) {
-                                listener.onResponse(new IndexAuthorizationResult(true, IndicesAccessControl.ALLOW_NO_INDICES));
-                            } else {
-                                buildIndicesAccessControl(authentication, action, authorizationInfo,
-                                    Sets.newHashSet(resolvedIndices.getLocal()), aliasOrIndexLookup, listener);
-                            }
-                        }, listener::onFailure));
-                    } else {
-                        listener.onResponse(indexAuthorizationResult);
-                    }
-                }, listener::onFailure));
-        }
-    }
-
-    private void authorizeIndexActionName(String action, AuthorizationInfo authorizationInfo, IndicesAccessControl grantedValue,
-                                          ActionListener<IndexAuthorizationResult> listener) {
-        if (authorizationInfo instanceof RBACAuthorizationInfo) {
-            final Role role = ((RBACAuthorizationInfo) authorizationInfo).getRole();
-            if (role.checkIndicesAction(action)) {
-                listener.onResponse(new IndexAuthorizationResult(true, grantedValue));
-            } else {
-                listener.onResponse(new IndexAuthorizationResult(true, IndicesAccessControl.DENIED));
+                        //all wildcard expressions have been resolved and only the security plugin could have set '-*' here.
+                        //'-*' matches no indices so we allow the request to go through, which will yield an empty response
+                        if (resolvedIndices.isNoIndicesPlaceholder()) {
+                            listener.onResponse(IndexAuthorizationResult.ALLOW_NO_INDICES);
+                        } else {
+                            listener.onResponse(buildIndicesAccessControl(action, role, resolvedIndices, aliasOrIndexLookup));
+                        }
+                    }, listener::onFailure));
+                } else {
+                    listener.onResponse(indexAuthorizationResult);
+                }
+            } catch (Exception e) {
+                listener.onFailure(e);
             }
-        } else {
-            listener.onFailure(new IllegalArgumentException("unsupported authorization info:" +
-                authorizationInfo.getClass().getSimpleName()));
         }
     }
 
@@ -558,18 +553,14 @@ public class RBACEngine implements AuthorizationEngine {
         return Collections.unmodifiableSet(indicesAndAliases);
     }
 
-    private void buildIndicesAccessControl(Authentication authentication, String action,
-                                           AuthorizationInfo authorizationInfo, Set<String> indices,
-                                           Map<String, IndexAbstraction> aliasAndIndexLookup,
-                                           ActionListener<IndexAuthorizationResult> listener) {
-        if (authorizationInfo instanceof RBACAuthorizationInfo) {
-            final Role role = ((RBACAuthorizationInfo) authorizationInfo).getRole();
-            final IndicesAccessControl accessControl = role.authorize(action, indices, aliasAndIndexLookup, fieldPermissionsCache);
-            listener.onResponse(new IndexAuthorizationResult(true, accessControl));
-        } else {
-            listener.onFailure(new IllegalArgumentException("unsupported authorization info:" +
-                authorizationInfo.getClass().getSimpleName()));
-        }
+    private IndexAuthorizationResult buildIndicesAccessControl(String action,
+                                                               Role role,
+                                                               ResolvedIndices indices,
+                                                               Map<String, IndexAbstraction> aliasAndIndexLookup) {
+        return new IndexAuthorizationResult(
+            true,
+            role.authorize(action, Sets.newHashSet(indices.getLocal()), aliasAndIndexLookup, fieldPermissionsCache)
+        );
     }
 
     private static boolean checkChangePasswordAction(Authentication authentication) {

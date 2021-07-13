@@ -91,7 +91,7 @@ public class CustomAuthorizationEngine implements AuthorizationEngine {
                 listener.onResponse(new IndexAuthorizationResult(true, indicesAccessControl));
             }, listener::onFailure));
         } else {
-            listener.onResponse(new IndexAuthorizationResult(true, IndicesAccessControl.DENIED));
+            listener.onResponse(IndexAuthorizationResult.DENIED);
         }
     }
 

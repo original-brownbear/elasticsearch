@@ -273,13 +273,17 @@ public interface AuthorizationEngine {
      */
     class AuthorizationResult {
 
+        private static final AuthorizationResult GRANTED = new AuthorizationResult(true);
+
+        private static final AuthorizationResult DENIED = new AuthorizationResult(false);
+
         private final boolean granted;
         private final boolean auditable;
 
         /**
          * Create an authorization result with the provided granted value that is auditable
          */
-        public AuthorizationResult(boolean granted) {
+        private AuthorizationResult(boolean granted) {
             this(granted, true);
         }
 
@@ -308,14 +312,14 @@ public interface AuthorizationEngine {
          * Returns a new authorization result that is granted and auditable
          */
         public static AuthorizationResult granted() {
-            return new AuthorizationResult(true);
+            return GRANTED;
         }
 
         /**
          * Returns a new authorization result that is denied and auditable
          */
         public static AuthorizationResult deny() {
-            return new AuthorizationResult(false);
+            return DENIED;
         }
     }
 
@@ -324,7 +328,15 @@ public interface AuthorizationEngine {
      * need to return a {@link IndicesAccessControl} object representing the users permissions to indices
      * that are being operated on.
      */
-    class IndexAuthorizationResult extends AuthorizationResult {
+    final class IndexAuthorizationResult extends AuthorizationResult {
+
+        public static final IndexAuthorizationResult DENIED = new IndexAuthorizationResult(true, IndicesAccessControl.DENIED);
+
+        public static final IndexAuthorizationResult ALLOW_NO_INDICES =
+            new IndexAuthorizationResult(true, IndicesAccessControl.ALLOW_NO_INDICES);
+
+        public static final IndexAuthorizationResult NULL =
+            new IndexAuthorizationResult(true, null);
 
         private final IndicesAccessControl indicesAccessControl;
 
