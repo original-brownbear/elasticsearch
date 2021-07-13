@@ -49,6 +49,7 @@ import java.util.function.Consumer;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.sameInstance;
 
 public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
 
@@ -77,6 +78,7 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
         private final Map<String, TrackedNode> nodes = ConcurrentCollections.newConcurrentMap();
         private final Map<String, TrackedRepository> repositories = ConcurrentCollections.newConcurrentMap();
         private final Map<String, TrackedIndex> indices = ConcurrentCollections.newConcurrentMap();
+        private final Map<String, TrackedSnapshot> snapshots = ConcurrentCollections.newConcurrentMap();
 
         private final AtomicInteger snapshotCounter = new AtomicInteger();
 
@@ -117,6 +119,173 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                 startSnapshotter();
             }
 
+            final int clonerCount = between(0, 5);
+            for (int i = 0; i < clonerCount; i++) {
+                startCloner();
+            }
+
+            final int deleterCount = between(0, 3);
+            for (int i = 0; i < deleterCount; i++) {
+                startSnapshotDeleter();
+            }
+        }
+
+        private void startCloner() {
+            threadPool.scheduleUnlessShuttingDown(TimeValue.timeValueMillis(between(1, 500)), CLIENT, mustSucceed(() -> {
+                final List<Releasable> localReleasables = new ArrayList<>();
+
+                try {
+                    final List<TrackedSnapshot> trackedSnapshots = new ArrayList<>(snapshots.values());
+                    if (trackedSnapshots.isEmpty()) {
+                        startCloner();
+                        return;
+                    }
+
+                    final Releasable nodeRestartBlock = blockNodeRestarts();
+                    if (nodeRestartBlock == null) {
+                        startCloner();
+                        return;
+                    }
+                    localReleasables.add(nodeRestartBlock);
+
+                    final TrackedSnapshot trackedSnapshot = randomFrom(trackedSnapshots);
+                    final Semaphore repositoryPermits = trackedSnapshot.trackedRepository.permits;
+                    if (repositoryPermits.tryAcquire() == false) {
+                        startCloner();
+                        return;
+                    }
+                    localReleasables.add(Releasables.releaseOnce(repositoryPermits::release));
+
+                    final Semaphore snapshotPermits = trackedSnapshot.permits;
+                    if (snapshotPermits.tryAcquire() == false) {
+                        startCloner();
+                        return;
+                    }
+                    localReleasables.add(Releasables.releaseOnce(snapshotPermits::release));
+
+                    if (snapshots.get(trackedSnapshot.snapshotName) != trackedSnapshot) {
+                        // concurrently removed
+                        startCloner();
+                        return;
+                    }
+
+                    final Releasable[] finalReleasables = localReleasables.toArray(new Releasable[0]);
+                    final Releasable releaseAll = () -> Releasables.close(finalReleasables);
+
+                    final String cloneName = "snapshot-clone-" + snapshotCounter.incrementAndGet();
+
+                    logger.info(
+                        "--> starting clone of [{}:{}] as [{}:{}]",
+                        trackedSnapshot.trackedRepository.repositoryName,
+                        trackedSnapshot.snapshotName,
+                        trackedSnapshot.trackedRepository.repositoryName,
+                        cloneName);
+
+                    client().admin().cluster().prepareCloneSnapshot(
+                        trackedSnapshot.trackedRepository.repositoryName,
+                        trackedSnapshot.snapshotName,
+                        cloneName).setIndices("*").execute(new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                            assertTrue(acknowledgedResponse.isAcknowledged());
+                            logger.info(
+                                "--> completed clone of [{}:{}] as [{}:{}]",
+                                trackedSnapshot.trackedRepository.repositoryName,
+                                trackedSnapshot.snapshotName,
+                                trackedSnapshot.trackedRepository.repositoryName,
+                                cloneName);
+                            startCloner();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Releasables.close(releaseAll);
+                            throw new AssertionError("unexpected", e);
+                        }
+                    });
+
+                    localReleasables.clear();
+                } finally {
+                    Releasables.close(localReleasables);
+                }
+            }));
+        }
+
+        private void startSnapshotDeleter() {
+            threadPool.scheduleUnlessShuttingDown(TimeValue.timeValueMillis(between(1, 500)), CLIENT, mustSucceed(() -> {
+                final List<Releasable> localReleasables = new ArrayList<>();
+
+                try {
+                    final List<TrackedSnapshot> trackedSnapshots = new ArrayList<>(snapshots.values());
+                    if (trackedSnapshots.isEmpty()) {
+                        startCloner();
+                        return;
+                    }
+
+                    final Releasable nodeRestartBlock = blockNodeRestarts();
+                    if (nodeRestartBlock == null) {
+                        startSnapshotDeleter();
+                        return;
+                    }
+                    localReleasables.add(nodeRestartBlock);
+
+                    final TrackedSnapshot trackedSnapshot = randomFrom(trackedSnapshots);
+                    final Semaphore repositoryPermits = trackedSnapshot.trackedRepository.permits;
+                    if (repositoryPermits.tryAcquire() == false) {
+                        startSnapshotDeleter();
+                        return;
+                    }
+                    localReleasables.add(Releasables.releaseOnce(repositoryPermits::release));
+
+                    final Semaphore snapshotPermits = trackedSnapshot.permits;
+                    if (snapshotPermits.tryAcquire(Integer.MAX_VALUE) == false) {
+                        startSnapshotDeleter();
+                        return;
+                    }
+                    localReleasables.add(Releasables.releaseOnce(() -> snapshotPermits.release(Integer.MAX_VALUE)));
+
+                    if (snapshots.get(trackedSnapshot.snapshotName) != trackedSnapshot) {
+                        // concurrently removed
+                        startSnapshotDeleter();
+                        return;
+                    }
+
+                    final Releasable[] finalReleasables = localReleasables.toArray(new Releasable[0]);
+                    final Releasable releaseAll = () -> Releasables.close(finalReleasables);
+
+                    logger.info(
+                        "--> starting deletion of [{}:{}]",
+                        trackedSnapshot.trackedRepository.repositoryName,
+                        trackedSnapshot.snapshotName);
+
+                    client().admin().cluster().prepareDeleteSnapshot(
+                        trackedSnapshot.trackedRepository.repositoryName,
+                        trackedSnapshot.snapshotName).execute(new ActionListener<>() {
+
+                        @Override
+                        public void onResponse(AcknowledgedResponse acknowledgedResponse) {
+                            assertTrue(acknowledgedResponse.isAcknowledged());
+                            assertThat(snapshots.remove(trackedSnapshot.snapshotName), sameInstance(trackedSnapshot));
+                            logger.info(
+                                "--> completed deletion of [{}:{}]",
+                                trackedSnapshot.trackedRepository.repositoryName,
+                                trackedSnapshot.snapshotName);
+                            startSnapshotDeleter();
+                        }
+
+                        @Override
+                        public void onFailure(Exception e) {
+                            Releasables.close(releaseAll);
+                            throw new AssertionError("unexpected", e);
+                        }
+                    });
+
+                    localReleasables.clear();
+                } finally {
+                    Releasables.close(localReleasables);
+                }
+            }));
         }
 
         private void startSnapshotter() {
@@ -205,7 +374,7 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                                     @Override
                                     public void onFailure(Exception e) {
                                         Releasables.close(releaseAll);
-                                        throw new AssertionError(e);
+                                        throw new AssertionError("unexpected", e);
                                     }
                                 });
                             } else {
@@ -217,13 +386,16 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                                             trackedRepository.repositoryName,
                                             snapshotName,
                                             releaseAll,
-                                            TrackedCluster.this::startSnapshotter);
+                                            () -> {
+                                                snapshots.put(snapshotName, new TrackedSnapshot(trackedRepository, snapshotName));
+                                                startSnapshotter();
+                                            });
                                     }
 
                                     @Override
                                     public void onFailure(Exception e) {
                                         Releasables.close(releaseAll);
-                                        throw new AssertionError(e);
+                                        throw new AssertionError("unexpected", e);
                                     }
                                 });
                             }
@@ -234,7 +406,7 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                         }
                     }, e -> {
                         Releasables.close(releaseAll);
-                        throw new AssertionError(e);
+                        throw new AssertionError("unexpected", e);
                     });
 
                     localReleasables.clear();
@@ -265,7 +437,7 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                         @Override
                         public void onFailure(Exception e) {
                             Releasables.close(onCompletion);
-                            throw new AssertionError(e);
+                            throw new AssertionError("unexpected", e);
                         }
                     });
 
@@ -526,7 +698,7 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                         Releasable localReleasable = releaseAll;
                         final Consumer<Exception> onFailure = e -> {
                             Releasables.close(releaseAll);
-                            throw new AssertionError(e);
+                            throw new AssertionError("unexpected", e);
                         };
 
                         try {
@@ -606,7 +778,7 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                                 @Override
                                 public void onFailure(Exception e) {
                                     Releasables.close(releaseAll);
-                                    throw new AssertionError(e);
+                                    throw new AssertionError("unexpected", e);
                                 }
                             });
 
@@ -618,6 +790,18 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
                 }));
             }
 
+        }
+
+        private class TrackedSnapshot {
+
+            private final TrackedRepository trackedRepository;
+            private final String snapshotName;
+            private final Semaphore permits = new Semaphore(Integer.MAX_VALUE);
+
+            public TrackedSnapshot(TrackedRepository trackedRepository, String snapshotName) {
+                this.trackedRepository = trackedRepository;
+                this.snapshotName = snapshotName;
+            }
         }
 
     }
