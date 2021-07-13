@@ -16,12 +16,14 @@ import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
+import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.settings.Settings;
@@ -420,18 +422,23 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
             threadPool.executor(CLIENT).execute(mustSucceed(() -> {
                 Releasable localReleasable = onCompletion;
                 try {
-                    client().admin().cluster().prepareGetSnapshots(repositoryName).setCurrentSnapshot().execute(new ActionListener<>() {
+                    client().admin().cluster().prepareState().clear().setCustoms(true).execute(new ActionListener<ClusterStateResponse>() {
                         @Override
-                        public void onResponse(GetSnapshotsResponse getSnapshotsResponse) {
-                            if (getSnapshotsResponse.getSnapshots().stream()
-                                .noneMatch(snapshotInfo -> snapshotInfo.snapshotId().getName().equals(snapshotName))) {
+                        public void onResponse(ClusterStateResponse clusterStateResponse) {
+                            final SnapshotsInProgress snapshots = clusterStateResponse.getState().custom(SnapshotsInProgress.TYPE);
 
-                                logger.info("--> snapshot [{}:{}] no longer running", repositoryName, snapshotName);
-                                Releasables.close(onCompletion);
-                                onSuccess.run();
-                            } else {
-                                pollForSnapshotCompletion(repositoryName, snapshotName, onCompletion, onSuccess);
+                            for (SnapshotsInProgress.Entry entry : snapshots.entries()) {
+                                if (entry.snapshot().getRepository().equals(repositoryName)
+                                    && entry.snapshot().getSnapshotId().getName().equals(snapshotName)) {
+
+                                    pollForSnapshotCompletion(repositoryName, snapshotName, onCompletion, onSuccess);
+                                    return;
+                                }
                             }
+
+                            logger.info("--> snapshot [{}:{}] no longer running", repositoryName, snapshotName);
+                            Releasables.close(onCompletion);
+                            onSuccess.run();
                         }
 
                         @Override
