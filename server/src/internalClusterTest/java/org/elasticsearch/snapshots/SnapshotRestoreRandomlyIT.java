@@ -15,7 +15,6 @@ import org.elasticsearch.action.StepListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
-import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -544,7 +543,7 @@ public class SnapshotRestoreRandomlyIT extends AbstractSnapshotIntegTestCase {
         }
 
         /**
-         * Tracks a repository in the cluster, and occasionally removes it & adds it back if no other activity holds any of its permits.
+         * Tracks a repository in the cluster, and occasionally removes it and adds it back if no other activity holds any of its permits.
          */
         private class TrackedRepository {
 
