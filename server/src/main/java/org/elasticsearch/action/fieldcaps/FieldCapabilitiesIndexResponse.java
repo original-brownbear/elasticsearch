@@ -13,6 +13,7 @@ import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.indices.IndicesModule;
 
 import java.io.IOException;
 import java.util.Map;
@@ -37,7 +38,7 @@ public class FieldCapabilitiesIndexResponse extends ActionResponse implements Wr
     FieldCapabilitiesIndexResponse(StreamInput in) throws IOException {
         super(in);
         this.indexName = in.readString();
-        this.responseMap = in.readMap(StreamInput::readString, IndexFieldCapabilities::new);
+        this.responseMap = in.readMap(input -> IndicesModule.deduplicateFieldTypeString(input.readString()), IndexFieldCapabilities::new);
         this.canMatch = in.readBoolean();
         this.originVersion = in.getVersion();
     }

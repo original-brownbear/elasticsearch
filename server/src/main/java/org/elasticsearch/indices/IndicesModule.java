@@ -60,12 +60,7 @@ import org.elasticsearch.index.mapper.IpScriptFieldType;
 import org.elasticsearch.index.mapper.KeywordScriptFieldType;
 import org.elasticsearch.index.mapper.LongScriptFieldType;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -102,7 +97,9 @@ public class IndicesModule extends AbstractModule {
         );
     }
 
-    public static Map<String, Mapper.TypeParser> getMappers(List<MapperPlugin> mapperPlugins) {
+    private static final Map<String, Mapper.TypeParser> builtInMappers;
+
+    static {
         Map<String, Mapper.TypeParser> mappers = new LinkedHashMap<>();
 
         // builtin mappers
@@ -129,7 +126,14 @@ public class IndicesModule extends AbstractModule {
         mappers.put(ObjectMapper.CONTENT_TYPE, new ObjectMapper.TypeParser());
         mappers.put(ObjectMapper.NESTED_CONTENT_TYPE, new ObjectMapper.TypeParser());
         mappers.put(TextFieldMapper.CONTENT_TYPE, TextFieldMapper.PARSER);
+        builtInMappers = Collections.unmodifiableMap(mappers);
+    }
 
+    public static Map<String, Mapper.TypeParser> getMappers(List<MapperPlugin> mapperPlugins) {
+        if (mapperPlugins.isEmpty()) {
+            return builtInMappers;
+        }
+        Map<String, Mapper.TypeParser> mappers = new LinkedHashMap<>(builtInMappers);
         for (MapperPlugin mapperPlugin : mapperPlugins) {
             for (Map.Entry<String, Mapper.TypeParser> entry : mapperPlugin.getMappers().entrySet()) {
                 if (mappers.put(entry.getKey(), entry.getValue()) != null) {
@@ -140,7 +144,9 @@ public class IndicesModule extends AbstractModule {
         return Collections.unmodifiableMap(mappers);
     }
 
-    private static Map<String, RuntimeField.Parser> getRuntimeFields(List<MapperPlugin> mapperPlugins) {
+    private static final Map<String, RuntimeField.Parser> builtInRuntimeFieldMappers;
+
+    static {
         Map<String, RuntimeField.Parser> runtimeParsers = new LinkedHashMap<>();
         runtimeParsers.put(BooleanFieldMapper.CONTENT_TYPE, BooleanScriptFieldType.PARSER);
         runtimeParsers.put(NumberFieldMapper.NumberType.LONG.typeName(), LongScriptFieldType.PARSER);
@@ -149,7 +155,11 @@ public class IndicesModule extends AbstractModule {
         runtimeParsers.put(DateFieldMapper.CONTENT_TYPE, DateScriptFieldType.PARSER);
         runtimeParsers.put(KeywordFieldMapper.CONTENT_TYPE, KeywordScriptFieldType.PARSER);
         runtimeParsers.put(GeoPointFieldMapper.CONTENT_TYPE, GeoPointScriptFieldType.PARSER);
+        builtInRuntimeFieldMappers = Collections.unmodifiableMap(runtimeParsers);
+    }
 
+    private static Map<String, RuntimeField.Parser> getRuntimeFields(List<MapperPlugin> mapperPlugins) {
+        final Map<String, RuntimeField.Parser> runtimeParsers = new LinkedHashMap<>(builtInRuntimeFieldMappers);
         for (MapperPlugin mapperPlugin : mapperPlugins) {
             for (Map.Entry<String, RuntimeField.Parser> entry : mapperPlugin.getRuntimeFields().entrySet()) {
                 if (runtimeParsers.put(entry.getKey(), entry.getValue()) != null) {
@@ -215,6 +225,26 @@ public class IndicesModule extends AbstractModule {
         // we register _field_names here so that it has a chance to see all the other mappers, including from plugins
         metadataMappers.put(fieldNamesEntry.getKey(), fieldNamesEntry.getValue());
         return Collections.unmodifiableMap(metadataMappers);
+    }
+
+    private static final Map<String, String> BUILT_IN_FIELD_TYPES;
+
+    static {
+        final Map<String, String> fieldTypes = new HashMap<>();
+        for (String s : builtInMappers.keySet()) {
+            fieldTypes.put(s, s);
+        }
+        for (String s : builtInMetadataMappers.keySet()) {
+            fieldTypes.put(s, s);
+        }
+        for (String s : builtInRuntimeFieldMappers.keySet()) {
+            fieldTypes.put(s, s);
+        }
+        BUILT_IN_FIELD_TYPES = Map.copyOf(fieldTypes);
+    }
+
+    public static String deduplicateFieldTypeString(String type) {
+        return BUILT_IN_FIELD_TYPES.getOrDefault(type, type);
     }
 
     /**

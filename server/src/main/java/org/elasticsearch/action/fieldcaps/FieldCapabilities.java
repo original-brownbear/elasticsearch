@@ -280,8 +280,8 @@ public class FieldCapabilities implements Writeable, ToXContentObject {
         private boolean isMetadataField;
         private boolean isSearchable;
         private boolean isAggregatable;
-        private List<IndexCaps> indiceList;
-        private Map<String, Set<String>> meta;
+        private final List<IndexCaps> indiceList;
+        private final Map<String, Set<String>> meta;
 
         Builder(String name, String type) {
             this.name = name;
