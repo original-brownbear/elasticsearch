@@ -1043,8 +1043,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             if (reposSeen.add(entry.repository())) {
                 for (ObjectCursor<ShardSnapshotStatus> value : (entry.isClone() ? entry.clones() : entry.shards()).values()) {
                     if (value.value.equals(ShardSnapshotStatus.UNASSIGNED_QUEUED)) {
-                        assert reposWithRunningDelete.contains(entry.repository())
-                            : "Found shard snapshot waiting to be assigned in [" + entry + "] but it is not blocked by any running delete";
+                        if(reposWithRunningDelete.contains(entry.repository()) == false) {
+                            throw new AssertionError(
+                                "Found shard snapshot waiting to be assigned in [" + entry + "] but it is not blocked by any running delete");
+                        }
                     } else if (value.value.isActive()) {
                         assert reposWithRunningDelete.contains(entry.repository()) == false
                             : "Found shard snapshot actively executing in ["
@@ -2659,8 +2661,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                     final ShardSnapshotStatus updated = shardAssignments.get(shardId);
                                     if (updated == null) {
                                         // We don't have a new assignment for this shard because its index was concurrently deleted
-                                        assert currentState.routingTable().hasIndex(shardId.getIndex()) == false
-                                            : "Missing assignment for [" + shardId + "]";
+                                        if(currentState.routingTable().hasIndex(shardId.getIndex())) {
+                                            throw new AssertionError("Missing assignment for [" + shardId + "]");
+                                        }
                                         updatedAssignmentsBuilder.put(shardId, ShardSnapshotStatus.MISSING);
                                     } else {
                                         markShardReassigned(shardId.getIndexName(), shardId.id(), reassignedShardIds);

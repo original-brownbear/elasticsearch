@@ -27,8 +27,11 @@ import org.elasticsearch.cluster.RestoreInProgress;
 import org.elasticsearch.cluster.SnapshotDeletionsInProgress;
 import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.UncategorizedExecutionException;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.discovery.AbstractDisruptionTestCase;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.IndexId;
@@ -36,20 +39,20 @@ import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
+import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.snapshots.mockstore.MockRepository;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.disruption.NetworkDisruption;
 import org.elasticsearch.test.transport.MockTransportService;
+import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
@@ -1607,6 +1610,49 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
             clusterAdmin().prepareSnapshotStatus().setSnapshots("snapshot-2").setRepository(repository).get().getSnapshots(),
             hasSize(1)
         );
+    }
+
+    public void testRandomIndexAndSnapshotCreateAndDeletes() throws Exception {
+        final String master = internalCluster().startMasterOnlyNode();
+        final String dataNode = internalCluster().startDataOnlyNode();
+        final String repoName = "test-repo";
+        createRepository(repoName, "mock");
+        final String indexName = "test-idx";
+        final String indexToClose = "index-to-close";
+        createIndexWithContent(indexToClose);
+        final String fullSnapshot = "full-snapshot";
+        createFullSnapshot(repoName, fullSnapshot);
+        createFullSnapshot(repoName, "dummy");
+        createIndexWithContent(indexName);
+        blockDataNode(repoName, dataNode);
+        final String firstSnapshotName = "snapshot-1";
+        final ActionFuture<CreateSnapshotResponse> snapshot1 = startFullSnapshot(repoName, firstSnapshotName, true);
+        awaitNumberOfSnapshotsInProgress(1);
+        waitForBlock(dataNode, repoName);
+        createIndexWithContent("test-idx-2");
+        final ActionFuture<CreateSnapshotResponse> snapshot2 = startFullSnapshot(repoName, "snapshot-2", true);
+        awaitNumberOfSnapshotsInProgress(2);
+        assertAcked(admin().indices().prepareDelete(indexToClose).get());
+        createIndexWithContent(indexToClose);
+        assertAcked(admin().indices().prepareClose(indexToClose).get());
+        final ActionFuture<RestoreSnapshotResponse> restore =
+                clusterAdmin().prepareRestoreSnapshot(repoName, fullSnapshot).setIndices(indexToClose).execute();
+        final ActionFuture<CreateSnapshotResponse> snapshot3 = startFullSnapshot(repoName, "snapshot-3", true);
+        awaitNumberOfSnapshotsInProgress(3);
+        assertAcked(admin().indices().prepareDelete(indexToClose).get());
+        final ActionFuture<RestoreSnapshotResponse> restore2 =
+                clusterAdmin().prepareRestoreSnapshot(repoName, fullSnapshot).setIndices(indexToClose).execute();
+        blockNodeOnAnyFiles(repoName, master);
+        final ActionFuture<AcknowledgedResponse> deleteFuture = startDeleteSnapshot(repoName, "dummy");
+        unblockAllDataNodes(repoName);
+        awaitNDeletionsInProgress(1);
+        unblockNode(repoName, master);
+        restore.get();
+        //restore2.get();
+        assertAcked(deleteFuture.get());
+        snapshot2.get();
+        snapshot3.get();
+        snapshot1.get();
     }
 
     private static void assertSnapshotStatusCountOnRepo(String otherBlockedRepoName, int count) {
