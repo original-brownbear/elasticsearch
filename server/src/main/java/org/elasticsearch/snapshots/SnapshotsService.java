@@ -1349,12 +1349,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      */
     private void endSnapshot(SnapshotsInProgress.Entry entry, Metadata metadata, @Nullable RepositoryData repositoryData) {
         final Snapshot snapshot = entry.snapshot();
+        final boolean newFinalization = endingSnapshots.add(snapshot);
         if (entry.isClone() && entry.state() == State.FAILED) {
             logger.debug("Removing failed snapshot clone [{}] from cluster state", entry);
             removeFailedSnapshotFromClusterState(snapshot, new SnapshotException(snapshot, entry.failure()), null);
             return;
         }
-        final boolean newFinalization = endingSnapshots.add(snapshot);
         final String repoName = snapshot.getRepository();
         if (tryEnterRepoLoop(repoName)) {
             if (repositoryData == null) {
