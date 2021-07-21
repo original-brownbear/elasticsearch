@@ -29,6 +29,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
+import java.util.UUID;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -66,7 +67,8 @@ public class SecurityTestUtils {
         return writeFile(folder, name, content.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static RoutingTable buildIndexRoutingTable(Index index) {
+    public static RoutingTable buildIndexRoutingTable(String indexName) {
+        Index index = new Index(indexName, UUID.randomUUID().toString());
         ShardRouting shardRouting = ShardRouting.newUnassigned(new ShardId(index, 0), true, ExistingStoreRecoverySource.INSTANCE,
                 new UnassignedInfo(UnassignedInfo.Reason.INDEX_CREATED, ""));
         String nodeId = ESTestCase.randomAlphaOfLength(8);

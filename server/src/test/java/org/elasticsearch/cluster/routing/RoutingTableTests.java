@@ -18,7 +18,6 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.node.DiscoveryNodes.Builder;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.common.Randomness;
-import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -128,7 +127,6 @@ public class RoutingTableTests extends ESAllocationTestCase {
 
     public void testIndex() {
         assertThat(clusterState.routingTable().index(TEST_INDEX_1).getIndex().getName(), is(TEST_INDEX_1));
-        assertThat(clusterState.routingTable().index(new Index(TEST_INDEX_1, UUIDs.randomBase64UUID())), is(nullValue()));
         assertThat(clusterState.routingTable().index("foobar"), is(nullValue()));
     }
 

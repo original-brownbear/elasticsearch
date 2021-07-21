@@ -53,6 +53,7 @@ import org.junit.Before;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -109,7 +110,8 @@ public class SecurityIndexManagerTests extends ESTestCase {
 
         final ClusterState.Builder clusterStateBuilder = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
                 RestrictedIndicesNames.SECURITY_MAIN_ALIAS);
-        manager.clusterChanged(event(markShardsAvailable(clusterStateBuilder)));
+        markShardsAvailable(clusterStateBuilder);
+        manager.clusterChanged(event(clusterStateBuilder));
 
         assertThat(manager.indexExists(), Matchers.equalTo(true));
         assertThat(manager.isAvailable(), Matchers.equalTo(true));
@@ -119,10 +121,9 @@ public class SecurityIndexManagerTests extends ESTestCase {
     public void testIndexWithoutPrimaryShards() {
         assertInitialState();
 
-        final ClusterState cs = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
-                RestrictedIndicesNames.SECURITY_MAIN_ALIAS).build();
-        final ClusterState.Builder clusterStateBuilder = ClusterState.builder(cs);
-        Index index = cs.metadata().index(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7).getIndex();
+        final ClusterState.Builder clusterStateBuilder = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
+                RestrictedIndicesNames.SECURITY_MAIN_ALIAS);
+        Index index = new Index(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7, UUID.randomUUID().toString());
         ShardRouting shardRouting = ShardRouting.newUnassigned(new ShardId(index, 0), true,
             RecoverySource.ExistingStoreRecoverySource.INSTANCE, new UnassignedInfo(UnassignedInfo.Reason.INDEX_CREATED, ""));
         String nodeId = ESTestCase.randomAlphaOfLength(8);
@@ -133,13 +134,13 @@ public class SecurityIndexManagerTests extends ESTestCase {
         clusterStateBuilder.routingTable(RoutingTable.builder()
                 .add(IndexRoutingTable.builder(index).addIndexShard(table).build())
                 .build());
-        manager.clusterChanged(event(clusterStateBuilder.build()));
+        manager.clusterChanged(event(clusterStateBuilder));
 
         assertIndexUpToDateButNotAvailable();
     }
 
-    private ClusterChangedEvent event(ClusterState clusterState) {
-        return new ClusterChangedEvent("test-event", clusterState, EMPTY_CLUSTER_STATE);
+    private ClusterChangedEvent event(ClusterState.Builder clusterStateBuilder) {
+        return new ClusterChangedEvent("test-event", clusterStateBuilder.build(), EMPTY_CLUSTER_STATE);
     }
 
     public void testIndexHealthChangeListeners() {
@@ -156,8 +157,9 @@ public class SecurityIndexManagerTests extends ESTestCase {
         // index doesn't exist and now exists
         final ClusterState.Builder clusterStateBuilder = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
                 RestrictedIndicesNames.SECURITY_MAIN_ALIAS);
-        final ClusterState clusterState = markShardsAvailable(clusterStateBuilder);
-        manager.clusterChanged(event(clusterState));
+        markShardsAvailable(clusterStateBuilder);
+        final ClusterState clusterState = clusterStateBuilder.build();
+        manager.clusterChanged(event(ClusterState.builder(clusterState)));
 
         assertTrue(listenerCalled.get());
         assertNull(previousState.get().indexHealth);
@@ -220,7 +222,7 @@ public class SecurityIndexManagerTests extends ESTestCase {
         prepareRunnableCalled.set(false);
         // state not recovered
         final ClusterBlocks.Builder blocks = ClusterBlocks.builder().addGlobalBlock(GatewayService.STATE_NOT_RECOVERED_BLOCK);
-        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME).blocks(blocks).build()));
+        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME).blocks(blocks)));
         manager.prepareIndexIfNeededThenExecute(prepareException::set, () -> prepareRunnableCalled.set(true));
         assertThat(prepareException.get(), is(notNullValue()));
         assertThat(prepareException.get(), instanceOf(ElasticsearchStatusException.class));
@@ -232,7 +234,8 @@ public class SecurityIndexManagerTests extends ESTestCase {
         // state recovered with index
         ClusterState.Builder clusterStateBuilder = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
                 RestrictedIndicesNames.SECURITY_MAIN_ALIAS, SecurityIndexManager.INTERNAL_MAIN_INDEX_FORMAT);
-        manager.clusterChanged(event(markShardsAvailable(clusterStateBuilder)));
+        markShardsAvailable(clusterStateBuilder);
+        manager.clusterChanged(event(clusterStateBuilder));
         manager.prepareIndexIfNeededThenExecute(prepareException::set, () -> prepareRunnableCalled.set(true));
         assertThat(prepareException.get(), is(nullValue()));
         assertThat(prepareRunnableCalled.get(), is(true));
@@ -259,7 +262,8 @@ public class SecurityIndexManagerTests extends ESTestCase {
             IndexMetadata.State.OPEN,
             getMappings(previousVersion)
         );
-        manager.clusterChanged(event(markShardsAvailable(clusterStateBuilder)));
+        markShardsAvailable(clusterStateBuilder);
+        manager.clusterChanged(event(clusterStateBuilder));
 
         manager.prepareIndexIfNeededThenExecute(prepareException::set, () -> prepareRunnableCalled.set(true));
 
@@ -292,7 +296,8 @@ public class SecurityIndexManagerTests extends ESTestCase {
             IndexMetadata.State.OPEN,
             getMappings(previousVersion)
         );
-        manager.clusterChanged(event(markShardsAvailable(clusterStateBuilder)));
+        markShardsAvailable(clusterStateBuilder);
+        manager.clusterChanged(event(clusterStateBuilder));
         manager.prepareIndexIfNeededThenExecute(prepareException::set, () -> prepareRunnableCalled.set(true));
 
         assertThat(prepareRunnableCalled.get(), is(false));
@@ -308,20 +313,21 @@ public class SecurityIndexManagerTests extends ESTestCase {
         manager.addStateListener((prev, current) -> listenerCalled.set(true));
         final ClusterBlocks.Builder blocks = ClusterBlocks.builder().addGlobalBlock(GatewayService.STATE_NOT_RECOVERED_BLOCK);
         // state not recovered
-        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME).blocks(blocks).build()));
+        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME).blocks(blocks)));
         assertThat(manager.isStateRecovered(), is(false));
         assertThat(listenerCalled.get(), is(false));
         // state recovered with index
         ClusterState.Builder clusterStateBuilder = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
                 RestrictedIndicesNames.SECURITY_MAIN_ALIAS, SecurityIndexManager.INTERNAL_MAIN_INDEX_FORMAT);
-        manager.clusterChanged(event(markShardsAvailable(clusterStateBuilder)));
+        markShardsAvailable(clusterStateBuilder);
+        manager.clusterChanged(event(clusterStateBuilder));
         assertThat(manager.isStateRecovered(), is(true));
         assertThat(listenerCalled.get(), is(true));
     }
 
     public void testIndexOutOfDateListeners() {
         final AtomicBoolean listenerCalled = new AtomicBoolean(false);
-        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME).build()));
+        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME)));
         AtomicBoolean upToDateChanged = new AtomicBoolean();
         manager.addStateListener((prev, current) -> {
             listenerCalled.set(true);
@@ -329,21 +335,22 @@ public class SecurityIndexManagerTests extends ESTestCase {
         });
         assertTrue(manager.isIndexUpToDate());
 
-        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME).build()));
+        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME)));
         assertFalse(listenerCalled.get());
         assertTrue(manager.isIndexUpToDate());
 
         // index doesn't exist and now exists with wrong format
         ClusterState.Builder clusterStateBuilder = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
                 RestrictedIndicesNames.SECURITY_MAIN_ALIAS, SecurityIndexManager.INTERNAL_MAIN_INDEX_FORMAT - 1);
-        manager.clusterChanged(event(markShardsAvailable(clusterStateBuilder)));
+        markShardsAvailable(clusterStateBuilder);
+        manager.clusterChanged(event(clusterStateBuilder));
         assertTrue(listenerCalled.get());
         assertTrue(upToDateChanged.get());
         assertFalse(manager.isIndexUpToDate());
 
         listenerCalled.set(false);
         assertFalse(listenerCalled.get());
-        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME).build()));
+        manager.clusterChanged(event(new ClusterState.Builder(CLUSTER_NAME)));
         assertTrue(listenerCalled.get());
         assertTrue(upToDateChanged.get());
         assertTrue(manager.isIndexUpToDate());
@@ -352,7 +359,8 @@ public class SecurityIndexManagerTests extends ESTestCase {
         // index doesn't exist and now exists with correct format
         clusterStateBuilder = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
                 RestrictedIndicesNames.SECURITY_MAIN_ALIAS, SecurityIndexManager.INTERNAL_MAIN_INDEX_FORMAT);
-        manager.clusterChanged(event(markShardsAvailable(clusterStateBuilder)));
+        markShardsAvailable(clusterStateBuilder);
+        manager.clusterChanged(event(clusterStateBuilder));
         assertTrue(listenerCalled.get());
         assertFalse(upToDateChanged.get());
         assertTrue(manager.isIndexUpToDate());
@@ -362,21 +370,23 @@ public class SecurityIndexManagerTests extends ESTestCase {
         // Index initially exists
         final ClusterState.Builder indexAvailable = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
             RestrictedIndicesNames.SECURITY_MAIN_ALIAS, IndexMetadata.State.OPEN);
-        manager.clusterChanged(event(markShardsAvailable(indexAvailable)));
+        markShardsAvailable(indexAvailable);
+
+        manager.clusterChanged(event(indexAvailable));
         assertThat(manager.indexExists(), is(true));
         assertThat(manager.isAvailable(), is(true));
 
         // Now close it
-        ClusterState.Builder indexClosed = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
+        final ClusterState.Builder indexClosed = createClusterState(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7,
             RestrictedIndicesNames.SECURITY_MAIN_ALIAS, IndexMetadata.State.CLOSE);
         if (randomBoolean()) {
             // In old/mixed cluster versions closed indices have no routing table
             indexClosed.routingTable(RoutingTable.EMPTY_ROUTING_TABLE);
         } else {
-            indexClosed = ClusterState.builder(markShardsAvailable(indexClosed));
+            markShardsAvailable(indexClosed);
         }
 
-        manager.clusterChanged(event(indexClosed.build()));
+        manager.clusterChanged(event(indexClosed));
         assertThat(manager.indexExists(), is(true));
         assertThat(manager.isAvailable(), is(false));
     }
@@ -417,11 +427,8 @@ public class SecurityIndexManagerTests extends ESTestCase {
         return ClusterState.builder(state()).metadata(metadataBuilder.build());
     }
 
-    private ClusterState markShardsAvailable(ClusterState.Builder clusterStateBuilder) {
-        final ClusterState cs = clusterStateBuilder.build();
-        return ClusterState.builder(cs).routingTable(
-                SecurityTestUtils.buildIndexRoutingTable(
-                        cs.metadata().index(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7).getIndex())).build();
+    private void markShardsAvailable(ClusterState.Builder clusterStateBuilder) {
+        clusterStateBuilder.routingTable(SecurityTestUtils.buildIndexRoutingTable(RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7));
     }
 
     private static ClusterState state() {

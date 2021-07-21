@@ -93,8 +93,8 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
     }
 
     public boolean hasIndex(Index index) {
-        IndexRoutingTable indexRouting = index(index);
-        return indexRouting != null;
+        IndexRoutingTable indexRouting = index(index.getName());
+        return indexRouting != null && indexRouting.getIndex().equals(index);
     }
 
     public IndexRoutingTable index(String index) {
@@ -102,8 +102,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
     }
 
     public IndexRoutingTable index(Index index) {
-        IndexRoutingTable indexRouting = index(index.getName());
-        return indexRouting != null && indexRouting.getIndex().equals(index) ? indexRouting : null;
+        return indicesRouting.get(index.getName());
     }
 
     public ImmutableOpenMap<String, IndexRoutingTable> indicesRouting() {
@@ -135,8 +134,8 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
      * @throws ShardNotFoundException if provided shard id is unknown
      */
     public IndexShardRoutingTable shardRoutingTable(ShardId shardId) {
-        IndexRoutingTable indexRouting = index(shardId.getIndex());
-        if (indexRouting == null) {
+        IndexRoutingTable indexRouting = index(shardId.getIndexName());
+        if (indexRouting == null || indexRouting.getIndex().equals(shardId.getIndex()) == false) {
             throw new IndexNotFoundException(shardId.getIndex());
         }
         IndexShardRoutingTable shard = indexRouting.shard(shardId.id());
@@ -148,7 +147,7 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
 
     @Nullable
     public ShardRouting getByAllocationId(ShardId shardId, String allocationId) {
-        final IndexRoutingTable indexRoutingTable = index(shardId.getIndex());
+        final IndexRoutingTable indexRoutingTable = index(shardId.getIndexName());
         if (indexRoutingTable == null) {
             return null;
         }

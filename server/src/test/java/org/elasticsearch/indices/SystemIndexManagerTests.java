@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.contains;
@@ -169,7 +170,10 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndices systemIndices = new SystemIndices(Map.of("MyIndex", FEATURE));
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
-        assertThat(manager.getUpgradeStatus(markShardsUnavailable(createClusterState()), DESCRIPTOR), equalTo(UpgradeStatus.UNHEALTHY));
+        final ClusterState.Builder clusterStateBuilder = createClusterState();
+        markShardsUnavailable(clusterStateBuilder);
+
+        assertThat(manager.getUpgradeStatus(clusterStateBuilder.build(), DESCRIPTOR), equalTo(UpgradeStatus.UNHEALTHY));
     }
 
     /**
@@ -180,7 +184,10 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndices systemIndices = new SystemIndices(Map.of("MyIndex", FEATURE));
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
-        assertThat(manager.getUpgradeStatus(markShardsAvailable(createClusterState(5)), DESCRIPTOR), equalTo(UpgradeStatus.NEEDS_UPGRADE));
+        final ClusterState.Builder clusterStateBuilder = createClusterState(5);
+        markShardsAvailable(clusterStateBuilder);
+
+        assertThat(manager.getUpgradeStatus(clusterStateBuilder.build(), DESCRIPTOR), equalTo(UpgradeStatus.NEEDS_UPGRADE));
     }
 
     /**
@@ -190,7 +197,10 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndices systemIndices = new SystemIndices(Map.of("MyIndex", FEATURE));
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
-        assertThat(manager.getUpgradeStatus(markShardsAvailable(createClusterState()), DESCRIPTOR), equalTo(UpgradeStatus.UP_TO_DATE));
+        final ClusterState.Builder clusterStateBuilder = createClusterState();
+        markShardsAvailable(clusterStateBuilder);
+
+        assertThat(manager.getUpgradeStatus(clusterStateBuilder.build(), DESCRIPTOR), equalTo(UpgradeStatus.UP_TO_DATE));
     }
 
     /**
@@ -200,10 +210,10 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndices systemIndices = new SystemIndices(Map.of("MyIndex", FEATURE));
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
-        assertThat(
-            manager.getUpgradeStatus(markShardsAvailable(createClusterState(Strings.toString(getMappings("1.0.0")))), DESCRIPTOR),
-            equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE)
-        );
+        final ClusterState.Builder clusterStateBuilder = createClusterState(Strings.toString(getMappings("1.0.0")));
+        markShardsAvailable(clusterStateBuilder);
+
+        assertThat(manager.getUpgradeStatus(clusterStateBuilder.build(), DESCRIPTOR), equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE));
     }
 
     /**
@@ -213,10 +223,10 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndices systemIndices = new SystemIndices(Map.of("MyIndex", FEATURE));
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
-        assertThat(
-            manager.getUpgradeStatus(markShardsAvailable(createClusterState(Strings.toString(getMappings(null)))), DESCRIPTOR),
-            equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE)
-        );
+        final ClusterState.Builder clusterStateBuilder = createClusterState(Strings.toString(getMappings(null)));
+        markShardsAvailable(clusterStateBuilder);
+
+        assertThat(manager.getUpgradeStatus(clusterStateBuilder.build(), DESCRIPTOR), equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE));
     }
 
     /**
@@ -226,7 +236,10 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndices systemIndices = new SystemIndices(Map.of("MyIndex", FEATURE));
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
-        manager.clusterChanged(event(markShardsAvailable(createClusterState(Strings.toString(getMappings("1.0.0"))))));
+        final ClusterState.Builder clusterStateBuilder = createClusterState(Strings.toString(getMappings("1.0.0")));
+        markShardsAvailable(clusterStateBuilder);
+
+        manager.clusterChanged(event(clusterStateBuilder));
 
         verify(client, times(1)).execute(any(PutMappingAction.class), any(PutMappingRequest.class), any());
     }
@@ -238,10 +251,10 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndices systemIndices = new SystemIndices(Map.of("MyIndex", FEATURE));
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
-        assertThat(
-            manager.getUpgradeStatus(markShardsAvailable(createClusterState(Strings.toString(getMappings(3)))), DESCRIPTOR),
-            equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE)
-        );
+        final ClusterState.Builder clusterStateBuilder = createClusterState(Strings.toString(getMappings(3)));
+        markShardsAvailable(clusterStateBuilder);
+
+        assertThat(manager.getUpgradeStatus(clusterStateBuilder.build(), DESCRIPTOR), equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE));
     }
 
     private static ClusterState.Builder createClusterState() {
@@ -273,16 +286,12 @@ public class SystemIndexManagerTests extends ESTestCase {
         return ClusterState.builder(state()).metadata(metadataBuilder.build());
     }
 
-    private ClusterState markShardsAvailable(ClusterState.Builder clusterStateBuilder) {
-        final ClusterState cs = clusterStateBuilder.build();
-        return ClusterState.builder(cs)
-            .routingTable(buildIndexRoutingTable(cs.metadata().index(DESCRIPTOR.getPrimaryIndex()).getIndex()))
-            .build();
+    private void markShardsAvailable(ClusterState.Builder clusterStateBuilder) {
+        clusterStateBuilder.routingTable(buildIndexRoutingTable(DESCRIPTOR.getPrimaryIndex()));
     }
 
-    private ClusterState markShardsUnavailable(ClusterState.Builder clusterStateBuilder) {
-        final ClusterState cs = clusterStateBuilder.build();
-        final RoutingTable routingTable = buildIndexRoutingTable(cs.metadata().index(DESCRIPTOR.getPrimaryIndex()).getIndex());
+    private void markShardsUnavailable(ClusterState.Builder clusterStateBuilder) {
+        final RoutingTable routingTable = buildIndexRoutingTable(DESCRIPTOR.getPrimaryIndex());
 
         Index prevIndex = routingTable.index(DESCRIPTOR.getPrimaryIndex()).getIndex();
 
@@ -304,7 +313,7 @@ public class SystemIndexManagerTests extends ESTestCase {
             )
             .build();
 
-        return ClusterState.builder(cs).routingTable(unavailableRoutingTable).build();
+        clusterStateBuilder.routingTable(unavailableRoutingTable);
     }
 
     private static ClusterState state() {
@@ -342,7 +351,8 @@ public class SystemIndexManagerTests extends ESTestCase {
         return indexMetadata;
     }
 
-    private static RoutingTable buildIndexRoutingTable(Index index) {
+    private static RoutingTable buildIndexRoutingTable(String indexName) {
+        Index index = new Index(indexName, UUID.randomUUID().toString());
         ShardRouting shardRouting = ShardRouting.newUnassigned(
             new ShardId(index, 0),
             true,
@@ -356,8 +366,8 @@ public class SystemIndexManagerTests extends ESTestCase {
         return RoutingTable.builder().add(IndexRoutingTable.builder(index).addIndexShard(table).build()).build();
     }
 
-    private ClusterChangedEvent event(ClusterState clusterState) {
-        return new ClusterChangedEvent("test-event", clusterState, EMPTY_CLUSTER_STATE);
+    private ClusterChangedEvent event(ClusterState.Builder clusterStateBuilder) {
+        return new ClusterChangedEvent("test-event", clusterStateBuilder.build(), EMPTY_CLUSTER_STATE);
     }
 
     private static Settings getSettings() {
