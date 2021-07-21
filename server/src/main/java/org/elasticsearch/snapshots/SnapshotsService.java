@@ -1160,6 +1160,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             deletionsToExecute.add(delete);
                         }
                     }
+                    assertNoDanglingSnapshots(res);
                     return res;
                 }
 
@@ -1351,12 +1352,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      */
     private void endSnapshot(SnapshotsInProgress.Entry entry, Metadata metadata, @Nullable RepositoryData repositoryData) {
         final Snapshot snapshot = entry.snapshot();
+        final boolean newFinalization = endingSnapshots.add(snapshot);
         if (entry.isClone() && entry.state() == State.FAILED) {
             logger.debug("Removing failed snapshot clone [{}] from cluster state", entry);
             removeFailedSnapshotFromClusterState(snapshot, new SnapshotException(snapshot, entry.failure()), null);
             return;
         }
-        final boolean newFinalization = endingSnapshots.add(snapshot);
         final String repoName = snapshot.getRepository();
         if (tryEnterRepoLoop(repoName)) {
             if (repositoryData == null) {
@@ -1521,7 +1522,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     metaForSnapshot,
                     snapshotInfo,
                     entry.version(),
-                    state -> stateWithoutSuccessfulSnapshot(state, snapshot),
+                    state -> {
+                        final ClusterState updated = stateWithoutSuccessfulSnapshot(state, snapshot);
+                        assertNoDanglingSnapshots(updated);
+                        return updated;
+                    },
                     ActionListener.wrap(newRepoData -> {
                         completeListenersIgnoringException(endAndGetListenersToResolve(snapshot), Tuple.tuple(newRepoData, snapshotInfo));
                         logger.info("snapshot [{}] completed with state [{}]", snapshot, snapshotInfo.state());
@@ -1921,7 +1926,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
             @Override
             public ClusterState execute(ClusterState currentState) {
-                final ClusterState updatedState = stateWithoutFailedSnapshot(currentState, snapshot);
+                final ClusterState updatedState;
+                try {
+                    assertNoDanglingSnapshots(currentState);
+                    updatedState = stateWithoutFailedSnapshot(currentState, snapshot);
+                } catch (AssertionError e) {
+                    throw e;
+                }
+                assert updatedState == currentState || endingSnapshots.contains(snapshot)
+                    : "did not track [" + snapshot + "] in ending snapshots while removing it from the cluster state";
                 // now check if there are any delete operations that refer to the just failed snapshot and remove the snapshot from them
                 return updateWithSnapshots(
                     updatedState,
@@ -2642,26 +2655,29 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 // No shards can be updated in this snapshot so we just add it as is again
                                 snapshotEntries.add(entry);
                             } else {
-                                if (shardAssignments == null) {
-                                    shardAssignments = shards(
-                                        snapshotsInProgress,
-                                        updatedDeletions,
-                                        currentState,
-                                        entry.indices().values(),
-                                        entry.version().onOrAfter(SHARD_GEN_IN_REPO_DATA_VERSION),
-                                        repositoryData,
-                                        repoName
-                                    );
-                                }
+                                shardAssignments = shards(
+                                    snapshotsInProgress,
+                                    updatedDeletions,
+                                    currentState,
+                                    entry.indices().values(),
+                                    entry.version().onOrAfter(SHARD_GEN_IN_REPO_DATA_VERSION),
+                                    repositoryData,
+                                    repoName
+                                );
+
                                 final ImmutableOpenMap.Builder<ShardId, ShardSnapshotStatus> updatedAssignmentsBuilder = ImmutableOpenMap
                                     .builder(entry.shards());
                                 for (RepositoryShardId shardId : canBeUpdated) {
                                     final ShardId sid = entry.shardId(shardId);
                                     final ShardSnapshotStatus updated = shardAssignments.get(sid);
                                     if (updated == null) {
-                                        // We don't have a new assignment for this shard because its index was concurrently deleted
-                                        assert currentState.routingTable().hasIndex(sid.getIndex()) == false
-                                            : "Missing assignment for [" + sid + "]";
+                                        try {
+                                            // We don't have a new assignment for this shard because its index was concurrently deleted
+                                            assert currentState.routingTable().hasIndex(sid.getIndex()) == false
+                                                    : "Missing assignment for [" + sid + "]";
+                                        } catch (AssertionError e) {
+                                            throw e;
+                                        }
                                         updatedAssignmentsBuilder.put(sid, ShardSnapshotStatus.MISSING);
                                     } else {
                                         markShardReassigned(shardId, reassignedShardIds);
