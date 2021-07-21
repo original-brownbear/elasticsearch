@@ -572,6 +572,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
         // Exception handler for IO exceptions with loading index and repo metadata
         final Consumer<Exception> onFailure = e -> {
+            endingSnapshots.add(targetSnapshot);
             initializingClones.remove(targetSnapshot);
             logger.info(() -> new ParameterizedMessage("Failed to start snapshot clone [{}]", cloneEntry), e);
             removeFailedSnapshotFromClusterState(targetSnapshot, e, null);
@@ -992,12 +993,16 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     snapshotsInProgress.entries().stream().map(SnapshotsInProgress.Entry::snapshot),
                     endingSnapshots.stream()
                 ).collect(Collectors.toSet());
-                final Set<Snapshot> snapshotListenerKeys = snapshotCompletionListeners.keySet();
-                assert runningSnapshots.containsAll(snapshotListenerKeys)
-                    : "Saw completion listeners for unknown snapshots in "
-                        + snapshotListenerKeys
-                        + " but running snapshots are "
-                        + runningSnapshots;
+                try {
+                    final Set<Snapshot> snapshotListenerKeys = snapshotCompletionListeners.keySet();
+                    assert runningSnapshots.containsAll(snapshotListenerKeys)
+                            : "Saw completion listeners for unknown snapshots in "
+                            + snapshotListenerKeys
+                            + " but running snapshots are "
+                            + runningSnapshots;
+                } catch (AssertionError e) {
+                    throw e;
+                }
             }
         }
         final SnapshotDeletionsInProgress snapshotDeletionsInProgress = state.custom(
