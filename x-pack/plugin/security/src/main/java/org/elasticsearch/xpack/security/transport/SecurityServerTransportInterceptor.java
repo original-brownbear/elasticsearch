@@ -6,13 +6,10 @@
  */
 package org.elasticsearch.xpack.security.transport;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.DestructiveOperations;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.RunOnce;
@@ -21,6 +18,7 @@ import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.InboundHandler;
 import org.elasticsearch.transport.SendRequestTransportException;
 import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportChannel;
@@ -45,13 +43,10 @@ import org.elasticsearch.xpack.security.authz.AuthorizationUtils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 import static org.elasticsearch.xpack.core.security.SecurityField.setting;
 
 public class SecurityServerTransportInterceptor implements TransportInterceptor {
-
-    private static final Logger logger = LogManager.getLogger(SecurityServerTransportInterceptor.class);
 
     private final AuthenticationService authcService;
     private final AuthorizationService authzService;
@@ -161,7 +156,7 @@ public class SecurityServerTransportInterceptor implements TransportInterceptor 
     public <T extends TransportRequest> TransportRequestHandler<T> interceptHandler(String action, String executor,
                                                                                     boolean forceExecution,
                                                                                     TransportRequestHandler<T> actualHandler) {
-        return new ProfileSecuredRequestHandler<>(logger, action, forceExecution, executor, actualHandler, profileFilters,
+        return new ProfileSecuredRequestHandler<>(action, forceExecution, executor, actualHandler, profileFilters,
                 licenseState, threadPool);
     }
 
@@ -192,12 +187,10 @@ public class SecurityServerTransportInterceptor implements TransportInterceptor 
         private final String executorName;
         private final ThreadPool threadPool;
         private final boolean forceExecution;
-        private final Logger logger;
 
-        ProfileSecuredRequestHandler(Logger logger, String action, boolean forceExecution, String executorName,
+        ProfileSecuredRequestHandler(String action, boolean forceExecution, String executorName,
                                      TransportRequestHandler<T> handler, Map<String, ServerTransportFilter> profileFilters,
                                      XPackLicenseState licenseState, ThreadPool threadPool) {
-            this.logger = logger;
             this.action = action;
             this.executorName = executorName;
             this.handler = handler;
@@ -206,37 +199,6 @@ public class SecurityServerTransportInterceptor implements TransportInterceptor 
             this.threadContext = threadPool.getThreadContext();
             this.threadPool = threadPool;
             this.forceExecution = forceExecution;
-        }
-
-        AbstractRunnable getReceiveRunnable(T request, TransportChannel channel, Task task) {
-            final Runnable releaseRequest = new RunOnce(request::decRef);
-            request.incRef();
-            return new AbstractRunnable() {
-                @Override
-                public boolean isForceExecution() {
-                    return forceExecution;
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-                    try {
-                        channel.sendResponse(e);
-                    } catch (Exception e1) {
-                        e1.addSuppressed(e);
-                        logger.warn("failed to send exception response for action [" + action + "]", e1);
-                    }
-                }
-
-                @Override
-                protected void doRun() throws Exception {
-                    handler.messageReceived(request, channel, task);
-                }
-
-                @Override
-                public void onAfter() {
-                    releaseRequest.run();
-                }
-            };
         }
 
         @Override
@@ -265,34 +227,91 @@ public class SecurityServerTransportInterceptor implements TransportInterceptor 
                         }
                     }
                     assert filter != null;
-                    final Thread executingThread = Thread.currentThread();
+                    final ActionListener<Void> filterListener;
+                    final Runnable releaseRequest = new RunOnce(request::decRef);
+                    request.incRef();
+                    if (ThreadPool.Names.SAME.equals(executorName)) {
+                        filterListener = new FilterListener(request, channel, task, releaseRequest);
+                    } else {
+                        final Thread executingThread = Thread.currentThread();
+                        filterListener = new FilterListener(request, channel, task, releaseRequest) {
+                            @Override
+                            public void onResponse(Void aVoid) {
+                                if (executingThread == Thread.currentThread()) {
+                                    // only fork off if we get called on another thread this means we moved to
+                                    // an async execution and in this case we need to go back to the thread pool
+                                    // that was actually executing it. it's also possible that the
+                                    // thread-pool we are supposed to execute on is `SAME` in that case
+                                    // the handler is OK with executing on a network thread and we can just continue even if
+                                    // we are on another thread due to async operations
+                                    super.onResponse(null);
+                                    return;
+                                }
+                                try {
+                                    threadPool.executor(executorName).execute(new AbstractRunnable() {
+                                        @Override
+                                        public boolean isForceExecution() {
+                                            return forceExecution;
+                                        }
 
-                    final AbstractRunnable receiveMessage = getReceiveRunnable(request, channel, task);
-                    CheckedConsumer<Void, Exception> consumer = (x) -> {
-                        final Executor executor;
-                        if (executingThread == Thread.currentThread()) {
-                            // only fork off if we get called on another thread this means we moved to
-                            // an async execution and in this case we need to go back to the thread pool
-                            // that was actually executing it. it's also possible that the
-                            // thread-pool we are supposed to execute on is `SAME` in that case
-                            // the handler is OK with executing on a network thread and we can just continue even if
-                            // we are on another thread due to async operations
-                            executor = threadPool.executor(ThreadPool.Names.SAME);
-                        } else {
-                            executor = threadPool.executor(executorName);
-                        }
+                                        @Override
+                                        public void onFailure(Exception e) {
+                                            InboundHandler.sendErrorResponse(action, channel, e);
+                                        }
 
-                        try {
-                            executor.execute(receiveMessage);
-                        } catch (Exception e) {
-                            receiveMessage.onFailure(e);
-                        }
+                                        @Override
+                                        protected void doRun() throws Exception {
+                                            handler.messageReceived(request, channel, task);
+                                        }
 
-                    };
-                    ActionListener<Void> filterListener = ActionListener.wrap(consumer, receiveMessage::onFailure);
+                                        @Override
+                                        public void onAfter() {
+                                            releaseRequest.run();
+                                        }
+                                    });
+                                } catch (Exception e) {
+                                    onFailure(e);
+                                }
+                            }
+                        };
+                    }
                     filter.inbound(action, request, channel, filterListener);
                 } else {
-                    getReceiveRunnable(request, channel, task).run();
+                    handler.messageReceived(request, channel, task);
+                }
+            }
+        }
+
+        private class FilterListener implements ActionListener<Void> {
+            private final T request;
+            private final TransportChannel channel;
+            private final Task task;
+            private final Runnable releaseRequest;
+
+            FilterListener(T request, TransportChannel channel, Task task, Runnable releaseRequest) {
+                this.request = request;
+                this.channel = channel;
+                this.task = task;
+                this.releaseRequest = releaseRequest;
+            }
+
+            @Override
+            public void onResponse(Void aVoid) {
+                try {
+                    handler.messageReceived(request, channel, task);
+                } catch (Exception e) {
+                    InboundHandler.sendErrorResponse(action, channel, e);
+                } finally {
+                    releaseRequest.run();
+                }
+            }
+
+            @Override
+            public final void onFailure(Exception e) {
+                try {
+                    InboundHandler.sendErrorResponse(action, channel, e);
+                } finally {
+                    releaseRequest.run();
                 }
             }
         }

@@ -244,7 +244,7 @@ public class InboundHandler {
         }
     }
 
-    private static void sendErrorResponse(String actionName, TransportChannel transportChannel, Exception e) {
+    public static void sendErrorResponse(String actionName, TransportChannel transportChannel, Exception e) {
         try {
             transportChannel.sendResponse(e);
         } catch (Exception inner) {
