@@ -621,14 +621,15 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 boolean changed = false;
                 final String localNodeId = currentState.nodes().getLocalNodeId();
                 final String repoName = cloneEntry.repository();
+                final SnapshotId cloneSnapshotId = cloneEntry.snapshot().getSnapshotId();
                 final ShardGenerations shardGenerations = repoData.shardGenerations();
                 for (int i = 0; i < updatedEntries.size(); i++) {
                     final SnapshotsInProgress.Entry entry = updatedEntries.get(i);
-                    if (cloneEntry.repository().equals(entry.repository()) == false) {
+                    if (repoName.equals(entry.repository()) == false) {
                         // different repo => just continue without modification
                         continue;
                     }
-                    if (cloneEntry.snapshot().getSnapshotId().equals(entry.snapshot().getSnapshotId())) {
+                    if (cloneSnapshotId.equals(entry.snapshot().getSnapshotId())) {
                         final ImmutableOpenMap.Builder<RepositoryShardId, ShardSnapshotStatus> clonesBuilder = ImmutableOpenMap.builder();
                         final boolean readyToExecute = currentState.custom(
                             SnapshotDeletionsInProgress.TYPE,
@@ -658,7 +659,10 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 }
                             }
                         }
-                        updatedEntry = cloneEntry.withClones(clonesBuilder.build());
+                        if (entry.clones().isEmpty() == false) {
+                            throw new AssertionError();
+                        }
+                        updatedEntry = entry.withClones(clonesBuilder.build());
                         // Move the now ready to execute clone operation to the back of the snapshot operations order because its
                         // shard snapshot state was based on all previous existing operations in progress
                         // TODO: If we could eventually drop the snapshot clone init phase we don't need this any longer
@@ -1349,12 +1353,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      */
     private void endSnapshot(SnapshotsInProgress.Entry entry, Metadata metadata, @Nullable RepositoryData repositoryData) {
         final Snapshot snapshot = entry.snapshot();
+        final boolean newFinalization = endingSnapshots.add(snapshot);
         if (entry.isClone() && entry.state() == State.FAILED) {
             logger.debug("Removing failed snapshot clone [{}] from cluster state", entry);
             removeFailedSnapshotFromClusterState(snapshot, new SnapshotException(snapshot, entry.failure()), null);
             return;
         }
-        final boolean newFinalization = endingSnapshots.add(snapshot);
         final String repoName = snapshot.getRepository();
         if (tryEnterRepoLoop(repoName)) {
             if (repositoryData == null) {
@@ -3130,6 +3134,9 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     newState.nodeId(),
                     newState.generation()
                 );
+                if (newState.generation() == null) {
+                    throw new AssertionError();
+                }
                 newStates.put(shardId, newState);
                 iterator.remove();
                 startedCount++;

@@ -27,8 +27,11 @@ import org.elasticsearch.cluster.RestoreInProgress;
 import org.elasticsearch.cluster.SnapshotDeletionsInProgress;
 import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.UncategorizedExecutionException;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.discovery.AbstractDisruptionTestCase;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.IndexId;
@@ -36,6 +39,7 @@ import org.elasticsearch.repositories.RepositoryData;
 import org.elasticsearch.repositories.RepositoryException;
 import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
+import org.elasticsearch.repositories.fs.FsRepository;
 import org.elasticsearch.snapshots.mockstore.MockRepository;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.disruption.NetworkDisruption;
@@ -50,6 +54,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
@@ -1607,6 +1612,51 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
             clusterAdmin().prepareSnapshotStatus().setSnapshots("snapshot-2").setRepository(repository).get().getSnapshots(),
             hasSize(1)
         );
+    }
+
+    public void testConcurrentSnapshotsOfDifferentScopes() throws Exception {
+        internalCluster().startMasterOnlyNode();
+        internalCluster().startDataOnlyNodes(3);
+        final String index1 = "index-1";
+        final String index2 = "index-2";
+        final String index3 = "index-3";
+        createIndexWithContent(index1);
+        createIndexWithContent(index2);
+        createIndexWithContent(index3);
+
+        final String repository = "test-repo";
+        createRepository(repository, FsRepository.TYPE);
+        final String fullSnapshot = "full-snapshot";
+        createFullSnapshot(repository, fullSnapshot);
+
+        final int snapshotCount = randomIntBetween(7, 10);
+        final List<String> indices = List.of(index1, index2, index3);
+        final List<Future<?>> doneFutures = new ArrayList<>();
+        final BytesReference source = new BytesArray("{}");
+        for (int i = 0; i < snapshotCount; i++) {
+            final String[] indicesToSnapshot = randomSubsetOf(indices).toArray(Strings.EMPTY_ARRAY);
+            doneFutures.add(startIndex(index1, "doc-" + i, source, XContentType.JSON));
+            doneFutures.add(startIndex(index2, "doc-" + i, source, XContentType.JSON));
+            doneFutures.add(startIndex(index3, "doc-" + i, source, XContentType.JSON));
+            doneFutures.add(prepareCreate("idx-" + i).execute());
+            doneFutures.add(startFullSnapshot(repository, "snx-" + i));
+            doneFutures.add(clusterAdmin().prepareCreateSnapshot(repository, "snapshot-" + i)
+                    .setIndices(indicesToSnapshot).setWaitForCompletion(true).execute());
+            doneFutures.add(clusterAdmin().prepareCloneSnapshot(repository, fullSnapshot, "clone-" + i).setIndices(indicesToSnapshot).execute());
+        }
+        for (int i = 0; i < snapshotCount; i++) {
+            if (randomBoolean()) {
+                doneFutures.add(startDeleteSnapshot(repository, "snapshot-" + i));
+            }
+        }
+        assertBusy(() -> {
+            for (Future<?> doneFuture : doneFutures) {
+                assertTrue(doneFuture.isDone());
+            }
+        }, 30L, TimeUnit.SECONDS);
+
+        final SnapshotInfo lastSnapshot = createFullSnapshot(repository, "snapshot-last");
+        assertAcked(startDeleteSnapshot(repository, lastSnapshot.snapshotId().getName()).get());
     }
 
     private static void assertSnapshotStatusCountOnRepo(String otherBlockedRepoName, int count) {
