@@ -11,7 +11,6 @@ package org.elasticsearch.transport.netty4;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import org.elasticsearch.ElasticsearchException;
@@ -131,41 +130,36 @@ final class Netty4MessageChannelHandler extends ChannelDuplexHandler {
                 break;
             }
             final WriteOperation write = currentWrite;
-            if (write.buf.readableBytes() == 0) {
-                write.promise.trySuccess();
-                currentWrite = null;
-                continue;
-            }
             final int readableBytes = write.buf.readableBytes();
             final int bufferSize = Math.min(readableBytes, 1 << 18);
-            final int readerIndex = write.buf.readerIndex();
-            final boolean sliced = readableBytes != bufferSize;
             final ByteBuf writeBuffer;
-            if (sliced) {
-                writeBuffer = write.buf.retainedSlice(readerIndex, bufferSize);
-                write.buf.readerIndex(readerIndex + bufferSize);
-            } else {
-                writeBuffer = write.buf;
-            }
-            final ChannelFuture writeFuture = ctx.write(writeBuffer);
-            if (sliced == false || write.buf.readableBytes() == 0) {
-                currentWrite = null;
-                writeFuture.addListener(future -> {
-                    assert ctx.executor().inEventLoop();
-                    if (future.isSuccess()) {
-                        write.promise.trySuccess();
-                    } else {
-                        write.promise.tryFailure(future.cause());
-                    }
-                });
-            } else {
-                writeFuture.addListener(future -> {
+            final ChannelPromise writePromise;
+            if (readableBytes != bufferSize) {
+                writeBuffer = write.buf.readRetainedSlice(bufferSize);
+                write.chunked = true;
+                writePromise = ctx.newPromise().addListener(future -> {
                     assert ctx.executor().inEventLoop();
                     if (future.isSuccess() == false) {
                         write.promise.tryFailure(future.cause());
                     }
                 });
+            } else {
+                currentWrite = null;
+                writeBuffer = write.buf;
+                if (write.chunked) {
+                    writePromise = ctx.newPromise().addListener(future -> {
+                        assert ctx.executor().inEventLoop();
+                        if (future.isSuccess()) {
+                            write.promise.trySuccess();
+                        } else {
+                            write.promise.tryFailure(future.cause());
+                        }
+                    });
+                } else {
+                    writePromise = write.promise;
+                }
             }
+            ctx.write(writeBuffer, writePromise);
             ctx.flush();
             if (channel.isActive() == false) {
                 failQueuedWrites();
@@ -182,6 +176,8 @@ final class Netty4MessageChannelHandler extends ChannelDuplexHandler {
     }
 
     private static final class WriteOperation {
+
+        private boolean chunked = false;
 
         private final ByteBuf buf;
 
