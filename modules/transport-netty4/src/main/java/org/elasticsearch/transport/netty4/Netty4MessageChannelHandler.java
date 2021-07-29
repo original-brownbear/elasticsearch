@@ -38,7 +38,7 @@ final class Netty4MessageChannelHandler extends ChannelDuplexHandler {
 
     private final Queue<WriteOperation> queuedWrites = new ArrayDeque<>();
 
-    private WriteOperation currentWrite;
+    private WriteOperation chunkedWrite;
     private final InboundPipeline pipeline;
 
     Netty4MessageChannelHandler(PageCacheRecycler recycler, Netty4Transport transport) {
@@ -89,8 +89,8 @@ final class Netty4MessageChannelHandler extends ChannelDuplexHandler {
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) {
         assert Transports.assertDefaultThreadContext(transport.getThreadPool().getThreadContext());
-        if (ctx.channel().isWritable()) {
-            doFlush(ctx);
+        if (isFlushing == false && ctx.channel().isWritable()) {
+            flushNoReentrant(ctx);
         }
         ctx.fireChannelWritabilityChanged();
     }
@@ -100,43 +100,64 @@ final class Netty4MessageChannelHandler extends ChannelDuplexHandler {
         assert Transports.assertDefaultThreadContext(transport.getThreadPool().getThreadContext());
         Channel channel = ctx.channel();
         if (channel.isWritable() || channel.isActive() == false) {
-            doFlush(ctx);
+            flushNoReentrant(ctx);
         }
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         assert Transports.assertDefaultThreadContext(transport.getThreadPool().getThreadContext());
-        doFlush(ctx);
+        flushNoReentrant(ctx);
         Releasables.closeExpectNoException(pipeline);
         super.channelInactive(ctx);
+    }
+
+    private boolean isFlushing = false;
+
+    private void flushNoReentrant(ChannelHandlerContext ctx) {
+        assert ctx.executor().inEventLoop();
+        if (isFlushing) {
+            return;
+        }
+        isFlushing = true;
+        try {
+            doFlush(ctx);
+        } finally {
+            isFlushing = false;
+        }
     }
 
     private void doFlush(ChannelHandlerContext ctx) {
         assert ctx.executor().inEventLoop();
         final Channel channel = ctx.channel();
         if (channel.isActive() == false) {
-            if (currentWrite != null) {
-                currentWrite.promise.tryFailure(new ClosedChannelException());
+            if (chunkedWrite != null) {
+                final WriteOperation writeToFail = chunkedWrite;
+                chunkedWrite = null;
+                writeToFail.promise.tryFailure(new ClosedChannelException());
             }
             failQueuedWrites();
             return;
         }
-        while (channel.isWritable()) {
-            if (currentWrite == null) {
-                currentWrite = queuedWrites.poll();
+        boolean needsFlush = true;
+        long bytesBeforeUnWritable;
+        while (channel.isWritable() && (bytesBeforeUnWritable = channel.bytesBeforeUnwritable()) > 0) {
+            final WriteOperation write;
+            if (chunkedWrite == null) {
+                write = queuedWrites.poll();
+            } else {
+                write = chunkedWrite;
             }
-            if (currentWrite == null) {
+            if (write == null) {
                 break;
             }
-            final WriteOperation write = currentWrite;
             final int readableBytes = write.buf.readableBytes();
-            final int bufferSize = Math.min(readableBytes, 1 << 18);
+            final int bufferSize = (int) Math.min(readableBytes, bytesBeforeUnWritable);
             final ByteBuf writeBuffer;
             final ChannelPromise writePromise;
             if (readableBytes != bufferSize) {
+                chunkedWrite = write;
                 writeBuffer = write.buf.readRetainedSlice(bufferSize);
-                write.chunked = true;
                 writePromise = ctx.newPromise().addListener(future -> {
                     assert ctx.executor().inEventLoop();
                     if (future.isSuccess() == false) {
@@ -144,9 +165,9 @@ final class Netty4MessageChannelHandler extends ChannelDuplexHandler {
                     }
                 });
             } else {
-                currentWrite = null;
                 writeBuffer = write.buf;
-                if (write.chunked) {
+                if (chunkedWrite != null) {
+                    chunkedWrite = null;
                     writePromise = ctx.newPromise().addListener(future -> {
                         assert ctx.executor().inEventLoop();
                         if (future.isSuccess()) {
@@ -160,11 +181,23 @@ final class Netty4MessageChannelHandler extends ChannelDuplexHandler {
                 }
             }
             ctx.write(writeBuffer, writePromise);
-            ctx.flush();
-            if (channel.isActive() == false) {
-                failQueuedWrites();
-                return;
+            if (channel.bytesBeforeUnwritable() == 0) {
+                ctx.flush();
+                needsFlush = false;
+            } else {
+                needsFlush = true;
             }
+        }
+        if (needsFlush) {
+            ctx.flush();
+        }
+        if (channel.isActive() == false) {
+            if (chunkedWrite != null) {
+                final WriteOperation writeToFail = chunkedWrite;
+                chunkedWrite = null;
+                writeToFail.promise.tryFailure(new ClosedChannelException());
+            }
+            failQueuedWrites();
         }
     }
 
@@ -176,8 +209,6 @@ final class Netty4MessageChannelHandler extends ChannelDuplexHandler {
     }
 
     private static final class WriteOperation {
-
-        private boolean chunked = false;
 
         private final ByteBuf buf;
 
