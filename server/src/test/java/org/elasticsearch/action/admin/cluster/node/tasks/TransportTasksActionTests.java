@@ -40,6 +40,7 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.tasks.TaskInfo;
+import org.elasticsearch.tasks.TaskListener;
 import org.elasticsearch.test.junit.annotations.TestLogging;
 import org.elasticsearch.test.tasks.MockTaskManager;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -271,7 +272,7 @@ public class TransportTasksActionTests extends TaskManagerTestCase {
             assertEquals(0, node.transportService.getTaskManager().getTasks().size());
         }
         Task task = testNodes[0].transportService.getTaskManager().registerAndExecute("transport", actions[0], request,
-            testNodes[0].transportService.getLocalNodeConnection(), (t, r) -> listener.onResponse(r), (t, e) -> listener.onFailure(e));
+            testNodes[0].transportService.getLocalNodeConnection(), TaskListener.wrap(listener));
         logger.info("Awaiting for all actions to start");
         assertTrue(actionLatch.await(10, TimeUnit.SECONDS));
         logger.info("Done waiting for all actions to start");

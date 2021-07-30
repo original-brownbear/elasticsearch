@@ -8,6 +8,8 @@
 
 package org.elasticsearch.tasks;
 
+import org.elasticsearch.action.ActionListener;
+
 /**
  * Listener for Task success or failure.
  */
@@ -35,4 +37,28 @@ public interface TaskListener<Response> {
      */
     void onFailure(Task task, Exception e);
 
+    static <T> TaskListener<T> wrap(ActionListener<T> listener) {
+        return new TaskListener<>() {
+            @Override
+            public void onResponse(Task task, T t) {
+                try {
+                    listener.onResponse(t);
+                } catch (Exception e) {
+                    assert false : new AssertionError("callback must handle its own exceptions", e);
+                    throw e;
+                }
+            }
+
+            @Override
+            public void onFailure(Task task, Exception e) {
+                try {
+                    listener.onFailure(e);
+                } catch (Exception ex) {
+                    ex.addSuppressed(e);
+                    assert false : new AssertionError("callback must handle its own exceptions", ex);
+                    throw ex;
+                }
+            }
+        };
+    }
 }

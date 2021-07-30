@@ -57,7 +57,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -146,18 +145,18 @@ public class TaskManager implements ClusterStateApplier {
 
     public <Request extends ActionRequest, Response extends ActionResponse>
     Task registerAndExecute(String type, TransportAction<Request, Response> action, Request request, Transport.Connection localConnection,
-                            BiConsumer<Task, Response> onResponse, BiConsumer<Task, Exception> onFailure) {
+                            TaskListener<Response> taskListener) {
         final Releasable unregisterChildNode;
         if (request.getParentTask().isSet()) {
             unregisterChildNode = registerChildConnection(request.getParentTask().getId(), localConnection);
         } else {
-            unregisterChildNode = () -> {};
+            unregisterChildNode = null;
         }
         final Task task;
         try {
             task = register(type, action.actionName, request);
         } catch (TaskCancelledException e) {
-            unregisterChildNode.close();
+            Releasables.close(unregisterChildNode);
             throw e;
         }
         // NOTE: ActionListener cannot infer Response, see https://bugs.openjdk.java.net/browse/JDK-8203195
@@ -167,7 +166,7 @@ public class TaskManager implements ClusterStateApplier {
                 try {
                     Releasables.close(unregisterChildNode, () -> unregister(task));
                 } finally {
-                    onResponse.accept(task, response);
+                    taskListener.onResponse(task, response);
                 }
             }
 
@@ -176,7 +175,7 @@ public class TaskManager implements ClusterStateApplier {
                 try {
                     Releasables.close(unregisterChildNode, () -> unregister(task));
                 } finally {
-                    onFailure.accept(task, e);
+                    taskListener.onFailure(task, e);
                 }
             }
         });
@@ -254,7 +253,7 @@ public class TaskManager implements ClusterStateApplier {
                 holder.unregisterChildConnection(childConnection);
             });
         }
-        return () -> {};
+        return null;
     }
 
     /**
@@ -533,7 +532,7 @@ public class TaskManager implements ClusterStateApplier {
                     listeners = cancellationListeners;
                     cancellationListeners = null;
                 } else {
-                    listeners = Collections.emptyList();
+                    return;
                 }
             }
             // We need to call the listener outside of the synchronised section to avoid potential bottle necks
@@ -582,7 +581,7 @@ public class TaskManager implements ClusterStateApplier {
                     listeners = childTaskCompletedListeners;
                     childTaskCompletedListeners = null;
                 } else {
-                    listeners = Collections.emptyList();
+                    return;
                 }
             }
             notifyListeners(listeners);

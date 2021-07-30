@@ -15,6 +15,7 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.ResponseListener;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.tasks.Task;
+import org.elasticsearch.tasks.TaskListener;
 import org.elasticsearch.tasks.TaskManager;
 import org.elasticsearch.transport.Transport;
 
@@ -37,8 +38,7 @@ public class ActionTestUtils {
     Response executeBlockingWithTask(TaskManager taskManager, Transport.Connection localConnection,
                                      TransportAction<Request, Response> action, Request request) {
         PlainActionFuture<Response> future = newFuture();
-        taskManager.registerAndExecute("transport", action, request, localConnection,
-            (t, r) -> future.onResponse(r), (t, e) -> future.onFailure(e));
+        taskManager.registerAndExecute("transport", action, request, localConnection, TaskListener.wrap(future));
         return future.actionGet();
     }
 

@@ -29,6 +29,7 @@ import org.elasticsearch.tasks.TaskCancelHelper;
 import org.elasticsearch.tasks.TaskCancelledException;
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.tasks.TaskInfo;
+import org.elasticsearch.tasks.TaskListener;
 import org.elasticsearch.tasks.TaskManager;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.FakeTcpChannel;
@@ -203,7 +204,7 @@ public class CancellableTasksTests extends TaskManagerTestCase {
                 .clusterService, testNodes[i].transportService, shouldBlock, actionLatch);
         }
         Task task = testNodes[0].transportService.getTaskManager().registerAndExecute("transport", actions[0], request,
-            testNodes[0].transportService.getLocalNodeConnection(), (t, r) -> listener.onResponse(r), (t, e) -> listener.onFailure(e));
+                testNodes[0].transportService.getLocalNodeConnection(), TaskListener.wrap(listener));
         if (waitForActionToStart) {
             logger.info("Awaiting for all actions to start");
             actionLatch.await();
@@ -352,7 +353,7 @@ public class CancellableTasksTests extends TaskManagerTestCase {
             .clusterService, testNodes[0].transportService, false, new CountDownLatch(1));
         TaskCancelledException cancelledException = expectThrows(TaskCancelledException.class,
             () -> taskManager.registerAndExecute("test", testAction, childRequest, testNodes[0].transportService.getLocalNodeConnection(),
-                (task, response) -> {}, (task, e) -> {}));
+                TaskListener.wrap(ActionListener.wrap(() -> {}))));
         assertThat(cancelledException.getMessage(), equalTo("task cancelled before starting [test]"));
         CountDownLatch latch = new CountDownLatch(1);
         taskManager.startBanOnChildTasks(parentTaskId.getId(), "reason", latch::countDown);

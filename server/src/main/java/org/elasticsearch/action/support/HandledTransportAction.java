@@ -10,10 +10,7 @@ package org.elasticsearch.action.support;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.TransportChannel;
-import org.elasticsearch.transport.TransportRequestHandler;
 import org.elasticsearch.transport.TransportService;
 
 /**
@@ -43,15 +40,9 @@ public abstract class HandledTransportAction<Request extends ActionRequest, Resp
                                      Writeable.Reader<Request> requestReader, String executor) {
         super(actionName, actionFilters, transportService.getTaskManager());
         transportService.registerRequestHandler(actionName, executor, false, canTripCircuitBreaker, requestReader,
-            new TransportHandler());
+                ((request, channel, task) -> {
+                    // We already got the task created on the network layer - no need to create it again on the transport layer
+                    execute(task, request, new ChannelActionListener<>(channel, actionName, request));
+                }));
     }
-
-    class TransportHandler implements TransportRequestHandler<Request> {
-        @Override
-        public final void messageReceived(final Request request, final TransportChannel channel, Task task) {
-            // We already got the task created on the network layer - no need to create it again on the transport layer
-            execute(task, request, new ChannelActionListener<>(channel, actionName, request));
-        }
-    }
-
 }

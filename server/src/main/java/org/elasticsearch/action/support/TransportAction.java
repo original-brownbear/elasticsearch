@@ -49,8 +49,17 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
             listener = new TaskResultStoringActionListener<>(taskManager, task, listener);
         }
 
-        RequestFilterChain<Request, Response> requestFilterChain = new RequestFilterChain<>(this, logger);
-        requestFilterChain.proceed(task, actionName, request, listener);
+        if (this.filters.length == 0) {
+            try {
+                doExecute(task, request, listener);
+            } catch (Exception e) {
+                logger.trace("Error during transport action execution.", e);
+                listener.onFailure(e);
+            }
+        } else {
+            RequestFilterChain<Request, Response> requestFilterChain = new RequestFilterChain<>(this, logger);
+            requestFilterChain.proceed(task, actionName, request, listener);
+        }
     }
 
     protected abstract void doExecute(Task task, Request request, ActionListener<Response> listener);
