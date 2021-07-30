@@ -983,12 +983,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         );
 
         for (IndexId indexId : indices) {
+            final Set<SnapshotId> applicableSnapshotIds = new HashSet<>(oldRepositoryData.getSnapshots(indexId));
             final Set<SnapshotId> survivingSnapshots = oldRepositoryData.getSnapshots(indexId)
                 .stream()
                 .filter(id -> snapshotIds.contains(id) == false)
                 .collect(Collectors.toSet());
             final StepListener<Collection<Integer>> shardCountListener = new StepListener<>();
             final Collection<String> indexMetaGenerations = snapshotIds.stream()
+                .filter(applicableSnapshotIds::contains)
                 .map(id -> oldRepositoryData.indexMetaDataGenerations().indexMetaBlobId(id, indexId))
                 .collect(Collectors.toSet());
             final ActionListener<Integer> allShardCountsListener = new GroupedActionListener<>(
