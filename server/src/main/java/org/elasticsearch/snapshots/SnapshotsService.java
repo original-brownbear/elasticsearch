@@ -1415,7 +1415,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 .custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY)
                 .snapshot(snapshot);
             final String failure = entry.failure();
-            logger.trace("[{}] finalizing snapshot in repository, state: [{}], failure[{}]", snapshot, entry.state(), failure);
+            logger.info("[{}] finalizing snapshot in repository, state: [{}], failure[{}] gen [{}] [{}]",
+                    snapshot, entry.state(), failure, repositoryData.getGenId(), entry.repositoryStateId());
             final ShardGenerations shardGenerations = buildGenerations(entry, metadata);
             final List<String> finalIndices = shardGenerations.indices().stream().map(IndexId::getName).collect(Collectors.toList());
             final Set<String> indexNames = new HashSet<>(finalIndices);
@@ -1729,6 +1730,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      */
     private static ClusterState stateWithoutSuccessfulSnapshot(ClusterState state, Snapshot snapshot) {
         // TODO: updating snapshots here leaks their outdated generation files, we should add logic to clean those up and enhance
+        // TODO: NOCOMMIT: some serious bug here causes outdated generations to be finalized again
         // BlobStoreTestUtil to catch this leak
         SnapshotsInProgress snapshots = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
         ClusterState result = state;
@@ -1753,7 +1755,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             for (ObjectObjectCursor<RepositoryShardId, ShardSnapshotStatus> finishedShardEntry : removedEntry
                                 .shardsByRepoShardId()) {
                                 final ShardSnapshotStatus shardState = finishedShardEntry.value;
-                                if (shardState.state() == ShardState.SUCCESS) {
+                                if (shardState.generation() != null && ShardGenerations.isSpecialShardGen(shardState.generation()) == false) {
                                     updatedShardAssignments = maybeAddUpdatedAssignment(
                                         updatedShardAssignments,
                                         shardState,
@@ -1769,7 +1771,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 .shardsByRepoShardId()) {
                                 final ShardSnapshotStatus shardState = finishedShardEntry.value;
                                 final RepositoryShardId repositoryShardId = finishedShardEntry.key;
-                                if (shardState.state() != ShardState.SUCCESS
+                                if (shardState.generation() == null || ShardGenerations.isSpecialShardGen(shardState.generation())
                                     || previousEntry.shardsByRepoShardId().containsKey(repositoryShardId) == false) {
                                     continue;
                                 }
@@ -1790,7 +1792,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 .shardsByRepoShardId()) {
                                 final ShardSnapshotStatus shardState = finishedShardEntry.value;
                                 final RepositoryShardId repositoryShardId = finishedShardEntry.key;
-                                if (shardState.state() != ShardState.SUCCESS
+                                if (shardState.generation() == null || ShardGenerations.isSpecialShardGen(shardState.generation())
                                     || previousEntry.shardsByRepoShardId().containsKey(repositoryShardId) == false) {
                                     continue;
                                 }
@@ -1807,7 +1809,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             for (ObjectObjectCursor<RepositoryShardId, ShardSnapshotStatus> finishedShardEntry : removedEntry
                                 .shardsByRepoShardId()) {
                                 final ShardSnapshotStatus shardState = finishedShardEntry.value;
-                                if (shardState.state() == ShardState.SUCCESS
+                                if (shardState.generation() != null && ShardGenerations.isSpecialShardGen(shardState.generation()) == false
                                     && previousEntry.shardsByRepoShardId().containsKey(finishedShardEntry.key)) {
                                     updatedShardAssignments = maybeAddUpdatedAssignment(
                                         updatedShardAssignments,
@@ -2250,7 +2252,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      * @param entry snapshot entry
      * @return true if entry is currently writing to the repository
      */
-    private static boolean isWritingToRepository(SnapshotsInProgress.Entry entry) {
+    public static boolean isWritingToRepository(SnapshotsInProgress.Entry entry) {
         if (entry.state().completed()) {
             // Entry is writing to the repo because it's finalizing on master
             return true;
@@ -2645,6 +2647,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 // No shards can be updated in this snapshot so we just add it as is again
                                 snapshotEntries.add(entry);
                             } else {
+                                try {
+                                    assert repositoryData.getGenId() == currentState.getMetadata().custom(RepositoriesMetadata.TYPE, RepositoriesMetadata.EMPTY).repository(repoName).generation();
+                                } catch (AssertionError e) {
+                                    throw e;
+                                }
                                 final ImmutableOpenMap<ShardId, ShardSnapshotStatus> shardAssignments = shards(
                                     snapshotsInProgress,
                                     updatedDeletions,

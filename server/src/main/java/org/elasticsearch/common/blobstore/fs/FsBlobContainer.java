@@ -8,6 +8,8 @@
 
 package org.elasticsearch.common.blobstore.fs;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetadata;
@@ -54,6 +56,8 @@ import static java.util.Collections.unmodifiableMap;
  * does not permit read and/or write access to the underlying files.
  */
 public class FsBlobContainer extends AbstractBlobContainer {
+
+    private static final Logger logger = LogManager.getLogger(FsBlobContainer.class);
 
     private static final String TEMP_FILE_PREFIX = "pending-";
 
@@ -149,6 +153,7 @@ public class FsBlobContainer extends AbstractBlobContainer {
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                logger.info("deleting [{}]", file);
                 Files.delete(file);
                 filesDeleted.incrementAndGet();
                 bytesDeleted.addAndGet(attrs.size());
@@ -164,7 +169,9 @@ public class FsBlobContainer extends AbstractBlobContainer {
         long suppressedExceptions = 0;
         while (blobNames.hasNext()) {
             try {
-                IOUtils.rm(path.resolve(blobNames.next()));
+                final String blobName = blobNames.next();
+                logger.info("deleting [{}]", blobName);
+                IOUtils.rm(path.resolve(blobName));
             } catch (IOException e) {
                 // track up to 10 delete exceptions and try to continue deleting on exceptions
                 if (ioe == null) {

@@ -773,6 +773,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             threadPool.executor(ThreadPool.Names.SNAPSHOT).execute(new AbstractRunnable() {
                 @Override
                 protected void doRun() throws Exception {
+                    assert clusterService.state().custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).entries().stream().noneMatch(entry -> entry.repository().equals(metadata.name()) && SnapshotsService.isWritingToRepository(entry)) : clusterService.state();
                     final Map<String, BlobMetadata> rootBlobs = blobContainer().listBlobs();
                     final RepositoryData repositoryData = safeRepositoryData(repositoryStateId, rootBlobs);
                     // Cache the indices that were found before writing out the new index-N blob so that a stuck master will never
@@ -1381,7 +1382,13 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     stateTransformer,
                     ActionListener.wrap(newRepoData -> {
                         if (writeShardGens) {
-                            cleanupOldShardGens(existingRepositoryData, updatedRepositoryData);
+                            try {
+                                assert existingRepositoryData.getSnapshotIds().size() + 1 == newRepoData.getSnapshotIds().size();
+                                assert newRepoData.getSnapshotIds().containsAll(existingRepositoryData.getSnapshotIds());
+                            } catch (AssertionError e) {
+                                throw e;
+                            }
+                            cleanupOldShardGens(existingRepositoryData, newRepoData);
                         }
                         listener.onResponse(newRepoData);
                     }, onUpdateFailure)
@@ -1449,6 +1456,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 )
             );
         try {
+            logger.info("obsolete generations {}", toDelete);
             deleteFromContainer(blobContainer(), toDelete.iterator());
         } catch (Exception e) {
             logger.warn("Failed to clean up old shard generation blobs", e);

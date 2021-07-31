@@ -100,6 +100,7 @@ public final class ShardGenerations {
                 // If we had a previous generation that is different from an updated generation it's obsolete
                 // Since this method assumes only additions and no removals of shards, a null updated generation means no update
                 if (updatedGeneration != null && oldGeneration != null && oldGeneration.equals(updatedGeneration) == false) {
+                    assert isSpecialShardGen(updatedGeneration) == false;
                     obsoleteShardIndices.put(i, oldGeneration);
                 }
             }
@@ -198,7 +199,7 @@ public final class ShardGenerations {
             shardGenerations.shardGenerations.forEach((indexId, gens) -> {
                 for (int i = 0; i < gens.size(); i++) {
                     final String gen = gens.get(i);
-                    if (gen != null) {
+                    if (gen != null && isSpecialShardGen(gen) == false) {
                         put(indexId, i, gen);
                     }
                 }
@@ -225,5 +226,9 @@ public final class ShardGenerations {
                 return Collections.unmodifiableList(Arrays.asList(gens));
             })));
         }
+    }
+
+    public static boolean isSpecialShardGen(@Nullable String generation) {
+        return NEW_SHARD_GEN.equals(generation) || DELETED_SHARD_GEN.equals(generation);
     }
 }
