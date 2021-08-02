@@ -745,7 +745,6 @@ public final class RepositoryData {
             if (shouldWriteShardGens) {
                 builder.startArray(SHARD_GENERATIONS);
                 for (String gen : shardGenerations.getGens(indexId)) {
-                    assert ShardGenerations.isSpecialShardGen(gen) == false;
                     builder.value(gen);
                 }
                 builder.endArray();

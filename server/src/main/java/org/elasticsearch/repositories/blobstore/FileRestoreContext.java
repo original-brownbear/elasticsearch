@@ -193,8 +193,8 @@ public abstract class FileRestoreContext {
                     continue; // skip write.lock, checksum files and files that exist in the snapshot
                 }
                 try {
-                    store.directory().deleteFile(storeFile);
                     store.deleteQuiet("restore", storeFile);
+                    store.directory().deleteFile(storeFile);
                 } catch (ImmutableDirectoryException e) {
                     // snapshots of immutable directories only contain an empty `segments_N` file since the data lives elsewhere, and if we
                     // restore such a snapshot then the real data is already present in the directory and cannot be removed.
