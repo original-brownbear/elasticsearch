@@ -204,6 +204,17 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             }
         }
         for (String repoName : assignedShardsByRepo.keySet()) {
+            final Map<String, IndexId> indexIdMap = new HashMap<>();
+            for (Entry entry : entries) {
+                if (entry.repository().equals(repoName) == false) {
+                    continue;
+                }
+                for (ObjectCursor<RepositoryShardId> key : entry.shardsByRepoShardId().keys()) {
+                    final IndexId indexId = key.value.index();
+                    final IndexId existing = indexIdMap.put(indexId.getName(), indexId);
+                    assert existing == null || indexId.equals(existing) : "conflict for name [" + indexId + "][" + existing + "]";
+                }
+            }
             // make sure in-flight-shard-states can be built cleanly for the entries without tripping assertions
             InFlightShardSnapshotStates.forRepo(repoName, entries);
         }
