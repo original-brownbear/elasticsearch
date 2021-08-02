@@ -845,7 +845,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     private static ShardGenerations buildGenerations(SnapshotsInProgress.Entry snapshot, Metadata metadata) {
         ShardGenerations.Builder builder = ShardGenerations.builder();
         if (snapshot.isClone()) {
-            snapshot.shardsByRepoShardId().forEach(c -> builder.put(c.key.index(), c.key.shardId(), c.value.generation()));
+            snapshot.shardsByRepoShardId().forEach(c -> builder.put(c.key.index(), c.key.shardId(),
+                    c.value.state().failed() ? null : c.value.generation()));
         } else {
             snapshot.shardsByRepoShardId().forEach(c -> {
                 final Index index = snapshot.indexByName(c.key.indexName());
@@ -853,7 +854,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     assert snapshot.partial() : "Index [" + index + "] was deleted during a snapshot but snapshot was not partial.";
                     return;
                 }
-                builder.put(c.key.index(), c.key.shardId(), c.value.generation());
+                builder.put(c.key.index(), c.key.shardId(), c.value.state().failed() ? null : c.value.generation());
             });
         }
         return builder.build();
@@ -1229,8 +1230,18 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 // this shard snapshot is waiting for a previous snapshot to finish execution for this shard
                 final ShardSnapshotStatus knownFailure = knownFailures.get(shardId);
                 if (knownFailure == null) {
-                    // if no failure is known for the shard we keep waiting
-                    shards.put(shardId, shardStatus);
+                    final IndexRoutingTable indexShardRoutingTable = routingTable.index(shardId.getIndex());
+                    if (indexShardRoutingTable == null) {
+                        // shard became unassigned while queued so we fail as missing here
+                        assert entry.partial();
+                        snapshotChanged = true;
+                        logger.debug("failing snapshot of shard [{}] because index got deleted", shardId);
+                        shards.put(shardId, ShardSnapshotStatus.MISSING);
+                        knownFailures.put(shardId, ShardSnapshotStatus.MISSING);
+                    } else {
+                        // if no failure is known for the shard we keep waiting
+                        shards.put(shardId, shardStatus);
+                    }
                 } else {
                     // If a failure is known for an execution we waited on for this shard then we fail with the same exception here
                     // as well
@@ -1265,7 +1276,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     shardStatus.nodeId(),
                     ShardState.FAILED,
                     "shard is unassigned",
-                    shardStatus.generation()
+                    null
                 );
                 shards.put(shardId, failedState);
                 knownFailures.put(shardId, failedState);
@@ -1280,7 +1291,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         shardStatus.nodeId(),
                         ShardState.FAILED,
                         "node shutdown",
-                        shardStatus.generation()
+                        null
                     );
                     shards.put(shardId, failedState);
                     knownFailures.put(shardId, failedState);
@@ -2817,7 +2828,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     private static ShardSnapshotStatus initShardSnapshotStatus(String shardRepoGeneration, ShardRouting primary) {
         ShardSnapshotStatus shardSnapshotStatus;
         if (primary == null || primary.assignedToNode() == false) {
-            shardSnapshotStatus = new ShardSnapshotStatus(null, ShardState.MISSING, "primary shard is not allocated", shardRepoGeneration);
+            shardSnapshotStatus = new ShardSnapshotStatus(null, ShardState.MISSING, "primary shard is not allocated", null);
         } else if (primary.relocating() || primary.initializing()) {
             shardSnapshotStatus = new ShardSnapshotStatus(primary.currentNodeId(), ShardState.WAITING, shardRepoGeneration);
         } else if (primary.started() == false) {
@@ -2825,7 +2836,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 primary.currentNodeId(),
                 ShardState.MISSING,
                 "primary shard hasn't been started yet",
-                shardRepoGeneration
+                    null
             );
         } else {
             shardSnapshotStatus = new ShardSnapshotStatus(primary.currentNodeId(), shardRepoGeneration);

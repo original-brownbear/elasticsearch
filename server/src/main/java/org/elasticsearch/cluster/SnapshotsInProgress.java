@@ -698,7 +698,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 if (status.state().completed() == false) {
                     final String nodeId = status.nodeId();
                     status = new ShardSnapshotStatus(nodeId, nodeId == null ? ShardState.FAILED : ShardState.ABORTED,
-                            "aborted by snapshot deletion", status.generation());
+                            "aborted by snapshot deletion", null);
                 }
                 completed &= status.state().completed();
                 shardsBuilder.put(shardEntry.key, status);
