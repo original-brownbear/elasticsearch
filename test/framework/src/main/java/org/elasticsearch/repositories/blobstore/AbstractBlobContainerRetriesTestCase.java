@@ -253,7 +253,8 @@ public abstract class AbstractBlobContainerRetriesTestCase extends ESTestCase {
         final BlobContainer blobContainer = createBlobContainer(randomInt(5), readTimeout, null, null);
 
         // HTTP server closes connection immediately
-        httpServer.createContext(downloadStorageEndpoint("read_blob_no_response"), HttpExchange::close);
+        httpServer.createContext(
+            downloadStorageEndpoint("/bucket/" + blobContainer.path().buildAsString() + "read_blob_no_response"), HttpExchange::close);
 
         Exception exception = expectThrows(unresponsiveExceptionType(),
             () -> {
