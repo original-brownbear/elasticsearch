@@ -84,7 +84,7 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
     private final TransportService transportService;
     private final ClusterService clusterService;
     private final IndexNameExpressionResolver indexNameExpressionResolver;
-    private final Predicate<String> metadataFieldPred;
+    private final Set<String> metadataFields;
     private final IndicesService indicesService;
 
     @Inject
@@ -100,8 +100,7 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
         this.clusterService = clusterService;
         this.indexNameExpressionResolver = indexNameExpressionResolver;
         this.indicesService = indicesService;
-        final Set<String> metadataFields = indicesService.getAllMetadataFields();
-        this.metadataFieldPred = metadataFields::contains;
+        metadataFields = indicesService.getAllMetadataFields();
         transportService.registerRequestHandler(ACTION_SHARD_NAME, ThreadPool.Names.SAME,
                 FieldCapabilitiesIndexRequest::new, new ShardTransportHandler());
     }
@@ -237,10 +236,23 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
         boolean includeUnmapped,
         List<FieldCapabilitiesFailure> failures
     ) {
-        String[] indices = indexResponses.stream().map(FieldCapabilitiesIndexResponse::getIndexName).sorted().toArray(String[]::new);
+        String[] indices = new String[indexResponses.size()];
+        int i = 0;
         final Map<String, Map<String, FieldCapabilities.Builder>> responseMapBuilder = new HashMap<>();
         for (FieldCapabilitiesIndexResponse response : indexResponses) {
-            innerMerge(responseMapBuilder, response);
+            final String indexName = response.getIndexName();
+            indices[i++] = indexName;
+            final boolean onOrAfter713 = response.getOriginVersion().onOrAfter(Version.V_7_13_0);
+            for (Map.Entry<String, IndexFieldCapabilities> entry : response.get().entrySet()) {
+                final String field = entry.getKey();
+                // best effort to detect metadata field coming from older nodes
+                final boolean isMetadataField = onOrAfter713 ? entry.getValue().isMetadatafield() : metadataFields.contains(field);
+                final IndexFieldCapabilities fieldCap = entry.getValue();
+                responseMapBuilder
+                    .computeIfAbsent(field, f -> new HashMap<>())
+                    .computeIfAbsent(fieldCap.getType(), key -> new FieldCapabilities.Builder(field, key))
+                    .add(indexName, isMetadataField, fieldCap.isSearchable(), fieldCap.isAggregatable(), fieldCap.meta());
+            }
         }
         final Map<String, Map<String, FieldCapabilities>> responseMap = new HashMap<>();
         for (Map.Entry<String, Map<String, FieldCapabilities.Builder>> entry : responseMapBuilder.entrySet()) {
@@ -255,6 +267,7 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
             }
             responseMap.put(entry.getKey(), Collections.unmodifiableMap(typeMap));
         }
+        Arrays.sort(indices);
         // de-dup failures
         return new FieldCapabilitiesResponse(indices, Collections.unmodifiableMap(responseMap), failures);
     }
@@ -268,21 +281,6 @@ public class TransportFieldCapabilitiesAction extends HandledTransportAction<Fie
             for (String index : unmappedIndices) {
                 unmapped.add(index, false, false, false, Collections.emptyMap());
             }
-        }
-    }
-
-    private void innerMerge(Map<String, Map<String, FieldCapabilities.Builder>> responseMapBuilder,
-                            FieldCapabilitiesIndexResponse response) {
-        for (Map.Entry<String, IndexFieldCapabilities> entry : response.get().entrySet()) {
-            final String field = entry.getKey();
-            // best effort to detect metadata field coming from older nodes
-            final boolean isMetadataField = response.getOriginVersion().onOrAfter(Version.V_7_13_0) ?
-                entry.getValue().isMetadatafield() : metadataFieldPred.test(field);
-            final IndexFieldCapabilities fieldCap = entry.getValue();
-            Map<String, FieldCapabilities.Builder> typeMap = responseMapBuilder.computeIfAbsent(field, f -> new HashMap<>());
-            FieldCapabilities.Builder builder = typeMap.computeIfAbsent(fieldCap.getType(),
-                key -> new FieldCapabilities.Builder(field, key));
-            builder.add(response.getIndexName(), isMetadataField, fieldCap.isSearchable(), fieldCap.isAggregatable(), fieldCap.meta());
         }
     }
 
