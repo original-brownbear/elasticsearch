@@ -11,15 +11,36 @@ package org.elasticsearch.repositories.blobstore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexCommit;
 import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.DocIdSetIterator;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreMode;
+import org.apache.lucene.search.Scorer;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.AlreadyClosedException;
+import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.RateLimiter;
+import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ExceptionsHelper;
@@ -57,6 +78,8 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.compress.NotXContentException;
 import org.elasticsearch.common.io.Streams;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.lucene.store.InputStreamIndexInput;
 import org.elasticsearch.common.metrics.CounterMetric;
@@ -65,6 +88,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
@@ -74,6 +98,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
@@ -142,6 +167,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -400,6 +426,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         this.namedXContentRegistry = namedXContentRegistry;
         this.basePath = basePath;
         this.maxSnapshotCount = MAX_SNAPSHOTS_SETTING.get(metadata.settings());
+        snapshotIndex = new SnapshotIndex(metadata.name());
     }
 
     @Override
@@ -1447,12 +1474,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     }
                 }));
             }
-            executor.execute(
-                ActionRunnable.run(
-                    allMetaListener,
-                    () -> SNAPSHOT_FORMAT.write(snapshotInfo, blobContainer(), snapshotId.getUUID(), compress)
-                )
-            );
+            executor.execute(ActionRunnable.run(allMetaListener, () -> {
+                SNAPSHOT_FORMAT.write(snapshotInfo, blobContainer(), snapshotId.getUUID(), compress);
+                snapshotIndex.cache(snapshotInfo);
+            }));
         }, onUpdateFailure);
     }
 
@@ -1507,7 +1532,11 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             Exception failure = null;
             SnapshotInfo snapshotInfo = null;
             try {
-                snapshotInfo = SNAPSHOT_FORMAT.read(metadata.name(), blobContainer(), snapshotId.getUUID(), namedXContentRegistry);
+                snapshotInfo = snapshotIndex.get(snapshotId);
+                if (snapshotInfo == null) {
+                    snapshotInfo = SNAPSHOT_FORMAT.read(metadata.name(), blobContainer(), snapshotId.getUUID(), namedXContentRegistry);
+                    snapshotIndex.cache(snapshotInfo);
+                }
             } catch (NoSuchFileException ex) {
                 failure = new SnapshotMissingException(metadata.name(), snapshotId, ex);
             } catch (IOException | NotXContentException ex) {
@@ -3442,6 +3471,95 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
     public int getReadBufferSizeInBytes() {
         return bufferSize;
+    }
+
+    private final SnapshotIndex snapshotIndex;
+
+    private static final String SNAPSHOT_ID_FIELD = "snapshot_id";
+
+    private static final class SnapshotIndex extends AbstractRefCounted {
+
+        private final Directory directory = new ByteBuffersDirectory();
+
+        final IndexWriterConfig config = new IndexWriterConfig(new KeywordAnalyzer());
+
+        private final IndexWriter writer;
+
+        SnapshotIndex(String name) {
+            super("snapshot-index-" + name);
+            try {
+                writer = new IndexWriter(directory, config);
+            } catch (IOException e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        long cacheSize() throws IOException {
+            long len = 0L;
+            for (String s : directory.listAll()) {
+                len += directory.fileLength(s);
+            }
+            return len;
+        }
+
+        @Nullable
+        SnapshotInfo get(SnapshotId snapshotId) {
+            try (DirectoryReader reader = DirectoryReader.open(writer)) {
+                final IndexSearcher searcher = new IndexSearcher(reader);
+                searcher.setQueryCache(null);
+                final Weight weight = searcher.createWeight(
+                        new BooleanQuery.Builder().add(
+                                new TermQuery(new Term(SNAPSHOT_ID_FIELD, snapshotId.getUUID())),
+                                BooleanClause.Occur.MUST
+                        ).build(),
+                        ScoreMode.COMPLETE_NO_SCORES,
+                        0.0f
+                );
+                for (LeafReaderContext leafReaderContext : searcher.getIndexReader().leaves()) {
+                    final Scorer scorer = weight.scorer(leafReaderContext);
+                    if (scorer != null) {
+                        final Bits liveDocs = leafReaderContext.reader().getLiveDocs();
+                        final IntPredicate isLiveDoc = liveDocs == null ? i -> true : liveDocs::get;
+                        final DocIdSetIterator docIdSetIterator = scorer.iterator();
+                        while (docIdSetIterator.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+                            if (isLiveDoc.test(docIdSetIterator.docID())) {
+                                final Document document = leafReaderContext.reader().document(docIdSetIterator.docID());
+                                final BytesRef raw = document.getBinaryValue("source");
+                                return SnapshotInfo.readFrom(StreamInput.wrap(raw.bytes, raw.offset, raw.length));
+                            }
+                        }
+                    }
+                }
+                return null;
+            } catch (Exception e) {
+                 throw new AssertionError(e);
+            }
+        }
+
+        synchronized void cache(SnapshotInfo snapshotInfo) {
+            final SnapshotId snapshotId = snapshotInfo.snapshotId();
+            final BytesStreamOutput baos = new BytesStreamOutput();
+            try {
+                snapshotInfo.writeTo(baos);
+                final Document newDoc = new Document();
+                newDoc.add(new StringField(SNAPSHOT_ID_FIELD, snapshotId.getUUID(), Field.Store.YES));
+                newDoc.add(new StoredField("source", baos.bytes().toBytesRef()));
+                writer.addDocument(newDoc);
+                writer.flush();
+                writer.forceMerge(1);
+            } catch (IOException e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        @Override
+        protected void closeInternal() {
+            try {
+                directory.close();
+            } catch (IOException e) {
+                throw new AssertionError(e);
+            }
+        }
     }
 
     /**
