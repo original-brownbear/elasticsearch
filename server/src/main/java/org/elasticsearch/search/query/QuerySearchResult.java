@@ -210,6 +210,7 @@ public final class QuerySearchResult extends SearchPhaseResult {
     }
 
     public void aggregations(InternalAggregations aggregations) {
+        assert this.aggregations == null : "found existing aggregations [" + aggregations + "]";
         this.aggregations = aggregations == null ? null : DelayableWriteable.referencing(aggregations);
         hasAggs = aggregations != null;
     }
@@ -243,10 +244,7 @@ public final class QuerySearchResult extends SearchPhaseResult {
         if (hasConsumedTopDocs() == false) {
             consumeTopDocs();
         }
-        if (aggregations != null) {
-            aggregations.close();
-            aggregations = null;
-        }
+        releaseAggs();
     }
 
     /**
