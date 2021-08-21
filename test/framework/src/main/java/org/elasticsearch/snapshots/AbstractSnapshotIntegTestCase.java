@@ -208,7 +208,7 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
     public void waitForBlock(String node, String repository) throws Exception {
         logger.info("--> waiting for [{}] to be blocked on node [{}]", repository, node);
         MockRepository mockRepository = getRepositoryOnNode(repository, node);
-        assertBusy(() -> assertTrue(mockRepository.blocked()), 30L, TimeUnit.SECONDS);
+        mockRepository.waitForBlock(TimeUnit.SECONDS.toMillis(30L));
     }
 
     public static void blockMasterFromFinalizingSnapshotOnIndexFile(final String repositoryName) {
@@ -277,7 +277,7 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
     public static void failReadsAllDataNodes(String repository) {
         for (RepositoriesService repositoriesService : internalCluster().getDataNodeInstances(RepositoriesService.class)) {
             MockRepository mockRepository = (MockRepository) repositoriesService.repository(repository);
-            mockRepository.setFailReadsAfterUnblock(true);
+            mockRepository.setFailReadsAfterUnblock();
         }
     }
 

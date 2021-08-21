@@ -46,7 +46,7 @@ public class RestGetSnapshotsCancellationIT extends AbstractSnapshotRestTestCase
 
         assertThat(future.isDone(), equalTo(false));
         awaitTaskWithPrefix(GetSnapshotsAction.NAME);
-        assertBusy(() -> assertTrue(repository.blocked()), 30L, TimeUnit.SECONDS);
+        repository.waitForBlock(TimeUnit.SECONDS.toMillis(30L));
         cancellable.cancel();
         assertAllCancellableTasksAreCancelled(GetSnapshotsAction.NAME);
         repository.unblock();

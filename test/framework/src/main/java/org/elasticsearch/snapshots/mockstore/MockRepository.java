@@ -12,9 +12,9 @@ import com.carrotsearch.randomizedtesting.RandomizedContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.CorruptIndexException;
-import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.Numbers;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetadata;
 import org.elasticsearch.common.blobstore.BlobPath;
@@ -24,6 +24,7 @@ import org.elasticsearch.common.blobstore.fs.FsBlobContainer;
 import org.elasticsearch.common.blobstore.support.FilterBlobContainer;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.Iterators;
+import org.elasticsearch.common.hash.MessageDigests;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.common.settings.Setting;
@@ -42,23 +43,22 @@ import org.elasticsearch.repositories.fs.FsRepository;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class MockRepository extends FsRepository {
@@ -166,9 +166,7 @@ public class MockRepository extends FsRepository {
         randomDataFileIOExceptionRate = metadata.settings().getAsDouble("random_data_file_io_exception_rate", 0.0);
         useLuceneCorruptionException = metadata.settings().getAsBoolean("use_lucene_corruption", false);
         maximumNumberOfFailures = metadata.settings().getAsLong("max_failure_number", 100L);
-        blockOnAnyFiles = metadata.settings().getAsBoolean("block_on_control", false);
         blockOnDataFiles = metadata.settings().getAsBoolean("block_on_data", false);
-        blockAndFailOnWriteSnapFile = metadata.settings().getAsBoolean("block_on_snap", false);
         randomPrefix = metadata.settings().get("random", "default");
         waitAfterUnblock = metadata.settings().getAsLong("wait_after_unblock", 0L);
         env = environment;
@@ -214,24 +212,29 @@ public class MockRepository extends FsRepository {
         return new MockBlobStore(super.createBlobStore());
     }
 
-    public synchronized void unblock() {
-        blocked = false;
-        // Clean blocking flags, so we wouldn't try to block again
-        blockOnDataFiles = false;
-        blockAndFailOnDataFiles = false;
-        blockOnAnyFiles = false;
-        blockAndFailOnWriteIndexFile = false;
-        blockOnWriteIndexFile = false;
-        blockAndFailOnWriteSnapFile = false;
-        blockedIndexId = null;
-        blockOnDeleteIndexN = false;
-        blockOnWriteShardLevelMeta = false;
-        blockAndFailOnWriteShardLevelMeta = false;
-        blockOnReadIndexMeta = false;
-        blockOnceOnReadSnapshotInfo.set(false);
-        blockAndFailOnReadSnapFile = false;
-        blockAndFailOnReadIndexFile = false;
-        this.notifyAll();
+    public void unblock() {
+        lock.lock();
+        try {
+            blocked = false;
+            // Clean blocking flags, so we wouldn't try to block again
+            blockOnDataFiles = false;
+            blockAndFailOnDataFiles = false;
+            blockOnAnyFiles = false;
+            blockAndFailOnWriteIndexFile = false;
+            blockOnWriteIndexFile = false;
+            blockAndFailOnWriteSnapFile = false;
+            blockedIndexId = null;
+            blockOnDeleteIndexN = false;
+            blockOnWriteShardLevelMeta = false;
+            blockAndFailOnWriteShardLevelMeta = false;
+            blockOnReadIndexMeta = false;
+            blockOnceOnReadSnapshotInfo.set(false);
+            blockAndFailOnReadSnapFile = false;
+            blockAndFailOnReadIndexFile = false;
+            blockCondition.signalAll();
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void blockOnDataFiles() {
@@ -284,8 +287,8 @@ public class MockRepository extends FsRepository {
         blockOnReadIndexMeta = true;
     }
 
-    public void setFailReadsAfterUnblock(boolean failReadsAfterUnblock) {
-        this.failReadsAfterUnblock = failReadsAfterUnblock;
+    public void setFailReadsAfterUnblock() {
+        this.failReadsAfterUnblock = true;
     }
 
     public void setBlockAndFailOnReadSnapFiles() {
@@ -306,6 +309,27 @@ public class MockRepository extends FsRepository {
         blockOnceOnReadSnapshotInfo.set(true);
     }
 
+    private final ReentrantLock lock = new ReentrantLock();
+
+    private final Condition waitForBlockCondition = lock.newCondition();
+    private final Condition blockCondition = lock.newCondition();
+
+    public void waitForBlock(long millis) throws InterruptedException {
+        final long start = threadPool.relativeTimeInMillis();
+        lock.lock();
+        try {
+            while (blocked == false) {
+                if (waitForBlockCondition.await(
+                        millis - (start - threadPool.relativeTimeInMillis()), TimeUnit.MILLISECONDS) == false) {
+                    break;
+                }
+            }
+            assert blocked : "not blocked within [" + millis + "ms]";
+        } finally {
+            lock.unlock();
+        }
+    }
+
     public boolean blocked() {
         return blocked;
     }
@@ -314,30 +338,34 @@ public class MockRepository extends FsRepository {
         this.failOnIndexLatest = failOnIndexLatest;
     }
 
-    private synchronized boolean blockExecution() {
-        logger.debug("[{}] Blocking execution", metadata.name());
+    private boolean blockExecution() {
         boolean wasBlocked = false;
+        lock.lock();
         try {
+            logger.debug("[{}] Blocking execution", metadata.name());
             while (blockAndFailOnDataFiles || blockOnDataFiles || blockOnAnyFiles || blockAndFailOnWriteIndexFile || blockOnWriteIndexFile
-                    || blockAndFailOnWriteSnapFile || blockOnDeleteIndexN || blockOnWriteShardLevelMeta || blockAndFailOnWriteShardLevelMeta
-                    || blockOnReadIndexMeta || blockAndFailOnReadSnapFile || blockAndFailOnReadIndexFile || blockedIndexId != null) {
+                || blockAndFailOnWriteSnapFile || blockOnDeleteIndexN || blockOnWriteShardLevelMeta || blockAndFailOnWriteShardLevelMeta
+                || blockOnReadIndexMeta || blockAndFailOnReadSnapFile || blockAndFailOnReadIndexFile || blockedIndexId != null) {
                 blocked = true;
-                this.wait();
+                waitForBlockCondition.signalAll();
+                blockCondition.await();
                 wasBlocked = true;
+            }
+            logger.debug("[{}] Unblocking execution", metadata.name());
+            if (wasBlocked && failReadsAfterUnblock) {
+                logger.debug("[{}] Next read operations will fail", metadata.name());
+                this.throwReadErrorAfterUnblock = true;
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-        }
-        logger.debug("[{}] Unblocking execution", metadata.name());
-        if (wasBlocked && failReadsAfterUnblock) {
-            logger.debug("[{}] Next read operations will fail", metadata.name());
-            this.throwReadErrorAfterUnblock = true;
+        } finally {
+            lock.unlock();
         }
         return wasBlocked;
     }
 
     public class MockBlobStore extends BlobStoreWrapper {
-        ConcurrentMap<String, AtomicLong> accessCounts = new ConcurrentHashMap<>();
+        private final ConcurrentMap<String, AtomicLong> accessCounts = new ConcurrentHashMap<>();
 
         private long incrementAndGet(String path) {
             AtomicLong value = accessCounts.get(path);
@@ -365,22 +393,13 @@ public class MockRepository extends FsRepository {
                 if (probability > 0.0) {
                     String path = path().add(blobName).buildAsString() + randomPrefix;
                     path += "/" + incrementAndGet(path);
-                    logger.info("checking [{}] [{}]", path, Math.abs(hashCode(path)) < Integer.MAX_VALUE * probability);
-                    return Math.abs(hashCode(path)) < Integer.MAX_VALUE * probability;
+                    final boolean shouldFail = Math.abs(
+                        Numbers.bytesToInt(MessageDigests.md5().digest(path.getBytes(StandardCharsets.UTF_8)), 0)
+                    ) < Integer.MAX_VALUE * probability;
+                    logger.info("checking [{}] [{}]", path, shouldFail);
+                    return shouldFail;
                 } else {
                     return false;
-                }
-            }
-
-            private int hashCode(String path) {
-                try {
-                    MessageDigest digest = MessageDigest.getInstance("MD5");
-                    byte[] bytes = digest.digest(path.getBytes("UTF-8"));
-                    int i = 0;
-                    return ((bytes[i++] & 0xFF) << 24) | ((bytes[i++] & 0xFF) << 16)
-                            | ((bytes[i++] & 0xFF) << 8) | (bytes[i++] & 0xFF);
-                } catch (NoSuchAlgorithmException | UnsupportedEncodingException ex) {
-                    throw new ElasticsearchException("cannot calculate hashcode", ex);
                 }
             }
 
@@ -390,7 +409,7 @@ public class MockRepository extends FsRepository {
                     // specific tests that cover the error handling around this blob.
                     return;
                 }
-                if (blobName.startsWith("__")) {
+                if (blobName.startsWith(UPLOADED_DATA_BLOB_PREFIX)) {
                     if (shouldFail(blobName, randomDataFileIOExceptionRate) && (incrementAndGetFailureCount() < maximumNumberOfFailures)) {
                         logger.info("throwing random IOException for file [{}] at path [{}]", blobName, path());
                         if (useLuceneCorruptionException) {
@@ -409,11 +428,11 @@ public class MockRepository extends FsRepository {
                         throw new IOException("Random IOException");
                     } else if (blockOnAnyFiles) {
                         blockExecutionAndMaybeWait(blobName);
-                    } else if (blobName.startsWith("snap-") && (blockAndFailOnWriteSnapFile || blockAndFailOnReadSnapFile)) {
+                    } else if ((blockAndFailOnWriteSnapFile || blockAndFailOnReadSnapFile) && blobName.startsWith(SNAPSHOT_PREFIX)) {
                         blockExecutionAndFail(blobName);
-                    } else if (blobName.startsWith(INDEX_FILE_PREFIX) && blockAndFailOnReadIndexFile) {
+                    } else if (blockAndFailOnReadIndexFile && blobName.startsWith(INDEX_FILE_PREFIX)) {
                         blockExecutionAndFail(blobName);
-                    } else if (blockedIndexId != null && path().parts().contains(blockedIndexId) && blobName.startsWith("snap-")) {
+                    } else if (blockedIndexId != null && path().parts().contains(blockedIndexId) && blobName.startsWith(SNAPSHOT_PREFIX)) {
                         blockExecutionAndMaybeWait(blobName);
                     }
                 }
@@ -504,8 +523,7 @@ public class MockRepository extends FsRepository {
             public void deleteBlobsIgnoringIfNotExists(Iterator<String> blobNames) throws IOException {
                 final List<String> names = new ArrayList<>();
                 blobNames.forEachRemaining(names::add);
-                if (blockOnDeleteIndexN && names.stream().anyMatch(
-                    name -> name.startsWith(BlobStoreRepository.INDEX_FILE_PREFIX))) {
+                if (blockOnDeleteIndexN && names.stream().anyMatch(name -> name.startsWith(BlobStoreRepository.INDEX_FILE_PREFIX))) {
                     blockExecutionAndMaybeWait("index-{N}");
                 }
                 super.deleteBlobsIgnoringIfNotExists(names.iterator());
@@ -515,15 +533,6 @@ public class MockRepository extends FsRepository {
             public Map<String, BlobMetadata> listBlobs() throws IOException {
                 maybeIOExceptionOrBlock("");
                 return super.listBlobs();
-            }
-
-            @Override
-            public Map<String, BlobContainer> children() throws IOException {
-                final Map<String, BlobContainer> res = new HashMap<>();
-                for (Map.Entry<String, BlobContainer> entry : super.children().entrySet()) {
-                    res.put(entry.getKey(), new MockBlobContainer(entry.getValue()));
-                }
-                return res;
             }
 
             @Override
@@ -562,22 +571,11 @@ public class MockRepository extends FsRepository {
                 }
             }
 
-            private void beforeWrite(String blobName) throws IOException {
-                maybeIOExceptionOrBlock(blobName);
-                if (blobName.startsWith(BlobStoreRepository.SNAPSHOT_PREFIX) && path().equals(basePath()) == false) {
-                    if (blockOnWriteShardLevelMeta) {
-                        blockExecutionAndMaybeWait(blobName);
-                    } else if (blockAndFailOnWriteShardLevelMeta) {
-                        blockExecutionAndFail(blobName);
-                    }
-                }
-            }
-
             @Override
             public void writeBlobAtomic(final String blobName, final BytesReference bytes,
                                         final boolean failIfAlreadyExists) throws IOException {
-                final Random random = beforeAtomicWrite(blobName);
-                if ((delegate() instanceof FsBlobContainer) && (random.nextBoolean())) {
+                beforeAtomicWrite(blobName);
+                if ((delegate() instanceof FsBlobContainer) && (RandomizedContext.current().getRandom().nextBoolean())) {
                     // Simulate a failure between the write and move operation in FsBlobContainer
                     final String tempBlobName = FsBlobContainer.tempBlobName(blobName);
                     super.writeBlob(tempBlobName, bytes, failIfAlreadyExists);
@@ -592,8 +590,18 @@ public class MockRepository extends FsRepository {
                 }
             }
 
-            private Random beforeAtomicWrite(String blobName) throws IOException {
-                final Random random = RandomizedContext.current().getRandom();
+            private void beforeWrite(String blobName) throws IOException {
+                maybeIOExceptionOrBlock(blobName);
+                if (blobName.startsWith(BlobStoreRepository.SNAPSHOT_PREFIX) && path().equals(basePath()) == false) {
+                    if (blockOnWriteShardLevelMeta) {
+                        blockExecutionAndMaybeWait(blobName);
+                    } else if (blockAndFailOnWriteShardLevelMeta) {
+                        blockExecutionAndFail(blobName);
+                    }
+                }
+            }
+
+            private void beforeAtomicWrite(String blobName) throws IOException {
                 if (failOnIndexLatest && BlobStoreRepository.INDEX_LATEST_BLOB.equals(blobName)) {
                     throw new IOException("Random IOException");
                 }
@@ -604,7 +612,6 @@ public class MockRepository extends FsRepository {
                         blockExecutionAndMaybeWait(blobName);
                     }
                 }
-                return random;
             }
         }
     }
