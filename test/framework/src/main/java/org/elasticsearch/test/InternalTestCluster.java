@@ -98,6 +98,7 @@ import org.elasticsearch.search.SearchService;
 import org.elasticsearch.tasks.TaskManager;
 import org.elasticsearch.test.disruption.ServiceDisruptionScheme;
 import org.elasticsearch.test.transport.MockTransportService;
+import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.Compression;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.transport.TransportSettings;
@@ -1118,6 +1119,17 @@ public final class InternalTestCluster extends TestCluster {
         }
         logger.trace("validating cluster formed, expecting {}", expectedNodes);
 
+        final Node randomNode = randomFrom(nodes.values()).node;
+        try {
+            ESIntegTestCase.awaitClusterState(
+                logger,
+                state -> state.nodes().getMasterNodeId() != null && state.nodes().getSize() == expectedNodes.size(),
+                getInstanceFromNode(ClusterService.class, randomNode),
+                getInstanceFromNode(ThreadPool.class, randomNode)
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
         try {
             assertBusy(() -> {
                 final List<ClusterState> states = nodes.values().stream()
