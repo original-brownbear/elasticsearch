@@ -57,8 +57,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 public class MockRepository extends FsRepository {
@@ -214,24 +217,35 @@ public class MockRepository extends FsRepository {
         return new MockBlobStore(super.createBlobStore());
     }
 
-    public synchronized void unblock() {
-        blocked = false;
-        // Clean blocking flags, so we wouldn't try to block again
-        blockOnDataFiles = false;
-        blockAndFailOnDataFiles = false;
-        blockOnAnyFiles = false;
-        blockAndFailOnWriteIndexFile = false;
-        blockOnWriteIndexFile = false;
-        blockAndFailOnWriteSnapFile = false;
-        blockedIndexId = null;
-        blockOnDeleteIndexN = false;
-        blockOnWriteShardLevelMeta = false;
-        blockAndFailOnWriteShardLevelMeta = false;
-        blockOnReadIndexMeta = false;
-        blockOnceOnReadSnapshotInfo.set(false);
-        blockAndFailOnReadSnapFile = false;
-        blockAndFailOnReadIndexFile = false;
-        this.notifyAll();
+    private final ReentrantLock blockLock = new ReentrantLock();
+
+    private final Condition blockedCondition = blockLock.newCondition();
+
+    private final Condition unblockedCondition = blockLock.newCondition();
+
+    public void unblock() {
+        blockLock.lock();
+        try {
+            blocked = false;
+            // Clean blocking flags, so we wouldn't try to block again
+            blockOnDataFiles = false;
+            blockAndFailOnDataFiles = false;
+            blockOnAnyFiles = false;
+            blockAndFailOnWriteIndexFile = false;
+            blockOnWriteIndexFile = false;
+            blockAndFailOnWriteSnapFile = false;
+            blockedIndexId = null;
+            blockOnDeleteIndexN = false;
+            blockOnWriteShardLevelMeta = false;
+            blockAndFailOnWriteShardLevelMeta = false;
+            blockOnReadIndexMeta = false;
+            blockOnceOnReadSnapshotInfo.set(false);
+            blockAndFailOnReadSnapFile = false;
+            blockAndFailOnReadIndexFile = false;
+            unblockedCondition.signalAll();
+        } finally {
+            blockLock.unlock();
+        }
     }
 
     public void blockOnDataFiles() {
@@ -306,6 +320,22 @@ public class MockRepository extends FsRepository {
         blockOnceOnReadSnapshotInfo.set(true);
     }
 
+    public void waitForBlock() throws InterruptedException {
+        if (blocked) {
+            return;
+        }
+        blockLock.lock();
+        try {
+            if (blocked || blockedCondition.await(30L, TimeUnit.SECONDS)) {
+                assert blocked : "should not be unblocking while waiting for a block on another thread";
+                return;
+            }
+            throw new AssertionError("did not become blocked within 30s");
+        } finally {
+            blockLock.unlock();
+        }
+    }
+
     public boolean blocked() {
         return blocked;
     }
@@ -314,26 +344,33 @@ public class MockRepository extends FsRepository {
         this.failOnIndexLatest = failOnIndexLatest;
     }
 
-    private synchronized boolean blockExecution() {
-        logger.debug("[{}] Blocking execution", metadata.name());
-        boolean wasBlocked = false;
+    private boolean blockExecution() {
+        blockLock.lock();
         try {
-            while (blockAndFailOnDataFiles || blockOnDataFiles || blockOnAnyFiles || blockAndFailOnWriteIndexFile || blockOnWriteIndexFile
-                    || blockAndFailOnWriteSnapFile || blockOnDeleteIndexN || blockOnWriteShardLevelMeta || blockAndFailOnWriteShardLevelMeta
-                    || blockOnReadIndexMeta || blockAndFailOnReadSnapFile || blockAndFailOnReadIndexFile || blockedIndexId != null) {
-                blocked = true;
-                this.wait();
-                wasBlocked = true;
+            logger.debug("[{}] Blocking execution", metadata.name());
+            boolean wasBlocked = false;
+            try {
+                while (blockAndFailOnDataFiles || blockOnDataFiles || blockOnAnyFiles || blockAndFailOnWriteIndexFile
+                        || blockOnWriteIndexFile || blockAndFailOnWriteSnapFile || blockOnDeleteIndexN || blockOnWriteShardLevelMeta
+                        || blockAndFailOnWriteShardLevelMeta || blockOnReadIndexMeta || blockAndFailOnReadSnapFile
+                        || blockAndFailOnReadIndexFile || blockedIndexId != null) {
+                    blocked = true;
+                    blockedCondition.signalAll();
+                    unblockedCondition.await();
+                    wasBlocked = true;
+                }
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
             }
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
+            logger.debug("[{}] Unblocking execution", metadata.name());
+            if (wasBlocked && failReadsAfterUnblock) {
+                logger.debug("[{}] Next read operations will fail", metadata.name());
+                this.throwReadErrorAfterUnblock = true;
+            }
+            return wasBlocked;
+        } finally {
+            blockLock.unlock();
         }
-        logger.debug("[{}] Unblocking execution", metadata.name());
-        if (wasBlocked && failReadsAfterUnblock) {
-            logger.debug("[{}] Next read operations will fail", metadata.name());
-            this.throwReadErrorAfterUnblock = true;
-        }
-        return wasBlocked;
     }
 
     public class MockBlobStore extends BlobStoreWrapper {

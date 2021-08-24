@@ -19,7 +19,6 @@ import org.elasticsearch.snapshots.mockstore.MockRepository;
 
 import java.util.Collection;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.action.support.ActionTestUtils.wrapAsRestResponseListener;
 import static org.elasticsearch.test.TaskAssertions.assertAllCancellableTasksAreCancelled;
@@ -53,7 +52,7 @@ public class RestSnapshotsStatusCancellationIT extends AbstractSnapshotRestTestC
 
         assertFalse(future.isDone());
         awaitTaskWithPrefix(SnapshotsStatusAction.NAME);
-        assertBusy(() -> assertTrue(repository.blocked()), 30L, TimeUnit.SECONDS);
+        repository.waitForBlock();
         cancellable.cancel();
         assertAllCancellableTasksAreCancelled(SnapshotsStatusAction.NAME);
         repository.unblock();
