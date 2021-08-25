@@ -183,13 +183,13 @@ public class DiskThresholdSettings {
 
     private static void doValidate(String low, String high, String flood) {
         try {
-            doValidateAsPercentage(low, high, flood);
-            return; // early return so that we do not try to parse as bytes
+            doValidateAsBytes(low, high, flood);
+            return; // early return so that we do not try to parse as ratio
         } catch (final ElasticsearchParseException e) {
-            // swallow as we are now going to try to parse as bytes
+            // swallow as we are now going to try to parse as ratio
         }
         try {
-            doValidateAsBytes(low, high, flood);
+            doValidateAsPercentage(low, high, flood);
         } catch (final ElasticsearchParseException e) {
             final String message = String.format(
                     Locale.ROOT,
@@ -424,10 +424,10 @@ public class DiskThresholdSettings {
      */
     private static String validWatermarkSetting(String watermark, String settingName) {
         try {
-            RatioValue.parseRatioValue(watermark);
+            ByteSizeValue.parseBytesSizeValue(watermark, settingName);
         } catch (ElasticsearchParseException e) {
             try {
-                ByteSizeValue.parseBytesSizeValue(watermark, settingName);
+                RatioValue.parseRatioValue(watermark);
             } catch (ElasticsearchParseException ex) {
                 ex.addSuppressed(e);
                 throw ex;
