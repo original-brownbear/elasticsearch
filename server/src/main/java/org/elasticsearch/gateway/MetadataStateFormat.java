@@ -76,7 +76,9 @@ public abstract class MetadataStateFormat<T> {
         } catch (FileNotFoundException | NoSuchFileException ignored) {
 
         }
-        logger.trace("cleaned up {}", stateLocation.resolve(fileName));
+        if (logger.isTraceEnabled()) {
+            logger.trace("cleaned up {}", stateLocation.resolve(fileName));
+        }
     }
 
     private static void deleteFileIgnoreExceptions(Path stateLocation, Directory directory, String fileName) {

@@ -12,6 +12,7 @@ import org.apache.lucene.util.BytesRef;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.regex.Pattern;
 
 /**
  * A set of utilities for numbers.
@@ -127,8 +128,8 @@ public final class Numbers {
     }
 
     // weak bounds on the BigDecimal representation to allow for coercion
-    private static BigDecimal BIGDECIMAL_GREATER_THAN_LONG_MAX_VALUE = BigDecimal.valueOf(Long.MAX_VALUE).add(BigDecimal.ONE);
-    private static BigDecimal BIGDECIMAL_LESS_THAN_LONG_MIN_VALUE = BigDecimal.valueOf(Long.MIN_VALUE).subtract(BigDecimal.ONE);
+    private static final BigDecimal BIGDECIMAL_GREATER_THAN_LONG_MAX_VALUE = BigDecimal.valueOf(Long.MAX_VALUE).add(BigDecimal.ONE);
+    private static final BigDecimal BIGDECIMAL_LESS_THAN_LONG_MIN_VALUE = BigDecimal.valueOf(Long.MIN_VALUE).subtract(BigDecimal.ONE);
 
     /** Return the long that {@code stringValue} stores or throws an exception if the
      *  stored value cannot be converted to a long that stores the exact same
@@ -188,5 +189,11 @@ public final class Numbers {
             throw new ArithmeticException("byte overflow: " + l);
         }
         return (byte) l;
+    }
+
+    private static final Pattern IS_NUMBER = Pattern.compile("^\\d+$");
+
+    public static boolean isPositiveInteger(String string) {
+        return IS_NUMBER.matcher(string).matches();
     }
 }

@@ -9,6 +9,7 @@
 package org.elasticsearch.repositories;
 
 import org.elasticsearch.cluster.SnapshotsInProgress;
+import org.elasticsearch.common.Numbers;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
 
@@ -21,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -52,8 +52,6 @@ public final class ShardGenerations {
         this.shardGenerations = Map.copyOf(shardGenerations);
     }
 
-    private static final Pattern IS_NUMBER = Pattern.compile("^\\d+$");
-
     /**
      * Filters out unreliable numeric shard generations read from {@link RepositoryData} or {@link IndexShardSnapshotStatus}, returning
      * {@code null} in their place.
@@ -67,7 +65,7 @@ public final class ShardGenerations {
         if (shardGeneration == null) {
             return null;
         }
-        return IS_NUMBER.matcher(shardGeneration.toString()).matches() ? null : shardGeneration;
+        return Numbers.isPositiveInteger(shardGeneration.toString()) ? null : shardGeneration;
     }
 
     /**

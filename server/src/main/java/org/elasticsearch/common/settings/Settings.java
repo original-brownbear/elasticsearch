@@ -13,6 +13,7 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchGenerationException;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.Version;
+import org.elasticsearch.common.Numbers;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -157,15 +158,19 @@ public final class Settings implements ToXContentFragment {
         int maxIndex = -1;
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             if (isArray) {
-                try {
-                    int index = Integer.parseInt(entry.getKey());
-                    if (index >= 0) {
-                        maxIndex = Math.max(maxIndex, index);
-                    } else {
+                if (Numbers.isPositiveInteger(entry.getKey()) == false) {
+                    isArray = false;
+                } else {
+                    try {
+                        int index = Integer.parseInt(entry.getKey());
+                        if (index >= 0) {
+                            maxIndex = Math.max(maxIndex, index);
+                        } else {
+                            isArray = false;
+                        }
+                    } catch (NumberFormatException ex) {
                         isArray = false;
                     }
-                } catch (NumberFormatException ex) {
-                    isArray = false;
                 }
             }
             if (entry.getValue() instanceof Map) {

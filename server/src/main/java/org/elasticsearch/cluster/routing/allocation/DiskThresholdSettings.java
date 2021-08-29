@@ -182,14 +182,23 @@ public class DiskThresholdSettings {
     }
 
     private static void doValidate(String low, String high, String flood) {
+        boolean likelyPercentage = low.endsWith("%");
         try {
-            doValidateAsPercentage(low, high, flood);
+            if (likelyPercentage) {
+                doValidateAsPercentage(low, high, flood);
+            } else {
+                doValidateAsBytes(low, high, flood);
+            }
             return; // early return so that we do not try to parse as bytes
         } catch (final ElasticsearchParseException e) {
             // swallow as we are now going to try to parse as bytes
         }
         try {
-            doValidateAsBytes(low, high, flood);
+            if (likelyPercentage) {
+                doValidateAsBytes(low, high, flood);
+            } else {
+                doValidateAsPercentage(low, high, flood);
+            }
         } catch (final ElasticsearchParseException e) {
             final String message = String.format(
                     Locale.ROOT,
@@ -412,7 +421,7 @@ public class DiskThresholdSettings {
             // NOTE: this is not end-user leniency, since up above we check that it's a valid byte or percentage, and then store the two
             // cases separately
             if (lenient) {
-                return ByteSizeValue.parseBytesSizeValue("0b", settingName);
+                return ByteSizeValue.ZERO;
             }
             throw ex;
         }
@@ -423,14 +432,18 @@ public class DiskThresholdSettings {
      * @return the watermark value given
      */
     private static String validWatermarkSetting(String watermark, String settingName) {
-        try {
+        if (watermark.endsWith("%")) {
             RatioValue.parseRatioValue(watermark);
-        } catch (ElasticsearchParseException e) {
+        } else {
             try {
                 ByteSizeValue.parseBytesSizeValue(watermark, settingName);
-            } catch (ElasticsearchParseException ex) {
-                ex.addSuppressed(e);
-                throw ex;
+            } catch (ElasticsearchParseException e) {
+                try {
+                    RatioValue.parseRatioValue(watermark);
+                } catch (ElasticsearchParseException ex) {
+                    ex.addSuppressed(e);
+                    throw ex;
+                }
             }
         }
         return watermark;
