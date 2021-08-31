@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.core.slm;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.Snapshot;
@@ -292,6 +293,7 @@ public class SnapshotRetentionConfigurationTests extends ESTestCase {
             Collections.singletonList("bar"),
             Collections.emptyList(),
             null,
+            Version.CURRENT,
             startTime + between(1, 10000),
             totalShards,
             new ArrayList<>(),
@@ -328,6 +330,7 @@ public class SnapshotRetentionConfigurationTests extends ESTestCase {
             Collections.singletonList("bar-fail"),
             Collections.emptyList(),
             "forced-failure",
+            Version.CURRENT,
             startTime + between(1, 10000),
             totalShards,
             failures,
@@ -356,6 +359,7 @@ public class SnapshotRetentionConfigurationTests extends ESTestCase {
             Collections.singletonList("bar-fail"),
             Collections.emptyList(),
             null,
+            Version.CURRENT,
             startTime + between(1, 10000),
             totalShards,
             failures,

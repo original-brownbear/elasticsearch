@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.admin.cluster.snapshots.create;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.Snapshot;
@@ -73,6 +74,7 @@ public class CreateSnapshotResponseTests extends AbstractXContentTestCase<Create
                 dataStreams,
                 featureStates,
                 reason,
+                Version.CURRENT,
                 endTime,
                 totalShards,
                 shardFailures,

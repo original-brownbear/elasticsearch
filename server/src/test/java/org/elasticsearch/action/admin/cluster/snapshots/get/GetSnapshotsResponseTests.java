@@ -92,6 +92,7 @@ public class GetSnapshotsResponseTests extends ESTestCase {
                     Collections.singletonList("ds"),
                     featureInfos,
                     reason,
+                    Version.CURRENT,
                     System.currentTimeMillis(),
                     randomIntBetween(2, 3),
                     shardFailures,

@@ -8,6 +8,7 @@
 
 package org.elasticsearch.snapshots;
 
+import org.elasticsearch.Version;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.test.ESTestCase;
@@ -62,6 +63,7 @@ public class SnapshotInfoTestUtils {
             dataStreams,
             snapshotFeatureInfos,
             reason,
+            Version.CURRENT,
             endTime,
             totalShards,
             shardFailures,
@@ -149,6 +151,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     instance.reason(),
+                    Version.CURRENT,
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -168,6 +171,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     instance.reason(),
+                    instance.version(),
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -183,6 +187,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     instance.reason(),
+                    instance.version(),
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -198,6 +203,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     randomValueOtherThan(instance.reason(), () -> randomAlphaOfLengthBetween(5, 15)),
+                    instance.version(),
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -213,6 +219,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     instance.reason(),
+                    instance.version(),
                     randomValueOtherThan(instance.endTime(), ESTestCase::randomNonNegativeLong),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -230,6 +237,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     instance.reason(),
+                    instance.version(),
                     instance.endTime(),
                     totalShards,
                     shardFailures,
@@ -245,6 +253,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     instance.reason(),
+                    instance.version(),
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -260,6 +269,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     instance.reason(),
+                    instance.version(),
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -279,6 +289,7 @@ public class SnapshotInfoTestUtils {
                     dataStreams,
                     instance.featureStates(),
                     instance.reason(),
+                    instance.version(),
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -294,6 +305,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     randomValueOtherThan(instance.featureStates(), SnapshotInfoTestUtils::randomSnapshotFeatureInfos),
                     instance.reason(),
+                    instance.version(),
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),
@@ -309,6 +321,7 @@ public class SnapshotInfoTestUtils {
                     instance.dataStreams(),
                     instance.featureStates(),
                     instance.reason(),
+                    instance.version(),
                     instance.endTime(),
                     instance.totalShards(),
                     instance.shardFailures(),

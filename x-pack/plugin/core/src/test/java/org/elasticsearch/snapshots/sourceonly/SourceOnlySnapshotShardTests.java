@@ -241,6 +241,7 @@ public class SourceOnlySnapshotShardTests extends IndexShardTestCase {
                         Collections.emptyList(),
                         Collections.emptyList(),
                         null,
+                        Version.CURRENT,
                         1L,
                         shardGenerations.totalShards(),
                         Collections.emptyList(),

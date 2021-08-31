@@ -1443,8 +1443,8 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     private void finalizeSnapshotEntry(Snapshot snapshot, Metadata metadata, RepositoryData repositoryData) {
         assert currentlyFinalizing.contains(snapshot.getRepository());
         try {
-            SnapshotsInProgress.Entry entry = clusterService.state()
-                .custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY)
+            final ClusterState currentClusterState = clusterService.state();
+            SnapshotsInProgress.Entry entry = currentClusterState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY)
                 .snapshot(snapshot);
             final String failure = entry.failure();
             logger.trace("[{}] finalizing snapshot in repository, state: [{}], failure[{}]", snapshot, entry.state(), failure);
@@ -1540,6 +1540,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     entry.dataStreams().stream().filter(metaForSnapshot.dataStreams()::containsKey).collect(Collectors.toList()),
                     entry.partial() ? onlySuccessfulFeatureStates(entry, finalIndices) : entry.featureStates(),
                     failure,
+                    currentClusterState.nodes().getMinNodeVersion(),
                     threadPool.absoluteTimeInMillis(),
                     entry.partial() ? shardGenerations.totalShards() : entry.shardsByRepoShardId().size(),
                     shardFailures,

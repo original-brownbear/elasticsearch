@@ -837,8 +837,6 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                     SnapshotsService.INDEX_GEN_IN_REPO_DATA_VERSION
                 )
             );
-            assertAcked(client().admin().cluster().prepareDeleteRepository(tmpRepositoryName));
-            createRepository(repositoryName, "fs", repoPath);
         }
 
         final SnapshotId snapshotOne = createSnapshot(repositoryName, "snapshot-1", List.of(indexName)).snapshotId();

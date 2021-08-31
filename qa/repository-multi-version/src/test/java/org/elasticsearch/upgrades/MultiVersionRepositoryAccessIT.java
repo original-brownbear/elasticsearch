@@ -42,6 +42,7 @@ import static org.elasticsearch.repositories.blobstore.BlobStoreRepository.READO
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -140,6 +141,15 @@ public class MultiVersionRepositoryAccessIT extends ESRestTestCase {
             } else if (TEST_STEP == TestStep.STEP4_NEW_CLUSTER) {
                 for (TestStep value : TestStep.values()) {
                     ensureSnapshotRestoreWorks(client, repoName, "snapshot-" + value, shards, index);
+                }
+                for (Map<String, Object> snapshot : snapshots) {
+                    final Object version = snapshot.get("version");
+                    final Object name = snapshot.get("snapshot");
+                    assertThat(version, instanceOf(String.class));
+                    assertThat(name, instanceOf(String.class));
+                    if (name.equals("snapshot-" + TestStep.STEP2_NEW_CLUSTER) || name.equals("snapshot-" + TestStep.STEP4_NEW_CLUSTER)) {
+                        assertThat(Version.fromString((String) version), equalTo(Version.CURRENT));
+                    }
                 }
             }
         } finally {

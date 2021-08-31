@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.slm;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -118,6 +119,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
             Collections.emptyList(),
             Collections.emptyList(),
             null,
+            Version.CURRENT,
             1L,
             1,
             Collections.emptyList(),
@@ -134,6 +136,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
             Collections.emptyList(),
             Collections.emptyList(),
             null,
+            Version.CURRENT,
             1L,
             1,
             Collections.emptyList(),
@@ -150,6 +153,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
             Collections.emptyList(),
             Collections.emptyList(),
             null,
+            Version.CURRENT,
             1L,
             1,
             Collections.emptyList(),
@@ -166,6 +170,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
             Collections.emptyList(),
             Collections.emptyList(),
             null,
+            Version.CURRENT,
             1L,
             1,
             Collections.emptyList(),
@@ -183,6 +188,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
             Collections.emptyList(),
             Collections.emptyList(),
             null,
+            Version.CURRENT,
             time + TimeValue.timeValueDays(4).millis(),
             1,
             Collections.emptyList(),
@@ -199,6 +205,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
             Collections.emptyList(),
             Collections.emptyList(),
             null,
+            Version.CURRENT,
             System.currentTimeMillis() + 1,
             1,
             Collections.emptyList(),
@@ -232,7 +239,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
 
             final SnapshotInfo eligibleSnapshot = new SnapshotInfo(
                     new Snapshot(repoId, new SnapshotId("name", "uuid")), Collections.singletonList("index"),
-                Collections.emptyList(), Collections.emptyList(), null, 1L, 1, Collections.emptyList(), true,
+                Collections.emptyList(), Collections.emptyList(), null, Version.CURRENT, 1L, 1, Collections.emptyList(), true,
                 Collections.singletonMap("policy", policyId), 0L, Collections.emptyMap());
             final SnapshotInfo ineligibleSnapshot = new SnapshotInfo(
                 new Snapshot(repoId, new SnapshotId("name2", "uuid2")),
@@ -240,6 +247,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
                 Collections.emptyList(),
                 Collections.emptyList(),
                 null,
+                Version.CURRENT,
                 System.currentTimeMillis() + 1,
                 1,
                 Collections.emptyList(),
