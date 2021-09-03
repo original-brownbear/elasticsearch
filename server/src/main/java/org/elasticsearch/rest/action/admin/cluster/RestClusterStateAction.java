@@ -20,6 +20,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -30,9 +31,7 @@ import org.elasticsearch.rest.action.RestCancellableNodeClient;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.LongSupplier;
@@ -124,14 +123,7 @@ public class RestClusterStateAction extends BaseRestHandler {
                                 threadPool::relativeTimeInMillis)));
     }
 
-    private static final Set<String> RESPONSE_PARAMS;
-
-    static {
-        final Set<String> responseParams = new HashSet<>();
-        responseParams.add("metric");
-        responseParams.addAll(Settings.FORMAT_PARAMS);
-        RESPONSE_PARAMS = Collections.unmodifiableSet(responseParams);
-    }
+    private static final Set<String> RESPONSE_PARAMS = Set.copyOf(Sets.union(Set.of("metric"), Settings.FORMAT_PARAMS));
 
     @Override
     protected Set<String> responseParams() {

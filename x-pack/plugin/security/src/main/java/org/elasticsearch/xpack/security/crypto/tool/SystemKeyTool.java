@@ -15,7 +15,6 @@ import org.elasticsearch.cli.Terminal;
 import org.elasticsearch.cli.UserException;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.PathUtils;
-import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.xpack.core.XPackPlugin;
 
@@ -43,8 +42,8 @@ public class SystemKeyTool extends EnvironmentAwareCommand {
         arguments = parser.nonOptions("key path");
     }
 
-    public static final Set<PosixFilePermission> PERMISSION_OWNER_READ_WRITE = Sets.newHashSet(PosixFilePermission.OWNER_READ,
-            PosixFilePermission.OWNER_WRITE);
+    public static final Set<PosixFilePermission> PERMISSION_OWNER_READ_WRITE =
+        Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
 
     public static void main(String[] args) throws Exception {
         final SystemKeyTool tool = new SystemKeyTool();

@@ -16,6 +16,7 @@ import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.DeprecationHandler;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentParser;
@@ -57,8 +58,7 @@ public class RestGetSnapshotsIT extends AbstractSnapshotRestTestCase {
         final List<String> snapshotNamesWithIndex =
             AbstractSnapshotIntegTestCase.createNSnapshots(logger, repoName, randomIntBetween(3, 20));
 
-        final Collection<String> allSnapshotNames = new HashSet<>(snapshotNamesWithIndex);
-        allSnapshotNames.addAll(snapshotNamesWithoutIndex);
+        final Collection<String> allSnapshotNames = Sets.union(snapshotNamesWithIndex, snapshotNamesWithoutIndex);
         doTestSortOrder(repoName, allSnapshotNames, SortOrder.ASC);
         doTestSortOrder(repoName, allSnapshotNames, SortOrder.DESC);
     }

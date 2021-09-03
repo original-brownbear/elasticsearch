@@ -21,6 +21,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.Table;
 import org.elasticsearch.common.regex.Regex;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.monitor.process.ProcessInfo;
 import org.elasticsearch.rest.RestRequest;
@@ -93,13 +94,8 @@ public class RestThreadPoolAction extends AbstractCatAction {
         });
     }
 
-    private static final Set<String> RESPONSE_PARAMS;
-
-    static {
-        final Set<String> responseParams = new HashSet<>(AbstractCatAction.RESPONSE_PARAMS);
-        responseParams.add("thread_pool_patterns");
-        RESPONSE_PARAMS = Collections.unmodifiableSet(responseParams);
-    }
+    private static final Set<String> RESPONSE_PARAMS =
+        Set.copyOf(Sets.union(Set.of("thread_pool_patterns"), AbstractCatAction.RESPONSE_PARAMS));
 
     @Override
     protected Set<String> responseParams() {

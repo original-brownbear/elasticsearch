@@ -15,6 +15,7 @@ import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequest;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -53,10 +54,8 @@ public class GetSnapshotsIT extends AbstractSnapshotIntegTestCase {
         final List<String> snapshotNamesWithIndexA = createNSnapshots(repoNameA, randomIntBetween(3, 20));
         final List<String> snapshotNamesWithIndexB = createNSnapshots(repoNameB, randomIntBetween(3, 20));
 
-        final Collection<String> allSnapshotNamesA = new HashSet<>(snapshotNamesWithIndexA);
-        final Collection<String> allSnapshotNamesB = new HashSet<>(snapshotNamesWithIndexB);
-        allSnapshotNamesA.addAll(snapshotNamesWithoutIndexA);
-        allSnapshotNamesB.addAll(snapshotNamesWithoutIndexB);
+        final Collection<String> allSnapshotNamesA = Sets.union(snapshotNamesWithIndexA, snapshotNamesWithoutIndexA);
+        final Collection<String> allSnapshotNamesB = Sets.union(snapshotNamesWithIndexB, snapshotNamesWithoutIndexB);
 
         doTestSortOrder(repoNameA, allSnapshotNamesA, SortOrder.ASC);
         doTestSortOrder(repoNameA, allSnapshotNamesA, SortOrder.DESC);
@@ -64,8 +63,7 @@ public class GetSnapshotsIT extends AbstractSnapshotIntegTestCase {
         doTestSortOrder(repoNameB, allSnapshotNamesB, SortOrder.ASC);
         doTestSortOrder(repoNameB, allSnapshotNamesB, SortOrder.DESC);
 
-        final Collection<String> allSnapshots = new HashSet<>(allSnapshotNamesA);
-        allSnapshots.addAll(allSnapshotNamesB);
+        final Collection<String> allSnapshots = Sets.union(allSnapshotNamesA, allSnapshotNamesB);
         doTestSortOrder("*", allSnapshots, SortOrder.ASC);
         doTestSortOrder("*", allSnapshots, SortOrder.DESC);
     }

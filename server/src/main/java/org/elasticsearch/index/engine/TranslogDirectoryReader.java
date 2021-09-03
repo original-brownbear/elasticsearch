@@ -38,7 +38,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.index.fieldvisitor.FieldNamesProvidingStoredFieldsVisitor;
@@ -143,8 +142,8 @@ final class TranslogDirectoryReader extends DirectoryReader {
         private static final FieldInfo FAKE_ID_FIELD
             = new FieldInfo(IdFieldMapper.NAME, 3, false, false, false, IndexOptions.DOCS,
             DocValuesType.NONE, -1, Collections.emptyMap(), 0, 0, 0, false);
-        private static Set<String> TRANSLOG_FIELD_NAMES =
-            Sets.newHashSet(SourceFieldMapper.NAME, RoutingFieldMapper.NAME, IdFieldMapper.NAME);
+        private static final Set<String> TRANSLOG_FIELD_NAMES =
+            Set.of(SourceFieldMapper.NAME, RoutingFieldMapper.NAME, IdFieldMapper.NAME);
 
 
         private final ShardId shardId;

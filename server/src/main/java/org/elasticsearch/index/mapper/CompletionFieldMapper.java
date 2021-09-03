@@ -23,7 +23,6 @@ import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.FilterXContentParser;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentParser;
@@ -201,7 +200,7 @@ public class CompletionFieldMapper extends FieldMapper {
 
     }
 
-    public static final Set<String> ALLOWED_CONTENT_FIELD_NAMES = Sets.newHashSet(Fields.CONTENT_FIELD_NAME_INPUT,
+    public static final Set<String> ALLOWED_CONTENT_FIELD_NAMES = Set.of(Fields.CONTENT_FIELD_NAME_INPUT,
             Fields.CONTENT_FIELD_NAME_WEIGHT, Fields.CONTENT_FIELD_NAME_CONTEXTS);
 
     public static final TypeParser PARSER

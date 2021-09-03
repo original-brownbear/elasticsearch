@@ -11,6 +11,7 @@ package org.elasticsearch.rest;
 import org.apache.lucene.search.spell.LevenshteinDistance;
 import org.apache.lucene.util.CollectionUtil;
 import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.core.Tuple;
@@ -22,7 +23,6 @@ import org.elasticsearch.rest.action.admin.cluster.RestNodesUsageAction;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -85,10 +85,14 @@ public abstract class BaseRestHandler implements RestHandler {
 
         // validate the non-response params
         if (unconsumedParams.isEmpty() == false) {
-            final Set<String> candidateParams = new HashSet<>();
-            candidateParams.addAll(request.consumedParams());
-            candidateParams.addAll(responseParams(request.getRestApiVersion()));
-            throw new IllegalArgumentException(unrecognized(request, unconsumedParams, candidateParams, "parameter"));
+            throw new IllegalArgumentException(
+                unrecognized(
+                    request,
+                    unconsumedParams,
+                    Sets.union(request.consumedParams(), responseParams(request.getRestApiVersion())),
+                    "parameter"
+                )
+            );
         }
 
         if (request.hasContent() && request.isContentConsumed() == false) {

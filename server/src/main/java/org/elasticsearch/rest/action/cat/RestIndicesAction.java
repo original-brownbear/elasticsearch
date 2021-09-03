@@ -31,6 +31,7 @@ import org.elasticsearch.common.Table;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.rest.RestRequest;
@@ -42,7 +43,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -226,9 +226,7 @@ public class RestIndicesAction extends AbstractCatAction {
     private static final Set<String> RESPONSE_PARAMS;
 
     static {
-        final Set<String> responseParams = new HashSet<>(asList("local", "health"));
-        responseParams.addAll(AbstractCatAction.RESPONSE_PARAMS);
-        RESPONSE_PARAMS = Collections.unmodifiableSet(responseParams);
+        RESPONSE_PARAMS = Collections.unmodifiableSet(Sets.union(asList("local", "health"), AbstractCatAction.RESPONSE_PARAMS));
     }
 
     @Override

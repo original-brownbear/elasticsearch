@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.AbstractDiffable;
 import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.ParsingException;
@@ -231,8 +232,7 @@ public class DataStreamAlias extends AbstractDiffable<DataStreamAlias> implement
      * the other data stream becomes the write data stream of the returned instance.
      */
     public DataStreamAlias merge(DataStreamAlias other) {
-        Set<String> mergedDataStreams = new HashSet<>(other.getDataStreams());
-        mergedDataStreams.addAll(this.getDataStreams());
+        final Set<String> mergedDataStreams = Sets.union(other.getDataStreams(), this.getDataStreams());
 
         String writeDataStream = this.writeDataStream;
         if (writeDataStream == null) {

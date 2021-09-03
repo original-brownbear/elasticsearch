@@ -935,10 +935,8 @@ public class IndexNameExpressionResolver {
                         .filter(entry -> entry.getValue().getType() == IndexAbstraction.Type.DATA_STREAM)
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                     // dedup backing indices if expand hidden indices option is true
-                    Set<String> resolvedIncludingDataStreams = new HashSet<>(resolvedExpressions);
-                    resolvedIncludingDataStreams.addAll(expand(context, excludeState, dataStreamsAbstractions,
-                        expressions.isEmpty() ? "_all" : expressions.get(0), options.expandWildcardsHidden()));
-                    return new ArrayList<>(resolvedIncludingDataStreams);
+                    return new ArrayList<>(Sets.union(resolvedExpressions, expand(context, excludeState, dataStreamsAbstractions,
+                        expressions.isEmpty() ? "_all" : expressions.get(0), options.expandWildcardsHidden())));
                 }
                 return resolvedExpressions;
             }

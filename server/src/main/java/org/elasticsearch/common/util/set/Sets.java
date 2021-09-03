@@ -193,7 +193,7 @@ public final class Sets {
 
     }
 
-    public static <T> Set<T> union(Set<T> left, Set<T> right) {
+    public static <T> Set<T> union(Collection<T> left, Collection<T> right) {
         Objects.requireNonNull(left);
         Objects.requireNonNull(right);
         Set<T> union = new HashSet<>(left);

@@ -18,6 +18,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.monitor.NodeHealthService;
@@ -225,9 +226,7 @@ public class FollowersChecker {
     // For assertions
     Set<DiscoveryNode> getKnownFollowers() {
         synchronized (mutex) {
-            final Set<DiscoveryNode> knownFollowers = new HashSet<>(faultyNodes);
-            knownFollowers.addAll(followerCheckers.keySet());
-            return knownFollowers;
+            return Sets.union(faultyNodes, followerCheckers.keySet());
         }
     }
 

@@ -13,6 +13,7 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.routing.allocation.command.AllocationCommands;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
@@ -24,9 +25,7 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.action.RestToXContentListener;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -79,14 +78,7 @@ public class RestClusterRerouteAction extends BaseRestHandler {
         return channel -> client.admin().cluster().reroute(clusterRerouteRequest, new RestToXContentListener<>(channel));
     }
 
-    private static final Set<String> RESPONSE_PARAMS;
-
-    static {
-        final Set<String> responseParams = new HashSet<>();
-        responseParams.add("metric");
-        responseParams.addAll(Settings.FORMAT_PARAMS);
-        RESPONSE_PARAMS = Collections.unmodifiableSet(responseParams);
-    }
+    private static final Set<String> RESPONSE_PARAMS = Set.copyOf(Sets.union(Set.of("metric"), Settings.FORMAT_PARAMS));
 
     @Override
     protected Set<String> responseParams() {

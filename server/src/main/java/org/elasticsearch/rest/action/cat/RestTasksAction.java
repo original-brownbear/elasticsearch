@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.Table;
 import org.elasticsearch.common.time.DateFormatter;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
@@ -27,9 +28,7 @@ import org.elasticsearch.tasks.TaskInfo;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -71,14 +70,7 @@ public class RestTasksAction extends AbstractCatAction {
         });
     }
 
-    private static final Set<String> RESPONSE_PARAMS;
-
-    static {
-        final Set<String> responseParams = new HashSet<>();
-        responseParams.add("detailed");
-        responseParams.addAll(AbstractCatAction.RESPONSE_PARAMS);
-        RESPONSE_PARAMS = Collections.unmodifiableSet(responseParams);
-    }
+    private static final Set<String> RESPONSE_PARAMS = Set.copyOf(Sets.union(Set.of("detailed"), AbstractCatAction.RESPONSE_PARAMS));
 
     @Override
     protected Set<String> responseParams() {

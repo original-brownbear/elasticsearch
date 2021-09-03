@@ -21,6 +21,7 @@ import org.elasticsearch.Build;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.cluster.node.info.PluginsAndModules;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.jdk.JarHell;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.Tuple;
@@ -578,9 +579,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
                 }
 
                 // jar hell check: extended plugins (so far) do not have jar hell with implementation+spi of this plugin
-                Set<URL> implementation = new HashSet<>(bundle.allUrls);
-                implementation.addAll(extendedPluginUrls);
-                JarHell.checkJarHell(implementation, logger::debug);
+                JarHell.checkJarHell(Sets.union(bundle.allUrls, extendedPluginUrls), logger::debug);
             }
 
             // Set transitive urls for other plugins to extend this plugin. Note that jarhell has already been checked above.
@@ -595,9 +594,7 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
                 throw new IllegalStateException("jar hell! duplicate codebases between plugin and core: " + intersection);
             }
             // check we don't have conflicting classes
-            Set<URL> union = new HashSet<>(classpath);
-            union.addAll(bundle.allUrls);
-            JarHell.checkJarHell(union, logger::debug);
+            JarHell.checkJarHell(Sets.union(classpath, bundle.allUrls), logger::debug);
         } catch (final IllegalStateException ise) {
             throw new IllegalStateException("failed to load plugin " + bundle.plugin.getName() + " due to jar hell", ise);
         } catch (final Exception e) {
