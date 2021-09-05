@@ -7,11 +7,12 @@
 
 package org.elasticsearch.xpack.security.authz.accesscontrol;
 
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.index.AbstractIndexComponent;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.cache.query.QueryCache;
 import org.elasticsearch.indices.IndicesQueryCache;
@@ -25,7 +26,9 @@ import java.util.Set;
 /**
  * Opts out of the query cache if field level security is active for the current request, and it is unsafe to cache.
  */
-public final class OptOutQueryCache extends AbstractIndexComponent implements QueryCache {
+public final class OptOutQueryCache implements QueryCache {
+
+    private final Logger logger;
 
     private final IndicesQueryCache indicesQueryCache;
     private final ThreadContext context;
@@ -35,7 +38,7 @@ public final class OptOutQueryCache extends AbstractIndexComponent implements Qu
             final IndexSettings indexSettings,
             final IndicesQueryCache indicesQueryCache,
             final ThreadContext context) {
-        super(indexSettings);
+        this.logger = Loggers.getLogger(getClass(), indexSettings.getIndex());
         this.indicesQueryCache = indicesQueryCache;
         this.context = Objects.requireNonNull(context, "threadContext must not be null");
         this.indexName = indexSettings.getIndex().getName();
@@ -50,7 +53,7 @@ public final class OptOutQueryCache extends AbstractIndexComponent implements Qu
     @Override
     public void clear(final String reason) {
         logger.debug("full cache clear, reason [{}]", reason);
-        indicesQueryCache.clearIndex(indexSettings.getIndex().getName());
+        indicesQueryCache.clearIndex(indexName);
     }
 
     @Override
