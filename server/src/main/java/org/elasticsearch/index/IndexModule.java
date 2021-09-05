@@ -418,12 +418,12 @@ public final class IndexModule {
             if (indexSettings.getValue(INDEX_QUERY_CACHE_ENABLED_SETTING)) {
                 BiFunction<IndexSettings, IndicesQueryCache, QueryCache> queryCacheProvider = forceQueryCacheProvider.get();
                 if (queryCacheProvider == null) {
-                    queryCache = new IndexQueryCache(indexSettings, indicesQueryCache);
+                    queryCache = new IndexQueryCache(indexSettings.getIndex(), indicesQueryCache);
                 } else {
                     queryCache = queryCacheProvider.apply(indexSettings, indicesQueryCache);
                 }
             } else {
-                queryCache = new DisabledQueryCache(indexSettings);
+                queryCache = DisabledQueryCache.get(indexSettings.getIndex());
             }
             if (IndexService.needsMapperService(indexSettings, indexCreationContext)) {
                 indexAnalyzers = analysisRegistry.build(indexSettings);

@@ -326,7 +326,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
         BitsetFilterCache bitsetFilterCache
     ) {
         SearchContext ctx = mock(SearchContext.class);
-        QueryCache queryCache = new DisabledQueryCache(indexSettings);
+        QueryCache queryCache = DisabledQueryCache.get(indexSettings.getIndex());
         QueryCachingPolicy queryCachingPolicy = new QueryCachingPolicy() {
             @Override
             public void onUse(Query query) {

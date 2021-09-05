@@ -10,14 +10,19 @@ package org.elasticsearch.index.cache.query;
 
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
-import org.elasticsearch.index.AbstractIndexComponent;
-import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.index.Index;
 
-public class DisabledQueryCache extends AbstractIndexComponent implements QueryCache {
+public class DisabledQueryCache implements QueryCache {
 
-    public DisabledQueryCache(IndexSettings indexSettings) {
-        super(indexSettings);
-        logger.debug("Using no query cache");
+    private static final DisabledQueryCache INSTANCE = new DisabledQueryCache();
+
+    public static DisabledQueryCache get(Index index) {
+        Loggers.getLogger(DisabledQueryCache.class, index).debug("Using no query cache");
+        return INSTANCE;
+    }
+
+    private DisabledQueryCache() {
     }
 
     @Override

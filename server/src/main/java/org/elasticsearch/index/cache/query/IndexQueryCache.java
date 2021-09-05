@@ -8,24 +8,30 @@
 
 package org.elasticsearch.index.cache.query;
 
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.index.AbstractIndexComponent;
-import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.indices.IndicesQueryCache;
 
 /**
  * The index-level query cache. This class mostly delegates to the node-level
  * query cache: {@link IndicesQueryCache}.
  */
-public class IndexQueryCache extends AbstractIndexComponent implements QueryCache {
+public class IndexQueryCache implements QueryCache {
 
     final IndicesQueryCache indicesQueryCache;
 
-    public IndexQueryCache(IndexSettings indexSettings, IndicesQueryCache indicesQueryCache) {
-        super(indexSettings);
+    private final Logger logger;
+
+    private final String name;
+
+    public IndexQueryCache(Index index, IndicesQueryCache indicesQueryCache) {
         this.indicesQueryCache = indicesQueryCache;
+        this.logger = Loggers.getLogger(getClass(), index);
+        this.name = index.getName();
     }
 
     @Override
@@ -36,7 +42,7 @@ public class IndexQueryCache extends AbstractIndexComponent implements QueryCach
     @Override
     public void clear(String reason) {
         logger.debug("full cache clear, reason [{}]", reason);
-        indicesQueryCache.clearIndex(indexSettings.getIndex().getName());
+        indicesQueryCache.clearIndex(name);
     }
 
     @Override
