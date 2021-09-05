@@ -20,7 +20,7 @@ public class SimplePatternTokenizerFactory extends AbstractTokenizerFactory {
     private final String pattern;
 
     public SimplePatternTokenizerFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(indexSettings, settings, name);
+        super(settings, name);
 
         pattern = settings.get("pattern", "");
     }

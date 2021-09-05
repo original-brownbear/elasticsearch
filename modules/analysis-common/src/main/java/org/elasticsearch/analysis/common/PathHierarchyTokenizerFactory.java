@@ -26,7 +26,7 @@ public class PathHierarchyTokenizerFactory extends AbstractTokenizerFactory {
     private final boolean reverse;
 
     PathHierarchyTokenizerFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(indexSettings, settings, name);
+        super(settings, name);
         bufferSize = settings.getAsInt("buffer_size", 1024);
         String delimiter = settings.get("delimiter");
         if (delimiter == null) {

@@ -130,7 +130,7 @@ public class AnalysisRegistryTests extends ESTestCase {
                 return tokenStream;
             }
         };
-        TokenizerFactory tokenizer = new AbstractTokenizerFactory(indexSettings, Settings.EMPTY, "my_tokenizer") {
+        TokenizerFactory tokenizer = new AbstractTokenizerFactory(Settings.EMPTY, "my_tokenizer") {
             @Override
             public Tokenizer create() {
                 return new StandardTokenizer();

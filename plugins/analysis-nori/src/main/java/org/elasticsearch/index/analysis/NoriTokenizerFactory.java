@@ -31,7 +31,7 @@ public class NoriTokenizerFactory extends AbstractTokenizerFactory {
     private final boolean discardPunctuation;
 
     public NoriTokenizerFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(indexSettings, settings, name);
+        super(settings, name);
         decompoundMode = getMode(settings);
         userDictionary = getUserDictionary(env, settings);
         discardPunctuation = settings.getAsBoolean("discard_punctuation", true);

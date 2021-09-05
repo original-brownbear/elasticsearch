@@ -36,7 +36,7 @@ public class IcuTokenizerFactory extends AbstractTokenizerFactory {
     private static final String RULE_FILES = "rule_files";
 
     public IcuTokenizerFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(indexSettings, settings, name);
+        super(settings, name);
         config = getIcuConfig(environment, settings);
     }
 

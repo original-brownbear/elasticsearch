@@ -20,7 +20,7 @@ public class UkrainianAnalyzerProvider extends AbstractIndexAnalyzerProvider<XUk
     private final XUkrainianMorfologikAnalyzer analyzer;
 
     public UkrainianAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(indexSettings, name, settings);
+        super(name, settings);
         analyzer = new XUkrainianMorfologikAnalyzer(
             Analysis.parseStopWords(env, settings, UkrainianMorfologikAnalyzer.getDefaultStopSet()),
             Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
