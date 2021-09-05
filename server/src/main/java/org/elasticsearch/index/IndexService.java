@@ -8,6 +8,7 @@
 
 package org.elasticsearch.index;
 
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -24,6 +25,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
@@ -96,7 +98,7 @@ import java.util.function.Supplier;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 
-public class IndexService extends AbstractIndexComponent implements IndicesClusterStateService.AllocatedIndex<IndexShard> {
+public class IndexService implements IndicesClusterStateService.AllocatedIndex<IndexShard> {
 
     private final IndexEventListener eventListener;
     private final IndexFieldDataService indexFieldData;
@@ -141,6 +143,8 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     private final Supplier<Sort> indexSortSupplier;
     private final ValuesSourceRegistry valuesSourceRegistry;
 
+    private final Logger logger;
+
     public IndexService(
             IndexSettings indexSettings,
             IndexCreationContext indexCreationContext,
@@ -171,9 +175,9 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             IndexStorePlugin.RecoveryStateFactory recoveryStateFactory,
             IndexStorePlugin.IndexFoldersDeletionListener indexFoldersDeletionListener,
             IndexStorePlugin.SnapshotCommitSupplier snapshotCommitSupplier) {
-        super(indexSettings);
-        this.allowExpensiveQueries = allowExpensiveQueries;
+        this.logger = Loggers.getLogger(getClass(), indexSettings.getIndex());
         this.indexSettings = indexSettings;
+        this.allowExpensiveQueries = allowExpensiveQueries;
         this.xContentRegistry = xContentRegistry;
         this.similarityService = similarityService;
         this.namedWriteableRegistry = namedWriteableRegistry;
