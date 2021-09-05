@@ -38,8 +38,8 @@ public class Loggers {
             Setting.Property.NodeScope));
 
     public static Logger getLogger(Class<?> clazz, ShardId shardId, String... prefixes) {
-        return getLogger(clazz, shardId.getIndex(), Stream.concat(Stream.of(Integer.toString(shardId.id())),
-            Arrays.stream(prefixes)).toArray(String[]::new));
+        return getLogger(clazz, Stream.concat(Stream.of(Loggers.SPACE, shardId.getIndexName(),
+                    Integer.toString(shardId.id())), Arrays.stream(prefixes)).toArray(String[]::new));
     }
 
     /**
@@ -51,8 +51,8 @@ public class Loggers {
         return new PrefixLogger(LogManager.getLogger(loggerName), prefix);
     }
 
-    public static Logger getLogger(Class<?> clazz, Index index, String... prefixes) {
-        return getLogger(clazz, Stream.concat(Stream.of(Loggers.SPACE, index.getName()), Arrays.stream(prefixes)).toArray(String[]::new));
+    public static Logger getLogger(Class<?> clazz, Index index) {
+        return getLogger(clazz, Loggers.SPACE, index.getName());
     }
 
     public static Logger getLogger(Class<?> clazz, String... prefixes) {
