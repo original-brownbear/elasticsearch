@@ -12,7 +12,6 @@ import org.apache.lucene.util.Accountable;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
-import org.elasticsearch.index.AbstractIndexComponent;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.shard.ShardId;
@@ -29,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class IndexFieldDataService extends AbstractIndexComponent implements Closeable {
+public class IndexFieldDataService implements Closeable {
     public static final String FIELDDATA_CACHE_VALUE_NODE = "node";
     public static final String FIELDDATA_CACHE_KEY = "index.fielddata.cache";
     public static final Setting<String> INDEX_FIELDDATA_CACHE_KEY =
@@ -59,10 +58,11 @@ public class IndexFieldDataService extends AbstractIndexComponent implements Clo
     };
     private volatile IndexFieldDataCache.Listener listener = DEFAULT_NOOP_LISTENER;
 
+    private final IndexSettings indexSettings;
 
     public IndexFieldDataService(IndexSettings indexSettings, IndicesFieldDataCache indicesFieldDataCache,
                                  CircuitBreakerService circuitBreakerService) {
-        super(indexSettings);
+        this.indexSettings = indexSettings;
         this.indicesFieldDataCache = indicesFieldDataCache;
         this.circuitBreakerService = circuitBreakerService;
     }
