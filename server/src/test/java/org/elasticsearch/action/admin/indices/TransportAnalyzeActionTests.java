@@ -129,7 +129,7 @@ public class TransportAnalyzeActionTests extends ESTestCase {
                 final String suffix;
 
                 AppendCharFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-                    super(indexSettings, name);
+                    super(name);
                     this.suffix = settings.get("suffix", "bar");
                 }
 

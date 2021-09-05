@@ -30,7 +30,7 @@ public class IcuNormalizerCharFilterFactory extends AbstractCharFilterFactory im
     private final Normalizer2 normalizer;
 
     public IcuNormalizerCharFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(indexSettings, name);
+        super(name);
         String method = settings.get("name", "nfkc_cf");
         String mode = settings.get("mode");
         if ("compose".equals(mode) == false && "decompose".equals(mode) == false) {
