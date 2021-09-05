@@ -73,7 +73,7 @@ public final class AnalysisRegistry implements Closeable {
                             Map<String, PreConfiguredTokenizer> preConfiguredTokenizers,
                             Map<String, PreBuiltAnalyzerProviderFactory> preConfiguredAnalyzers) {
         this.environment = environment;
-        this.charFilters = unmodifiableMap(charFilters);
+        this.charFilters = Map.copyOf(charFilters);
         this.tokenFilters = unmodifiableMap(tokenFilters);
         this.tokenizers = unmodifiableMap(tokenizers);
         this.analyzers = unmodifiableMap(analyzers);
