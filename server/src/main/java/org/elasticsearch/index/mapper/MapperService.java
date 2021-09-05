@@ -124,6 +124,10 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
             this::getMetadataMappers, this::resolveDocumentType);
     }
 
+    public IndexSettings getIndexSettings() {
+        return indexSettings;
+    }
+
     public boolean hasNested() {
         return mappingLookup().hasNested();
     }
@@ -179,8 +183,8 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
      * Update local mapping by applying the incoming mapping that have already been merged with the current one on the master
      */
     public void updateMapping(final IndexMetadata currentIndexMetadata, final IndexMetadata newIndexMetadata) throws IOException {
-        assert newIndexMetadata.getIndex().equals(index()) : "index mismatch: expected " + index()
-            + " but was " + newIndexMetadata.getIndex();
+        assert newIndexMetadata.getIndex().equals(getIndexSettings().getIndex())
+            : "index mismatch: expected " + getIndexSettings().getIndex() + " but was " + newIndexMetadata.getIndex();
 
         if (currentIndexMetadata != null && currentIndexMetadata.getMappingVersion() == newIndexMetadata.getMappingVersion()) {
             assert assertNoUpdateRequired(newIndexMetadata);
@@ -200,12 +204,12 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
             }
             String op = previousMapper != null ? "updated" : "added";
             if (logger.isDebugEnabled() && incomingMappingSource.compressed().length < 512) {
-                logger.debug("[{}] {} mapping, source [{}]", index(), op, incomingMappingSource.string());
+                logger.debug("[{}] {} mapping, source [{}]", getIndexSettings().getIndex(), op, incomingMappingSource.string());
             } else if (logger.isTraceEnabled()) {
-                logger.trace("[{}] {} mapping, source [{}]", index(), op, incomingMappingSource.string());
+                logger.trace("[{}] {} mapping, source [{}]", getIndexSettings().getIndex(), op, incomingMappingSource.string());
             } else {
                 logger.debug("[{}] {} mapping (source suppressed due to length, use TRACE level if needed)",
-                    index(), op);
+                        getIndexSettings().getIndex(), op);
             }
         }
     }
@@ -230,8 +234,8 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         }
         // we used to ask the master to refresh its mappings whenever the result of merging the incoming mappings with the
         // current mappings differs from the incoming mappings. We now rather assert that this situation never happens.
-        assert mergedMappingSource.equals(incomingMappingSource) : "[" + index() + "] parsed mapping, and got different sources\n" +
-            "incoming:\n" + incomingMappingSource + "\nmerged:\n" + mergedMappingSource;
+        assert mergedMappingSource.equals(incomingMappingSource) : "[" + getIndexSettings().getIndex()
+            + "] parsed mapping, and got different sources\nincoming:\n" + incomingMappingSource + "\nmerged:\n" + mergedMappingSource;
         return true;
     }
 

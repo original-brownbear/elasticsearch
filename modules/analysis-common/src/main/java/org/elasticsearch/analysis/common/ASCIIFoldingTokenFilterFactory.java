@@ -31,7 +31,7 @@ public class ASCIIFoldingTokenFilterFactory extends AbstractTokenFilterFactory
 
     public ASCIIFoldingTokenFilterFactory(IndexSettings indexSettings, Environment environment,
             String name, Settings settings) {
-        super(indexSettings, name, settings);
+        super(name, settings);
         preserveOriginal = settings.getAsBoolean(PRESERVE_ORIGINAL.getPreferredName(), DEFAULT_PRESERVE_ORIGINAL);
     }
 

@@ -36,7 +36,7 @@ public class ScriptedConditionTokenFilterFactory extends AbstractTokenFilterFact
 
     ScriptedConditionTokenFilterFactory(IndexSettings indexSettings, String name,
                                                Settings settings, ScriptService scriptService) {
-        super(indexSettings, name, settings);
+        super(name, settings);
 
         Settings scriptSettings = settings.getAsSettings("script");
         Script script = Script.parse(scriptSettings);

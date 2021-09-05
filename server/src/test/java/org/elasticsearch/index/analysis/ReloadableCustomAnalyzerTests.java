@@ -17,7 +17,6 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.test.IndexSettingsModule;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
@@ -32,10 +31,9 @@ import static org.elasticsearch.index.analysis.AnalyzerComponents.createComponen
 public class ReloadableCustomAnalyzerTests extends ESTestCase {
 
     private static TestAnalysis testAnalysis;
-    private static Settings settings = Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT).build();
+    private static final Settings settings = Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT).build();
 
-    private static TokenFilterFactory NO_OP_SEARCH_TIME_FILTER = new AbstractTokenFilterFactory(
-            IndexSettingsModule.newIndexSettings("index", settings), "my_filter", Settings.EMPTY) {
+    private static final TokenFilterFactory NO_OP_SEARCH_TIME_FILTER = new AbstractTokenFilterFactory("my_filter", Settings.EMPTY) {
         @Override
         public AnalysisMode getAnalysisMode() {
             return AnalysisMode.SEARCH_TIME;
@@ -47,8 +45,8 @@ public class ReloadableCustomAnalyzerTests extends ESTestCase {
         }
     };
 
-    private static TokenFilterFactory LOWERCASE_SEARCH_TIME_FILTER = new AbstractTokenFilterFactory(
-            IndexSettingsModule.newIndexSettings("index", settings), "my_other_filter", Settings.EMPTY) {
+    private static final TokenFilterFactory LOWERCASE_SEARCH_TIME_FILTER = new AbstractTokenFilterFactory(
+        "my_other_filter", Settings.EMPTY) {
         @Override
         public AnalysisMode getAnalysisMode() {
             return AnalysisMode.SEARCH_TIME;

@@ -91,7 +91,6 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
-import java.util.function.LongUnaryOperator;
 import java.util.function.Supplier;
 
 import static java.util.Collections.emptyMap;
@@ -192,9 +191,10 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             if (indexSettings.getIndexSortConfig().hasIndexSort()) {
                 // we delay the actual creation of the sort order for this index because the mapping has not been merged yet.
                 // The sort order is validated right after the merge of the mapping later in the process.
+                final String indexName = indexSettings.getIndex().getName();
                 this.indexSortSupplier = () -> indexSettings.getIndexSortConfig().buildIndexSort(
                     mapperService::fieldType,
-                    (fieldType, searchLookup) -> indexFieldData.getForField(fieldType, indexFieldData.index().getName(), searchLookup)
+                    (fieldType, searchLookup) -> indexFieldData.getForField(fieldType, indexName, searchLookup)
                 );
             } else {
                 this.indexSortSupplier = () -> null;
@@ -367,19 +367,8 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         return indexSettings.getUUID();
     }
 
-    // NOTE: O(numShards) cost, but numShards should be smallish?
-    private long getAvgShardSizeInBytes() throws IOException {
-        long sum = 0;
-        int count = 0;
-        for (IndexShard indexShard : this) {
-            sum += indexShard.store().stats(0L, LongUnaryOperator.identity()).sizeInBytes();
-            count++;
-        }
-        if (count == 0) {
-            return -1L;
-        } else {
-            return sum / count;
-        }
+    public Index index() {
+        return indexSettings.getIndex();
     }
 
     public synchronized IndexShard createShard(
@@ -558,7 +547,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         return recoveryStateFactory.newRecoveryState(shardRouting, targetNode, sourceNode);
     }
 
-    @Override
     public IndexSettings getIndexSettings() {
         return indexSettings;
     }
@@ -692,7 +680,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
     }
 
-    private final class FieldDataCacheListener implements IndexFieldDataCache.Listener {
+    private static final class FieldDataCacheListener implements IndexFieldDataCache.Listener {
         final IndexService indexService;
 
         FieldDataCacheListener(IndexService indexService) {
@@ -770,7 +758,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                     }
 
                     @Override
-                    protected void doRun() throws Exception {
+                    protected void doRun() {
                         maybeRefreshEngine(true);
                     }
 
@@ -980,7 +968,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
     }
 
-    final class AsyncRefreshTask extends BaseAsyncTask {
+    static final class AsyncRefreshTask extends BaseAsyncTask {
 
         AsyncRefreshTask(IndexService indexService) {
             super(indexService, indexService.getIndexSettings().getRefreshInterval());
@@ -1051,7 +1039,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     /**
      * Background task that syncs the global checkpoint to replicas.
      */
-    final class AsyncGlobalCheckpointTask extends BaseAsyncTask {
+    static final class AsyncGlobalCheckpointTask extends BaseAsyncTask {
 
         AsyncGlobalCheckpointTask(final IndexService indexService) {
             // index.global_checkpoint_sync_interval is not a real setting, it is only registered in tests
@@ -1074,7 +1062,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
     }
 
-    final class AsyncRetentionLeaseSyncTask extends BaseAsyncTask {
+    static final class AsyncRetentionLeaseSyncTask extends BaseAsyncTask {
 
         AsyncRetentionLeaseSyncTask(final IndexService indexService) {
             super(indexService, RETENTION_LEASE_SYNC_INTERVAL_SETTING.get(indexService.getIndexSettings().getSettings()));

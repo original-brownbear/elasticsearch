@@ -22,7 +22,7 @@ public class IcuTransformTokenFilterFactory extends AbstractTokenFilterFactory i
     private final Transliterator transliterator;
 
     public IcuTransformTokenFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(indexSettings, name, settings);
+        super(name, settings);
         this.id = settings.get("id", "Null");
         String s = settings.get("dir", "forward");
         this.dir = "forward".equals(s) ? Transliterator.FORWARD : Transliterator.REVERSE;

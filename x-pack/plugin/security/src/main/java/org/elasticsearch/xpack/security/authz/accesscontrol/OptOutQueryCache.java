@@ -50,7 +50,7 @@ public final class OptOutQueryCache extends AbstractIndexComponent implements Qu
     @Override
     public void clear(final String reason) {
         logger.debug("full cache clear, reason [{}]", reason);
-        indicesQueryCache.clearIndex(index().getName());
+        indicesQueryCache.clearIndex(indexSettings.getIndex().getName());
     }
 
     @Override

@@ -17,7 +17,7 @@ import org.elasticsearch.index.IndexSettings;
 public class NoriNumberFilterFactory extends AbstractTokenFilterFactory {
 
     public NoriNumberFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(indexSettings, name, settings);
+        super(name, settings);
     }
 
     @Override

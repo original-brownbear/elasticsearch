@@ -40,7 +40,6 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.ShardLockObtainFailedException;
 import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.index.Index;
-import org.elasticsearch.index.IndexComponent;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.seqno.GlobalCheckpointSyncAction;
@@ -201,7 +200,8 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
         if (state.blocks().disableStatePersistence()) {
             for (AllocatedIndex<? extends Shard> indexService : indicesService) {
                 // also cleans shards
-                indicesService.removeIndex(indexService.index(), NO_LONGER_ASSIGNED, "cleaning index (disabled block persistence)");
+                indicesService.removeIndex(
+                    indexService.getIndexSettings().getIndex(), NO_LONGER_ASSIGNED, "cleaning index (disabled block persistence)");
             }
             return;
         }
@@ -365,7 +365,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
         }
 
         for (AllocatedIndex<? extends Shard> indexService : indicesService) {
-            final Index index = indexService.index();
+            final Index index = indexService.getIndexSettings().getIndex();
             final IndexMetadata indexMetadata = state.metadata().index(index);
             final IndexMetadata existingMetadata = indexService.getIndexSettings().getIndexMetadata();
 
@@ -502,7 +502,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
         }
         final ClusterState state = event.state();
         for (AllocatedIndex<? extends Shard> indexService : indicesService) {
-            final Index index = indexService.index();
+            final Index index = indexService.getIndexSettings().getIndex();
             final IndexMetadata currentIndexMetadata = indexService.getIndexSettings().getIndexMetadata();
             final IndexMetadata newIndexMetadata = state.metadata().index(index);
             assert newIndexMetadata != null : "index " + index + " should have been removed by deleteIndices";
@@ -520,7 +520,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
                     reason = "mapping update failed";
                     indexService.updateMapping(currentIndexMetadata, newIndexMetadata);
                 } catch (Exception e) {
-                    indicesService.removeIndex(indexService.index(), FAILURE, "removing index (" + reason + ")");
+                    indicesService.removeIndex(indexService.getIndexSettings().getIndex(), FAILURE, "removing index (" + reason + ")");
 
                     // fail shards that would be created or updated by createOrUpdateShards
                     RoutingNode localRoutingNode = state.getRoutingNodes().node(state.nodes().getLocalNodeId());
@@ -566,7 +566,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
 
         DiscoveryNode sourceNode = null;
         if (shardRouting.recoverySource().getType() == Type.PEER)  {
-            sourceNode = findSourceNodeForPeerRecovery(logger, routingTable, nodes, shardRouting);
+            sourceNode = findSourceNodeForPeerRecovery(routingTable, nodes, shardRouting);
             if (sourceNode == null) {
                 logger.trace("ignoring initializing shard {} - no source node can be found.", shardRouting.shardId());
                 return;
@@ -637,7 +637,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
      * Finds the routing source node for peer recovery, return null if its not found. Note, this method expects the shard
      * routing to *require* peer recovery, use {@link ShardRouting#recoverySource()} to check if its needed or not.
      */
-    private static DiscoveryNode findSourceNodeForPeerRecovery(Logger logger, RoutingTable routingTable, DiscoveryNodes nodes,
+    private static DiscoveryNode findSourceNodeForPeerRecovery(RoutingTable routingTable, DiscoveryNodes nodes,
                                                                ShardRouting shardRouting) {
         DiscoveryNode sourceNode = null;
         if (shardRouting.primary() == false) {
@@ -811,7 +811,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
                               IndexShardRoutingTable routingTable) throws IOException;
     }
 
-    public interface AllocatedIndex<T extends Shard> extends Iterable<T>, IndexComponent {
+    public interface AllocatedIndex<T extends Shard> extends Iterable<T> {
 
         /**
          * Returns the index settings of this index.

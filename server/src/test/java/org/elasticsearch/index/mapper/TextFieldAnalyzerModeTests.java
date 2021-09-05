@@ -49,7 +49,7 @@ public class TextFieldAnalyzerModeTests extends ESTestCase {
 
 
     private Analyzer createAnalyzerWithMode(AnalysisMode mode) {
-        TokenFilterFactory tokenFilter = new AbstractTokenFilterFactory(indexSettings, "my_analyzer", Settings.EMPTY) {
+        TokenFilterFactory tokenFilter = new AbstractTokenFilterFactory("my_analyzer", Settings.EMPTY) {
             @Override
             public AnalysisMode getAnalysisMode() {
                 return mode;

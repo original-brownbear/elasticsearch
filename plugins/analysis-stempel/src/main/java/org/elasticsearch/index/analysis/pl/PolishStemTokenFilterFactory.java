@@ -23,7 +23,7 @@ import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 public class PolishStemTokenFilterFactory extends AbstractTokenFilterFactory {
 
     public PolishStemTokenFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(indexSettings, name, settings);
+        super(name, settings);
     }
 
     @Override public TokenStream create(TokenStream tokenStream) {

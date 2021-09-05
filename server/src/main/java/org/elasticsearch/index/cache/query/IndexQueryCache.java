@@ -36,7 +36,7 @@ public class IndexQueryCache extends AbstractIndexComponent implements QueryCach
     @Override
     public void clear(String reason) {
         logger.debug("full cache clear, reason [{}]", reason);
-        indicesQueryCache.clearIndex(index().getName());
+        indicesQueryCache.clearIndex(indexSettings.getIndex().getName());
     }
 
     @Override
