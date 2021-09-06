@@ -8,6 +8,7 @@
 
 package org.elasticsearch.index.analysis;
 
+import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.AbstractIndexComponent;
 import org.elasticsearch.index.IndexSettings;
@@ -16,9 +17,12 @@ public abstract class AbstractTokenFilterFactory extends AbstractIndexComponent 
 
     private final String name;
 
+    protected final DeprecationLogger deprecationLogger;
+
     public AbstractTokenFilterFactory(IndexSettings indexSettings, String name, Settings settings) {
         super(indexSettings);
         this.name = name;
+        this.deprecationLogger = DeprecationLogger.getLogger(getClass());
         Analysis.checkForDeprecatedVersion(name, settings);
     }
 

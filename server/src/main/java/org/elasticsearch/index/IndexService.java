@@ -119,7 +119,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     private volatile Map<Integer, IndexShard> shards = emptyMap();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicBoolean deleted = new AtomicBoolean(false);
-    private final IndexSettings indexSettings;
     private final List<SearchOperationListener> searchOperationListeners;
     private final List<IndexingOperationListener> indexingOperationListeners;
     private final BooleanSupplier allowExpensiveQueries;
@@ -174,7 +173,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             IndexStorePlugin.SnapshotCommitSupplier snapshotCommitSupplier) {
         super(indexSettings);
         this.allowExpensiveQueries = allowExpensiveQueries;
-        this.indexSettings = indexSettings;
         this.xContentRegistry = xContentRegistry;
         this.similarityService = similarityService;
         this.namedWriteableRegistry = namedWriteableRegistry;
@@ -188,7 +186,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                 // we parse all percolator queries as they would be parsed on shard 0
                 () -> newSearchExecutionContext(0, 0, null, System::currentTimeMillis, null, emptyMap()),
                 idFieldDataEnabled, scriptService);
-            this.indexFieldData = new IndexFieldDataService(indexSettings, indicesFieldDataCache, circuitBreakerService, mapperService);
+            this.indexFieldData = new IndexFieldDataService(indexSettings, indicesFieldDataCache, circuitBreakerService);
             if (indexSettings.getIndexSortConfig().hasIndexSort()) {
                 // we delay the actual creation of the sort order for this index because the mapping has not been merged yet.
                 // The sort order is validated right after the merge of the mapping later in the process.

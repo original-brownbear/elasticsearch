@@ -289,7 +289,7 @@ public abstract class AggregatorTestCase extends ESTestCase {
             () -> query,
             null,
             consumer,
-            () -> buildSubSearchContext(indexSettings, searchExecutionContext, bitsetFilterCache),
+            () -> buildSubSearchContext(searchExecutionContext, bitsetFilterCache),
             bitsetFilterCache,
             randomInt(),
             () -> 0L,
@@ -320,13 +320,9 @@ public abstract class AggregatorTestCase extends ESTestCase {
     /**
      * Build a {@link SubSearchContext}s to power {@code top_hits}.
      */
-    private SubSearchContext buildSubSearchContext(
-        IndexSettings indexSettings,
-        SearchExecutionContext searchExecutionContext,
-        BitsetFilterCache bitsetFilterCache
-    ) {
+    private SubSearchContext buildSubSearchContext(SearchExecutionContext searchExecutionContext, BitsetFilterCache bitsetFilterCache) {
         SearchContext ctx = mock(SearchContext.class);
-        QueryCache queryCache = new DisabledQueryCache(indexSettings);
+        QueryCache queryCache = DisabledQueryCache.INSTANCE;
         QueryCachingPolicy queryCachingPolicy = new QueryCachingPolicy() {
             @Override
             public void onUse(Query query) {

@@ -7,7 +7,6 @@
  */
 package org.elasticsearch.index;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.lucene.index.MergePolicy;
 import org.elasticsearch.Version;
@@ -319,7 +318,6 @@ public final class IndexSettings {
 
     private final Index index;
     private final Version version;
-    private final Logger logger;
     private final String nodeName;
     private final Settings nodeSettings;
     private final int numberOfShards;
@@ -341,7 +339,7 @@ public final class IndexSettings {
     private final MergePolicyConfig mergePolicyConfig;
     private final IndexSortConfig indexSortConfig;
     private final IndexScopedSettings scopedSettings;
-    private long gcDeletesInMillis = DEFAULT_GC_DELETES.millis();
+    private long gcDeletesInMillis;
     private final boolean softDeleteEnabled;
     private volatile long softDeleteRetentionOperations;
 
@@ -459,7 +457,6 @@ public final class IndexSettings {
         this.settings = Settings.builder().put(nodeSettings).put(indexMetadata.getSettings()).build();
         this.index = indexMetadata.getIndex();
         version = IndexMetadata.SETTING_INDEX_VERSION_CREATED.get(settings);
-        logger = Loggers.getLogger(getClass(), index);
         nodeName = Node.NODE_NAME_SETTING.get(settings);
         this.indexMetadata = indexMetadata;
         numberOfShards = settings.getAsInt(IndexMetadata.SETTING_NUMBER_OF_SHARDS, null);
@@ -496,7 +493,7 @@ public final class IndexSettings {
         maxAnalyzedOffset = scopedSettings.get(MAX_ANALYZED_OFFSET_SETTING);
         maxTermsCount = scopedSettings.get(MAX_TERMS_COUNT_SETTING);
         maxRegexLength = scopedSettings.get(MAX_REGEX_LENGTH_SETTING);
-        this.mergePolicyConfig = new MergePolicyConfig(logger, this);
+        this.mergePolicyConfig = new MergePolicyConfig(Loggers.getLogger(getClass(), index), this);
         this.indexSortConfig = new IndexSortConfig(this);
         searchIdleAfter = scopedSettings.get(INDEX_SEARCH_IDLE_AFTER);
         defaultPipeline = scopedSettings.get(DEFAULT_PIPELINE);
