@@ -25,6 +25,7 @@ import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.indices.ResolvedIndexAbstractions;
 import org.elasticsearch.transport.RemoteClusterAware;
 import org.elasticsearch.transport.RemoteConnectionStrategy;
 import org.elasticsearch.transport.TransportRequest;
@@ -90,7 +91,7 @@ class IndicesAndAliasesResolver {
      * Otherwise, <em>N</em> will be added to the <em>local</em> index list.
      */
 
-    ResolvedIndices resolve(String action, TransportRequest request, Metadata metadata, Set<String> authorizedIndices) {
+    ResolvedIndices resolve(String action, TransportRequest request, Metadata metadata, ResolvedIndexAbstractions authorizedIndices) {
         if (request instanceof IndicesAliasesRequest) {
             ResolvedIndices.Builder resolvedIndicesBuilder = new ResolvedIndices.Builder();
             IndicesAliasesRequest indicesAliasesRequest = (IndicesAliasesRequest) request;
@@ -111,7 +112,7 @@ class IndicesAndAliasesResolver {
 
 
     ResolvedIndices resolveIndicesAndAliases(String action, IndicesRequest indicesRequest, Metadata metadata,
-                                             Set<String> authorizedIndices) {
+                                             ResolvedIndexAbstractions authorizedIndices) {
         final ResolvedIndices.Builder resolvedIndicesBuilder = new ResolvedIndices.Builder();
         boolean indicesReplacedWithNoIndices = false;
         if (indicesRequest instanceof PutMappingRequest && ((PutMappingRequest) indicesRequest).getConcreteIndex() != null) {
@@ -250,7 +251,7 @@ class IndicesAndAliasesResolver {
      * request's concrete index is not in the list of authorized indices, then we need to look to
      * see if this can be authorized against an alias
      */
-    static String getPutMappingIndexOrAlias(PutMappingRequest request, Set<String> authorizedIndicesList, Metadata metadata) {
+    static String getPutMappingIndexOrAlias(PutMappingRequest request, ResolvedIndexAbstractions authorizedIndicesList, Metadata metadata) {
         final String concreteIndexName = request.getConcreteIndex().getName();
 
         // validate that the concrete index exists, otherwise there is no remapping that we could do
@@ -261,7 +262,7 @@ class IndicesAndAliasesResolver {
         } else if (indexAbstraction.getType() != IndexAbstraction.Type.CONCRETE_INDEX) {
             throw new IllegalStateException("concrete index [" + concreteIndexName + "] is a [" +
                 indexAbstraction.getType().getDisplayName() + "], but a concrete index is expected");
-        } else if (authorizedIndicesList.contains(concreteIndexName)) {
+        } else if (authorizedIndicesList.authorized(concreteIndexName)) {
             // user is authorized to put mappings for this index
             resolvedAliasOrIndex = concreteIndexName;
         } else {
@@ -272,7 +273,7 @@ class IndicesAndAliasesResolver {
             if (aliasMetadata != null) {
                 Optional<String> foundAlias = aliasMetadata.stream()
                     .map(AliasMetadata::alias)
-                    .filter(authorizedIndicesList::contains)
+                    .filter(authorizedIndicesList::authorized)
                     .filter(aliasName -> {
                         IndexAbstraction alias = metadata.getIndicesLookup().get(aliasName);
                         List<IndexMetadata> indexMetadata = alias.getIndices();

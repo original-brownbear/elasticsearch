@@ -36,6 +36,7 @@ import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.indices.ResolvedIndexAbstractions;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.license.XPackLicenseState.Feature;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -299,18 +300,14 @@ public class AuthorizationService {
             }, clusterAuthzListener::onFailure));
         } else if (isIndexAction(action)) {
             final Metadata metadata = clusterService.state().metadata();
-            final AsyncSupplier<Set<String>> authorizedIndicesSupplier = new CachingAsyncSupplier<>(authzIndicesListener -> {
-                LoadAuthorizedIndiciesTimeChecker timeChecker = LoadAuthorizedIndiciesTimeChecker.start(requestInfo, authzInfo);
-                authzEngine.loadAuthorizedIndices(
-                    requestInfo,
-                    authzInfo,
-                    metadata.getIndicesLookup(),
-                    authzIndicesListener.map(authzIndices -> {
-                        timeChecker.done(authzIndices);
-                        return authzIndices;
-                    })
+            final AsyncSupplier<ResolvedIndexAbstractions> authorizedIndicesSupplier = new CachingAsyncSupplier<>(authzIndicesListener ->
+                    authzEngine.loadAuthorizedIndices(
+                            requestInfo,
+                            authzInfo,
+                            metadata.getIndicesLookup(),
+                            authzIndicesListener
+                    )
                 );
-            });
             final AsyncSupplier<ResolvedIndices> resolvedIndicesAsyncSupplier = new CachingAsyncSupplier<>(resolvedIndicesListener ->
                     authorizedIndicesSupplier.getAsync(
                         ActionListener.wrap(
@@ -344,7 +341,7 @@ public class AuthorizationService {
     private void handleIndexActionAuthorizationResult(final IndexAuthorizationResult result, final RequestInfo requestInfo,
                                                       final String requestId, final AuthorizationInfo authzInfo,
                                                       final AuthorizationEngine authzEngine,
-                                                      final AsyncSupplier<Set<String>> authorizedIndicesSupplier,
+                                                      final AsyncSupplier<ResolvedIndexAbstractions> authorizedIndicesSupplier,
                                                       final AsyncSupplier<ResolvedIndices> resolvedIndicesAsyncSupplier,
                                                       final Metadata metadata,
                                                       final ActionListener<Void> listener) {
@@ -510,7 +507,7 @@ public class AuthorizationService {
      */
     private void authorizeBulkItems(RequestInfo requestInfo, AuthorizationInfo authzInfo,
                                     AuthorizationEngine authzEngine, AsyncSupplier<ResolvedIndices> resolvedIndicesAsyncSupplier,
-                                    AsyncSupplier<Set<String>> authorizedIndicesSupplier,
+                                    AsyncSupplier<ResolvedIndexAbstractions> authorizedIndicesSupplier,
                                     Metadata metadata, String requestId, ActionListener<Void> listener) {
         final Authentication authentication = requestInfo.getAuthentication();
         final BulkShardRequest request = (BulkShardRequest) requestInfo.getRequest();

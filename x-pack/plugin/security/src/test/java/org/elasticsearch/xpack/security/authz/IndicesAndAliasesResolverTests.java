@@ -49,6 +49,7 @@ import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.indices.ResolvedIndexAbstractions;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.protocol.xpack.graph.GraphExploreRequest;
 import org.elasticsearch.search.internal.ShardSearchRequest;
@@ -1526,7 +1527,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
     public void testHiddenIndicesResolution() {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indicesOptions(IndicesOptions.fromOptions(false, false, true, true, true));
-        Set<String> authorizedIndices = buildAuthorizedIndices(user, SearchAction.NAME);
+        ResolvedIndices authorizedIndices = buildAuthorizedIndices(user, SearchAction.NAME);
         ResolvedIndices resolvedIndices
             = defaultIndicesResolver.resolveIndicesAndAliases(SearchAction.NAME, searchRequest, metadata, authorizedIndices);
         assertThat(resolvedIndices.getLocal(), containsInAnyOrder("bar", "bar-closed", "foofoobar", "foobarfoo", "foofoo", "foofoo-closed",
@@ -1893,7 +1894,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
 
         // data streams should _not_ be in the authorized list but their backing indices that matched both the requested pattern
         // and the authorized pattern should be in the list
-        final Set<String> authorizedIndices = buildAuthorizedIndices(user, GetAliasesAction.NAME, request);
+        final ResolvedIndexAbstractions authorizedIndices = buildAuthorizedIndices(user, GetAliasesAction.NAME, request);
         assertThat(authorizedIndices, not(hasItem("logs-foobar")));
         DataStream dataStream = metadata.dataStreams().get("logs-foobar");
         assertThat(authorizedIndices, not(hasItem(indexName)));
@@ -1949,7 +1950,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
 
         // data streams should _not_ be in the authorized list but their backing indices that matched both the requested pattern
         // and the authorized pattern should be in the list
-        final Set<String> authorizedIndices = buildAuthorizedIndices(user, GetAliasesAction.NAME, request);
+        final ResolvedIndexAbstractions authorizedIndices = buildAuthorizedIndices(user, GetAliasesAction.NAME, request);
         assertThat(authorizedIndices, not(hasItem("logs-foobar")));
         DataStream dataStream = metadata.dataStreams().get("logs-foobar");
         assertThat(authorizedIndices, not(hasItem(indexName)));
@@ -1996,11 +1997,11 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
         assertThat(resolvedIndices.getLocal(), contains(DataStream.getDefaultBackingIndexName("logs-foobar", 1)));
     }
 
-    private Set<String> buildAuthorizedIndices(User user, String action) {
+    private ResolvedIndexAbstractions buildAuthorizedIndices(User user, String action) {
         return buildAuthorizedIndices(user, action, TransportRequest.Empty.INSTANCE);
     }
 
-    private Set<String> buildAuthorizedIndices(User user, String action, TransportRequest request) {
+    private ResolvedIndexAbstractions buildAuthorizedIndices(User user, String action, TransportRequest request) {
         PlainActionFuture<Role> rolesListener = new PlainActionFuture<>();
         final Authentication authentication =
             new Authentication(user, new RealmRef("test", "indices-aliases-resolver-tests", "node"), null);
@@ -2015,11 +2016,11 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
                 .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0));
     }
 
-    private ResolvedIndices resolveIndices(TransportRequest request, Set<String> authorizedIndices) {
+    private ResolvedIndices resolveIndices(TransportRequest request, ResolvedIndexAbstractions authorizedIndices) {
         return resolveIndices("indices:/" + randomAlphaOfLength(8), request, authorizedIndices);
     }
 
-    private ResolvedIndices resolveIndices(String action, TransportRequest request, Set<String> authorizedIndices) {
+    private ResolvedIndices resolveIndices(String action, TransportRequest request, ResolvedIndexAbstractions authorizedIndices) {
         return defaultIndicesResolver.resolve(action, request, this.metadata, authorizedIndices);
     }
 

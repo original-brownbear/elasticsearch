@@ -11,6 +11,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.indices.ResolvedIndexAbstractions;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.xpack.core.security.action.user.GetUserPrivilegesRequest;
 import org.elasticsearch.xpack.core.security.action.user.GetUserPrivilegesResponse;
@@ -148,7 +149,7 @@ public interface AuthorizationEngine {
      * @param listener the listener to be notified of the authorization result
      */
     void loadAuthorizedIndices(RequestInfo requestInfo, AuthorizationInfo authorizationInfo,
-                               Map<String, IndexAbstraction> indicesLookup, ActionListener<Set<String>> listener);
+                               Map<String, IndexAbstraction> indicesLookup, ActionListener<ResolvedIndexAbstractions> listener);
 
 
     /**

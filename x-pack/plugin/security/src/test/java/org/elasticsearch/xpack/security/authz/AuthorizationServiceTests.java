@@ -100,6 +100,7 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.bulk.stats.BulkOperationListener;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardId;
+import org.elasticsearch.indices.ResolvedIndexAbstractions;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.license.XPackLicenseState.Feature;
@@ -1837,7 +1838,8 @@ public class AuthorizationServiceTests extends ESTestCase {
 
             @Override
             public void loadAuthorizedIndices(RequestInfo requestInfo, AuthorizationInfo authorizationInfo,
-                                              Map<String, IndexAbstraction> indicesLookup, ActionListener<Set<String>> listener) {
+                                              Map<String, IndexAbstraction> indicesLookup,
+                                              ActionListener<ResolvedIndexAbstractions> listener) {
                 throw new UnsupportedOperationException("not implemented");
             }
 

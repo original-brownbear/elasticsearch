@@ -33,6 +33,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.indices.ResolvedIndexAbstractions;
 import org.elasticsearch.transport.TransportActionProxy;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.xpack.core.async.DeleteAsyncResultAction;
@@ -358,7 +359,7 @@ public class RBACEngine implements AuthorizationEngine {
 
     @Override
     public void loadAuthorizedIndices(RequestInfo requestInfo, AuthorizationInfo authorizationInfo,
-                                      Map<String, IndexAbstraction> indicesLookup, ActionListener<Set<String>> listener) {
+                                      Map<String, IndexAbstraction> indicesLookup, ActionListener<ResolvedIndexAbstractions> listener) {
         if (authorizationInfo instanceof RBACAuthorizationInfo) {
             final Role role = ((RBACAuthorizationInfo) authorizationInfo).getRole();
             listener.onResponse(resolveAuthorizedIndicesFromRole(role, requestInfo, indicesLookup));
@@ -525,35 +526,10 @@ public class RBACEngine implements AuthorizationEngine {
         return new GetUserPrivilegesResponse(cluster, conditionalCluster, indices, application, runAs);
     }
 
-    static Set<String> resolveAuthorizedIndicesFromRole(Role role, RequestInfo requestInfo, Map<String, IndexAbstraction> lookup) {
+    static ResolvedIndexAbstractions resolveAuthorizedIndicesFromRole(Role role, RequestInfo requestInfo,
+                                                                      Map<String, IndexAbstraction> lookup) {
         Predicate<IndexAbstraction> predicate = role.allowedIndicesMatcher(requestInfo.getAction());
-
-        // do not include data streams for actions that do not operate on data streams
-        TransportRequest request = requestInfo.getRequest();
-        final boolean includeDataStreams = (request instanceof IndicesRequest) && ((IndicesRequest) request).includeDataStreams();
-
-        Set<String> indicesAndAliases = new HashSet<>();
-        // TODO: can this be done smarter? I think there are usually more indices/aliases in the cluster then indices defined a roles?
-        if (includeDataStreams) {
-            for (IndexAbstraction indexAbstraction : lookup.values()) {
-                if (predicate.test(indexAbstraction)) {
-                    indicesAndAliases.add(indexAbstraction.getName());
-                    if (indexAbstraction.getType() == IndexAbstraction.Type.DATA_STREAM) {
-                        // add data stream and its backing indices for any authorized data streams
-                        for (IndexMetadata indexMetadata : indexAbstraction.getIndices()) {
-                            indicesAndAliases.add(indexMetadata.getIndex().getName());
-                        }
-                    }
-                }
-            }
-        } else {
-            for (IndexAbstraction indexAbstraction : lookup.values()) {
-                if (indexAbstraction.getType() != IndexAbstraction.Type.DATA_STREAM && predicate.test(indexAbstraction)) {
-                    indicesAndAliases.add(indexAbstraction.getName());
-                }
-            }
-        }
-        return Collections.unmodifiableSet(indicesAndAliases);
+        return new ResolvedIndexAbstractions(predicate, lookup);
     }
 
     private IndexAuthorizationResult buildIndicesAccessControl(String action,
