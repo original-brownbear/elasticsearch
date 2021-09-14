@@ -1,7 +1,8 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License;
- * you may not use this file except in compliance with the Elastic License.
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
  */
 package org.elasticsearch.xpack.enrich;
 
@@ -18,13 +19,15 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.ingest.PutPipelineRequest;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.geo.GeoPlugin;
 import org.elasticsearch.index.reindex.ReindexPlugin;
 import org.elasticsearch.ingest.common.IngestCommonPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.script.mustache.MustachePlugin;
 import org.elasticsearch.test.ESSingleNodeTestCase;
+import org.elasticsearch.test.TestGeoShapeFieldMapperPlugin;
+import org.elasticsearch.xpack.core.XPackSettings;
 import org.elasticsearch.xpack.core.enrich.EnrichPolicy;
 import org.elasticsearch.xpack.core.enrich.action.EnrichStatsAction;
 import org.elasticsearch.xpack.core.enrich.action.ExecuteEnrichPolicyAction;
@@ -38,9 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.elasticsearch.xpack.enrich.EnrichMultiNodeIT.DECORATE_FIELDS;
-import static org.elasticsearch.xpack.enrich.EnrichMultiNodeIT.MATCH_FIELD;
-import static org.elasticsearch.xpack.enrich.EnrichMultiNodeIT.SOURCE_INDEX_NAME;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
@@ -50,14 +50,33 @@ import static org.hamcrest.Matchers.nullValue;
 
 public class BasicEnrichTests extends ESSingleNodeTestCase {
 
+    static final String SOURCE_INDEX_NAME = "users";
+    static final String MATCH_FIELD = "email";
+    static final String[] DECORATE_FIELDS = new String[] { "address", "city", "country" };
+
     @Override
     protected Collection<Class<? extends Plugin>> getPlugins() {
-        return Arrays.asList(LocalStateEnrich.class, ReindexPlugin.class, IngestCommonPlugin.class, MustachePlugin.class, GeoPlugin.class);
+        return Arrays.asList(
+            LocalStateEnrich.class,
+            ReindexPlugin.class,
+            IngestCommonPlugin.class,
+            MustachePlugin.class,
+            TestGeoShapeFieldMapperPlugin.class
+        );
     }
 
     @Override
     protected boolean resetNodeAfterTest() {
         return true;
+    }
+
+    @Override
+    protected Settings nodeSettings() {
+        return Settings.builder()
+            // TODO Fix the test so that it runs with security enabled
+            // https://github.com/elastic/elasticsearch/issues/75940
+            .put(XPackSettings.SECURITY_ENABLED.getKey(), false)
+            .build();
     }
 
     public void testIngestDataWithMatchProcessor() {

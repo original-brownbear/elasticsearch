@@ -5,6 +5,11 @@
       "description":"Updates an alias to point to a new index when the existing index\nis considered to be too large or too old."
     },
     "stability":"stable",
+    "visibility":"public",
+    "headers":{
+      "accept": [ "application/json"],
+      "content_type": ["application/json"]
+    },
     "url":{
       "paths":[
         {
@@ -53,10 +58,6 @@
       "wait_for_active_shards":{
         "type":"string",
         "description":"Set the number of active shards to wait for on the newly created rollover index before the operation returns."
-      },
-      "prefer_v2_templates": {
-        "type": "boolean",
-        "description": "favor V2 templates instead of V1 templates during automatic index creation"
       }
     },
     "body":{

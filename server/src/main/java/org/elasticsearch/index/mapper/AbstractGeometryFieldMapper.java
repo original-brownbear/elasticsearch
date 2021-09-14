@@ -1,261 +1,183 @@
 /*
- * Licensed to Elasticsearch under one or more contributor
- * license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright
- * ownership. Elasticsearch licenses this file to you under
- * the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0 and the Server Side Public License, v 1; you may not use this file except
+ * in compliance with, at your election, the Elastic License 2.0 or the Server
+ * Side Public License, v 1.
  */
 package org.elasticsearch.index.mapper;
 
-import org.apache.lucene.index.IndexOptions;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
 import org.elasticsearch.common.Explicit;
-import org.elasticsearch.common.ParseField;
-import org.elasticsearch.common.geo.ShapeRelation;
-import org.elasticsearch.common.geo.SpatialStrategy;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.support.XContentMapValues;
-import org.elasticsearch.geometry.Geometry;
-import org.elasticsearch.index.query.QueryShardContext;
-import org.elasticsearch.index.query.QueryShardException;
+import org.elasticsearch.common.geo.GeometryFormatterFactory;
+import org.elasticsearch.common.xcontent.XContentParser;
+import org.elasticsearch.common.xcontent.support.MapXContentParser;
+import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.index.analysis.NamedAnalyzer;
+import org.elasticsearch.index.query.SearchExecutionContext;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Base field mapper class for all spatial field types
  */
-public abstract class AbstractGeometryFieldMapper extends FieldMapper {
+public abstract class AbstractGeometryFieldMapper<T> extends FieldMapper {
 
-    public static class Names {
-        public static final ParseField IGNORE_MALFORMED = new ParseField("ignore_malformed");
-        public static final ParseField IGNORE_Z_VALUE = new ParseField("ignore_z_value");
+    public static Parameter<Explicit<Boolean>> ignoreMalformedParam(Function<FieldMapper, Explicit<Boolean>> initializer,
+                                                                    boolean ignoreMalformedByDefault) {
+        return Parameter.explicitBoolParam("ignore_malformed", true, initializer, ignoreMalformedByDefault);
     }
 
-    public static class Defaults {
-        public static final Explicit<Boolean> IGNORE_MALFORMED = new Explicit<>(false, false);
-        public static final Explicit<Boolean> IGNORE_Z_VALUE = new Explicit<>(true, false);
+    public static Parameter<Explicit<Boolean>> ignoreZValueParam(Function<FieldMapper, Explicit<Boolean>> initializer) {
+        return Parameter.explicitBoolParam("ignore_z_value", true, initializer, true);
     }
 
-    public abstract static class Builder<T extends Builder, Y extends AbstractGeometryFieldMapper>
-            extends FieldMapper.Builder<T, Y> {
-        protected Boolean ignoreMalformed;
-        protected Boolean ignoreZValue;
+    /**
+     * Interface representing parser in geometry indexing pipeline.
+     */
+    public abstract static class Parser<T> {
+        /**
+         * Parse the given xContent value to one or more objects of type {@link T}. The value can be
+         * in any supported format.
+         */
+        public abstract void parse(
+            XContentParser parser,
+            CheckedConsumer<T, IOException> consumer,
+            Consumer<Exception> onMalformed) throws IOException;
 
-        public Builder(String name, MappedFieldType fieldType, MappedFieldType defaultFieldType) {
-            super(name, fieldType, defaultFieldType);
-        }
-
-        public Builder(String name, MappedFieldType fieldType, MappedFieldType defaultFieldType, boolean ignoreMalformed,
-                       boolean ignoreZValue) {
-            super(name, fieldType, defaultFieldType);
-            this.ignoreMalformed = ignoreMalformed;
-            this.ignoreZValue = ignoreZValue;
-        }
-
-        public Builder ignoreMalformed(boolean ignoreMalformed) {
-            this.ignoreMalformed = ignoreMalformed;
-            return this;
-        }
-
-        protected Explicit<Boolean> ignoreMalformed(BuilderContext context) {
-            if (ignoreMalformed != null) {
-                return new Explicit<>(ignoreMalformed, true);
+        private void fetchFromSource(Object sourceMap, Consumer<T> consumer) {
+            try (XContentParser parser = MapXContentParser.wrapObject(sourceMap)) {
+                parse(parser, v -> consumer.accept(v), e -> {}); /* ignore malformed */
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
-            if (context.indexSettings() != null) {
-                return new Explicit<>(IGNORE_MALFORMED_SETTING.get(context.indexSettings()), false);
-            }
-            return Defaults.IGNORE_MALFORMED;
         }
 
-        public Explicit<Boolean> ignoreMalformed() {
-            if (ignoreMalformed != null) {
-                return new Explicit<>(ignoreMalformed, true);
-            }
-            return AbstractShapeGeometryFieldMapper.Defaults.IGNORE_MALFORMED;
-        }
+    }
 
-        protected Explicit<Boolean> ignoreZValue(BuilderContext context) {
-            if (ignoreZValue != null) {
-                return new Explicit<>(ignoreZValue, true);
-            }
-            return Defaults.IGNORE_Z_VALUE;
-        }
+    public abstract static class AbstractGeometryFieldType<T> extends MappedFieldType {
 
-        public Explicit<Boolean> ignoreZValue() {
-            if (ignoreZValue != null) {
-                return new Explicit<>(ignoreZValue, true);
-            }
-            return AbstractShapeGeometryFieldMapper.Defaults.IGNORE_Z_VALUE;
-        }
+        protected final Parser<T> geometryParser;
 
-        public Builder ignoreZValue(final boolean ignoreZValue) {
-            this.ignoreZValue = ignoreZValue;
-            return this;
+        protected AbstractGeometryFieldType(String name, boolean indexed, boolean stored, boolean hasDocValues,
+                                            Parser<T> geometryParser, Map<String, String> meta) {
+            super(name, indexed, stored, hasDocValues, TextSearchInfo.NONE, meta);
+            this.geometryParser = geometryParser;
         }
 
         @Override
-        protected void setupFieldType(BuilderContext context) {
-            super.setupFieldType(context);
-
-            // field mapper handles this at build time
-            // but prefix tree strategies require a name, so throw a similar exception
-            if (name().isEmpty()) {
-                throw new IllegalArgumentException("name cannot be empty string");
-            }
-        }
-    }
-
-    public abstract static class TypeParser<T extends Builder> implements Mapper.TypeParser {
-        protected abstract T newBuilder(String name, Map<String, Object> params);
-
-        public T parse(String name, Map<String, Object> node, Map<String, Object> params, ParserContext parserContext) {
-            for (Iterator<Map.Entry<String, Object>> iterator = node.entrySet().iterator(); iterator.hasNext();) {
-                Map.Entry<String, Object> entry = iterator.next();
-                String propName = entry.getKey();
-                Object propNode = entry.getValue();
-
-                if (Names.IGNORE_MALFORMED.match(propName, LoggingDeprecationHandler.INSTANCE)) {
-                    params.put(Names.IGNORE_MALFORMED.getPreferredName(), XContentMapValues.nodeBooleanValue(propNode,
-                        name + ".ignore_malformed"));
-                    iterator.remove();
-                } else if (Names.IGNORE_Z_VALUE.getPreferredName().equals(propName)) {
-                    params.put(GeoPointFieldMapper.Names.IGNORE_Z_VALUE.getPreferredName(),
-                        XContentMapValues.nodeBooleanValue(propNode, name + "." + Names.IGNORE_Z_VALUE.getPreferredName()));
-                    iterator.remove();
-                }
-            }
-            T builder = newBuilder(name, params);
-            if (params.containsKey(GeoPointFieldMapper.Names.IGNORE_Z_VALUE.getPreferredName())) {
-                builder.ignoreZValue((Boolean)params.get(GeoPointFieldMapper.Names.IGNORE_Z_VALUE.getPreferredName()));
-            }
-
-            if (params.containsKey(Names.IGNORE_MALFORMED.getPreferredName())) {
-                builder.ignoreMalformed((Boolean)params.get(Names.IGNORE_MALFORMED.getPreferredName()));
-            }
-            return builder;
-        }
-
-        @Override
-        @SuppressWarnings("rawtypes")
-        public T parse(String name, Map<String, Object> node, ParserContext parserContext)
-            throws MapperParsingException {
-            Map<String, Object> params = new HashMap<>();
-            return parse(name, node, params, parserContext);
-        }
-    }
-
-    public abstract static class AbstractGeometryFieldType extends MappedFieldType {
-        protected QueryProcessor geometryQueryBuilder;
-
-        protected AbstractGeometryFieldType() {
-            setIndexOptions(IndexOptions.DOCS);
-            setTokenized(false);
-            setStored(false);
-            setStoreTermVectors(false);
-            setOmitNorms(true);
-        }
-
-        protected AbstractGeometryFieldType(AbstractGeometryFieldType ref) {
-            super(ref);
-        }
-
-        public void setGeometryQueryBuilder(QueryProcessor geometryQueryBuilder)  {
-            this.geometryQueryBuilder = geometryQueryBuilder;
-        }
-
-        public QueryProcessor geometryQueryBuilder() {
-            return geometryQueryBuilder;
+        public final Query termQuery(Object value, SearchExecutionContext context) {
+            throw new IllegalArgumentException("Geometry fields do not support exact searching, use dedicated geometry queries instead: ["
+                    + name() + "]");
         }
 
         /**
-         * interface representing a query builder that generates a query from the given geometry
+         * Gets the formatter by name.
          */
-        public interface QueryProcessor {
-            Query process(Geometry shape, String fieldName, ShapeRelation relation, QueryShardContext context);
-
-            @Deprecated
-            default Query process(Geometry shape, String fieldName, SpatialStrategy strategy, ShapeRelation relation,
-                                  QueryShardContext context) {
-                return process(shape, fieldName, relation, context);
-            }
-        }
+        protected abstract Function<List<T>, List<Object>> getFormatter(String format);
 
         @Override
-        public Query existsQuery(QueryShardContext context) {
-            return new TermQuery(new Term(FieldNamesFieldMapper.NAME, name()));
-        }
-
-        @Override
-        public Query termQuery(Object value, QueryShardContext context) {
-            throw new QueryShardException(context,
-                "Geometry fields do not support exact searching, use dedicated geometry queries instead: ["
-                + name() + "]");
+        public ValueFetcher valueFetcher(SearchExecutionContext context, String format) {
+            Function<List<T>, List<Object>> formatter = getFormatter(format != null ? format : GeometryFormatterFactory.GEOJSON);
+            return new ArraySourceValueFetcher(name(), context) {
+                @Override
+                protected Object parseSourceValue(Object value) {
+                    final List<T> values = new ArrayList<>();
+                    geometryParser.fetchFromSource(value, values::add);
+                    return formatter.apply(values);
+                }
+            };
         }
     }
 
-    protected Explicit<Boolean> ignoreMalformed;
-    protected Explicit<Boolean> ignoreZValue;
+    private final Explicit<Boolean> ignoreMalformed;
+    private final Explicit<Boolean> ignoreZValue;
+    private final Parser<T> parser;
 
-    protected AbstractGeometryFieldMapper(String simpleName, MappedFieldType fieldType, MappedFieldType defaultFieldType,
-                                          Settings indexSettings, Explicit<Boolean> ignoreMalformed,
-                                          Explicit<Boolean> ignoreZValue, MultiFields multiFields, CopyTo copyTo) {
-        super(simpleName, fieldType, defaultFieldType, indexSettings, multiFields, copyTo);
+    protected AbstractGeometryFieldMapper(String simpleName, MappedFieldType mappedFieldType,
+                                          Map<String, NamedAnalyzer> indexAnalyzers,
+                                          Explicit<Boolean> ignoreMalformed, Explicit<Boolean> ignoreZValue,
+                                          MultiFields multiFields, CopyTo copyTo,
+                                          Parser<T> parser) {
+        super(simpleName, mappedFieldType, indexAnalyzers, multiFields, copyTo, false, null);
         this.ignoreMalformed = ignoreMalformed;
         this.ignoreZValue = ignoreZValue;
+        this.parser = parser;
+    }
+
+    protected AbstractGeometryFieldMapper(String simpleName, MappedFieldType mappedFieldType,
+                                          Explicit<Boolean> ignoreMalformed, Explicit<Boolean> ignoreZValue,
+                                          MultiFields multiFields, CopyTo copyTo,
+                                          Parser<T> parser) {
+        this(simpleName, mappedFieldType, Collections.emptyMap(), ignoreMalformed, ignoreZValue, multiFields, copyTo, parser);
+    }
+
+    protected AbstractGeometryFieldMapper(
+        String simpleName,
+        MappedFieldType mappedFieldType,
+        MultiFields multiFields,
+        CopyTo copyTo,
+        Parser<T> parser,
+        String onScriptError
+    ) {
+        super(simpleName, mappedFieldType, Collections.emptyMap(), multiFields, copyTo, true, onScriptError);
+        this.ignoreMalformed = new Explicit<>(false, true);
+        this.ignoreZValue = new Explicit<>(false, true);
+        this.parser = parser;
     }
 
     @Override
-    protected void doMerge(Mapper mergeWith) {
-        super.doMerge(mergeWith);
-        AbstractGeometryFieldMapper gsfm = (AbstractGeometryFieldMapper)mergeWith;
-
-        if (gsfm.ignoreMalformed.explicit()) {
-            this.ignoreMalformed = gsfm.ignoreMalformed;
-        }
-        if (gsfm.ignoreZValue.explicit()) {
-            this.ignoreZValue = gsfm.ignoreZValue;
-        }
+    @SuppressWarnings("unchecked")
+    public AbstractGeometryFieldType<T> fieldType() {
+        return (AbstractGeometryFieldType<T>) mappedFieldType;
     }
 
     @Override
-    protected void parseCreateField(ParseContext context) throws IOException {
+    protected void parseCreateField(DocumentParserContext context) throws IOException {
         throw new UnsupportedOperationException("Parsing is implemented in parse(), this method should NEVER be called");
     }
 
+    /**
+     * Build an index document using a parsed geometry
+     * @param context   the ParseContext holding the document
+     * @param geometry  the parsed geometry object
+     */
+    protected abstract void index(DocumentParserContext context, T geometry) throws IOException;
+
     @Override
-    public void doXContentBody(XContentBuilder builder, boolean includeDefaults, Params params) throws IOException {
-        super.doXContentBody(builder, includeDefaults, params);
-        if (includeDefaults || ignoreMalformed.explicit()) {
-            builder.field(Names.IGNORE_MALFORMED.getPreferredName(), ignoreMalformed.value());
+    public final void parse(DocumentParserContext context) throws IOException {
+        if (hasScript) {
+            throw new MapperParsingException("failed to parse field [" + fieldType().name() + "] of type + " + contentType() + "]",
+                new IllegalArgumentException("Cannot index data directly into a field with a [script] parameter"));
         }
-        if (includeDefaults || ignoreZValue.explicit()) {
-            builder.field(Names.IGNORE_Z_VALUE.getPreferredName(), ignoreZValue.value());
-        }
+        parser.parse(context.parser(), v -> index(context, v), e -> {
+            if (ignoreMalformed()) {
+                context.addIgnoredField(fieldType().name());
+            } else {
+                throw new MapperParsingException(
+                    "failed to parse field [" + fieldType().name() + "] of type [" + contentType() + "]", e
+                );
+            }
+        });
     }
 
-    public Explicit<Boolean> ignoreMalformed() {
-        return ignoreMalformed;
+    public boolean ignoreMalformed() {
+        return ignoreMalformed.value();
     }
 
-    public Explicit<Boolean> ignoreZValue() {
-        return ignoreZValue;
+    public boolean ignoreZValue() {
+        return ignoreZValue.value();
+    }
+
+    @Override
+    public final boolean parsesArrayValue() {
+        return true;
     }
 }

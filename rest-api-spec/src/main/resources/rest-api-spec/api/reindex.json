@@ -5,6 +5,11 @@
       "description":"Allows to copy documents from one index to another, optionally filtering the source\ndocuments by a query, changing the destination index settings, or fetching the\ndocuments from a remote cluster."
     },
     "stability":"stable",
+    "visibility":"public",
+    "headers":{
+      "accept": [ "application/json"],
+      "content_type": ["application/json"]
+    },
     "url":{
       "paths":[
         {
@@ -52,10 +57,6 @@
       "max_docs":{
         "type":"number",
         "description":"Maximum number of documents to process (default: all documents)"
-      },
-      "prefer_v2_templates": {
-        "type": "boolean",
-        "description": "favor V2 templates instead of V1 templates during index creation"
       }
     },
     "body":{

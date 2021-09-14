@@ -1,13 +1,16 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License;
- * you may not use this file except in compliance with the Elastic License.
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
  */
 
 package org.elasticsearch.xpack.core.transform.transforms.pivot;
 
 import org.elasticsearch.Version;
-import org.elasticsearch.common.ParseField;
+import org.elasticsearch.action.ActionRequestValidationException;
+import org.elasticsearch.core.Nullable;
+import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -15,13 +18,12 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.AbstractObjectParser;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 
+import static org.elasticsearch.action.ValidateActions.addValidationError;
 import static org.elasticsearch.common.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
 /*
@@ -32,7 +34,8 @@ public abstract class SingleGroupSource implements Writeable, ToXContentObject {
     public enum Type {
         TERMS(0),
         HISTOGRAM(1),
-        DATE_HISTOGRAM(2);
+        DATE_HISTOGRAM(2),
+        GEOTILE_GRID(3);
 
         private final byte id;
 
@@ -52,6 +55,8 @@ public abstract class SingleGroupSource implements Writeable, ToXContentObject {
                     return HISTOGRAM;
                 case 2:
                     return DATE_HISTOGRAM;
+                case 3:
+                    return GEOTILE_GRID;
                 default:
                     throw new IllegalArgumentException("unknown type");
             }
@@ -64,18 +69,26 @@ public abstract class SingleGroupSource implements Writeable, ToXContentObject {
 
     protected static final ParseField FIELD = new ParseField("field");
     protected static final ParseField SCRIPT = new ParseField("script");
+    protected static final ParseField MISSING_BUCKET = new ParseField("missing_bucket");
 
     protected final String field;
     protected final ScriptConfig scriptConfig;
+    protected final boolean missingBucket;
 
     static <T> void declareValuesSourceFields(AbstractObjectParser<? extends SingleGroupSource, T> parser, boolean lenient) {
         parser.declareString(optionalConstructorArg(), FIELD);
         parser.declareObject(optionalConstructorArg(), (p, c) -> ScriptConfig.fromXContent(p, lenient), SCRIPT);
+        parser.declareBoolean(optionalConstructorArg(), MISSING_BUCKET);
+        if (lenient == false) {
+            // either a script or a field must be declared, or both
+            parser.declareRequiredFieldSet(FIELD.getPreferredName(), SCRIPT.getPreferredName());
+        }
     }
 
-    public SingleGroupSource(final String field, final ScriptConfig scriptConfig) {
+    public SingleGroupSource(final String field, final ScriptConfig scriptConfig, final boolean missingBucket) {
         this.field = field;
         this.scriptConfig = scriptConfig;
+        this.missingBucket = missingBucket;
     }
 
     public SingleGroupSource(StreamInput in) throws IOException {
@@ -85,6 +98,20 @@ public abstract class SingleGroupSource implements Writeable, ToXContentObject {
         } else {
             scriptConfig = null;
         }
+        if (in.getVersion().onOrAfter(Version.V_7_10_0)) {
+            missingBucket = in.readBoolean();
+        } else {
+            missingBucket = false;
+        }
+    }
+
+    ActionRequestValidationException validate(ActionRequestValidationException validationException) {
+        // either a script or a field must be declared
+        if (field == null && scriptConfig == null) {
+            validationException =
+                addValidationError("Required one of fields [field, script], but none were specified.", validationException);
+        }
+        return validationException;
     }
 
     @Override
@@ -102,6 +129,9 @@ public abstract class SingleGroupSource implements Writeable, ToXContentObject {
         if (scriptConfig != null) {
             builder.field(SCRIPT.getPreferredName(), scriptConfig);
         }
+        if (missingBucket) {
+            builder.field(MISSING_BUCKET.getPreferredName(), missingBucket);
+        }
     }
 
     @Override
@@ -110,17 +140,12 @@ public abstract class SingleGroupSource implements Writeable, ToXContentObject {
         if (out.getVersion().onOrAfter(Version.V_7_7_0)) {
             out.writeOptionalWriteable(scriptConfig);
         }
+        if (out.getVersion().onOrAfter(Version.V_7_10_0)) {
+            out.writeBoolean(missingBucket);
+        }
     }
 
     public abstract Type getType();
-
-    public abstract boolean supportsIncrementalBucketUpdate();
-
-    public abstract QueryBuilder getIncrementalBucketUpdateFilterQuery(
-        Set<String> changedBuckets,
-        String synchronizationField,
-        long synchronizationTimestamp
-    );
 
     public String getField() {
         return field;
@@ -128,6 +153,10 @@ public abstract class SingleGroupSource implements Writeable, ToXContentObject {
 
     public ScriptConfig getScriptConfig() {
         return scriptConfig;
+    }
+
+    public boolean getMissingBucket() {
+        return missingBucket;
     }
 
     @Override
@@ -142,16 +171,27 @@ public abstract class SingleGroupSource implements Writeable, ToXContentObject {
 
         final SingleGroupSource that = (SingleGroupSource) other;
 
-        return Objects.equals(this.field, that.field) && Objects.equals(this.scriptConfig, that.scriptConfig);
+        return this.missingBucket == that.missingBucket
+            && Objects.equals(this.field, that.field)
+            && Objects.equals(this.scriptConfig, that.scriptConfig);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(field, scriptConfig);
+        return Objects.hash(field, scriptConfig, missingBucket);
     }
 
     @Override
     public String toString() {
         return Strings.toString(this, true, true);
     }
+
+    /**
+     * @return The preferred mapping type if it exists. Is nullable.
+     */
+    @Nullable
+    public String getMappingType() {
+        return null;
+    }
+
 }

@@ -1,136 +1,146 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License;
- * you may not use this file except in compliance with the Elastic License.
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
  */
 package org.elasticsearch.xpack.spatial.index.mapper;
 
 import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.XYDocValuesField;
 import org.apache.lucene.document.XYPointField;
-import org.apache.lucene.index.IndexOptions;
-import org.elasticsearch.ElasticsearchParseException;
+import org.apache.lucene.search.Query;
+import org.elasticsearch.common.CheckedBiFunction;
 import org.elasticsearch.common.Explicit;
-import org.elasticsearch.common.ParseField;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
-import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.geo.GeometryFormatterFactory;
+import org.elasticsearch.common.geo.ShapeRelation;
+import org.elasticsearch.common.logging.DeprecationCategory;
+import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.index.mapper.AbstractGeometryFieldMapper;
-import org.elasticsearch.index.mapper.ArrayValueMapperParser;
+import org.elasticsearch.geometry.Geometry;
+import org.elasticsearch.geometry.Point;
+import org.elasticsearch.index.mapper.AbstractPointGeometryFieldMapper;
+import org.elasticsearch.index.mapper.DocumentParserContext;
+import org.elasticsearch.index.mapper.FieldMapper;
+import org.elasticsearch.index.mapper.GeoShapeFieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
-import org.elasticsearch.index.mapper.Mapper;
-import org.elasticsearch.index.mapper.MapperParsingException;
-import org.elasticsearch.index.mapper.ParseContext;
+import org.elasticsearch.index.mapper.MapperBuilderContext;
+import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.xpack.spatial.common.CartesianPoint;
 import org.elasticsearch.xpack.spatial.index.query.ShapeQueryPointProcessor;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
-
-import static org.elasticsearch.index.mapper.TypeParsers.parseField;
-
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Field Mapper for point type.
  *
  * Uses lucene 8 XYPoint encoding
  */
-public class PointFieldMapper extends AbstractGeometryFieldMapper implements ArrayValueMapperParser {
+public class PointFieldMapper extends AbstractPointGeometryFieldMapper<CartesianPoint> {
     public static final String CONTENT_TYPE = "point";
 
-    public static class Names extends AbstractGeometryFieldMapper.Names {
-        public static final ParseField NULL_VALUE = new ParseField("null_value");
+    private static final DeprecationLogger DEPRECATION_LOGGER = DeprecationLogger.getLogger(GeoShapeFieldMapper.class);
+
+    private static Builder builder(FieldMapper in) {
+        return ((PointFieldMapper)in).builder;
     }
 
-    public static class Builder extends AbstractGeometryFieldMapper.Builder<Builder, PointFieldMapper> {
-        public Builder(String name) {
-            super(name, new PointFieldType(), new PointFieldType());
-            builder = this;
-        }
+    public static class Builder extends FieldMapper.Builder {
 
-        public PointFieldMapper build(BuilderContext context, String simpleName, MappedFieldType fieldType,
-                                      MappedFieldType defaultFieldType, Settings indexSettings,
-                                      MultiFields multiFields, Explicit<Boolean> ignoreMalformed,
-                                      CopyTo copyTo) {
-            setupFieldType(context);
-            return new PointFieldMapper(simpleName, fieldType, defaultFieldType, indexSettings, multiFields,
-                ignoreMalformed, ignoreZValue(context), copyTo);
-        }
+        final Parameter<Boolean> indexed = Parameter.indexParam(m -> builder(m).indexed.get(), true);
+        final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> builder(m).hasDocValues.get(), true);
+        final Parameter<Boolean> stored = Parameter.storeParam(m -> builder(m).stored.get(), false);
 
-        @Override
-        public PointFieldType fieldType() {
-            return (PointFieldType)fieldType;
-        }
+        final Parameter<Explicit<Boolean>> ignoreMalformed;
+        final Parameter<Explicit<Boolean>> ignoreZValue = ignoreZValueParam(m -> builder(m).ignoreZValue.get());
+        final Parameter<CartesianPoint> nullValue;
+        final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
-        @Override
-        public PointFieldMapper build(BuilderContext context) {
-            return build(context, name, fieldType, defaultFieldType, context.indexSettings(),
-                multiFieldsBuilder.build(this, context), ignoreMalformed(context), copyTo);
+        public Builder(String name, boolean ignoreMalformedByDefault) {
+            super(name);
+            this.ignoreMalformed = ignoreMalformedParam(m -> builder(m).ignoreMalformed.get(), ignoreMalformedByDefault);
+            this.nullValue = nullValueParam(
+                m -> builder(m).nullValue.get(),
+                (n, c, o) -> o == null ? null : parseNullValue(o, ignoreZValue.get().value(), ignoreMalformed.get().value()),
+                () -> null).acceptsNull();
         }
 
         @Override
-        protected void setupFieldType(BuilderContext context) {
-            super.setupFieldType(context);
-
-            fieldType().setGeometryQueryBuilder(new ShapeQueryPointProcessor());
-        }
-    }
-
-    public static class TypeParser extends AbstractGeometryFieldMapper.TypeParser<Builder> {
-        @Override
-        protected Builder newBuilder(String name, Map<String, Object> params) {
-            return new PointFieldMapper.Builder(name);
+        protected List<Parameter<?>> getParameters() {
+            return Arrays.asList(indexed, hasDocValues, stored, ignoreMalformed, ignoreZValue, nullValue, meta);
         }
 
-        @Override
-        @SuppressWarnings("rawtypes")
-        public Builder parse(String name, Map<String, Object> node, Map<String, Object> params, ParserContext parserContext) {
-            Builder builder = super.parse(name, node, params, parserContext);
-            parseField(builder, name, node, parserContext);
-            Object nullValue = null;
-            for (Iterator<Map.Entry<String, Object>> iterator = node.entrySet().iterator(); iterator.hasNext();) {
-                Map.Entry<String, Object> entry = iterator.next();
-                String propName = entry.getKey();
-                Object propNode = entry.getValue();
-
-                if (Names.NULL_VALUE.match(propName, LoggingDeprecationHandler.INSTANCE)) {
-                    if (propNode == null) {
-                        throw new MapperParsingException("Property [null_value] cannot be null.");
-                    }
-                    nullValue = propNode;
-                    iterator.remove();
+        private static CartesianPoint parseNullValue(Object nullValue, boolean ignoreZValue, boolean ignoreMalformed) {
+            CartesianPoint point = new CartesianPoint();
+            CartesianPoint.parsePoint(nullValue, point, ignoreZValue);
+            if (ignoreMalformed == false) {
+                if (Double.isFinite(point.getX()) == false) {
+                    throw new IllegalArgumentException("illegal x value [" + point.getX() + "]");
+                }
+                if (Double.isFinite(point.getY()) == false) {
+                    throw new IllegalArgumentException("illegal y value [" + point.getY() + "]");
                 }
             }
-
-            if (nullValue != null) {
-                boolean ignoreMalformed = builder.ignoreMalformed().value();
-                boolean ignoreZValue = builder.ignoreZValue().value();
-                CartesianPoint point = CartesianPoint.parsePoint(nullValue, ignoreZValue);
-                if (ignoreMalformed == false) {
-                    if (Float.isFinite(point.getX()) == false) {
-                        throw new IllegalArgumentException("illegal x value [" + point.getX() + "]");
-                    }
-                    if (Float.isFinite(point.getY()) == false) {
-                        throw new IllegalArgumentException("illegal y value [" + point.getY() + "]");
-                    }
-                }
-                builder.nullValue(point);
-            }
-            return builder;
+            return point;
         }
+
+        @Override
+        public FieldMapper build(MapperBuilderContext context) {
+            if (multiFieldsBuilder.hasMultiFields()) {
+                DEPRECATION_LOGGER.critical(
+                    DeprecationCategory.MAPPINGS,
+                    "point_multifields",
+                    "Adding multifields to [point] mappers has no effect and will be forbidden in future"
+                );
+            }
+            CartesianPointParser parser
+                = new CartesianPointParser(
+                name,
+                CartesianPoint::new,
+                (p, point) -> {
+                    CartesianPoint.parsePoint(p, point, ignoreZValue.get().value());
+                    return point;
+                },
+                nullValue.get(),
+                ignoreZValue.get().value(), ignoreMalformed.get().value());
+            PointFieldType ft
+                = new PointFieldType(context.buildFullName(name), indexed.get(), stored.get(), hasDocValues.get(), parser, meta.get());
+            return new PointFieldMapper(name, ft, multiFieldsBuilder.build(this, context),
+                copyTo.build(), parser, this);
+        }
+
     }
 
-    public PointFieldMapper(String simpleName, MappedFieldType fieldType, MappedFieldType defaultFieldType,
-                            Settings indexSettings, MultiFields multiFields, Explicit<Boolean> ignoreMalformed,
-                            Explicit<Boolean> ignoreZValue, CopyTo copyTo) {
-        super(simpleName, fieldType, defaultFieldType, indexSettings, ignoreMalformed, ignoreZValue, multiFields, copyTo);
+    public static TypeParser PARSER = new TypeParser((n, c) -> new Builder(n, IGNORE_MALFORMED_SETTING.get(c.getSettings())));
+
+    private final Builder builder;
+
+    public PointFieldMapper(String simpleName, MappedFieldType mappedFieldType,
+                            MultiFields multiFields, CopyTo copyTo,
+                            CartesianPointParser parser, Builder builder) {
+        super(simpleName, mappedFieldType, multiFields,
+            builder.ignoreMalformed.get(), builder.ignoreZValue.get(), builder.nullValue.get(), copyTo, parser);
+        this.builder = builder;
     }
 
     @Override
-    protected void doMerge(Mapper mergeWith) {
-        super.doMerge(mergeWith);
+    protected void index(DocumentParserContext context, CartesianPoint point) throws IOException {
+        if (fieldType().isSearchable()) {
+            context.doc().add(new XYPointField(fieldType().name(), (float) point.getX(), (float) point.getY()));
+        }
+        if (fieldType().hasDocValues()) {
+            context.doc().add(new XYDocValuesField(fieldType().name(), (float) point.getX(), (float) point.getY()));
+        } else if (fieldType().isStored() || fieldType().isSearchable()) {
+            context.addToFieldNames(fieldType().name());
+        }
+        if (fieldType().isStored()) {
+            context.doc().add(new StoredField(fieldType().name(), point.toString()));
+        }
     }
 
     @Override
@@ -138,15 +148,24 @@ public class PointFieldMapper extends AbstractGeometryFieldMapper implements Arr
         return CONTENT_TYPE;
     }
 
-    public static class PointFieldType extends AbstractGeometryFieldType {
-        public PointFieldType() {
-            super();
-            setHasDocValues(true);
-            setDimensions(2, Integer.BYTES);
-        }
+    @Override
+    public PointFieldType fieldType() {
+        return (PointFieldType) mappedFieldType;
+    }
 
-        PointFieldType(PointFieldType ref) {
-            super(ref);
+    @Override
+    public FieldMapper.Builder getMergeBuilder() {
+        return new Builder(simpleName(), builder.ignoreMalformed.getDefaultValue().value()).init(this);
+    }
+
+    public static class PointFieldType extends AbstractGeometryFieldType<CartesianPoint> implements ShapeQueryable {
+
+        private final ShapeQueryPointProcessor queryProcessor;
+
+        private PointFieldType(String name, boolean indexed, boolean stored, boolean hasDocValues,
+                               CartesianPointParser parser, Map<String, String> meta) {
+            super(name, indexed, stored, hasDocValues, parser, meta);
+            this.queryProcessor = new ShapeQueryPointProcessor();
         }
 
         @Override
@@ -155,95 +174,44 @@ public class PointFieldMapper extends AbstractGeometryFieldMapper implements Arr
         }
 
         @Override
-        public MappedFieldType clone() {
-            return new PointFieldType(this);
+        public Query shapeQuery(Geometry shape, String fieldName, ShapeRelation relation, SearchExecutionContext context) {
+            return queryProcessor.shapeQuery(shape, fieldName, relation, context);
+        }
+
+        @Override
+        protected Function<List<CartesianPoint>, List<Object>> getFormatter(String format) {
+           return GeometryFormatterFactory.getFormatter(format, p -> new Point(p.getX(), p.getY()));
         }
     }
 
-    protected void parse(ParseContext context, CartesianPoint point) throws IOException {
+    /** CartesianPoint parser implementation */
+    private static class CartesianPointParser extends PointParser<CartesianPoint> {
 
-        if (fieldType().indexOptions() != IndexOptions.NONE) {
-            context.doc().add(new XYPointField(fieldType().name(), point.getX(), point.getY()));
+        CartesianPointParser(String field,
+                             Supplier<CartesianPoint> pointSupplier,
+                             CheckedBiFunction<XContentParser, CartesianPoint, CartesianPoint, IOException> objectParser,
+                             CartesianPoint nullValue,
+                             boolean ignoreZValue,
+                             boolean ignoreMalformed) {
+            super(field, pointSupplier, objectParser, nullValue, ignoreZValue, ignoreMalformed);
         }
-        if (fieldType().stored()) {
-            context.doc().add(new StoredField(fieldType().name(), point.toString()));
-        }
-        if (fieldType.hasDocValues()) {
-            context.doc().add(new XYDocValuesField(fieldType().name(), point.getX(), point.getY()));
-        } else if (fieldType().stored() || fieldType().indexOptions() != IndexOptions.NONE) {
-            createFieldNamesField(context);
-        }
-        // if the mapping contains multi-fields then throw an error?
-        if (multiFields.iterator().hasNext()) {
-            throw new ElasticsearchParseException("[{}] field type does not accept multi-fields", CONTENT_TYPE);
-        }
-    }
 
-    @Override
-    public void parse(ParseContext context) throws IOException {
-        context.path().add(simpleName());
-
-        try {
-            CartesianPoint sparse = context.parseExternalValue(CartesianPoint.class);
-
-            if (sparse != null) {
-                parse(context, sparse);
-            } else {
-                sparse = new CartesianPoint();
-                XContentParser.Token token = context.parser().currentToken();
-                if (token == XContentParser.Token.START_ARRAY) {
-                    token = context.parser().nextToken();
-                    if (token == XContentParser.Token.VALUE_NUMBER) {
-                        float x = context.parser().floatValue();
-                        context.parser().nextToken();
-                        float y = context.parser().floatValue();
-                        token = context.parser().nextToken();
-                        if (token == XContentParser.Token.VALUE_NUMBER) {
-                            CartesianPoint.assertZValue(ignoreZValue.value(), context.parser().floatValue());
-                        } else if (token != XContentParser.Token.END_ARRAY) {
-                            throw new ElasticsearchParseException("[{}] field type does not accept > 3 dimensions", CONTENT_TYPE);
-                        }
-                        parse(context, sparse.reset(x, y));
-                    } else {
-                        while (token != XContentParser.Token.END_ARRAY) {
-                            parsePointIgnoringMalformed(context, sparse);
-                            token = context.parser().nextToken();
-                        }
-                    }
-                } else if (token == XContentParser.Token.VALUE_NULL) {
-                    if (fieldType.nullValue() != null) {
-                        parse(context, (CartesianPoint) fieldType.nullValue());
-                    }
-                } else {
-                    parsePointIgnoringMalformed(context, sparse);
+        @Override
+        protected CartesianPoint validate(CartesianPoint in) {
+            if (ignoreMalformed == false) {
+                if (Double.isFinite(in.getX()) == false) {
+                    throw new IllegalArgumentException("illegal x value [" + in.getX() + "] for " + field);
+                }
+                if (Double.isFinite(in.getY()) == false) {
+                    throw new IllegalArgumentException("illegal y value [" + in.getY() + "] for " + field);
                 }
             }
-        } catch (Exception ex) {
-            throw new MapperParsingException("failed to parse field [{}] of type [{}]", ex, fieldType().name(), fieldType().typeName());
+            return in;
         }
 
-        context.path().remove();
-    }
-
-    /**
-     * Parses point represented as an object or an array, ignores malformed points if needed
-     */
-    private void parsePointIgnoringMalformed(ParseContext context, CartesianPoint sparse) throws IOException {
-        try {
-            parse(context, CartesianPoint.parsePoint(context.parser(), sparse, ignoreZValue().value()));
-        } catch (ElasticsearchParseException e) {
-            if (ignoreMalformed.value() == false) {
-                throw e;
-            }
-            context.addIgnoredField(fieldType.name());
-        }
-    }
-
-    @Override
-    public void doXContentBody(XContentBuilder builder, boolean includeDefaults, Params params) throws IOException {
-        super.doXContentBody(builder, includeDefaults, params);
-        if (includeDefaults || fieldType().nullValue() != null) {
-            builder.field(Names.NULL_VALUE.getPreferredName(), fieldType().nullValue());
+        @Override
+        protected void reset(CartesianPoint in, double x, double y) {
+            in.reset(x, y);
         }
     }
 }

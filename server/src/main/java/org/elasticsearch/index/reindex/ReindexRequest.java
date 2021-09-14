@@ -1,37 +1,25 @@
 /*
- * Licensed to Elasticsearch under one or more contributor
- * license agreements. See the NOTICE file distributed with
- * this work for additional information regarding copyright
- * ownership. Elasticsearch licenses this file to you under
- * the Apache License, Version 2.0 (the "License"); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0 and the Server Side Public License, v 1; you may not use this file except
+ * in compliance with, at your election, the Elastic License 2.0 or the Server
+ * Side Public License, v 1.
  */
 
 package org.elasticsearch.index.reindex;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.CompositeIndicesRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.ParseField;
+import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.uid.Versions;
-import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -53,7 +41,7 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 import static org.elasticsearch.action.ValidateActions.addValidationError;
-import static org.elasticsearch.common.unit.TimeValue.parseTimeValue;
+import static org.elasticsearch.core.TimeValue.parseTimeValue;
 import static org.elasticsearch.index.VersionType.INTERNAL;
 
 /**
@@ -70,8 +58,6 @@ public class ReindexRequest extends AbstractBulkIndexByScrollRequest<ReindexRequ
     private IndexRequest destination;
 
     private RemoteInfo remoteInfo;
-
-    private Boolean preferV2Templates;
 
     public ReindexRequest() {
         this(new SearchRequest(), new IndexRequest(), true);
@@ -90,9 +76,6 @@ public class ReindexRequest extends AbstractBulkIndexByScrollRequest<ReindexRequ
         super(in);
         destination = new IndexRequest(in);
         remoteInfo = in.readOptionalWriteable(RemoteInfo::new);
-        if (in.getVersion().onOrAfter(Version.V_8_0_0)) {
-            preferV2Templates = in.readOptionalBoolean();
-        }
     }
 
     @Override
@@ -244,6 +227,14 @@ public class ReindexRequest extends AbstractBulkIndexByScrollRequest<ReindexRequ
     }
 
     /**
+     * Sets the require_alias request flag on the destination index
+     */
+    public ReindexRequest setRequireAlias(boolean requireAlias) {
+        this.getDestination().setRequireAlias(requireAlias);
+        return this;
+    }
+
+    /**
      * Gets the target for this reindex request in the for of an {@link IndexRequest}
      */
     public IndexRequest getDestination() {
@@ -255,16 +246,6 @@ public class ReindexRequest extends AbstractBulkIndexByScrollRequest<ReindexRequ
      */
     public RemoteInfo getRemoteInfo() {
         return remoteInfo;
-    }
-
-    public ReindexRequest preferV2Templates(@Nullable Boolean preferV2Templates) {
-        this.preferV2Templates = preferV2Templates;
-        return this;
-    }
-
-    @Nullable
-    public Boolean preferV2Templates() {
-        return this.preferV2Templates;
     }
 
     @Override
@@ -279,9 +260,6 @@ public class ReindexRequest extends AbstractBulkIndexByScrollRequest<ReindexRequ
         super.writeTo(out);
         destination.writeTo(out);
         out.writeOptionalWriteable(remoteInfo);
-        if (out.getVersion().onOrAfter(Version.V_8_0_0)) {
-            out.writeOptionalBoolean(preferV2Templates);
-        }
     }
 
     @Override
@@ -369,9 +347,19 @@ public class ReindexRequest extends AbstractBulkIndexByScrollRequest<ReindexRequ
 
         PARSER.declareField(sourceParser::parse, new ParseField("source"), ObjectParser.ValueType.OBJECT);
         PARSER.declareField((p, v, c) -> destParser.parse(p, v.getDestination(), c), new ParseField("dest"), ObjectParser.ValueType.OBJECT);
-        PARSER.declareInt(ReindexRequest::setMaxDocsValidateIdentical, new ParseField("max_docs"));
+
+        PARSER.declareInt(ReindexRequest::setMaxDocsValidateIdentical,
+            new ParseField("max_docs", "size")
+                .forRestApiVersion(RestApiVersion.equalTo(RestApiVersion.V_7)));
+
+        PARSER.declareInt(ReindexRequest::setMaxDocsValidateIdentical,
+            new ParseField("max_docs")
+                .forRestApiVersion(RestApiVersion.onOrAfter(RestApiVersion.V_8)));
         // avoid silently accepting an ignored size.
-        PARSER.declareInt((r,s) -> failOnSizeSpecified(), new ParseField("size"));
+        PARSER.declareInt((r,s) -> failOnSizeSpecified(),
+            new ParseField("size")
+                .forRestApiVersion(RestApiVersion.onOrAfter(RestApiVersion.V_8)));
+
         PARSER.declareField((p, v, c) -> v.setScript(Script.parse(p)), new ParseField("script"),
             ObjectParser.ValueType.OBJECT);
         PARSER.declareString(ReindexRequest::setConflicts, new ParseField("conflicts"));

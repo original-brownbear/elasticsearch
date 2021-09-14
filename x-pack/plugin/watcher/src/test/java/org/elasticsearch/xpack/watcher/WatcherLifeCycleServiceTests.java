@@ -1,7 +1,8 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License;
- * you may not use this file except in compliance with the Elastic License.
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
  */
 package org.elasticsearch.xpack.watcher;
 
@@ -47,8 +48,6 @@ import static java.util.Arrays.asList;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.RELOCATING;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.STARTED;
 import static org.elasticsearch.xpack.core.watcher.support.WatcherIndexTemplateRegistryField.HISTORY_TEMPLATE_NAME;
-import static org.elasticsearch.xpack.core.watcher.support.WatcherIndexTemplateRegistryField.TRIGGERED_TEMPLATE_NAME;
-import static org.elasticsearch.xpack.core.watcher.support.WatcherIndexTemplateRegistryField.WATCHES_TEMPLATE_NAME;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
@@ -94,8 +93,6 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
         ClusterState clusterState = ClusterState.builder(new ClusterName("my-cluster"))
             .metadata(Metadata.builder()
                 .put(IndexTemplateMetadata.builder(HISTORY_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-                .put(IndexTemplateMetadata.builder(TRIGGERED_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-                .put(IndexTemplateMetadata.builder(WATCHES_TEMPLATE_NAME).patterns(randomIndexPatterns()))
                 .build())
             .nodes(new DiscoveryNodes.Builder().masterNodeId("node_1").localNodeId("node_1").add(newNode("node_1")))
             .routingTable(RoutingTable.builder().add(watchRoutingTable).build())
@@ -126,8 +123,6 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
             .routingTable(RoutingTable.builder().add(watchRoutingTable).build())
             .metadata(Metadata.builder()
                 .put(IndexTemplateMetadata.builder(HISTORY_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-                .put(IndexTemplateMetadata.builder(TRIGGERED_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-                .put(IndexTemplateMetadata.builder(WATCHES_TEMPLATE_NAME).patterns(randomIndexPatterns()))
                 .build())
             .build();
 
@@ -152,9 +147,7 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
             .numberOfShards(1).numberOfReplicas(0);
         Metadata.Builder metadataBuilder = Metadata.builder()
             .put(indexMetadataBuilder)
-            .put(IndexTemplateMetadata.builder(HISTORY_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-            .put(IndexTemplateMetadata.builder(TRIGGERED_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-            .put(IndexTemplateMetadata.builder(WATCHES_TEMPLATE_NAME).patterns(randomIndexPatterns()));
+            .put(IndexTemplateMetadata.builder(HISTORY_TEMPLATE_NAME).patterns(randomIndexPatterns()));
         if (randomBoolean()) {
             metadataBuilder.putCustom(WatcherMetadata.TYPE, new WatcherMetadata(false));
         }
@@ -179,9 +172,9 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
         ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
         verify(watcherService, times(1))
             .stop(eq("watcher manually marked to shutdown by cluster state update"), captor.capture());
-        assertEquals(WatcherState.STOPPING, lifeCycleService.getState());
+        assertEquals(WatcherState.STOPPING, lifeCycleService.getState().get());
         captor.getValue().run();
-        assertEquals(WatcherState.STOPPED, lifeCycleService.getState());
+        assertEquals(WatcherState.STOPPED, lifeCycleService.getState().get());
 
         // Starting via cluster state update, as the watcher metadata block is removed/set to true
         reset(watcherService);
@@ -427,17 +420,6 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
         if (isHistoryTemplateAdded) {
             metadataBuilder.put(IndexTemplateMetadata.builder(HISTORY_TEMPLATE_NAME).patterns(randomIndexPatterns()));
         }
-        boolean isTriggeredTemplateAdded = randomBoolean();
-        if (isTriggeredTemplateAdded) {
-            metadataBuilder.put(IndexTemplateMetadata.builder(TRIGGERED_TEMPLATE_NAME).patterns(randomIndexPatterns()));
-        }
-        boolean isWatchesTemplateAdded = randomBoolean();
-        if (isWatchesTemplateAdded) {
-            // ensure not all templates are added, otherwise life cycle service would start
-            if ((isHistoryTemplateAdded || isTriggeredTemplateAdded) == false) {
-                metadataBuilder.put(IndexTemplateMetadata.builder(WATCHES_TEMPLATE_NAME).patterns(randomIndexPatterns()));
-            }
-        }
         ClusterState state = ClusterState.builder(new ClusterName("my-cluster")).nodes(nodes).metadata(metadataBuilder).build();
         when(watcherService.validate(eq(state))).thenReturn(true);
 
@@ -480,13 +462,11 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
                     new HashSet<>(roles), Version.CURRENT))).build();
 
         lifeCycleService.clusterChanged(new ClusterChangedEvent("test", state, state));
-        assertThat(lifeCycleService.getState(), is(WatcherState.STARTED));
+        assertThat(lifeCycleService.getState().get(), is(WatcherState.STARTED));
     }
 
     public void testDataNodeWithoutDataCanStart() {
         Metadata metadata = Metadata.builder().put(IndexTemplateMetadata.builder(HISTORY_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-            .put(IndexTemplateMetadata.builder(TRIGGERED_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-            .put(IndexTemplateMetadata.builder(WATCHES_TEMPLATE_NAME).patterns(randomIndexPatterns()))
             .build();
         ClusterState state = ClusterState.builder(new ClusterName("my-cluster"))
             .nodes(new DiscoveryNodes.Builder().masterNodeId("node_1").localNodeId("node_1").add(newNode("node_1")))
@@ -494,7 +474,7 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
             .build();
 
         lifeCycleService.clusterChanged(new ClusterChangedEvent("test", state, state));
-        assertThat(lifeCycleService.getState(), is(WatcherState.STARTED));
+        assertThat(lifeCycleService.getState().get(), is(WatcherState.STARTED));
     }
 
     // this emulates a node outage somewhere in the cluster that carried a watcher shard
@@ -566,8 +546,7 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
             .put(IndexMetadata.INDEX_FORMAT_SETTING.getKey(), 6)) // the internal index format, required
             .numberOfShards(1).numberOfReplicas(0);
         Metadata metadata = Metadata.builder().put(IndexTemplateMetadata.builder(HISTORY_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-            .put(IndexTemplateMetadata.builder(TRIGGERED_TEMPLATE_NAME).patterns(randomIndexPatterns()))
-            .put(IndexTemplateMetadata.builder(WATCHES_TEMPLATE_NAME).patterns(randomIndexPatterns())).put(indexMetadataBuilder)
+            .put(indexMetadataBuilder)
             .build();
         ClusterState state = ClusterState.builder(new ClusterName("my-cluster"))
             .nodes(new DiscoveryNodes.Builder().masterNodeId("node_1").localNodeId("node_1")
@@ -584,7 +563,7 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
         when(watcherService.validate(state)).thenReturn(true);
 
         lifeCycleService.clusterChanged(new ClusterChangedEvent("foo", state, emptyState));
-        assertThat(lifeCycleService.getState(), is(WatcherState.STARTED));
+        assertThat(lifeCycleService.getState().get(), is(WatcherState.STARTED));
         verify(watcherService, times(1)).reload(eq(state), anyString());
         assertThat(lifeCycleService.shardRoutings(), hasSize(1));
 
@@ -604,6 +583,6 @@ public class WatcherLifeCycleServiceTests extends ESTestCase {
 
     private static DiscoveryNode newNode(String nodeName, Version version) {
         return new DiscoveryNode(nodeName, ESTestCase.buildNewFakeTransportAddress(), Collections.emptyMap(),
-            DiscoveryNodeRole.BUILT_IN_ROLES, version);
+            DiscoveryNodeRole.roles(), version);
     }
 }

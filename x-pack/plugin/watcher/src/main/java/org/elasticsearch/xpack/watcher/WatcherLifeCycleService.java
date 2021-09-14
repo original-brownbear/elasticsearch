@@ -1,7 +1,8 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License;
- * you may not use this file except in compliance with the Elastic License.
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
  */
 package org.elasticsearch.xpack.watcher;
 
@@ -31,6 +32,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.cluster.routing.ShardRoutingState.RELOCATING;
@@ -97,7 +99,7 @@ public class WatcherLifeCycleService implements ClusterStateListener {
         boolean isWatcherStoppedManually = isWatcherStoppedManually(event.state());
         boolean isStoppedOrStopping = stopStates.contains(this.state.get());
         // if this is not a data node, we need to start it ourselves possibly
-        if (event.state().nodes().getLocalNode().isDataNode() == false &&
+        if (event.state().nodes().getLocalNode().canContainData() == false &&
             isWatcherStoppedManually == false && isStoppedOrStopping) {
             this.state.set(WatcherState.STARTING);
             watcherService.start(event.state(), () -> this.state.set(WatcherState.STARTED));
@@ -203,7 +205,7 @@ public class WatcherLifeCycleService implements ClusterStateListener {
         return previousShardRoutings.get();
     }
 
-    public WatcherState getState() {
-        return state.get();
+    public Supplier<WatcherState> getState(){
+        return () -> state.get();
     }
 }

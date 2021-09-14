@@ -1,7 +1,8 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License;
- * you may not use this file except in compliance with the Elastic License.
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
  */
 
 package org.elasticsearch.xpack.ccr.action;
@@ -12,13 +13,13 @@ import org.elasticsearch.cluster.metadata.IndexMetadata.State;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.MapperTestUtils;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.ccr.Ccr;
 import org.elasticsearch.xpack.ccr.CcrSettings;
-import org.elasticsearch.xpack.ccr.IndexFollowingIT;
 import org.elasticsearch.xpack.core.ccr.action.ResumeFollowAction;
 
 import java.io.IOException;
@@ -34,12 +35,20 @@ import static org.hamcrest.Matchers.is;
 
 public class TransportResumeFollowActionTests extends ESTestCase {
 
+    public static ResumeFollowAction.Request resumeFollow(String followerIndex) {
+        ResumeFollowAction.Request request = new ResumeFollowAction.Request();
+        request.setFollowerIndex(followerIndex);
+        request.getParameters().setMaxRetryDelay(TimeValue.timeValueMillis(10));
+        request.getParameters().setReadPollTimeout(TimeValue.timeValueMillis(10));
+        return request;
+    }
+
     public void testValidation() throws IOException {
         final Map<String, String> customMetadata = new HashMap<>();
         customMetadata.put(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_SHARD_HISTORY_UUIDS, "uuid");
         customMetadata.put(Ccr.CCR_CUSTOM_METADATA_LEADER_INDEX_UUID_KEY, "_na_");
 
-        ResumeFollowAction.Request request = IndexFollowingIT.resumeFollow("index2");
+        ResumeFollowAction.Request request = resumeFollow("index2");
         String[] UUIDs = new String[]{"uuid"};
         {
             IndexMetadata leaderIMD = createIMD("index1", 5, Settings.EMPTY, null);
@@ -106,7 +115,7 @@ public class TransportResumeFollowActionTests extends ESTestCase {
             IndexMetadata leaderIMD = createIMD("index1", 1, Settings.EMPTY, null);
             IndexMetadata followIMD = createIMD("index2", 1, Settings.EMPTY, customMetadata);
             MapperService mapperService = MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(), Settings.EMPTY, "index2");
-            mapperService.updateMapping(null, followIMD);
+            mapperService.merge(followIMD, MapperService.MergeReason.MAPPING_RECOVERY);
             Exception e = expectThrows(IllegalArgumentException.class,
                 () -> validate(request, leaderIMD, followIMD, UUIDs, mapperService));
             assertThat(e.getMessage(), equalTo("the following index [index2] is not ready to follow; " +
@@ -119,9 +128,9 @@ public class TransportResumeFollowActionTests extends ESTestCase {
             IndexMetadata followIMD = createIMD("index2", State.OPEN, "{\"properties\": {\"field\": {\"type\": \"text\"}}}", 5,
                 Settings.builder().put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true).build(), customMetadata);
             MapperService mapperService = MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(), Settings.EMPTY, "index2");
-            mapperService.updateMapping(null, followIMD);
+            mapperService.merge(followIMD, MapperService.MergeReason.MAPPING_RECOVERY);
             Exception e = expectThrows(IllegalArgumentException.class, () -> validate(request, leaderIMD, followIMD, UUIDs, mapperService));
-            assertThat(e.getMessage(), equalTo("mapper [field] of different type, current_type [text], merged_type [keyword]"));
+            assertThat(e.getMessage(), equalTo("mapper [field] cannot be changed from type [text] to [keyword]"));
         }
         {
             // should fail because of non whitelisted settings not the same between leader and follow index
@@ -134,7 +143,7 @@ public class TransportResumeFollowActionTests extends ESTestCase {
                 .put("index.analysis.analyzer.my_analyzer.type", "custom")
                 .put("index.analysis.analyzer.my_analyzer.tokenizer", "standard").build(), customMetadata);
             Exception e = expectThrows(IllegalArgumentException.class, () -> validate(request, leaderIMD, followIMD, UUIDs, null));
-            assertThat(e.getMessage(), equalTo("the leader index setting[{\"index.analysis.analyzer.my_analyzer.tokenizer\"" +
+            assertThat(e.getMessage(), equalTo("the leader index settings [{\"index.analysis.analyzer.my_analyzer.tokenizer\"" +
                 ":\"whitespace\",\"index.analysis.analyzer.my_analyzer.type\":\"custom\",\"index.number_of_shards\":\"5\"}] " +
                 "and follower index settings [{\"index.analysis.analyzer.my_analyzer.tokenizer\":\"standard\"," +
                 "\"index.analysis.analyzer.my_analyzer.type\":\"custom\",\"index.number_of_shards\":\"5\"}] must be identical"));
@@ -146,7 +155,7 @@ public class TransportResumeFollowActionTests extends ESTestCase {
             IndexMetadata followIMD = createIMD("index2", 5, followingIndexSettings, customMetadata);
             MapperService mapperService = MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(),
                 followingIndexSettings, "index2");
-            mapperService.updateMapping(null, followIMD);
+            mapperService.merge(followIMD, MapperService.MergeReason.MAPPING_RECOVERY);
             IllegalArgumentException error =
                     expectThrows(IllegalArgumentException.class, () -> validate(request, leaderIMD, followIMD, UUIDs, mapperService));
             assertThat(error.getMessage(), equalTo("the following index [index2] is not ready to follow; " +
@@ -158,7 +167,7 @@ public class TransportResumeFollowActionTests extends ESTestCase {
             IndexMetadata followIMD = createIMD("index2", 5, Settings.builder()
                 .put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true).build(), customMetadata);
             MapperService mapperService = MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(), Settings.EMPTY, "index2");
-            mapperService.updateMapping(null, followIMD);
+            mapperService.merge(followIMD, MapperService.MergeReason.MAPPING_RECOVERY);
             validate(request, leaderIMD, followIMD, UUIDs, mapperService);
         }
         {
@@ -173,7 +182,7 @@ public class TransportResumeFollowActionTests extends ESTestCase {
                 .put("index.analysis.analyzer.my_analyzer.tokenizer", "standard").build(), customMetadata);
             MapperService mapperService = MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(),
                 followIMD.getSettings(), "index2");
-            mapperService.updateMapping(null, followIMD);
+            mapperService.merge(followIMD, MapperService.MergeReason.MAPPING_RECOVERY);
             validate(request, leaderIMD, followIMD, UUIDs, mapperService);
         }
         {
@@ -190,7 +199,7 @@ public class TransportResumeFollowActionTests extends ESTestCase {
                 .put("index.analysis.analyzer.my_analyzer.tokenizer", "standard").build(), customMetadata);
             MapperService mapperService = MapperTestUtils.newMapperService(xContentRegistry(), createTempDir(),
                 followIMD.getSettings(), "index2");
-            mapperService.updateMapping(null, followIMD);
+            mapperService.merge(followIMD, MapperService.MergeReason.MAPPING_RECOVERY);
             validate(request, leaderIMD, followIMD, UUIDs, mapperService);
         }
     }
@@ -207,6 +216,7 @@ public class TransportResumeFollowActionTests extends ESTestCase {
         replicatedSettings.add(MapperService.INDEX_MAPPING_NESTED_FIELDS_LIMIT_SETTING);
         replicatedSettings.add(MapperService.INDEX_MAPPING_DEPTH_LIMIT_SETTING);
         replicatedSettings.add(MapperService.INDEX_MAPPING_FIELD_NAME_LENGTH_LIMIT_SETTING);
+        replicatedSettings.add(MapperService.INDEX_MAPPING_DIMENSION_FIELDS_LIMIT_SETTING);
         replicatedSettings.add(IndexSettings.MAX_NGRAM_DIFF_SETTING);
         replicatedSettings.add(IndexSettings.MAX_SHINGLE_DIFF_SETTING);
 
@@ -224,7 +234,7 @@ public class TransportResumeFollowActionTests extends ESTestCase {
         Settings.Builder settings = Settings.builder();
         settings.put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), "");
         settings.put(IndexSettings.INDEX_SOFT_DELETES_SETTING.getKey(), "");
-        settings.put(IndexMetadata.SETTING_INDEX_VERSION_CREATED.getKey(), "");
+        settings.put(IndexMetadata.SETTING_VERSION_CREATED, "");
         settings.put(IndexMetadata.SETTING_INDEX_UUID, "");
         settings.put(IndexMetadata.SETTING_INDEX_PROVIDED_NAME, "");
         settings.put(IndexMetadata.SETTING_CREATION_DATE, "");

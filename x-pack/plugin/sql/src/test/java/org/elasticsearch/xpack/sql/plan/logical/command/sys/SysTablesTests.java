@@ -1,12 +1,13 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License;
- * you may not use this file except in compliance with the Elastic License.
+ * or more contributor license agreements. Licensed under the Elastic License
+ * 2.0; you may not use this file except in compliance with the Elastic License
+ * 2.0.
  */
 package org.elasticsearch.xpack.sql.plan.logical.command.sys;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.collect.Tuple;
+import org.elasticsearch.core.Tuple;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xpack.ql.expression.function.FunctionRegistry;
 import org.elasticsearch.xpack.ql.index.EsIndex;
@@ -24,7 +25,7 @@ import org.elasticsearch.xpack.sql.plan.logical.command.Command;
 import org.elasticsearch.xpack.sql.proto.Mode;
 import org.elasticsearch.xpack.sql.proto.Protocol;
 import org.elasticsearch.xpack.sql.proto.SqlTypedParamValue;
-import org.elasticsearch.xpack.sql.session.Configuration;
+import org.elasticsearch.xpack.sql.session.SqlConfiguration;
 import org.elasticsearch.xpack.sql.session.SchemaRowSet;
 import org.elasticsearch.xpack.sql.session.SqlSession;
 import org.elasticsearch.xpack.sql.stats.Metrics;
@@ -58,8 +59,8 @@ public class SysTablesTests extends ESTestCase {
     private final IndexInfo alias = new IndexInfo("alias", IndexType.ALIAS);
     private final IndexInfo frozen = new IndexInfo("frozen", IndexType.FROZEN_INDEX);
 
-    private final Configuration FROZEN_CFG = new Configuration(DateUtils.UTC, Protocol.FETCH_SIZE, Protocol.REQUEST_TIMEOUT,
-            Protocol.PAGE_TIMEOUT, null, Mode.PLAIN, null, null, null, false, true);
+    private final SqlConfiguration FROZEN_CFG = new SqlConfiguration(DateUtils.UTC, Protocol.FETCH_SIZE, Protocol.REQUEST_TIMEOUT,
+            Protocol.PAGE_TIMEOUT, null, null, Mode.PLAIN, null, null, null, null, false, true);
 
     //
     // catalog enumeration
@@ -331,7 +332,7 @@ public class SysTablesTests extends ESTestCase {
         return new SqlTypedParamValue(DataTypes.fromJava(value).typeName(), value);
     }
 
-    private Tuple<Command, SqlSession> sql(String sql, List<SqlTypedParamValue> params, Configuration cfg) {
+    private Tuple<Command, SqlSession> sql(String sql, List<SqlTypedParamValue> params, SqlConfiguration cfg) {
         EsIndex test = new EsIndex("test", mapping);
         Analyzer analyzer = new Analyzer(SqlTestUtils.TEST_CFG, new FunctionRegistry(), IndexResolution.valid(test),
                                          new Verifier(new Metrics()));
@@ -348,7 +349,7 @@ public class SysTablesTests extends ESTestCase {
         executeCommand(sql, emptyList(), consumer, infos);
     }
 
-    private void executeCommand(String sql, Consumer<SchemaRowSet> consumer, Configuration cfg, IndexInfo... infos) throws Exception {
+    private void executeCommand(String sql, Consumer<SchemaRowSet> consumer, SqlConfiguration cfg, IndexInfo... infos) throws Exception {
         executeCommand(sql, emptyList(), consumer, cfg, infos);
     }
 
@@ -358,7 +359,7 @@ public class SysTablesTests extends ESTestCase {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private void executeCommand(String sql, List<SqlTypedParamValue> params, Consumer<SchemaRowSet> consumer, Configuration cfg,
+    private void executeCommand(String sql, List<SqlTypedParamValue> params, Consumer<SchemaRowSet> consumer, SqlConfiguration cfg,
             IndexInfo... infos) throws Exception {
         Tuple<Command, SqlSession> tuple = sql(sql, params, cfg);
 
