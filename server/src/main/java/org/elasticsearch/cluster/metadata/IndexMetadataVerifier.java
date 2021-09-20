@@ -19,6 +19,7 @@ import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.index.IndexSettings;
+import org.elasticsearch.index.analysis.AnalysisRegistry;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
@@ -101,6 +102,72 @@ public class IndexMetadataVerifier {
         }
     }
 
+    private static final Similarity BM_25_SIMILARITY = new BM25Similarity();
+
+    private static final Map<String, TriFunction<Settings, Version, ScriptService, Similarity>> FAKE_SIMILARITY_MAP = new AbstractMap<>() {
+
+        @Override
+        public boolean containsKey(Object key) {
+            return true;
+        }
+
+        @Override
+        public TriFunction<Settings, Version, ScriptService, Similarity> get(Object key) {
+            assert key instanceof String : "key must be a string but was: " + key.getClass();
+            return (settings, version, scriptService) -> BM_25_SIMILARITY;
+        }
+
+        // this entrySet impl isn't fully correct but necessary as SimilarityService will iterate
+        // over all similarities
+        @Override
+        public Set<Entry<String, TriFunction<Settings, Version, ScriptService, Similarity>>> entrySet() {
+            return Collections.emptySet();
+        }
+    };
+
+    private static final Analyzer FAKE_ANALYZER = new Analyzer() {
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName) {
+            throw new UnsupportedOperationException("shouldn't be here");
+        }
+
+        @Override
+        public void close() {
+            assert false : "should not be called";
+        }
+    };
+
+    private static final NamedAnalyzer FAKE_DEFAULT_ANALYZER =
+        new NamedAnalyzer(AnalysisRegistry.DEFAULT_ANALYZER_NAME, AnalyzerScope.INDEX, FAKE_ANALYZER);
+    private static final NamedAnalyzer FAKE_DEFAULT_SEARCH_ANALYZER =
+        new NamedAnalyzer(AnalysisRegistry.DEFAULT_SEARCH_ANALYZER_NAME, AnalyzerScope.INDEX, FAKE_ANALYZER);
+    private static final NamedAnalyzer FAKE_DEFAULT_SEARCH_QUOTED_ANALYZER =
+        new NamedAnalyzer(AnalysisRegistry.DEFAULT_SEARCH_QUOTED_ANALYZER_NAME, AnalyzerScope.INDEX, FAKE_ANALYZER);
+
+    private static final Map<String, NamedAnalyzer> FAKE_ANALYZER_MAP = new AbstractMap<>() {
+        @Override
+        public NamedAnalyzer get(Object key) {
+            assert key instanceof String : "key must be a string but was: " + key.getClass();
+            if (AnalysisRegistry.DEFAULT_ANALYZER_NAME.equals(key)) {
+                return FAKE_DEFAULT_ANALYZER;
+            } else if (AnalysisRegistry.DEFAULT_SEARCH_ANALYZER_NAME.equals(key)) {
+                return FAKE_DEFAULT_SEARCH_ANALYZER;
+            } else if (AnalysisRegistry.DEFAULT_SEARCH_QUOTED_ANALYZER_NAME.equals(key)) {
+                return FAKE_DEFAULT_SEARCH_QUOTED_ANALYZER;
+            }
+            return new NamedAnalyzer((String)key, AnalyzerScope.INDEX, FAKE_ANALYZER);
+        }
+
+        // this entrySet impl isn't fully correct but necessary as IndexAnalyzers will iterate
+        // over all analyzers to close them
+        @Override
+        public Set<Entry<String, NamedAnalyzer>> entrySet() {
+            return Collections.emptySet();
+        }
+    };
+
+    private static final IndexAnalyzers FAKE_INDEX_ANALYZERS = new IndexAnalyzers(FAKE_ANALYZER_MAP, FAKE_ANALYZER_MAP, FAKE_ANALYZER_MAP);
+
     /**
      * Check that we can parse the mappings.
      *
@@ -124,54 +191,10 @@ public class IndexMetadataVerifier {
 
             IndexSettings indexSettings = new IndexSettings(indexMetadata, this.settings);
 
-            final Map<String, TriFunction<Settings, Version, ScriptService, Similarity>> similarityMap
-                    = new AbstractMap<String, TriFunction<Settings, Version, ScriptService, Similarity>>() {
-                @Override
-                public boolean containsKey(Object key) {
-                    return true;
-                }
-
-                @Override
-                public TriFunction<Settings, Version, ScriptService, Similarity> get(Object key) {
-                    assert key instanceof String : "key must be a string but was: " + key.getClass();
-                    return (settings, version, scriptService) -> new BM25Similarity();
-                }
-
-                // this entrySet impl isn't fully correct but necessary as SimilarityService will iterate
-                // over all similarities
-                @Override
-                public Set<Entry<String, TriFunction<Settings, Version, ScriptService, Similarity>>> entrySet() {
-                    return Collections.emptySet();
-                }
-            };
-            SimilarityService similarityService = new SimilarityService(indexSettings, null, similarityMap);
-            final NamedAnalyzer fakeDefault = new NamedAnalyzer("default", AnalyzerScope.INDEX, new Analyzer() {
-                @Override
-                protected TokenStreamComponents createComponents(String fieldName) {
-                    throw new UnsupportedOperationException("shouldn't be here");
-                }
-            });
-
-            final Map<String, NamedAnalyzer> analyzerMap = new AbstractMap<String, NamedAnalyzer>() {
-                @Override
-                public NamedAnalyzer get(Object key) {
-                    assert key instanceof String : "key must be a string but was: " + key.getClass();
-                    return new NamedAnalyzer((String)key, AnalyzerScope.INDEX, fakeDefault.analyzer());
-                }
-
-                // this entrySet impl isn't fully correct but necessary as IndexAnalyzers will iterate
-                // over all analyzers to close them
-                @Override
-                public Set<Entry<String, NamedAnalyzer>> entrySet() {
-                    return Collections.emptySet();
-                }
-            };
-            try (IndexAnalyzers fakeIndexAnalzyers =
-                     new IndexAnalyzers(analyzerMap, analyzerMap, analyzerMap)) {
-                MapperService mapperService = new MapperService(indexSettings, fakeIndexAnalzyers, xContentRegistry, similarityService,
-                        mapperRegistry, () -> null, () -> false, scriptService);
-                mapperService.merge(indexMetadata, MapperService.MergeReason.MAPPING_RECOVERY);
-            }
+            SimilarityService similarityService = new SimilarityService(indexSettings, null, FAKE_SIMILARITY_MAP);
+            MapperService mapperService = new MapperService(indexSettings, FAKE_INDEX_ANALYZERS, xContentRegistry, similarityService,
+                    mapperRegistry, () -> null, () -> false, scriptService);
+            mapperService.merge(indexMetadata, MapperService.MergeReason.MAPPING_RECOVERY);
         } catch (Exception ex) {
             // Wrap the inner exception so we have the index name in the exception message
             throw new IllegalStateException("Failed to parse mappings for index [" + indexMetadata.getIndex() + "]", ex);
