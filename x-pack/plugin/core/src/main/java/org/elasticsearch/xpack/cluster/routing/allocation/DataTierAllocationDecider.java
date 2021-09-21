@@ -232,12 +232,7 @@ public class DataTierAllocationDecider extends AllocationDecider {
             for (DiscoveryNodeRole role : roles) {
                 roleNames.add(role.roleName());
             }
-            for (String value : values) {
-                if (roleNames.contains(value) == false) {
-                    return false;
-                }
-            }
+            return roleNames.containsAll(Arrays.asList(values));
         }
-        return true;
     }
 }
