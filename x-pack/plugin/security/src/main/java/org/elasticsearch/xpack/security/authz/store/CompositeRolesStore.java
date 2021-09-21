@@ -185,8 +185,7 @@ public class CompositeRolesStore {
                         logDeprecatedRoles(rolesRetrievalResult.roleDescriptors);
                         final boolean missingRoles = rolesRetrievalResult.getMissingRoles().isEmpty() == false;
                         if (missingRoles) {
-                            logger.debug(() -> new ParameterizedMessage("Could not find roles with names {}",
-                                    rolesRetrievalResult.getMissingRoles()));
+                            logger.debug("Could not find roles with names {}", rolesRetrievalResult.getMissingRoles());
                         }
                         final Set<RoleDescriptor> effectiveDescriptors;
                         Set<RoleDescriptor> roleDescriptors = rolesRetrievalResult.getRoleDescriptors();
@@ -198,11 +197,9 @@ public class CompositeRolesStore {
                         } else {
                             effectiveDescriptors = roleDescriptors;
                         }
-                        logger.trace(() -> new ParameterizedMessage("Exposing effective role descriptors [{}] for role names [{}]",
-                                effectiveDescriptors, roleNames));
+                        logger.trace("Exposing effective role descriptors [{}] for role names [{}]", effectiveDescriptors, roleNames);
                         effectiveRoleDescriptorsConsumer.accept(Collections.unmodifiableCollection(effectiveDescriptors));
-                        logger.trace(() -> new ParameterizedMessage("Building role from descriptors [{}] for role names [{}]",
-                                effectiveDescriptors, roleNames));
+                        logger.trace("Building role from descriptors [{}] for role names [{}]", effectiveDescriptors, roleNames);
                         buildThenMaybeCacheRole(roleKey, effectiveDescriptors, rolesRetrievalResult.getMissingRoles(),
                             rolesRetrievalResult.isSuccess(), invalidationCounter, roleActionListener);
                     },
@@ -211,14 +208,14 @@ public class CompositeRolesStore {
     }
 
     void logDeprecatedRoles(Set<RoleDescriptor> roleDescriptors) {
-        roleDescriptors.stream()
-            .filter(rd -> Boolean.TRUE.equals(rd.getMetadata().get(MetadataUtils.DEPRECATED_METADATA_KEY)))
-            .forEach(rd -> {
+        for (RoleDescriptor rd : roleDescriptors) {
+            if (Boolean.TRUE.equals(rd.getMetadata().get(MetadataUtils.DEPRECATED_METADATA_KEY))) {
                 String reason = Objects.toString(
                     rd.getMetadata().get(MetadataUtils.DEPRECATED_REASON_METADATA_KEY), "Please check the documentation");
                 deprecationLogger.critical(DeprecationCategory.SECURITY, "deprecated_role-" + rd.getName(), "The role [" + rd.getName() +
                             "] is deprecated and will be removed in a future version of Elasticsearch. " + reason);
-            });
+            }
+        }
     }
 
     // for testing
@@ -396,14 +393,19 @@ public class CompositeRolesStore {
     }
 
     private void roleDescriptors(Set<String> roleNames, ActionListener<RolesRetrievalResult> rolesResultListener) {
-        final Set<String> filteredRoleNames = roleNames.stream().filter((s) -> {
-            if (negativeLookupCache.get(s) != null) {
-                logger.debug(() -> new ParameterizedMessage("Requested role [{}] does not exist (cached)", s));
-                return false;
-            } else {
-                return true;
-            }
-        }).collect(Collectors.toSet());
+        final Set<String> filteredRoleNames;
+        if (negativeLookupCache.count() > 0) {
+            filteredRoleNames = roleNames.stream().filter((s) -> {
+                if (negativeLookupCache.get(s) != null) {
+                    logger.debug("Requested role [{}] does not exist (cached)", s);
+                    return false;
+                } else {
+                    return true;
+                }
+            }).collect(Collectors.toSet());
+        } else {
+            filteredRoleNames = roleNames;
+        }
 
         loadRoleDescriptorsAsync(filteredRoleNames, rolesResultListener);
     }
