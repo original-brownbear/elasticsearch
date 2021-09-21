@@ -207,7 +207,6 @@ public class DataTierAllocationDecider extends AllocationDecider {
 
     private static boolean allocationAllowed(String tierSetting, Set<DiscoveryNodeRole> roles) {
         String[] values = parseTierList(tierSetting);
-        Set<String> roleNames = null;
         if (values.length == 0) {
             return true;
         }
@@ -224,13 +223,11 @@ public class DataTierAllocationDecider extends AllocationDecider {
             }
             return false;
         } else {
+            Set<String> roleNames = new HashSet<>(roles.size());
+            for (DiscoveryNodeRole role : roles) {
+                roleNames.add(role.roleName());
+            }
             for (String value : values) {
-                if (roleNames == null) {
-                    roleNames = new HashSet<>(roles.size());
-                    for (DiscoveryNodeRole role : roles) {
-                        roleNames.add(role.roleName());
-                    }
-                }
                 if (roleNames.contains(value) == false) {
                     return false;
                 }
