@@ -188,7 +188,12 @@ public class DataTierAllocationDecider extends AllocationDecider {
     }
 
     public static String[] parseTierList(String tiers) {
-        return Strings.tokenizeToStringArray(tiers, ",");
+        if (Strings.hasLength(tiers) == false) {
+            // avoid parsing overhead in the null/empty string case
+            return new String[0];
+        } else {
+            return Strings.tokenizeToStringArray(tiers, ",");
+        }
     }
 
     static boolean tierNodesPresent(String singleTier, DiscoveryNodes nodes) {
