@@ -182,11 +182,13 @@ public class DiskThresholdSettings {
     }
 
     private static void doValidate(String low, String high, String flood) {
-        try {
-            doValidateAsPercentage(low, high, flood);
-            return; // early return so that we do not try to parse as bytes
-        } catch (final ElasticsearchParseException e) {
-            // swallow as we are now going to try to parse as bytes
+        if (low.endsWith("b") == false) {
+            try {
+                doValidateAsPercentage(low, high, flood);
+                return; // early return so that we do not try to parse as bytes
+            } catch (final ElasticsearchParseException e) {
+                // swallow as we are now going to try to parse as bytes
+            }
         }
         try {
             doValidateAsBytes(low, high, flood);
@@ -412,7 +414,7 @@ public class DiskThresholdSettings {
             // NOTE: this is not end-user leniency, since up above we check that it's a valid byte or percentage, and then store the two
             // cases separately
             if (lenient) {
-                return ByteSizeValue.parseBytesSizeValue("0b", settingName);
+                return ByteSizeValue.ZERO;
             }
             throw ex;
         }
@@ -423,6 +425,10 @@ public class DiskThresholdSettings {
      * @return the watermark value given
      */
     private static String validWatermarkSetting(String watermark, String settingName) {
+        if (watermark.endsWith("b")) {
+            ByteSizeValue.parseBytesSizeValue(watermark, settingName);
+            return watermark;
+        }
         try {
             RatioValue.parseRatioValue(watermark);
         } catch (ElasticsearchParseException e) {

@@ -283,6 +283,8 @@ public class Setting<T> implements ToXContentObject {
         this(new SimpleKey(key), fallBackSetting, parser, properties);
     }
 
+    private String keyString;
+
     /**
      * Returns the settings key or a prefix if this setting is a group setting.
      * <b>Note: this method should not be used to retrieve a value from a {@link Settings} object.
@@ -291,7 +293,13 @@ public class Setting<T> implements ToXContentObject {
      * @see #isGroupSetting()
      */
     public final String getKey() {
-        return key.toString();
+        String keyStr = keyString;
+        if (keyStr != null) {
+            return keyStr;
+        }
+        keyStr = key.toString();
+        keyString = keyStr;
+        return keyStr;
     }
 
     /**
@@ -534,11 +542,16 @@ public class Setting<T> implements ToXContentObject {
      */
     String innerGetRaw(final Settings settings) {
         SecureSettings secureSettings = settings.getSecureSettings();
-        if (secureSettings != null && secureSettings.getSettingNames().contains(getKey())) {
-            throw new IllegalArgumentException("Setting [" + getKey() + "] is a non-secure setting" +
+        final String key = getKey();
+        if (secureSettings != null && secureSettings.getSettingNames().contains(key)) {
+            throw new IllegalArgumentException("Setting [" + key + "] is a non-secure setting" +
                 " and must be stored inside elasticsearch.yml, but was found inside the Elasticsearch keystore");
         }
-        return settings.get(getKey(), defaultValue.apply(settings));
+        final String found = settings.get(key);
+        if (found != null) {
+            return found;
+        }
+        return defaultValue.apply(settings);
     }
 
     /** Logs a deprecation warning if the setting is deprecated and used. */
@@ -1555,6 +1568,9 @@ public class Setting<T> implements ToXContentObject {
     }
 
     private static List<String> parseableStringToList(String parsableString) {
+        if ("[]".equals(parsableString)) {
+            return List.of();
+        }
         // fromXContent doesn't use named xcontent or deprecation.
         try (XContentParser xContentParser = XContentType.JSON.xContent()
                 .createParser(NamedXContentRegistry.EMPTY, DeprecationHandler.THROW_UNSUPPORTED_OPERATION, parsableString)) {
@@ -1569,6 +1585,9 @@ public class Setting<T> implements ToXContentObject {
     }
 
     private static String arrayToParsableString(List<String> array) {
+        if (array.isEmpty()) {
+            return "[]";
+        }
         try {
             XContentBuilder builder = XContentBuilder.builder(XContentType.JSON.xContent());
             builder.startArray();
