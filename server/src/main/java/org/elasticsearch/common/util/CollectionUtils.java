@@ -15,7 +15,6 @@ import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.InPlaceMergeSorter;
 import org.apache.lucene.util.IntroSorter;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 
 import java.nio.file.Path;
 import java.util.AbstractList;
@@ -134,41 +133,74 @@ public class CollectionUtils {
      *                    more context to the handler of the exception
      */
     public static void ensureNoSelfReferences(Object value, String messageHint) {
-        Iterable<?> it = convert(value);
-        if (it != null) {
-            ensureNoSelfReferences(it, value, Collections.newSetFromMap(new IdentityHashMap<>()), messageHint);
+        if (value instanceof Map) {
+            ensureNoSelfReferences((Map<?,?>) value, newIdentitySet(), messageHint);
+        } else if ((value instanceof Iterable) && (value instanceof Path == false)) {
+            ensureNoSelfReferences((Iterable<?>) value, value, newIdentitySet(), messageHint);
+        } else if (value instanceof Object[]) {
+            ensureNoSelfReferences((Object[]) value, value, newIdentitySet(), messageHint);
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static Iterable<?> convert(Object value) {
-        if (value == null) {
-            return null;
+    public static void ensureNoSelfReferences(Map<String, Object> map, String messageHint) {
+        if (map == null) {
+            return;
         }
-        if (value instanceof Map) {
-            Map<?,?> map = (Map<?,?>) value;
-            return () -> Iterators.concat(map.keySet().iterator(), map.values().iterator());
-        } else if ((value instanceof Iterable) && (value instanceof Path == false)) {
-            return (Iterable<?>) value;
-        } else if (value instanceof Object[]) {
-            return Arrays.asList((Object[]) value);
-        } else {
-            return null;
+        ensureNoSelfReferences(map.values(), map, newIdentitySet(), messageHint);
+    }
+
+    private static Set<Object> newIdentitySet() {
+        return Collections.newSetFromMap(new IdentityHashMap<>());
+    }
+
+    private static void ensureNoSelfReferences(Map<?, ?> map, final Set<Object> ancestors, String messageHint) {
+        safeAddToAncestors(map, ancestors, messageHint);
+        for (Map.Entry<?, ?> o : map.entrySet()) {
+            doEnsureNoSelfReference(ancestors, messageHint, o.getKey());
+            doEnsureNoSelfReference(ancestors, messageHint, o.getValue());
         }
+        ancestors.remove(map);
     }
 
     private static void ensureNoSelfReferences(final Iterable<?> value, Object originalReference, final Set<Object> ancestors,
                                                String messageHint) {
-        if (value != null) {
-            if (ancestors.add(originalReference) == false) {
-                String suffix = Strings.isNullOrEmpty(messageHint) ? "" : String.format(Locale.ROOT, " (%s)", messageHint);
-                throw new IllegalArgumentException("Iterable object is self-referencing itself" + suffix);
-            }
-            for (Object o : value) {
-                ensureNoSelfReferences(convert(o), o, ancestors, messageHint);
-            }
-            ancestors.remove(originalReference);
+        safeAddToAncestors(originalReference, ancestors, messageHint);
+        for (Object o : value) {
+            doEnsureNoSelfReference(ancestors, messageHint, o);
         }
+        ancestors.remove(originalReference);
+    }
+
+    private static void doEnsureNoSelfReference(Set<Object> ancestors, String messageHint, Object o) {
+        if (o instanceof Map) {
+            Map<?,?> map = (Map<?,?>) o;
+            ensureNoSelfReferences(map.keySet(), o, ancestors, messageHint);
+            ensureNoSelfReferences(map.values(), o, ancestors, messageHint);
+        } else if ((o instanceof Iterable) && (o instanceof Path == false)) {
+            ensureNoSelfReferences((Iterable<?>) o, o, ancestors, messageHint);
+        } else if (o instanceof Object[]) {
+            ensureNoSelfReferences((Object[]) o, o, ancestors, messageHint);
+        }
+    }
+
+    private static void ensureNoSelfReferences(Object[] value, Object originalReference, final Set<Object> ancestors,
+                                               String messageHint) {
+        safeAddToAncestors(originalReference, ancestors, messageHint);
+        for (Object o : value) {
+            doEnsureNoSelfReference(ancestors, messageHint, o);
+        }
+        ancestors.remove(originalReference);
+    }
+
+    private static void safeAddToAncestors(Object originalReference, Set<Object> ancestors, String messageHint) {
+        if (ancestors.add(originalReference) == false) {
+            throwOnSelfReference(messageHint);
+        }
+    }
+
+    private static void throwOnSelfReference(String messageHint) {
+        String suffix = Strings.isNullOrEmpty(messageHint) ? "" : String.format(Locale.ROOT, " (%s)", messageHint);
+        throw new IllegalArgumentException("Iterable object is self-referencing itself" + suffix);
     }
 
     private static class RotatedList<T> extends AbstractList<T> implements RandomAccess {
