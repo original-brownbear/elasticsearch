@@ -78,7 +78,7 @@ public class BytesStreamOutput extends BytesStream {
 
         // illegal args: offset and/or length exceed array size
         if (b.length < (offset + length)) {
-            throw new IllegalArgumentException("Illegal offset " + offset + "/length " + length + " for byte[] of length " + b.length);
+            throwIllegalOffset(b, offset, length);
         }
 
         // get enough pages for new size
@@ -89,6 +89,10 @@ public class BytesStreamOutput extends BytesStream {
 
         // advance
         count += length;
+    }
+
+    private void throwIllegalOffset(byte[] b, int offset, int length) {
+        throw new IllegalArgumentException("Illegal offset " + offset + "/length " + length + " for byte[] of length " + b.length);
     }
 
     @Override
@@ -171,9 +175,6 @@ public class BytesStreamOutput extends BytesStream {
     }
 
     protected void ensureCapacity(long offset) {
-        if (offset > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException(getClass().getSimpleName() + " cannot hold more than 2GB of data");
-        }
         if (bytes == null) {
             this.bytes = bigArrays.newByteArray(BigArrays.overSize(offset, PageCacheRecycler.PAGE_SIZE_IN_BYTES, 1), false);
         } else {

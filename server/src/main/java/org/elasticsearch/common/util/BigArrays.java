@@ -387,28 +387,32 @@ public class BigArrays {
         if (this.breakerService != null) {
             CircuitBreaker breaker = this.breakerService.getBreaker(breakerName);
             if (this.checkBreaker) {
-                // checking breaker means potentially tripping, but it doesn't
-                // have to if the delta is negative
-                if (delta > 0) {
-                    try {
-                        breaker.addEstimateBytesAndMaybeBreak(delta, "<reused_arrays>");
-                    } catch (CircuitBreakingException e) {
-                        if (isDataAlreadyCreated) {
-                            // since we've already created the data, we need to
-                            // add it so closing the stream re-adjusts properly
-                            breaker.addWithoutBreaking(delta);
-                        }
-                        // re-throw the original exception
-                        throw e;
-                    }
-                } else {
-                    breaker.addWithoutBreaking(delta);
-                }
+                checkBreaker(delta, isDataAlreadyCreated, breaker);
             } else {
                 // even if we are not checking the breaker, we need to adjust
                 // its' totals, so add without breaking
                 breaker.addWithoutBreaking(delta);
             }
+        }
+    }
+
+    private void checkBreaker(long delta, boolean isDataAlreadyCreated, CircuitBreaker breaker) {
+        // checking breaker means potentially tripping, but it doesn't
+        // have to if the delta is negative
+        if (delta > 0) {
+            try {
+                breaker.addEstimateBytesAndMaybeBreak(delta, "<reused_arrays>");
+            } catch (CircuitBreakingException e) {
+                if (isDataAlreadyCreated) {
+                    // since we've already created the data, we need to
+                    // add it so closing the stream re-adjusts properly
+                    breaker.addWithoutBreaking(delta);
+                }
+                // re-throw the original exception
+                throw e;
+            }
+        } else {
+            breaker.addWithoutBreaking(delta);
         }
     }
 

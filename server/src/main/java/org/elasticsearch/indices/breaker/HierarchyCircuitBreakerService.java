@@ -287,37 +287,41 @@ public class HierarchyCircuitBreakerService extends CircuitBreakerService {
         final MemoryUsage memoryUsed = memoryUsed(newBytesReserved);
         long parentLimit = this.parentSettings.getLimit();
         if (memoryUsed.totalUsage > parentLimit && overLimitStrategy.overLimit(memoryUsed).totalUsage > parentLimit) {
-            this.parentTripCount.incrementAndGet();
-            final StringBuilder message = new StringBuilder("[parent] Data too large, data for [" + label + "]" +
-                    " would be [" + memoryUsed.totalUsage + "/" + new ByteSizeValue(memoryUsed.totalUsage) + "]" +
-                    ", which is larger than the limit of [" +
-                    parentLimit + "/" + new ByteSizeValue(parentLimit) + "]");
-            if (this.trackRealMemoryUsage) {
-                final long realUsage = memoryUsed.baseUsage;
-                message.append(", real usage: [");
-                message.append(realUsage);
-                message.append("/");
-                message.append(new ByteSizeValue(realUsage));
-                message.append("], new bytes reserved: [");
-                message.append(newBytesReserved);
-                message.append("/");
-                message.append(new ByteSizeValue(newBytesReserved));
-                message.append("]");
-            }
-            message.append(", usages [");
-            message.append(this.breakers.entrySet().stream().map(e -> {
-                    final CircuitBreaker breaker = e.getValue();
-                    final long breakerUsed = (long)(breaker.getUsed() * breaker.getOverhead());
-                    return e.getKey() + "=" + breakerUsed + "/" + new ByteSizeValue(breakerUsed);
-                }).collect(Collectors.joining(", ")));
-            message.append("]");
-            // derive durability of a tripped parent breaker depending on whether the majority of memory tracked by
-            // child circuit breakers is categorized as transient or permanent.
-            CircuitBreaker.Durability durability = memoryUsed.transientChildUsage >= memoryUsed.permanentChildUsage ?
-                CircuitBreaker.Durability.TRANSIENT : CircuitBreaker.Durability.PERMANENT;
-            logger.debug(() -> new ParameterizedMessage("{}", message.toString()));
-            throw new CircuitBreakingException(message.toString(), memoryUsed.totalUsage, parentLimit, durability);
+            trip(newBytesReserved, label, memoryUsed, parentLimit);
         }
+    }
+
+    private void trip(long newBytesReserved, String label, MemoryUsage memoryUsed, long parentLimit) {
+        this.parentTripCount.incrementAndGet();
+        final StringBuilder message = new StringBuilder("[parent] Data too large, data for [" + label + "]" +
+                " would be [" + memoryUsed.totalUsage + "/" + new ByteSizeValue(memoryUsed.totalUsage) + "]" +
+                ", which is larger than the limit of [" +
+                parentLimit + "/" + new ByteSizeValue(parentLimit) + "]");
+        if (this.trackRealMemoryUsage) {
+            final long realUsage = memoryUsed.baseUsage;
+            message.append(", real usage: [");
+            message.append(realUsage);
+            message.append("/");
+            message.append(new ByteSizeValue(realUsage));
+            message.append("], new bytes reserved: [");
+            message.append(newBytesReserved);
+            message.append("/");
+            message.append(new ByteSizeValue(newBytesReserved));
+            message.append("]");
+        }
+        message.append(", usages [");
+        message.append(this.breakers.entrySet().stream().map(e -> {
+                final CircuitBreaker breaker = e.getValue();
+                final long breakerUsed = (long)(breaker.getUsed() * breaker.getOverhead());
+                return e.getKey() + "=" + breakerUsed + "/" + new ByteSizeValue(breakerUsed);
+            }).collect(Collectors.joining(", ")));
+        message.append("]");
+        // derive durability of a tripped parent breaker depending on whether the majority of memory tracked by
+        // child circuit breakers is categorized as transient or permanent.
+        CircuitBreaker.Durability durability = memoryUsed.transientChildUsage >= memoryUsed.permanentChildUsage ?
+            CircuitBreaker.Durability.TRANSIENT : CircuitBreaker.Durability.PERMANENT;
+        logger.debug(() -> new ParameterizedMessage("{}", message.toString()));
+        throw new CircuitBreakingException(message.toString(), memoryUsed.totalUsage, parentLimit, durability);
     }
 
     private CircuitBreaker validateAndCreateBreaker(BreakerSettings breakerSettings) {
