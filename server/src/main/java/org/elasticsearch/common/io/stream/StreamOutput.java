@@ -19,6 +19,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.CharArrays;
 import org.elasticsearch.core.Nullable;
@@ -1129,7 +1130,7 @@ public abstract class StreamOutput extends OutputStream {
     }
 
 
-    private static final Map<String, byte[]> NAMED_WRITABLE_NAMES = ConcurrentCollections.newConcurrentMap();
+    private static volatile Map<String, byte[]> NAMED_WRITABLE_NAMES = Map.of();
 
     public static byte[] literalToEncodedString(String literal) {
         try {
@@ -1151,7 +1152,18 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     public void writeLiteralString(String string) throws IOException {
-        writeBytes(NAMED_WRITABLE_NAMES.computeIfAbsent(string, StreamOutput::literalToEncodedString));
+        final Map<String, byte[]> bytesCache = NAMED_WRITABLE_NAMES;
+        byte[] res = bytesCache.get(string);
+        if (res == null) {
+            res = computeAndTryToCache(string, bytesCache);
+        }
+        writeBytes(res);
+    }
+
+    private byte[] computeAndTryToCache(String string, Map<String, byte[]> bytesCache) {
+        final byte[] res = literalToEncodedString(string);
+        NAMED_WRITABLE_NAMES = Maps.copyMapWithAddedEntry(bytesCache, string, res);
+        return res;
     }
 
     /**
