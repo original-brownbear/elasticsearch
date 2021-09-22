@@ -123,7 +123,7 @@ final class TermVectorsWriter {
         // now, write the information about offset of the terms in the
         // termVectors field
         BytesStreamOutput header = new BytesStreamOutput();
-        header.writeString(HEADER);
+        header.writeLiteralString(HEADER);
         header.writeInt(CURRENT_VERSION);
         header.writeBoolean(getTermStatistics);
         header.writeBoolean(getFieldStatistics);

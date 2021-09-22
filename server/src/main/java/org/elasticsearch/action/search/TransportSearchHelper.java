@@ -32,8 +32,8 @@ final class TransportSearchHelper {
     static String buildScrollId(AtomicArray<? extends SearchPhaseResult> searchPhaseResults) {
         try {
             BytesStreamOutput out = new BytesStreamOutput();
-            out.writeString(INCLUDE_CONTEXT_UUID);
-            out.writeString(searchPhaseResults.length() == 1 ? ParsedScrollId.QUERY_AND_FETCH_TYPE : ParsedScrollId.QUERY_THEN_FETCH_TYPE);
+            out.writeLiteralString(INCLUDE_CONTEXT_UUID);
+            out.writeLiteralString(searchPhaseResults.length() == 1 ? ParsedScrollId.QUERY_AND_FETCH_TYPE : ParsedScrollId.QUERY_THEN_FETCH_TYPE);
             out.writeVInt(searchPhaseResults.asList().size());
             for (SearchPhaseResult searchPhaseResult : searchPhaseResults.asList()) {
                 out.writeString(searchPhaseResult.getContextId().getSessionId());

@@ -19,6 +19,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
+import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.CharArrays;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -62,6 +63,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntFunction;
 
 import static java.util.Map.entry;
@@ -1126,12 +1128,30 @@ public abstract class StreamOutput extends OutputStream {
         throw new AssertionError("too many nested exceptions", throwable);
     }
 
+
+    private static final Map<String, byte[]> NAMED_WRITABLE_NAMES = ConcurrentCollections.newConcurrentMap();
+
+    public static byte[] literalToEncodedString(String literal) {
+        try {
+            final BytesStreamOutput tmp = new BytesStreamOutput();
+            tmp.writeString(literal);
+            return tmp.copyBytes().array();
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
+
     /**
      * Writes a {@link NamedWriteable} to the current stream, by first writing its name and then the object itself
      */
     public void writeNamedWriteable(NamedWriteable namedWriteable) throws IOException {
-        writeString(namedWriteable.getWriteableName());
+        writeLiteralString(namedWriteable.getWriteableName());
         namedWriteable.writeTo(this);
+    }
+
+    public void writeLiteralString(String string) throws IOException {
+        writeBytes(NAMED_WRITABLE_NAMES.computeIfAbsent(string, StreamOutput::literalToEncodedString));
     }
 
     /**

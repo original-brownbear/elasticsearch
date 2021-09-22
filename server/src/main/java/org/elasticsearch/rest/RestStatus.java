@@ -495,7 +495,7 @@ public enum RestStatus {
     }
 
     public static void writeTo(StreamOutput out, RestStatus status) throws IOException {
-        out.writeString(status.name());
+        out.writeLiteralString(status.name());
     }
 
     public static RestStatus status(int successfulShards, int totalShards, ShardOperationFailedException... failures) {

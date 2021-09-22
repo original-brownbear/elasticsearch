@@ -118,7 +118,7 @@ abstract class OutboundMessage extends NetworkMessage {
                 // empty features array
                 stream.writeStringArray(Strings.EMPTY_ARRAY);
             }
-            stream.writeString(action);
+            stream.writeLiteralString(action);
         }
 
         // Do not compress instances of BytesTransportRequest

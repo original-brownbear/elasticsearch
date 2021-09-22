@@ -110,7 +110,7 @@ public final class Fuzziness implements ToXContentFragment, Writeable {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeString(fuzziness);
+        out.writeLiteralString(fuzziness);
         // we cannot serialize the low/high bounds since the other node does not know about them.
         // This is a best-effort to not fail queries in case the cluster is being upgraded and users
         // start using features that are not available on all nodes.

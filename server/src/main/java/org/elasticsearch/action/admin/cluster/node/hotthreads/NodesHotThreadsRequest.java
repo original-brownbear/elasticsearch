@@ -93,7 +93,7 @@ public class NodesHotThreadsRequest extends BaseNodesRequest<NodesHotThreadsRequ
         super.writeTo(out);
         out.writeInt(threads);
         out.writeBoolean(ignoreIdleThreads);
-        out.writeString(type.getTypeValue());
+        out.writeLiteralString(type.getTypeValue());
         out.writeTimeValue(interval);
         out.writeInt(snapshots);
     }

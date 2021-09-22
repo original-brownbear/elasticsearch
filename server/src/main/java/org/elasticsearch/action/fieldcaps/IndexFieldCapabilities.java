@@ -63,7 +63,7 @@ public class IndexFieldCapabilities implements Writeable {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(name);
-        out.writeString(type);
+        out.writeLiteralString(type);
         out.writeBoolean(isMetadatafield);
         out.writeBoolean(isSearchable);
         out.writeBoolean(isAggregatable);
