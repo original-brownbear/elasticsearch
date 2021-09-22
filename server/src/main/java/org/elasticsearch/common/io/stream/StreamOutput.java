@@ -20,7 +20,6 @@ import org.apache.lucene.util.BytesRefBuilder;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.util.Maps;
-import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.CharArrays;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -64,7 +63,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntFunction;
 
 import static java.util.Map.entry;
@@ -228,13 +226,26 @@ public abstract class StreamOutput extends OutputStream {
             return;
         }
         byte[] buffer = scratch.get();
-        int index = 0;
-        do {
-            buffer[index++] = ((byte) ((i & 0x7f) | 0x80));
-            i >>>= 7;
-        } while ((i & ~0x7F) != 0);
-        buffer[index++] = ((byte) i);
+        int index = doBufferVInt(i, buffer, 0);
         writeBytes(buffer, 0, index);
+    }
+
+    private static int bufferVInt(int value, byte[] buffer, int offset) {
+        if (Integer.numberOfLeadingZeros(value) >= 25) {
+            buffer[offset] = (byte) value;
+            return offset + 1;
+        }
+        return doBufferVInt(value, buffer, offset);
+    }
+
+    private static int doBufferVInt(int value, byte[] buffer, int offset) {
+        int index = offset;
+        do {
+            buffer[index++] = ((byte) ((value & 0x7f) | 0x80));
+            value >>>= 7;
+        } while ((value & ~0x7F) != 0);
+        buffer[index++] = ((byte) value);
+        return index;
     }
 
     /**
@@ -322,8 +333,9 @@ public abstract class StreamOutput extends OutputStream {
         if (str == null) {
             writeBoolean(false);
         } else {
-            writeBoolean(true);
-            writeString(str);
+            byte[] buffer = scratch.get();
+            buffer[0] = ONE;
+            doWriteString(str, buffer, 1);
         }
     }
 
@@ -394,10 +406,13 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     public void writeString(String str) throws IOException {
-        final int charCount = str.length();
         byte[] buffer = scratch.get();
-        int offset = 0;
-        writeVInt(charCount);
+        doWriteString(str, buffer, 0);
+    }
+
+    private void doWriteString(String str, byte[] buffer, int off) throws IOException {
+        final int charCount = str.length();
+        int offset = bufferVInt(charCount, buffer, off);
         for (int i = 0; i < charCount; i++) {
             final int c = str.charAt(i);
             if (c <= 0x007F) {
@@ -414,11 +429,11 @@ public abstract class StreamOutput extends OutputStream {
             // we need at most 3 bytes so we flush the buffer once we have less than 3 bytes
             // left before we start another iteration
             if (offset > buffer.length - 3) {
-                writeBytes(buffer, offset);
+                writeBytes(buffer, 0, offset);
                 offset = 0;
             }
         }
-        writeBytes(buffer, offset);
+        writeBytes(buffer, 0, offset);
     }
 
     public void writeSecureString(SecureString secureStr) throws IOException {

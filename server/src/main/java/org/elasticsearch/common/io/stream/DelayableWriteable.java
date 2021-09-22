@@ -10,6 +10,7 @@ package org.elasticsearch.common.io.stream;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.core.Releasable;
 
 import java.io.IOException;
