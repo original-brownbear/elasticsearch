@@ -81,6 +81,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.iterableWithSize;
 
 public class EnrichPolicyRunnerTests extends ESSingleNodeTestCase {
 
@@ -2140,8 +2141,8 @@ public class EnrichPolicyRunnerTests extends ESSingleNodeTestCase {
         assertThat(indexSegments.getShards().size(), is(equalTo(1)));
         IndexShardSegments shardSegments = indexSegments.getShards().get(0);
         assertNotNull(shardSegments);
-        assertThat(shardSegments.getShards().length, is(equalTo(1)));
-        ShardSegments shard = shardSegments.getShards()[0];
+        assertThat(shardSegments.getShards(), iterableWithSize(1));
+        ShardSegments shard = shardSegments.getAt(0);
         assertThat(shard.getSegments().size(), is(equalTo(1)));
         Segment segment = shard.getSegments().iterator().next();
         assertThat(segment.getNumDocs(), is(equalTo(expectedDocs)));

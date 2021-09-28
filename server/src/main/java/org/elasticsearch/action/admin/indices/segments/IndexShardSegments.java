@@ -10,18 +10,18 @@ package org.elasticsearch.action.admin.indices.segments;
 
 import org.elasticsearch.index.shard.ShardId;
 
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 public class IndexShardSegments implements Iterable<ShardSegments> {
 
     private final ShardId shardId;
 
-    private final ShardSegments[] shards;
+    private final List<ShardSegments> shards;
 
-    IndexShardSegments(ShardId shardId, ShardSegments[] shards) {
+    IndexShardSegments(ShardId shardId, List<ShardSegments> shards) {
         this.shardId = shardId;
-        this.shards = shards;
+        this.shards = List.copyOf(shards);
     }
 
     public ShardId getShardId() {
@@ -29,15 +29,15 @@ public class IndexShardSegments implements Iterable<ShardSegments> {
     }
 
     public ShardSegments getAt(int i) {
-        return shards[i];
+        return shards.get(i);
     }
 
-    public ShardSegments[] getShards() {
+    public List<ShardSegments> getShards() {
         return this.shards;
     }
 
     @Override
     public Iterator<ShardSegments> iterator() {
-        return Arrays.stream(shards).iterator();
+        return shards.iterator();
     }
 }

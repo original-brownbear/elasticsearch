@@ -108,8 +108,7 @@ public class GraphTests extends ESSingleNodeTestCase {
         client().admin().indices().prepareRefresh("test").get();
         assertAllSuccessful(actionGet);
         for (IndexShardSegments seg : client().admin().indices().prepareSegments().get().getIndices().get("test")) {
-            ShardSegments[] shards = seg.getShards();
-            for (ShardSegments shardSegments : shards) {
+            for (ShardSegments shardSegments : seg.getShards()) {
                 assertEquals(1, shardSegments.getSegments().size());
             }
         }

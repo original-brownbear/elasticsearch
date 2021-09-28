@@ -120,9 +120,7 @@ public class RestSegmentsAction extends AbstractCatAction {
             Map<Integer, IndexShardSegments> shards = indexSegments.getShards();
 
             for (IndexShardSegments indexShardSegments : shards.values()) {
-                ShardSegments[] shardSegments = indexShardSegments.getShards();
-
-                for (ShardSegments shardSegment : shardSegments) {
+                for (ShardSegments shardSegment : indexShardSegments.getShards()) {
                     List<Segment> segments = shardSegment.getSegments();
 
                     for (Segment segment : segments) {

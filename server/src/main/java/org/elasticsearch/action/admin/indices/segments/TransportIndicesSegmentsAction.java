@@ -73,8 +73,7 @@ public class TransportIndicesSegmentsAction
     protected IndicesSegmentResponse newResponse(IndicesSegmentsRequest request, int totalShards, int successfulShards, int failedShards,
                                                  List<ShardSegments> results, List<DefaultShardOperationFailedException> shardFailures,
                                                  ClusterState clusterState) {
-        return new IndicesSegmentResponse(results.toArray(new ShardSegments[results.size()]), totalShards, successfulShards, failedShards,
-            shardFailures);
+        return new IndicesSegmentResponse(results, totalShards, successfulShards, failedShards, shardFailures);
     }
 
     @Override

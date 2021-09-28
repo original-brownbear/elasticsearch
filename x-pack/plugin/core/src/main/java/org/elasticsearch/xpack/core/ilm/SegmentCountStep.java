@@ -8,14 +8,15 @@ package org.elasticsearch.xpack.core.ilm;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.segments.IndexSegments;
+import org.elasticsearch.action.admin.indices.segments.IndexShardSegments;
 import org.elasticsearch.action.admin.indices.segments.IndicesSegmentsRequest;
 import org.elasticsearch.action.admin.indices.segments.ShardSegments;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.Metadata;
-import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.TimeValue;
@@ -25,11 +26,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.Index;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * This {@link Step} evaluates whether force_merge was successful by checking the segment count.
@@ -62,27 +59,28 @@ public class SegmentCountStep extends AsyncWaitStep {
                 IndexSegments idxSegments = response.getIndices().get(index.getName());
                 if (idxSegments == null || (response.getShardFailures() != null && response.getShardFailures().length > 0)) {
                     final DefaultShardOperationFailedException[] failures = response.getShardFailures();
-                    logger.info("[{}] retrieval of segment counts after force merge did not succeed, " +
-                            "there were {} shard failures. failures: {}",
-                        index.getName(),
-                        response.getFailedShards(),
-                        failures == null ? "n/a" : Strings.collectionToDelimitedString(Arrays.stream(failures)
-                            .map(Strings::toString)
-                            .collect(Collectors.toList()), ","));
+                    for (DefaultShardOperationFailedException failure : failures) {
+                        logger.warn(
+                            new ParameterizedMessage(
+                                "[{}][{}] retrieval of segment counts after force merge did not succeed", index, failure.shardId()),
+                                failure
+                        );
+                    }
                     listener.onResponse(true, new Info(-1));
                 } else {
-                    List<ShardSegments> unmergedShards = idxSegments.getShards().values().stream()
-                        .flatMap(iss -> Arrays.stream(iss.getShards()))
-                        .filter(shardSegments -> shardSegments.getSegments().size() > maxNumSegments)
-                        .collect(Collectors.toList());
-                    if (unmergedShards.size() > 0) {
-                        Map<ShardRouting, Integer> unmergedShardCounts = unmergedShards.stream()
-                            .collect(Collectors.toMap(ShardSegments::getShardRouting, ss -> ss.getSegments().size()));
-                        logger.info("[{}] best effort force merge to [{}] segments did not succeed for {} shards: {}",
-                            index.getName(), maxNumSegments, unmergedShards.size(), unmergedShardCounts);
+                    int unmergedCount = 0;
+                    for (IndexShardSegments iss : idxSegments.getShards().values()) {
+                        for (ShardSegments shardSegments : iss.getShards()) {
+                            final int segmentCount = shardSegments.getSegments().size();
+                            if (segmentCount > maxNumSegments) {
+                                logger.info("[{}] best effort force merge to [{}] segments did not succeed for {}: {}",
+                                        index.getName(), maxNumSegments, shardSegments.getShardRouting(), segmentCount);
+                                unmergedCount++;
+                            }
+                        }
                     }
                     // Force merging is best effort, so always return true that the condition has been met.
-                    listener.onResponse(true, new Info(unmergedShards.size()));
+                    listener.onResponse(true, new Info(unmergedCount));
                 }
             }, listener::onFailure));
     }

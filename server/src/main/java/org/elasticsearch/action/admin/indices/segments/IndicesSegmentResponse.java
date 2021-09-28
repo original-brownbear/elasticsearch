@@ -12,7 +12,6 @@ import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.SortedNumericSortField;
 import org.apache.lucene.search.SortedSetSortField;
-import org.apache.lucene.util.Accountable;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.action.support.broadcast.BroadcastResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -24,59 +23,50 @@ import org.elasticsearch.transport.Transports;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 public class IndicesSegmentResponse extends BroadcastResponse {
 
-    private final ShardSegments[] shards;
+    private final List<ShardSegments> shards;
 
     private Map<String, IndexSegments> indicesSegments;
 
     IndicesSegmentResponse(StreamInput in) throws IOException {
         super(in);
-        shards = in.readArray(ShardSegments::new, ShardSegments[]::new);
+        shards = in.readList(ShardSegments::new);
     }
 
-    IndicesSegmentResponse(ShardSegments[] shards, int totalShards, int successfulShards, int failedShards,
+    IndicesSegmentResponse(List<ShardSegments> shards, int totalShards, int successfulShards, int failedShards,
                            List<DefaultShardOperationFailedException> shardFailures) {
         super(totalShards, successfulShards, failedShards, shardFailures);
-        this.shards = shards;
+        this.shards = List.copyOf(shards);
     }
 
     public Map<String, IndexSegments> getIndices() {
         if (indicesSegments != null) {
             return indicesSegments;
         }
-        Map<String, IndexSegments> indicesSegments = new HashMap<>();
+        final Map<String, List<ShardSegments>> indicesSegmentsTmp = new HashMap<>();
 
-        Set<String> indices = new HashSet<>();
         for (ShardSegments shard : shards) {
-            indices.add(shard.getShardRouting().getIndexName());
+            indicesSegmentsTmp.computeIfAbsent(shard.getShardRouting().getIndexName(), k -> new ArrayList<>()).add(shard);
+        }
+        final Map<String, IndexSegments> tmpSegments = new HashMap<>(indicesSegmentsTmp.size());
+        for (Map.Entry<String, List<ShardSegments>> entry : indicesSegmentsTmp.entrySet()) {
+            tmpSegments.put(entry.getKey(), new IndexSegments(entry.getKey(), entry.getValue()));
         }
 
-        for (String indexName : indices) {
-            List<ShardSegments> shards = new ArrayList<>();
-            for (ShardSegments shard : this.shards) {
-                if (shard.getShardRouting().getIndexName().equals(indexName)) {
-                    shards.add(shard);
-                }
-            }
-            indicesSegments.put(indexName, new IndexSegments(indexName, shards.toArray(new ShardSegments[shards.size()])));
-        }
-        this.indicesSegments = indicesSegments;
+        this.indicesSegments = Map.copyOf(tmpSegments);
         return indicesSegments;
     }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeArray(shards);
+        out.writeList(shards);
     }
 
     @Override
@@ -168,21 +158,6 @@ public class IndicesSegmentResponse extends BroadcastResponse {
         builder.endArray();
     }
 
-    private static void toXContent(XContentBuilder builder, Accountable tree) throws IOException {
-        builder.startObject();
-        builder.field(Fields.DESCRIPTION, tree.toString());
-        builder.humanReadableField(Fields.SIZE_IN_BYTES, Fields.SIZE, new ByteSizeValue(tree.ramBytesUsed()));
-        Collection<Accountable> children = tree.getChildResources();
-        if (children.isEmpty() == false) {
-            builder.startArray(Fields.CHILDREN);
-            for (Accountable child : children) {
-                toXContent(builder, child);
-            }
-            builder.endArray();
-        }
-        builder.endObject();
-    }
-
     static final class Fields {
         static final String INDICES = "indices";
         static final String SHARDS = "shards";
@@ -207,8 +182,5 @@ public class IndicesSegmentResponse extends BroadcastResponse {
         static final String MERGE_ID = "merge_id";
         static final String MEMORY = "memory";
         static final String MEMORY_IN_BYTES = "memory_in_bytes";
-        static final String RAM_TREE = "ram_tree";
-        static final String DESCRIPTION = "description";
-        static final String CHILDREN = "children";
     }
 }

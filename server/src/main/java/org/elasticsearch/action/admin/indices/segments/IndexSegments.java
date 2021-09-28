@@ -20,23 +20,19 @@ public class IndexSegments implements Iterable<IndexShardSegments> {
 
     private final Map<Integer, IndexShardSegments> indexShards;
 
-    IndexSegments(String index, ShardSegments[] shards) {
+    IndexSegments(String index, List<ShardSegments> shards) {
         this.index = index;
 
         Map<Integer, List<ShardSegments>> tmpIndexShards = new HashMap<>();
         for (ShardSegments shard : shards) {
-            List<ShardSegments> lst = tmpIndexShards.get(shard.getShardRouting().id());
-            if (lst == null) {
-                lst = new ArrayList<>();
-                tmpIndexShards.put(shard.getShardRouting().id(), lst);
-            }
+            List<ShardSegments> lst = tmpIndexShards.computeIfAbsent(shard.getShardRouting().id(), k -> new ArrayList<>());
             lst.add(shard);
         }
-        indexShards = new HashMap<>();
+        final Map<Integer, IndexShardSegments> indexShards = new HashMap<>(tmpIndexShards.size());
         for (Map.Entry<Integer, List<ShardSegments>> entry : tmpIndexShards.entrySet()) {
-            indexShards.put(entry.getKey(), new IndexShardSegments(entry.getValue().get(0).getShardRouting().shardId(),
-                entry.getValue().toArray(new ShardSegments[entry.getValue().size()])));
+            indexShards.put(entry.getKey(), new IndexShardSegments(entry.getValue().get(0).getShardRouting().shardId(), entry.getValue()));
         }
+        this.indexShards = Map.copyOf(indexShards);
     }
 
     public String getIndex() {
