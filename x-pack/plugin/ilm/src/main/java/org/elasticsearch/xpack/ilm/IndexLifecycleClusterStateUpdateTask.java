@@ -39,10 +39,26 @@ public abstract class IndexLifecycleClusterStateUpdateTask extends ClusterStateU
         return currentStepKey;
     }
 
+    private boolean executed;
+
+    @Override
+    public final ClusterState execute(ClusterState currentState) throws Exception {
+        assert executed == false;
+        final ClusterState updatedState = doExecute(currentState);
+        if (currentState != updatedState) {
+            executed = true;
+        }
+        return updatedState;
+    }
+
+    protected abstract ClusterState doExecute(ClusterState currentState) throws Exception;
+
     @Override
     public final void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
         listener.onResponse(null);
-        onClusterStateProcessed(source, oldState, newState);
+        if (executed) {
+            onClusterStateProcessed(source, oldState, newState);
+        }
     }
 
     @Override
