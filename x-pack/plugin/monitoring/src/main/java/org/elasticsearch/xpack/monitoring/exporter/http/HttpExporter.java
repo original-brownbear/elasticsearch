@@ -53,7 +53,6 @@ import javax.net.ssl.SSLContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,7 +85,7 @@ public class HttpExporter extends Exporter {
 
     public static final String TYPE = "http";
 
-    private static Setting.AffixSettingDependency HTTP_TYPE_DEPENDENCY = new Setting.AffixSettingDependency() {
+    private static final Setting.AffixSettingDependency HTTP_TYPE_DEPENDENCY = new Setting.AffixSettingDependency() {
         @Override
         public Setting.AffixSetting<String> getSetting() {
             return Exporter.TYPE_SETTING;
@@ -162,11 +161,10 @@ public class HttpExporter extends Exporter {
                         }
 
                         @Override
-                        public Iterator<Setting<?>> settings() {
+                        public List<Setting<?>> settings() {
                             final String namespace =
                                 HttpExporter.HOST_SETTING.getNamespace(HttpExporter.HOST_SETTING.getConcreteSetting(key));
-                            final List<Setting<?>> settings = List.of(Exporter.TYPE_SETTING.getConcreteSettingForNamespace(namespace));
-                            return settings.iterator();
+                            return List.of(Exporter.TYPE_SETTING.getConcreteSettingForNamespace(namespace));
                         }
 
                     },
@@ -227,14 +225,11 @@ public class HttpExporter extends Exporter {
                             }
 
                             @Override
-                            public Iterator<Setting<?>> settings() {
+                            public List<Setting<?>> settings() {
                                 final String namespace =
                                     HttpExporter.AUTH_USERNAME_SETTING.getNamespace(
                                         HttpExporter.AUTH_USERNAME_SETTING.getConcreteSetting(key));
-
-                                final List<Setting<?>> settings = List.of(
-                                    Exporter.TYPE_SETTING.getConcreteSettingForNamespace(namespace));
-                                return settings.iterator();
+                                return List.of(Exporter.TYPE_SETTING.getConcreteSettingForNamespace(namespace));
                             }
 
                         },

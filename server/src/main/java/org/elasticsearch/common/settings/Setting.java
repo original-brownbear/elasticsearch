@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -458,12 +457,11 @@ public class Setting<T> implements ToXContentObject {
         try {
             T parsed = parser.apply(value);
             if (validate) {
-                final Iterator<Setting<?>> it = validator.settings();
+                final List<Setting<?>> dependencies = validator.settings();
                 final Map<Setting<?>, Object> map;
-                if (it.hasNext()) {
-                    map = new HashMap<>();
-                    while (it.hasNext()) {
-                        final Setting<?> setting = it.next();
+                if (dependencies.isEmpty() == false) {
+                    map = new HashMap<>(dependencies.size());
+                    for (Setting<?> setting : dependencies) {
                         if (setting instanceof AffixSetting) {
                             // Collect all possible concrete settings
                             AffixSetting<?> as = ((AffixSetting<?>)setting);
@@ -1006,13 +1004,13 @@ public class Setting<T> implements ToXContentObject {
 
         /**
          * The settings on which the validity of this setting depends. The values of the specified settings are passed to
-         * {@link #validate(Object, Map)}. By default this returns an empty iterator, indicating that this setting does not depend on any
+         * {@link #validate(Object, Map)}. By default this returns an empty list, indicating that this setting does not depend on any
          * other settings.
          *
          * @return the settings on which the validity of this setting depends.
          */
-        default Iterator<Setting<?>> settings() {
-            return Collections.emptyIterator();
+        default List<Setting<?>> settings() {
+            return List.of();
         }
 
     }

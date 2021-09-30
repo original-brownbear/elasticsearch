@@ -27,7 +27,6 @@ import org.elasticsearch.test.junit.annotations.TestLogging;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -233,9 +232,8 @@ public class SettingTests extends ESTestCase {
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            final List<Setting<?>> settings = List.of(BAZ_QUX_SETTING, QUUX_QUUZ_SETTING);
-            return settings.iterator();
+        public List<Setting<?>> settings() {
+            return List.of(BAZ_QUX_SETTING, QUUX_QUUZ_SETTING);
         }
     }
 
@@ -862,9 +860,8 @@ public class SettingTests extends ESTestCase {
             }
 
             @Override
-            public Iterator<Setting<?>> settings() {
-                List<Setting<?>> a = List.of(affix, fix0);
-                return a.iterator();
+            public List<Setting<?>> settings() {
+                return List.of(affix, fix0);
             }
         });
 

@@ -60,7 +60,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -149,6 +148,8 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
     public static final Setting<Integer> INDEX_ROUTING_PARTITION_SIZE_SETTING =
             Setting.intSetting(SETTING_ROUTING_PARTITION_SIZE, 1, 1, Property.IndexScope);
 
+    private static final List<Setting<?>> NUMBER_ROUTING_SHARDS_VALIDATE_SETTINGS = List.of(INDEX_NUMBER_OF_SHARDS_SETTING);
+
     @SuppressWarnings("Convert2Diamond") // since some IntelliJs mysteriously report an error if an <Integer> is replaced with <> here:
     public static final Setting<Integer> INDEX_NUMBER_OF_ROUTING_SHARDS_SETTING = Setting.intSetting(
         "index.number_of_routing_shards",
@@ -172,9 +173,8 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             }
 
             @Override
-            public Iterator<Setting<?>> settings() {
-                final List<Setting<?>> settings = List.of(INDEX_NUMBER_OF_SHARDS_SETTING);
-                return settings.iterator();
+            public List<Setting<?>> settings() {
+                return NUMBER_ROUTING_SHARDS_VALIDATE_SETTINGS;
             }
 
         },

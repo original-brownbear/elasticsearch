@@ -19,7 +19,6 @@ import org.elasticsearch.test.ESTestCase;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -543,9 +542,8 @@ public class SettingsUpdaterTests extends ESTestCase {
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            final List<Setting<?>> settings = List.of(SETTING_FOO_HIGH);
-            return settings.iterator();
+        public List<Setting<?>> settings() {
+            return List.of(SETTING_FOO_HIGH);
         }
 
     }
@@ -565,9 +563,8 @@ public class SettingsUpdaterTests extends ESTestCase {
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            final List<Setting<?>> settings = List.of(SETTING_FOO_LOW);
-            return settings.iterator();
+        public List<Setting<?>> settings() {
+            return List.of(SETTING_FOO_LOW);
         }
 
     }

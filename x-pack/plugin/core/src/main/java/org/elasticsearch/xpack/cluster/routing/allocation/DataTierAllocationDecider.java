@@ -27,8 +27,6 @@ import org.elasticsearch.snapshots.SearchableSnapshotsSettings;
 import org.elasticsearch.xpack.core.DataTier;
 import org.elasticsearch.xpack.core.searchablesnapshots.SearchableSnapshotsConstants;
 
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -65,7 +63,7 @@ public class DataTierAllocationDecider extends AllocationDecider {
 
     private static class DataTierValidator implements Setting.Validator<String> {
 
-        private static final Collection<Setting<?>> dependencies = List.of(
+        private static final List<Setting<?>> dependencies = List.of(
             IndexModule.INDEX_STORE_TYPE_SETTING,
             SearchableSnapshotsConstants.SNAPSHOT_PARTIAL_SETTING
         );
@@ -100,8 +98,8 @@ public class DataTierAllocationDecider extends AllocationDecider {
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            return dependencies.iterator();
+        public List<Setting<?>> settings() {
+            return dependencies;
         }
     }
 

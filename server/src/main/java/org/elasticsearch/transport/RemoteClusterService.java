@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.elasticsearch.common.settings.Setting.boolSetting;
@@ -405,9 +405,15 @@ public final class RemoteClusterService extends RemoteClusterAware implements Cl
         private final String clusterAlias;
         private final String key;
 
+        private final List<Setting<?>> settingsToValidate;
+
         private RemoteConnectionEnabled(String clusterAlias, String key) {
             this.clusterAlias = clusterAlias;
             this.key = key;
+            this.settingsToValidate = List.copyOf(
+                Stream.concat(Stream.of(RemoteConnectionStrategy.REMOTE_CONNECTION_MODE.getConcreteSettingForNamespace(clusterAlias)),
+                settingsStream()).collect(Collectors.toList())
+            );
         }
 
         @Override
@@ -422,9 +428,8 @@ public final class RemoteClusterService extends RemoteClusterAware implements Cl
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            return Stream.concat(Stream.of(RemoteConnectionStrategy.REMOTE_CONNECTION_MODE.getConcreteSettingForNamespace(clusterAlias)),
-                settingsStream()).iterator();
+        public List<Setting<?>> settings() {
+            return settingsToValidate;
         }
 
         private Stream<Setting<?>> settingsStream() {

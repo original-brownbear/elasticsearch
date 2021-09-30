@@ -76,6 +76,8 @@ public final class Settings implements ToXContentFragment {
     /** The raw settings from the full key to raw string value. */
     private final Map<String, Object> settings;
 
+    private final Map<String, Object> fastSettings;
+
     /** The secure settings storage associated with these settings. */
     private final SecureSettings secureSettings;
 
@@ -90,7 +92,16 @@ public final class Settings implements ToXContentFragment {
 
     private Settings(Map<String, Object> settings, SecureSettings secureSettings) {
         // we use a sorted map for consistent serialization when using getAsMap()
-        this.settings = Collections.unmodifiableSortedMap(new TreeMap<>(settings));
+        final TreeMap<String, Object> tree = new TreeMap<>();
+        final Map<String, Object> hash = new HashMap<>(settings.size());
+        settings.forEach((k, v) -> {
+            if (v != null) {
+                hash.put(k, v);
+            }
+            tree.put(k, v);
+        });
+        this.settings = Collections.unmodifiableSortedMap(tree);
+        this.fastSettings = Map.copyOf(hash);
         this.secureSettings = secureSettings;
     }
 
@@ -224,7 +235,7 @@ public final class Settings implements ToXContentFragment {
      * @return The setting value, {@code null} if it does not exists.
      */
     public String get(String setting) {
-        return toString(settings.get(setting));
+        return toString(fastSettings.get(setting));
     }
 
     /**
@@ -304,7 +315,7 @@ public final class Settings implements ToXContentFragment {
      * Returns <code>true</code> iff the given key has a value in this settings object
      */
     public boolean hasValue(String key) {
-        return settings.get(key) != null;
+        return fastSettings.get(key) != null;
     }
 
     /**
@@ -388,7 +399,7 @@ public final class Settings implements ToXContentFragment {
      */
     public List<String> getAsList(String key, List<String> defaultValue, Boolean commaDelimited) throws SettingsException {
         List<String> result = new ArrayList<>();
-        final Object valueFromPrefix = settings.get(key);
+        final Object valueFromPrefix = fastSettings.get(key);
         if (valueFromPrefix != null) {
             if (valueFromPrefix instanceof List) {
                 @SuppressWarnings("unchecked")

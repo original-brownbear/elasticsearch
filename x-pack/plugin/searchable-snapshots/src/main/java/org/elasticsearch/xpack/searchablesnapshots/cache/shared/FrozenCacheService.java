@@ -42,8 +42,6 @@ import org.elasticsearch.xpack.searchablesnapshots.cache.common.SparseFileTracke
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -115,6 +113,8 @@ public class FrozenCacheService implements Releasable {
         s -> RelativeByteSizeValue.parseRelativeByteSizeValue(s, SHARED_CACHE_SETTINGS_PREFIX + "size"),
         new Setting.Validator<>() {
 
+            private final List<Setting<?>> dependencies = List.of(NodeRoleSettings.NODE_ROLES_SETTING, Environment.PATH_DATA_SETTING);
+
             @Override
             public void validate(final RelativeByteSizeValue value) {
 
@@ -140,9 +140,8 @@ public class FrozenCacheService implements Releasable {
             }
 
             @Override
-            public Iterator<Setting<?>> settings() {
-                final List<Setting<?>> settings = List.of(NodeRoleSettings.NODE_ROLES_SETTING, Environment.PATH_DATA_SETTING);
-                return settings.iterator();
+            public List<Setting<?>> settings() {
+                return dependencies;
             }
 
         },
@@ -160,11 +159,11 @@ public class FrozenCacheService implements Releasable {
         },
         (s) -> ByteSizeValue.parseBytesSizeValue(s, SHARED_CACHE_SETTINGS_PREFIX + "size.max_headroom"),
         new Setting.Validator<>() {
-            private final Collection<Setting<?>> dependencies = List.of(SNAPSHOT_CACHE_SIZE_SETTING);
+            private final List<Setting<?>> dependencies = List.of(SNAPSHOT_CACHE_SIZE_SETTING);
 
             @Override
-            public Iterator<Setting<?>> settings() {
-                return dependencies.iterator();
+            public List<Setting<?>> settings() {
+                return dependencies;
             }
 
             @Override

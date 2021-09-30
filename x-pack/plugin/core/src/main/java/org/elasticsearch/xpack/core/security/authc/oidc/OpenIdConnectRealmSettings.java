@@ -21,7 +21,6 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -185,11 +184,10 @@ public class OpenIdConnectRealmSettings {
             }
 
             @Override
-            public Iterator<Setting<?>> settings() {
+            public List<Setting<?>> settings() {
                 final String namespace = HTTP_PROXY_HOST.getNamespace(HTTP_PROXY_HOST.getConcreteSetting(key));
-                final List<Setting<?>> settings = List.of(HTTP_PROXY_PORT.getConcreteSettingForNamespace(namespace),
+                return List.of(HTTP_PROXY_PORT.getConcreteSettingForNamespace(namespace),
                     HTTP_PROXY_SCHEME.getConcreteSettingForNamespace(namespace));
-                return settings.iterator();
             }
         }, Setting.Property.NodeScope));
     public static final Setting.AffixSetting<Integer> HTTP_PROXY_PORT

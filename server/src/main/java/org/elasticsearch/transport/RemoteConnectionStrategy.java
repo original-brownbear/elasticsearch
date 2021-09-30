@@ -31,7 +31,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -371,6 +370,8 @@ public abstract class RemoteConnectionStrategy implements TransportConnectionLis
         private final String namespace;
         private final Consumer<T> valueChecker;
 
+        private final List<Setting<?>> settingsToValidate;
+
         StrategyValidator(String namespace, String key, ConnectionStrategy expectedStrategy) {
             this(namespace, key, expectedStrategy, (v) -> {});
         }
@@ -380,6 +381,7 @@ public abstract class RemoteConnectionStrategy implements TransportConnectionLis
             this.key = key;
             this.expectedStrategy = expectedStrategy;
             this.valueChecker = valueChecker;
+            this.settingsToValidate = List.of(REMOTE_CONNECTION_MODE.getConcreteSettingForNamespace(namespace));
         }
 
         @Override
@@ -398,10 +400,8 @@ public abstract class RemoteConnectionStrategy implements TransportConnectionLis
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            Setting<ConnectionStrategy> concrete = REMOTE_CONNECTION_MODE.getConcreteSettingForNamespace(namespace);
-            Stream<Setting<?>> settingStream = Stream.of(concrete);
-            return settingStream.iterator();
+        public List<Setting<?>> settings() {
+            return settingsToValidate;
         }
     }
 }

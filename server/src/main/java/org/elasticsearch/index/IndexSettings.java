@@ -27,7 +27,6 @@ import org.elasticsearch.ingest.IngestService;
 import org.elasticsearch.node.Node;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -355,8 +354,8 @@ public final class IndexSettings {
             }
 
             @Override
-            public Iterator<Setting<?>> settings() {
-                return IndexMode.VALIDATE_WITH_SETTINGS.iterator();
+            public List<Setting<?>> settings() {
+                return IndexMode.VALIDATE_WITH_SETTINGS;
             }
         },
         Property.IndexScope,

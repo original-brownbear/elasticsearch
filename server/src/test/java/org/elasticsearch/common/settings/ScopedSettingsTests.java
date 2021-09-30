@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -285,8 +284,8 @@ public class ScopedSettingsTests extends ESTestCase {
             }
 
             @Override
-            public Iterator<Setting<?>> settings() {
-                return List.<Setting<?>>of(baseSetting).iterator();
+            public List<Setting<?>> settings() {
+                return List.of(baseSetting);
             }
         };
         final Setting<String> dependingSetting = Setting.simpleString(prefix + "foo.depending", dependingValidator, scopeProperty);

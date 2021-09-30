@@ -19,7 +19,6 @@ import org.elasticsearch.common.unit.RatioValue;
 import org.elasticsearch.common.unit.RelativeByteSizeValue;
 import org.elasticsearch.core.TimeValue;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -124,11 +123,10 @@ public class DiskThresholdSettings {
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            final List<Setting<?>> settings = List.of(
+        public List<Setting<?>> settings() {
+            return List.of(
                     CLUSTER_ROUTING_ALLOCATION_HIGH_DISK_WATERMARK_SETTING,
                     CLUSTER_ROUTING_ALLOCATION_DISK_FLOOD_STAGE_WATERMARK_SETTING);
-            return settings.iterator();
         }
 
     }
@@ -148,11 +146,11 @@ public class DiskThresholdSettings {
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            final List<Setting<?>> settings = List.of(
+        public List<Setting<?>> settings() {
+            return List.of(
                     CLUSTER_ROUTING_ALLOCATION_LOW_DISK_WATERMARK_SETTING,
-                    CLUSTER_ROUTING_ALLOCATION_DISK_FLOOD_STAGE_WATERMARK_SETTING);
-            return settings.iterator();
+                    CLUSTER_ROUTING_ALLOCATION_DISK_FLOOD_STAGE_WATERMARK_SETTING
+            );
         }
 
     }
@@ -172,11 +170,11 @@ public class DiskThresholdSettings {
         }
 
         @Override
-        public Iterator<Setting<?>> settings() {
-            final List<Setting<?>> settings = List.of(
+        public List<Setting<?>> settings() {
+            return List.of(
                     CLUSTER_ROUTING_ALLOCATION_LOW_DISK_WATERMARK_SETTING,
-                    CLUSTER_ROUTING_ALLOCATION_HIGH_DISK_WATERMARK_SETTING);
-            return settings.iterator();
+                    CLUSTER_ROUTING_ALLOCATION_HIGH_DISK_WATERMARK_SETTING
+            );
         }
 
     }

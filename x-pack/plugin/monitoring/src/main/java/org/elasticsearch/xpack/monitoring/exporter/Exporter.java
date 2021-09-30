@@ -20,7 +20,6 @@ import org.elasticsearch.xpack.monitoring.exporter.http.HttpExporter;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,11 +70,10 @@ public abstract class Exporter implements AutoCloseable {
                 }
 
                 @Override
-                public Iterator<Setting<?>> settings() {
+                public List<Setting<?>> settings() {
                     final String namespace =
                         Exporter.TYPE_SETTING.getNamespace(Exporter.TYPE_SETTING.getConcreteSetting(key));
-                    final List<Setting<?>> settings = List.of(HttpExporter.HOST_SETTING.getConcreteSettingForNamespace(namespace));
-                    return settings.iterator();
+                    return List.of(HttpExporter.HOST_SETTING.getConcreteSettingForNamespace(namespace));
                 }
 
             },
