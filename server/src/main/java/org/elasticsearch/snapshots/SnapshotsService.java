@@ -1049,7 +1049,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
 
     // Assert that there are no snapshots that have a shard that is waiting to be assigned even though the cluster state would allow for it
     // to be assigned
-    private static boolean assertNoDanglingSnapshots(ClusterState state) {
+    public static boolean assertNoDanglingSnapshots(ClusterState state) {
         final SnapshotsInProgress snapshotsInProgress = state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY);
         final SnapshotDeletionsInProgress snapshotDeletionsInProgress = state.custom(
             SnapshotDeletionsInProgress.TYPE,
@@ -1227,22 +1227,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             updatedSnapshotEntries.add(snapshot);
                         }
                     }
-                    final ClusterState res = readyDeletions(
-                        changed
-                            ? ClusterState.builder(currentState)
-                                .putCustom(SnapshotsInProgress.TYPE, SnapshotsInProgress.of(updatedSnapshotEntries))
-                                .build()
-                            : currentState
-                    ).v1();
-                    for (SnapshotDeletionsInProgress.Entry delete : res.custom(
-                        SnapshotDeletionsInProgress.TYPE,
-                        SnapshotDeletionsInProgress.EMPTY
-                    ).getEntries()) {
-                        if (delete.state() == SnapshotDeletionsInProgress.State.STARTED) {
-                            deletionsToExecute.add(delete);
-                        }
-                    }
-                    return res;
+
+                    return changed ? readyDeletions(
+                            ClusterState.builder(currentState)
+                                .putCustom(SnapshotsInProgress.TYPE, SnapshotsInProgress.of(updatedSnapshotEntries)).build()).v1()
+                            : currentState;
                 }
 
                 @Override
@@ -1282,9 +1271,12 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     }
                     startExecutableClones(newState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY), null);
                     // run newly ready deletes
-                    for (SnapshotDeletionsInProgress.Entry entry : deletionsToExecute) {
-                        if (tryEnterRepoLoop(entry.repository())) {
-                            deleteSnapshotsFromRepository(entry, newState.nodes().getMinNodeVersion());
+                    for (SnapshotDeletionsInProgress.Entry delete : newState.custom(
+                            SnapshotDeletionsInProgress.TYPE,
+                            SnapshotDeletionsInProgress.EMPTY
+                    ).getEntries()) {
+                        if (delete.state() == SnapshotDeletionsInProgress.State.STARTED) {
+                            deleteSnapshotsFromRepository(delete, newState.nodes().getMinNodeVersion());
                         }
                     }
                 }
@@ -1917,7 +1909,13 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             }
             result = ClusterState.builder(state).putCustom(SnapshotsInProgress.TYPE, SnapshotsInProgress.of(entries)).build();
         }
-        return readyDeletions(result).v1();
+        final ClusterState resultWithDeletes = readyDeletions(result).v1();
+        try {
+            assert SnapshotsService.assertNoDanglingSnapshots(resultWithDeletes);
+        } catch (AssertionError e) {
+            throw e;
+        }
+        return resultWithDeletes;
     }
 
     private static void addSnapshotEntry(
