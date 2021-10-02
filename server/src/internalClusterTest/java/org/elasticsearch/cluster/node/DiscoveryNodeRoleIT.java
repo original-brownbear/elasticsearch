@@ -94,7 +94,7 @@ public class DiscoveryNodeRoleIT extends ESIntegTestCase {
         final NodesInfoResponse response = client().admin().cluster().prepareNodesInfo(name).get();
         assertThat(response.getNodes(), hasSize(1));
         final Matcher<Iterable<? super DiscoveryNodeRole>> matcher;
-        if (DiscoveryNode.hasRole(settings, AdditionalRolePlugin.ADDITIONAL_ROLE)) {
+        if (DiscoveryNodeRole.hasRole(settings, AdditionalRolePlugin.ADDITIONAL_ROLE)) {
             matcher = hasItem(AdditionalRolePlugin.ADDITIONAL_ROLE);
         } else {
             matcher = not(hasItem(AdditionalRolePlugin.ADDITIONAL_ROLE));

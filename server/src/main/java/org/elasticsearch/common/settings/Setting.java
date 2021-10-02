@@ -173,7 +173,7 @@ public class Setting<T> implements ToXContentObject {
             checkPropertyRequiresIndexScope(propertiesAsSet, Property.NotCopyableOnResize);
             checkPropertyRequiresIndexScope(propertiesAsSet, Property.InternalIndex);
             checkPropertyRequiresIndexScope(propertiesAsSet, Property.PrivateIndex);
-            checkPropertyRequiresNodeScope(propertiesAsSet, Property.Consistent);
+            checkPropertyRequiresNodeScope(propertiesAsSet);
             this.properties = propertiesAsSet;
         }
     }
@@ -184,9 +184,9 @@ public class Setting<T> implements ToXContentObject {
         }
     }
 
-    private void checkPropertyRequiresNodeScope(final EnumSet<Property> properties, final Property property) {
-        if (properties.contains(property) && properties.contains(Property.NodeScope) == false) {
-            throw new IllegalArgumentException("non-node-scoped setting [" + key + "] can not have property [" + property + "]");
+    private void checkPropertyRequiresNodeScope(final EnumSet<Property> properties) {
+        if (properties.contains(Property.Consistent) && properties.contains(Property.NodeScope) == false) {
+            throw new IllegalArgumentException("non-node-scoped setting [" + key + "] can not have property [" + Property.Consistent + "]");
         }
     }
 
@@ -796,7 +796,7 @@ public class Setting<T> implements ToXContentObject {
          * @return the raw list of dependencies for this setting
          */
         public Set<AffixSettingDependency> getDependencies() {
-            return Collections.unmodifiableSet(dependencies);
+            return dependencies;
         }
 
         @Override
@@ -816,7 +816,7 @@ public class Setting<T> implements ToXContentObject {
                             @Override
                             public void validate(final String key, final Object value, final Object dependency) {
                                 s.validate(key, value, dependency);
-                            };
+                            }
                         })
                     .collect(Collectors.toSet());
             }
@@ -1179,19 +1179,20 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<Version> versionSetting(final String key, final Version defaultValue, Property... properties) {
-        return new Setting<>(key, s -> Integer.toString(defaultValue.id), s -> Version.fromId(Integer.parseInt(s)), properties);
+        return new Setting<>(key, Integer.toString(defaultValue.id), s -> Version.fromId(Integer.parseInt(s)), properties);
     }
 
     public static Setting<Float> floatSetting(String key, float defaultValue, Property... properties) {
-        return new Setting<>(key, (s) -> Float.toString(defaultValue), Float::parseFloat, properties);
+        return new Setting<>(key, Float.toString(defaultValue), Float::parseFloat, properties);
     }
 
     public static Setting<Float> floatSetting(String key, float defaultValue, float minValue, Property... properties) {
-        return new Setting<>(key, (s) -> Float.toString(defaultValue), (s) -> {
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Float.toString(defaultValue), (s) -> {
             float value = Float.parseFloat(s);
             if (value < minValue) {
                 String err = "Failed to parse value" +
-                    (isFiltered(properties) ? "" : " [" + s + "]") + " for setting [" + key + "] must be >= " + minValue;
+                    (isFiltered ? "" : " [" + s + "]") + " for setting [" + key + "] must be >= " + minValue;
                 throw new IllegalArgumentException(err);
             }
             return value;
@@ -1203,43 +1204,47 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<Integer> intSetting(String key, int defaultValue, int minValue, int maxValue, Property... properties) {
-        return new Setting<>(key, (s) -> Integer.toString(defaultValue),
-            (s) -> parseInt(s, minValue, maxValue, key, isFiltered(properties)), properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Integer.toString(defaultValue), (s) -> parseInt(s, minValue, maxValue, key, isFiltered), properties);
     }
 
     public static Setting<Integer> intSetting(String key, int defaultValue, int minValue, Property... properties) {
-        return new Setting<>(key, (s) -> Integer.toString(defaultValue), (s) -> parseInt(s, minValue, key, isFiltered(properties)),
-            properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Integer.toString(defaultValue), (s) -> parseInt(s, minValue, key, isFiltered), properties);
     }
 
     public static Setting<Integer> intSetting(String key, int defaultValue, int minValue, Validator<Integer> validator,
                                               Property... properties) {
-        return new Setting<>(key, Integer.toString(defaultValue), (s) -> parseInt(s, minValue, key, isFiltered(properties)), validator,
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Integer.toString(defaultValue), (s) -> parseInt(s, minValue, key, isFiltered), validator,
             properties);
     }
 
     public static Setting<Integer> intSetting(String key, Setting<Integer> fallbackSetting, int minValue, Property... properties) {
-        return new Setting<>(key, fallbackSetting, (s) -> parseInt(s, minValue, key, isFiltered(properties)), properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, fallbackSetting, (s) -> parseInt(s, minValue, key, isFiltered), properties);
     }
 
     public static Setting<Integer> intSetting(String key, Setting<Integer> fallbackSetting, int minValue, int maxValue,
                                               Property... properties) {
-        return new Setting<>(key, fallbackSetting, (s) -> parseInt(s, minValue, maxValue, key, isFiltered(properties)), properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, fallbackSetting, (s) -> parseInt(s, minValue, maxValue, key, isFiltered), properties);
     }
 
     public static Setting<Integer> intSetting(String key, Setting<Integer> fallbackSetting, int minValue, Validator<Integer> validator,
                                               Property... properties) {
+        final boolean isFiltered = isFiltered(properties);
         return new Setting<>(new SimpleKey(key), fallbackSetting, fallbackSetting::getRaw,
-            (s) -> parseInt(s, minValue, key, isFiltered(properties)),validator, properties);
+            (s) -> parseInt(s, minValue, key, isFiltered),validator, properties);
     }
 
     public static Setting<Long> longSetting(String key, long defaultValue, long minValue, Property... properties) {
-        return new Setting<>(key, (s) -> Long.toString(defaultValue), (s) -> parseLong(s, minValue, key, isFiltered(properties)),
-            properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Long.toString(defaultValue), (s) -> parseLong(s, minValue, key, isFiltered), properties);
     }
 
     public static Setting<String> simpleString(String key, Property... properties) {
-        return new Setting<>(key, s -> "", Function.identity(), properties);
+        return new Setting<>(key, "", Function.identity(), properties);
     }
 
     public static Setting<String> simpleString(String key, Validator<String> validator, Property... properties) {
@@ -1276,7 +1281,7 @@ public class Setting<T> implements ToXContentObject {
      * @return the Setting Object
      */
     public static Setting<String> simpleString(String key, String defaultValue, Property... properties) {
-        return new Setting<>(key, s -> defaultValue, Function.identity(), properties);
+        return new Setting<>(key, defaultValue, Function.identity(), properties);
     }
 
     public static int parseInt(String s, int minValue, String key) {
@@ -1330,25 +1335,30 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<Boolean> boolSetting(String key, boolean defaultValue, Property... properties) {
-        return new Setting<>(key, (s) -> Boolean.toString(defaultValue), b -> parseBoolean(b, key, isFiltered(properties)), properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Boolean.toString(defaultValue), b -> parseBoolean(b, key, isFiltered), properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, Setting<Boolean> fallbackSetting, Property... properties) {
-        return new Setting<>(key, fallbackSetting, b -> parseBoolean(b, key, isFiltered(properties)), properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, fallbackSetting, b -> parseBoolean(b, key, isFiltered), properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, Setting<Boolean> fallbackSetting, Validator<Boolean> validator,
                                                Property... properties) {
+        final boolean isFiltered = isFiltered(properties);
         return new Setting<>(new SimpleKey(key), fallbackSetting, fallbackSetting::getRaw, b -> parseBoolean(b, key,
-            isFiltered(properties)), validator, properties);
+            isFiltered), validator, properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, boolean defaultValue, Validator<Boolean> validator, Property... properties) {
-        return new Setting<>(key, Boolean.toString(defaultValue), b -> parseBoolean(b, key, isFiltered(properties)), validator, properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Boolean.toString(defaultValue), b -> parseBoolean(b, key, isFiltered), validator, properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, Function<Settings, String> defaultValueFn, Property... properties) {
-        return new Setting<>(key, defaultValueFn, b -> parseBoolean(b, key, isFiltered(properties)), properties);
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, defaultValueFn, b -> parseBoolean(b, key, isFiltered), properties);
     }
 
     static boolean parseBoolean(String b, String key, boolean isFiltered) {
@@ -1364,7 +1374,8 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<ByteSizeValue> byteSizeSetting(String key, ByteSizeValue value, Property... properties) {
-        return byteSizeSetting(key, (s) -> value.toString(), properties);
+        final String defaultValue = value.toString();
+        return byteSizeSetting(key, s -> defaultValue, properties);
     }
 
     public static Setting<ByteSizeValue> byteSizeSetting(String key, Setting<ByteSizeValue> fallbackSetting,
@@ -1503,7 +1514,7 @@ public class Setting<T> implements ToXContentObject {
      * @return the setting object
      */
     public static Setting<ByteSizeValue> memorySizeSetting(String key, String defaultPercentage, Property... properties) {
-        return new Setting<>(key, (s) -> defaultPercentage, (s) -> MemorySizeValue.parseBytesSizeValueOrHeapRatio(s, key), properties);
+        return new Setting<>(key, defaultPercentage, (s) -> MemorySizeValue.parseBytesSizeValueOrHeapRatio(s, key), properties);
     }
 
     public static <T> Setting<List<T>> listSetting(
@@ -1756,7 +1767,8 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<TimeValue> timeSetting(String key, TimeValue defaultValue, Property... properties) {
-        return new Setting<>(key, (s) -> defaultValue.getStringRep(), (s) -> TimeValue.parseTimeValue(s, key), properties);
+
+        return new Setting<>(key, defaultValue.getStringRep(), (s) -> TimeValue.parseTimeValue(s, key), properties);
     }
 
     public static Setting<TimeValue> timeSetting(String key, Setting<TimeValue> fallbackSetting, Property... properties) {
@@ -1786,15 +1798,16 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<Double> doubleSetting(String key, double defaultValue, double minValue, double maxValue, Property... properties) {
-        return new Setting<>(key, (s) -> Double.toString(defaultValue), (s) -> {
+        final boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Double.toString(defaultValue), (s) -> {
             final double d = Double.parseDouble(s);
             if (d < minValue) {
-                String err = "Failed to parse value" + (isFiltered(properties) ? "" : " [" + s + "]") + " for setting [" + key +
+                String err = "Failed to parse value" + (isFiltered ? "" : " [" + s + "]") + " for setting [" + key +
                     "] must be >= " + minValue;
                 throw new IllegalArgumentException(err);
             }
             if (d > maxValue) {
-                String err = "Failed to parse value" + (isFiltered(properties) ? "" : " [" + s + "]") + " for setting [" + key +
+                String err = "Failed to parse value" + (isFiltered ? "" : " [" + s + "]") + " for setting [" + key +
                     "] must be <= " + maxValue;
                 throw new IllegalArgumentException(err);
             }

@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.autoscaling;
 
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
@@ -84,7 +83,7 @@ public abstract class AbstractFrozenAutoscalingIntegTestCase extends AbstractSna
         Settings.Builder builder = Settings.builder()
             .put(super.nodeSettings(nodeOrdinal, otherSettings))
             .put(SELF_GENERATED_LICENSE_TYPE.getKey(), "trial");
-        if (DiscoveryNode.hasRole(otherSettings, DiscoveryNodeRole.DATA_FROZEN_NODE_ROLE)) {
+        if (DiscoveryNodeRole.hasRole(otherSettings, DiscoveryNodeRole.DATA_FROZEN_NODE_ROLE)) {
             builder.put(FrozenCacheService.SNAPSHOT_CACHE_SIZE_SETTING.getKey(), new ByteSizeValue(10, ByteSizeUnit.MB));
         }
         return builder.build();

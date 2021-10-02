@@ -52,7 +52,7 @@ public class SamlRealmSettings {
 
     public static final Setting.AffixSetting<String> NAMEID_FORMAT = Setting.affixKeySetting(
             RealmSettings.realmSettingPrefix(TYPE), "nameid_format",
-            key -> new Setting<>(key, s -> TRANSIENT_NAMEID_FORMAT, Function.identity(), Setting.Property.NodeScope));
+            key -> new Setting<>(key, TRANSIENT_NAMEID_FORMAT, Function.identity(), Setting.Property.NodeScope));
 
     public static final Setting.AffixSetting<Boolean> NAMEID_ALLOW_CREATE = Setting.affixKeySetting(
             RealmSettings.realmSettingPrefix(TYPE), "nameid.allow_create",

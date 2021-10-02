@@ -69,7 +69,6 @@ import org.elasticsearch.common.util.concurrent.FutureUtils;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.discovery.zen.ElectMasterService;
@@ -777,13 +776,13 @@ public final class InternalTestCluster extends TestCluster {
         String suffix = "";
         // only add the suffixes if roles are explicitly defined
         if (settings.hasValue("nodes.roles")) {
-            if (DiscoveryNode.hasRole(settings, DiscoveryNodeRole.MASTER_ROLE)) {
+            if (DiscoveryNodeRole.hasRole(settings, DiscoveryNodeRole.MASTER_ROLE)) {
                 suffix = suffix + DiscoveryNodeRole.MASTER_ROLE.roleNameAbbreviation();
             }
             if (DiscoveryNode.canContainData(settings)) {
                 suffix = suffix + DiscoveryNodeRole.DATA_ROLE.roleNameAbbreviation();
             }
-            if (DiscoveryNode.hasRole(settings, DiscoveryNodeRole.MASTER_ROLE) == false
+            if (DiscoveryNodeRole.hasRole(settings, DiscoveryNodeRole.MASTER_ROLE) == false
                 && DiscoveryNode.canContainData(settings) == false) {
                 suffix = suffix + "c";
             }

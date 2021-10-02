@@ -52,23 +52,8 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
         return localStorageEnable;
     }
 
-    public static boolean hasRole(final Settings settings, final DiscoveryNodeRole role) {
-        /*
-         * This method can be called before the o.e.n.NodeRoleSettings.NODE_ROLES_SETTING is initialized. We do not want to trigger
-         * initialization prematurely because that will bake the default roles before plugins have had a chance to register them. Therefore,
-         * to avoid initializing this setting prematurely, we avoid using the actual node roles setting instance here.
-         */
-        if (settings.hasValue("node.roles")) {
-            return settings.getAsList("node.roles").contains(role.roleName());
-        } else if (role.legacySetting() != null && settings.hasValue(role.legacySetting().getKey())) {
-            return role.legacySetting().get(settings);
-        } else {
-            return role.isEnabledByDefault(settings);
-        }
-    }
-
     public static boolean isMasterNode(Settings settings) {
-        return hasRole(settings, DiscoveryNodeRole.MASTER_ROLE);
+        return DiscoveryNodeRole.hasRole(settings, DiscoveryNodeRole.MASTER_ROLE);
     }
 
     /**
@@ -81,7 +66,7 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
      * @return true if the given settings are indicative of having the top-level data role, otherwise false
      */
     public static boolean hasDataRole(final Settings settings) {
-        return hasRole(settings, DiscoveryNodeRole.DATA_ROLE);
+        return DiscoveryNodeRole.hasRole(settings, DiscoveryNodeRole.DATA_ROLE);
     }
 
     /**
@@ -97,11 +82,11 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
     }
 
     public static boolean isIngestNode(final Settings settings) {
-        return hasRole(settings, DiscoveryNodeRole.INGEST_ROLE);
+        return DiscoveryNodeRole.hasRole(settings, DiscoveryNodeRole.INGEST_ROLE);
     }
 
     public static boolean isRemoteClusterClient(final Settings settings) {
-        return hasRole(settings, DiscoveryNodeRole.REMOTE_CLUSTER_CLIENT_ROLE);
+        return DiscoveryNodeRole.hasRole(settings, DiscoveryNodeRole.REMOTE_CLUSTER_CLIENT_ROLE);
     }
 
     private static boolean isDedicatedFrozenRoles(Set<DiscoveryNodeRole> roles) {

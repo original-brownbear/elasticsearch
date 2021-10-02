@@ -47,7 +47,7 @@ public final class AutoQueueAdjustingExecutorBuilder extends ExecutorBuilder<Aut
         this.sizeSetting =
                 new Setting<>(
                         sizeKey,
-                        s -> Integer.toString(size),
+                        Integer.toString(size),
                         s -> Setting.parseInt(s, 1, applyHardSizeLimit(settings, name), sizeKey),
                         Setting.Property.NodeScope);
         final String queueSizeKey = settingsKey(prefix, "queue_size");

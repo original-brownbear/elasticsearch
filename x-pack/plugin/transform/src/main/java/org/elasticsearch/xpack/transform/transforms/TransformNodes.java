@@ -12,6 +12,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -187,7 +188,7 @@ public final class TransformNodes {
         Writeable.Reader<Response> reader,
         ActionListener<Response> listener
     ) {
-        final boolean isTransformNode = DiscoveryNode.hasRole(nodeSettings, Transform.TRANSFORM_ROLE);
+        final boolean isTransformNode = DiscoveryNodeRole.hasRole(nodeSettings, Transform.TRANSFORM_ROLE);
         final boolean isRemoteClusterClientNode = DiscoveryNode.isRemoteClusterClient(nodeSettings);
         final DiscoveryNodes nodes = clusterState.nodes();
 

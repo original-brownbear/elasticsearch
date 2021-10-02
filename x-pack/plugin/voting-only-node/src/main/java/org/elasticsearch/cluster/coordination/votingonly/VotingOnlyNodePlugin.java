@@ -91,7 +91,7 @@ public class VotingOnlyNodePlugin extends Plugin implements DiscoveryPlugin, Net
     public VotingOnlyNodePlugin(Settings settings) {
         this.settings = settings;
         threadPool = new SetOnce<>();
-        isVotingOnlyNode = DiscoveryNode.hasRole(settings, VOTING_ONLY_NODE_ROLE);
+        isVotingOnlyNode = DiscoveryNodeRole.hasRole(settings, VOTING_ONLY_NODE_ROLE);
         this.transportClientMode = XPackPlugin.transportClientMode(settings);
     }
 

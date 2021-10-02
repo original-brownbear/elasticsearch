@@ -102,7 +102,7 @@ public final class FixedExecutorBuilder extends ExecutorBuilder<FixedExecutorBui
         this.sizeSetting =
             new Setting<>(
                 sizeKey,
-                s -> Integer.toString(size),
+                Integer.toString(size),
                 s -> Setting.parseInt(s, 1, applyHardSizeLimit(settings, name), sizeKey),
                 properties);
         final String queueSizeKey = settingsKey(prefix, "queue_size");
