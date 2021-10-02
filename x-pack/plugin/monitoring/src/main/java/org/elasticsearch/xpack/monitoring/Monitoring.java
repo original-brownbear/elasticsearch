@@ -70,11 +70,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.elasticsearch.common.settings.Setting.boolSetting;
-
 public class Monitoring extends Plugin implements ActionPlugin, ReloadablePlugin {
 
-    public static final Setting<Boolean> MIGRATION_DECOMMISSION_ALERTS = boolSetting("xpack.monitoring.migration.decommission_alerts",
+    public static final Setting<Boolean> MIGRATION_DECOMMISSION_ALERTS = Setting.boolSetting("xpack.monitoring.migration.decommission_alerts",
         false, Setting.Property.Dynamic, Setting.Property.NodeScope);
 
     protected final Settings settings;

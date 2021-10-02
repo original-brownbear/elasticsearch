@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import static org.elasticsearch.common.settings.Setting.boolSetting;
 import static org.elasticsearch.xpack.monitoring.collector.TimeoutUtils.ensureNoTimeouts;
 
 /**
@@ -43,7 +42,7 @@ public class IndexRecoveryCollector extends Collector {
      * Flag to indicate if only active recoveries should be collected (default to false: all recoveries are collected)
      */
     public static final Setting<Boolean> INDEX_RECOVERY_ACTIVE_ONLY =
-            boolSetting(collectionSetting("index.recovery.active_only"), false, Setting.Property.Dynamic, Setting.Property.NodeScope);
+            Setting.boolSetting(collectionSetting("index.recovery.active_only"), false, Setting.Property.Dynamic, Setting.Property.NodeScope);
 
     private final Client client;
 

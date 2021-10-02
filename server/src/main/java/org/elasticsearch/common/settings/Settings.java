@@ -534,6 +534,12 @@ public final class Settings implements ToXContentFragment {
                 @SuppressWarnings("unchecked")
                 List<String> stringList = (List<String>) value;
                 builder.putList(key, stringList);
+            } else if (value instanceof Boolean) {
+                builder.put(key, (Boolean) value);
+            } else if (value instanceof Integer) {
+                builder.put(key, (Integer) value);
+            } else if (value instanceof Long) {
+                builder.put(key, (Long) value);
             } else {
                 builder.put(key, value.toString());
             }
@@ -636,18 +642,24 @@ public final class Settings implements ToXContentFragment {
                 String key = keyBuilder.toString();
                 validateValue(key, null, parser, allowNullValues);
                 builder.putNull(key);
-            } else if (parser.currentToken() == XContentParser.Token.VALUE_STRING
-                || parser.currentToken() == XContentParser.Token.VALUE_NUMBER) {
+            } else if (parser.currentToken() == XContentParser.Token.VALUE_STRING) {
                 String key = keyBuilder.toString();
                 String value = parser.text();
                 validateValue(key, value, parser, allowNullValues);
                 builder.put(key, value);
-            } else if (parser.currentToken() == XContentParser.Token.VALUE_BOOLEAN) {
+            } else if (parser.currentToken() == XContentParser.Token.VALUE_NUMBER) {
                 String key = keyBuilder.toString();
-                validateValue(key, parser.text(), parser, allowNullValues);
-                builder.put(key, parser.booleanValue());
+                Number value = parser.numberValue();
+                validateValue(key, value, parser, allowNullValues);
+                builder.put(key, value);
             } else {
-                XContentParserUtils.throwUnknownToken(parser.currentToken(), parser.getTokenLocation());
+                if (parser.currentToken() == XContentParser.Token.VALUE_BOOLEAN) {
+                    String key = keyBuilder.toString();
+                    validateValue(key, parser.text(), parser, allowNullValues);
+                    builder.put(key, parser.booleanValue());
+                } else {
+                    XContentParserUtils.throwUnknownToken(parser.currentToken(), parser.getTokenLocation());
+                }
             }
         }
     }
@@ -772,7 +784,8 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(final String key, final TimeValue timeValue) {
-            return put(key, timeValue.getStringRep());
+            map.put(key, timeValue);
+            return this;
         }
 
         /**
@@ -783,7 +796,8 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(final String key, final ByteSizeValue byteSizeValue) {
-            return put(key, byteSizeValue.getStringRep());
+            map.put(key, byteSizeValue);
+            return this;
         }
 
         /**
@@ -866,7 +880,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, boolean value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 
@@ -878,7 +892,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, int value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 
@@ -895,7 +909,12 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, long value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
+            return this;
+        }
+
+        public Builder put(String setting, Number value) {
+            map.put(setting, value);
             return this;
         }
 
@@ -907,7 +926,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, float value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 
@@ -919,7 +938,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, double value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 

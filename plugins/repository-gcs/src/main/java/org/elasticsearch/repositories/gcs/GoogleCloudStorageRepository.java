@@ -28,7 +28,6 @@ import java.util.function.Function;
 
 import static org.elasticsearch.common.settings.Setting.Property;
 import static org.elasticsearch.common.settings.Setting.byteSizeSetting;
-import static org.elasticsearch.common.settings.Setting.simpleString;
 
 class GoogleCloudStorageRepository extends MeteredBlobStoreRepository {
     private static final Logger logger = LogManager.getLogger(GoogleCloudStorageRepository.class);
@@ -45,9 +44,9 @@ class GoogleCloudStorageRepository extends MeteredBlobStoreRepository {
     static final String TYPE = "gcs";
 
     static final Setting<String> BUCKET =
-            simpleString("bucket", Property.NodeScope, Property.Dynamic);
+            Setting.simpleString("bucket", Property.NodeScope, Property.Dynamic);
     static final Setting<String> BASE_PATH =
-            simpleString("base_path", Property.NodeScope, Property.Dynamic);
+            Setting.simpleString("base_path", Property.NodeScope, Property.Dynamic);
     static final Setting<ByteSizeValue> CHUNK_SIZE =
             byteSizeSetting("chunk_size", MAX_CHUNK_SIZE, MIN_CHUNK_SIZE, MAX_CHUNK_SIZE, Property.NodeScope, Property.Dynamic);
     static final Setting<String> CLIENT_NAME = new Setting<>("client", "default", Function.identity());

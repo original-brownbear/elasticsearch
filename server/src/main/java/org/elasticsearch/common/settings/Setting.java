@@ -172,7 +172,7 @@ public class Setting<T> implements ToXContentObject {
             checkPropertyRequiresIndexScope(propertiesAsSet, Property.NotCopyableOnResize);
             checkPropertyRequiresIndexScope(propertiesAsSet, Property.InternalIndex);
             checkPropertyRequiresIndexScope(propertiesAsSet, Property.PrivateIndex);
-            checkPropertyRequiresNodeScope(propertiesAsSet, Property.Consistent);
+            checkPropertyRequiresNodeScope(propertiesAsSet);
             this.properties = propertiesAsSet;
         }
     }
@@ -183,9 +183,9 @@ public class Setting<T> implements ToXContentObject {
         }
     }
 
-    private void checkPropertyRequiresNodeScope(final EnumSet<Property> properties, final Property property) {
-        if (properties.contains(property) && properties.contains(Property.NodeScope) == false) {
-            throw new IllegalArgumentException("non-node-scoped setting [" + key + "] can not have property [" + property + "]");
+    private void checkPropertyRequiresNodeScope(final EnumSet<Property> properties) {
+        if (properties.contains(Property.Consistent) && properties.contains(Property.NodeScope) == false) {
+            throw new IllegalArgumentException("non-node-scoped setting [" + key + "] can not have property [" + Property.Consistent + "]");
         }
     }
 
@@ -1281,15 +1281,7 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<String> simpleString(String key, Setting<String> fallback, Property... properties) {
-        return simpleString(key, fallback, Function.identity(), properties);
-    }
-
-    public static Setting<String> simpleString(
-            final String key,
-            final Setting<String> fallback,
-            final Function<String, String> parser,
-            final Property... properties) {
-        return new Setting<>(key, fallback, parser, properties);
+        return new Setting<>(key, fallback, Function.identity(), properties);
     }
 
     /**
@@ -1336,12 +1328,6 @@ public class Setting<T> implements ToXContentObject {
 
     public static Setting<Boolean> boolSetting(String key, Setting<Boolean> fallbackSetting, Property... properties) {
         return new Setting<>(key, fallbackSetting, booleanParser(key, isFiltered(properties)), properties);
-    }
-
-    public static Setting<Boolean> boolSetting(String key, Setting<Boolean> fallbackSetting, Validator<Boolean> validator,
-                                               Property... properties) {
-        return new Setting<>(new SimpleKey(key), fallbackSetting, fallbackSetting::getRaw, booleanParser(key, isFiltered(properties)),
-            validator, properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, boolean defaultValue, Validator<Boolean> validator, Property... properties) {
@@ -1527,23 +1513,6 @@ public class Setting<T> implements ToXContentObject {
             final Function<String, T> singleValueParser,
             final Property... properties) {
         return listSetting(key, fallbackSetting, singleValueParser, (s) -> parseableStringToList(fallbackSetting.getRaw(s)), properties);
-    }
-
-    public static <T> Setting<List<T>> listSetting(
-            final String key,
-            final Function<String, T> singleValueParser,
-            final Function<Settings, List<String>> defaultStringValue,
-            final Property... properties) {
-        return listSetting(key, null, singleValueParser, defaultStringValue, properties);
-    }
-
-    public static <T> Setting<List<T>> listSetting(
-        final String key,
-        final Function<String, T> singleValueParser,
-        final Function<Settings, List<String>> defaultStringValue,
-        final Validator<List<T>> validator,
-        final Property... properties) {
-        return listSetting(key, null, singleValueParser, defaultStringValue, validator, properties);
     }
 
     public static <T> Setting<List<T>> listSetting(
@@ -1770,14 +1739,6 @@ public class Setting<T> implements ToXContentObject {
 
     public static Setting<TimeValue> positiveTimeSetting(String key, TimeValue defaultValue, Property... properties) {
         return timeSetting(key, defaultValue, TimeValue.timeValueMillis(0), properties);
-    }
-
-    public static Setting<TimeValue> positiveTimeSetting(
-            final String key,
-            final Setting<TimeValue> fallbackSetting,
-            final TimeValue minValue,
-            final Property... properties) {
-        return timeSetting(key, fallbackSetting, minValue, properties);
     }
 
     public static Setting<Double> doubleSetting(String key, double defaultValue, double minValue, Property... properties) {

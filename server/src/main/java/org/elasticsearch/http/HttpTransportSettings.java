@@ -21,9 +21,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
-import static org.elasticsearch.common.settings.Setting.boolSetting;
 import static org.elasticsearch.common.settings.Setting.intSetting;
-import static org.elasticsearch.common.settings.Setting.listSetting;
 
 public final class HttpTransportSettings {
 
@@ -48,11 +46,11 @@ public final class HttpTransportSettings {
     public static final Setting<Integer> SETTING_HTTP_COMPRESSION_LEVEL =
         intSetting("http.compression_level", 3, Property.NodeScope);
     public static final Setting<List<String>> SETTING_HTTP_HOST =
-        listSetting("http.host", emptyList(), Function.identity(), Property.NodeScope);
+        Setting.listSetting("http.host", emptyList(), Function.identity(), Property.NodeScope);
     public static final Setting<List<String>> SETTING_HTTP_PUBLISH_HOST =
-        listSetting("http.publish_host", SETTING_HTTP_HOST, Function.identity(), Property.NodeScope);
+        Setting.listSetting("http.publish_host", SETTING_HTTP_HOST, Function.identity(), Property.NodeScope);
     public static final Setting<List<String>> SETTING_HTTP_BIND_HOST =
-        listSetting("http.bind_host", SETTING_HTTP_HOST, Function.identity(), Property.NodeScope);
+        Setting.listSetting("http.bind_host", SETTING_HTTP_HOST, Function.identity(), Property.NodeScope);
 
     public static final Setting<PortsRange> SETTING_HTTP_PORT =
         new Setting<>("http.port", "9200-9300", PortsRange::new, Property.NodeScope);
@@ -89,9 +87,9 @@ public final class HttpTransportSettings {
     // Tcp socket settings
 
     public static final Setting<Boolean> SETTING_HTTP_TCP_NO_DELAY =
-        boolSetting("http.tcp.no_delay", NetworkService.TCP_NO_DELAY, Setting.Property.NodeScope);
+        Setting.boolSetting("http.tcp.no_delay", NetworkService.TCP_NO_DELAY, Setting.Property.NodeScope);
     public static final Setting<Boolean> SETTING_HTTP_TCP_KEEP_ALIVE =
-        boolSetting("http.tcp.keep_alive", NetworkService.TCP_KEEP_ALIVE, Setting.Property.NodeScope);
+        Setting.boolSetting("http.tcp.keep_alive", NetworkService.TCP_KEEP_ALIVE, Setting.Property.NodeScope);
     public static final Setting<Integer> SETTING_HTTP_TCP_KEEP_IDLE =
         intSetting("http.tcp.keep_idle", NetworkService.TCP_KEEP_IDLE, -1, 300, Setting.Property.NodeScope);
     public static final Setting<Integer> SETTING_HTTP_TCP_KEEP_INTERVAL =
@@ -99,7 +97,7 @@ public final class HttpTransportSettings {
     public static final Setting<Integer> SETTING_HTTP_TCP_KEEP_COUNT =
         intSetting("http.tcp.keep_count", NetworkService.TCP_KEEP_COUNT, -1, Setting.Property.NodeScope);
     public static final Setting<Boolean> SETTING_HTTP_TCP_REUSE_ADDRESS =
-        boolSetting("http.tcp.reuse_address", NetworkService.TCP_REUSE_ADDRESS, Setting.Property.NodeScope);
+        Setting.boolSetting("http.tcp.reuse_address", NetworkService.TCP_REUSE_ADDRESS, Setting.Property.NodeScope);
     public static final Setting<ByteSizeValue> SETTING_HTTP_TCP_SEND_BUFFER_SIZE =
         Setting.byteSizeSetting("http.tcp.send_buffer_size", NetworkService.TCP_SEND_BUFFER_SIZE, Setting.Property.NodeScope);
     public static final Setting<ByteSizeValue> SETTING_HTTP_TCP_RECEIVE_BUFFER_SIZE =
@@ -113,7 +111,7 @@ public final class HttpTransportSettings {
             Collections.emptyList(), Function.identity(), Setting.Property.Dynamic, Setting.Property.NodeScope);
 
     public static final Setting<Boolean> SETTING_HTTP_CLIENT_STATS_ENABLED =
-        boolSetting("http.client_stats.enabled", true, Property.Dynamic, Property.NodeScope);
+        Setting.boolSetting("http.client_stats.enabled", true, Property.Dynamic, Property.NodeScope);
     public static final Setting<Integer> SETTING_HTTP_CLIENT_STATS_MAX_CLOSED_CHANNEL_COUNT =
         intSetting("http.client_stats.closed_channels.max_count", 10000, Property.NodeScope);
     public static final Setting<TimeValue> SETTING_HTTP_CLIENT_STATS_MAX_CLOSED_CHANNEL_AGE =

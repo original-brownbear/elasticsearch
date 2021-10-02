@@ -20,10 +20,8 @@ import java.util.function.Function;
 
 import static java.util.Collections.emptyList;
 import static org.elasticsearch.common.settings.Setting.affixKeySetting;
-import static org.elasticsearch.common.settings.Setting.boolSetting;
 import static org.elasticsearch.common.settings.Setting.enumSetting;
 import static org.elasticsearch.common.settings.Setting.intSetting;
-import static org.elasticsearch.common.settings.Setting.listSetting;
 import static org.elasticsearch.common.settings.Setting.timeSetting;
 
 public final class TransportSettings {
@@ -32,16 +30,16 @@ public final class TransportSettings {
     public static final String FEATURE_PREFIX = "transport.features";
 
     public static final Setting<List<String>> HOST =
-        listSetting("transport.host", emptyList(), Function.identity(), Setting.Property.NodeScope);
+        Setting.listSetting("transport.host", emptyList(), Function.identity(), Setting.Property.NodeScope);
     public static final Setting<List<String>> PUBLISH_HOST =
-        listSetting("transport.publish_host", HOST, Function.identity(), Setting.Property.NodeScope);
+        Setting.listSetting("transport.publish_host", HOST, Function.identity(), Setting.Property.NodeScope);
     public static final Setting.AffixSetting<List<String>> PUBLISH_HOST_PROFILE =
-        affixKeySetting("transport.profiles.", "publish_host", key -> listSetting(key, PUBLISH_HOST, Function.identity(),
+        affixKeySetting("transport.profiles.", "publish_host", key -> Setting.listSetting(key, PUBLISH_HOST, Function.identity(),
             Setting.Property.NodeScope));
     public static final Setting<List<String>> BIND_HOST =
-        listSetting("transport.bind_host", HOST, Function.identity(), Setting.Property.NodeScope);
+        Setting.listSetting("transport.bind_host", HOST, Function.identity(), Setting.Property.NodeScope);
     public static final Setting.AffixSetting<List<String>> BIND_HOST_PROFILE = affixKeySetting("transport.profiles.", "bind_host",
-        key -> listSetting(key, BIND_HOST, Function.identity(), Setting.Property.NodeScope));
+        key -> Setting.listSetting(key, BIND_HOST, Function.identity(), Setting.Property.NodeScope));
     public static final Setting<String> PORT =
         new Setting<>("transport.port", "9300-9400", Function.identity(), Setting.Property.NodeScope);
     public static final Setting.AffixSetting<String> PORT_PROFILE = affixKeySetting("transport.profiles.", "port",
@@ -64,14 +62,14 @@ public final class TransportSettings {
     // Tcp socket settings
 
     public static final Setting<Boolean> TCP_NO_DELAY =
-        boolSetting("transport.tcp.no_delay", NetworkService.TCP_NO_DELAY, Setting.Property.NodeScope);
+        Setting.boolSetting("transport.tcp.no_delay", NetworkService.TCP_NO_DELAY, Setting.Property.NodeScope);
     public static final Setting.AffixSetting<Boolean> TCP_NO_DELAY_PROFILE =
-        affixKeySetting("transport.profiles.", "tcp.no_delay", key -> boolSetting(key, TCP_NO_DELAY, Setting.Property.NodeScope));
+        affixKeySetting("transport.profiles.", "tcp.no_delay", key -> Setting.boolSetting(key, TCP_NO_DELAY, Setting.Property.NodeScope));
     public static final Setting<Boolean> TCP_KEEP_ALIVE =
-        boolSetting("transport.tcp.keep_alive", NetworkService.TCP_KEEP_ALIVE, Setting.Property.NodeScope);
+        Setting.boolSetting("transport.tcp.keep_alive", NetworkService.TCP_KEEP_ALIVE, Setting.Property.NodeScope);
     public static final Setting.AffixSetting<Boolean> TCP_KEEP_ALIVE_PROFILE =
         affixKeySetting("transport.profiles.", "tcp.keep_alive",
-            key -> boolSetting(key, TCP_KEEP_ALIVE, Setting.Property.NodeScope));
+            key -> Setting.boolSetting(key, TCP_KEEP_ALIVE, Setting.Property.NodeScope));
     public static final Setting<Integer> TCP_KEEP_IDLE =
         intSetting("transport.tcp.keep_idle", NetworkService.TCP_KEEP_IDLE, -1, 300, Setting.Property.NodeScope);
     public static final Setting.AffixSetting<Integer> TCP_KEEP_IDLE_PROFILE =
@@ -88,9 +86,9 @@ public final class TransportSettings {
         affixKeySetting("transport.profiles.", "tcp.keep_count",
             key -> intSetting(key, TCP_KEEP_COUNT, -1, Setting.Property.NodeScope));
     public static final Setting<Boolean> TCP_REUSE_ADDRESS =
-        boolSetting("transport.tcp.reuse_address", NetworkService.TCP_REUSE_ADDRESS, Setting.Property.NodeScope);
+        Setting.boolSetting("transport.tcp.reuse_address", NetworkService.TCP_REUSE_ADDRESS, Setting.Property.NodeScope);
     public static final Setting.AffixSetting<Boolean> TCP_REUSE_ADDRESS_PROFILE =
-        affixKeySetting("transport.profiles.", "tcp.reuse_address", key -> boolSetting(key, TCP_REUSE_ADDRESS, Setting.Property.NodeScope));
+        affixKeySetting("transport.profiles.", "tcp.reuse_address", key -> Setting.boolSetting(key, TCP_REUSE_ADDRESS, Setting.Property.NodeScope));
     public static final Setting<ByteSizeValue> TCP_SEND_BUFFER_SIZE =
         Setting.byteSizeSetting("transport.tcp.send_buffer_size", NetworkService.TCP_SEND_BUFFER_SIZE, Setting.Property.NodeScope);
     public static final Setting.AffixSetting<ByteSizeValue> TCP_SEND_BUFFER_SIZE_PROFILE =
@@ -118,9 +116,9 @@ public final class TransportSettings {
     // Tracer settings
 
     public static final Setting<List<String>> TRACE_LOG_INCLUDE_SETTING =
-        listSetting("transport.tracer.include", emptyList(), Function.identity(), Setting.Property.Dynamic, Setting.Property.NodeScope);
+        Setting.listSetting("transport.tracer.include", emptyList(), Function.identity(), Setting.Property.Dynamic, Setting.Property.NodeScope);
     public static final Setting<List<String>> TRACE_LOG_EXCLUDE_SETTING =
-        listSetting("transport.tracer.exclude",
+        Setting.listSetting("transport.tracer.exclude",
             Arrays.asList("internal:coordination/fault_detection/*"),
             Function.identity(), Setting.Property.Dynamic, Setting.Property.NodeScope);
 

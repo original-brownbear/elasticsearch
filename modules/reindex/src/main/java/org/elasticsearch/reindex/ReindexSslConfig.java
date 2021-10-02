@@ -36,9 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static org.elasticsearch.common.settings.Setting.listSetting;
-import static org.elasticsearch.common.settings.Setting.simpleString;
-
 /**
  * Loads "reindex.ssl.*" configuration from Settings, and makes the applicable configuration (trust manager / key manager / hostname
  * verification / cipher-suites) available for reindex-from-remote.
@@ -55,12 +52,12 @@ public class ReindexSslConfig {
         for (String key : SslConfigurationKeys.getStringKeys()) {
             String settingName = "reindex.ssl." + key;
             final Setting.Property[] properties = SslConfigurationKeys.isDeprecated(key) ? deprecatedProperties : defaultProperties;
-            SETTINGS.put(settingName, simpleString(settingName, properties));
+            SETTINGS.put(settingName, Setting.simpleString(settingName, properties));
         }
         for (String key : SslConfigurationKeys.getListKeys()) {
             String settingName = "reindex.ssl." + key;
             final Setting.Property[] properties = SslConfigurationKeys.isDeprecated(key) ? deprecatedProperties : defaultProperties;
-            SETTINGS.put(settingName, listSetting(settingName, Collections.emptyList(), Function.identity(), properties));
+            SETTINGS.put(settingName, Setting.listSetting(settingName, Collections.emptyList(), Function.identity(), properties));
         }
         for (String key : SslConfigurationKeys.getSecureStringKeys()) {
             String settingName = "reindex.ssl." + key;

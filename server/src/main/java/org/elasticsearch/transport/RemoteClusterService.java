@@ -44,7 +44,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static org.elasticsearch.common.settings.Setting.boolSetting;
 import static org.elasticsearch.common.settings.Setting.enumSetting;
 import static org.elasticsearch.common.settings.Setting.timeSetting;
 
@@ -77,7 +76,7 @@ public final class RemoteClusterService extends RemoteClusterAware implements Cl
         Setting.affixKeySetting(
             "cluster.remote.",
             "skip_unavailable",
-            (ns, key) -> boolSetting(
+            (ns, key) -> Setting.boolSetting(
                 key,
                 false,
                 new RemoteConnectionEnabled<>(ns, key),

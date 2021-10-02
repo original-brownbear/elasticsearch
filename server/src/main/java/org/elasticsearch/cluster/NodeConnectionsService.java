@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.elasticsearch.common.settings.Setting.Property;
-import static org.elasticsearch.common.settings.Setting.positiveTimeSetting;
 
 /**
  * This component is responsible for maintaining connections from this node to all the nodes listed in the cluster state, and for
@@ -61,7 +60,7 @@ public class NodeConnectionsService extends AbstractLifecycleComponent {
     private static final Logger logger = LogManager.getLogger(NodeConnectionsService.class);
 
     public static final Setting<TimeValue> CLUSTER_NODE_RECONNECT_INTERVAL_SETTING =
-        positiveTimeSetting("cluster.nodes.reconnect_interval", TimeValue.timeValueSeconds(10), Property.NodeScope);
+        Setting.positiveTimeSetting("cluster.nodes.reconnect_interval", TimeValue.timeValueSeconds(10), Property.NodeScope);
 
     private final ThreadPool threadPool;
     private final TransportService transportService;
