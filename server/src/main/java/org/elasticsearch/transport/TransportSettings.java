@@ -88,7 +88,8 @@ public final class TransportSettings {
     public static final Setting<Boolean> TCP_REUSE_ADDRESS =
         Setting.boolSetting("transport.tcp.reuse_address", NetworkService.TCP_REUSE_ADDRESS, Setting.Property.NodeScope);
     public static final Setting.AffixSetting<Boolean> TCP_REUSE_ADDRESS_PROFILE =
-        affixKeySetting("transport.profiles.", "tcp.reuse_address", key -> Setting.boolSetting(key, TCP_REUSE_ADDRESS, Setting.Property.NodeScope));
+        affixKeySetting("transport.profiles.", "tcp.reuse_address",
+            key -> Setting.boolSetting(key, TCP_REUSE_ADDRESS, Setting.Property.NodeScope));
     public static final Setting<ByteSizeValue> TCP_SEND_BUFFER_SIZE =
         Setting.byteSizeSetting("transport.tcp.send_buffer_size", NetworkService.TCP_SEND_BUFFER_SIZE, Setting.Property.NodeScope);
     public static final Setting.AffixSetting<ByteSizeValue> TCP_SEND_BUFFER_SIZE_PROFILE =
@@ -115,8 +116,9 @@ public final class TransportSettings {
 
     // Tracer settings
 
-    public static final Setting<List<String>> TRACE_LOG_INCLUDE_SETTING =
-        Setting.listSetting("transport.tracer.include", emptyList(), Function.identity(), Setting.Property.Dynamic, Setting.Property.NodeScope);
+    public static final Setting<List<String>> TRACE_LOG_INCLUDE_SETTING = Setting.listSetting(
+        "transport.tracer.include", emptyList(), Function.identity(), Setting.Property.Dynamic,
+        Setting.Property.NodeScope);
     public static final Setting<List<String>> TRACE_LOG_EXCLUDE_SETTING =
         Setting.listSetting("transport.tracer.exclude",
             Arrays.asList("internal:coordination/fault_detection/*"),

@@ -42,7 +42,7 @@ public class IndexRecoveryCollector extends Collector {
      * Flag to indicate if only active recoveries should be collected (default to false: all recoveries are collected)
      */
     public static final Setting<Boolean> INDEX_RECOVERY_ACTIVE_ONLY =
-            Setting.boolSetting(collectionSetting("index.recovery.active_only"), false, Setting.Property.Dynamic, Setting.Property.NodeScope);
+        Setting.boolSetting(collectionSetting("index.recovery.active_only"), false, Setting.Property.Dynamic, Setting.Property.NodeScope);
 
     private final Client client;
 
