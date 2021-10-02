@@ -72,8 +72,8 @@ import java.util.function.Supplier;
 
 public class Monitoring extends Plugin implements ActionPlugin, ReloadablePlugin {
 
-    public static final Setting<Boolean> MIGRATION_DECOMMISSION_ALERTS = Setting.boolSetting("xpack.monitoring.migration.decommission_alerts",
-        false, Setting.Property.Dynamic, Setting.Property.NodeScope);
+    public static final Setting<Boolean> MIGRATION_DECOMMISSION_ALERTS = Setting.boolSetting(
+        "xpack.monitoring.migration.decommission_alerts", false, Setting.Property.Dynamic, Setting.Property.NodeScope);
 
     protected final Settings settings;
 

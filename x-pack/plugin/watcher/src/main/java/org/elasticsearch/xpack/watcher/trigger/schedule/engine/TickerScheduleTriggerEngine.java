@@ -36,8 +36,8 @@ import java.util.concurrent.CountDownLatch;
 
 public class TickerScheduleTriggerEngine extends ScheduleTriggerEngine {
 
-    public static final Setting<TimeValue> TICKER_INTERVAL_SETTING =
-        Setting.positiveTimeSetting("xpack.watcher.trigger.schedule.ticker.tick_interval", TimeValue.timeValueMillis(500), Property.NodeScope);
+    public static final Setting<TimeValue> TICKER_INTERVAL_SETTING = Setting.positiveTimeSetting(
+        "xpack.watcher.trigger.schedule.ticker.tick_interval", TimeValue.timeValueMillis(500), Property.NodeScope);
 
     private static final Logger logger = LogManager.getLogger(TickerScheduleTriggerEngine.class);
 
