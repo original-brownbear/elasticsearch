@@ -787,7 +787,7 @@ public class ScopedSettingsTests extends ESTestCase {
         final String dependentSettingName = "this.setting.depends.on.another";
         Setting<Integer> dependentSetting = new Setting<>(dependentSettingName,
             (s) -> Integer.toString(dependedSetting.get(s) + 10),
-            (s) -> Setting.parseInt(s, 1, dependentSettingName),
+            Setting.intParser(1, dependentSettingName),
             Property.Dynamic, Property.NodeScope);
 
         ClusterSettings settings = new ClusterSettings(Settings.EMPTY, new HashSet<>(Arrays.asList(dependedSetting, dependentSetting)));

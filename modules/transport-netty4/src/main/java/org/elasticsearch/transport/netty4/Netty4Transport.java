@@ -50,6 +50,7 @@ import java.net.SocketOption;
 import java.util.Map;
 
 import static org.elasticsearch.common.settings.Setting.byteSizeSetting;
+import static org.elasticsearch.common.settings.Setting.intParser;
 import static org.elasticsearch.common.settings.Setting.intSetting;
 import static org.elasticsearch.common.util.concurrent.ConcurrentCollections.newConcurrentMap;
 
@@ -65,7 +66,7 @@ public class Netty4Transport extends TcpTransport {
     public static final Setting<Integer> WORKER_COUNT =
         new Setting<>("transport.netty.worker_count",
             (s) -> Integer.toString(EsExecutors.allocatedProcessors(s)),
-            (s) -> Setting.parseInt(s, 1, "transport.netty.worker_count"), Property.NodeScope);
+            intParser(1, "transport.netty.worker_count"), Property.NodeScope);
 
     public static final Setting<ByteSizeValue> NETTY_RECEIVE_PREDICTOR_SIZE = Setting.byteSizeSetting(
         "transport.netty.receive_predictor_size", new ByteSizeValue(64, ByteSizeUnit.KB), Property.NodeScope);

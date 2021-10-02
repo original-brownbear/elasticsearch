@@ -52,7 +52,7 @@ public class ThrottlingAllocationDecider extends AllocationDecider {
     public static final Setting<Integer> CLUSTER_ROUTING_ALLOCATION_NODE_CONCURRENT_RECOVERIES_SETTING =
         new Setting<>("cluster.routing.allocation.node_concurrent_recoveries",
             Integer.toString(DEFAULT_CLUSTER_ROUTING_ALLOCATION_NODE_CONCURRENT_RECOVERIES),
-            (s) -> Setting.parseInt(s, 0, "cluster.routing.allocation.node_concurrent_recoveries"),
+            Setting.intParser( 0, "cluster.routing.allocation.node_concurrent_recoveries"),
             Property.Dynamic, Property.NodeScope);
     public static final Setting<Integer> CLUSTER_ROUTING_ALLOCATION_NODE_INITIAL_PRIMARIES_RECOVERIES_SETTING =
         Setting.intSetting("cluster.routing.allocation.node_initial_primaries_recoveries",
@@ -61,13 +61,13 @@ public class ThrottlingAllocationDecider extends AllocationDecider {
     public static final Setting<Integer> CLUSTER_ROUTING_ALLOCATION_NODE_CONCURRENT_INCOMING_RECOVERIES_SETTING = new Setting<>(
         "cluster.routing.allocation.node_concurrent_incoming_recoveries",
         CLUSTER_ROUTING_ALLOCATION_NODE_CONCURRENT_RECOVERIES_SETTING,
-        (s) -> Setting.parseInt(s, 0, "cluster.routing.allocation.node_concurrent_incoming_recoveries"),
+        Setting.intParser(0, "cluster.routing.allocation.node_concurrent_incoming_recoveries"),
         Property.Dynamic,
         Property.NodeScope);
     public static final Setting<Integer> CLUSTER_ROUTING_ALLOCATION_NODE_CONCURRENT_OUTGOING_RECOVERIES_SETTING = new Setting<>(
         "cluster.routing.allocation.node_concurrent_outgoing_recoveries",
         CLUSTER_ROUTING_ALLOCATION_NODE_CONCURRENT_RECOVERIES_SETTING,
-        (s) -> Setting.parseInt(s, 0, "cluster.routing.allocation.node_concurrent_outgoing_recoveries"),
+        Setting.intParser(0, "cluster.routing.allocation.node_concurrent_outgoing_recoveries"),
         Property.Dynamic,
         Property.NodeScope);
 

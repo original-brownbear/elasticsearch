@@ -112,7 +112,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
             long maxBufferComponents = Math.max(2, Math.min(maxBufferComponentsEstimate, Integer.MAX_VALUE));
             return String.valueOf(maxBufferComponents);
             // Netty's CompositeByteBuf implementation does not allow less than two components.
-        }, s -> Setting.parseInt(s, 2, Integer.MAX_VALUE, SETTING_KEY_HTTP_NETTY_MAX_COMPOSITE_BUFFER_COMPONENTS), Property.NodeScope);
+        }, Setting.intParser(2, Integer.MAX_VALUE, SETTING_KEY_HTTP_NETTY_MAX_COMPOSITE_BUFFER_COMPONENTS), Property.NodeScope);
 
     public static final Setting<Integer> SETTING_HTTP_WORKER_COUNT = Setting.intSetting("http.netty.worker_count", 0, Property.NodeScope);
 
