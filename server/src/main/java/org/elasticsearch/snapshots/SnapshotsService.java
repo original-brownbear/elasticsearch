@@ -1010,7 +1010,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             logger.warn("Failed to update snapshot state ", e);
         }
         assert assertConsistentWithClusterState(event.state());
-        assert assertNoDanglingSnapshots(event.state());
+        try {
+            assert assertNoDanglingSnapshots(event.state());
+        } catch (AssertionError e) {
+            throw e;
+        }
     }
 
     private boolean assertConsistentWithClusterState(ClusterState state) {
@@ -1075,6 +1079,20 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                                 + Strings.toString(snapshotDeletionsInProgress)
                                 + "]";
                     }
+                }
+            }
+        }
+        Map<String, Set<RepositoryShardId>> busyShardsByRepo = new HashMap<>();
+        for (SnapshotsInProgress.Entry entry : snapshotsInProgress.entries()) {
+            if (reposWithRunningDelete.contains(entry.repository())) {
+                continue;
+            }
+            final Set<RepositoryShardId> shardIds = busyShardsByRepo.computeIfAbsent(entry.repository(), r -> new HashSet<>());
+            for (ObjectObjectCursor<RepositoryShardId, ShardSnapshotStatus> cursor : entry.shardsByRepoShardId()) {
+                if (cursor.value.isActive()) {
+                    shardIds.add(cursor.key);
+                } else if (cursor.value == ShardSnapshotStatus.UNASSIGNED_QUEUED) {
+                    assert shardIds.contains(cursor.key) : "must have active assignment for [" + cursor.key + "]";
                 }
             }
         }
