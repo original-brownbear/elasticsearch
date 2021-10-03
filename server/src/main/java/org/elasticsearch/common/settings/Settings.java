@@ -273,12 +273,15 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public Integer getAsInt(String setting, Integer defaultValue) {
-        String sValue = get(setting);
+        Object sValue = settings.get(setting);
         if (sValue == null) {
             return defaultValue;
         }
+        if (sValue instanceof Number) {
+            return ((Number) sValue).intValue();
+        }
         try {
-            return Integer.parseInt(sValue);
+            return Integer.parseInt(toString(sValue));
         } catch (NumberFormatException e) {
             throw new SettingsException("Failed to parse int setting [" + setting + "] with value [" + sValue + "]", e);
         }
@@ -289,12 +292,15 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public Long getAsLong(String setting, Long defaultValue) {
-        String sValue = get(setting);
+        Object sValue = settings.get(setting);
         if (sValue == null) {
             return defaultValue;
         }
+        if (sValue instanceof Number) {
+            return ((Number) sValue).longValue();
+        }
         try {
-            return Long.parseLong(sValue);
+            return Long.parseLong(toString(sValue));
         } catch (NumberFormatException e) {
             throw new SettingsException("Failed to parse long setting [" + setting + "] with value [" + sValue + "]", e);
         }
@@ -321,7 +327,14 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public Boolean getAsBoolean(String setting, Boolean defaultValue) {
-        return Booleans.parseBoolean(get(setting), defaultValue);
+        final Object result = settings.get(setting);
+        if (result == null) {
+            return defaultValue;
+        }
+        if (result instanceof Boolean) {
+            return (Boolean) result;
+        }
+        return Booleans.parseBoolean(toString(result), defaultValue);
     }
 
     /**
@@ -536,10 +549,8 @@ public final class Settings implements ToXContentFragment {
                 builder.putList(key, stringList);
             } else if (value instanceof Boolean) {
                 builder.put(key, (Boolean) value);
-            } else if (value instanceof Integer) {
-                builder.put(key, (Integer) value);
-            } else if (value instanceof Long) {
-                builder.put(key, (Long) value);
+            } else if (value instanceof Number) {
+                builder.put(key, (Number) value);
             } else {
                 builder.put(key, value.toString());
             }
