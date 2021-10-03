@@ -738,7 +738,7 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
 
     private static boolean indexSettingsMatchRepositoryMetadata(Settings indexSettings, RepositoryMetadata repositoryMetadata) {
         if (isSearchableSnapshotStore(indexSettings)) {
-            final String indexRepositoryUuid = indexSettings.get(SEARCHABLE_SNAPSHOTS_REPOSITORY_UUID_SETTING_KEY);
+            final String indexRepositoryUuid = indexSettings.getAsString(SEARCHABLE_SNAPSHOTS_REPOSITORY_UUID_SETTING_KEY);
             if (Strings.hasLength(indexRepositoryUuid)) {
                 return Objects.equals(repositoryMetadata.uuid(), indexRepositoryUuid);
             } else {

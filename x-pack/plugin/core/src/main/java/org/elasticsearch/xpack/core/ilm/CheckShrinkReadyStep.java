@@ -68,7 +68,7 @@ public class CheckShrinkReadyStep extends ClusterStateWaitStep {
         int expectedShardCount = idxMeta.getNumberOfShards();
 
         // The id of the node the shards should be on
-        final String idShardsShouldBeOn = idxMeta.getSettings().get(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id");
+        final String idShardsShouldBeOn = idxMeta.getSettings().getAsString(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._id");
         if (idShardsShouldBeOn == null) {
             throw new IllegalStateException("Cannot check shrink allocation as there are no allocation rules by _id");
         }

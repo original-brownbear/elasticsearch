@@ -91,14 +91,14 @@ public class FileUserPasswdStoreTests extends ESTestCase {
         Files.createDirectories(configDir);
         Path file = configDir.resolve("users");
         Files.copy(users, file, StandardCopyOption.REPLACE_EXISTING);
-        final Hasher hasher = Hasher.resolve(settings.get("xpack.security.authc.password_hashing.algorithm"));
+        final Hasher hasher = Hasher.resolve(settings.getAsString("xpack.security.authc.password_hashing.algorithm"));
         RealmConfig config = getRealmConfig();
         try (ResourceWatcherService watcherService = new ResourceWatcherService(settings, threadPool)) {
             final CountDownLatch latch = new CountDownLatch(1);
 
             FileUserPasswdStore store = new FileUserPasswdStore(config, watcherService, latch::countDown);
             //Test users share the hashing algorithm name for convenience
-            String username = settings.get("xpack.security.authc.password_hashing.algorithm");
+            String username = settings.getAsString("xpack.security.authc.password_hashing.algorithm");
             User user = new User(username);
             assertThat(store.userExists(username), is(true));
             final String password = username.startsWith("pbkdf2") ? "longertestpassword" : "test123";
@@ -156,7 +156,7 @@ public class FileUserPasswdStoreTests extends ESTestCase {
 
             FileUserPasswdStore store = new FileUserPasswdStore(config, watcherService, latch::countDown);
             //Test users share the hashing algorithm name for convenience
-            String username = settings.get("xpack.security.authc.password_hashing.algorithm");
+            String username = settings.getAsString("xpack.security.authc.password_hashing.algorithm");
             User user = new User(username);
             final String password = username.startsWith("pbkdf2") ? "longertestpassword" : "test123";
             final AuthenticationResult result = store.verifyPassword(username, new SecureString(password), () -> user);

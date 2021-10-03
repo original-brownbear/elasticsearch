@@ -97,11 +97,11 @@ public class ClusterGetSettingsResponse extends ActionResponse implements ToXCon
      */
     public String getSetting(String setting) {
         if (persistentSettings.hasValue(setting)) {
-            return persistentSettings.get(setting);
+            return persistentSettings.getAsString(setting);
         } else if (transientSettings.hasValue(setting)) {
-            return transientSettings.get(setting);
+            return transientSettings.getAsString(setting);
         } else if (defaultSettings.hasValue(setting)) {
-            return defaultSettings.get(setting);
+            return defaultSettings.getAsString(setting);
         } else {
             return null;
         }

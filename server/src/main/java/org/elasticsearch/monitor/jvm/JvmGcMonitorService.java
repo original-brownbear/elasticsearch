@@ -159,7 +159,7 @@ public class JvmGcMonitorService extends AbstractLifecycleComponent {
         try {
             threshold = settings.getAsTime(level, null);
         } catch (RuntimeException ex) {
-            final String settingValue = settings.get(level);
+            final String settingValue = settings.getAsString(level);
             throw new IllegalArgumentException("failed to parse setting [" + getThresholdName(key, level) + "] with value [" +
                 settingValue + "] as a time value", ex);
         }
@@ -167,7 +167,7 @@ public class JvmGcMonitorService extends AbstractLifecycleComponent {
         if (threshold == null) {
             throw new IllegalArgumentException("missing gc_threshold for [" + getThresholdName(key, level) + "]");
         } else if (threshold.nanos() < 0) {
-            final String settingValue = settings.get(level);
+            final String settingValue = settings.getAsString(level);
             throw new IllegalArgumentException("invalid gc_threshold [" + getThresholdName(key, level) + "] value [" +
                 settingValue + "]: value cannot be negative");
         }

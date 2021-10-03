@@ -190,7 +190,7 @@ public class MockRepository extends FsRepository {
         // TODO: use another method of testing not being able to read the test file written by the master...
         // this is super duper hacky
         if (metadata.settings().getAsBoolean("localize_location", false)) {
-            Path location = PathUtils.get(metadata.settings().get("location"));
+            Path location = PathUtils.get(metadata.settings().getAsString("location"));
             location = location.resolve(Integer.toString(environment.hashCode()));
             return new RepositoryMetadata(metadata.name(), metadata.type(),
                 Settings.builder().put(metadata.settings()).put("location", location.toAbsolutePath()).build());

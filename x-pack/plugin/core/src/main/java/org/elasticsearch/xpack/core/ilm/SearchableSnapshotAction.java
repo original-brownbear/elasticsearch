@@ -136,7 +136,7 @@ public class SearchableSnapshotAction implements LifecycleAction {
                 String policyName = LifecycleSettings.LIFECYCLE_NAME_SETTING.get(indexMetadata.getSettings());
                 if (indexMetadata.getSettings().get(LifecycleSettings.SNAPSHOT_INDEX_NAME) != null) {
                     // The index is already a searchable snapshot, let's see if the repository matches
-                    String repo = indexMetadata.getSettings().get(SEARCHABLE_SNAPSHOTS_REPOSITORY_NAME_SETTING_KEY);
+                    String repo = indexMetadata.getSettings().getAsString(SEARCHABLE_SNAPSHOTS_REPOSITORY_NAME_SETTING_KEY);
                     if (this.snapshotRepository.equals(repo) == false) {
                         // Okay, different repo, we need to go ahead with the searchable snapshot
                         logger.debug("[{}] action is configured for index [{}] in policy [{}] which is already mounted as a searchable " +

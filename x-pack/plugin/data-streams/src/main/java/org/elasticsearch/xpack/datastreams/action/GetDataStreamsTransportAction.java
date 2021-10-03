@@ -86,13 +86,13 @@ public class GetDataStreamsTransportAction extends TransportMasterNodeReadAction
                         dataStreamDescriptor.getComposableIndexTemplate(),
                         dataStreamDescriptor.getComponentTemplates()
                     );
-                    ilmPolicyName = settings.get("index.lifecycle.name");
+                    ilmPolicyName = settings.getAsString("index.lifecycle.name");
                 }
             } else {
                 indexTemplate = MetadataIndexTemplateService.findV2Template(state.metadata(), dataStream.getName(), false);
                 if (indexTemplate != null) {
                     Settings settings = MetadataIndexTemplateService.resolveSettings(state.metadata(), indexTemplate);
-                    ilmPolicyName = settings.get("index.lifecycle.name");
+                    ilmPolicyName = settings.getAsString("index.lifecycle.name");
                 } else {
                     LOGGER.warn(
                         "couldn't find any matching template for data stream [{}]. has it been restored (and possibly renamed)"

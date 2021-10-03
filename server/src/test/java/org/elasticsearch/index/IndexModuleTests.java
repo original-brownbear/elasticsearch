@@ -323,7 +323,7 @@ public class IndexModuleTests extends ESTestCase {
         IndexModule module =
                 createIndexModule(indexSettings, emptyAnalysisRegistry, indexNameExpressionResolver);
         module.addSimilarity("test_similarity",
-                (providerSettings, indexCreatedVersion, scriptService) -> new TestSimilarity(providerSettings.get("key")));
+                (providerSettings, indexCreatedVersion, scriptService) -> new TestSimilarity(providerSettings.getAsString("key")));
 
         IndexService indexService = newIndexService(module);
         SimilarityService similarityService = indexService.similarityService();

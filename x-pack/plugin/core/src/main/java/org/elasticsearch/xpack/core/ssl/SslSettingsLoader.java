@@ -69,7 +69,7 @@ public class SslSettingsLoader extends SslConfigurationLoader {
     @Override
     protected String getSettingAsString(String key) {
         checkSetting(key);
-        final String val = settings.get(key);
+        final String val = settings.getAsString(key);
         return val == null ? "" : val;
     }
 

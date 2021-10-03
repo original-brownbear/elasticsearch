@@ -80,7 +80,7 @@ public class AccountTests extends ESTestCase {
             Settings settings = sb.build();
             emailDefaults = new Account.Config.EmailDefaults(accountName, settings);
             for (String name : settings.names()) {
-                builder.put("email_defaults." + name, settings.get(name));
+                builder.put("email_defaults." + name, settings.getAsString(name));
             }
         } else {
             emailDefaults = new Account.Config.EmailDefaults(accountName, Settings.EMPTY);
@@ -132,12 +132,12 @@ public class AccountTests extends ESTestCase {
         for (String name : new String[]{ "connection_timeout", "write_timeout", "timeout"}) {
             String propertyName = name.replaceAll("_", "");
             smtpProps.put("mail.smtp." + propertyName,
-                    String.valueOf(TimeValue.parseTimeValue(Account.DEFAULT_SMTP_TIMEOUT_SETTINGS.get(name), name).millis()));
+                    String.valueOf(TimeValue.parseTimeValue(Account.DEFAULT_SMTP_TIMEOUT_SETTINGS.getAsString(name), name).millis()));
         }
 
         Settings smtpSettings = smtpBuilder.build();
         for (String name : smtpSettings.names()) {
-            builder.put("smtp." + name, smtpSettings.get(name));
+            builder.put("smtp." + name, smtpSettings.getAsString(name));
         }
 
         Settings settings = builder.build();

@@ -130,7 +130,7 @@ public class SettingsFilterTests extends ESTestCase {
 
         Settings filteredSettings = settingsFilter.filter(settings);
         for (Map.Entry<String, Matcher<? super String>> entry : settingsMatcherMap.entrySet()) {
-            assertThat(filteredSettings.get(entry.getKey()), entry.getValue());
+            assertThat(filteredSettings.getAsString(entry.getKey()), entry.getValue());
         }
 
         if (useLegacyLdapBindPassword) {

@@ -279,7 +279,7 @@ public class BaseRunAsSuperuserCommandTests extends CommandTestCase {
         @Override
         protected void executeCommand(Terminal terminal, OptionSet options, Environment env, String username, SecureString password)
             throws Exception {
-            final Path confDir = jimfs.getPath(env.settings().get("path.home")).resolve("config");
+            final Path confDir = jimfs.getPath(env.settings().getAsString("path.home")).resolve("config");
             List<String> lines = Files.readAllLines(confDir.resolve("users"), StandardCharsets.UTF_8);
             assertThat(lines.size(), equalTo(1));
             assertThat(lines.get(0), containsString(username));

@@ -77,11 +77,11 @@ public class GetSettingsResponse extends ActionResponse implements ToXContentObj
         Settings settings = indexToSettings.get(index);
         if (setting != null) {
             if (settings != null && settings.hasValue(setting)) {
-                return settings.get(setting);
+                return settings.getAsString(setting);
             } else {
                 Settings defaultSettings = indexToDefaultSettings.get(index);
                 if (defaultSettings != null) {
-                    return defaultSettings.get(setting);
+                    return defaultSettings.getAsString(setting);
                 } else {
                     return null;
                 }

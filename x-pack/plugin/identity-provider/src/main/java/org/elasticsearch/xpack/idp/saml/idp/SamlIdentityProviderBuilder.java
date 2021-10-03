@@ -298,7 +298,7 @@ public class SamlIdentityProviderBuilder {
 
         final List<X509Credential> credentials = new ArrayList<>();
         final Set<String> selectedAliases = new HashSet<>();
-        final String configAlias = settings.get(prefix + "keystore.alias");
+        final String configAlias = settings.getAsString(prefix + "keystore.alias");
         if (Strings.isNullOrEmpty(configAlias)) {
             final String[] rsaAliases = keyManager.getServerAliases("RSA", null);
             if (null != rsaAliases) {

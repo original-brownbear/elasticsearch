@@ -447,7 +447,7 @@ public class IndexLifecycleService
             // Only look at indices where the node picked for the shrink is the node marked as shutting down
             .filter(indexToMetadata -> {
                 String nodePicked = indexToMetadata.getValue().getSettings()
-                    .get(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_SETTING.getKey() + "_id");
+                    .getAsString(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_SETTING.getKey() + "_id");
                 return nodeId.equals(nodePicked);
             })
             .map(Map.Entry::getKey)

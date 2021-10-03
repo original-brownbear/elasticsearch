@@ -87,7 +87,7 @@ public final class SimilarityService {
                 throw new IllegalArgumentException("Cannot redefine built-in Similarity [" + name + "]");
             }
             Settings providerSettings = entry.getValue();
-            String typeName = providerSettings.get("type");
+            String typeName = providerSettings.getAsString("type");
             if (typeName == null) {
                 throw new IllegalArgumentException("Similarity [" + name + "] must have an associated type");
             } else if ((similarities.containsKey(typeName) || BUILT_IN.containsKey(typeName)) == false) {

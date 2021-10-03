@@ -82,7 +82,8 @@ public class WaitForActiveShardsStep extends ClusterStateWaitStep {
                 return getErrorResultOnNullMetadata(getKey(), index);
             }
             rolledIndexName = rolledIndexMeta.getIndex().getName();
-            waitForActiveShardsSettingValue = rolledIndexMeta.getSettings().get(IndexMetadata.SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey());
+            waitForActiveShardsSettingValue =
+                rolledIndexMeta.getSettings().getAsString(IndexMetadata.SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey());
         } else {
             String rolloverAlias = RolloverAction.LIFECYCLE_ROLLOVER_ALIAS_SETTING.get(originalIndexMeta.getSettings());
             if (Strings.isNullOrEmpty(rolloverAlias)) {
@@ -96,7 +97,8 @@ public class WaitForActiveShardsStep extends ClusterStateWaitStep {
             IndexMetadata aliasWriteIndex = aliasAbstraction.getWriteIndex();
             if (aliasWriteIndex != null) {
                 rolledIndexName = aliasWriteIndex.getIndex().getName();
-                waitForActiveShardsSettingValue = aliasWriteIndex.getSettings().get(IndexMetadata.SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey());
+                waitForActiveShardsSettingValue =
+                    aliasWriteIndex.getSettings().getAsString(IndexMetadata.SETTING_WAIT_FOR_ACTIVE_SHARDS.getKey());
             } else {
                 List<IndexMetadata> indices = aliasAbstraction.getIndices();
                 int maxIndexCounter = -1;
@@ -112,7 +114,7 @@ public class WaitForActiveShardsStep extends ClusterStateWaitStep {
                     return getErrorResultOnNullMetadata(getKey(), index);
                 }
                 rolledIndexName = rolledIndexMeta.getIndex().getName();
-                waitForActiveShardsSettingValue = rolledIndexMeta.getSettings().get("index.write.wait_for_active_shards");
+                waitForActiveShardsSettingValue = rolledIndexMeta.getSettings().getAsString("index.write.wait_for_active_shards");
             }
         }
 

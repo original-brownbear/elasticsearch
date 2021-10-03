@@ -1561,9 +1561,9 @@ public class RestoreService implements ClusterStateApplier {
             final Settings indexSettings = metadata.getIndexSafe(index).getSettings();
             assert "snapshot".equals(INDEX_STORE_TYPE_SETTING.get(indexSettings)) : "not a snapshot backed index: " + index;
 
-            final String repositoryUuid = indexSettings.get(SEARCHABLE_SNAPSHOTS_REPOSITORY_UUID_SETTING_KEY);
-            final String repositoryName = indexSettings.get(SEARCHABLE_SNAPSHOTS_REPOSITORY_NAME_SETTING_KEY);
-            final String snapshotUuid = indexSettings.get(SEARCHABLE_SNAPSHOTS_SNAPSHOT_UUID_SETTING_KEY);
+            final String repositoryUuid = indexSettings.getAsString(SEARCHABLE_SNAPSHOTS_REPOSITORY_UUID_SETTING_KEY);
+            final String repositoryName = indexSettings.getAsString(SEARCHABLE_SNAPSHOTS_REPOSITORY_NAME_SETTING_KEY);
+            final String snapshotUuid = indexSettings.getAsString(SEARCHABLE_SNAPSHOTS_SNAPSHOT_UUID_SETTING_KEY);
 
             final boolean deleteSnapshot = indexSettings.getAsBoolean(SEARCHABLE_SNAPSHOTS_DELETE_SNAPSHOT_ON_INDEX_DELETION, false);
             if (deleteSnapshot && snapshotInfo.indices().size() != 1 && Objects.equals(snapshotUuid, snapshotInfo.snapshotId().getUUID())) {
@@ -1591,12 +1591,12 @@ public class RestoreService implements ClusterStateApplier {
                 if ("snapshot".equals(INDEX_STORE_TYPE_SETTING.get(otherSettings)) == false) {
                     continue; // other index is not a searchable snapshot index, skip
                 }
-                final String otherSnapshotUuid = otherSettings.get(SEARCHABLE_SNAPSHOTS_SNAPSHOT_UUID_SETTING_KEY);
+                final String otherSnapshotUuid = otherSettings.getAsString(SEARCHABLE_SNAPSHOTS_SNAPSHOT_UUID_SETTING_KEY);
                 if (Objects.equals(snapshotUuid, otherSnapshotUuid) == false) {
                     continue; // other index is backed by a different snapshot, skip
                 }
-                final String otherRepositoryUuid = otherSettings.get(SEARCHABLE_SNAPSHOTS_REPOSITORY_UUID_SETTING_KEY);
-                final String otherRepositoryName = otherSettings.get(SEARCHABLE_SNAPSHOTS_REPOSITORY_NAME_SETTING_KEY);
+                final String otherRepositoryUuid = otherSettings.getAsString(SEARCHABLE_SNAPSHOTS_REPOSITORY_UUID_SETTING_KEY);
+                final String otherRepositoryName = otherSettings.getAsString(SEARCHABLE_SNAPSHOTS_REPOSITORY_NAME_SETTING_KEY);
                 if (matchRepository(repositoryUuid, repositoryName, otherRepositoryUuid, otherRepositoryName) == false) {
                     continue; // other index is backed by a snapshot from a different repository, skip
                 }

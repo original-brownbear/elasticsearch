@@ -86,7 +86,7 @@ public class TransportAnalyzeActionTests extends ESTestCase {
                 MockFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
                     super(indexSettings, name, settings);
                     if (settings.hasValue("stopword")) {
-                        this.stopset = new CharacterRunAutomaton(Automata.makeString(settings.get("stopword")));
+                        this.stopset = new CharacterRunAutomaton(Automata.makeString(settings.getAsString("stopword")));
                     }
                     else {
                         this.stopset = MockTokenFilter.ENGLISH_STOPSET;

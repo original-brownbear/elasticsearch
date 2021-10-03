@@ -116,7 +116,7 @@ public class EnableAssignmentDeciderIT extends ESIntegTestCase {
         ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().clear().setMetadata(true).get();
         Settings settings = clusterStateResponse.getState().getMetadata().settings();
 
-        String value = settings.get(CLUSTER_TASKS_ALLOCATION_ENABLE_SETTING.getKey());
+        String value = settings.getAsString(CLUSTER_TASKS_ALLOCATION_ENABLE_SETTING.getKey());
         assertThat(Allocation.fromString(value), equalTo(expected));
     }
 

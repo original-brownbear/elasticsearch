@@ -194,7 +194,7 @@ public class Account {
 
         Config(String name, Settings settings, @Nullable SSLSocketFactory sslSocketFactory, Logger logger) {
             this.name = name;
-            profile = Profile.resolve(settings.get("profile"), Profile.STANDARD);
+            profile = Profile.resolve(settings.getAsString("profile"), Profile.STANDARD);
             defaults = new EmailDefaults(name, settings.getAsSettings("email_defaults"));
             smtp = new Smtp(settings.getAsSettings(SMTP_PROTOCOL));
             if (smtp.host == null) {
@@ -228,7 +228,7 @@ public class Account {
             final Properties properties;
 
             Smtp(Settings settings) {
-                host = settings.get("host", settings.get("localaddress", settings.get("local_address")));
+                host = settings.get("host", settings.get("localaddress", settings.getAsString("local_address")));
 
                 port = settings.getAsInt("port", settings.getAsInt("localport", settings.getAsInt("local_port", 25)));
                 user = settings.get("user", settings.get("from", null));
@@ -276,7 +276,7 @@ public class Account {
                 // Secure strings can not be retreived out of a settings object and should be handled differently
                 Set<String> insecureSettings = settings.filter(s -> s.startsWith("secure_") == false).keySet();
                 for (String key : insecureSettings) {
-                    props.setProperty(SMTP_SETTINGS_PREFIX + key, settings.get(key));
+                    props.setProperty(SMTP_SETTINGS_PREFIX + key, settings.getAsString(key));
                 }
                 return props;
             }
@@ -325,7 +325,7 @@ public class Account {
                     to = Email.AddressList.parse(settings, Email.Field.TO.getPreferredName());
                     cc = Email.AddressList.parse(settings, Email.Field.CC.getPreferredName());
                     bcc = Email.AddressList.parse(settings, Email.Field.BCC.getPreferredName());
-                    subject = settings.get(Email.Field.SUBJECT.getPreferredName());
+                    subject = settings.getAsString(Email.Field.SUBJECT.getPreferredName());
                 } catch (IllegalArgumentException iae) {
                     throw new SettingsException("invalid email defaults in email account settings [" + accountName + "]", iae);
                 }

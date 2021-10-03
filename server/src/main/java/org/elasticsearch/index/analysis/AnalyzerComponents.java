@@ -40,7 +40,7 @@ public final class AnalyzerComponents {
 
     static AnalyzerComponents createComponents(String name, Settings analyzerSettings, final Map<String, TokenizerFactory> tokenizers,
             final Map<String, CharFilterFactory> charFilters, final Map<String, TokenFilterFactory> tokenFilters) {
-        String tokenizerName = analyzerSettings.get("tokenizer");
+        String tokenizerName = analyzerSettings.getAsString("tokenizer");
         if (tokenizerName == null) {
             throw new IllegalArgumentException("Custom Analyzer [" + name + "] must be configured with a tokenizer");
         }

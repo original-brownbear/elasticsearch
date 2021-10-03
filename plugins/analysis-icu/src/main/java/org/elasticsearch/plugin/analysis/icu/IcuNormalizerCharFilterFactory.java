@@ -34,7 +34,7 @@ public class IcuNormalizerCharFilterFactory extends AbstractCharFilterFactory im
     public IcuNormalizerCharFilterFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
         super(indexSettings, name);
         String method = settings.get("name", "nfkc_cf");
-        String mode = settings.get("mode");
+        String mode = settings.getAsString("mode");
         if ("compose".equals(mode) == false && "decompose".equals(mode) == false) {
             mode = "compose";
         }

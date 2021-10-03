@@ -671,7 +671,7 @@ public final class InternalTestCluster extends TestCluster {
         assert Thread.holdsLock(this);
         ensureOpen();
         Collection<Class<? extends Plugin>> plugins = getPlugins();
-        String name = settings.get("node.name");
+        String name = settings.getAsString("node.name");
 
         final NodeAndClient nodeAndClient = nodes.get(name);
         if (reuseExisting && nodeAndClient != null) {

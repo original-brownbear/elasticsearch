@@ -152,11 +152,11 @@ public class GetIndexResponse extends ActionResponse implements ToXContentObject
         Settings indexSettings = settings.get(index);
         if (setting != null) {
             if (indexSettings != null && indexSettings.hasValue(setting)) {
-                return indexSettings.get(setting);
+                return indexSettings.getAsString(setting);
             } else {
                 Settings defaultIndexSettings = defaultSettings.get(index);
                 if (defaultIndexSettings != null) {
-                    return defaultIndexSettings.get(setting);
+                    return defaultIndexSettings.getAsString(setting);
                 } else {
                     return null;
                 }

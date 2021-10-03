@@ -826,7 +826,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                         .repositories()
                         .get(0)
                         .settings()
-                        .get("location")
+                        .getAsString("location")
                 );
             initWithSnapshotVersion(
                 tmpRepositoryName,

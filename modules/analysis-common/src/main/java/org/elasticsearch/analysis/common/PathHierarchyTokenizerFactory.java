@@ -28,7 +28,7 @@ public class PathHierarchyTokenizerFactory extends AbstractTokenizerFactory {
     PathHierarchyTokenizerFactory(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
         super(indexSettings, settings, name);
         bufferSize = settings.getAsInt("buffer_size", 1024);
-        String delimiter = settings.get("delimiter");
+        String delimiter = settings.getAsString("delimiter");
         if (delimiter == null) {
             this.delimiter = PathHierarchyTokenizer.DEFAULT_DELIMITER;
         } else if (delimiter.length() != 1) {
@@ -37,7 +37,7 @@ public class PathHierarchyTokenizerFactory extends AbstractTokenizerFactory {
             this.delimiter = delimiter.charAt(0);
         }
 
-        String replacement = settings.get("replacement");
+        String replacement = settings.getAsString("replacement");
         if (replacement == null) {
             this.replacement = this.delimiter;
         } else if (replacement.length() != 1) {

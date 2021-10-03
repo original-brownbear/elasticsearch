@@ -31,7 +31,7 @@ public class PatternTokenizerFactory extends AbstractTokenizerFactory {
             throw new IllegalArgumentException("pattern is missing for [" + name + "] tokenizer of type 'pattern'");
         }
 
-        this.pattern = Regex.compile(sPattern, settings.get("flags"));
+        this.pattern = Regex.compile(sPattern, settings.getAsString("flags"));
         this.group = settings.getAsInt("group", -1);
     }
 

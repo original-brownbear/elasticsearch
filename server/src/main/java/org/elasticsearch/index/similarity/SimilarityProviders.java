@@ -94,7 +94,7 @@ final class SimilarityProviders {
      * @return {@link BasicModel} referred to in the Settings
      */
     private static BasicModel parseBasicModel(Version indexCreatedVersion, Settings settings) {
-        String basicModel = settings.get("basic_model");
+        String basicModel = settings.getAsString("basic_model");
         BasicModel model = BASIC_MODELS.get(basicModel);
 
         if (model == null) {
@@ -125,7 +125,7 @@ final class SimilarityProviders {
      * @return {@link AfterEffect} referred to in the Settings
      */
     private static AfterEffect parseAfterEffect(Version indexCreatedVersion, Settings settings) {
-        String afterEffect = settings.get("after_effect");
+        String afterEffect = settings.getAsString("after_effect");
         AfterEffect effect = AFTER_EFFECTS.get(afterEffect);
 
         if (effect == null) {
@@ -156,7 +156,7 @@ final class SimilarityProviders {
      * @return {@link Normalization} referred to in the Settings
      */
     private static Normalization parseNormalization(Settings settings) {
-        String normalization = settings.get("normalization");
+        String normalization = settings.getAsString("normalization");
 
         if ("no".equals(normalization)) {
             return new Normalization.NoNormalization();
@@ -178,7 +178,7 @@ final class SimilarityProviders {
     }
 
     private static Independence parseIndependence(Settings settings) {
-        String name = settings.get("independence_measure");
+        String name = settings.getAsString("independence_measure");
         Independence measure = INDEPENDENCE_MEASURES.get(name);
         if (measure == null) {
             throw new IllegalArgumentException("Unsupported IndependenceMeasure [" + name + "], expected one of "
@@ -194,7 +194,7 @@ final class SimilarityProviders {
      * @return {@link Normalization} referred to in the Settings
      */
     private static Distribution parseDistribution(Settings settings) {
-        String rawDistribution = settings.get("distribution");
+        String rawDistribution = settings.getAsString("distribution");
         Distribution distribution = DISTRIBUTIONS.get(rawDistribution);
         if (distribution == null) {
             throw new IllegalArgumentException("Unsupported Distribution [" + rawDistribution + "]");
@@ -209,7 +209,7 @@ final class SimilarityProviders {
      * @return {@link Normalization} referred to in the Settings
      */
     private static Lambda parseLambda(Settings settings) {
-        String rawLambda = settings.get("lambda");
+        String rawLambda = settings.getAsString("lambda");
         Lambda lambda = LAMBDAS.get(rawLambda);
         if (lambda == null) {
             throw new IllegalArgumentException("Unsupported Lambda [" + rawLambda + "]");

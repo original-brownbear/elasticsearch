@@ -38,7 +38,7 @@ public class Ec2DiscoveryUpdateSettingsTests extends AbstractAwsTestCase {
                 .setPersistentSettings(Settings.builder().put(settingName, expectedValue))
                 .get();
 
-        final String value = response.getPersistentSettings().get(settingName);
+        final String value = response.getPersistentSettings().getAsString(settingName);
         assertThat(value, is(expectedValue));
     }
 }

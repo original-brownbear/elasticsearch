@@ -31,6 +31,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.xpack.core.ilm.Step.StepKey;
+import org.hamcrest.Matchers;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -43,7 +44,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
@@ -83,7 +83,8 @@ public class SetSingleNodeAllocateStepTests extends AbstractStepTestCase<SetSing
                                                               String... expectedIndices) {
         assertNotNull(request);
         assertArrayEquals(expectedIndices, request.indices());
-        assertThat(request.settings().get(settingsKey), anyOf(acceptableValues.stream().map(e -> equalTo(e)).collect(Collectors.toList())));
+        assertThat(request.settings().getAsString(settingsKey),
+            anyOf(acceptableValues.stream().map(Matchers::equalTo).collect(Collectors.toList())));
         if (assertOnlyKeyInSettings) {
             assertEquals(2, request.settings().size());
         }

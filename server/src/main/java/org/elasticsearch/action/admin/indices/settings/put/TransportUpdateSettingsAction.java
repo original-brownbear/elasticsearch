@@ -141,8 +141,8 @@ public class TransportUpdateSettingsAction extends AcknowledgedTransportMasterNo
                 final Settings descriptorSettings = descriptor.getSettings();
                 List<String> failedKeys = new ArrayList<>();
                 for (String key : requestSettings.keySet()) {
-                    final String expectedValue = descriptorSettings.get(key);
-                    final String actualValue = requestSettings.get(key);
+                    final String expectedValue = descriptorSettings.getAsString(key);
+                    final String actualValue = requestSettings.getAsString(key);
 
                     if (Objects.equals(expectedValue, actualValue) == false) {
                         failedKeys.add(key);

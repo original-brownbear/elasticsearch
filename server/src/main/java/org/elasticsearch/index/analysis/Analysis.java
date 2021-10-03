@@ -70,7 +70,7 @@ public class Analysis {
     private static final DeprecationLogger DEPRECATION_LOGGER = DeprecationLogger.getLogger(Analysis.class);
 
     public static void checkForDeprecatedVersion(String name, Settings settings) {
-        String sVersion = settings.get("version");
+        String sVersion = settings.getAsString("version");
         if (sVersion != null) {
             DEPRECATION_LOGGER.critical(
                 DeprecationCategory.ANALYSIS,
@@ -81,7 +81,7 @@ public class Analysis {
     }
 
     public static CharArraySet parseStemExclusion(Settings settings, CharArraySet defaultStemExclusion) {
-        String value = settings.get("stem_exclusion");
+        String value = settings.getAsString("stem_exclusion");
         if ("_none_".equals(value)) {
             return CharArraySet.EMPTY_SET;
         }
@@ -132,7 +132,7 @@ public class Analysis {
 
     public static CharArraySet parseWords(Environment env, Settings settings, String name, CharArraySet defaultWords,
                                           Map<String, Set<?>> namedWords, boolean ignoreCase) {
-        String value = settings.get(name);
+        String value = settings.getAsString(name);
         if (value != null) {
             if ("_none_".equals(value)) {
                 return CharArraySet.EMPTY_SET;

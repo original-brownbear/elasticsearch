@@ -859,7 +859,7 @@ public abstract class AbstractScopedSettings {
                     final List<String> upgradedValue = upgrader.getListValue(value);
                     builder.putList(upgradedKey, upgradedValue);
                 } else {
-                    final String value = settings.get(key);
+                    final String value = settings.getAsString(key);
                     final String upgradedKey = upgrader.getKey(key);
                     final String upgradedValue = upgrader.getValue(value);
                     builder.put(upgradedKey, upgradedValue);
@@ -943,7 +943,7 @@ public abstract class AbstractScopedSettings {
 
         @Override
         public String getValue() {
-            return settings.get(key);
+            return settings.getAsString(key);
         }
 
         @Override

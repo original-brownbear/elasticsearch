@@ -230,7 +230,7 @@ public class ExecutableJiraActionTests extends ESTestCase {
                 .putList("k0", "a", "b", "c")
                 .put("k1", "v1")
                 .build();
-        Map<String, String> defaults = build.keySet().stream().collect(Collectors.toMap(Function.identity(), k -> build.get(k)));
+        Map<String, String> defaults = build.keySet().stream().collect(Collectors.toMap(Function.identity(), build::getAsString));
 
         Map<String, Object> fields = new HashMap<>();
         fields.put("k2", "v2");
@@ -247,7 +247,7 @@ public class ExecutableJiraActionTests extends ESTestCase {
         Settings build = Settings.builder()
                 .putList("k0", "a", "b", "c")
                 .build();
-        Map<String, String> defaults = build.keySet().stream().collect(Collectors.toMap(Function.identity(), k -> build.get(k)));
+        Map<String, String> defaults = build.keySet().stream().collect(Collectors.toMap(Function.identity(), build::getAsString));
         Map<String, Object> fields = new HashMap<>();
         fields.put("k1", "v1");
         fields.put("k0", new String[]{"d", "e", "f"}); // should not be overridden byt the defaults

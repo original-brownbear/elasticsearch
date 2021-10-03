@@ -479,7 +479,7 @@ public final class ThreadContext implements Writeable {
         } else {
             Map<String, String> defaultHeader = new HashMap<>();
             for (String key : headers.names()) {
-                defaultHeader.put(key, headers.get(key));
+                defaultHeader.put(key, headers.getAsString(key));
             }
             return Collections.unmodifiableMap(defaultHeader);
         }

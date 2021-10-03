@@ -102,7 +102,7 @@ public class IndexingMemoryController implements IndexingOperationListener, Clos
 
         ByteSizeValue indexingBuffer = INDEX_BUFFER_SIZE_SETTING.get(settings);
 
-        String indexingBufferSetting = settings.get(INDEX_BUFFER_SIZE_SETTING.getKey());
+        String indexingBufferSetting = settings.getAsString(INDEX_BUFFER_SIZE_SETTING.getKey());
         // null means we used the default (10%)
         if (indexingBufferSetting == null || indexingBufferSetting.endsWith("%")) {
             // We only apply the min/max when % value was used for the index buffer:

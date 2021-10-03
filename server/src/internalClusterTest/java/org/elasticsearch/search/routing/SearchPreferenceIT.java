@@ -223,7 +223,7 @@ public class SearchPreferenceIT extends ESIntegTestCase {
         assertAcked(client().admin().indices().prepareUpdateSettings("test2").setSettings(Settings.builder()
             .put(SETTING_NUMBER_OF_REPLICAS, 0)
             .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + "._name",
-                internalCluster().getDataNodeInstance(Node.class).settings().get(Node.NODE_NAME_SETTING.getKey()))));
+                internalCluster().getDataNodeInstance(Node.class).settings().getAsString(Node.NODE_NAME_SETTING.getKey()))));
 
         ensureGreen();
 

@@ -687,7 +687,7 @@ public class MachineLearning extends Plugin implements SystemIndexPlugin,
     }
 
     private void addMlNodeAttribute(Settings.Builder additionalSettings, String attrName, String value) {
-        String oldValue = settings.get(attrName);
+        String oldValue = settings.getAsString(attrName);
         if (oldValue == null) {
             additionalSettings.put(attrName, value);
         } else {

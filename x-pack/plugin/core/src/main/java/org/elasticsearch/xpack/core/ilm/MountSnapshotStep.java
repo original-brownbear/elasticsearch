@@ -65,7 +65,7 @@ public class MountSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
 
         LifecycleExecutionState lifecycleState = fromIndexMetadata(indexMetadata);
 
-        String policyName = indexMetadata.getSettings().get(LifecycleSettings.LIFECYCLE_NAME);
+        String policyName = indexMetadata.getSettings().getAsString(LifecycleSettings.LIFECYCLE_NAME);
         final String snapshotRepository = lifecycleState.getSnapshotRepository();
         if (Strings.hasText(snapshotRepository) == false) {
             listener.onFailure(new IllegalStateException("snapshot repository is not present for policy [" + policyName + "] and index [" +

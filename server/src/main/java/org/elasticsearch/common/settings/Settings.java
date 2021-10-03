@@ -223,8 +223,12 @@ public final class Settings implements ToXContentFragment {
      * @param setting The setting key
      * @return The setting value, {@code null} if it does not exists.
      */
-    public String get(String setting) {
+    public String getAsString(String setting) {
         return toString(settings.get(setting));
+    }
+
+    public Object get(String setting) {
+        return settings.get(setting);
     }
 
     /**
@@ -232,7 +236,7 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public String get(String setting, String defaultValue) {
-        String retVal = get(setting);
+        String retVal = getAsString(setting);
         return retVal == null ? defaultValue : retVal;
     }
 
@@ -241,12 +245,14 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public Float getAsFloat(String setting, Float defaultValue) {
-        String sValue = get(setting);
+        Object sValue = get(setting);
         if (sValue == null) {
             return defaultValue;
+        } else if (sValue instanceof Number) {
+            return ((Number) sValue).floatValue();
         }
         try {
-            return Float.parseFloat(sValue);
+            return Float.parseFloat(sValue.toString());
         } catch (NumberFormatException e) {
             throw new SettingsException("Failed to parse float setting [" + setting + "] with value [" + sValue + "]", e);
         }
@@ -257,12 +263,14 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public Double getAsDouble(String setting, Double defaultValue) {
-        String sValue = get(setting);
+        Object sValue = get(setting);
         if (sValue == null) {
             return defaultValue;
+        } else if (sValue instanceof Number) {
+            return ((Number) sValue).doubleValue();
         }
         try {
-            return Double.parseDouble(sValue);
+            return Double.parseDouble(sValue.toString());
         } catch (NumberFormatException e) {
             throw new SettingsException("Failed to parse double setting [" + setting + "] with value [" + sValue + "]", e);
         }
@@ -273,12 +281,14 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public Integer getAsInt(String setting, Integer defaultValue) {
-        String sValue = get(setting);
+        Object sValue = get(setting);
         if (sValue == null) {
             return defaultValue;
+        } else if (sValue instanceof Number) {
+            return ((Number) sValue).intValue();
         }
         try {
-            return Integer.parseInt(sValue);
+            return Integer.parseInt(sValue.toString());
         } catch (NumberFormatException e) {
             throw new SettingsException("Failed to parse int setting [" + setting + "] with value [" + sValue + "]", e);
         }
@@ -289,12 +299,14 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public Long getAsLong(String setting, Long defaultValue) {
-        String sValue = get(setting);
+        Object sValue = get(setting);
         if (sValue == null) {
             return defaultValue;
+        } else if (sValue instanceof Number) {
+            return ((Number) sValue).longValue();
         }
         try {
-            return Long.parseLong(sValue);
+            return Long.parseLong(sValue.toString());
         } catch (NumberFormatException e) {
             throw new SettingsException("Failed to parse long setting [" + setting + "] with value [" + sValue + "]", e);
         }
@@ -321,7 +333,13 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public Boolean getAsBoolean(String setting, Boolean defaultValue) {
-        return Booleans.parseBoolean(get(setting), defaultValue);
+        final Object found = get(setting);
+        if (found == null) {
+            return defaultValue;
+        } else if (found instanceof Boolean) {
+            return (Boolean) found;
+        }
+        return Booleans.parseBoolean(found.toString(), defaultValue);
     }
 
     /**
@@ -329,7 +347,7 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public TimeValue getAsTime(String setting, TimeValue defaultValue) {
-        return parseTimeValue(get(setting), defaultValue, setting);
+        return parseTimeValue(getAsString(setting), defaultValue, setting);
     }
 
     /**
@@ -337,7 +355,7 @@ public final class Settings implements ToXContentFragment {
      * returns the default value provided.
      */
     public ByteSizeValue getAsBytesSize(String setting, ByteSizeValue defaultValue) throws SettingsException {
-        return parseBytesSizeValue(get(setting), defaultValue, setting);
+        return parseBytesSizeValue(getAsString(setting), defaultValue, setting);
     }
 
     /**
@@ -395,14 +413,14 @@ public final class Settings implements ToXContentFragment {
                 final List<String> valuesAsList = (List<String>) valueFromPrefix;
                 return Collections.unmodifiableList(valuesAsList);
             } else if (commaDelimited) {
-                String[] strings = Strings.splitStringByCommaToArray(get(key));
+                String[] strings = Strings.splitStringByCommaToArray(getAsString(key));
                 if (strings.length > 0) {
                     for (String string : strings) {
                         result.add(string.trim());
                     }
                 }
             } else {
-                result.add(get(key).trim());
+                result.add(getAsString(key).trim());
             }
         }
 
@@ -462,12 +480,15 @@ public final class Settings implements ToXContentFragment {
      * Returns a parsed version.
      */
     public Version getAsVersion(String setting, Version defaultVersion) throws SettingsException {
-        String sValue = get(setting);
+        Object sValue = get(setting);
         if (sValue == null) {
             return defaultVersion;
         }
+        if (sValue instanceof Number) {
+            return Version.fromId(((Number) sValue).intValue());
+        }
         try {
-            return Version.fromId(Integer.parseInt(sValue));
+            return Version.fromId(Integer.parseInt(sValue.toString()));
         } catch (Exception e) {
             throw new SettingsException("Failed to parse version setting [" + setting + "] with value [" + sValue + "]", e);
         }
@@ -534,6 +555,10 @@ public final class Settings implements ToXContentFragment {
                 @SuppressWarnings("unchecked")
                 List<String> stringList = (List<String>) value;
                 builder.putList(key, stringList);
+            } else if (value instanceof Boolean) {
+                builder.put(key, (Boolean) value);
+            } else if (value instanceof Number) {
+                builder.put(key, (Number) value);
             } else {
                 builder.put(key, value.toString());
             }
@@ -636,12 +661,16 @@ public final class Settings implements ToXContentFragment {
                 String key = keyBuilder.toString();
                 validateValue(key, null, parser, allowNullValues);
                 builder.putNull(key);
-            } else if (parser.currentToken() == XContentParser.Token.VALUE_STRING
-                || parser.currentToken() == XContentParser.Token.VALUE_NUMBER) {
+            } else if (parser.currentToken() == XContentParser.Token.VALUE_STRING) {
                 String key = keyBuilder.toString();
                 String value = parser.text();
                 validateValue(key, value, parser, allowNullValues);
                 builder.put(key, value);
+            } else if (parser.currentToken() == XContentParser.Token.VALUE_NUMBER) {
+                String key = keyBuilder.toString();
+                String value = parser.text();
+                validateValue(key, value, parser, allowNullValues);
+                builder.put(key, parser.numberValue());
             } else if (parser.currentToken() == XContentParser.Token.VALUE_BOOLEAN) {
                 String key = keyBuilder.toString();
                 validateValue(key, parser.text(), parser, allowNullValues);
@@ -819,6 +848,11 @@ public final class Settings implements ToXContentFragment {
             return put(key, luceneVersion.toString());
         }
 
+        public Builder put(String key, Number value) {
+            map.put(key, value);
+            return this;
+        }
+
         /**
          * Sets a setting with the provided setting key and value.
          *
@@ -866,7 +900,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, boolean value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 
@@ -878,7 +912,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, int value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 
@@ -895,7 +929,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, long value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 
@@ -907,7 +941,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, float value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 
@@ -919,7 +953,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder put(String setting, double value) {
-            put(setting, String.valueOf(value));
+            map.put(setting, value);
             return this;
         }
 

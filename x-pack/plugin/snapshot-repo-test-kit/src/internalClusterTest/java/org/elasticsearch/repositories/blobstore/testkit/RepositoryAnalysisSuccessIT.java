@@ -155,7 +155,7 @@ public class RepositoryAnalysisSuccessIT extends AbstractSnapshotIntegTestCase {
     }
 
     private static BlobPath buildBlobPath(Settings settings) {
-        final String basePath = settings.get(BASE_PATH_SETTING_KEY);
+        final String basePath = settings.getAsString(BASE_PATH_SETTING_KEY);
         if (basePath == null) {
             return BlobPath.EMPTY;
         } else {

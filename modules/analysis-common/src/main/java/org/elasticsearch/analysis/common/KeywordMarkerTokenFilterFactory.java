@@ -48,7 +48,7 @@ public class KeywordMarkerTokenFilterFactory extends AbstractTokenFilterFactory 
 
         boolean ignoreCase =
             settings.getAsBoolean("ignore_case", false);
-        String patternString = settings.get("keywords_pattern");
+        String patternString = settings.getAsString("keywords_pattern");
         if (patternString != null) {
             // a pattern for matching keywords is specified, as opposed to a
             // set of keyword strings to match against

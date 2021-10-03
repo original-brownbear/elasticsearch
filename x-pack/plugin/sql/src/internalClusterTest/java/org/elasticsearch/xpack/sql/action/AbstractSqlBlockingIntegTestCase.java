@@ -175,7 +175,7 @@ public abstract class AbstractSqlBlockingIntegTestCase extends ESIntegTestCase {
         }
 
         public SearchBlockPlugin(Settings settings, Path configPath) throws Exception {
-            nodeId = settings.get("node.name");
+            nodeId = settings.getAsString("node.name");
         }
 
         @Override

@@ -106,7 +106,7 @@ public final class AnalysisRegistry implements Closeable {
                                       BiFunction<String, IndexSettings, AnalysisProvider<T>> indexComponentProvider) throws IOException {
         if (nod.definition != null) {
             // custom component, so we build it from scratch
-            String type = nod.definition.get("type");
+            String type = nod.definition.getAsString("type");
             if (type == null) {
                 throw new IllegalArgumentException("Missing [type] setting for anonymous " + componentType + ": " + nod.definition);
             }
@@ -329,7 +329,7 @@ public final class AnalysisRegistry implements Closeable {
         final Map<String, Settings> subSettings = indexSettings.getSettings().getGroups(componentSettings);
         if (subSettings.containsKey(componentName)) {
             Settings currentSettings = subSettings.get(componentName);
-            return getAnalysisProvider(componentType, providers, componentName, currentSettings.get("type"));
+            return getAnalysisProvider(componentType, providers, componentName, currentSettings.getAsString("type"));
         } else {
             return providerFunction.apply(componentName);
         }
@@ -377,7 +377,7 @@ public final class AnalysisRegistry implements Closeable {
         for (Map.Entry<String, Settings> entry : settingsMap.entrySet()) {
             String name = entry.getKey();
             Settings currentSettings = entry.getValue();
-            String typeName = currentSettings.get("type");
+            String typeName = currentSettings.getAsString("type");
             if (component == Component.ANALYZER) {
                 T factory = null;
                 if (typeName == null) {

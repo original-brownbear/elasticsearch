@@ -31,7 +31,7 @@ public class PatternReplaceTokenFilterFactory extends AbstractTokenFilterFactory
         if (sPattern == null) {
             throw new IllegalArgumentException("pattern is missing for [" + name + "] token filter of type 'pattern_replace'");
         }
-        this.pattern = Regex.compile(sPattern, settings.get("flags"));
+        this.pattern = Regex.compile(sPattern, settings.getAsString("flags"));
         this.replacement = settings.get("replacement", "");
         this.all = settings.getAsBoolean("all", true);
     }

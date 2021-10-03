@@ -69,7 +69,7 @@ public class GetTermVectorsTests extends ESSingleNodeTestCase {
 
                     @Override
                     public TokenStream create(TokenStream tokenStream) {
-                        String delimiter = settings.get("delimiter");
+                        String delimiter = settings.getAsString("delimiter");
                         PayloadEncoder encoder = null;
                         if (settings.get("encoding").equals("float")) {
                             encoder = new FloatEncoder();

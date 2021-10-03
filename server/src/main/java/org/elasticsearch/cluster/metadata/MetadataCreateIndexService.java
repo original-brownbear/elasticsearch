@@ -766,7 +766,7 @@ public class MetadataCreateIndexService {
             indexSettingsBuilder.put(SETTING_NUMBER_OF_REPLICAS, INDEX_NUMBER_OF_REPLICAS_SETTING.get(settings));
         }
         if (settings.get(SETTING_AUTO_EXPAND_REPLICAS) != null && indexSettingsBuilder.get(SETTING_AUTO_EXPAND_REPLICAS) == null) {
-            indexSettingsBuilder.put(SETTING_AUTO_EXPAND_REPLICAS, settings.get(SETTING_AUTO_EXPAND_REPLICAS));
+            indexSettingsBuilder.put(SETTING_AUTO_EXPAND_REPLICAS, settings.getAsString(SETTING_AUTO_EXPAND_REPLICAS));
         }
 
         if (indexSettingsBuilder.get(SETTING_CREATION_DATE) == null) {

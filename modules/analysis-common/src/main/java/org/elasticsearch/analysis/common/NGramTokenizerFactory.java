@@ -74,7 +74,7 @@ public class NGramTokenizerFactory extends AbstractTokenizerFactory {
                     throw new IllegalArgumentException("Unknown token type: '" + characterClass + "', must be one of " + Stream
                             .of(MATCHERS.keySet(), Collections.singleton("custom")).flatMap(x -> x.stream()).collect(Collectors.toSet()));
                 }
-                String customCharacters = settings.get("custom_token_chars");
+                String customCharacters = settings.getAsString("custom_token_chars");
                 if (customCharacters == null) {
                     throw new IllegalArgumentException("Token type: 'custom' requires setting `custom_token_chars`");
                 }

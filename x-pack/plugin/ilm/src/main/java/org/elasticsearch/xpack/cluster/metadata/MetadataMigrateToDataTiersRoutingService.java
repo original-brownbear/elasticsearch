@@ -423,7 +423,7 @@ public final class MetadataMigrateToDataTiersRoutingService {
             logger.debug("index [{}]: removed setting [{}]", indexName, attributeBasedRoutingSettingName);
         } else {
             // parse the custom attribute routing into the corresponding tier preference and configure it
-            String attributeValue = currentIndexSettings.get(attributeBasedRoutingSettingName);
+            String attributeValue = currentIndexSettings.getAsString(attributeBasedRoutingSettingName);
             String convertedTierPreference = convertAttributeValueToTierPreference(attributeValue);
             if (convertedTierPreference != null) {
                 newSettingsBuilder.put(TIER_PREFERENCE, convertedTierPreference);

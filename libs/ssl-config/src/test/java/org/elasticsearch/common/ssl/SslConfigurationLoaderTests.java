@@ -43,7 +43,7 @@ public class SslConfigurationLoaderTests extends ESTestCase {
 
         @Override
         protected String getSettingAsString(String key) throws Exception {
-            return settings.get(key);
+            return settings.getAsString(key);
         }
 
         @Override

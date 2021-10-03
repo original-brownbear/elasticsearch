@@ -80,7 +80,7 @@ public class RepositoryFilterUserMetadataIT extends ESIntegTestCase {
 
                     // Storing the initially expected metadata value here to verify that #filterUserMetadata is only called once on the
                     // initial master node starting the snapshot
-                    private final String initialMetaValue = metadata.settings().get(MASTER_SETTING_VALUE);
+                    private final String initialMetaValue = metadata.settings().getAsString(MASTER_SETTING_VALUE);
 
                     @Override
                     public void finalizeSnapshot(FinalizeSnapshotContext finalizeSnapshotContext) {

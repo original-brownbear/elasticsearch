@@ -108,7 +108,7 @@ public class ScriptService implements Closeable, ClusterStateApplier, ScriptComp
         this.engines = Collections.unmodifiableMap(Objects.requireNonNull(engines));
         this.contexts = Collections.unmodifiableMap(Objects.requireNonNull(contexts));
 
-        if (Strings.hasLength(settings.get(DISABLE_DYNAMIC_SCRIPTING_SETTING))) {
+        if (Strings.hasLength(settings.getAsString(DISABLE_DYNAMIC_SCRIPTING_SETTING))) {
             throw new IllegalArgumentException(DISABLE_DYNAMIC_SCRIPTING_SETTING + " is not a supported setting, replace with " +
                     "fine-grained script settings. \n Dynamic scripts can be enabled for all languages and all operations not " +
                     "using `script.disable_dynamic: false` in elasticsearch.yml");

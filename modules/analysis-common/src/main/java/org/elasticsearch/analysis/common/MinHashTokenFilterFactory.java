@@ -39,16 +39,16 @@ public class MinHashTokenFilterFactory extends AbstractTokenFilterFactory {
     private Map<String, String> convertSettings(Settings settings) {
         Map<String, String> settingMap = new HashMap<>();
         if (settings.hasValue("hash_count")) {
-            settingMap.put("hashCount", settings.get("hash_count"));
+            settingMap.put("hashCount", settings.getAsString("hash_count"));
         }
         if (settings.hasValue("bucketCount")) {
-            settingMap.put("bucketCount", settings.get("bucket_count"));
+            settingMap.put("bucketCount", settings.getAsString("bucket_count"));
         }
         if (settings.hasValue("hashSetSize")) {
-            settingMap.put("hashSetSize", settings.get("hash_set_size"));
+            settingMap.put("hashSetSize", settings.getAsString("hash_set_size"));
         }
         if (settings.hasValue("with_rotation")) {
-            settingMap.put("withRotation", settings.get("with_rotation"));
+            settingMap.put("withRotation", settings.getAsString("with_rotation"));
         }
         return settingMap;
     }

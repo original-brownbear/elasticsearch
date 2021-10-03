@@ -164,7 +164,7 @@ public class Exporters extends AbstractLifecycleComponent {
         Settings exportersSettings = settings.getByPrefix("xpack.monitoring.exporters.");
         for (String name : exportersSettings.names()) {
             Settings exporterSettings = exportersSettings.getAsSettings(name);
-            String type = exporterSettings.get("type");
+            String type = exporterSettings.getAsString("type");
             if (type == null) {
                 throw new SettingsException("missing exporter type for [" + name + "] exporter");
             }

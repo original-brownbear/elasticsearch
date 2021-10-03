@@ -43,7 +43,7 @@ public class IcuNormalizerTokenFilterFactory extends AbstractTokenFilterFactory 
     static Normalizer2 wrapWithUnicodeSetFilter(final IndexSettings indexSettings,
                                                 final Normalizer2 normalizer,
                                                 final Settings settings) {
-        String unicodeSetFilter = settings.get("unicode_set_filter");
+        String unicodeSetFilter = settings.getAsString("unicode_set_filter");
         if (unicodeSetFilter != null) {
             UnicodeSet unicodeSet = new UnicodeSet(unicodeSetFilter);
 

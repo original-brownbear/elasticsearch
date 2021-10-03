@@ -61,9 +61,9 @@ public class SslClientAuthenticationTests extends SecurityIntegTestCase {
                 .keySet()
                 .forEach(k -> {
                     String httpKey = "xpack.security.http.ssl." + k;
-                    String value = baseSettings.get("xpack.security.transport.ssl." + k);
+                    String value = baseSettings.getAsString("xpack.security.transport.ssl." + k);
                     if (value != null) {
-                        builder.put(httpKey, baseSettings.get("xpack.security.transport.ssl." + k));
+                        builder.put(httpKey, baseSettings.getAsString("xpack.security.transport.ssl." + k));
                     }
                 });
 

@@ -45,7 +45,7 @@ public class IcuCollationTokenFilterFactory extends AbstractTokenFilterFactory {
         super(indexSettings, name, settings);
 
         Collator collator;
-        String rules = settings.get("rules");
+        String rules = settings.getAsString("rules");
         if (rules != null) {
             Exception failureToResolve = null;
             try {
@@ -63,12 +63,12 @@ public class IcuCollationTokenFilterFactory extends AbstractTokenFilterFactory {
                 }
             }
         } else {
-            String language = settings.get("language");
+            String language = settings.getAsString("language");
             if (language != null) {
                 ULocale locale;
-                String country = settings.get("country");
+                String country = settings.getAsString("country");
                 if (country != null) {
-                    String variant = settings.get("variant");
+                    String variant = settings.getAsString("variant");
                     if (variant != null) {
                         locale = new ULocale(language, country, variant);
                     } else {
@@ -84,7 +84,7 @@ public class IcuCollationTokenFilterFactory extends AbstractTokenFilterFactory {
         }
 
         // set the strength flag, otherwise it will be the default.
-        String strength = settings.get("strength");
+        String strength = settings.getAsString("strength");
         if (strength != null) {
             if (strength.equalsIgnoreCase("primary")) {
                 collator.setStrength(Collator.PRIMARY);
@@ -102,7 +102,7 @@ public class IcuCollationTokenFilterFactory extends AbstractTokenFilterFactory {
         }
 
         // set the decomposition flag, otherwise it will be the default.
-        String decomposition = settings.get("decomposition");
+        String decomposition = settings.getAsString("decomposition");
         if (decomposition != null) {
             if (decomposition.equalsIgnoreCase("no")) {
                 collator.setDecomposition(Collator.NO_DECOMPOSITION);
@@ -115,7 +115,7 @@ public class IcuCollationTokenFilterFactory extends AbstractTokenFilterFactory {
 
         // expert options: concrete subclasses are always a RuleBasedCollator
         RuleBasedCollator rbc = (RuleBasedCollator) collator;
-        String alternate = settings.get("alternate");
+        String alternate = settings.getAsString("alternate");
         if (alternate != null) {
             if (alternate.equalsIgnoreCase("shifted")) {
                 rbc.setAlternateHandlingShifted(true);
@@ -131,7 +131,7 @@ public class IcuCollationTokenFilterFactory extends AbstractTokenFilterFactory {
             rbc.setCaseLevel(caseLevel);
         }
 
-        String caseFirst = settings.get("caseFirst");
+        String caseFirst = settings.getAsString("caseFirst");
         if (caseFirst != null) {
             if (caseFirst.equalsIgnoreCase("lower")) {
                 rbc.setLowerCaseFirst(true);
@@ -147,7 +147,7 @@ public class IcuCollationTokenFilterFactory extends AbstractTokenFilterFactory {
             rbc.setNumericCollation(numeric);
         }
 
-        String variableTop = settings.get("variableTop");
+        String variableTop = settings.getAsString("variableTop");
         if (variableTop != null) {
             rbc.setVariableTop(variableTop);
         }

@@ -79,7 +79,7 @@ public class CopySettingsStep extends ClusterStateActionStep {
 
         Settings.Builder settings = Settings.builder().put(targetIndexMetadata.getSettings());
         for (String key : settingsKeys) {
-            String value = sourceIndexMetadata.getSettings().get(key);
+            String value = sourceIndexMetadata.getSettings().getAsString(key);
             settings.put(key, value);
         }
 

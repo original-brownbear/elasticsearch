@@ -95,7 +95,7 @@ public class ServiceAccountSingleNodeTests extends SecuritySingleNodeTestCase {
         final AuthenticateRequest authenticateRequest = new AuthenticateRequest("elastic/fleet-server");
         final AuthenticateResponse authenticateResponse =
             createServiceAccountClient().execute(AuthenticateAction.INSTANCE, authenticateRequest).actionGet();
-        final String nodeName = node().settings().get(Node.NODE_NAME_SETTING.getKey());
+        final String nodeName = node().settings().getAsString(Node.NODE_NAME_SETTING.getKey());
         assertThat(authenticateResponse.authentication(), equalTo(
            getExpectedAuthentication("token1", "file")
         ));
@@ -171,7 +171,7 @@ public class ServiceAccountSingleNodeTests extends SecuritySingleNodeTestCase {
     }
 
     private Authentication getExpectedAuthentication(String tokenName, String tokenSource) {
-        final String nodeName = node().settings().get(Node.NODE_NAME_SETTING.getKey());
+        final String nodeName = node().settings().getAsString(Node.NODE_NAME_SETTING.getKey());
         return new Authentication(
             new User("elastic/fleet-server", Strings.EMPTY_ARRAY, "Service account - elastic/fleet-server", null,
                 Map.of("_elastic_service_account", true), true),

@@ -1051,14 +1051,14 @@ public class Security extends Plugin implements SystemIndexPlugin, IngestPlugin,
     static void validateForFips(Settings settings) {
         final List<String> validationErrors = new ArrayList<>();
         Settings keystoreTypeSettings = settings.filter(k -> k.endsWith("keystore.type"))
-            .filter(k -> settings.get(k).equalsIgnoreCase("jks"));
+            .filter(k -> settings.getAsString(k).equalsIgnoreCase("jks"));
         if (keystoreTypeSettings.isEmpty() == false) {
             validationErrors.add("JKS Keystores cannot be used in a FIPS 140 compliant JVM. Please " +
                 "revisit [" + keystoreTypeSettings.toDelimitedString(',') + "] settings");
         }
         Settings keystorePathSettings = settings.filter(k -> k.endsWith("keystore.path"))
             .filter(k -> settings.hasValue(k.replace(".path", ".type")) == false)
-            .filter(k -> KeyStoreUtil.inferKeyStoreType(settings.get(k)).equals("jks"));
+            .filter(k -> KeyStoreUtil.inferKeyStoreType(settings.getAsString(k)).equals("jks"));
         if (keystorePathSettings.isEmpty() == false) {
             validationErrors.add("JKS Keystores cannot be used in a FIPS 140 compliant JVM. Please " +
                 "revisit [" + keystorePathSettings.toDelimitedString(',') + "] settings");

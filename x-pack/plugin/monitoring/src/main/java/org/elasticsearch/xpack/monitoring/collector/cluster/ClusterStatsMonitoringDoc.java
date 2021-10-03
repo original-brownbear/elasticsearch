@@ -126,7 +126,7 @@ public class ClusterStatsMonitoringDoc extends MonitoringDoc {
         if (metadata == null) {
             return null;
         }
-        return metadata.settings().get(SETTING_DISPLAY_NAME);
+        return metadata.settings().getAsString(SETTING_DISPLAY_NAME);
     }
 
     @Override

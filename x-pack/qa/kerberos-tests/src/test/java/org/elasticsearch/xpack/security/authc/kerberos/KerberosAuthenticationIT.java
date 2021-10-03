@@ -197,13 +197,13 @@ public class KerberosAuthenticationIT extends ESRestTestCase {
     }
 
     private static void configureRestClientBuilder(final RestClientBuilder restClientBuilder, final Settings settings) {
-        final String socketTimeoutString = settings.get(CLIENT_SOCKET_TIMEOUT);
+        final String socketTimeoutString = settings.getAsString(CLIENT_SOCKET_TIMEOUT);
         if (socketTimeoutString != null) {
             final TimeValue socketTimeout = TimeValue.parseTimeValue(socketTimeoutString, CLIENT_SOCKET_TIMEOUT);
             restClientBuilder.setRequestConfigCallback(conf -> conf.setSocketTimeout(Math.toIntExact(socketTimeout.getMillis())));
         }
         if (settings.hasValue(CLIENT_PATH_PREFIX)) {
-            restClientBuilder.setPathPrefix(settings.get(CLIENT_PATH_PREFIX));
+            restClientBuilder.setPathPrefix(settings.getAsString(CLIENT_PATH_PREFIX));
         }
     }
 }

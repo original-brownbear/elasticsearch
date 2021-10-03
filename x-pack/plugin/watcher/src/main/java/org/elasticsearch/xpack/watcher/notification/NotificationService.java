@@ -131,7 +131,7 @@ public abstract class NotificationService<Account> {
     }
 
     private @Nullable String getDefaultAccountName(Settings settings) {
-        return settings.get("xpack.notification." + type + ".default_account");
+        return settings.getAsString("xpack.notification." + type + ".default_account");
     }
 
     private Map<String, LazyInitializable<Account, SettingsException>> createAccounts(Settings settings, Set<String> accountNames,

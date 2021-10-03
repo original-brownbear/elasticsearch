@@ -171,7 +171,7 @@ final class LocalDatabases implements Closeable {
 
     @SuppressForbidden(reason = "PathUtils#get")
     private static Path getGeoipConfigDirectory(Environment environment) {
-        return PathUtils.get(environment.settings().get("ingest.geoip.database_path"));
+        return PathUtils.get(environment.settings().getAsString("ingest.geoip.database_path"));
     }
 
     private class GeoipDirectoryListener implements FileChangesListener {

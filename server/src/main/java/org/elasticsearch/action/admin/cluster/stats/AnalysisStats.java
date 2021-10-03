@@ -104,7 +104,7 @@ public final class AnalysisStats implements ToXContentFragment, Writeable {
                     }
                 }
 
-                String tokenizer = analyzerSetting.get("tokenizer");
+                String tokenizer = analyzerSetting.getAsString("tokenizer");
                 if (tokenizer != null) {
                     stats = usedBuiltInTokenizers.computeIfAbsent(tokenizer, IndexFeatureStats::new);
                     stats.count++;
@@ -144,7 +144,7 @@ public final class AnalysisStats implements ToXContentFragment, Writeable {
                 Map<String, IndexFeatureStats> stats,
                 Set<String> indexTypes) {
         for (Settings analysisComponentSettings : settings) {
-            final String type = analysisComponentSettings.get("type");
+            final String type = analysisComponentSettings.getAsString("type");
             if (type != null) {
                 IndexFeatureStats s = stats.computeIfAbsent(type, IndexFeatureStats::new);
                 s.count++;

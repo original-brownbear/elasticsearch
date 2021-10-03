@@ -157,7 +157,7 @@ public abstract class AbstractEqlBlockingIntegTestCase extends AbstractEqlIntegT
         }
 
         public SearchBlockPlugin(Settings settings, Path configPath) throws Exception {
-            nodeId = settings.get("node.name");
+            nodeId = settings.getAsString("node.name");
         }
 
         @Override

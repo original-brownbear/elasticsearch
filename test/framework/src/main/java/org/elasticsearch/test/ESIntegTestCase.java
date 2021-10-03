@@ -1994,8 +1994,8 @@ public abstract class ESIntegTestCase extends ESTestCase {
     protected NumShards getNumShards(String index) {
         Metadata metadata = client().admin().cluster().prepareState().get().getState().metadata();
         assertThat(metadata.hasIndex(index), equalTo(true));
-        int numShards = Integer.valueOf(metadata.index(index).getSettings().get(SETTING_NUMBER_OF_SHARDS));
-        int numReplicas = Integer.valueOf(metadata.index(index).getSettings().get(SETTING_NUMBER_OF_REPLICAS));
+        int numShards = Integer.parseInt(metadata.index(index).getSettings().getAsString(SETTING_NUMBER_OF_SHARDS));
+        int numReplicas = Integer.parseInt(metadata.index(index).getSettings().getAsString(SETTING_NUMBER_OF_REPLICAS));
         return new NumShards(numShards, numReplicas);
     }
 
@@ -2217,14 +2217,14 @@ public abstract class ESIntegTestCase extends ESTestCase {
     public static Index resolveIndex(String index) {
         GetIndexResponse getIndexResponse = client().admin().indices().prepareGetIndex().setIndices(index).get();
         assertTrue("index " + index + " not found", getIndexResponse.getSettings().containsKey(index));
-        String uuid = getIndexResponse.getSettings().get(index).get(IndexMetadata.SETTING_INDEX_UUID);
+        String uuid = getIndexResponse.getSettings().get(index).getAsString(IndexMetadata.SETTING_INDEX_UUID);
         return new Index(index, uuid);
     }
 
     public static String resolveCustomDataPath(String index) {
         GetIndexResponse getIndexResponse = client().admin().indices().prepareGetIndex().setIndices(index).get();
         assertTrue("index " + index + " not found", getIndexResponse.getSettings().containsKey(index));
-        return getIndexResponse.getSettings().get(index).get(IndexMetadata.SETTING_DATA_PATH);
+        return getIndexResponse.getSettings().get(index).getAsString(IndexMetadata.SETTING_DATA_PATH);
     }
 
     public static boolean inFipsJvm() {

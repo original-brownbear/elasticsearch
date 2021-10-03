@@ -34,7 +34,7 @@ public class PatternAnalyzerProvider extends AbstractIndexAnalyzerProvider<Analy
         if (sPattern == null) {
             throw new IllegalArgumentException("Analyzer [" + name + "] of type pattern must have a `pattern` set");
         }
-        Pattern pattern = Regex.compile(sPattern, settings.get("flags"));
+        Pattern pattern = Regex.compile(sPattern, settings.getAsString("flags"));
 
         analyzer = new PatternAnalyzer(pattern, lowercase, stopWords);
     }

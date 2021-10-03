@@ -250,7 +250,7 @@ public class PolicyStepsRegistry {
         }
 
         final String phase = stepKey.getPhase();
-        final String policyName = indexMetadata.getSettings().get(LifecycleSettings.LIFECYCLE_NAME);
+        final String policyName = indexMetadata.getSettings().getAsString(LifecycleSettings.LIFECYCLE_NAME);
         final Index index = indexMetadata.getIndex();
 
         if (policyName == null) {

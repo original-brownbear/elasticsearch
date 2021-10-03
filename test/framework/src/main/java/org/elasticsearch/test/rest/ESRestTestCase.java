@@ -1151,9 +1151,9 @@ public abstract class ESRestTestCase extends ESTestCase {
     }
 
     protected static void configureClient(RestClientBuilder builder, Settings settings) throws IOException {
-        String truststorePath = settings.get(TRUSTSTORE_PATH);
-        String certificateAuthorities = settings.get(CERTIFICATE_AUTHORITIES);
-        String clientCertificatePath = settings.get(CLIENT_CERT_PATH);
+        String truststorePath = settings.getAsString(TRUSTSTORE_PATH);
+        String certificateAuthorities = settings.getAsString(CERTIFICATE_AUTHORITIES);
+        String clientCertificatePath = settings.getAsString(CLIENT_CERT_PATH);
 
         if (certificateAuthorities != null && truststorePath != null) {
             throw new IllegalStateException("Cannot set both " + CERTIFICATE_AUTHORITIES + " and " + TRUSTSTORE_PATH
@@ -1165,7 +1165,7 @@ public abstract class ESRestTestCase extends ESTestCase {
                 throw new IllegalStateException("Keystore " + truststorePath + "cannot be used in FIPS 140 mode. Please configure "
                     + CERTIFICATE_AUTHORITIES + " with a PEM encoded trusted CA/certificate instead");
             }
-            final String keystorePass = settings.get(TRUSTSTORE_PASSWORD);
+            final String keystorePass = settings.getAsString(TRUSTSTORE_PASSWORD);
             if (keystorePass == null) {
                 throw new IllegalStateException(TRUSTSTORE_PATH + " is provided but not " + TRUSTSTORE_PASSWORD);
             }
@@ -1199,8 +1199,8 @@ public abstract class ESRestTestCase extends ESTestCase {
                 final SSLContextBuilder sslContextBuilder = SSLContexts.custom();
                 if (clientCertificatePath != null) {
                     final Path certPath = PathUtils.get(clientCertificatePath);
-                    final Path keyPath = PathUtils.get(Objects.requireNonNull(settings.get(CLIENT_KEY_PATH), "No key provided"));
-                    final String password = settings.get(CLIENT_KEY_PASSWORD);
+                    final Path keyPath = PathUtils.get(Objects.requireNonNull(settings.getAsString(CLIENT_KEY_PATH), "No key provided"));
+                    final String password = settings.getAsString(CLIENT_KEY_PASSWORD);
                     final char[] passwordChars = password == null ? null : password.toCharArray();
                     final PrivateKey key = PemUtils.readPrivateKey(keyPath, () -> passwordChars);
                     final Certificate[] clientCertChain = PemUtils.readCertificates(List.of(certPath)).toArray(Certificate[]::new);
@@ -1223,11 +1223,11 @@ public abstract class ESRestTestCase extends ESTestCase {
             defaultHeaders[i++] = new BasicHeader(entry.getKey(), entry.getValue());
         }
         builder.setDefaultHeaders(defaultHeaders);
-        final String socketTimeoutString = Objects.requireNonNullElse(settings.get(CLIENT_SOCKET_TIMEOUT), "60s");
+        final String socketTimeoutString = Objects.requireNonNullElse(settings.getAsString(CLIENT_SOCKET_TIMEOUT), "60s");
         final TimeValue socketTimeout = TimeValue.parseTimeValue(socketTimeoutString, CLIENT_SOCKET_TIMEOUT);
         builder.setRequestConfigCallback(conf -> conf.setSocketTimeout(Math.toIntExact(socketTimeout.getMillis())));
         if (settings.hasValue(CLIENT_PATH_PREFIX)) {
-            builder.setPathPrefix(settings.get(CLIENT_PATH_PREFIX));
+            builder.setPathPrefix(settings.getAsString(CLIENT_PATH_PREFIX));
         }
     }
 

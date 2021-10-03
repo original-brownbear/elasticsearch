@@ -53,7 +53,7 @@ public class ClusterUpdateSettingsResponseTests extends AbstractSerializingTestC
         List<String> keysToBeModified = randomSubsetOf(randomIntBetween(1, allKeys.size()), allKeys);
         Builder builder = Settings.builder();
         for (String key : allKeys) {
-            String value = settings.get(key);
+            String value = settings.getAsString(key);
             if (keysToBeModified.contains(key)) {
                 value += randomAlphaOfLengthBetween(2, 5);
             }

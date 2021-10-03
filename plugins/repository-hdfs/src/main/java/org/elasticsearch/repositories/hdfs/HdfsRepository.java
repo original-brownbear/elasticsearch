@@ -60,7 +60,7 @@ public final class HdfsRepository extends BlobStoreRepository {
         this.environment = environment;
         this.chunkSize = metadata.settings().getAsBytesSize("chunk_size", null);
 
-        String uriSetting = getMetadata().settings().get("uri");
+        String uriSetting = getMetadata().settings().getAsString("uri");
         if (Strings.hasText(uriSetting) == false) {
             throw new IllegalArgumentException("No 'uri' defined for hdfs snapshot/restore");
         }
@@ -76,7 +76,7 @@ public final class HdfsRepository extends BlobStoreRepository {
                 "Use 'path' option to specify a path [%s], not the uri [%s] for hdfs snapshot/restore", uri.getPath(), uriSetting));
         }
 
-        pathSetting = getMetadata().settings().get("path");
+        pathSetting = getMetadata().settings().getAsString("path");
         // get configuration
         if (pathSetting == null) {
             throw new IllegalArgumentException("No 'path' defined for hdfs snapshot/restore");
@@ -91,7 +91,7 @@ public final class HdfsRepository extends BlobStoreRepository {
         final Settings confSettings = repositorySettings.getByPrefix("conf.");
         for (String key : confSettings.keySet()) {
             logger.debug("Adding configuration to HDFS Client Configuration : {} = {}", key, confSettings.get(key));
-            hadoopConfiguration.set(key, confSettings.get(key));
+            hadoopConfiguration.set(key, confSettings.getAsString(key));
         }
 
         // Disable FS cache
@@ -140,7 +140,7 @@ public final class HdfsRepository extends BlobStoreRepository {
         }
 
         // Check if the user added a principal to use, and that there is a keytab file provided
-        String kerberosPrincipal = repositorySettings.get(CONF_SECURITY_PRINCIPAL);
+        String kerberosPrincipal = repositorySettings.getAsString(CONF_SECURITY_PRINCIPAL);
 
         // Check to see if the authentication method is compatible
         if (kerberosPrincipal != null && authMethod.equals(AuthenticationMethod.SIMPLE)) {

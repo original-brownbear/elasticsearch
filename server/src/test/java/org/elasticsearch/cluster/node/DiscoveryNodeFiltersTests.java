@@ -342,7 +342,7 @@ public class DiscoveryNodeFiltersTests extends ESTestCase {
         List<String> keys = new ArrayList<>(source.keySet());
         Collections.shuffle(keys, random());
         for (String o : keys) {
-            settings.put(o, source.get(o));
+            settings.put(o, source.getAsString(o));
         }
         return settings.build();
     }

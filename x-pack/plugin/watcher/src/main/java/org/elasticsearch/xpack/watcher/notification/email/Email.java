@@ -412,7 +412,7 @@ public class Email implements ToXContentObject {
         }
 
         public static Priority parse(Settings settings, String name) {
-            String value = settings.get(name);
+            String value = settings.getAsString(name);
             if (value == null) {
                 return null;
             }
@@ -478,7 +478,7 @@ public class Email implements ToXContentObject {
         }
 
         public static Address parse(Settings settings, String name) {
-            String value = settings.get(name);
+            String value = settings.getAsString(name);
             try {
                 return value != null ? new Address(value) : null;
             } catch (AddressException ae) {

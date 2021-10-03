@@ -119,7 +119,7 @@ public class FileServiceAccountTokenStoreTests extends ESTestCase {
         Files.createDirectories(configDir);
         Path targetFile = configDir.resolve("service_tokens");
         Files.copy(serviceTokensSourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
-        final String hashingAlgo = settings.get("xpack.security.authc.service_token_hashing.algorithm");
+        final String hashingAlgo = settings.getAsString("xpack.security.authc.service_token_hashing.algorithm");
         final Hasher hasher = Hasher.resolve(hashingAlgo);
         try (ResourceWatcherService watcherService = new ResourceWatcherService(settings, threadPool)) {
             final AtomicInteger counter = new AtomicInteger(0);

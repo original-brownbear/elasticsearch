@@ -172,7 +172,7 @@ public class SamlMetadataCommand extends KeyStoreAwareCommand {
                 .signingCredential(spConfig.getSigningConfiguration().getCredential())
                 .authnRequestsSigned(spConfig.getSigningConfiguration().shouldSign(AuthnRequest.DEFAULT_ELEMENT_LOCAL_NAME))
                 .nameIdFormat(realm.getSetting(SamlRealmSettings.NAMEID_FORMAT))
-                .serviceName(option(serviceNameSpec, options, env.settings().get("cluster.name")));
+                .serviceName(option(serviceNameSpec, options, env.settings().getAsString("cluster.name")));
 
         Map<String, String> attributes = getAttributeNames(options, realm);
         for (String attr : attributes.keySet()) {
@@ -395,7 +395,7 @@ public class SamlMetadataCommand extends KeyStoreAwareCommand {
         final String prefix = RealmSettings.realmSettingPrefix(realm.identifier()) + SamlRealmSettings.AttributeSetting.ATTRIBUTES_PREFIX;
         final Settings attributeSettings = realm.settings().getByPrefix(prefix);
         for (String key : sorted(attributeSettings.keySet())) {
-            final String attr = attributeSettings.get(key);
+            final String attr = attributeSettings.getAsString(key);
             attributes.put(attr, key);
         }
         return attributes;

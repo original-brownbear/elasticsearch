@@ -49,7 +49,7 @@ public class FingerprintAnalyzerProvider extends AbstractIndexAnalyzerProvider<A
     }
 
     public static char parseSeparator(Settings settings) throws IllegalArgumentException {
-        String customSeparator = settings.get(SEPARATOR.getPreferredName());
+        String customSeparator = settings.getAsString(SEPARATOR.getPreferredName());
         if (customSeparator == null) {
             return DEFAULT_SEPARATOR;
         } else if (customSeparator.length() == 1) {

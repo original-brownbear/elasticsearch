@@ -87,7 +87,7 @@ public class ReindexSslConfig {
 
             @Override
             protected String getSettingAsString(String key) {
-                return settings.get(key);
+                return settings.getAsString(key);
             }
 
             @Override
