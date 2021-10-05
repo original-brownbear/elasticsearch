@@ -19,10 +19,10 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.core.CoreCollectionUtils;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentParser.Token;
 import org.elasticsearch.test.ESTestCase;
 import org.hamcrest.Matcher;
@@ -1016,7 +1016,7 @@ public abstract class BaseXContentTestCase extends ESTestCase {
 
     /**
      * Test that the same map written multiple times do not trigger the self-reference check in
-     * {@link CollectionUtils#ensureNoSelfReferences(Object, String)} (Object)}
+     * {@link CoreCollectionUtils#ensureNoSelfReferences(Object, String)} (Object)}
      */
     public void testRepeatedMapsAndNoSelfReferences() throws Exception {
         Map<String, Object> mapB = singletonMap("b", "B");

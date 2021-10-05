@@ -9,7 +9,7 @@ package org.elasticsearch.search.aggregations.support.values;
 
 import org.apache.lucene.search.Scorable;
 import org.elasticsearch.common.lucene.ScorerAware;
-import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.core.CoreCollectionUtils;
 import org.elasticsearch.index.fielddata.SortedBinaryDocValues;
 import org.elasticsearch.index.fielddata.SortingBinaryDocValues;
 import org.elasticsearch.script.AggregationScript;
@@ -34,7 +34,7 @@ public class ScriptBytesValues extends SortingBinaryDocValues implements ScorerA
         if (o == null) {
             values[i].clear();
         } else {
-            CollectionUtils.ensureNoSelfReferences(o, "ScriptBytesValues value");
+            CoreCollectionUtils.ensureNoSelfReferences(o, "ScriptBytesValues value");
             values[i].copyChars(o.toString());
         }
     }

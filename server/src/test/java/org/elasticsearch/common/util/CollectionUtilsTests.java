@@ -12,6 +12,7 @@ import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefArray;
 import org.apache.lucene.util.BytesRefBuilder;
 import org.apache.lucene.util.Counter;
+import org.elasticsearch.core.CoreCollectionUtils;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.ArrayList;
@@ -171,15 +172,15 @@ public class CollectionUtilsTests extends ESTestCase {
     }
 
     public void testEnsureNoSelfReferences() {
-        CollectionUtils.ensureNoSelfReferences(emptyMap(), "test with empty map");
-        CollectionUtils.ensureNoSelfReferences(null, "test with null");
+        CoreCollectionUtils.ensureNoSelfReferences(emptyMap(), "test with empty map");
+        CoreCollectionUtils.ensureNoSelfReferences(null, "test with null");
 
         {
             Map<String, Object> map = new HashMap<>();
             map.put("field", map);
 
             IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-                () -> CollectionUtils.ensureNoSelfReferences(map, "test with self ref value"));
+                () -> CoreCollectionUtils.ensureNoSelfReferences(map, "test with self ref value"));
             assertThat(e.getMessage(), containsString("Iterable object is self-referencing itself (test with self ref value)"));
         }
         {
@@ -187,7 +188,7 @@ public class CollectionUtilsTests extends ESTestCase {
             map.put(map, 1);
 
             IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-                () -> CollectionUtils.ensureNoSelfReferences(map, "test with self ref key"));
+                () -> CoreCollectionUtils.ensureNoSelfReferences(map, "test with self ref key"));
             assertThat(e.getMessage(), containsString("Iterable object is self-referencing itself (test with self ref key)"));
         }
 

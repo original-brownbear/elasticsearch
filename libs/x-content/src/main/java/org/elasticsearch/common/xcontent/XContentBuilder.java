@@ -9,6 +9,7 @@
 package org.elasticsearch.common.xcontent;
 
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.CoreCollectionUtils;
 import org.elasticsearch.core.RestApiVersion;
 
 import java.io.ByteArrayOutputStream;
@@ -29,7 +30,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -942,7 +942,7 @@ public final class XContentBuilder implements Closeable, Flushable {
         // checks that the map does not contain references to itself because
         // iterating over map entries will cause a stackoverflow error
         if (ensureNoSelfReferences) {
-            ensureNoSelfReferences(values);
+            CoreCollectionUtils.ensureNoSelfReferences(values, "");
         }
 
         if (writeStartAndEndHeaders) {
@@ -975,7 +975,7 @@ public final class XContentBuilder implements Closeable, Flushable {
             // checks that the iterable does not contain references to itself because
             // iterating over entries will cause a stackoverflow error
             if (ensureNoSelfReferences) {
-                ensureNoSelfReferences(values);
+                CoreCollectionUtils.ensureNoSelfReferences(values, "");
             }
             startArray();
             for (Object value : values) {
@@ -1121,40 +1121,6 @@ public final class XContentBuilder implements Closeable, Flushable {
     static void ensureNotNull(Object value, String message) {
         if (value == null) {
             throw new IllegalArgumentException(message);
-        }
-    }
-
-    private static void ensureNoSelfReferences(Object value) {
-        Iterable<?> it = convert(value);
-        if (it != null) {
-            ensureNoSelfReferences(it, value, Collections.newSetFromMap(new IdentityHashMap<>()));
-        }
-    }
-
-    private static Iterable<?> convert(Object value) {
-        if (value == null) {
-            return null;
-        }
-        if (value instanceof Map) {
-            return ((Map<?,?>) value).values();
-        } else if ((value instanceof Iterable) && (value instanceof Path == false)) {
-            return (Iterable<?>) value;
-        } else if (value instanceof Object[]) {
-            return Arrays.asList((Object[]) value);
-        } else {
-            return null;
-        }
-    }
-
-    private static void ensureNoSelfReferences(final Iterable<?> value, Object originalReference, final Set<Object> ancestors) {
-        if (value != null) {
-            if (ancestors.add(originalReference) == false) {
-                throw new IllegalArgumentException("Iterable object is self-referencing itself");
-            }
-            for (Object o : value) {
-                ensureNoSelfReferences(convert(o), o, ancestors);
-            }
-            ancestors.remove(originalReference);
         }
     }
 

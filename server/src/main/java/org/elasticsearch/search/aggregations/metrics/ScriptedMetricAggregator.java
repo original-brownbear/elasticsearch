@@ -12,8 +12,8 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.Scorable;
 import org.apache.lucene.search.ScoreMode;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.ObjectArray;
+import org.elasticsearch.core.CoreCollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.script.Script;
@@ -142,7 +142,7 @@ class ScriptedMetricAggregator extends MetricsAggregator {
             return new State();
         }
         // The last script that touched the state at this point is the "map" script
-        CollectionUtils.ensureNoSelfReferences(state.aggState, "Scripted metric aggs map script");
+        CoreCollectionUtils.ensureNoSelfReferences(state.aggState, "Scripted metric aggs map script");
         return state;
     }
 
@@ -182,7 +182,7 @@ class ScriptedMetricAggregator extends MetricsAggregator {
             }
             Map<String, Object> initialState = new HashMap<>();
             initScriptFactory.newInstance(initScriptParamsForState, initialState).execute();
-            CollectionUtils.ensureNoSelfReferences(initialState, "Scripted metric aggs init script");
+            CoreCollectionUtils.ensureNoSelfReferences(initialState, "Scripted metric aggs init script");
             return initialState;
         }
 
@@ -191,7 +191,7 @@ class ScriptedMetricAggregator extends MetricsAggregator {
                 return aggState;
             }
             Object result = combineScriptFactory.newInstance(combineScriptParamsForState, aggState).execute();
-            CollectionUtils.ensureNoSelfReferences(result, "Scripted metric aggs combine script");
+            CoreCollectionUtils.ensureNoSelfReferences(result, "Scripted metric aggs combine script");
             return result;
         }
 

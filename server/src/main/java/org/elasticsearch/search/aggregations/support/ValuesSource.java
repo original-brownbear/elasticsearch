@@ -20,7 +20,7 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.Rounding;
 import org.elasticsearch.common.Rounding.Prepared;
 import org.elasticsearch.common.lucene.ScorerAware;
-import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.core.CoreCollectionUtils;
 import org.elasticsearch.index.fielddata.AbstractSortingNumericDocValues;
 import org.elasticsearch.index.fielddata.DocValueBits;
 import org.elasticsearch.index.fielddata.IndexFieldData;
@@ -390,7 +390,7 @@ public abstract class ValuesSource {
                             final BytesRef value = bytesValues.nextValue();
                             script.setNextAggregationValue(value.utf8ToString());
                             Object run = script.execute();
-                            CollectionUtils.ensureNoSelfReferences(run, "ValuesSource.BytesValues script");
+                            CoreCollectionUtils.ensureNoSelfReferences(run, "ValuesSource.BytesValues script");
                             values[i].copyChars(run.toString());
                         }
                         sort();

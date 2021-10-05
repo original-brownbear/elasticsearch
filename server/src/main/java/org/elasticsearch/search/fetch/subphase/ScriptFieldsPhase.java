@@ -9,7 +9,7 @@ package org.elasticsearch.search.fetch.subphase;
 
 import org.apache.lucene.index.LeafReaderContext;
 import org.elasticsearch.common.document.DocumentField;
-import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.core.CoreCollectionUtils;
 import org.elasticsearch.script.FieldScript;
 import org.elasticsearch.search.fetch.FetchContext;
 import org.elasticsearch.search.fetch.FetchSubPhase;
@@ -45,7 +45,7 @@ public final class ScriptFieldsPhase implements FetchSubPhase {
                     final Object value;
                     try {
                         value = leafScripts[i].execute();
-                        CollectionUtils.ensureNoSelfReferences(value, "ScriptFieldsPhase leaf script " + i);
+                        CoreCollectionUtils.ensureNoSelfReferences(value, "ScriptFieldsPhase leaf script " + i);
                     } catch (RuntimeException e) {
                         if (scriptFields.get(i).ignoreException()) {
                             continue;
