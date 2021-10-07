@@ -23,6 +23,7 @@ import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SerialMergeScheduler;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TieredMergePolicy;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -195,6 +196,12 @@ public class PersistedClusterStateService {
         indexWriterConfig.setCommitOnClose(false);
         // most of the data goes into stored fields which are not buffered, so we only really need a tiny buffer
         indexWriterConfig.setRAMBufferSizeMB(1.0);
+        final TieredMergePolicy mergePolicy = new TieredMergePolicy();
+        indexWriterConfig.setMergePolicy(mergePolicy);
+        mergePolicy.setFloorSegmentMB(0.001);
+        mergePolicy.setMaxMergeAtOnce(500);
+        mergePolicy.setSegmentsPerTier(500);
+        mergePolicy.setDeletesPctAllowed(50.0);
         // merge on the write thread (e.g. while flushing)
         indexWriterConfig.setMergeScheduler(new SerialMergeScheduler());
 
