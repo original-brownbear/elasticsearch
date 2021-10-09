@@ -1039,6 +1039,8 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
 
         private final Map<MappingMetadata, MappingMetadata> mappingMetadataMapDeduplication;
 
+        private final Map<String, String> stringDeduplicator = new HashMap<>();
+
         public Builder() {
             clusterUUID = UNKNOWN_CLUSTER_UUID;
             indices = ImmutableOpenMap.builder();
@@ -1074,8 +1076,11 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             } else {
                 found = mappingMetadataMapDeduplication.putIfAbsent(mappingMetadata, mappingMetadata);
             }
-            if (found != null && found != mappingMetadata) {
-                this.indices.put(name, IndexMetadata.builder(indexMetadata).putMapping(found).build());
+            final Settings compressedIndexSettings = Settings.compress(indexMetadata.getSettings(), stringDeduplicator);
+            if ((found != null && found != mappingMetadata) || (compressedIndexSettings != indexMetadata.getSettings())) {
+                this.indices.put(name, IndexMetadata.builder(indexMetadata)
+                    .settings(compressedIndexSettings)
+                    .putMapping(found == null ? mappingMetadata : found).build());
             } else {
                 this.indices.put(name, indexMetadata);
             }

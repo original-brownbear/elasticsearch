@@ -724,6 +724,40 @@ public final class Settings implements ToXContentFragment {
         return newKeySet;
     }
 
+    public static Settings compress(Settings settings, Map<String, String> stringDeduplicator) {
+        boolean changed = false;
+        final TreeMap<String, Object> copy = new TreeMap<>();
+        for (Map.Entry<String, Object> entry : settings.settings.entrySet()) {
+            final String keyUsed = entry.getKey();
+            final String deduplicatedKey = stringDeduplicator.computeIfAbsent(keyUsed, Function.identity());
+            changed |= (keyUsed != deduplicatedKey);
+            final Object value = entry.getValue();
+            if (value instanceof String) {
+                final String deduplicatedStringValue = stringDeduplicator.computeIfAbsent((String) value, Function.identity());
+                changed |= (deduplicatedStringValue != value);
+                copy.put(deduplicatedKey, deduplicatedStringValue);
+            } else if (value instanceof List) {
+                final List<Object> copiedListValue = new ArrayList<>((List<?>) value);
+                for (int i = 0; i < copiedListValue.size(); i++) {
+                    final Object found = copiedListValue.get(i);
+                    if (found instanceof String) {
+                        final String deduplicatedStringValue = stringDeduplicator.computeIfAbsent((String) found, Function.identity());
+                        changed |= (deduplicatedStringValue != found);
+                        copiedListValue.set(i, deduplicatedStringValue);
+                    }
+                }
+                copy.put(deduplicatedKey, copiedListValue);
+            } else {
+                copy.put(deduplicatedKey, entry.getValue());
+            }
+        }
+        if (changed) {
+            return (Settings.of(copy, settings.secureSettings));
+        } else {
+            return settings;
+        }
+    }
+
     /**
      * A builder allowing to put different settings and then {@link #build()} an immutable
      * settings implementation. Use {@link Settings#builder()} in order to
