@@ -1037,12 +1037,15 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
         private final ImmutableOpenMap.Builder<String, IndexTemplateMetadata> templates;
         private final ImmutableOpenMap.Builder<String, Custom> customs;
 
+        private final Map<MappingMetadata, MappingMetadata> mappingMetadataMapDeduplication;
+
         public Builder() {
             clusterUUID = UNKNOWN_CLUSTER_UUID;
             indices = ImmutableOpenMap.builder();
             templates = ImmutableOpenMap.builder();
             customs = ImmutableOpenMap.builder();
             indexGraveyard(IndexGraveyard.builder().build()); // create new empty index graveyard to initialize
+            mappingMetadataMapDeduplication = new HashMap<>();
         }
 
         public Builder(Metadata metadata) {
@@ -1053,16 +1056,36 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             this.persistentSettings = metadata.persistentSettings;
             this.hashesOfConsistentSettings = metadata.hashesOfConsistentSettings;
             this.version = metadata.version;
-            this.indices = ImmutableOpenMap.builder(metadata.indices);
             this.templates = ImmutableOpenMap.builder(metadata.templates);
             this.customs = ImmutableOpenMap.builder(metadata.customs);
+            this.mappingMetadataMapDeduplication = new HashMap<>(metadata.indices.size());
+            this.indices = ImmutableOpenMap.builder(metadata.indices.size());
+            for (IndexMetadata indexMetadata : metadata.indices.values()) {
+                putIndex(indexMetadata);
+            }
+        }
+
+        private void putIndex(IndexMetadata indexMetadata) {
+            final String name = indexMetadata.getIndex().getName();
+            final MappingMetadata mappingMetadata = indexMetadata.mapping();
+            final MappingMetadata found;
+            if (mappingMetadata == null) {
+                found = null;
+            } else {
+                found = mappingMetadataMapDeduplication.putIfAbsent(mappingMetadata, mappingMetadata);
+            }
+            if (found != null && found != mappingMetadata) {
+                this.indices.put(name, IndexMetadata.builder(indexMetadata).putMapping(found).build());
+            } else {
+                this.indices.put(name, indexMetadata);
+            }
         }
 
         public Builder put(IndexMetadata.Builder indexMetadataBuilder) {
             // we know its a new one, increment the version and store
             indexMetadataBuilder.version(indexMetadataBuilder.version() + 1);
             IndexMetadata indexMetadata = indexMetadataBuilder.build();
-            indices.put(indexMetadata.getIndex().getName(), indexMetadata);
+            putIndex(indexMetadata);
             return this;
         }
 
@@ -1074,7 +1097,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             if (incrementVersion) {
                 indexMetadata = IndexMetadata.builder(indexMetadata).version(indexMetadata.getVersion() + 1).build();
             }
-            indices.put(indexMetadata.getIndex().getName(), indexMetadata);
+            putIndex(indexMetadata);
             return this;
         }
 
@@ -1106,7 +1129,9 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
         }
 
         public Builder indices(ImmutableOpenMap<String, IndexMetadata> indices) {
-            this.indices.putAll(indices);
+            for (IndexMetadata indexMetadata : indices.values()) {
+                putIndex(indexMetadata);
+            }
             return this;
         }
 
