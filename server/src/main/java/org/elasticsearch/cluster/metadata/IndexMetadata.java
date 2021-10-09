@@ -1181,7 +1181,9 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         }
 
         public Builder putMapping(MappingMetadata mappingMd) {
-            mappings.put(mappingMd.type(), mappingMd);
+            if (mappingMd != null) {
+                mappings.put(mappingMd.type(), mappingMd);
+            }
             return this;
         }
 
