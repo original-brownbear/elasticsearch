@@ -254,9 +254,7 @@ public final class ObjectParser<Value, Context> extends AbstractObjectParser<Val
      */
     public Value parse(XContentParser parser, Value value, Context context) throws IOException {
         XContentParser.Token token;
-        if (parser.currentToken() == XContentParser.Token.START_OBJECT) {
-            token = parser.currentToken();
-        } else {
+        if (parser.currentToken() != XContentParser.Token.START_OBJECT) {
             token = parser.nextToken();
             if (token != XContentParser.Token.START_OBJECT) {
                 throw new XContentParseException(parser.getTokenLocation(), "[" + name  + "] Expected START_OBJECT but was: " + token);
@@ -320,7 +318,7 @@ public final class ObjectParser<Value, Context> extends AbstractObjectParser<Val
         StringBuilder message = new StringBuilder();
         for (List<String> fieldset : exclusiveFields) {
             if (fieldset.size() > 1) {
-                message.append("The following fields are not allowed together: ").append(fieldset.toString()).append(" ");
+                message.append("The following fields are not allowed together: ").append(fieldset).append(" ");
             }
         }
         if (message.length() > 0) {
@@ -447,7 +445,7 @@ public final class ObjectParser<Value, Context> extends AbstractObjectParser<Val
             XContentParser.Token token;
             if (p.currentToken() == XContentParser.Token.START_OBJECT) {
                 // Fields are just named entries in a single object
-                while ((token = p.nextToken()) != XContentParser.Token.END_OBJECT) {
+                while (p.nextToken() != XContentParser.Token.END_OBJECT) {
                     fields.add(objectParser.apply(p, c));
                 }
             } else if (p.currentToken() == XContentParser.Token.START_ARRAY) {
@@ -513,14 +511,12 @@ public final class ObjectParser<Value, Context> extends AbstractObjectParser<Val
         this.exclusiveFieldSets.add(exclusiveSet);
     }
 
-    private void parseArray(XContentParser parser, FieldParser fieldParser, String currentFieldName, Value value, Context context)
-            throws IOException {
+    private void parseArray(XContentParser parser, FieldParser fieldParser, String currentFieldName, Value value, Context context) {
         assert parser.currentToken() == XContentParser.Token.START_ARRAY : "Token was: " + parser.currentToken();
         parseValue(parser, fieldParser, currentFieldName, value, context);
     }
 
-    private void parseValue(XContentParser parser, FieldParser fieldParser, String currentFieldName, Value value, Context context)
-            throws IOException {
+    private void parseValue(XContentParser parser, FieldParser fieldParser, String currentFieldName, Value value, Context context) {
         try {
             fieldParser.parser.parse(parser, value, context);
         } catch (Exception ex) {
@@ -529,8 +525,7 @@ public final class ObjectParser<Value, Context> extends AbstractObjectParser<Val
         }
     }
 
-    private void parseSub(XContentParser parser, FieldParser fieldParser, String currentFieldName, Value value, Context context)
-            throws IOException {
+    private void parseSub(XContentParser parser, FieldParser fieldParser, String currentFieldName, Value value, Context context) {
         final XContentParser.Token token = parser.currentToken();
         switch (token) {
             case START_OBJECT:

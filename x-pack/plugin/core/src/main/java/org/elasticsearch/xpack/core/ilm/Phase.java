@@ -23,12 +23,11 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Represents set of {@link LifecycleAction}s which should be executed at a
@@ -42,8 +41,22 @@ public class Phase implements ToXContentObject, Writeable {
 
     @SuppressWarnings("unchecked")
     private static final ConstructingObjectParser<Phase, String> PARSER = new ConstructingObjectParser<>("phase", false,
-            (a, name) -> new Phase(name, (TimeValue) a[0], ((List<LifecycleAction>) a[1]).stream()
-                    .collect(Collectors.toMap(LifecycleAction::getWriteableName, Function.identity()))));
+            (a, name) -> {
+                final List<LifecycleAction> list = (List<LifecycleAction>) a[1];
+                final int size = list.size();
+                final Map<String, LifecycleAction> map;
+                if (size > 0) {
+                    map = new HashMap<>(size);
+                    for (LifecycleAction lifecycleAction : list) {
+                        if (map.put(lifecycleAction.getWriteableName(), lifecycleAction) != null) {
+                            throw new IllegalStateException("Duplicate key");
+                        }
+                    }
+                } else {
+                    map = org.elasticsearch.core.Map.of();
+                }
+                return new Phase(name, (TimeValue) a[0], map);
+            });
     static {
         PARSER.declareField(ConstructingObjectParser.optionalConstructorArg(),
             (ContextParser<String, Object>) (p, c) -> {

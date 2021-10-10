@@ -174,7 +174,7 @@ public enum XContentType {
                 type.shortName().equalsIgnoreCase(stringType);
     }
 
-    private int index;
+    private final int index;
 
     XContentType(int index) {
         this.index = index;

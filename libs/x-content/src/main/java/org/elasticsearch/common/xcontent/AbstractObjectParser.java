@@ -155,7 +155,7 @@ public abstract class AbstractObjectParser<Value, Context> {
     }
 
     public <T> void declareObject(BiConsumer<Value, T> consumer, ContextParser<Context, T> objectParser, ParseField field) {
-        declareField(consumer, (p, c) -> objectParser.parse(p, c), field, ValueType.OBJECT);
+        declareField(consumer, objectParser, field, ValueType.OBJECT);
     }
 
     /**
@@ -169,7 +169,8 @@ public abstract class AbstractObjectParser<Value, Context> {
 
     public void declareFloat(BiConsumer<Value, Float> consumer, ParseField field) {
         // Using a method reference here angers some compilers
-        declareField(consumer, p -> p.floatValue(), field, ValueType.FLOAT);
+        declareField(consumer,
+                (CheckedFunction<XContentParser, Float, IOException>) XContentParser::floatValue, field, ValueType.FLOAT);
     }
 
     /**
@@ -182,7 +183,8 @@ public abstract class AbstractObjectParser<Value, Context> {
 
     public void declareDouble(BiConsumer<Value, Double> consumer, ParseField field) {
         // Using a method reference here angers some compilers
-        declareField(consumer, p -> p.doubleValue(), field, ValueType.DOUBLE);
+        declareField(consumer,
+                (CheckedFunction<XContentParser, Double, IOException>) XContentParser::doubleValue, field, ValueType.DOUBLE);
     }
 
     /**
@@ -195,7 +197,7 @@ public abstract class AbstractObjectParser<Value, Context> {
 
     public void declareLong(BiConsumer<Value, Long> consumer, ParseField field) {
         // Using a method reference here angers some compilers
-        declareField(consumer, p -> p.longValue(), field, ValueType.LONG);
+        declareField(consumer, (CheckedFunction<XContentParser, Long, IOException>) XContentParser::longValue, field, ValueType.LONG);
     }
 
     public void declareLongOrNull(BiConsumer<Value, Long> consumer, long nullValue, ParseField field) {
@@ -206,7 +208,7 @@ public abstract class AbstractObjectParser<Value, Context> {
 
     public void declareInt(BiConsumer<Value, Integer> consumer, ParseField field) {
         // Using a method reference here angers some compilers
-        declareField(consumer, p -> p.intValue(), field, ValueType.INT);
+        declareField(consumer, (CheckedFunction<XContentParser, Integer, IOException>) XContentParser::intValue, field, ValueType.INT);
     }
 
     /**
@@ -239,7 +241,7 @@ public abstract class AbstractObjectParser<Value, Context> {
     }
 
     public <T> void declareObjectArray(BiConsumer<Value, List<T>> consumer, ContextParser<Context, T> objectParser, ParseField field) {
-        declareFieldArray(consumer, (p, c) -> objectParser.parse(p, c), field, ValueType.OBJECT_ARRAY);
+        declareFieldArray(consumer, objectParser, field, ValueType.OBJECT_ARRAY);
     }
 
     /**
