@@ -166,9 +166,11 @@ public class RolloverAction implements LifecycleAction {
         return true;
     }
 
+    private static final Settings INDEXING_COMPLETE_SETTINGS =
+        Settings.builder().put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, true).build();
+
     @Override
     public List<Step> toSteps(Client client, String phase, Step.StepKey nextStepKey) {
-        Settings indexingComplete = Settings.builder().put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, true).build();
 
         StepKey waitForRolloverReadyStepKey = new StepKey(phase, NAME, WaitForRolloverReadyStep.NAME);
         StepKey rolloverStepKey = new StepKey(phase, NAME, RolloverStep.NAME);
@@ -183,7 +185,7 @@ public class RolloverAction implements LifecycleAction {
         UpdateRolloverLifecycleDateStep updateDateStep = new UpdateRolloverLifecycleDateStep(updateDateStepKey, setIndexingCompleteStepKey,
             System::currentTimeMillis);
         UpdateSettingsStep setIndexingCompleteStep = new UpdateSettingsStep(setIndexingCompleteStepKey, nextStepKey,
-            client, indexingComplete);
+            client, INDEXING_COMPLETE_SETTINGS);
         return Arrays.asList(waitForRolloverReadyStep, rolloverStep, waitForActiveShardsStep, updateDateStep, setIndexingCompleteStep);
     }
 

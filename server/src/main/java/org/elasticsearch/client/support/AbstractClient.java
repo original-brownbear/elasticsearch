@@ -364,7 +364,7 @@ public abstract class AbstractClient implements Client {
         this.settings = settings;
         this.threadPool = threadPool;
         this.admin = new Admin(this);
-        this.logger =LogManager.getLogger(this.getClass());
+        this.logger = LogManager.getLogger(this.getClass());
         this.threadedWrapper = new ThreadedActionListener.Wrapper(logger, settings, threadPool);
     }
 

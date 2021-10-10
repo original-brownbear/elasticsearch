@@ -29,14 +29,12 @@ import java.util.Map;
  */
 public class LifecyclePolicySecurityClient extends AbstractClient {
 
-    private Client client;
-    private Map<String, String> headers;
-    private String origin;
+    private final Client client;
+    private final Map<String, String> headers;
 
-    public LifecyclePolicySecurityClient(Client client, String origin, Map<String, String> headers) {
+    public LifecyclePolicySecurityClient(Client client, Map<String, String> headers) {
         super(client.settings(), client.threadPool());
         this.client = client;
-        this.origin = origin;
         this.headers = headers;
     }
 
@@ -49,7 +47,7 @@ public class LifecyclePolicySecurityClient extends AbstractClient {
     @Override
     protected <Request extends ActionRequest, Response extends ActionResponse> void doExecute(ActionType<Response> action, Request request,
                                                                                               ActionListener<Response> listener) {
-        ClientHelper.executeWithHeadersAsync(headers, origin, client, action, request, listener);
+        ClientHelper.executeWithHeadersAsync(headers, ClientHelper.INDEX_LIFECYCLE_ORIGIN, client, action, request, listener);
     }
 
 }

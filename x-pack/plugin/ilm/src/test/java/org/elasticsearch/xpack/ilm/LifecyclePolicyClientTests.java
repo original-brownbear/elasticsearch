@@ -16,7 +16,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xpack.core.ClientHelper;
 import org.mockito.Mockito;
 
 import java.util.Collections;
@@ -55,7 +54,7 @@ public class LifecyclePolicyClientTests extends ESTestCase {
 
         SearchRequest request = new SearchRequest("foo");
 
-        try (LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client, ClientHelper.INDEX_LIFECYCLE_ORIGIN,
+        try (LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client,
                 Collections.emptyMap())) {
             policyClient.execute(SearchAction.INSTANCE, request, listener);
         }
@@ -89,7 +88,7 @@ public class LifecyclePolicyClientTests extends ESTestCase {
         headers.put("foo", "foo");
         headers.put("bar", "bar");
 
-        try (LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client, ClientHelper.INDEX_LIFECYCLE_ORIGIN,
+        try (LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client,
                 headers)) {
             policyClient.execute(SearchAction.INSTANCE, request, listener);
         }
@@ -125,7 +124,7 @@ public class LifecyclePolicyClientTests extends ESTestCase {
         headers.put("es-security-runas-user", "foo");
         headers.put("_xpack_security_authentication", "bar");
 
-        try (LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client, ClientHelper.INDEX_LIFECYCLE_ORIGIN,
+        try (LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client,
                 headers)) {
             policyClient.execute(SearchAction.INSTANCE, request, listener);
         }

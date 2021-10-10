@@ -27,7 +27,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
 import org.elasticsearch.snapshots.SnapshotException;
 import org.elasticsearch.snapshots.SnapshotInfo;
-import org.elasticsearch.xpack.core.ClientHelper;
 import org.elasticsearch.xpack.core.scheduler.SchedulerEngine;
 import org.elasticsearch.xpack.core.slm.SnapshotInvocationRecord;
 import org.elasticsearch.xpack.core.slm.SnapshotLifecycleMetadata;
@@ -89,7 +88,7 @@ public class SnapshotLifecycleTask implements SchedulerEngine.Listener {
             // don't time out on this request to not produce failed SLM runs in case of a temporarily slow master node
             CreateSnapshotRequest request = policyMetadata.getPolicy().toRequest().masterNodeTimeout(TimeValue.MAX_VALUE);
             final LifecyclePolicySecurityClient clientWithHeaders = new LifecyclePolicySecurityClient(client,
-                ClientHelper.INDEX_LIFECYCLE_ORIGIN, policyMetadata.getHeaders());
+                    policyMetadata.getHeaders());
             logger.info("snapshot lifecycle policy [{}] issuing create snapshot [{}]",
                 policyMetadata.getPolicy().getId(), request.snapshot());
             clientWithHeaders.admin().cluster().createSnapshot(request, new ActionListener<CreateSnapshotResponse>() {

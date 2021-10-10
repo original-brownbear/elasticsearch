@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class PolicyStepsRegistry {
@@ -116,15 +117,17 @@ public class PolicyStepsRegistry {
                 });
 
         for (String deletedPolicyName : mapDiff.getDeletes()) {
-            lifecyclePolicyMap.remove(deletedPolicyName);
+            final LifecyclePolicyMetadata removedPolicy = lifecyclePolicyMap.remove(deletedPolicyName);
+            if (removedPolicy.getHeaders().isEmpty() == false) {
+                cachedClients.remove(removedPolicy.getHeaders());
+            }
             firstStepMap.remove(deletedPolicyName);
             stepMap.remove(deletedPolicyName);
         }
 
         if (mapDiff.getUpserts().isEmpty() == false) {
             for (LifecyclePolicyMetadata policyMetadata : mapDiff.getUpserts().values()) {
-                LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client, ClientHelper.INDEX_LIFECYCLE_ORIGIN,
-                    policyMetadata.getHeaders());
+                LifecyclePolicySecurityClient policyClient = getClient(policyMetadata.getHeaders());
                 lifecyclePolicyMap.put(policyMetadata.getName(), policyMetadata);
                 List<Step> policyAsSteps = policyMetadata.getPolicy().toSteps(policyClient, licenseState);
                 if (policyAsSteps.isEmpty() == false) {
@@ -157,8 +160,7 @@ public class PolicyStepsRegistry {
         if (policyMetadata == null) {
             throw new IllegalArgumentException("the policy [" + policyName + "] for index" + index + " does not exist");
         }
-        final LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client, ClientHelper.INDEX_LIFECYCLE_ORIGIN,
-            policyMetadata.getHeaders());
+        final LifecyclePolicySecurityClient policyClient = getClient(policyMetadata.getHeaders());
         return policyMetadata.getPolicy().toSteps(policyClient, licenseState);
     }
 
@@ -198,9 +200,9 @@ public class PolicyStepsRegistry {
         return PhaseCacheManagement.readStepKeys(xContentRegistry, client, phaseDef, currentPhase, licenseState);
     }
 
-    private List<Step> parseStepsFromPhase(String policy, String currentPhase, String phaseDef) throws IOException {
+    private List<Step> parseStepsFromPhase(final String policy, final String currentPhase, final String phaseDef) throws IOException {
         final PhaseExecutionInfo phaseExecutionInfo;
-        LifecyclePolicyMetadata policyMetadata = lifecyclePolicyMap.get(policy);
+        final LifecyclePolicyMetadata policyMetadata = lifecyclePolicyMap.get(policy);
         if (policyMetadata == null) {
             throw new IllegalStateException("unable to parse steps for policy [" + policy + "] as it doesn't exist");
         }
@@ -222,8 +224,7 @@ public class PolicyStepsRegistry {
             }
             policyToExecute = new LifecyclePolicy(currentPolicy.getType(), currentPolicy.getName(), phaseMap, currentPolicy.getMetadata());
         }
-        LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(client,
-            ClientHelper.INDEX_LIFECYCLE_ORIGIN, lifecyclePolicyMap.get(policy).getHeaders());
+        LifecyclePolicySecurityClient policyClient = getClient(policyMetadata.getHeaders());
         final List<Step> steps = policyToExecute.toSteps(policyClient, licenseState);
         // Build a list of steps that correspond with the phase the index is currently in
         final List<Step> phaseSteps;
@@ -312,5 +313,12 @@ public class PolicyStepsRegistry {
                 return retrievedPhase.getMinimumAge();
             }
         }
+    }
+
+    private final ConcurrentHashMap<Map<String, String>, LifecyclePolicySecurityClient> cachedClients = new ConcurrentHashMap<>();
+
+    private LifecyclePolicySecurityClient getClient(Map<String, String> headers) {
+        return cachedClients.computeIfAbsent(
+            ClientHelper.filterSecurityHeaders(headers), h -> new LifecyclePolicySecurityClient(client, h));
     }
 }

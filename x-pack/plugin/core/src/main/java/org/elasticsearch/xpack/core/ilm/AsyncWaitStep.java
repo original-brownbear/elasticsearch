@@ -20,7 +20,7 @@ import org.elasticsearch.index.Index;
  */
 public abstract class AsyncWaitStep extends Step {
 
-    private Client client;
+    private final Client client;
 
     public AsyncWaitStep(StepKey key, StepKey nextStepKey, Client client) {
         super(key, nextStepKey);
