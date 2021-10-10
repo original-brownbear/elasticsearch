@@ -531,8 +531,11 @@ public class Setting<T> implements ToXContentObject {
      * instead. This is useful if the value can't be parsed due to an invalid value to access the actual value.
      */
     private String getRaw(final Settings settings) {
-        checkDeprecation(settings);
-        return innerGetRaw(settings);
+        if (exists(settings)) {
+            checkDeprecation(settings);
+            return innerGetRaw(settings);
+        }
+        return defaultValue.apply(settings);
     }
 
     /**
@@ -544,7 +547,7 @@ public class Setting<T> implements ToXContentObject {
      */
     String innerGetRaw(final Settings settings) {
         final String key = getKey();
-            if (this.isSecure(settings)) {
+        if (this.isSecure(settings)) {
             throw new IllegalArgumentException("Setting [" + key + "] is a non-secure setting" +
                 " and must be stored inside elasticsearch.yml, but was found inside the Elasticsearch keystore");
         }
