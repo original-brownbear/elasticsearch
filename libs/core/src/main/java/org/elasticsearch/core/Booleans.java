@@ -53,13 +53,19 @@ public final class Booleans {
      * @throws IllegalArgumentException if the string cannot be parsed to boolean.
      */
     public static boolean parseBoolean(String value) {
-        if (isFalse(value)) {
-            return false;
+        if (value != null) {
+            switch (value) {
+                case "true":
+                    return true;
+                case "false":
+                    return false;
+            }
         }
-        if (isTrue(value)) {
-            return true;
-        }
-        throw new IllegalArgumentException("Failed to parse value [" + value + "] as only [true] or [false] are allowed.");
+        throw notBooleanException(value);
+    }
+
+    private static IllegalArgumentException notBooleanException(String value) {
+        return new IllegalArgumentException("Failed to parse value [" + value + "] as only [true] or [false] are allowed.");
     }
 
     private static boolean hasText(CharSequence str) {
@@ -82,17 +88,27 @@ public final class Booleans {
      * @return see {@link #parseBoolean(String)}
      */
     public static boolean parseBoolean(String value, boolean defaultValue) {
-        if (hasText(value)) {
-            return parseBoolean(value);
+        final Boolean res = parseBoolean(value, null);
+        if (res != null) {
+            return res;
         }
         return defaultValue;
     }
 
     public static Boolean parseBoolean(String value, Boolean defaultValue) {
-        if (hasText(value)) {
-            return parseBoolean(value);
+        if (value == null) {
+            return defaultValue;
         }
-        return defaultValue;
+        switch (value) {
+            case "true":
+                return true;
+            case "false":
+                return false;
+        }
+        if (hasText(value) == false) {
+            return defaultValue;
+        }
+        throw notBooleanException(value);
     }
 
     /**
