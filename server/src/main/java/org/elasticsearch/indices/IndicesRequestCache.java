@@ -63,7 +63,7 @@ public final class IndicesRequestCache implements RemovalListener<IndicesRequest
     public static final Setting<ByteSizeValue> INDICES_CACHE_QUERY_SIZE =
         Setting.memorySizeSetting("indices.requests.cache.size", "1%", Property.NodeScope);
     public static final Setting<TimeValue> INDICES_CACHE_QUERY_EXPIRE =
-        Setting.positiveTimeSetting("indices.requests.cache.expire", new TimeValue(0), Property.NodeScope);
+        Setting.positiveTimeSetting("indices.requests.cache.expire", TimeValue.ZERO, Property.NodeScope);
 
     private final ConcurrentMap<CleanupKey, Boolean> registeredClosedListeners = ConcurrentCollections.newConcurrentMap();
     private final Set<CleanupKey> keysToClean = ConcurrentCollections.newConcurrentSet();

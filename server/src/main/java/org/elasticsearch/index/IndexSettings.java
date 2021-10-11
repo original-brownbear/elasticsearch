@@ -247,7 +247,7 @@ public final class IndexSettings {
      * TODO: Remove this setting in 9.0.
      **/
     public static final Setting<TimeValue> INDEX_TRANSLOG_RETENTION_AGE_SETTING =
-        Setting.timeSetting("index.translog.retention.age", settings -> TimeValue.MINUS_ONE,
+        Setting.timeSetting("index.translog.retention.age", TimeValue.MINUS_ONE,
             TimeValue.MINUS_ONE, Property.Dynamic, Property.IndexScope);
 
     /**

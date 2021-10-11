@@ -415,7 +415,7 @@ public class IndexServiceTests extends ESSingleNodeTestCase {
             createIndex("test", settings);
             fail();
         } catch (IllegalArgumentException ex) {
-            assertEquals("failed to parse value [0ms] for setting [index.translog.sync_interval], must be >= [100ms]", ex.getMessage());
+            assertEquals("Failed to parse value [0ms] for setting [index.translog.sync_interval], must be >= [100ms]", ex.getMessage());
         }
     }
 

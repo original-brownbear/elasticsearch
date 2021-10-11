@@ -67,13 +67,13 @@ public class ThreadPoolTests extends ESTestCase {
     public void testEstimatedTimeIntervalSettingAcceptsOnlyZeroAndPositiveTime() {
         final Settings settings = Settings.builder().put("thread_pool.estimated_time_interval", -1).build();
         assertThat(expectThrows(IllegalArgumentException.class, () -> ESTIMATED_TIME_INTERVAL_SETTING.get(settings)).getMessage(),
-                equalTo("failed to parse value [-1] for setting [thread_pool.estimated_time_interval], must be >= [0ms]"));
+                equalTo("Failed to parse value [-1] for setting [thread_pool.estimated_time_interval], must be >= [0ms]"));
     }
 
     public void testLateTimeIntervalWarningSettingAcceptsOnlyZeroAndPositiveTime() {
         final Settings settings = Settings.builder().put("thread_pool.estimated_time_interval.warn_threshold", -1).build();
         assertThat(expectThrows(IllegalArgumentException.class, () -> LATE_TIME_INTERVAL_WARN_THRESHOLD_SETTING.get(settings)).getMessage(),
-                equalTo("failed to parse value [-1] for setting [thread_pool.estimated_time_interval.warn_threshold], must be >= [0ms]"));
+                equalTo("Failed to parse value [-1] for setting [thread_pool.estimated_time_interval.warn_threshold], must be >= [0ms]"));
     }
 
     public void testLateTimeIntervalWarningMuchLongerThanEstimatedTimeIntervalByDefault() {

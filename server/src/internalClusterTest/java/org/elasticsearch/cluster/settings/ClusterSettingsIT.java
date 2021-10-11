@@ -272,7 +272,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
                     .get();
             fail("bogus value");
         } catch (IllegalArgumentException ex) {
-            assertEquals(ex.getMessage(), "Failed to parse value [-1] for setting [" + INITIAL_RECOVERIES.getKey() + "] must be >= 0");
+            assertEquals(ex.getMessage(), "Failed to parse value [-1] for setting [" + INITIAL_RECOVERIES.getKey() + "], must be >= [0]");
         }
 
         assertThat(clusterService().getClusterSettings().get(INITIAL_RECOVERIES), equalTo(42));

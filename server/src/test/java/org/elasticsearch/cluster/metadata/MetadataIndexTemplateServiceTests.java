@@ -114,7 +114,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
         assertEquals(throwables.size(), 1);
         assertThat(throwables.get(0), instanceOf(InvalidIndexTemplateException.class));
         assertThat(throwables.get(0).getMessage(),
-                containsString("Failed to parse value [0] for setting [index.number_of_shards] must be >= 1"));
+                containsString("Failed to parse value [0] for setting [index.number_of_shards], must be >= [1]"));
         assertThat(throwables.get(0).getMessage(),
                 containsString("unknown value for [index.shard.check_on_startup] " +
                                 "must be one of [true, false, checksum] but was: blargh"));
@@ -179,7 +179,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
         assertThat(throwables.get(0).getMessage(), containsString("name must not contain a space"));
         assertThat(throwables.get(0).getMessage(), containsString("index_pattern [_test_shards*] must not start with '_'"));
         assertThat(throwables.get(0).getMessage(),
-                containsString("Failed to parse value [0] for setting [index.number_of_shards] must be >= 1"));
+                containsString("Failed to parse value [0] for setting [index.number_of_shards], must be >= [1]"));
     }
 
     public void testIndexTemplateWithAliasNameEqualToTemplatePattern() {

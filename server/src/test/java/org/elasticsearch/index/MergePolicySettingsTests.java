@@ -121,7 +121,7 @@ public class MergePolicySettingsTests extends ESTestCase {
             indexSettings.updateIndexMetadata(newIndexMeta("index",
                 Settings.builder().put(MergePolicyConfig.INDEX_MERGE_POLICY_DELETES_PCT_ALLOWED_SETTING.getKey(), 53).build())));
         final Throwable cause = exc.getCause();
-        assertThat(cause.getMessage(), containsString("must be <= 50.0"));
+        assertThat(cause.getMessage(), containsString("must be <= [50.0]"));
         indexSettings.updateIndexMetadata(newIndexMeta("index", Settings.EMPTY)); // see if defaults are restored
         assertEquals(((EsTieredMergePolicy) indexSettings.getMergePolicy()).getForceMergeDeletesPctAllowed(),
             MergePolicyConfig.DEFAULT_EXPUNGE_DELETES_ALLOWED, 0.0d);

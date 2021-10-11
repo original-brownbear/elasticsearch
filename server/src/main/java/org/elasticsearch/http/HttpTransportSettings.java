@@ -84,7 +84,7 @@ public final class HttpTransportSettings {
 
     // A default of 0 means that by default there is no read timeout
     public static final Setting<TimeValue> SETTING_HTTP_READ_TIMEOUT =
-        Setting.timeSetting("http.read_timeout", new TimeValue(0), new TimeValue(0), Property.NodeScope);
+        Setting.timeSetting("http.read_timeout", TimeValue.ZERO, TimeValue.ZERO, Property.NodeScope);
 
     // Tcp socket settings
 

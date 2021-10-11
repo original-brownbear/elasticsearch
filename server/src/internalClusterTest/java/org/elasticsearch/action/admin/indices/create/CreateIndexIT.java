@@ -138,7 +138,7 @@ public class CreateIndexIT extends ESIntegTestCase {
             .get();
             fail("should have thrown an exception about the primary shard count");
         } catch (IllegalArgumentException e) {
-            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_shards] must be >= 1", e.getMessage());
+            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_shards], must be >= [1]", e.getMessage());
         }
         value = randomIntBetween(-10, -1);
         try {
@@ -148,7 +148,7 @@ public class CreateIndexIT extends ESIntegTestCase {
                     .get();
             fail("should have thrown an exception about the replica shard count");
         } catch (IllegalArgumentException e) {
-            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_replicas] must be >= 0", e.getMessage());
+            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_replicas], must be >= [0]", e.getMessage());
         }
 
     }
@@ -190,7 +190,7 @@ public class CreateIndexIT extends ESIntegTestCase {
                 .get();
             fail("should have thrown an exception about the shard count");
         } catch (IllegalArgumentException e) {
-            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_shards] must be >= 1", e.getMessage());
+            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_shards], must be >= [1]", e.getMessage());
         }
         value = randomIntBetween(-10, -1);
         try {
@@ -200,7 +200,7 @@ public class CreateIndexIT extends ESIntegTestCase {
                 .get();
             fail("should have thrown an exception about the shard count");
         } catch (IllegalArgumentException e) {
-            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_replicas] must be >= 0", e.getMessage());
+            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_replicas], must be >= [0]", e.getMessage());
         }
     }
 

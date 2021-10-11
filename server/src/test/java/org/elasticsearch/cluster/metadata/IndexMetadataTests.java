@@ -308,7 +308,7 @@ public class IndexMetadataTests extends ESTestCase {
             expectThrows(IllegalArgumentException.class, () -> IndexMetadata.builder("test").settings(settings).build());
         assertThat(
             e.getMessage(),
-            equalTo("Failed to parse value [" + numberOfShards + "] for setting [index.number_of_shards] must be >= 1"));
+            equalTo("Failed to parse value [" + numberOfShards + "] for setting [index.number_of_shards], must be >= [1]"));
     }
 
     public void testMissingCreatedVersion() {
@@ -339,7 +339,7 @@ public class IndexMetadataTests extends ESTestCase {
         assertThat(
             e.getMessage(),
             equalTo(
-                "Failed to parse value [" + numberOfReplicas + "] for setting [index.number_of_replicas] must be >= 0"));
+                "Failed to parse value [" + numberOfReplicas + "] for setting [index.number_of_replicas], must be >= [0]"));
     }
 
     public void testParseIndexNameReturnsCounter() {

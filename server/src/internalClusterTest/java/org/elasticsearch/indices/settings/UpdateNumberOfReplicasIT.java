@@ -397,7 +397,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
                 .execute().actionGet();
             fail("should have thrown an exception about the replica shard count");
         } catch (IllegalArgumentException e) {
-            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_replicas] must be >= 0", e.getMessage());
+            assertEquals("Failed to parse value [" + value + "] for setting [index.number_of_replicas], must be >= [0]", e.getMessage());
             assertThat(
                     client().admin().cluster().prepareState().get().getState().metadata().index("test").getSettingsVersion(),
                     equalTo(settingsVersion));

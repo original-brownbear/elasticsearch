@@ -73,7 +73,7 @@ public class SettingTests extends ESTestCase {
         final long value = 20_000_000 - randomIntBetween(1, 1024);
         final Settings settings = Settings.builder().put("a.byte.size", value + "b").build();
         final IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> byteSizeValueSetting.get(settings));
-        final String expectedMessage = "failed to parse value [" + value + "b] for setting [a.byte.size], must be >= [20000000b]";
+        final String expectedMessage = "Failed to parse value [" + value + "b] for setting [a.byte.size], must be >= [20000000b]";
         assertThat(e, hasToString(containsString(expectedMessage)));
     }
 
@@ -87,7 +87,7 @@ public class SettingTests extends ESTestCase {
         final long value = (1L << 31) - 1 + randomIntBetween(1, 1024);
         final Settings settings = Settings.builder().put("a.byte.size", value + "b").build();
         final IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> byteSizeValueSetting.get(settings));
-        final String expectedMessage = "failed to parse value [" + value + "b] for setting [a.byte.size], must be <= [2147483647b]";
+        final String expectedMessage = "Failed to parse value [" + value + "b] for setting [a.byte.size], must be <= [2147483647b]";
         assertThat(e, hasToString(containsString(expectedMessage)));
     }
 
@@ -152,7 +152,7 @@ public class SettingTests extends ESTestCase {
         assertEquals(new ByteSizeValue(12), value.get());
 
         assertTrue(settingUpdater.apply(Settings.builder().put("a.byte.size", "20%").build(), Settings.EMPTY));
-        assertEquals(new ByteSizeValue((int) (JvmInfo.jvmInfo().getMem().getHeapMax().getBytes() * 0.2)), value.get());
+        assertEquals(new ByteSizeValue((long) (JvmInfo.jvmInfo().getMem().getHeapMax().getBytes() * 0.2)), value.get());
     }
 
     public void testSimpleUpdate() {
@@ -273,44 +273,44 @@ public class SettingTests extends ESTestCase {
     public void testFilteredFloatSetting() {
         final IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () ->
             Setting.floatSetting("foo", 42.0f, 43.0f, Property.Filtered));
-        assertThat(e, hasToString(containsString("Failed to parse value for setting [foo] must be >= 43.0")));
+        assertThat(e, hasToString(containsString("Failed to parse value for setting [foo], must be >= [43.0]")));
     }
 
     public void testFilteredDoubleSetting() {
         final IllegalArgumentException e1 = expectThrows(IllegalArgumentException.class, () ->
             Setting.doubleSetting("foo", 42.0, 43.0, Property.Filtered));
-        assertThat(e1, hasToString(containsString("Failed to parse value for setting [foo] must be >= 43.0")));
+        assertThat(e1, hasToString(containsString("Failed to parse value for setting [foo], must be >= [43.0]")));
 
         final IllegalArgumentException e2 = expectThrows(IllegalArgumentException.class, () ->
             Setting.doubleSetting("foo", 45.0, 43.0, 44.0, Property.Filtered));
-        assertThat(e2, hasToString(containsString("Failed to parse value for setting [foo] must be <= 44.0")));
+        assertThat(e2, hasToString(containsString("Failed to parse value for setting [foo], must be <= [44.0]")));
     }
 
     public void testFilteredIntSetting() {
         final IllegalArgumentException e1 = expectThrows(IllegalArgumentException.class, () ->
             Setting.intSetting("foo", 42, 43, 44, Property.Filtered));
-        assertThat(e1, hasToString(containsString("Failed to parse value for setting [foo] must be >= 43")));
+        assertThat(e1, hasToString(containsString("Failed to parse value for setting [foo], must be >= [43]")));
 
         final IllegalArgumentException e2 = expectThrows(IllegalArgumentException.class, () ->
             Setting.intSetting("foo", 45, 43, 44, Property.Filtered));
-        assertThat(e2, hasToString(containsString("Failed to parse value for setting [foo] must be <= 44")));
+        assertThat(e2, hasToString(containsString("Failed to parse value for setting [foo], must be <= [44]")));
     }
 
     public void testFilteredLongSetting() {
         final IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () ->
             Setting.longSetting("foo", 42L, 43L, Property.Filtered));
-        assertThat(e, hasToString(containsString("Failed to parse value for setting [foo] must be >= 43")));
+        assertThat(e, hasToString(containsString("Failed to parse value for setting [foo], must be >= [43]")));
     }
 
     public void testFilteredTimeSetting() {
         final IllegalArgumentException e1 = expectThrows(IllegalArgumentException.class, () ->
             Setting.timeSetting("foo", TimeValue.timeValueHours(1), TimeValue.timeValueHours(2), Property.Filtered));
-        assertThat(e1, hasToString(containsString("failed to parse value for setting [foo], must be >= [2h]")));
+        assertThat(e1, hasToString(containsString("Failed to parse value for setting [foo], must be >= [2h]")));
 
         final IllegalArgumentException e2 = expectThrows(IllegalArgumentException.class, () ->
             Setting.timeSetting("foo", TimeValue.timeValueHours(4), TimeValue.timeValueHours(2), TimeValue.timeValueHours(3),
                 Property.Filtered));
-        assertThat(e2, hasToString(containsString("failed to parse value for setting [foo], must be <= [3h]")));
+        assertThat(e2, hasToString(containsString("Failed to parse value for setting [foo], must be <= [3h]")));
 
         final Setting<TimeValue> minSetting = Setting.timeSetting(
             "foo",
@@ -896,14 +896,14 @@ public class SettingTests extends ESTestCase {
             integerSetting.get(Settings.builder().put("foo.bar", 11).build());
             fail();
         } catch (IllegalArgumentException ex) {
-            assertEquals("Failed to parse value [11] for setting [foo.bar] must be <= 10", ex.getMessage());
+            assertEquals("Failed to parse value [11] for setting [foo.bar], must be <= [10]", ex.getMessage());
         }
 
         try {
             integerSetting.get(Settings.builder().put("foo.bar", -1).build());
             fail();
         } catch (IllegalArgumentException ex) {
-            assertEquals("Failed to parse value [-1] for setting [foo.bar] must be >= 0", ex.getMessage());
+            assertEquals("Failed to parse value [-1] for setting [foo.bar], must be >= [0]", ex.getMessage());
         }
 
         assertEquals(5, integerSetting.get(Settings.builder().put("foo.bar", 5).build()).intValue());
@@ -997,7 +997,7 @@ public class SettingTests extends ESTestCase {
             = expectThrows(IllegalArgumentException.class,
             () -> settingWithLowerBound.get(Settings.builder().put("foo", "4999ms").build()));
 
-        assertThat(illegalArgumentException.getMessage(), equalTo("failed to parse value [4999ms] for setting [foo], must be >= [5s]"));
+        assertThat(illegalArgumentException.getMessage(), equalTo("Failed to parse value [4999ms] for setting [foo], must be >= [5s]"));
 
         Setting<TimeValue> settingWithBothBounds = Setting.timeSetting("bar",
             TimeValue.timeValueSeconds(10), TimeValue.timeValueSeconds(5), TimeValue.timeValueSeconds(20));
@@ -1008,12 +1008,12 @@ public class SettingTests extends ESTestCase {
         illegalArgumentException
             = expectThrows(IllegalArgumentException.class,
             () -> settingWithBothBounds.get(Settings.builder().put("bar", "4999ms").build()));
-        assertThat(illegalArgumentException.getMessage(), equalTo("failed to parse value [4999ms] for setting [bar], must be >= [5s]"));
+        assertThat(illegalArgumentException.getMessage(), equalTo("Failed to parse value [4999ms] for setting [bar], must be >= [5s]"));
 
         illegalArgumentException
             = expectThrows(IllegalArgumentException.class,
             () -> settingWithBothBounds.get(Settings.builder().put("bar", "20001ms").build()));
-        assertThat(illegalArgumentException.getMessage(), equalTo("failed to parse value [20001ms] for setting [bar], must be <= [20s]"));
+        assertThat(illegalArgumentException.getMessage(), equalTo("Failed to parse value [20001ms] for setting [bar], must be <= [20s]"));
     }
 
     public void testSettingsGroupUpdater() {
@@ -1161,11 +1161,9 @@ public class SettingTests extends ESTestCase {
         final int count = randomIntBetween(1, 16);
         Setting<String> current = Setting.simpleString("fallback0", Property.NodeScope);
         for (int i = 1; i < count; i++) {
-            final Setting<String> next =
-                    new Setting<>(new Setting.SimpleKey("fallback" + i), current, Function.identity(), Property.NodeScope);
-            current = next;
+            current = new Setting<>("fallback" + i, current, Function.identity(), Property.NodeScope);
         }
-        final Setting<String> fooSetting = new Setting<>(new Setting.SimpleKey("foo"), current, Function.identity(), Property.NodeScope);
+        final Setting<String> fooSetting = new Setting<>("foo", current, Function.identity(), Property.NodeScope);
         assertFalse(fooSetting.exists(Settings.EMPTY));
         if (randomBoolean()) {
             assertTrue(fooSetting.exists(Settings.builder().put("foo", "bar").build()));

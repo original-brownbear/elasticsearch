@@ -17,8 +17,8 @@ public class TimeValue implements Comparable<TimeValue> {
     /** How many nano-seconds in one milli-second */
     public static final long NSEC_PER_MSEC = TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS);
 
-    public static final TimeValue MINUS_ONE = timeValueMillis(-1);
-    public static final TimeValue ZERO = timeValueMillis(0);
+    public static final TimeValue MINUS_ONE = new TimeValue(-1, TimeUnit.MILLISECONDS);
+    public static final TimeValue ZERO = new TimeValue(0, TimeUnit.MILLISECONDS);
     public static final TimeValue MAX_VALUE = TimeValue.timeValueNanos(Long.MAX_VALUE);
 
     private static final long C0 = 1L;
@@ -49,6 +49,11 @@ public class TimeValue implements Comparable<TimeValue> {
     }
 
     public static TimeValue timeValueMillis(long millis) {
+        if (millis == 0) {
+            return ZERO;
+        } else if (millis == -1) {
+            return MINUS_ONE;
+        }
         return new TimeValue(millis, TimeUnit.MILLISECONDS);
     }
 

@@ -392,7 +392,7 @@ public class EsExecutorsTests extends ESTestCase {
             expectThrows(IllegalArgumentException.class, () -> processorsSetting.get(settings));
         final String expected = String.format(
             Locale.ROOT,
-            "Failed to parse value [%d] for setting [%s] must be <= %d",
+            "Failed to parse value [%d] for setting [%s], must be <= [%d]",
             processors,
             processorsSetting.getKey(),
             available);

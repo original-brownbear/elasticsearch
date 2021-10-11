@@ -97,7 +97,7 @@ public class JvmGcMonitorServiceSettingsTests extends ESTestCase {
             builder.put("monitor.jvm.gc.overhead." + threshold, randomIntBetween(Integer.MIN_VALUE, -1));
             execute(builder.build(), (command, interval, name) -> null, e -> {
                 assertThat(e, instanceOf(IllegalArgumentException.class));
-                assertThat(e.getMessage(), containsString("setting [monitor.jvm.gc.overhead." + threshold + "] must be >= 0"));
+                assertThat(e.getMessage(), containsString("setting [monitor.jvm.gc.overhead." + threshold + "], must be >= [0]"));
             }, true, null);
         }
 
@@ -106,7 +106,7 @@ public class JvmGcMonitorServiceSettingsTests extends ESTestCase {
             builder.put("monitor.jvm.gc.overhead." + threshold, randomIntBetween(100 + 1, Integer.MAX_VALUE));
             execute(builder.build(), (command, interval, name) -> null, e -> {
                 assertThat(e, instanceOf(IllegalArgumentException.class));
-                assertThat(e.getMessage(), containsString("setting [monitor.jvm.gc.overhead." + threshold + "] must be <= 100"));
+                assertThat(e.getMessage(), containsString("setting [monitor.jvm.gc.overhead." + threshold + "], must be <= [100]"));
             }, true, null);
         }
 

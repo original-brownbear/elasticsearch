@@ -129,7 +129,7 @@ public class SettingsListenerIT extends ESIntegTestCase {
                 .put("index.test.new.setting", -5)).get();
             fail();
         } catch (IllegalArgumentException ex) {
-            assertEquals("Failed to parse value [-5] for setting [index.test.new.setting] must be >= -1", ex.getMessage());
+            assertEquals("Failed to parse value [-5] for setting [index.test.new.setting], must be >= [-1]", ex.getMessage());
         }
     }
 }

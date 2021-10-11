@@ -140,7 +140,7 @@ public class GoogleCloudStorageBlobStoreRepositoryTests extends ESMockAPIBasedRe
                                                                         Settings.builder().put("chunk_size", "0").build());
             GoogleCloudStorageRepository.getSetting(GoogleCloudStorageRepository.CHUNK_SIZE, repoMetadata);
         });
-        assertEquals("failed to parse value [0] for setting [chunk_size], must be >= [1b]", e.getMessage());
+        assertEquals("Failed to parse value [0] for setting [chunk_size], must be >= [1b]", e.getMessage());
 
         // negative bytes not allowed
         e = expectThrows(IllegalArgumentException.class, () -> {
@@ -148,7 +148,7 @@ public class GoogleCloudStorageBlobStoreRepositoryTests extends ESMockAPIBasedRe
                                                                         Settings.builder().put("chunk_size", "-1").build());
             GoogleCloudStorageRepository.getSetting(GoogleCloudStorageRepository.CHUNK_SIZE, repoMetadata);
         });
-        assertEquals("failed to parse value [-1] for setting [chunk_size], must be >= [1b]", e.getMessage());
+        assertEquals("Failed to parse value [-1] for setting [chunk_size], must be >= [1b]", e.getMessage());
 
         // greater than max chunk size not allowed
         e = expectThrows(IllegalArgumentException.class, () -> {
@@ -156,7 +156,7 @@ public class GoogleCloudStorageBlobStoreRepositoryTests extends ESMockAPIBasedRe
                                                                         Settings.builder().put("chunk_size", "6tb").build());
             GoogleCloudStorageRepository.getSetting(GoogleCloudStorageRepository.CHUNK_SIZE, repoMetadata);
         });
-        assertEquals("failed to parse value [6tb] for setting [chunk_size], must be <= [5tb]", e.getMessage());
+        assertEquals("Failed to parse value [6tb] for setting [chunk_size], must be <= [5tb]", e.getMessage());
     }
 
     public void testWriteReadLarge() throws IOException {

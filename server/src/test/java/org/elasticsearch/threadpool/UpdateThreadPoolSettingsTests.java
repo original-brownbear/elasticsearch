@@ -72,7 +72,7 @@ public class UpdateThreadPoolSettingsTests extends ESThreadPoolTestCase {
         assertThat(
             initial,
             hasToString(containsString(
-                "Failed to parse value [" + tooBig + "] for setting [thread_pool." + Names.WRITE + ".size] must be ")));
+                "Failed to parse value [" + tooBig + "] for setting [thread_pool." + Names.WRITE + ".size], must be ")));
     }
 
     private static int getExpectedThreadPoolSize(Settings settings, String name, int size) {

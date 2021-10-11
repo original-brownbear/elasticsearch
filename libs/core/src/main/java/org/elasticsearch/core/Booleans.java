@@ -64,10 +64,6 @@ public final class Booleans {
         throw notBooleanException(value);
     }
 
-    private static IllegalArgumentException notBooleanException(String value) {
-        return new IllegalArgumentException("Failed to parse value [" + value + "] as only [true] or [false] are allowed.");
-    }
-
     private static boolean hasText(CharSequence str) {
         if (str == null || str.length() == 0) {
             return false;
@@ -109,6 +105,10 @@ public final class Booleans {
             return defaultValue;
         }
         throw notBooleanException(value);
+    }
+
+    private static IllegalArgumentException notBooleanException(String value) {
+        return new IllegalArgumentException("Failed to parse value [" + value + "] as only [true] or [false] are allowed.");
     }
 
     /**
