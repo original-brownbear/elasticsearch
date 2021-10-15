@@ -25,7 +25,7 @@ public class ComponentTemplateMetadataTests extends AbstractNamedWriteableTestCa
         for (int i = 0; i < count; i++) {
             templateMap.put(randomAlphaOfLength(4), ComponentTemplateTests.randomInstance());
         }
-        return new ComponentTemplateMetadata(templateMap);
+        return ComponentTemplateMetadata.of(templateMap);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class ComponentTemplateMetadataTests extends AbstractNamedWriteableTestCa
             // Change the value
             templates.put(newTemplate.getKey(), ComponentTemplateTests.mutateTemplate(newTemplate.getValue()));
         }
-        return new ComponentTemplateMetadata(templates);
+        return ComponentTemplateMetadata.of(templates);
     }
 
     @Override

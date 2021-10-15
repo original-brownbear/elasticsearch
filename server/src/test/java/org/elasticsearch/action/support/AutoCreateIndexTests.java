@@ -216,7 +216,7 @@ public class AutoCreateIndexTests extends ESTestCase {
             .metadata(Map.of())
             .build();
 
-        final Metadata metadata = Metadata.builder().indexTemplates(Map.of("test_template", template)).build();
+        final Metadata metadata = Metadata.builder().put("test_template", template).build();
         final ClusterState clusterState = ClusterState.builder(buildClusterState()).metadata(metadata).build();
 
         Settings settings = Settings.builder().put(AutoCreateIndex.AUTO_CREATE_INDEX_SETTING.getKey(), randomIndex.charAt(0) + "*").build();
@@ -237,7 +237,7 @@ public class AutoCreateIndexTests extends ESTestCase {
             .metadata(Map.of())
             .build();
 
-        final Metadata metadata = Metadata.builder().indexTemplates(Map.of("test_template", template)).build();
+        final Metadata metadata = Metadata.builder().put("test_template", template).build();
         final ClusterState clusterState = ClusterState.builder(buildClusterState()).metadata(metadata).build();
 
         Settings settings = Settings.builder().put(AutoCreateIndex.AUTO_CREATE_INDEX_SETTING.getKey(), false).build();
@@ -260,7 +260,7 @@ public class AutoCreateIndexTests extends ESTestCase {
            .allowAutoCreate(false)
            .build();
 
-        final Metadata metadata = Metadata.builder().indexTemplates(Map.of("test_template", template)).build();
+        final Metadata metadata = Metadata.builder().put("test_template", template).build();
         final ClusterState clusterState = ClusterState.builder(buildClusterState()).metadata(metadata).build();
 
         Settings settings = Settings.builder().put(AutoCreateIndex.AUTO_CREATE_INDEX_SETTING.getKey(), false).build();
@@ -283,7 +283,7 @@ public class AutoCreateIndexTests extends ESTestCase {
             .allowAutoCreate(true)
             .build();
 
-        final Metadata metadata = Metadata.builder().indexTemplates(Map.of("test_template", template)).build();
+        final Metadata metadata = Metadata.builder().put("test_template", template).build();
         final ClusterState clusterState = ClusterState.builder(buildClusterState()).metadata(metadata).build();
 
         Settings settings = Settings.builder().put(AutoCreateIndex.AUTO_CREATE_INDEX_SETTING.getKey(), false).build();

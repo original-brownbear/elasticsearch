@@ -30,6 +30,7 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
+import org.elasticsearch.cluster.metadata.ComposableIndexTemplateMetadata;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexTemplateMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
@@ -391,7 +392,7 @@ public class MlIndexAndAliasTests extends ESTestCase {
             .metadata(Metadata.builder()
                 .indices(ImmutableOpenMap.<String, IndexMetadata>builder().putAll(indices).build())
                 .templates(ImmutableOpenMap.<String, IndexTemplateMetadata>builder().putAll(legacyTemplates).build())
-                .indexTemplates(composableTemplates)
+                .putCustom(ComposableIndexTemplateMetadata.TYPE, ComposableIndexTemplateMetadata.of(composableTemplates))
                 .build())
             .build();
     }

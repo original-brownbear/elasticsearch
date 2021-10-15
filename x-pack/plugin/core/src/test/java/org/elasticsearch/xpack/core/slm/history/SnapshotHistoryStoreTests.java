@@ -15,6 +15,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
+import org.elasticsearch.cluster.metadata.ComposableIndexTemplateMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
@@ -59,8 +60,10 @@ public class SnapshotHistoryStoreTests extends ESTestCase {
             ComposableIndexTemplate.parse(JsonXContent.jsonXContent.createParser(NamedXContentRegistry.EMPTY,
                 DeprecationHandler.THROW_UNSUPPORTED_OPERATION, TEMPLATE_SLM_HISTORY.loadBytes()));
         ClusterState state = clusterService.state();
-        Metadata.Builder metadataBuilder =
-            Metadata.builder(state.getMetadata()).indexTemplates(Map.of(TEMPLATE_SLM_HISTORY.getTemplateName(), template));
+        Metadata.Builder metadataBuilder = Metadata.builder(state.getMetadata()).putCustom(
+            ComposableIndexTemplateMetadata.TYPE,
+            ComposableIndexTemplateMetadata.EMPTY.withAddedTemplate(TEMPLATE_SLM_HISTORY.getTemplateName(), template)
+        );
         ClusterServiceUtils.setState(clusterService, ClusterState.builder(state).metadata(metadataBuilder).build());
         historyStore = new SnapshotHistoryStore(Settings.EMPTY, client, clusterService);
         clusterService.stop();

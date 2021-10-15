@@ -8,10 +8,12 @@
 
 package org.elasticsearch.cluster.metadata;
 
+import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.cluster.DiffableUtils;
 import org.elasticsearch.cluster.NamedDiff;
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -32,6 +34,9 @@ import java.util.Objects;
 public class DataStreamMetadata implements Metadata.Custom {
 
     public static final String TYPE = "data_stream";
+
+    public static final DataStreamMetadata EMPTY = new DataStreamMetadata(Map.of(), Map.of());
+
     private static final ParseField DATA_STREAM = new ParseField("data_stream");
     private static final ParseField DATA_STREAM_ALIASES = new ParseField("data_stream_aliases");
     @SuppressWarnings("unchecked")
@@ -42,7 +47,7 @@ public class DataStreamMetadata implements Metadata.Custom {
             if (dataStreamAliases == null) {
                 dataStreamAliases = Map.of();
             }
-            return new DataStreamMetadata(dataStreams, dataStreamAliases);
+            return of(dataStreams, dataStreamAliases);
     });
 
     static {
@@ -67,7 +72,55 @@ public class DataStreamMetadata implements Metadata.Custom {
     private final Map<String, DataStream> dataStreams;
     private final Map<String, DataStreamAlias> dataStreamAliases;
 
-    public DataStreamMetadata(Map<String, DataStream> dataStreams,
+    public static DataStreamMetadata of(Map<String, DataStream> dataStreams, Map<String, DataStreamAlias> dataStreamAliases) {
+        if (dataStreams.isEmpty() && dataStreamAliases.isEmpty()) {
+            return EMPTY;
+        }
+        return new DataStreamMetadata(dataStreams, dataStreamAliases);
+    }
+
+    public DataStreamMetadata withAddedDataStream(DataStream dataStream) {
+        return of(Maps.copyMapWithAddedOrReplacedEntry(dataStreams, dataStream.getName(), dataStream), dataStreamAliases);
+    }
+
+    public DataStreamMetadata withRemovedDataStream(String name) {
+        if (dataStreams.containsKey(name) == false) {
+            return this;
+        }
+        boolean changedAliases = false;
+        Map<String, DataStreamAlias> aliasCopy = new HashMap<>(dataStreamAliases);
+        for (Map.Entry<String, DataStreamAlias> entry : dataStreamAliases.entrySet()) {
+            final DataStreamAlias alias = entry.getValue();
+            final DataStreamAlias adjusted = alias.removeDataStream(name);
+            if (adjusted != alias) {
+                changedAliases = true;
+                entry.setValue(adjusted);
+            }
+        }
+        return of(Maps.copyMapWithRemovedEntry(dataStreams, name), changedAliases ? aliasCopy : dataStreamAliases);
+    }
+
+    public DataStreamMetadata withRemovedAlias(String aliasName, String dataStreamName, boolean mustExist) {
+        DataStreamAlias existing = dataStreamAliases.get(aliasName);
+        if (mustExist && existing == null) {
+            throw new ResourceNotFoundException("alias [" + aliasName + "] doesn't exist");
+        } else if (existing == null) {
+            return this;
+        }
+        DataStreamAlias copy = existing.removeDataStream(dataStreamName);
+        if (copy == existing) {
+            return this;
+        }
+        Map<String, DataStreamAlias> dataStreamAliases = new HashMap<>(getDataStreamAliases());
+        if (copy != null) {
+            dataStreamAliases.put(aliasName, copy);
+        } else {
+            dataStreamAliases.remove(aliasName);
+        }
+        return of(dataStreams, dataStreamAliases);
+    }
+
+    private DataStreamMetadata(Map<String, DataStream> dataStreams,
                               Map<String, DataStreamAlias> dataStreamAliases) {
         this.dataStreams = Map.copyOf(dataStreams);
         this.dataStreamAliases = Map.copyOf(dataStreamAliases);
@@ -174,7 +227,7 @@ public class DataStreamMetadata implements Metadata.Custom {
 
         @Override
         public Metadata.Custom apply(Metadata.Custom part) {
-            return new DataStreamMetadata(
+            return DataStreamMetadata.of(
                 dataStreamDiff.apply(((DataStreamMetadata) part).dataStreams),
                 dataStreamAliasDiff != null ? dataStreamAliasDiff.apply(((DataStreamMetadata) part).dataStreamAliases) : Map.of()
             );

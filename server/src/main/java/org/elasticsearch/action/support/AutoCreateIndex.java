@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.MetadataIndexTemplateService;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -107,9 +108,10 @@ public final class AutoCreateIndex {
         this.autoCreate = autoCreate;
     }
 
+    @Nullable
     private ComposableIndexTemplate findTemplate(String indexName, Metadata metadata) {
         final String templateName = MetadataIndexTemplateService.findV2Template(metadata, indexName, false);
-        return metadata.templatesV2().get(templateName);
+        return templateName == null ? null : metadata.templatesV2().get(templateName);
     }
 
     static class AutoCreate {

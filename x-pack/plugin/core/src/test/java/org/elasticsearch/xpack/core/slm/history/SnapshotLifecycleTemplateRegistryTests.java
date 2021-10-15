@@ -20,6 +20,7 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlocks;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
+import org.elasticsearch.cluster.metadata.ComposableIndexTemplateMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
@@ -390,7 +391,7 @@ public class SnapshotLifecycleTemplateRegistryTests extends ESTestCase {
 
         return ClusterState.builder(new ClusterName("test"))
             .metadata(Metadata.builder()
-                .indexTemplates(indexTemplates)
+                .putCustom(ComposableIndexTemplateMetadata.TYPE, ComposableIndexTemplateMetadata.of(indexTemplates))
                 .transientSettings(nodeSettings)
                 .putCustom(IndexLifecycleMetadata.TYPE, ilmMeta)
                 .build())

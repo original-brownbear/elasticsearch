@@ -817,7 +817,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             ComposableIndexTemplate invalidGlobalTemplate = new ComposableIndexTemplate(List.of("*"),
                 templateWithHiddenSetting, List.of("ct"), 5L, 1L, null, null, null);
             Metadata invalidGlobalTemplateMetadata = Metadata.builder().putCustom(ComposableIndexTemplateMetadata.TYPE,
-                new ComposableIndexTemplateMetadata(Map.of("invalid_global_template", invalidGlobalTemplate))).build();
+                ComposableIndexTemplateMetadata.of(Map.of("invalid_global_template", invalidGlobalTemplate))).build();
 
             MetadataIndexTemplateService.findV2Template(invalidGlobalTemplateMetadata, "index-name", false);
             fail("expecting an exception as the matching global template is invalid");

@@ -12,6 +12,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.cluster.DiffableUtils;
 import org.elasticsearch.cluster.NamedDiff;
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -32,10 +33,13 @@ import java.util.Objects;
  */
 public class ComponentTemplateMetadata implements Metadata.Custom {
     public static final String TYPE = "component_template";
+
+    public static final ComponentTemplateMetadata EMPTY = new ComponentTemplateMetadata(Map.of());
+
     private static final ParseField COMPONENT_TEMPLATE = new ParseField("component_template");
     @SuppressWarnings("unchecked")
     private static final ConstructingObjectParser<ComponentTemplateMetadata, Void> PARSER = new ConstructingObjectParser<>(TYPE, false,
-        a -> new ComponentTemplateMetadata((Map<String, ComponentTemplate>) a[0]));
+        a -> of((Map<String, ComponentTemplate>) a[0]));
 
     static {
         PARSER.declareObject(ConstructingObjectParser.constructorArg(), (p, c) -> {
@@ -49,12 +53,30 @@ public class ComponentTemplateMetadata implements Metadata.Custom {
     }
     private final Map<String, ComponentTemplate> componentTemplates;
 
-    public ComponentTemplateMetadata(Map<String, ComponentTemplate> componentTemplates) {
-        this.componentTemplates = componentTemplates;
+    public static ComponentTemplateMetadata of(Map<String, ComponentTemplate> map) {
+        if (map.isEmpty()) {
+            return EMPTY;
+        }
+        return new ComponentTemplateMetadata(map);
+    }
+
+    private ComponentTemplateMetadata(Map<String, ComponentTemplate> componentTemplates) {
+        this.componentTemplates = Map.copyOf(componentTemplates);
     }
 
     public ComponentTemplateMetadata(StreamInput in) throws IOException {
-        this.componentTemplates = in.readMap(StreamInput::readString, ComponentTemplate::new);
+        this(in.readMap(StreamInput::readString, ComponentTemplate::new));
+    }
+
+    public ComponentTemplateMetadata withAddedTemplate(String name, ComponentTemplate template) {
+        return ComponentTemplateMetadata.of(Maps.copyMapWithAddedOrReplacedEntry(componentTemplates, name, template));
+    }
+
+    public ComponentTemplateMetadata withRemovedTemplate(String name) {
+        if (componentTemplates.containsKey(name) == false) {
+            return this;
+        }
+        return ComponentTemplateMetadata.of(Maps.copyMapWithRemovedEntry(componentTemplates, name));
     }
 
     public Map<String, ComponentTemplate> componentTemplates() {
@@ -142,7 +164,7 @@ public class ComponentTemplateMetadata implements Metadata.Custom {
 
         @Override
         public Metadata.Custom apply(Metadata.Custom part) {
-            return new ComponentTemplateMetadata(componentTemplateDiff.apply(((ComponentTemplateMetadata) part).componentTemplates));
+            return ComponentTemplateMetadata.of(componentTemplateDiff.apply(((ComponentTemplateMetadata) part).componentTemplates));
         }
 
         @Override

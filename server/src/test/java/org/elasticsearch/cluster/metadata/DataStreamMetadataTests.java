@@ -30,7 +30,7 @@ public class DataStreamMetadataTests extends AbstractNamedWriteableTestCase<Data
     @Override
     protected DataStreamMetadata createTestInstance() {
         if (randomBoolean()) {
-            return new DataStreamMetadata(Map.of(), Map.of());
+            return DataStreamMetadata.EMPTY;
         }
         Map<String, DataStream> dataStreams = new HashMap<>();
         for (int i = 0; i < randomIntBetween(1, 5); i++) {
@@ -44,7 +44,7 @@ public class DataStreamMetadataTests extends AbstractNamedWriteableTestCase<Data
                 dataStreamsAliases.put(alias.getName(), alias);
             }
         }
-        return new DataStreamMetadata(dataStreams, dataStreamsAliases);
+        return DataStreamMetadata.of(dataStreams, dataStreamsAliases);
     }
 
     @Override

@@ -89,7 +89,7 @@ public class LifecyclePolicyUtilsTests extends ESTestCase {
                             .put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy")
                             .build()))
                     .putCustom(ComposableIndexTemplateMetadata.TYPE,
-                        new ComposableIndexTemplateMetadata(Collections.singletonMap("mytemplate",
+                        ComposableIndexTemplateMetadata.of(Collections.singletonMap("mytemplate",
                             new ComposableIndexTemplate(Collections.singletonList("myds"),
                                 new Template(Settings.builder().put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy").build(), null, null),
                                 null, null, null, null, new ComposableIndexTemplate.DataStreamTemplate(false, false)))))
@@ -130,7 +130,7 @@ public class LifecyclePolicyUtilsTests extends ESTestCase {
                     .put(new DataStream("myds", new DataStream.TimestampField("@timestamp"),
                         Collections.singletonList(new Index("myindex", "uuid"))))
                     .putCustom(ComposableIndexTemplateMetadata.TYPE,
-                        new ComposableIndexTemplateMetadata(Collections.singletonMap("mytemplate",
+                        ComposableIndexTemplateMetadata.of(Collections.singletonMap("mytemplate",
                             new ComposableIndexTemplate(Collections.singletonList("myds"),
                                 new Template(Settings.builder().put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy").build(), null, null),
                                 null, null, null, null, new ComposableIndexTemplate.DataStreamTemplate(false, false)))))

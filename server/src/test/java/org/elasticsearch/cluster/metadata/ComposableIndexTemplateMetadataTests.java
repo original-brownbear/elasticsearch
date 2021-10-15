@@ -20,13 +20,13 @@ public class ComposableIndexTemplateMetadataTests extends AbstractNamedWriteable
     @Override
     protected ComposableIndexTemplateMetadata createTestInstance() {
         if (randomBoolean()) {
-            return new ComposableIndexTemplateMetadata(Collections.emptyMap());
+            return ComposableIndexTemplateMetadata.of(Collections.emptyMap());
         }
         Map<String, ComposableIndexTemplate> templates = new HashMap<>();
         for (int i = 0; i < randomIntBetween(1, 5); i++) {
             templates.put(randomAlphaOfLength(5), ComposableIndexTemplateTests.randomInstance());
         }
-        return new ComposableIndexTemplateMetadata(templates);
+        return ComposableIndexTemplateMetadata.of(templates);
     }
 
     @Override

@@ -15,7 +15,6 @@ import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.CollectionUtil;
-import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.AliasesRequest;
 import org.elasticsearch.cluster.ClusterState;
@@ -67,7 +66,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -716,33 +714,23 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
     }
 
     public Map<String, ComponentTemplate> componentTemplates() {
-        return Optional.ofNullable((ComponentTemplateMetadata) this.custom(ComponentTemplateMetadata.TYPE))
-            .map(ComponentTemplateMetadata::componentTemplates)
-            .orElse(Collections.emptyMap());
+        return this.custom(ComponentTemplateMetadata.TYPE, ComponentTemplateMetadata.EMPTY).componentTemplates();
     }
 
     public Map<String, ComposableIndexTemplate> templatesV2() {
-        return Optional.ofNullable((ComposableIndexTemplateMetadata) this.custom(ComposableIndexTemplateMetadata.TYPE))
-            .map(ComposableIndexTemplateMetadata::indexTemplates)
-            .orElse(Collections.emptyMap());
+        return this.custom(ComposableIndexTemplateMetadata.TYPE, ComposableIndexTemplateMetadata.EMPTY).indexTemplates();
     }
 
     public Map<String, DataStream> dataStreams() {
-        return Optional.ofNullable((DataStreamMetadata) this.custom(DataStreamMetadata.TYPE))
-            .map(DataStreamMetadata::dataStreams)
-            .orElse(Collections.emptyMap());
+        return this.custom(DataStreamMetadata.TYPE, DataStreamMetadata.EMPTY).dataStreams();
     }
 
     public Map<String, DataStreamAlias> dataStreamAliases() {
-        return Optional.ofNullable((DataStreamMetadata) this.custom(DataStreamMetadata.TYPE))
-            .map(DataStreamMetadata::getDataStreamAliases)
-            .orElse(Collections.emptyMap());
+        return this.custom(DataStreamMetadata.TYPE, DataStreamMetadata.EMPTY).getDataStreamAliases();
     }
 
     public Map<String, SingleNodeShutdownMetadata> nodeShutdowns() {
-        return Optional.ofNullable((NodesShutdownMetadata) this.custom(NodesShutdownMetadata.TYPE))
-            .map(NodesShutdownMetadata::getAllNodeMetadataMap)
-            .orElse(Collections.emptyMap());
+        return this.custom(NodesShutdownMetadata.TYPE, NodesShutdownMetadata.EMPTY).getAllNodeMetadataMap();
     }
 
     public ImmutableOpenMap<String, Custom> customs() {
@@ -1131,101 +1119,64 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
 
         public Builder put(String name, ComponentTemplate componentTemplate) {
             Objects.requireNonNull(componentTemplate, "it is invalid to add a null component template: " + name);
-            // ಠ_ಠ at ImmutableOpenMap
-            Map<String, ComponentTemplate> existingTemplates =
-                Optional.ofNullable((ComponentTemplateMetadata) this.customs.get(ComponentTemplateMetadata.TYPE))
-                    .map(ctm -> new HashMap<>(ctm.componentTemplates()))
-                    .orElse(new HashMap<>());
-            existingTemplates.put(name, componentTemplate);
-            this.customs.put(ComponentTemplateMetadata.TYPE, new ComponentTemplateMetadata(existingTemplates));
+            this.customs.put(ComponentTemplateMetadata.TYPE, componentTemplateMetadata().withAddedTemplate(name, componentTemplate));
             return this;
         }
 
+        private ComponentTemplateMetadata componentTemplateMetadata() {
+            return (ComponentTemplateMetadata) this.customs.getOrDefault(ComponentTemplateMetadata.TYPE, ComponentTemplateMetadata.EMPTY);
+        }
+
         public Builder removeComponentTemplate(String name) {
-            // ಠ_ಠ at ImmutableOpenMap
-            Map<String, ComponentTemplate> existingTemplates =
-                Optional.ofNullable((ComponentTemplateMetadata) this.customs.get(ComponentTemplateMetadata.TYPE))
-                    .map(ctm -> new HashMap<>(ctm.componentTemplates()))
-                    .orElse(new HashMap<>());
-            existingTemplates.remove(name);
-            this.customs.put(ComponentTemplateMetadata.TYPE, new ComponentTemplateMetadata(existingTemplates));
+            this.customs.put(ComponentTemplateMetadata.TYPE, (componentTemplateMetadata()).withRemovedTemplate(name));
             return this;
         }
 
         public Builder componentTemplates(Map<String, ComponentTemplate> componentTemplates) {
-            this.customs.put(ComponentTemplateMetadata.TYPE, new ComponentTemplateMetadata(componentTemplates));
-            return this;
-        }
-
-        public Builder indexTemplates(Map<String, ComposableIndexTemplate> indexTemplates) {
-            this.customs.put(ComposableIndexTemplateMetadata.TYPE, new ComposableIndexTemplateMetadata(indexTemplates));
+            this.customs.put(ComponentTemplateMetadata.TYPE, ComponentTemplateMetadata.of(componentTemplates));
             return this;
         }
 
         public Builder put(String name, ComposableIndexTemplate indexTemplate) {
             Objects.requireNonNull(indexTemplate, "it is invalid to add a null index template: " + name);
-            // ಠ_ಠ at ImmutableOpenMap
-            Map<String, ComposableIndexTemplate> existingTemplates =
-                Optional.ofNullable((ComposableIndexTemplateMetadata) this.customs.get(ComposableIndexTemplateMetadata.TYPE))
-                    .map(itmd -> new HashMap<>(itmd.indexTemplates()))
-                    .orElse(new HashMap<>());
-            existingTemplates.put(name, indexTemplate);
-            this.customs.put(ComposableIndexTemplateMetadata.TYPE, new ComposableIndexTemplateMetadata(existingTemplates));
+            this.customs.put(
+                ComposableIndexTemplateMetadata.TYPE,
+                composableIndexTemplateMetadata().withAddedTemplate(name, indexTemplate)
+            );
             return this;
         }
 
         public Builder removeIndexTemplate(String name) {
-            // ಠ_ಠ at ImmutableOpenMap
-            Map<String, ComposableIndexTemplate> existingTemplates =
-                Optional.ofNullable((ComposableIndexTemplateMetadata) this.customs.get(ComposableIndexTemplateMetadata.TYPE))
-                    .map(itmd -> new HashMap<>(itmd.indexTemplates()))
-                    .orElse(new HashMap<>());
-            existingTemplates.remove(name);
-            this.customs.put(ComposableIndexTemplateMetadata.TYPE, new ComposableIndexTemplateMetadata(existingTemplates));
+            this.customs.put(ComposableIndexTemplateMetadata.TYPE, composableIndexTemplateMetadata().withRemovedTemplate(name));
             return this;
         }
 
+        private ComposableIndexTemplateMetadata composableIndexTemplateMetadata() {
+            return (ComposableIndexTemplateMetadata) customs.getOrDefault(
+                ComposableIndexTemplateMetadata.TYPE,
+                ComposableIndexTemplateMetadata.EMPTY
+            );
+        }
+
         public DataStream dataStream(String dataStreamName) {
-            DataStreamMetadata dataStreamMetadata = (DataStreamMetadata) customs.get(DataStreamMetadata.TYPE);
-            if (dataStreamMetadata != null) {
-                return dataStreamMetadata.dataStreams().get(dataStreamName);
-            } else {
-                return null;
-            }
+            return dataStreamMetadata().dataStreams().get(dataStreamName);
         }
 
         public Builder dataStreams(Map<String, DataStream> dataStreams, Map<String, DataStreamAlias> dataStreamAliases) {
-            this.customs.put(DataStreamMetadata.TYPE, new DataStreamMetadata(dataStreams, dataStreamAliases));
+            this.customs.put(DataStreamMetadata.TYPE, DataStreamMetadata.of(dataStreams, dataStreamAliases));
             return this;
         }
 
         public Builder put(DataStream dataStream) {
             Objects.requireNonNull(dataStream, "it is invalid to add a null data stream");
-            Map<String, DataStream> existingDataStreams =
-                Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                    .map(dsmd -> new HashMap<>(dsmd.dataStreams()))
-                    .orElse(new HashMap<>());
-            existingDataStreams.put(dataStream.getName(), dataStream);
-            Map<String, DataStreamAlias> existingDataStreamAliases =
-                Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                .map(dsmd -> new HashMap<>(dsmd.getDataStreamAliases()))
-                .orElse(new HashMap<>());
-
-            this.customs.put(DataStreamMetadata.TYPE, new DataStreamMetadata(existingDataStreams, existingDataStreamAliases));
+            this.customs.put(DataStreamMetadata.TYPE, dataStreamMetadata().withAddedDataStream(dataStream));
             return this;
         }
 
         public boolean put(String aliasName, String dataStream, Boolean isWriteDataStream, String filter) {
-            Map<String, DataStream> existingDataStream =
-                Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                    .map(dsmd -> new HashMap<>(dsmd.dataStreams()))
-                    .orElse(new HashMap<>());
-            Map<String, DataStreamAlias> dataStreamAliases =
-                Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                    .map(dsmd -> new HashMap<>(dsmd.getDataStreamAliases()))
-                    .orElse(new HashMap<>());
+            final DataStreamMetadata existing = dataStreamMetadata();
 
-            if (existingDataStream.containsKey(dataStream) == false) {
+            if (existing.dataStreams().containsKey(dataStream) == false) {
                 throw new IllegalArgumentException("alias [" + aliasName + "] refers to a non existing data stream [" + dataStream + "]");
             }
 
@@ -1236,6 +1187,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
                 filterAsMap = null;
             }
 
+            Map<String, DataStreamAlias> dataStreamAliases = new HashMap<>(existing.getDataStreamAliases());
             DataStreamAlias alias = dataStreamAliases.get(aliasName);
             if (alias == null) {
                 String writeDataStream = isWriteDataStream != null && isWriteDataStream ? dataStream : null;
@@ -1249,72 +1201,26 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             }
             dataStreamAliases.put(aliasName, alias);
 
-            this.customs.put(DataStreamMetadata.TYPE, new DataStreamMetadata(existingDataStream, dataStreamAliases));
+            this.customs.put(DataStreamMetadata.TYPE, DataStreamMetadata.of(existing.dataStreams(), dataStreamAliases));
             return true;
         }
 
         public Builder removeDataStream(String name) {
-            Map<String, DataStream> existingDataStreams =
-                Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                    .map(dsmd -> new HashMap<>(dsmd.dataStreams()))
-                    .orElse(new HashMap<>());
-            existingDataStreams.remove(name);
-
-            Map<String, DataStreamAlias> existingDataStreamAliases =
-                Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                    .map(dsmd -> new HashMap<>(dsmd.getDataStreamAliases()))
-                    .orElse(new HashMap<>());
-
-            Set<String> aliasesToDelete = new HashSet<>();
-            List<DataStreamAlias> aliasesToUpdate = new ArrayList<>();
-            for (var alias : existingDataStreamAliases.values()) {
-                DataStreamAlias copy = alias.removeDataStream(name);
-                if (copy != null) {
-                    if (copy == alias) {
-                        continue;
-                    }
-                    aliasesToUpdate.add(copy);
-                } else {
-                    aliasesToDelete.add(alias.getName());
-                }
-            }
-            for (DataStreamAlias alias : aliasesToUpdate) {
-                existingDataStreamAliases.put(alias.getName(), alias);
-            }
-            for (String aliasToDelete : aliasesToDelete) {
-                existingDataStreamAliases.remove(aliasToDelete);
-            }
-
-            this.customs.put(DataStreamMetadata.TYPE, new DataStreamMetadata(existingDataStreams, existingDataStreamAliases));
+            this.customs.put(DataStreamMetadata.TYPE, dataStreamMetadata().withRemovedDataStream(name));
             return this;
         }
 
-        public boolean removeDataStreamAlias(String aliasName, String dataStreamName, boolean mustExist) {
-            Map<String, DataStreamAlias> dataStreamAliases =
-                Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                    .map(dsmd -> new HashMap<>(dsmd.getDataStreamAliases()))
-                    .orElse(new HashMap<>());
+        private DataStreamMetadata dataStreamMetadata() {
+            return (DataStreamMetadata) this.customs.getOrDefault(DataStreamMetadata.TYPE, DataStreamMetadata.EMPTY);
+        }
 
-            DataStreamAlias existing = dataStreamAliases.get(aliasName);
-            if (mustExist && existing == null) {
-                throw new ResourceNotFoundException("alias [" + aliasName + "] doesn't exist");
-            } else if (existing == null) {
+        public boolean removeDataStreamAlias(String aliasName, String dataStreamName, boolean mustExist) {
+            final DataStreamMetadata existing = dataStreamMetadata();
+            final DataStreamMetadata updated = existing.withRemovedAlias(aliasName, dataStreamName, mustExist);
+            if (existing == updated) {
                 return false;
             }
-            DataStreamAlias copy = existing.removeDataStream(dataStreamName);
-            if (copy == existing) {
-                return false;
-            }
-            if (copy != null) {
-                dataStreamAliases.put(aliasName, copy);
-            } else {
-                dataStreamAliases.remove(aliasName);
-            }
-            Map<String, DataStream> existingDataStream =
-                Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                    .map(dsmd -> new HashMap<>(dsmd.dataStreams()))
-                    .orElse(new HashMap<>());
-            this.customs.put(DataStreamMetadata.TYPE, new DataStreamMetadata(existingDataStream, dataStreamAliases));
+            this.customs.put(DataStreamMetadata.TYPE, updated);
             return true;
         }
 
@@ -1487,12 +1393,11 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             }
 
             final Set<String> allDataStreams = new HashSet<>();
-            DataStreamMetadata dataStreamMetadata = (DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE);
-            if (dataStreamMetadata != null) {
-                for (DataStream dataStream : dataStreamMetadata.dataStreams().values()) {
-                    allDataStreams.add(dataStream.getName());
-                }
+            DataStreamMetadata dataStreamMetadata = dataStreamMetadata();
+            for (DataStream dataStream : dataStreamMetadata.dataStreams().values()) {
+                allDataStreams.add(dataStream.getName());
             }
+
 
             final Set<String> aliasDuplicatesWithIndices = new HashSet<>(allAliases);
             aliasDuplicatesWithIndices.retainAll(allIndices);

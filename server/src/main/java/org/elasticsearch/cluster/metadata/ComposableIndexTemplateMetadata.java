@@ -12,6 +12,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.cluster.DiffableUtils;
 import org.elasticsearch.cluster.NamedDiff;
+import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -35,7 +36,7 @@ public class ComposableIndexTemplateMetadata implements Metadata.Custom {
     private static final ParseField INDEX_TEMPLATE = new ParseField("index_template");
     @SuppressWarnings("unchecked")
     private static final ConstructingObjectParser<ComposableIndexTemplateMetadata, Void> PARSER = new ConstructingObjectParser<>(TYPE,
-        false, a -> new ComposableIndexTemplateMetadata((Map<String, ComposableIndexTemplate>) a[0]));
+        false, a -> ComposableIndexTemplateMetadata.of((Map<String, ComposableIndexTemplate>) a[0]));
 
     static {
         PARSER.declareObject(ConstructingObjectParser.constructorArg(), (p, c) -> {
@@ -48,18 +49,41 @@ public class ComposableIndexTemplateMetadata implements Metadata.Custom {
         }, INDEX_TEMPLATE);
     }
 
+    public static final ComposableIndexTemplateMetadata EMPTY = new ComposableIndexTemplateMetadata(Map.of());
+
     private final Map<String, ComposableIndexTemplate> indexTemplates;
 
-    public ComposableIndexTemplateMetadata(Map<String, ComposableIndexTemplate> templates) {
-        this.indexTemplates = templates;
+    public static ComposableIndexTemplateMetadata of(Map<String, ComposableIndexTemplate> templates) {
+        if (templates.isEmpty()) {
+            return EMPTY;
+        }
+        return new ComposableIndexTemplateMetadata(templates);
+    }
+
+    private ComposableIndexTemplateMetadata(Map<String, ComposableIndexTemplate> templates) {
+        this.indexTemplates = Map.copyOf(templates);
     }
 
     public ComposableIndexTemplateMetadata(StreamInput in) throws IOException {
-        this.indexTemplates = in.readMap(StreamInput::readString, ComposableIndexTemplate::new);
+        this(in.readMap(StreamInput::readString, ComposableIndexTemplate::new));
     }
 
     public static ComposableIndexTemplateMetadata fromXContent(XContentParser parser) throws IOException {
         return PARSER.parse(parser, null);
+    }
+
+    public ComposableIndexTemplateMetadata withAddedTemplate(String name, ComposableIndexTemplate indexTemplate) {
+        if (indexTemplate.equals(indexTemplates.get(name))) {
+            return this;
+        }
+        return ComposableIndexTemplateMetadata.of(Maps.copyMapWithAddedOrReplacedEntry(indexTemplates, name, indexTemplate));
+    }
+
+    public ComposableIndexTemplateMetadata withRemovedTemplate(String name) {
+        if (indexTemplates.containsKey(name) == false) {
+            return this;
+        }
+        return ComposableIndexTemplateMetadata.of(Maps.copyMapWithRemovedEntry(indexTemplates, name));
     }
 
     public Map<String, ComposableIndexTemplate> indexTemplates() {
@@ -143,7 +167,7 @@ public class ComposableIndexTemplateMetadata implements Metadata.Custom {
 
         @Override
         public Metadata.Custom apply(Metadata.Custom part) {
-            return new ComposableIndexTemplateMetadata(indexTemplateDiff.apply(((ComposableIndexTemplateMetadata) part).indexTemplates));
+            return ComposableIndexTemplateMetadata.of(indexTemplateDiff.apply(((ComposableIndexTemplateMetadata) part).indexTemplates));
         }
 
         @Override

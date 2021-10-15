@@ -40,6 +40,9 @@ import java.util.stream.Collectors;
  */
 public class NodesShutdownMetadata implements Metadata.Custom {
     public static final String TYPE = "node_shutdown";
+
+    public static final NodesShutdownMetadata EMPTY = new NodesShutdownMetadata(Map.of());
+
     public static final Version NODE_SHUTDOWN_VERSION = Version.V_7_13_0;
 
     private static final ParseField NODES_FIELD = new ParseField("nodes");
