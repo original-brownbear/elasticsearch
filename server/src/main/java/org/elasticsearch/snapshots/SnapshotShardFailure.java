@@ -11,6 +11,7 @@ package org.elasticsearch.snapshots;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.Nullable;
@@ -35,7 +36,7 @@ public class SnapshotShardFailure extends ShardOperationFailedException {
     private final ShardId shardId;
 
     SnapshotShardFailure(StreamInput in) throws IOException {
-        nodeId = in.readOptionalString();
+        nodeId = DiscoveryNode.deduplicator.deduplicateAllowNull(in.readOptionalString());
         shardId = new ShardId(in);
         super.shardId = shardId.getId();
         index = shardId.getIndexName();

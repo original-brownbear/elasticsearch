@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.util.StringLiteralDeduplicator;
 import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.node.Node;
@@ -36,6 +37,8 @@ import static org.elasticsearch.node.NodeRoleSettings.NODE_ROLES_SETTING;
 public class DiscoveryNode implements Writeable, ToXContentFragment {
 
     static final String COORDINATING_ONLY = "coordinating_only";
+
+    public static final StringLiteralDeduplicator deduplicator = new StringLiteralDeduplicator();
 
     public static boolean hasRole(final Settings settings, final DiscoveryNodeRole role) {
         // this method can be called before the o.e.n.NodeRoleSettings.NODE_ROLES_SETTING is initialized
@@ -186,14 +189,14 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
     public DiscoveryNode(String nodeName, String nodeId, String ephemeralId, String hostName, String hostAddress,
                          TransportAddress address, Map<String, String> attributes, Set<DiscoveryNodeRole> roles, Version version) {
         if (nodeName != null) {
-            this.nodeName = nodeName.intern();
+            this.nodeName = deduplicator.deduplicate(nodeName);
         } else {
             this.nodeName = "";
         }
-        this.nodeId = nodeId.intern();
-        this.ephemeralId = ephemeralId.intern();
-        this.hostName = hostName.intern();
-        this.hostAddress = hostAddress.intern();
+        this.nodeId = deduplicator.deduplicate(nodeId);
+        this.ephemeralId = deduplicator.deduplicate(ephemeralId);
+        this.hostName = deduplicator.deduplicate(hostName);
+        this.hostAddress = deduplicator.deduplicate(hostAddress);
         this.address = address;
         if (version == null) {
             this.version = Version.CURRENT;
@@ -224,11 +227,11 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
      * @throws IOException if there is an error while reading from the stream
      */
     public DiscoveryNode(StreamInput in) throws IOException {
-        this.nodeName = in.readString().intern();
-        this.nodeId = in.readString().intern();
-        this.ephemeralId = in.readString().intern();
-        this.hostName = in.readString().intern();
-        this.hostAddress = in.readString().intern();
+        this.nodeName = deduplicator.deduplicate(in.readString());
+        this.nodeId = deduplicator.deduplicate(in.readString());
+        this.ephemeralId = deduplicator.deduplicate(in.readString());
+        this.hostName = deduplicator.deduplicate(in.readString());
+        this.hostAddress = deduplicator.deduplicate(in.readString());
         this.address = new TransportAddress(in);
         this.attributes = in.readMap(StreamInput::readString, StreamInput::readString);
         int rolesSize = in.readVInt();

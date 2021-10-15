@@ -12,6 +12,7 @@ import com.carrotsearch.hppc.ObjectHashSet;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 import org.elasticsearch.Version;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -74,8 +75,8 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
     }
 
     public ClusterInfo(StreamInput in) throws IOException {
-        Map<String, DiskUsage> leastMap = in.readMap(StreamInput::readString, DiskUsage::new);
-        Map<String, DiskUsage> mostMap = in.readMap(StreamInput::readString, DiskUsage::new);
+        Map<String, DiskUsage> leastMap = in.readMap(inpt -> DiscoveryNode.deduplicator.deduplicate(inpt.readString()), DiskUsage::new);
+        Map<String, DiskUsage> mostMap = in.readMap(inpt -> DiscoveryNode.deduplicator.deduplicate(inpt.readString()), DiskUsage::new);
         Map<String, Long> sizeMap = in.readMap(StreamInput::readString, StreamInput::readLong);
         Map<ShardId, Long> dataSetSizeMap;
         if (in.getVersion().onOrAfter(DATA_SET_SIZE_SIZE_VERSION)) {
@@ -246,7 +247,7 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
         }
 
         public NodeAndPath(StreamInput in) throws IOException {
-            this.nodeId = in.readString();
+            this.nodeId = DiscoveryNode.deduplicator.deduplicate(in.readString());
             this.path = in.readString();
         }
 

@@ -11,6 +11,7 @@ package org.elasticsearch.action.admin.cluster.snapshots.status;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.action.support.broadcast.BroadcastShardResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
@@ -34,7 +35,7 @@ public class SnapshotIndexShardStatus extends BroadcastShardResponse implements 
 
     private SnapshotIndexShardStage stage = SnapshotIndexShardStage.INIT;
 
-    private SnapshotStats stats;
+    private final SnapshotStats stats;
 
     private String nodeId;
 
@@ -44,7 +45,7 @@ public class SnapshotIndexShardStatus extends BroadcastShardResponse implements 
         super(in);
         stage = SnapshotIndexShardStage.fromValue(in.readByte());
         stats = new SnapshotStats(in);
-        nodeId = in.readOptionalString();
+        nodeId = DiscoveryNode.deduplicator.deduplicateAllowNull(in.readOptionalString());
         failure = in.readOptionalString();
     }
 

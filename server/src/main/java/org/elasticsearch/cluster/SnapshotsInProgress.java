@@ -12,6 +12,7 @@ import com.carrotsearch.hppc.cursors.ObjectObjectCursor;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState.Custom;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
@@ -471,7 +472,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 String reason,
                 @Nullable ShardGeneration generation,
                 @Nullable ShardSnapshotResult shardSnapshotResult) {
-            this.nodeId = nodeId;
+            this.nodeId = DiscoveryNode.deduplicator.deduplicateAllowNull(nodeId);
             this.state = state;
             this.reason = reason;
             this.generation = generation;
@@ -501,7 +502,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         }
 
         public static ShardSnapshotStatus readFrom(StreamInput in) throws IOException {
-            String nodeId = in.readOptionalString();
+            String nodeId = DiscoveryNode.deduplicator.deduplicateAllowNull(in.readOptionalString());
             final ShardState state = ShardState.fromValue(in.readByte());
             final ShardGeneration generation = in.readOptionalWriteable(ShardGeneration::new);
             final String reason = in.readOptionalString();

@@ -9,6 +9,7 @@
 package org.elasticsearch.tasks;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -67,7 +68,7 @@ public final class TaskId implements Writeable {
      * {@linkplain StreamInput} so we can return the {@link #EMPTY_TASK_ID} without allocating.
      */
     public static TaskId readFromStream(StreamInput in) throws IOException {
-        String nodeId = in.readString();
+        String nodeId = DiscoveryNode.deduplicator.deduplicate(in.readString());
         if (nodeId.isEmpty()) {
             /*
              * The only TaskId allowed to have the empty string as its nodeId is the EMPTY_TASK_ID and there is only ever one of it and it

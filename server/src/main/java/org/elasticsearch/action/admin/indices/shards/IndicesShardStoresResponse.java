@@ -200,7 +200,7 @@ public class IndicesShardStoresResponse extends ActionResponse implements ToXCon
      * Single node failure while retrieving shard store information
      */
     public static class Failure extends DefaultShardOperationFailedException {
-        private String nodeId;
+        private final String nodeId;
 
         public Failure(String nodeId, String index, int shardId, Throwable reason) {
             super(index, shardId, reason);
@@ -209,7 +209,7 @@ public class IndicesShardStoresResponse extends ActionResponse implements ToXCon
 
         private Failure(StreamInput in) throws IOException {
             readFrom(in, this);
-            nodeId = in.readString();
+            nodeId = DiscoveryNode.deduplicator.deduplicate(in.readString());
         }
 
         public String nodeId() {

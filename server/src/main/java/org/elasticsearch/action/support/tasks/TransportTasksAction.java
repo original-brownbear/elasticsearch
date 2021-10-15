@@ -346,7 +346,7 @@ public abstract class TransportTasksAction<
 
         NodeTasksResponse(StreamInput in) throws IOException {
             super(in);
-            nodeId = in.readString();
+            nodeId = DiscoveryNode.deduplicator.deduplicate(in.readString());
             int resultsSize = in.readVInt();
             results = new ArrayList<>(resultsSize);
             for (; resultsSize > 0; resultsSize--) {

@@ -13,6 +13,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.SingleNodeShutdownMetadata;
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -268,7 +269,7 @@ public final class UnassignedInfo implements ToXContentFragment, Writeable {
         this.failedAllocations = failedAllocations;
         this.lastAllocationStatus = Objects.requireNonNull(lastAllocationStatus);
         this.failedNodeIds = Set.copyOf(failedNodeIds);
-        this.lastAllocatedNodeId = lastAllocatedNodeId;
+        this.lastAllocatedNodeId = DiscoveryNode.deduplicator.deduplicateAllowNull(lastAllocatedNodeId);
         assert (failedAllocations > 0) == (reason == Reason.ALLOCATION_FAILED) : "failedAllocations: "
             + failedAllocations
             + " for reason "
@@ -295,9 +296,10 @@ public final class UnassignedInfo implements ToXContentFragment, Writeable {
         this.failure = in.readException();
         this.failedAllocations = in.readVInt();
         this.lastAllocationStatus = AllocationStatus.readFrom(in);
-        this.failedNodeIds = Collections.unmodifiableSet(in.readSet(StreamInput::readString));
+        this.failedNodeIds = Collections.unmodifiableSet(
+            in.readSet(streamInput -> DiscoveryNode.deduplicator.deduplicate(streamInput.readString())));
         if (in.getVersion().onOrAfter(VERSION_LAST_ALLOCATED_NODE_ADDED)) {
-            this.lastAllocatedNodeId = in.readOptionalString();
+            this.lastAllocatedNodeId = DiscoveryNode.deduplicator.deduplicateAllowNull(in.readOptionalString());
         } else {
             this.lastAllocatedNodeId = null;
         }

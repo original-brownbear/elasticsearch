@@ -8,6 +8,7 @@
 
 package org.elasticsearch.cluster;
 
+import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -42,8 +43,8 @@ public class DiskUsage implements ToXContentFragment, Writeable {
     }
 
     public DiskUsage(StreamInput in) throws IOException {
-        this.nodeId = in.readString();
-        this.nodeName = in.readString();
+        this.nodeId = DiscoveryNode.deduplicator.deduplicate(in.readString());
+        this.nodeName = DiscoveryNode.deduplicator.deduplicate(in.readString());
         this.path = in.readString();
         this.totalBytes = in.readVLong();
         this.freeBytes = in.readVLong();

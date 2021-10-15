@@ -10,6 +10,7 @@ package org.elasticsearch.common.util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
+import org.elasticsearch.core.Nullable;
 
 import java.util.Map;
 
@@ -27,6 +28,10 @@ public final class StringLiteralDeduplicator {
     private final Map<String, String> map = ConcurrentCollections.newConcurrentMapWithAggressiveConcurrency();
 
     public StringLiteralDeduplicator() {
+    }
+
+    public String deduplicateAllowNull(@Nullable String string) {
+        return string == null ? null : deduplicate(string);
     }
 
     public String deduplicate(String string) {

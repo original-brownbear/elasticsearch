@@ -513,9 +513,9 @@ public abstract class TransportBroadcastByNodeAction<Request extends BroadcastRe
     }
 
     public class NodeRequest extends TransportRequest implements IndicesRequest {
-        private String nodeId;
+        private final String nodeId;
 
-        private List<ShardRouting> shards;
+        private final List<ShardRouting> shards;
 
         protected Request indicesLevelRequest;
 
@@ -523,7 +523,7 @@ public abstract class TransportBroadcastByNodeAction<Request extends BroadcastRe
             super(in);
             indicesLevelRequest = readRequestFrom(in);
             shards = in.readList(ShardRouting::new);
-            nodeId = in.readString();
+            nodeId = DiscoveryNode.deduplicator.deduplicate(in.readString());
         }
 
         public NodeRequest(String nodeId, Request request, List<ShardRouting> shards) {
@@ -572,7 +572,7 @@ public abstract class TransportBroadcastByNodeAction<Request extends BroadcastRe
 
         NodeResponse(StreamInput in) throws IOException {
             super(in);
-            nodeId = in.readString();
+            nodeId = DiscoveryNode.deduplicator.deduplicate(in.readString());
             totalShards = in.readVInt();
             results = in.readList((stream) -> stream.readBoolean() ? readShardResult(stream) : null);
             if (in.readBoolean()) {
