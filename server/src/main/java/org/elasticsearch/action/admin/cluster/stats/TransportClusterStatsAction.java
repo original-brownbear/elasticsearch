@@ -94,7 +94,7 @@ public class TransportClusterStatsAction extends TransportNodesAction<ClusterSta
         mappingStatsStep.whenComplete(mappingStats -> analysisStatsStep.whenComplete(analysisStats -> ActionListener.completeWith(
                 listener,
                 () -> new ClusterStatsResponse(
-                        System.currentTimeMillis(),
+                        threadPool.absoluteTimeInMillis(),
                         metadata.clusterUUID(),
                         clusterService.getClusterName(),
                         responses,

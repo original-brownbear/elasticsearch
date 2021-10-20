@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -48,6 +49,7 @@ public final class MappingStats implements ToXContentFragment, Writeable {
         Map<String, FieldStats> fieldTypes = new HashMap<>();
         Set<String> concreteFieldNames = new HashSet<>();
         Map<String, RuntimeFieldStats> runtimeFieldTypes = new HashMap<>();
+        final Map<CompressedXContent, Map<String, Object>> deserializedMappings = new HashMap<>();
         for (IndexMetadata indexMetadata : metadata) {
             ensureNotCancelled.run();
             if (indexMetadata.isSystem()) {
@@ -59,7 +61,9 @@ public final class MappingStats implements ToXContentFragment, Writeable {
             Set<String> indexRuntimeFieldTypes = new HashSet<>();
             MappingMetadata mappingMetadata = indexMetadata.mapping();
             if (mappingMetadata != null) {
-                MappingVisitor.visitMapping(mappingMetadata.getSourceAsMap(), (field, fieldMapping) -> {
+                final Map<String, Object> mapping =
+                    deserializedMappings.computeIfAbsent(mappingMetadata.source(), c -> mappingMetadata.getSourceAsMap());
+                MappingVisitor.visitMapping(mapping, (field, fieldMapping) -> {
                     concreteFieldNames.add(field);
                     String type = null;
                     Object typeO = fieldMapping.get("type");
@@ -88,7 +92,7 @@ public final class MappingStats implements ToXContentFragment, Writeable {
                     }
                 });
 
-                MappingVisitor.visitRuntimeMapping(mappingMetadata.getSourceAsMap(), (field, fieldMapping) -> {
+                MappingVisitor.visitRuntimeMapping(mapping, (field, fieldMapping) -> {
                     Object typeObject = fieldMapping.get("type");
                     if (typeObject == null) {
                         return;

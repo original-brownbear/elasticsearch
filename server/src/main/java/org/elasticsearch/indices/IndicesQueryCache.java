@@ -31,7 +31,6 @@ import org.elasticsearch.index.shard.ShardId;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -77,28 +76,25 @@ public class IndicesQueryCache implements QueryCache, Closeable {
 
     /** Get usage statistics for the given shard. */
     public QueryCacheStats getStats(ShardId shard) {
-        final Map<ShardId, QueryCacheStats> stats = new HashMap<>();
-        for (Map.Entry<ShardId, Stats> entry : shardStats.entrySet()) {
-            stats.put(entry.getKey(), entry.getValue().toQueryCacheStats());
-        }
+        long totalSize = 0;
+        int count = 0;
         QueryCacheStats shardStats = new QueryCacheStats();
-        QueryCacheStats info = stats.get(shard);
-        if (info == null) {
-            info = new QueryCacheStats();
+        for (Map.Entry<ShardId, Stats> entry : this.shardStats.entrySet()) {
+            final QueryCacheStats queryCacheStats = entry.getValue().toQueryCacheStats();
+            totalSize += queryCacheStats.getCacheSize();
+            count++;
+            if (entry.getKey().equals(shard)) {
+                shardStats.add(queryCacheStats);
+            }
         }
-        shardStats.add(info);
 
         // We also have some shared ram usage that we try to distribute
         // proportionally to their number of cache entries of each shard.
         // Sometimes it's not possible to do this when there are no shard entries at all,
         // which can happen as the shared ram usage can extend beyond the closing of all shards.
-        if (stats.isEmpty() == false) {
-            long totalSize = 0;
-            for (QueryCacheStats s : stats.values()) {
-                totalSize += s.getCacheSize();
-            }
+        if (count > 0) {
             final double weight = totalSize == 0
-                ? 1d / stats.size()
+                ? 1d / count
                 : ((double) shardStats.getCacheSize()) / totalSize;
             final long additionalRamBytesUsed = Math.round(weight * sharedRamBytesUsed);
             assert additionalRamBytesUsed >= 0L : additionalRamBytesUsed;
