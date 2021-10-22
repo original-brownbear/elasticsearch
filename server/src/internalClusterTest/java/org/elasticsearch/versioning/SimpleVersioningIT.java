@@ -347,22 +347,12 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             case 0:
                 // random simple
                 logger.info("--> use random simple ids");
-                ids = new IDSource() {
-                    @Override
-                    public String next() {
-                        return TestUtil.randomSimpleString(random, 1, 10);
-                    }
-                };
+                ids = () -> TestUtil.randomSimpleString(random, 1, 10);
                 break;
             case 1:
                 // random realistic unicode
                 logger.info("--> use random realistic unicode ids");
-                ids = new IDSource() {
-                    @Override
-                    public String next() {
-                        return TestUtil.randomRealisticUnicodeString(random, 1, 20);
-                    }
-                };
+                ids = () -> TestUtil.randomRealisticUnicodeString(random, 1, 20);
                 break;
             case 2:
                 // sequential
@@ -575,70 +565,67 @@ public class SimpleVersioningIT extends ESIntegTestCase {
         final long startTime = System.nanoTime();
         for (int i = 0; i < threads.length; i++) {
             final int threadID = i;
-            threads[i] = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        //final Random threadRandom = RandomizedContext.current().getRandom();
-                        final Random threadRandom = random();
-                        startingGun.await();
-                        while (true) {
+            threads[i] = new Thread(() -> {
+                try {
+                    //final Random threadRandom = RandomizedContext.current().getRandom();
+                    final Random threadRandom = random();
+                    startingGun.await();
+                    while (true) {
 
-                            // TODO: sometimes use bulk:
+                        // TODO: sometimes use bulk:
 
-                            int index = upto.getAndIncrement();
-                            if (index >= idVersions.length) {
-                                break;
+                        int index = upto.getAndIncrement();
+                        if (index >= idVersions.length) {
+                            break;
+                        }
+                        if (index % 100 == 0) {
+                            logger.trace("{}: index={}", Thread.currentThread().getName(), index);
+                        }
+                        IDAndVersion idVersion = idVersions[index];
+
+                        String id = idVersion.id;
+                        idVersion.threadID = threadID;
+                        idVersion.indexStartTime = System.nanoTime() - startTime;
+                        long version1 = idVersion.version;
+                        if (idVersion.delete) {
+                            try {
+                                idVersion.response = client().prepareDelete("test", id)
+                                        .setVersion(version1)
+                                        .setVersionType(VersionType.EXTERNAL).execute().actionGet();
+                            } catch (VersionConflictEngineException vcee) {
+                                // OK: our version is too old
+                                assertThat(version1, lessThanOrEqualTo(truth.get(id).version));
+                                idVersion.versionConflict = true;
                             }
-                            if (index % 100 == 0) {
-                                logger.trace("{}: index={}", Thread.currentThread().getName(), index);
-                            }
-                            IDAndVersion idVersion = idVersions[index];
+                        } else {
+                            try {
+                                idVersion.response = client().prepareIndex("test").setId(id)
+                                        .setSource("foo", "bar")
+                                        .setVersion(version1).setVersionType(VersionType.EXTERNAL).get();
 
-                            String id = idVersion.id;
-                            idVersion.threadID = threadID;
-                            idVersion.indexStartTime = System.nanoTime() - startTime;
-                            long version = idVersion.version;
-                            if (idVersion.delete) {
-                                try {
-                                    idVersion.response = client().prepareDelete("test", id)
-                                            .setVersion(version)
-                                            .setVersionType(VersionType.EXTERNAL).execute().actionGet();
-                                } catch (VersionConflictEngineException vcee) {
-                                    // OK: our version is too old
-                                    assertThat(version, lessThanOrEqualTo(truth.get(id).version));
-                                    idVersion.versionConflict = true;
-                                }
-                            } else {
-                                try {
-                                    idVersion.response = client().prepareIndex("test").setId(id)
-                                            .setSource("foo", "bar")
-                                            .setVersion(version).setVersionType(VersionType.EXTERNAL).get();
-
-                                } catch (VersionConflictEngineException vcee) {
-                                    // OK: our version is too old
-                                    assertThat(version, lessThanOrEqualTo(truth.get(id).version));
-                                    idVersion.versionConflict = true;
-                                }
-                            }
-                            idVersion.indexFinishTime = System.nanoTime() - startTime;
-
-                            if (threadRandom.nextInt(100) == 7) {
-                                logger.trace("--> {}: TEST: now refresh at {}", threadID, System.nanoTime() - startTime);
-                                refresh();
-                                logger.trace("--> {}: TEST: refresh done at {}", threadID, System.nanoTime() - startTime);
-                            }
-                            if (threadRandom.nextInt(100) == 7) {
-                                logger.trace("--> {}: TEST: now flush at {}", threadID, System.nanoTime() - startTime);
-                                flush();
-                                logger.trace("--> {}: TEST: flush done at {}", threadID, System.nanoTime() - startTime);
+                            } catch (VersionConflictEngineException vcee) {
+                                // OK: our version is too old
+                                assertThat(version1, lessThanOrEqualTo(truth.get(id).version));
+                                idVersion.versionConflict = true;
                             }
                         }
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        idVersion.indexFinishTime = System.nanoTime() - startTime;
+
+                        if (threadRandom.nextInt(100) == 7) {
+                            logger.trace("--> {}: TEST: now refresh at {}", threadID, System.nanoTime() - startTime);
+                            refresh();
+                            logger.trace("--> {}: TEST: refresh done at {}", threadID, System.nanoTime() - startTime);
+                        }
+                        if (threadRandom.nextInt(100) == 7) {
+                            logger.trace("--> {}: TEST: now flush at {}", threadID, System.nanoTime() - startTime);
+                            flush();
+                            logger.trace("--> {}: TEST: flush done at {}", threadID, System.nanoTime() - startTime);
+                        }
                     }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-            };
+            });
             threads[i].start();
         }
 

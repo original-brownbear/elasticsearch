@@ -38,7 +38,7 @@ public class ParsedTDigestPercentiles extends ParsedPercentiles implements Perce
 
     @Override
     public Iterable<String> valueNames() {
-        return percentiles.keySet().stream().map(d -> d.toString()).collect(Collectors.toList());
+        return percentiles.keySet().stream().map(Object::toString).collect(Collectors.toList());
     }
 
     private static final ObjectParser<ParsedTDigestPercentiles, Void> PARSER = new ObjectParser<>(

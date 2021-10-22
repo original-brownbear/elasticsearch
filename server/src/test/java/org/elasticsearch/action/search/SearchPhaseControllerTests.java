@@ -1028,7 +1028,7 @@ public class SearchPhaseControllerTests extends ESTestCase {
             } else {
                 circuitBreaker.shouldBreak.set(false);
             }
-            CircuitBreakingException exc = expectThrows(CircuitBreakingException.class, () -> consumer.reduce());
+            CircuitBreakingException exc = expectThrows(CircuitBreakingException.class, consumer::reduce);
             assertEquals(shouldFailPartial, hasConsumedFailure.get());
             assertThat(exc.getMessage(), containsString("<reduce_aggs>"));
             circuitBreaker.shouldBreak.set(false);

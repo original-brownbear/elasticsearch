@@ -278,14 +278,14 @@ public class BoolQueryBuilder extends AbstractQueryBuilder<BoolQueryBuilder> {
 
     private static final ObjectParser<BoolQueryBuilder, Integer> PARSER = new ObjectParser<>("bool", BoolQueryBuilder::new);
     static {
-        PARSER.declareObjectArrayOrNull((builder, clauses) -> clauses.forEach(builder::must), (p, c) -> parseInnerQueryBuilder(p, c),
-            MUST);
-        PARSER.declareObjectArrayOrNull((builder, clauses) -> clauses.forEach(builder::should), (p, c) -> parseInnerQueryBuilder(p, c),
-            SHOULD);
-        PARSER.declareObjectArrayOrNull((builder, clauses) -> clauses.forEach(builder::mustNot), (p, c) -> parseInnerQueryBuilder(p, c),
-            MUST_NOT);
-        PARSER.declareObjectArrayOrNull((builder, clauses) -> clauses.forEach(builder::filter), (p, c) -> parseInnerQueryBuilder(p, c),
-            FILTER);
+        PARSER.declareObjectArrayOrNull((builder, clauses) -> clauses.forEach(builder::must),
+            AbstractQueryBuilder::parseInnerQueryBuilder, MUST);
+        PARSER.declareObjectArrayOrNull((builder, clauses) -> clauses.forEach(builder::should),
+            AbstractQueryBuilder::parseInnerQueryBuilder, SHOULD);
+        PARSER.declareObjectArrayOrNull((builder, clauses) -> clauses.forEach(builder::mustNot),
+            AbstractQueryBuilder::parseInnerQueryBuilder, MUST_NOT);
+        PARSER.declareObjectArrayOrNull((builder, clauses) -> clauses.forEach(builder::filter),
+            AbstractQueryBuilder::parseInnerQueryBuilder, FILTER);
         PARSER.declareBoolean(BoolQueryBuilder::adjustPureNegative, ADJUST_PURE_NEGATIVE);
         PARSER.declareField(BoolQueryBuilder::minimumShouldMatch, (p, c) -> p.textOrNull(),
             MINIMUM_SHOULD_MATCH, ObjectParser.ValueType.VALUE);

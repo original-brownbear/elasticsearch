@@ -71,6 +71,7 @@ import org.elasticsearch.search.aggregations.metrics.TopHits;
 import org.elasticsearch.search.aggregations.metrics.TopHitsAggregationBuilder;
 import org.elasticsearch.search.aggregations.support.ValueType;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.IndexSettingsModule;
 import org.junit.After;
 import org.junit.Before;
@@ -2503,11 +2504,11 @@ public class CompositeAggregatorTests extends AggregatorTestCase {
     }
 
     public void testRandomLongs() throws IOException {
-        testRandomTerms("long", () -> randomLong(), (v) -> (long) v);
+        testRandomTerms("long", ESTestCase::randomLong, (v) -> (long) v);
     }
 
     public void testRandomInts() throws IOException {
-        testRandomTerms("price", () -> randomInt(), (v) -> ((Number) v).intValue());
+        testRandomTerms("price", ESTestCase::randomInt, (v) -> ((Number) v).intValue());
     }
 
     public void testDuplicateNames() {

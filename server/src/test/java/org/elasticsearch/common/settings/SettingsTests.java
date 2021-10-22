@@ -333,7 +333,7 @@ public class SettingsTests extends ESTestCase {
         }
         assertEquals("a.b.c.d", iterator.next());
         assertFalse(iterator.hasNext());
-        expectThrows(NoSuchElementException.class, () -> iterator.next());
+        expectThrows(NoSuchElementException.class, iterator::next);
 
     }
 
@@ -383,7 +383,7 @@ public class SettingsTests extends ESTestCase {
         }
         assertEquals("c", prefixIterator.next());
         assertFalse(prefixIterator.hasNext());
-        expectThrows(NoSuchElementException.class, () -> prefixIterator.next());
+        expectThrows(NoSuchElementException.class, prefixIterator::next);
     }
 
     public void testSecureSettingsPrefix() {
@@ -445,7 +445,7 @@ public class SettingsTests extends ESTestCase {
         for (int i = 0; i < 10; i++) {
             assertFalse(iterator.hasNext());
         }
-        expectThrows(NoSuchElementException.class, () -> iterator.next());
+        expectThrows(NoSuchElementException.class, iterator::next);
     }
 
     public void testEmpty() {

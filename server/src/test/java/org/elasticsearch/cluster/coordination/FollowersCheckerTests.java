@@ -635,7 +635,7 @@ public class FollowersCheckerTests extends ESTestCase {
    public void testPreferMasterNodes() {
         List<DiscoveryNode> nodes = randomNodes(10);
         DiscoveryNodes.Builder discoNodesBuilder = DiscoveryNodes.builder();
-        nodes.forEach(dn -> discoNodesBuilder.add(dn));
+        nodes.forEach(discoNodesBuilder::add);
         DiscoveryNodes discoveryNodes = discoNodesBuilder.localNodeId(nodes.get(0).getId()).build();
         CapturingTransport capturingTransport = new CapturingTransport();
         final DeterministicTaskQueue deterministicTaskQueue = new DeterministicTaskQueue();

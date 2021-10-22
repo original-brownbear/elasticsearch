@@ -119,7 +119,7 @@ public final class IndexSortConfig {
         this.indexName = indexSettings.getIndex().getName();
         List<String> fields = INDEX_SORT_FIELD_SETTING.get(settings);
         this.sortSpecs = fields.stream()
-            .map((name) -> new FieldSortSpec(name))
+            .map(FieldSortSpec::new)
             .toArray(FieldSortSpec[]::new);
 
         if (INDEX_SORT_ORDER_SETTING.exists(settings)) {

@@ -331,7 +331,7 @@ public class ObjectParserTests extends ESTestCase {
         {
             XContentParser parser = createParser(JsonXContent.jsonXContent, "{ \"test\" : \"FOO\" }");
             ObjectParser<TestStruct, Void> objectParser = new ObjectParser<>("foo");
-            objectParser.declareString((struct, value) -> struct.set(value), TestEnum::valueOf, new ParseField("test"));
+            objectParser.declareString(TestStruct::set, TestEnum::valueOf, new ParseField("test"));
             TestStruct s = objectParser.parse(parser, new TestStruct(), null);
             assertEquals(s.test, TestEnum.FOO);
         }
@@ -954,10 +954,12 @@ public class ObjectParserTests extends ESTestCase {
     @Override
     protected NamedXContentRegistry xContentRegistry() {
         return new NamedXContentRegistry(Arrays.asList(
-            new NamedXContentRegistry.Entry(Object.class, new ParseField("str"), p -> p.text()),
-            new NamedXContentRegistry.Entry(Object.class, new ParseField("int"), p -> p.intValue()),
-            new NamedXContentRegistry.Entry(Object.class, new ParseField("float"), p -> p.floatValue()),
-            new NamedXContentRegistry.Entry(Object.class, new ParseField("bool"), p -> p.booleanValue())
+            new NamedXContentRegistry.Entry(Object.class, new ParseField("str"), XContentParser::text),
+            new NamedXContentRegistry.Entry(Object.class, new ParseField("int"),
+                (CheckedFunction<XContentParser, Object, IOException>) XContentParser::intValue),
+            new NamedXContentRegistry.Entry(Object.class, new ParseField("float"),
+                (CheckedFunction<XContentParser, Object, IOException>) XContentParser::floatValue),
+            new NamedXContentRegistry.Entry(Object.class, new ParseField("bool"), XContentParser::booleanValue)
         ));
     }
 

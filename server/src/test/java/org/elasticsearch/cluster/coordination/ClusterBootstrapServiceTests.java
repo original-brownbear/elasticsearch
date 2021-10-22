@@ -478,7 +478,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
         final AtomicBoolean bootstrapped = new AtomicBoolean();
 
         ClusterBootstrapService clusterBootstrapService = new ClusterBootstrapService(settings.build(),
-            transportService, () -> emptyList(), () -> false, vc -> {
+            transportService, Collections::emptyList, () -> false, vc -> {
             assertTrue(bootstrapped.compareAndSet(false, true));
             assertThat(vc.getNodeIds(), hasSize(1));
             assertThat(vc.getNodeIds(), hasItem(localNode.getId()));
@@ -503,7 +503,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             .put(INITIAL_MASTER_NODES_SETTING.getKey(), "test");
 
         assertThat(expectThrows(IllegalArgumentException.class, () -> new ClusterBootstrapService(settings.build(),
-            transportService, () -> emptyList(), () -> false, vc -> fail())).getMessage(),
+            transportService, Collections::emptyList, () -> false, vc -> fail())).getMessage(),
             containsString("setting [" + INITIAL_MASTER_NODES_SETTING.getKey() + "] is not allowed when [discovery.type] is set " +
                 "to [single-node]"));
     }
@@ -515,7 +515,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             .put(nonMasterNode());
 
         assertThat(expectThrows(IllegalArgumentException.class, () -> new ClusterBootstrapService(settings.build(),
-                transportService, () -> emptyList(), () -> false, vc -> fail())).getMessage(),
+                transportService, Collections::emptyList, () -> false, vc -> fail())).getMessage(),
             containsString("node with [discovery.type] set to [single-node] must be master-eligible"));
     }
 }

@@ -22,6 +22,7 @@ import org.elasticsearch.search.aggregations.InternalAggregation;
 import org.elasticsearch.search.aggregations.InternalAggregation.ReduceContext;
 import org.elasticsearch.search.aggregations.ParsedAggregation;
 import org.elasticsearch.search.aggregations.pipeline.PipelineAggregator.PipelineTree;
+import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.InternalAggregationTestCase;
 import org.elasticsearch.test.VersionUtils;
 
@@ -45,16 +46,16 @@ public class InternalScriptedMetricTests extends InternalAggregationTestCase<Int
     private Supplier<Object>[] valueTypes;
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private final Supplier<Object>[] leafValueSuppliers = new Supplier[] {
-        () -> randomInt(),
-        () -> randomLong(),
-        () -> randomDouble(),
-        () -> randomFloat(),
-        () -> randomBoolean(),
+            ESTestCase::randomInt,
+            ESTestCase::randomLong,
+            ESTestCase::randomDouble,
+            ESTestCase::randomFloat,
+            ESTestCase::randomBoolean,
         () -> randomAlphaOfLength(5),
         () -> new GeoPoint(randomDouble(), randomDouble()),
         () -> null };
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private final Supplier<Object>[] nestedValueSuppliers = new Supplier[] { () -> new HashMap<String, Object>(), () -> new ArrayList<>() };
+    private final Supplier<Object>[] nestedValueSuppliers = new Supplier[] {HashMap::new, ArrayList::new};
 
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })

@@ -26,13 +26,13 @@ public class WriteStateExceptionTests extends ESTestCase {
 
     public void testNonDirtyRethrow() {
         WriteStateException ex = new WriteStateException(false, "test", null);
-        UncheckedIOException ex2 = expectThrows(UncheckedIOException.class, () -> ex.rethrowAsErrorOrUncheckedException());
+        UncheckedIOException ex2 = expectThrows(UncheckedIOException.class, ex::rethrowAsErrorOrUncheckedException);
         assertThat(ex2.getCause(), instanceOf(WriteStateException.class));
     }
 
     public void testDirtyRethrow() {
         WriteStateException ex = new WriteStateException(true, "test", null);
-        IOError err = expectThrows(IOError.class, () -> ex.rethrowAsErrorOrUncheckedException());
+        IOError err = expectThrows(IOError.class, ex::rethrowAsErrorOrUncheckedException);
         assertThat(err.getCause(), instanceOf(WriteStateException.class));
     }
 }

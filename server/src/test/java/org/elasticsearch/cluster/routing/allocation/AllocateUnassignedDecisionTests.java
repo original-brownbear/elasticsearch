@@ -37,12 +37,12 @@ public class AllocateUnassignedDecisionTests extends ESTestCase {
     public void testDecisionNotTaken() {
         AllocateUnassignedDecision allocateUnassignedDecision = AllocateUnassignedDecision.NOT_TAKEN;
         assertFalse(allocateUnassignedDecision.isDecisionTaken());
-        expectThrows(IllegalStateException.class, () -> allocateUnassignedDecision.getAllocationDecision());
-        expectThrows(IllegalStateException.class, () -> allocateUnassignedDecision.getAllocationStatus());
-        expectThrows(IllegalStateException.class, () -> allocateUnassignedDecision.getAllocationId());
-        expectThrows(IllegalStateException.class, () -> allocateUnassignedDecision.getTargetNode());
-        expectThrows(IllegalStateException.class, () -> allocateUnassignedDecision.getNodeDecisions());
-        expectThrows(IllegalStateException.class, () -> allocateUnassignedDecision.getExplanation());
+        expectThrows(IllegalStateException.class, allocateUnassignedDecision::getAllocationDecision);
+        expectThrows(IllegalStateException.class, allocateUnassignedDecision::getAllocationStatus);
+        expectThrows(IllegalStateException.class, allocateUnassignedDecision::getAllocationId);
+        expectThrows(IllegalStateException.class, allocateUnassignedDecision::getTargetNode);
+        expectThrows(IllegalStateException.class, allocateUnassignedDecision::getNodeDecisions);
+        expectThrows(IllegalStateException.class, allocateUnassignedDecision::getExplanation);
     }
 
     public void testNoDecision() {

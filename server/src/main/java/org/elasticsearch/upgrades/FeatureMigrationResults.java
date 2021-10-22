@@ -72,7 +72,7 @@ public class FeatureMigrationResults implements Metadata.Custom {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeMap(
             featureStatuses,
-            (StreamOutput outStream, String featureName) -> outStream.writeString(featureName),
+                StreamOutput::writeString,
             (StreamOutput outStream, SingleFeatureMigrationResult featureStatus) -> featureStatus.writeTo(outStream)
         );
     }

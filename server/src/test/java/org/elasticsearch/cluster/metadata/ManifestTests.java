@@ -34,15 +34,15 @@ public class ManifestTests extends ESTestCase {
         if (introduceErrors) {
             switch (randomInt(3)) {
                 case 0: {
-                    currentTerm = randomValueOtherThan(currentTerm, () -> randomNonNegativeLong());
+                    currentTerm = randomValueOtherThan(currentTerm, ESTestCase::randomNonNegativeLong);
                     break;
                 }
                 case 1: {
-                    clusterStateVersion = randomValueOtherThan(clusterStateVersion, () -> randomNonNegativeLong());
+                    clusterStateVersion = randomValueOtherThan(clusterStateVersion, ESTestCase::randomNonNegativeLong);
                     break;
                 }
                 case 2: {
-                    generation = randomValueOtherThan(generation, () -> randomNonNegativeLong());
+                    generation = randomValueOtherThan(generation, ESTestCase::randomNonNegativeLong);
                     break;
                 }
                 case 3: {
@@ -58,7 +58,7 @@ public class ManifestTests extends ESTestCase {
                         }
                         case 2: {
                             Index index = randomFrom(indices.keySet());
-                            indices.compute(index, (i, g) -> randomValueOtherThan(g, () -> randomNonNegativeLong()));
+                            indices.compute(index, (i, g) -> randomValueOtherThan(g, ESTestCase::randomNonNegativeLong));
                             break;
                         }
                     }

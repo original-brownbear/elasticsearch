@@ -64,24 +64,16 @@ final class Bootstrap {
 
     /** creates a new instance */
     Bootstrap() {
-        keepAliveThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    keepAliveLatch.await();
-                } catch (InterruptedException e) {
-                    // bail out
-                }
+        keepAliveThread = new Thread(() -> {
+            try {
+                keepAliveLatch.await();
+            } catch (InterruptedException e) {
+                // bail out
             }
         }, "elasticsearch[keepAlive/" + Version.CURRENT + "]");
         keepAliveThread.setDaemon(false);
         // keep this thread alive (non daemon thread) until we shutdown
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                keepAliveLatch.countDown();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(keepAliveLatch::countDown));
     }
 
     /**
@@ -120,20 +112,17 @@ final class Bootstrap {
 
         // listener for windows close event
         if (ctrlHandler) {
-            Natives.addConsoleCtrlHandler(new ConsoleCtrlHandler() {
-                @Override
-                public boolean handle(int code) {
-                    if (CTRL_CLOSE_EVENT == code) {
-                        logger.info("running graceful exit on windows");
-                        try {
-                            Bootstrap.stop();
-                        } catch (IOException e) {
-                            throw new ElasticsearchException("failed to stop node", e);
-                        }
-                        return true;
+            Natives.addConsoleCtrlHandler(code -> {
+                if (ConsoleCtrlHandler.CTRL_CLOSE_EVENT == code) {
+                    logger.info("running graceful exit on windows");
+                    try {
+                        Bootstrap.stop();
+                    } catch (IOException e) {
+                        throw new ElasticsearchException("failed to stop node", e);
                     }
-                    return false;
+                    return true;
                 }
+                return false;
             });
         }
 
@@ -179,25 +168,22 @@ final class Bootstrap {
         initializeProbes();
 
         if (addShutdownHook) {
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        IOUtils.close(node, spawner);
-                        LoggerContext context = (LoggerContext) LogManager.getContext(false);
-                        Configurator.shutdown(context);
-                        if (node != null && node.awaitClose(10, TimeUnit.SECONDS) == false) {
-                            throw new IllegalStateException("Node didn't stop within 10 seconds. " +
-                                    "Any outstanding requests or tasks might get killed.");
-                        }
-                    } catch (IOException ex) {
-                        throw new ElasticsearchException("failed to stop node", ex);
-                    } catch (InterruptedException e) {
-                        LogManager.getLogger(Bootstrap.class).warn("Thread got interrupted while waiting for the node to shutdown.");
-                        Thread.currentThread().interrupt();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    IOUtils.close(node, spawner);
+                    LoggerContext context = (LoggerContext) LogManager.getContext(false);
+                    Configurator.shutdown(context);
+                    if (node != null && node.awaitClose(10, TimeUnit.SECONDS) == false) {
+                        throw new IllegalStateException("Node didn't stop within 10 seconds. " +
+                                "Any outstanding requests or tasks might get killed.");
                     }
+                } catch (IOException ex) {
+                    throw new ElasticsearchException("failed to stop node", ex);
+                } catch (InterruptedException e) {
+                    LogManager.getLogger(Bootstrap.class).warn("Thread got interrupted while waiting for the node to shutdown.");
+                    Thread.currentThread().interrupt();
                 }
-            });
+            }));
         }
 
         try {

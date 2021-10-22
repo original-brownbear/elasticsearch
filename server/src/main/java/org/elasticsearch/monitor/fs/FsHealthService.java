@@ -111,7 +111,7 @@ public class FsHealthService extends AbstractLifecycleComponent implements NodeH
             statusInfo = new StatusInfo(HEALTHY, "health check passed");
         } else {
             String info = "health check failed on [" + unhealthyPaths.stream()
-                .map(k -> k.toString()).collect(Collectors.joining(",")) + "]";
+                .map(Path::toString).collect(Collectors.joining(",")) + "]";
             statusInfo = new StatusInfo(UNHEALTHY, info);
         }
 

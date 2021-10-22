@@ -458,7 +458,7 @@ public class SslDiagnostics {
     private static String extendedKeyUsageDescription(X509Certificate certificate) {
         try {
             return Optional.ofNullable(certificate.getExtendedKeyUsage())
-                .flatMap(keyUsage -> generateExtendedKeyUsageDescription(keyUsage))
+                .flatMap(SslDiagnostics::generateExtendedKeyUsageDescription)
                 .orElse("no extendedKeyUsage");
         } catch (CertificateParsingException e) {
             return "invalid extendedKeyUsage [" + e + "]";

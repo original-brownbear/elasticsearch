@@ -151,9 +151,9 @@ public class XContentParserUtilsTests extends ESTestCase {
         final String delimiter = randomFrom("#", ":", "/", "-", "_", "|", "_delim_");
         final XContentType xContentType = randomFrom(XContentType.values());
 
-        final ObjectParser<SetOnce<Boolean>, Void> BOOLPARSER = new ObjectParser<>("bool", () -> new SetOnce<>());
+        final ObjectParser<SetOnce<Boolean>, Void> BOOLPARSER = new ObjectParser<>("bool", SetOnce::new);
         BOOLPARSER.declareBoolean(SetOnce::set, new ParseField("field"));
-        final ObjectParser<SetOnce<Long>, Void> LONGPARSER = new ObjectParser<>("long", () -> new SetOnce<>());
+        final ObjectParser<SetOnce<Long>, Void> LONGPARSER = new ObjectParser<>("long", SetOnce::new);
         LONGPARSER.declareLong(SetOnce::set, new ParseField("field"));
 
         List<NamedXContentRegistry.Entry> namedXContents = new ArrayList<>();

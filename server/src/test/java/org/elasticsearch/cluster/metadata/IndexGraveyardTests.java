@@ -121,7 +121,7 @@ public class IndexGraveyardTests extends ESTestCase {
         final int numPurged = graveyardBuilder.getNumPurged();
         assertThat(numPurged, equalTo(numToPurge));
         final IndexGraveyard.IndexGraveyardDiff diff = new IndexGraveyard.IndexGraveyardDiff(graveyard1, graveyard2);
-        final List<Index> actualAdded = diff.getAdded().stream().map(t -> t.getIndex()).collect(Collectors.toList());
+        final List<Index> actualAdded = diff.getAdded().stream().map(IndexGraveyard.Tombstone::getIndex).collect(Collectors.toList());
         assertThat(new HashSet<>(actualAdded), equalTo(new HashSet<>(additions)));
         assertThat(diff.getRemovedCount(), equalTo(removals.size()));
     }

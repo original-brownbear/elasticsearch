@@ -311,30 +311,27 @@ public class NodeEnvironmentTests extends ESTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         final int iters = scaledRandomIntBetween(10000, 100000);
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread() {
-                @Override
-                public void run() {
+            threads[i] = new Thread(() -> {
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    fail(e.getMessage());
+                }
+                for (int i1 = 0; i1 < iters; i1++) {
+                    int shard = randomIntBetween(0, counts.length - 1);
                     try {
-                        latch.await();
-                    } catch (InterruptedException e) {
-                        fail(e.getMessage());
-                    }
-                    for (int i = 0; i < iters; i++) {
-                        int shard = randomIntBetween(0, counts.length - 1);
-                        try {
-                            try (ShardLock autoCloses = env.shardLock(new ShardId("foo", "fooUUID", shard), "1",
-                                scaledRandomIntBetween(0, 10))) {
-                                counts[shard].value++;
-                                countsAtomic[shard].incrementAndGet();
-                                assertEquals(flipFlop[shard].incrementAndGet(), 1);
-                                assertEquals(flipFlop[shard].decrementAndGet(), 0);
-                            }
-                        } catch (ShardLockObtainFailedException ex) {
-                            // ok
+                        try (ShardLock autoCloses = env.shardLock(new ShardId("foo", "fooUUID", shard), "1",
+                            scaledRandomIntBetween(0, 10))) {
+                            counts[shard].value++;
+                            countsAtomic[shard].incrementAndGet();
+                            assertEquals(flipFlop[shard].incrementAndGet(), 1);
+                            assertEquals(flipFlop[shard].decrementAndGet(), 0);
                         }
+                    } catch (ShardLockObtainFailedException ex) {
+                        // ok
                     }
                 }
-            };
+            });
             threads[i].start();
         }
         latch.countDown(); // fire the threads up

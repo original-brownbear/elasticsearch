@@ -332,15 +332,12 @@ public class QueryRescorerIT extends ESIntegTestCase {
     // and shard id are equal during merging shard results.
     // This comparator uses a custom tie in case the scores are equal, so that both regular hits and rescored hits
     // are sorted equally. This is fine since tests only care about the fact the scores should be equal, not ordering.
-    private static final Comparator<SearchHit> searchHitsComparator = new Comparator<SearchHit>() {
-        @Override
-        public int compare(SearchHit hit1, SearchHit hit2) {
-            int cmp = Float.compare(hit2.getScore(), hit1.getScore());
-            if (cmp == 0) {
-                return hit1.getId().compareTo(hit2.getId());
-            } else {
-                return cmp;
-            }
+    private static final Comparator<SearchHit> searchHitsComparator = (hit1, hit2) -> {
+        int cmp = Float.compare(hit2.getScore(), hit1.getScore());
+        if (cmp == 0) {
+            return hit1.getId().compareTo(hit2.getId());
+        } else {
+            return cmp;
         }
     };
 

@@ -91,7 +91,7 @@ public interface FieldValues<T> {
             public List<Object> fetchValues(SourceLookup lookup, List<Object> ignoredValues)  {
                 List<T> values = new ArrayList<>();
                 try {
-                    fieldValues.valuesForDoc(context.lookup(), ctx, lookup.docId(), v -> values.add(v));
+                    fieldValues.valuesForDoc(context.lookup(), ctx, lookup.docId(), values::add);
                 } catch (Exception e) {
                     ignoredValues.addAll(values);
                 }

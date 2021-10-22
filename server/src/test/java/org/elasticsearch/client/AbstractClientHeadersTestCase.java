@@ -143,7 +143,7 @@ public abstract class AbstractClientHeadersTestCase extends ESTestCase {
     protected static void assertHeaders(ThreadPool pool) {
         Settings asSettings = HEADER_SETTINGS.getAsSettings(ThreadContext.PREFIX);
         assertHeaders(pool.getThreadContext().getHeaders(),
-            asSettings.keySet().stream().collect(Collectors.toMap(Function.identity(), k -> asSettings.get(k))));
+            asSettings.keySet().stream().collect(Collectors.toMap(Function.identity(), asSettings::get)));
     }
 
     public static class InternalException extends Exception {
@@ -164,7 +164,7 @@ public abstract class AbstractClientHeadersTestCase extends ESTestCase {
 
         public AssertingActionListener(String action, ThreadPool pool) {
             this(action, THREAD_HEADER_SETTINGS.keySet().stream()
-                .collect(Collectors.toMap(Function.identity(), k -> THREAD_HEADER_SETTINGS.get(k))), pool);
+                .collect(Collectors.toMap(Function.identity(), THREAD_HEADER_SETTINGS::get)), pool);
         }
 
        public AssertingActionListener(String action, Map<String, String> expectedHeaders, ThreadPool pool) {

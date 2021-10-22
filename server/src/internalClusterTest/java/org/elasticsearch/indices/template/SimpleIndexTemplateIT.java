@@ -530,7 +530,7 @@ public class SimpleIndexTemplateIT extends ESIntegTestCase {
                 .addAlias(new Alias("invalid_alias").filter("abcde"));
 
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-            () -> putIndexTemplateRequestBuilder.get());
+                putIndexTemplateRequestBuilder::get);
         assertThat(e.getMessage(), equalTo("failed to parse filter for alias [invalid_alias]"));
 
         GetIndexTemplatesResponse response = client().admin().indices().prepareGetTemplates("template_1").get();
@@ -555,7 +555,7 @@ public class SimpleIndexTemplateIT extends ESIntegTestCase {
                 .addAlias(new Alias("  ").indexRouting("1,2,3"));
 
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-            () -> putIndexTemplateRequestBuilder.get());
+                putIndexTemplateRequestBuilder::get);
         assertThat(e.getMessage(), equalTo("alias name is required"));
     }
 
@@ -565,7 +565,7 @@ public class SimpleIndexTemplateIT extends ESIntegTestCase {
                 .addAlias(new Alias("alias").indexRouting("1,2,3"));
 
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class,
-            () -> putIndexTemplateRequestBuilder.get());
+                putIndexTemplateRequestBuilder::get);
         assertThat(e.getMessage(), equalTo("alias [alias] has several index routing values associated with it"));
     }
 

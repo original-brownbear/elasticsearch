@@ -49,13 +49,7 @@ class SingleMethodInjector implements SingleMemberInjector {
         if (Modifier.isPrivate(modifiers) == false && Modifier.isProtected(modifiers) == false) {
         }
 
-        return new MethodInvoker() {
-            @Override
-            public Object invoke(Object target, Object... parameters)
-                    throws IllegalAccessException, InvocationTargetException {
-                return method.invoke(target, parameters);
-            }
-        };
+        return method::invoke;
     }
 
     @Override

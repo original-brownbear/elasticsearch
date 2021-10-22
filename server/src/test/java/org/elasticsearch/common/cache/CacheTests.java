@@ -744,7 +744,7 @@ public class CacheTests extends ESTestCase {
         // start a watchdog service
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(() -> {
-            Set<Long> ids = threads.stream().map(t -> t.getId()).collect(Collectors.toSet());
+            Set<Long> ids = threads.stream().map(Thread::getId).collect(Collectors.toSet());
             ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
             long[] deadlockedThreads = mxBean.findDeadlockedThreads();
             if (deadlock.get() == false && deadlockedThreads != null) {

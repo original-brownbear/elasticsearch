@@ -153,7 +153,7 @@ public class RecoverySourcePruneMergePolicyTests extends ESTestCase {
         try (Directory dir = newDirectory()) {
             IndexWriterConfig iwc = newIndexWriterConfig();
             iwc.setMergePolicy(new RecoverySourcePruneMergePolicy("extra_source",
-                () -> new MatchAllDocsQuery(), iwc.getMergePolicy()));
+                    MatchAllDocsQuery::new, iwc.getMergePolicy()));
             try (IndexWriter writer = new IndexWriter(dir, iwc)) {
                 for (int i = 0; i < 20; i++) {
                     if (i > 0 && randomBoolean()) {

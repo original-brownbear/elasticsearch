@@ -58,23 +58,20 @@ public class IndexingMasterFailoverIT extends ESIntegTestCase {
 
         final CyclicBarrier barrier = new CyclicBarrier(2);
 
-        Thread indexingThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    barrier.await();
-                } catch (InterruptedException e) {
-                    logger.warn("Barrier interrupted", e);
-                    return;
-                } catch (BrokenBarrierException e) {
-                    logger.warn("Broken barrier", e);
-                    return;
-                }
-                for (int i = 0; i < 10; i++) {
-                    // index data with mapping changes
-                    IndexResponse response = client(dataNode).prepareIndex("myindex").setSource("field_" + i, "val").get();
-                    assertEquals(DocWriteResponse.Result.CREATED, response.getResult());
-                }
+        Thread indexingThread = new Thread(() -> {
+            try {
+                barrier.await();
+            } catch (InterruptedException e) {
+                logger.warn("Barrier interrupted", e);
+                return;
+            } catch (BrokenBarrierException e) {
+                logger.warn("Broken barrier", e);
+                return;
+            }
+            for (int i = 0; i < 10; i++) {
+                // index data with mapping changes
+                IndexResponse response = client(dataNode).prepareIndex("myindex").setSource("field_" + i, "val").get();
+                assertEquals(DocWriteResponse.Result.CREATED, response.getResult());
             }
         });
         indexingThread.setName("indexingThread");

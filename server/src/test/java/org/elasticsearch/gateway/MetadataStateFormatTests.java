@@ -669,7 +669,7 @@ public class MetadataStateFormatTests extends ESTestCase {
 
     public Path[] content(String glob, Path dir) throws IOException {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, glob)) {
-            return StreamSupport.stream(stream.spliterator(), false).toArray(length -> new Path[length]);
+            return StreamSupport.stream(stream.spliterator(), false).toArray(Path[]::new);
         }
     }
 

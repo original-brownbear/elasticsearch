@@ -1980,6 +1980,7 @@ public class IngestServiceTests extends ESTestCase {
     }
 
     private IngestStats.Stats getPipelineStats(List<IngestStats.PipelineStat> pipelineStats, String id) {
-        return pipelineStats.stream().filter(p1 -> p1.getPipelineId().equals(id)).findFirst().map(p2 -> p2.getStats()).orElse(null);
+        return pipelineStats.stream().filter(p1 -> p1.getPipelineId().equals(id)).findFirst().map(IngestStats.PipelineStat::getStats)
+            .orElse(null);
     }
 }

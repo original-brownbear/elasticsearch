@@ -37,7 +37,7 @@ public class GetStoredScriptResponseTests extends AbstractSerializingTestCase<Ge
 
     @Override
     protected Predicate<String> getRandomFieldsExcludeFilter() {
-        return s -> "script.options".equals(s);
+        return "script.options"::equals;
     }
 
     private static StoredScriptSource randomScriptSource() {

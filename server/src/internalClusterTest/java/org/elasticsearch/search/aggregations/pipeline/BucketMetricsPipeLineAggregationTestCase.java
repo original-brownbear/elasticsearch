@@ -424,7 +424,7 @@ abstract class BucketMetricsPipeLineAggregationTestCase<T extends NumericMetrics
         assertThat(pipelineBucket, notNullValue());
         assertThat(pipelineBucket.getName(), equalTo("nested_terms_bucket"));
 
-        assertResult((k) -> getNestedMetric(allBuckets.get(k)), (k) -> nestedTags.get(k), allBuckets.size(), pipelineBucket);
+        assertResult((k) -> getNestedMetric(allBuckets.get(k)), nestedTags::get, allBuckets.size(), pipelineBucket);
     }
 
     /**

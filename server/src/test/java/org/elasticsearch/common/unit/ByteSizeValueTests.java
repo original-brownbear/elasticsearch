@@ -312,7 +312,7 @@ public class ByteSizeValueTests extends AbstractWireSerializingTestCase<ByteSize
             ByteSizeValue instance = new ByteSizeValue(randomIntBetween(1, 1000), randomFrom(ByteSizeUnit.values()));
             long bytesValue = instance.getBytes();
             if (bytesValue > Integer.MAX_VALUE) {
-                IllegalArgumentException exception = expectThrows(IllegalArgumentException.class, () -> instance.bytesAsInt());
+                IllegalArgumentException exception = expectThrows(IllegalArgumentException.class, instance::bytesAsInt);
                 assertEquals("size [" + instance.toString() + "] is bigger than max int", exception.getMessage());
             } else {
                 assertEquals((int) bytesValue, instance.bytesAsInt());

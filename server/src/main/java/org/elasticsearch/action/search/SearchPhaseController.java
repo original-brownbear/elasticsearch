@@ -53,6 +53,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -623,7 +624,7 @@ public final class SearchPhaseController {
             if (profileBuilder == null) {
                 assert fetchResults.stream()
                     .map(SearchPhaseResult::fetchResult)
-                    .filter(r -> r != null)
+                    .filter(Objects::nonNull)
                     .allMatch(r -> r.profileResult() == null) : "found fetch profile without search profile";
                 return null;
 

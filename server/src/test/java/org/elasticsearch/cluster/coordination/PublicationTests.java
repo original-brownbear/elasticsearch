@@ -383,7 +383,7 @@ public class PublicationTests extends ESTestCase {
         initializeCluster(singleNodeConfig);
 
         DiscoveryNodes.Builder discoNodesBuilder = DiscoveryNodes.builder();
-        randomNodes(10).forEach(dn -> discoNodesBuilder.add(dn));
+        randomNodes(10).forEach(discoNodesBuilder::add);
         DiscoveryNodes discoveryNodes = discoNodesBuilder.add(n1).localNodeId(n1.getId()).build();
         MockPublication publication = node1.publish(CoordinationStateTests.clusterState(1L, 2L,
             discoveryNodes, singleNodeConfig, singleNodeConfig, 42L), null, Collections.emptySet());

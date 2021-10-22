@@ -116,7 +116,7 @@ public class NetworkModuleTests extends ESTestCase {
 
         settings = Settings.builder().put(NetworkModule.TRANSPORT_TYPE_KEY, "local").build();
         NetworkModule newModule = newNetworkModule(settings);
-        expectThrows(IllegalStateException.class, () -> newModule.getHttpServerTransportSupplier());
+        expectThrows(IllegalStateException.class, newModule::getHttpServerTransportSupplier);
     }
 
     public void testOverrideDefault() {

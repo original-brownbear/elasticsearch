@@ -54,7 +54,7 @@ public abstract class AbstractGeometryFieldMapper<T> extends FieldMapper {
 
         private void fetchFromSource(Object sourceMap, Consumer<T> consumer) {
             try (XContentParser parser = MapXContentParser.wrapObject(sourceMap)) {
-                parse(parser, v -> consumer.accept(v), e -> {}); /* ignore malformed */
+                parse(parser, consumer::accept, e -> {}); /* ignore malformed */
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

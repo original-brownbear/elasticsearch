@@ -607,15 +607,12 @@ public class IndexAliasesIT extends ESIntegTestCase {
         ExecutorService executor = Executors.newFixedThreadPool(aliasCount);
         for (int i = 0; i < aliasCount; i++) {
             final String aliasName = "alias" + i;
-            executor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    assertAliasesVersionIncreases(
-                            "test",
-                            () -> assertAcked(admin().indices().prepareAliases().addAlias("test", aliasName)));
-                    client().index(indexRequest(aliasName).id("1").source(source("1", "test"), XContentType.JSON))
-                        .actionGet();
-                }
+            executor.submit(() -> {
+                assertAliasesVersionIncreases(
+                        "test",
+                        () -> assertAcked(admin().indices().prepareAliases().addAlias("test", aliasName)));
+                client().index(indexRequest(aliasName).id("1").source(source("1", "test"), XContentType.JSON))
+                    .actionGet();
             });
         }
         executor.shutdown();

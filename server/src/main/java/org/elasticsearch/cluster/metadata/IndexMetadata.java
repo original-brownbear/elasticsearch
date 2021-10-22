@@ -303,7 +303,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         Setting.prefixKeySetting(INDEX_ROUTING_EXCLUDE_GROUP_PREFIX + ".", key ->
             Setting.simpleString(key, value -> IP_VALIDATOR.accept(key, value), Property.Dynamic, Property.IndexScope));
     public static final Setting.AffixSetting<String> INDEX_ROUTING_INITIAL_RECOVERY_GROUP_SETTING =
-        Setting.prefixKeySetting("index.routing.allocation.initial_recovery.", key -> Setting.simpleString(key));
+        Setting.prefixKeySetting("index.routing.allocation.initial_recovery.", Setting::simpleString);
 
     /**
      * The number of active shard copies to check for before proceeding with a write operation.

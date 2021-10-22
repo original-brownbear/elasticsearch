@@ -13,7 +13,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.xcontent.ToXContentFragment;
-import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.index.get.GetResult;
 import org.elasticsearch.search.SearchHit;
@@ -109,34 +108,26 @@ public class DocumentField implements Writeable, Iterable<Object> {
     }
     
     public ToXContentFragment getValidValuesWriter(){
-        return new ToXContentFragment() {
-            
-            @Override
-            public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-                builder.startArray(name);
-                for (Object value : values) {
-                    // This call doesn't really need to support writing any kind of object, since the values
-                    // here are always serializable to xContent. Each value could be a leaf types like a string,
-                    // number, or boolean, a list of such values, or a map of such values with string keys.
-                    builder.value(value);
-                }
-                builder.endArray();
-                return builder;
+        return (builder, params) -> {
+            builder.startArray(name);
+            for (Object value : values) {
+                // This call doesn't really need to support writing any kind of object, since the values
+                // here are always serializable to xContent. Each value could be a leaf types like a string,
+                // number, or boolean, a list of such values, or a map of such values with string keys.
+                builder.value(value);
             }
+            builder.endArray();
+            return builder;
         };
     }
     public ToXContentFragment getIgnoredValuesWriter(){
-        return new ToXContentFragment() {
-            
-            @Override
-            public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-                builder.startArray(name);
-                for (Object value : ignoredValues) {
-                    builder.value(value);
-                }
-                builder.endArray();
-                return builder;
+        return (builder, params) -> {
+            builder.startArray(name);
+            for (Object value : ignoredValues) {
+                builder.value(value);
             }
+            builder.endArray();
+            return builder;
         };
     }    
 

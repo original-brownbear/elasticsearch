@@ -389,30 +389,27 @@ public class AsyncShardFetchTests extends ESTestCase {
         protected void asyncFetch(DiscoveryNode[] nodes, long fetchingRound) {
             for (final DiscoveryNode node : nodes) {
                 final String nodeId = node.getId();
-                threadPool.generic().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        Entry entry = null;
-                        try {
-                            entry = simulations.get(nodeId);
-                            if (entry == null) {
-                                // we are simulating a master node switch, wait for it to not be null
-                                assertBusy(() -> assertTrue(simulations.containsKey(nodeId)));
-                            }
-                            assert entry != null;
-                            entry.executeLatch.await();
-                            if (entry.failure != null) {
-                                processAsyncFetch(null,
-                                    Collections.singletonList(new FailedNodeException(nodeId, "unexpected", entry.failure)), fetchingRound);
-                            } else {
-                                processAsyncFetch(Collections.singletonList(entry.response), null, fetchingRound);
-                            }
-                        } catch (Exception e) {
-                            logger.error("unexpected failure", e);
-                        } finally {
-                            if (entry != null) {
-                                entry.waitLatch.countDown();
-                            }
+                threadPool.generic().execute(() -> {
+                    Entry entry = null;
+                    try {
+                        entry = simulations.get(nodeId);
+                        if (entry == null) {
+                            // we are simulating a master node switch, wait for it to not be null
+                            assertBusy(() -> assertTrue(simulations.containsKey(nodeId)));
+                        }
+                        assert entry != null;
+                        entry.executeLatch.await();
+                        if (entry.failure != null) {
+                            processAsyncFetch(null,
+                                Collections.singletonList(new FailedNodeException(nodeId, "unexpected", entry.failure)), fetchingRound);
+                        } else {
+                            processAsyncFetch(Collections.singletonList(entry.response), null, fetchingRound);
+                        }
+                    } catch (Exception e) {
+                        logger.error("unexpected failure", e);
+                    } finally {
+                        if (entry != null) {
+                            entry.waitLatch.countDown();
                         }
                     }
                 });

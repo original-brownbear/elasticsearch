@@ -10,6 +10,7 @@ package org.elasticsearch.search.suggest.term;
 
 import com.carrotsearch.randomizedtesting.generators.RandomStrings;
 
+import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.json.JsonXContent;
 import org.elasticsearch.search.suggest.AbstractSuggestionBuilderTestCase;
@@ -99,16 +100,16 @@ public class TermSuggestionBuilderTests extends AbstractSuggestionBuilderTestCas
     protected void mutateSpecificParameters(TermSuggestionBuilder builder) throws IOException {
         switch (randomIntBetween(0, 9)) {
             case 0:
-                builder.suggestMode(randomValueOtherThan(builder.suggestMode(), () -> randomSuggestMode()));
+                builder.suggestMode(randomValueOtherThan(builder.suggestMode(), TermSuggestionBuilderTests::randomSuggestMode));
                 break;
             case 1:
-                builder.accuracy(randomValueOtherThan(builder.accuracy(), () -> randomFloat()));
+                builder.accuracy(randomValueOtherThan(builder.accuracy(), ESTestCase::randomFloat));
                 break;
             case 2:
-                builder.sort(randomValueOtherThan(builder.sort(), () -> randomSort()));
+                builder.sort(randomValueOtherThan(builder.sort(), TermSuggestionBuilderTests::randomSort));
                 break;
             case 3:
-                builder.stringDistance(randomValueOtherThan(builder.stringDistance(), () -> randomStringDistance()));
+                builder.stringDistance(randomValueOtherThan(builder.stringDistance(), TermSuggestionBuilderTests::randomStringDistance));
                 break;
             case 4:
                 builder.maxEdits(randomValueOtherThan(builder.maxEdits(), () -> randomIntBetween(1, 2)));
@@ -117,7 +118,7 @@ public class TermSuggestionBuilderTests extends AbstractSuggestionBuilderTestCas
                 builder.maxInspections(randomValueOtherThan(builder.maxInspections(), () -> randomInt(Integer.MAX_VALUE)));
                 break;
             case 6:
-                builder.maxTermFreq(randomValueOtherThan(builder.maxTermFreq(), () -> randomFloat()));
+                builder.maxTermFreq(randomValueOtherThan(builder.maxTermFreq(), ESTestCase::randomFloat));
                 break;
             case 7:
                 builder.prefixLength(randomValueOtherThan(builder.prefixLength(), () -> randomInt(Integer.MAX_VALUE)));
@@ -126,7 +127,7 @@ public class TermSuggestionBuilderTests extends AbstractSuggestionBuilderTestCas
                 builder.minWordLength(randomValueOtherThan(builder.minWordLength(), () -> randomInt(Integer.MAX_VALUE)));
                 break;
             case 9:
-                builder.minDocFreq(randomValueOtherThan(builder.minDocFreq(), () -> randomFloat()));
+                builder.minDocFreq(randomValueOtherThan(builder.minDocFreq(), ESTestCase::randomFloat));
                 break;
             default:
                 break; // do nothing

@@ -280,40 +280,37 @@ public class SearchServiceTests extends ESSingleNodeTestCase {
         Semaphore semaphore = new Semaphore(Integer.MAX_VALUE);
         ShardRouting routing = TestShardRouting.newShardRouting(indexShard.shardId(), randomAlphaOfLength(5), randomBoolean(),
             ShardRoutingState.INITIALIZING);
-        final Thread thread = new Thread() {
-            @Override
-            public void run() {
-                startGun.countDown();
-                while(running.get()) {
-                    if (randomBoolean()) {
-                        service.afterIndexRemoved(indexService.index(), indexService.getIndexSettings(), DELETED);
-                    } else {
-                        service.beforeIndexShardCreated(routing, indexService.getIndexSettings().getSettings());
+        final Thread thread = new Thread(() -> {
+            startGun.countDown();
+            while(running.get()) {
+                if (randomBoolean()) {
+                    service.afterIndexRemoved(indexService.index(), indexService.getIndexSettings(), DELETED);
+                } else {
+                    service.beforeIndexShardCreated(routing, indexService.getIndexSettings().getSettings());
+                }
+                if (randomBoolean()) {
+                    // here we trigger some refreshes to ensure the IR go out of scope such that we hit ACE if we access a search
+                    // context in a non-sane way.
+                    try {
+                        semaphore.acquire();
+                    } catch (InterruptedException e) {
+                        throw new AssertionError(e);
                     }
-                    if (randomBoolean()) {
-                        // here we trigger some refreshes to ensure the IR go out of scope such that we hit ACE if we access a search
-                        // context in a non-sane way.
-                        try {
-                            semaphore.acquire();
-                        } catch (InterruptedException e) {
-                            throw new AssertionError(e);
+                    client().prepareIndex("index").setSource("field", "value")
+                        .setRefreshPolicy(randomFrom(WriteRequest.RefreshPolicy.values())).execute(new ActionListener<IndexResponse>() {
+                        @Override
+                        public void onResponse(IndexResponse indexResponse) {
+                            semaphore.release();
                         }
-                        client().prepareIndex("index").setSource("field", "value")
-                            .setRefreshPolicy(randomFrom(WriteRequest.RefreshPolicy.values())).execute(new ActionListener<IndexResponse>() {
-                            @Override
-                            public void onResponse(IndexResponse indexResponse) {
-                                semaphore.release();
-                            }
 
-                            @Override
-                            public void onFailure(Exception e) {
-                                semaphore.release();
-                            }
-                        });
-                    }
+                        @Override
+                        public void onFailure(Exception e) {
+                            semaphore.release();
+                        }
+                    });
                 }
             }
-        };
+        });
         thread.start();
         startGun.await();
         try {

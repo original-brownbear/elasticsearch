@@ -273,41 +273,33 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
     public void executeRequest(SearchTask task, SearchRequest searchRequest, String actionName,
                                boolean includeSearchContext, SinglePhaseSearchAction phaseSearchAction,
                                ActionListener<SearchResponse> listener) {
-        executeRequest(task, searchRequest, new SearchAsyncActionProvider() {
+        executeRequest(task, searchRequest,
+            (task1, searchRequest1, executor, shardsIts, timeProvider, connectionLookup, clusterState, aliasFilter, concreteIndexBoosts,
+             listener1, preFilter, threadPool, clusters) -> new AbstractSearchAsyncAction<>(
+            actionName, logger, searchTransportService, connectionLookup, aliasFilter, concreteIndexBoosts,
+            executor, searchRequest1, listener1, shardsIts, timeProvider, clusterState, task1,
+            new ArraySearchPhaseResults<>(shardsIts.size()), 1, clusters) {
             @Override
-            public AbstractSearchAsyncAction<? extends SearchPhaseResult> asyncSearchAction(
-                SearchTask task, SearchRequest searchRequest, Executor executor, GroupShardsIterator<SearchShardIterator> shardsIts,
-                SearchTimeProvider timeProvider, BiFunction<String, String, Transport.Connection> connectionLookup,
-                ClusterState clusterState, Map<String, AliasFilter> aliasFilter,
-                Map<String, Float> concreteIndexBoosts, ActionListener<SearchResponse> listener,
-                boolean preFilter, ThreadPool threadPool, SearchResponse.Clusters clusters) {
-                return new AbstractSearchAsyncAction<>(
-                    actionName, logger, searchTransportService, connectionLookup, aliasFilter, concreteIndexBoosts,
-                    executor, searchRequest, listener, shardsIts, timeProvider, clusterState, task,
-                    new ArraySearchPhaseResults<>(shardsIts.size()), 1, clusters) {
-                    @Override
-                    protected void executePhaseOnShard(SearchShardIterator shardIt, SearchShardTarget shard,
-                                                       SearchActionListener<SearchPhaseResult> listener) {
-                        final Transport.Connection connection = getConnection(shard.getClusterAlias(), shard.getNodeId());
-                        phaseSearchAction.executeOnShardTarget(task, shardIt, connection, listener);
-                    }
+            protected void executePhaseOnShard(SearchShardIterator shardIt, SearchShardTarget shard,
+                                               SearchActionListener<SearchPhaseResult> listener1) {
+                final Transport.Connection connection = getConnection(shard.getClusterAlias(), shard.getNodeId());
+                phaseSearchAction.executeOnShardTarget(task1, shardIt, connection, listener1);
+            }
 
+            @Override
+            protected SearchPhase getNextPhase(SearchPhaseResults<SearchPhaseResult> results, SearchPhaseContext context) {
+                return new SearchPhase(getName()) {
                     @Override
-                    protected SearchPhase getNextPhase(SearchPhaseResults<SearchPhaseResult> results, SearchPhaseContext context) {
-                        return new SearchPhase(getName()) {
-                            @Override
-                            public void run() {
-                                final AtomicArray<SearchPhaseResult> atomicArray = results.getAtomicArray();
-                                sendSearchResponse(InternalSearchResponse.empty(), atomicArray);
-                            }
-                        };
-                    }
-
-                    @Override
-                    boolean buildPointInTimeFromSearchResults() {
-                        return includeSearchContext;
+                    public void run() {
+                        final AtomicArray<SearchPhaseResult> atomicArray = results.getAtomicArray();
+                        sendSearchResponse(InternalSearchResponse.empty(), atomicArray);
                     }
                 };
+            }
+
+            @Override
+            boolean buildPointInTimeFromSearchResults() {
+                return includeSearchContext;
             }
         }, listener);
     }

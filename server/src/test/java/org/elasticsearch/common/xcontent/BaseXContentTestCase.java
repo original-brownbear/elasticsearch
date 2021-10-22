@@ -1087,7 +1087,7 @@ public abstract class BaseXContentTestCase extends ESTestCase {
                     .field("key", 2)
                 .endObject();
         try (XContentParser xParser = createParser(builder)) {
-            JsonParseException pex = expectThrows(JsonParseException.class, () -> xParser.map());
+            JsonParseException pex = expectThrows(JsonParseException.class, xParser::map);
             assertThat(pex.getMessage(), startsWith("Duplicate field 'key'"));
         }
     }
@@ -1110,7 +1110,7 @@ public abstract class BaseXContentTestCase extends ESTestCase {
         NamedXContentRegistry registry = new NamedXContentRegistry(Arrays.asList(
             new NamedXContentRegistry.Entry(Object.class, new ParseField("test1"), p -> test1),
             new NamedXContentRegistry.Entry(Object.class, new ParseField("test2", "deprecated"), p -> test2),
-            new NamedXContentRegistry.Entry(Object.class, new ParseField("str"), p -> p.text())));
+            new NamedXContentRegistry.Entry(Object.class, new ParseField("str"), XContentParser::text)));
         XContentBuilder b = XContentBuilder.builder(xcontentType().xContent());
         b.value("test");
         try (XContentParser p = xcontentType().xContent().createParser(registry, LoggingDeprecationHandler.INSTANCE,

@@ -27,12 +27,9 @@ public class PortsRange {
 
     public int[] ports() throws NumberFormatException {
         final IntArrayList ports = new IntArrayList();
-        iterate(new PortCallback() {
-            @Override
-            public boolean onPortNumber(int portNumber) {
-                ports.add(portNumber);
-                return false;
-            }
+        iterate(portNumber -> {
+            ports.add(portNumber);
+            return false;
         });
         return ports.toArray();
     }

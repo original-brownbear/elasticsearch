@@ -219,25 +219,22 @@ public class CreateIndexIT extends ESIntegTestCase {
         client().admin().indices().prepareDelete("test").execute(new ActionListener<AcknowledgedResponse>() { // this happens async!!!
                 @Override
                 public void onResponse(AcknowledgedResponse deleteIndexResponse) {
-                    Thread thread = new Thread() {
-                     @Override
-                    public void run() {
-                         try {
-                             // recreate that index
-                             client().prepareIndex("test").setSource("index_version", indexVersion.get()).get();
-                             synchronized (indexVersionLock) {
-                                 // we sync here since we have to ensure that all indexing operations below for a given ID are done before
-                                 // we increment the index version otherwise a doc that is in-flight could make it into an index that it
-                                 // was supposed to be deleted for and our assertion fail...
-                                 indexVersion.incrementAndGet();
-                             }
-                             // from here on all docs with index_version == 0|1 must be gone!!!! only 2 are ok;
-                             assertAcked(client().admin().indices().prepareDelete("test").get());
-                         } finally {
-                             latch.countDown();
-                         }
-                     }
-                    };
+                    Thread thread = new Thread(() -> {
+                        try {
+                            // recreate that index
+                            client().prepareIndex("test").setSource("index_version", indexVersion.get()).get();
+                            synchronized (indexVersionLock) {
+                                // we sync here since we have to ensure that all indexing operations below for a given ID are done before
+                                // we increment the index version otherwise a doc that is in-flight could make it into an index that it
+                                // was supposed to be deleted for and our assertion fail...
+                                indexVersion.incrementAndGet();
+                            }
+                            // from here on all docs with index_version == 0|1 must be gone!!!! only 2 are ok;
+                            assertAcked(client().admin().indices().prepareDelete("test").get());
+                        } finally {
+                            latch.countDown();
+                        }
+                    });
                     thread.start();
                 }
 

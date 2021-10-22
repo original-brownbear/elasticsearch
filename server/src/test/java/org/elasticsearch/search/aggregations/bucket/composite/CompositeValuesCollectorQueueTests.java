@@ -299,7 +299,7 @@ public class CompositeValuesCollectorQueueTests extends AggregatorTestCase {
                 }
             }
             CompositeKey[] expected = keys.toArray(new CompositeKey[0]);
-            Arrays.sort(expected, (a, b) -> compareKey(a, b));
+            Arrays.sort(expected, CompositeValuesCollectorQueueTests::compareKey);
             for (boolean withProducer : new boolean[] { true, false }) {
                 int pos = 0;
                 CompositeKey last = null;

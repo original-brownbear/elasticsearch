@@ -306,7 +306,7 @@ public class KeywordFieldMapperTests extends MapperTestCase {
 
     public void testDimension() throws IOException {
         // Test default setting
-        MapperService mapperService = createMapperService(fieldMapping(b -> minimalMapping(b)));
+        MapperService mapperService = createMapperService(fieldMapping(this::minimalMapping));
         KeywordFieldMapper.KeywordFieldType ft = (KeywordFieldMapper.KeywordFieldType) mapperService.fieldType("field");
         assertFalse(ft.isDimension());
 

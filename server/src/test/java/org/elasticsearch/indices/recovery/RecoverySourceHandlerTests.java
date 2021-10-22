@@ -451,7 +451,7 @@ public class RecoverySourceHandlerTests extends ESTestCase {
         SetOnce<Exception> sendFilesError = new SetOnce<>();
         CountDownLatch latch = new CountDownLatch(1);
         handler.sendFiles(store, metas.toArray(new StoreFileMetadata[0]), () -> 0,
-            new LatchedActionListener<>(ActionListener.wrap(r -> sendFilesError.set(null), e -> sendFilesError.set(e)), latch));
+            new LatchedActionListener<>(ActionListener.wrap(r -> sendFilesError.set(null), sendFilesError::set), latch));
         latch.await();
         assertThat(sendFilesError.get(), instanceOf(IOException.class));
         assertNotNull(ExceptionsHelper.unwrapCorruption(sendFilesError.get()));
@@ -702,7 +702,7 @@ public class RecoverySourceHandlerTests extends ESTestCase {
         SetOnce<Exception> sendFilesError = new SetOnce<>();
         CountDownLatch sendFilesLatch = new CountDownLatch(1);
         handler.sendFiles(store, files.toArray(new StoreFileMetadata[0]), () -> 0,
-            new LatchedActionListener<>(ActionListener.wrap(r -> sendFilesError.set(null), e -> sendFilesError.set(e)), sendFilesLatch));
+            new LatchedActionListener<>(ActionListener.wrap(r -> sendFilesError.set(null), sendFilesError::set), sendFilesLatch));
         assertBusy(() -> assertThat(sentChunks.get(), equalTo(Math.min(totalChunks, maxConcurrentChunks))));
         List<FileChunkResponse> failedChunks = randomSubsetOf(between(1, unrepliedChunks.size()), unrepliedChunks);
         CountDownLatch replyLatch = new CountDownLatch(failedChunks.size());

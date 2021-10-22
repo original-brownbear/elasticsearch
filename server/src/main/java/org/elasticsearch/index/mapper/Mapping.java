@@ -55,12 +55,7 @@ public final class Mapping implements ToXContentFragment {
         }
         this.root = rootObjectMapper;
         // keep root mappers sorted for consistent serialization
-        Arrays.sort(metadataMappers, new Comparator<Mapper>() {
-            @Override
-            public int compare(Mapper o1, Mapper o2) {
-                return o1.name().compareTo(o2.name());
-            }
-        });
+        Arrays.sort(metadataMappers, Comparator.comparing(FieldMapper::name));
         this.metadataMappersMap = unmodifiableMap(metadataMappersMap);
         this.metadataMappersByName = unmodifiableMap(metadataMappersByName);
         this.meta = meta;

@@ -74,12 +74,7 @@ public class ScheduleWithFixedDelayTests extends ESTestCase {
         verify(threadPool, times(1)).schedule(reschedulingRunnable, delay, Names.GENERIC);
 
         // create a thread and start the runnable
-        Thread runThread = new Thread() {
-            @Override
-            public void run() {
-                reschedulingRunnable.run();
-            }
-        };
+        Thread runThread = new Thread(reschedulingRunnable::run);
         runThread.start();
 
         // wait for the runnable to be started and ensure the runnable hasn't used the threadpool again

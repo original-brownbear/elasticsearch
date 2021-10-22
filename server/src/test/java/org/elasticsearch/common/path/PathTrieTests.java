@@ -21,12 +21,7 @@ import static org.hamcrest.Matchers.nullValue;
 
 public class PathTrieTests extends ESTestCase {
 
-    public static final PathTrie.Decoder NO_DECODER = new PathTrie.Decoder() {
-        @Override
-        public String decode(String value) {
-            return value;
-        }
-    };
+    public static final PathTrie.Decoder NO_DECODER = value -> value;
 
     public void testPath() {
         PathTrie<String> trie = new PathTrie<>(NO_DECODER);

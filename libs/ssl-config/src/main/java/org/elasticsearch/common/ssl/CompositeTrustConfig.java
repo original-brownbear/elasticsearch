@@ -10,6 +10,7 @@ package org.elasticsearch.common.ssl;
 
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509ExtendedTrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -44,8 +45,8 @@ public class CompositeTrustConfig implements SslTrustConfig {
     public X509ExtendedTrustManager createTrustManager() {
         try {
             Collection<Certificate> trustedIssuers = configs.stream()
-                .map(c -> c.createTrustManager())
-                .map(tm -> tm.getAcceptedIssuers())
+                .map(SslTrustConfig::createTrustManager)
+                .map(X509TrustManager::getAcceptedIssuers)
                 .flatMap(Arrays::stream)
                 .collect(Collectors.toSet());
             final KeyStore store = KeyStoreUtil.buildTrustStore(trustedIssuers);

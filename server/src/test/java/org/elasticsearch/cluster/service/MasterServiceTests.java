@@ -547,7 +547,7 @@ public class MasterServiceTests extends ESTestCase {
         int totalTaskCount = 0;
         for (Tuple<TaskExecutor, Set<Task>> assignment : assignments) {
             final int taskCount = assignment.v2().size();
-            counts.merge(assignment.v1(), taskCount, (previous, count) -> previous + count);
+            counts.merge(assignment.v1(), taskCount, Integer::sum);
             totalTaskCount += taskCount;
         }
         final CountDownLatch updateLatch = new CountDownLatch(totalTaskCount);

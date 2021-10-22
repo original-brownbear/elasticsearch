@@ -132,7 +132,7 @@ public class ScriptContextInfo implements ToXContentObject, Writeable {
     static {
         PARSER.declareString(constructorArg(), new ParseField(NAME_FIELD));
         PARSER.declareObjectArray(constructorArg(),
-            (parser, ctx) -> ScriptMethodInfo.PARSER.apply(parser, ctx),
+                ScriptMethodInfo.PARSER::apply,
             new ParseField(METHODS_FIELD));
     }
 
@@ -208,7 +208,7 @@ public class ScriptContextInfo implements ToXContentObject, Writeable {
             PARSER.declareString(constructorArg(), new ParseField(NAME_FIELD));
             PARSER.declareString(constructorArg(), new ParseField(RETURN_TYPE_FIELD));
             PARSER.declareObjectArray(constructorArg(),
-                (parser, ctx) -> ParameterInfo.PARSER.apply(parser, ctx),
+                    ParameterInfo.PARSER::apply,
                 new ParseField(PARAMETERS_FIELD));
         }
 

@@ -101,16 +101,13 @@ public class SecureSM extends SecurityManager {
     };
 
     // java.security.debug support
-    private static final boolean DEBUG = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-        @Override
-        public Boolean run() {
-            try {
-                String v = System.getProperty("java.security.debug");
-                // simple check that they are trying to debug
-                return v != null && v.length() > 0;
-            } catch (SecurityException e) {
-                return false;
-            }
+    private static final boolean DEBUG = AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> {
+        try {
+            String v = System.getProperty("java.security.debug");
+            // simple check that they are trying to debug
+            return v != null && v.length() > 0;
+        } catch (SecurityException e) {
+            return false;
         }
     });
 
@@ -209,41 +206,38 @@ public class SecureSM extends SecurityManager {
      * @param status the exit status
      */
     protected void innerCheckExit(final int status) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                final String systemClassName = System.class.getName(),
-                        runtimeClassName = Runtime.class.getName();
-                String exitMethodHit = null;
-                for (final StackTraceElement se : Thread.currentThread().getStackTrace()) {
-                    final String className = se.getClassName(), methodName = se.getMethodName();
-                    if (
-                        ("exit".equals(methodName) || "halt".equals(methodName)) &&
-                        (systemClassName.equals(className) || runtimeClassName.equals(className))
-                    ) {
-                        exitMethodHit = className + '#' + methodName + '(' + status + ')';
-                        continue;
-                    }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            final String systemClassName = System.class.getName(),
+                    runtimeClassName = Runtime.class.getName();
+            String exitMethodHit = null;
+            for (final StackTraceElement se : Thread.currentThread().getStackTrace()) {
+                final String className = se.getClassName(), methodName = se.getMethodName();
+                if (
+                    ("exit".equals(methodName) || "halt".equals(methodName)) &&
+                    (systemClassName.equals(className) || runtimeClassName.equals(className))
+                ) {
+                    exitMethodHit = className + '#' + methodName + '(' + status + ')';
+                    continue;
+                }
 
-                    if (exitMethodHit != null) {
-                        if (classesThatCanExit == null) {
-                            break;
-                        }
-                        if (classCanExit(className, classesThatCanExit)) {
-                            // this exit point is allowed, we return normally from closure:
-                            return null;
-                        }
-                        // anything else in stack trace is not allowed, break and throw SecurityException below:
+                if (exitMethodHit != null) {
+                    if (classesThatCanExit == null) {
                         break;
                     }
+                    if (classCanExit(className, classesThatCanExit)) {
+                        // this exit point is allowed, we return normally from closure:
+                        return null;
+                    }
+                    // anything else in stack trace is not allowed, break and throw SecurityException below:
+                    break;
                 }
-
-                if (exitMethodHit == null) {
-                    // should never happen, only if JVM hides stack trace - replace by generic:
-                    exitMethodHit = "JVM exit method";
-                }
-                throw new SecurityException(exitMethodHit + " calls are not allowed");
             }
+
+            if (exitMethodHit == null) {
+                // should never happen, only if JVM hides stack trace - replace by generic:
+                exitMethodHit = "JVM exit method";
+            }
+            throw new SecurityException(exitMethodHit + " calls are not allowed");
         });
 
         // we passed the stack check, delegate to super, so default policy can still deny permission:

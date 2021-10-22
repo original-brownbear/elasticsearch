@@ -89,12 +89,9 @@ public final class Elements {
      * Returns the module composed of {@code elements}.
      */
     public static Module getModule(final Iterable<? extends Element> elements) {
-        return new Module() {
-            @Override
-            public void configure(Binder binder) {
-                for (Element element : elements) {
-                    element.applyTo(binder);
-                }
+        return binder -> {
+            for (Element element : elements) {
+                element.applyTo(binder);
             }
         };
     }

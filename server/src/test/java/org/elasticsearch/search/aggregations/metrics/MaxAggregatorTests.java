@@ -64,6 +64,7 @@ import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
 import org.elasticsearch.search.aggregations.support.ValueType;
 import org.elasticsearch.search.aggregations.support.ValuesSourceType;
 import org.elasticsearch.search.lookup.LeafDocLookup;
+import org.elasticsearch.test.ESTestCase;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -296,12 +297,13 @@ public class MaxAggregatorTests extends AggregatorTestCase {
             (v) -> LongPoint.decodeDimension(v, 0)
         );
 
-        testMaxShortcutCase(() -> randomInt(), (n) -> new IntPoint("number", n.intValue()), (v) -> IntPoint.decodeDimension(v, 0));
+        testMaxShortcutCase(ESTestCase::randomInt, (n) -> new IntPoint("number", n.intValue()), (v) -> IntPoint.decodeDimension(v, 0));
 
-        testMaxShortcutCase(() -> randomFloat(), (n) -> new FloatPoint("number", n.floatValue()), (v) -> FloatPoint.decodeDimension(v, 0));
+        testMaxShortcutCase(ESTestCase::randomFloat, (n) -> new FloatPoint("number", n.floatValue()),
+            (v) -> FloatPoint.decodeDimension(v, 0));
 
         testMaxShortcutCase(
-            () -> randomDouble(),
+                ESTestCase::randomDouble,
             (n) -> new DoublePoint("number", n.doubleValue()),
             (v) -> DoublePoint.decodeDimension(v, 0)
         );

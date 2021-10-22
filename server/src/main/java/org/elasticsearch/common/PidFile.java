@@ -95,15 +95,12 @@ public final class PidFile {
     }
 
     private static void addShutdownHook(final Path path) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException e) {
-                    throw new ElasticsearchException("Failed to delete pid file " + path, e);
-                }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                Files.deleteIfExists(path);
+            } catch (IOException e) {
+                throw new ElasticsearchException("Failed to delete pid file " + path, e);
             }
-        });
+        }));
     }
 }

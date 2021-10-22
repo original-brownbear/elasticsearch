@@ -458,12 +458,7 @@ public final class Errors {
         }
 
         List<Message> result = new ArrayList<>(root.errors);
-        CollectionUtil.timSort(result, new Comparator<Message>() {
-            @Override
-            public int compare(Message a, Message b) {
-                return a.getSource().compareTo(b.getSource());
-            }
-        });
+        CollectionUtil.timSort(result, Comparator.comparing(Message::getSource));
 
         return unmodifiableList(result);
     }

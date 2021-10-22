@@ -255,7 +255,7 @@ public final class BitsetFilterCache extends AbstractIndexComponent
                     });
                 }
             }
-            return () -> latch.await();
+            return latch::await;
         }
 
     }

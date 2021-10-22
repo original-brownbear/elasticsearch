@@ -121,7 +121,7 @@ public class StepListenerTests extends ESTestCase {
         });
 
         assertEquals(RemoteTransportException.class, exception.get().getClass());
-        RuntimeException e = expectThrows(RuntimeException.class, () -> step.result());
+        RuntimeException e = expectThrows(RuntimeException.class, step::result);
         assertEquals(RemoteTransportException.class, e.getClass());
     }
 

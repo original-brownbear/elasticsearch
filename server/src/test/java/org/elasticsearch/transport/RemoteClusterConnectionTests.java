@@ -161,19 +161,16 @@ public class RemoteClusterConnectionTests extends ESTestCase {
                 emptySet(), Version.CURRENT);
             CountDownLatch acceptedLatch = new CountDownLatch(1);
             CountDownLatch closeRemote = new CountDownLatch(1);
-            Thread t = new Thread() {
-                @Override
-                public void run() {
-                    try (Socket accept = socket.accept()) {
-                        acceptedLatch.countDown();
-                        closeRemote.await();
-                    } catch (IOException e) {
-                        // that's fine we might close
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+            Thread t = new Thread(() -> {
+                try (Socket accept = socket.accept()) {
+                    acceptedLatch.countDown();
+                    closeRemote.await();
+                } catch (IOException e) {
+                    // that's fine we might close
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-            };
+            });
             t.start();
 
             try (MockTransportService service = MockTransportService.createNewService(Settings.EMPTY, Version.CURRENT, threadPool, null)) {
@@ -236,59 +233,56 @@ public class RemoteClusterConnectionTests extends ESTestCase {
                     CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
                     for (int i = 0; i < threads.length; i++) {
                         final int numConnectionAttempts = randomIntBetween(10, 100);
-                        threads[i] = new Thread() {
-                            @Override
-                            public void run() {
-                                try {
-                                    barrier.await();
-                                    CountDownLatch latch = new CountDownLatch(numConnectionAttempts);
-                                    for (int i = 0; i < numConnectionAttempts; i++) {
-                                        AtomicReference<Exception> executed = new AtomicReference<>();
-                                        ActionListener<Void> listener = ActionListener.wrap(
-                                            x -> {
-                                                if (executed.compareAndSet(null, new RuntimeException())) {
-                                                    latch.countDown();
-                                                } else {
-                                                    throw new AssertionError("shit's been called twice", executed.get());
+                        threads[i] = new Thread(() -> {
+                            try {
+                                barrier.await();
+                                CountDownLatch latch = new CountDownLatch(numConnectionAttempts);
+                                for (int i1 = 0; i1 < numConnectionAttempts; i1++) {
+                                    AtomicReference<Exception> executed = new AtomicReference<>();
+                                    ActionListener<Void> listener = ActionListener.wrap(
+                                        x -> {
+                                            if (executed.compareAndSet(null, new RuntimeException())) {
+                                                latch.countDown();
+                                            } else {
+                                                throw new AssertionError("shit's been called twice", executed.get());
+                                            }
+                                        },
+                                        x -> {
+                                            if (executed.compareAndSet(null, x)) {
+                                                latch.countDown();
+                                            } else {
+                                                final String message = x.getMessage();
+                                                if ((executed.get().getClass() == x.getClass()
+                                                    && "operation was cancelled reason [connect handler is closed]".equals(message)
+                                                    && message.equals(executed.get().getMessage())) == false) {
+                                                    // we do cancel the operation and that means that if timing allows it, the caller
+                                                    // of a blocking call as well as the handler will get the exception from the
+                                                    // ExecutionCancelledException concurrently. unless that is the case we fail
+                                                    // if we get called more than once!
+                                                    AssertionError assertionError = new AssertionError("shit's been called twice", x);
+                                                    assertionError.addSuppressed(executed.get());
+                                                    throw assertionError;
                                                 }
-                                            },
-                                            x -> {
-                                                if (executed.compareAndSet(null, x)) {
-                                                    latch.countDown();
-                                                } else {
-                                                    final String message = x.getMessage();
-                                                    if ((executed.get().getClass() == x.getClass()
-                                                        && "operation was cancelled reason [connect handler is closed]".equals(message)
-                                                        && message.equals(executed.get().getMessage())) == false) {
-                                                        // we do cancel the operation and that means that if timing allows it, the caller
-                                                        // of a blocking call as well as the handler will get the exception from the
-                                                        // ExecutionCancelledException concurrently. unless that is the case we fail
-                                                        // if we get called more than once!
-                                                        AssertionError assertionError = new AssertionError("shit's been called twice", x);
-                                                        assertionError.addSuppressed(executed.get());
-                                                        throw assertionError;
-                                                    }
-                                                }
-                                                if (x instanceof RejectedExecutionException || x instanceof AlreadyClosedException) {
-                                                    // that's fine
-                                                } else {
-                                                    throw new AssertionError(x);
-                                                }
-                                            });
-                                        try {
-                                            connection.ensureConnected(listener);
-                                        } catch (Exception e) {
-                                            // it's ok if we're shutting down
-                                            assertThat(e.getMessage(), containsString("threadcontext is already closed"));
-                                            latch.countDown();
-                                        }
+                                            }
+                                            if (x instanceof RejectedExecutionException || x instanceof AlreadyClosedException) {
+                                                // that's fine
+                                            } else {
+                                                throw new AssertionError(x);
+                                            }
+                                        });
+                                    try {
+                                        connection.ensureConnected(listener);
+                                    } catch (Exception e) {
+                                        // it's ok if we're shutting down
+                                        assertThat(e.getMessage(), containsString("threadcontext is already closed"));
+                                        latch.countDown();
                                     }
-                                    latch.await();
-                                } catch (Exception ex) {
-                                    throw new AssertionError(ex);
                                 }
+                                latch.await();
+                            } catch (Exception ex) {
+                                throw new AssertionError(ex);
                             }
-                        };
+                        });
                         threads[i].start();
                     }
                     barrier.await();

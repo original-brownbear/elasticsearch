@@ -538,7 +538,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
     }
 
     private void assertWindowFails(SearchRequestBuilder search) {
-        SearchPhaseExecutionException e = expectThrows(SearchPhaseExecutionException.class, () -> search.get());
+        SearchPhaseExecutionException e = expectThrows(SearchPhaseExecutionException.class, search::get);
         assertThat(e.toString(), containsString("Result window is too large, from + size must be less than or equal to: ["
                 + IndexSettings.MAX_RESULT_WINDOW_SETTING.get(Settings.EMPTY)));
         assertThat(e.toString(), containsString("See the scroll api for a more efficient way to request large data sets"));
@@ -547,7 +547,7 @@ public class SimpleSearchIT extends ESIntegTestCase {
     private void assertRescoreWindowFails(int windowSize) {
         SearchRequestBuilder search = client().prepareSearch("idx")
                 .addRescorer(new QueryRescorerBuilder(matchAllQuery()).windowSize(windowSize));
-        SearchPhaseExecutionException e = expectThrows(SearchPhaseExecutionException.class, () -> search.get());
+        SearchPhaseExecutionException e = expectThrows(SearchPhaseExecutionException.class, search::get);
         assertThat(e.toString(), containsString("Rescore window [" + windowSize + "] is too large. It must "
                 + "be less than [" + IndexSettings.MAX_RESCORE_WINDOW_SETTING.get(Settings.EMPTY)));
         assertThat(e.toString(), containsString(

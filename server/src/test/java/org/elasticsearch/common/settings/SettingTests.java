@@ -417,7 +417,7 @@ public class SettingTests extends ESTestCase {
 
     public void testComplexType() {
         AtomicReference<ComplexType> ref = new AtomicReference<>(null);
-        Setting<ComplexType> setting = new Setting<>("foo.bar", (s) -> "", (s) -> new ComplexType(s),
+        Setting<ComplexType> setting = new Setting<>("foo.bar", (s) -> "", ComplexType::new,
             Property.Dynamic, Property.NodeScope);
         assertFalse(setting.isGroupSetting());
         ref.set(setting.get(Settings.EMPTY));
@@ -631,7 +631,7 @@ public class SettingTests extends ESTestCase {
     }
 
     public void testListSettings() {
-        Setting<List<String>> listSetting = Setting.listSetting("foo.bar", Arrays.asList("foo,bar"), (s) -> s.toString(),
+        Setting<List<String>> listSetting = Setting.listSetting("foo.bar", Arrays.asList("foo,bar"), String::toString,
             Property.Dynamic, Property.NodeScope);
         List<String> value = listSetting.get(Settings.EMPTY);
         assertFalse(listSetting.exists(Settings.EMPTY));
@@ -707,7 +707,7 @@ public class SettingTests extends ESTestCase {
     }
 
     public void testListSettingAcceptsNumberSyntax() {
-        Setting<List<String>> listSetting = Setting.listSetting("foo.bar", Arrays.asList("foo,bar"), (s) -> s.toString(),
+        Setting<List<String>> listSetting = Setting.listSetting("foo.bar", Arrays.asList("foo,bar"), String::toString,
             Property.Dynamic, Property.NodeScope);
         List<String> input = Arrays.asList("test", "test1, test2", "test", ",,,,");
         Settings.Builder builder = Settings.builder().putList("foo.bar", input.toArray(new String[0]));

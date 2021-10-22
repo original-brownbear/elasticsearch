@@ -90,7 +90,7 @@ public class CustomUnifiedHighlighterTests extends ESTestCase {
                         query,
                         noMatchSize,
                         expectedPassages.length,
-                        name -> "text".equals(name),
+                        "text"::equals,
                         maxAnalyzedOffset,
                         queryMaxAnalyzedOffset
                 );

@@ -40,12 +40,10 @@ public class ESPolicyTests extends ESTestCase {
             }
         );
         try {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    System.getProperty("user.home");
-                    fail("access should have been denied");
-                    return null;
-                }
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                System.getProperty("user.home");
+                fail("access should have been denied");
+                return null;
             }, noPermissionsAcc);
         } catch (SecurityException expected) {
             // expected exception

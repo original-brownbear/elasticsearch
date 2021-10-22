@@ -113,7 +113,7 @@ public class TransportGetFeatureUpgradeStatusAction extends TransportMasterNodeA
             state.metadata().<PersistentTasksCustomMetadata>custom(PersistentTasksCustomMetadata.TYPE)
         )
             .map(tasksMetdata -> tasksMetdata.getTask(SYSTEM_INDEX_UPGRADE_TASK_NAME))
-            .map(task -> task.getState())
+            .map(PersistentTasksCustomMetadata.PersistentTask::getState)
             .map(taskState -> ((SystemIndexMigrationTaskState) taskState).getCurrentFeature())
             .orElse(null);
 

@@ -43,7 +43,7 @@ public class GetSnapshottableFeaturesResponseTests extends AbstractWireSerializi
         }
         Set<String> existingFeatureNames = instance.getSnapshottableFeatures()
             .stream()
-            .map(feature -> feature.getFeatureName())
+            .map(GetSnapshottableFeaturesResponse.SnapshottableFeature::getFeatureName)
             .collect(Collectors.toSet());
         return new GetSnapshottableFeaturesResponse(
             randomList(

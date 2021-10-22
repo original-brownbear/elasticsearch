@@ -97,7 +97,7 @@ public final class KeyStoreUtil {
     public static KeyStore filter(KeyStore store, Predicate<KeyStoreEntry> filter) {
         stream(store, e -> new SslConfigException("Failed to apply filter to existing keystore", e))
             .filter(filter.negate())
-            .forEach(e -> e.delete());
+            .forEach(KeyStoreEntry::delete);
         return store;
     }
 

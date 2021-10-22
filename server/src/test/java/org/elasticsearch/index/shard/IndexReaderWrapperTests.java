@@ -103,9 +103,7 @@ public class IndexReaderWrapperTests extends ESTestCase {
         try (Engine.Searcher wrap =  IndexShard.wrapSearcher(new Engine.Searcher("foo", open,
                 IndexSearcher.getDefaultSimilarity(), IndexSearcher.getDefaultQueryCache(), IndexSearcher.getDefaultQueryCachingPolicy(),
                 () -> closeCalled.set(true)), mock(ShardFieldUsageTracker.FieldUsageStatsTrackingSession.class), wrapper)) {
-            ElasticsearchDirectoryReader.addReaderCloseListener(wrap.getDirectoryReader(), key -> {
-                cache.remove(key);
-            });
+            ElasticsearchDirectoryReader.addReaderCloseListener(wrap.getDirectoryReader(), cache::remove);
             TopDocs search = wrap.search(new TermQuery(new Term("field", "doc")), 1);
             cache.put(wrap.getIndexReader().getReaderCacheHelper().getKey(), search);
         }

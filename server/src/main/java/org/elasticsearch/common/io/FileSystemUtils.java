@@ -163,7 +163,7 @@ public final class FileSystemUtils {
     }
 
     private static Path[] toArray(DirectoryStream<Path> stream) {
-        return StreamSupport.stream(stream.spliterator(), false).toArray(length -> new Path[length]);
+        return StreamSupport.stream(stream.spliterator(), false).toArray(Path[]::new);
     }
 
 }

@@ -16,8 +16,6 @@ import org.elasticsearch.test.ESTestCase;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -42,24 +40,14 @@ public class MultiOrdinalsTests extends ESTestCase {
             ordsAndIdSet.add(new OrdAndId(random.nextInt(numOrdinals), random.nextInt(numDocs)));
         }
         List<OrdAndId> ordsAndIds = new ArrayList<>(ordsAndIdSet);
-        Collections.sort(ordsAndIds, new Comparator<OrdAndId>() {
-
-            @Override
-            public int compare(OrdAndId o1, OrdAndId o2) {
-                if (o1.ord < o2.ord) {
-                    return -1;
-                }
-                if (o1.ord == o2.ord) {
-                    if (o1.id < o2.id) {
-                        return -1;
-                    }
-                    if (o1.id > o2.id) {
-                        return 1;
-                    }
-                    return 0;
-                }
-                return 1;
+        ordsAndIds.sort((o1, o2) -> {
+            if (o1.ord < o2.ord) {
+                return -1;
             }
+            if (o1.ord == o2.ord) {
+                return Integer.compare(o1.id, o2.id);
+            }
+            return 1;
         });
         long lastOrd = -1;
         for (OrdAndId ordAndId : ordsAndIds) {
@@ -71,24 +59,14 @@ public class MultiOrdinalsTests extends ESTestCase {
             builder.addDoc(ordAndId.id);
         }
 
-        Collections.sort(ordsAndIds, new Comparator<OrdAndId>() {
-
-            @Override
-            public int compare(OrdAndId o1, OrdAndId o2) {
-                if (o1.id < o2.id) {
-                    return -1;
-                }
-                if (o1.id == o2.id) {
-                    if (o1.ord < o2.ord) {
-                        return -1;
-                    }
-                    if (o1.ord > o2.ord) {
-                        return 1;
-                    }
-                    return 0;
-                }
-                return 1;
+        ordsAndIds.sort((o1, o2) -> {
+            if (o1.id < o2.id) {
+                return -1;
             }
+            if (o1.id == o2.id) {
+                return Long.compare(o1.ord, o2.ord);
+            }
+            return 1;
         });
         Ordinals ords = creationMultiOrdinals(builder);
         SortedSetDocValues docs = ords.ordinals();
@@ -155,10 +133,7 @@ public class MultiOrdinalsTests extends ESTestCase {
             if (id != other.id) {
                 return false;
             }
-            if (ord != other.ord) {
-                return false;
-            }
-            return true;
+            return ord == other.ord;
         }
     }
 

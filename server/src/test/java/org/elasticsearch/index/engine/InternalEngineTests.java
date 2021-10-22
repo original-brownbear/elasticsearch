@@ -1032,7 +1032,7 @@ public class InternalEngineTests extends EngineTestCase {
         final Path translogPath = createTempDir();
         store = createStore();
         final AtomicLong globalCheckpoint = new AtomicLong(SequenceNumbers.NO_OPS_PERFORMED);
-        final LongSupplier globalCheckpointSupplier = () -> globalCheckpoint.get();
+        final LongSupplier globalCheckpointSupplier = globalCheckpoint::get;
         engine = createEngine(config(defaultSettings, store, translogPath, newMergePolicy(), null, null,
             globalCheckpointSupplier));
         ParsedDocument doc = testParsedDocument("1", null, testDocumentWithTextField(), B_1, null);
@@ -1547,40 +1547,37 @@ public class InternalEngineTests extends EngineTestCase {
                 final CountDownLatch startGun = new CountDownLatch(1);
                 final CountDownLatch indexed = new CountDownLatch(1);
 
-                Thread thread = new Thread() {
-                    @Override
-                    public void run() {
+                Thread thread = new Thread(() -> {
+                    try {
                         try {
-                            try {
-                                startGun.await();
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            int i = 0;
-                            while (true) {
-                                int numDocs = randomIntBetween(1, 20);
-                                for (int j = 0; j < numDocs; j++) {
-                                    i++;
-                                    ParsedDocument doc = testParsedDocument(Integer.toString(i), null, testDocument(), B_1,
-                                        null);
-                                    Engine.Index index = indexForDoc(doc);
-                                    engine.index(index);
-                                }
-                                engine.refresh("test");
-                                indexed.countDown();
-                                try {
-                                    engine.forceMerge(randomBoolean(), 1, false, UUIDs.randomBase64UUID());
-                                } catch (IOException e) {
-                                    return;
-                                }
-                            }
-                        } catch (AlreadyClosedException ex) {
-                            // fine
-                        } catch (IOException e) {
-                            throw new AssertionError(e);
+                            startGun.await();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
                         }
+                        int i = 0;
+                        while (true) {
+                            int numDocs = randomIntBetween(1, 20);
+                            for (int j1 = 0; j1 < numDocs; j1++) {
+                                i++;
+                                ParsedDocument doc = testParsedDocument(Integer.toString(i), null, testDocument(), B_1,
+                                    null);
+                                Engine.Index index = indexForDoc(doc);
+                                engine.index(index);
+                            }
+                            engine.refresh("test");
+                            indexed.countDown();
+                            try {
+                                engine.forceMerge(randomBoolean(), 1, false, UUIDs.randomBase64UUID());
+                            } catch (IOException e) {
+                                return;
+                            }
+                        }
+                    } catch (AlreadyClosedException ex) {
+                        // fine
+                    } catch (IOException e) {
+                        throw new AssertionError(e);
                     }
-                };
+                });
 
                 thread.start();
                 startGun.countDown();
@@ -2807,7 +2804,7 @@ public class InternalEngineTests extends EngineTestCase {
             AtomicBoolean throwErrorOnCommit = new AtomicBoolean();
             final Path translogPath = createTempDir();
             final AtomicLong globalCheckpoint = new AtomicLong(SequenceNumbers.NO_OPS_PERFORMED);
-            final LongSupplier globalCheckpointSupplier = () -> globalCheckpoint.get();
+            final LongSupplier globalCheckpointSupplier = globalCheckpoint::get;
             store.createEmpty();
             final String translogUUID = Translog.createEmptyTranslog(translogPath, globalCheckpoint.get(), shardId, primaryTerm.get());
             store.associateIndexWithNewTranslog(translogUUID);
@@ -3016,34 +3013,31 @@ public class InternalEngineTests extends EngineTestCase {
     public void testShardNotAvailableExceptionWhenEngineClosedConcurrently() throws IOException, InterruptedException {
         AtomicReference<Exception> exception = new AtomicReference<>();
         String operation = randomFrom("optimize", "refresh", "flush");
-        Thread mergeThread = new Thread() {
-            @Override
-            public void run() {
-                boolean stop = false;
-                logger.info("try with {}", operation);
-                while (stop == false) {
-                    try {
-                        switch (operation) {
-                            case "optimize": {
-                                engine.forceMerge(true, 1, false, UUIDs.randomBase64UUID());
-                                break;
-                            }
-                            case "refresh": {
-                                engine.refresh("test refresh");
-                                break;
-                            }
-                            case "flush": {
-                                engine.flush(true, true);
-                                break;
-                            }
+        Thread mergeThread = new Thread(() -> {
+            boolean stop = false;
+            logger.info("try with {}", operation);
+            while (stop == false) {
+                try {
+                    switch (operation) {
+                        case "optimize": {
+                            engine.forceMerge(true, 1, false, UUIDs.randomBase64UUID());
+                            break;
                         }
-                    } catch (Exception e) {
-                        exception.set(e);
-                        stop = true;
+                        case "refresh": {
+                            engine.refresh("test refresh");
+                            break;
+                        }
+                        case "flush": {
+                            engine.flush(true, true);
+                            break;
+                        }
                     }
+                } catch (Exception e) {
+                    exception.set(e);
+                    stop = true;
                 }
             }
-        };
+        });
         mergeThread.start();
         engine.close();
         mergeThread.join();
@@ -3478,7 +3472,7 @@ public class InternalEngineTests extends EngineTestCase {
         }
         if (engine.engineConfig.getIndexSettings().isSoftDeleteEnabled()) {
             List<Translog.Operation> ops = readAllOperationsInLucene(engine);
-            assertThat(ops.stream().map(o -> o.seqNo()).collect(Collectors.toList()), hasItem(20L));
+            assertThat(ops.stream().map(Translog.Operation::seqNo).collect(Collectors.toList()), hasItem(20L));
         }
     }
 
@@ -3704,26 +3698,23 @@ public class InternalEngineTests extends EngineTestCase {
 
         AtomicInteger offset = new AtomicInteger(-1);
         for (int i = 0; i < thread.length; i++) {
-            thread[i] = new Thread() {
-                @Override
-                public void run() {
-                    startGun.countDown();
+            thread[i] = new Thread(() -> {
+                startGun.countDown();
+                try {
+                    startGun.await();
+                } catch (InterruptedException e) {
+                    throw new AssertionError(e);
+                }
+                assertThat(engine.getVersionMap().values(), empty());
+                int docOffset;
+                while ((docOffset = offset.incrementAndGet()) < docs.size()) {
                     try {
-                        startGun.await();
-                    } catch (InterruptedException e) {
+                        engine.index(docs.get(docOffset));
+                    } catch (IOException e) {
                         throw new AssertionError(e);
                     }
-                    assertThat(engine.getVersionMap().values(), empty());
-                    int docOffset;
-                    while ((docOffset = offset.incrementAndGet()) < docs.size()) {
-                        try {
-                            engine.index(docs.get(docOffset));
-                        } catch (IOException e) {
-                            throw new AssertionError(e);
-                        }
-                    }
                 }
-            };
+            });
             thread[i].start();
         }
         try (Engine.Searcher searcher = engine.acquireSearcher("test", Engine.SearcherScope.INTERNAL)) {
@@ -3901,9 +3892,9 @@ public class InternalEngineTests extends EngineTestCase {
                 try (Engine.Searcher searcher = engine.acquireSearcher("test", Engine.SearcherScope.INTERNAL)) {
                     Map<String, Long> liveOps = latestOps.entrySet().stream()
                         .filter(e -> e.getValue().operationType() == Engine.Operation.TYPE.INDEX)
-                        .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().seqNo()));
-                    assertThat(getDocIds(engine, true).stream().collect(Collectors.toMap(e -> e.getId(), e -> e.getSeqNo())),
-                        equalTo(liveOps));
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().seqNo()));
+                    assertThat(getDocIds(engine, true).stream()
+                        .collect(Collectors.toMap(DocIdSeqNoAndSource::getId, DocIdSeqNoAndSource::getSeqNo)), equalTo(liveOps));
                     for (String id : latestOps.keySet()) {
                         String msg = "latestOps=" + latestOps + " op=" + id;
                         DocIdAndSeqNo docIdAndSeqNo = VersionsAndSeqNoResolver.loadDocIdAndSeqNo(searcher.getIndexReader(), newUid(id));
@@ -4165,7 +4156,7 @@ public class InternalEngineTests extends EngineTestCase {
                     maxSeqNo,
                     localCheckpoint);
             EngineConfig noopEngineConfig = copy(engine.config(), new SoftDeletesRetentionMergePolicy(Lucene.SOFT_DELETES_FIELD,
-                () -> new MatchAllDocsQuery(), engine.config().getMergePolicy()));
+                    MatchAllDocsQuery::new, engine.config().getMergePolicy()));
             noOpEngine = new InternalEngine(noopEngineConfig, IndexWriter.MAX_DOCS, supplier) {
                 @Override
                 protected long doGenerateSeqNoForOperation(Operation operation) {
@@ -4675,7 +4666,7 @@ public class InternalEngineTests extends EngineTestCase {
         store.associateIndexWithNewTranslog(translogUUID);
 
         final EngineConfig engineConfig = config(defaultSettings, store, translogPath,
-            NoMergePolicy.INSTANCE, null, null, () -> globalCheckpoint.get());
+            NoMergePolicy.INSTANCE, null, null, globalCheckpoint::get);
         final AtomicLong lastSyncedGlobalCheckpointBeforeCommit = new AtomicLong(Translog.readGlobalCheckpoint(translogPath, translogUUID));
         try (InternalEngine engine = new InternalEngine(engineConfig) {
                 @Override
@@ -5188,7 +5179,7 @@ public class InternalEngineTests extends EngineTestCase {
 
     private void assertOperationHistoryInLucene(List<Engine.Operation> operations) throws IOException {
         final MergePolicy keepSoftDeleteDocsMP = new SoftDeletesRetentionMergePolicy(
-            Lucene.SOFT_DELETES_FIELD, () -> new MatchAllDocsQuery(), engine.config().getMergePolicy());
+            Lucene.SOFT_DELETES_FIELD, MatchAllDocsQuery::new, engine.config().getMergePolicy());
         Settings.Builder settings = Settings.builder()
             .put(defaultSettings.getSettings())
             .put(IndexSettings.INDEX_SOFT_DELETES_RETENTION_OPERATIONS_SETTING.getKey(), randomLongBetween(0, 10));
@@ -5218,7 +5209,8 @@ public class InternalEngineTests extends EngineTestCase {
                 }
             }
             List<Translog.Operation> actualOps = readAllOperationsInLucene(engine);
-            assertThat(actualOps.stream().map(o -> o.seqNo()).collect(Collectors.toList()), containsInAnyOrder(expectedSeqNos.toArray()));
+            assertThat(actualOps.stream().map(Translog.Operation::seqNo).collect(Collectors.toList()),
+                containsInAnyOrder(expectedSeqNos.toArray()));
             assertConsistentHistoryBetweenTranslogAndLuceneIndex(engine);
         }
     }
@@ -5513,7 +5505,8 @@ public class InternalEngineTests extends EngineTestCase {
                 }
                 assertThat(versionMap.keySet(), equalTo(deletesAfterCheckpoint.keySet()));
                 final LocalCheckpointTracker tracker = engine.getLocalCheckpointTracker();
-                final Set<Long> seqNosInSafeCommit = operationsInSafeCommit.stream().map(op -> op.seqNo()).collect(Collectors.toSet());
+                final Set<Long> seqNosInSafeCommit =
+                    operationsInSafeCommit.stream().map(Engine.Operation::seqNo).collect(Collectors.toSet());
                 for (Engine.Operation op : operations) {
                     assertThat(
                         "seq_no=" + op.seqNo() + " max_seq_no=" + tracker.getMaxSeqNo() + "checkpoint=" + tracker.getProcessedCheckpoint(),
@@ -5831,7 +5824,7 @@ public class InternalEngineTests extends EngineTestCase {
     private Map<BytesRef, DeleteVersionValue> tombstonesInVersionMap(InternalEngine engine) {
         return engine.getVersionMap().entrySet().stream()
             .filter(e -> e.getValue() instanceof DeleteVersionValue)
-            .collect(Collectors.toMap(e -> e.getKey(), e -> (DeleteVersionValue) e.getValue()));
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> (DeleteVersionValue) e.getValue()));
     }
 
     public void testTreatDocumentFailureAsFatalError() throws Exception {

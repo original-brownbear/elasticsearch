@@ -120,15 +120,12 @@ public class TaskResultTests extends ESTestCase {
         for (int f = 0; f < fields; f++) {
             result.put(randomAlphaOfLength(5), randomAlphaOfLength(5));
         }
-        return new ToXContent() {
-            @Override
-            public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-                // Responses in Elasticsearch never output a leading startObject. There isn't really a good reason, they just don't.
-                for (Map.Entry<String, String> entry : result.entrySet()) {
-                    builder.field(entry.getKey(), entry.getValue());
-                }
-                return builder;
+        return (builder, params) -> {
+            // Responses in Elasticsearch never output a leading startObject. There isn't really a good reason, they just don't.
+            for (Map.Entry<String, String> entry : result.entrySet()) {
+                builder.field(entry.getKey(), entry.getValue());
             }
+            return builder;
         };
     }
 }

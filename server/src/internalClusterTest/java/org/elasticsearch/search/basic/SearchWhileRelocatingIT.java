@@ -60,40 +60,37 @@ public class SearchWhileRelocatingIT extends ESIntegTestCase {
 
             Thread[] threads = new Thread[scaledRandomIntBetween(1, 3)];
             for (int j = 0; j < threads.length; j++) {
-                threads[j] = new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            while (stop.get() == false) {
-                                SearchResponse sr = client().prepareSearch().setSize(numDocs).get();
-                                if (sr.getHits().getTotalHits().value != numDocs) {
-                                    // if we did not search all shards but had no serious failures that is potentially fine
-                                    // if only the hit-count is wrong. this can happen if the cluster-state is behind when the
-                                    // request comes in. It's a small window but a known limitation.
-                                    if (sr.getTotalShards() != sr.getSuccessfulShards() &&
-                                        Stream.of(sr.getShardFailures()).allMatch(
-                                            ssf -> ssf.getCause() instanceof NoShardAvailableActionException)) {
-                                        nonCriticalExceptions.add("Count is " + sr.getHits().getTotalHits().value + " but " + numDocs +
-                                            " was expected. " + formatShardStatus(sr));
-                                    } else {
-                                        assertHitCount(sr, numDocs);
-                                    }
+                threads[j] = new Thread(() -> {
+                    try {
+                        while (stop.get() == false) {
+                            SearchResponse sr = client().prepareSearch().setSize(numDocs).get();
+                            if (sr.getHits().getTotalHits().value != numDocs) {
+                                // if we did not search all shards but had no serious failures that is potentially fine
+                                // if only the hit-count is wrong. this can happen if the cluster-state is behind when the
+                                // request comes in. It's a small window but a known limitation.
+                                if (sr.getTotalShards() != sr.getSuccessfulShards() &&
+                                    Stream.of(sr.getShardFailures()).allMatch(
+                                        ssf -> ssf.getCause() instanceof NoShardAvailableActionException)) {
+                                    nonCriticalExceptions.add("Count is " + sr.getHits().getTotalHits().value + " but " + numDocs +
+                                        " was expected. " + formatShardStatus(sr));
+                                } else {
+                                    assertHitCount(sr, numDocs);
                                 }
+                            }
 
-                                final SearchHits sh = sr.getHits();
-                                assertThat("Expected hits to be the same size the actual hits array", sh.getTotalHits().value,
-                                        equalTo((long) (sh.getHits().length)));
-                                // this is the more critical but that we hit the actual hit array has a different size than the
-                                // actual number of hits.
-                            }
-                        } catch (SearchPhaseExecutionException ex) {
-                            // it's possible that all shards fail if we have a small number of shards.
-                            if (ex.getMessage().contains("all shards failed") == false) {
-                                throw ex;
-                            }
+                            final SearchHits sh = sr.getHits();
+                            assertThat("Expected hits to be the same size the actual hits array", sh.getTotalHits().value,
+                                    equalTo((long) (sh.getHits().length)));
+                            // this is the more critical but that we hit the actual hit array has a different size than the
+                            // actual number of hits.
+                        }
+                    } catch (SearchPhaseExecutionException ex) {
+                        // it's possible that all shards fail if we have a small number of shards.
+                        if (ex.getMessage().contains("all shards failed") == false) {
+                            throw ex;
                         }
                     }
-                };
+                });
             }
             for (int j = 0; j < threads.length; j++) {
                 threads[j].start();

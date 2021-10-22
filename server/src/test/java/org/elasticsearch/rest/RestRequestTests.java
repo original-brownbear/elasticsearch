@@ -19,6 +19,7 @@ import org.elasticsearch.http.HttpChannel;
 import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.rest.FakeRestRequest;
+import org.junit.Assert;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -155,7 +156,7 @@ public class RestRequestTests extends ESTestCase {
     }
 
     public void testWithContentOrSourceParamParserOrNull() throws IOException {
-        contentRestRequest("", emptyMap()).withContentOrSourceParamParserOrNull(parser -> assertNull(parser));
+        contentRestRequest("", emptyMap()).withContentOrSourceParamParserOrNull(Assert::assertNull);
         contentRestRequest("{}", emptyMap()).withContentOrSourceParamParserOrNull(parser -> assertEquals(emptyMap(), parser.map()));
         contentRestRequest("{}", singletonMap("source", "stuff2")).withContentOrSourceParamParserOrNull(parser ->
                 assertEquals(emptyMap(), parser.map()));

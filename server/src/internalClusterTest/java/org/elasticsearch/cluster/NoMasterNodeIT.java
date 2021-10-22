@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.coordination.NoMasterBlockService;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -276,7 +277,7 @@ public class NoMasterNodeIT extends ESIntegTestCase {
         logger.info("Cluster state:\n{}", clusterState.getState());
 
         final List<String> nodesWithShards = clusterState.getState().routingTable().index("test1").shard(0).activeShards().stream()
-            .map(shardRouting -> shardRouting.currentNodeId()).map(nodeId -> clusterState.getState().nodes().resolveNode(nodeId))
+            .map(ShardRouting::currentNodeId).map(nodeId -> clusterState.getState().nodes().resolveNode(nodeId))
             .map(DiscoveryNode::getName).collect(Collectors.toList());
 
         client().execute(AddVotingConfigExclusionsAction.INSTANCE,

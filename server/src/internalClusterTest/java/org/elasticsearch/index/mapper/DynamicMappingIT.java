@@ -104,16 +104,13 @@ public class DynamicMappingIT extends ESIntegTestCase {
         final AtomicReference<Throwable> error = new AtomicReference<>();
         for (int i = 0; i < indexThreads.length; ++i) {
             final String id = Integer.toString(i);
-            indexThreads[i] = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        startLatch.await();
-                        assertEquals(DocWriteResponse.Result.CREATED, client().prepareIndex("index").setId(id)
-                            .setSource("field" + id, "bar").get().getResult());
-                    } catch (Exception e) {
-                        error.compareAndSet(null, e);
-                    }
+            indexThreads[i] = new Thread(() -> {
+                try {
+                    startLatch.await();
+                    assertEquals(DocWriteResponse.Result.CREATED, client().prepareIndex("index").setId(id)
+                        .setSource("field" + id, "bar").get().getResult());
+                } catch (Exception e) {
+                    error.compareAndSet(null, e);
                 }
             });
             indexThreads[i].start();

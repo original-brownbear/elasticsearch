@@ -16,7 +16,6 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.xcontent.ToXContentFragment;
-import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.test.AbstractNamedWriteableTestCase;
@@ -133,12 +132,9 @@ public class SortValueTests extends AbstractNamedWriteableTestCase<SortValue> {
     }
 
     public String toXContent(SortValue sortValue, DocValueFormat format) {
-        return Strings.toString(new ToXContentFragment() {
-            @Override
-            public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-                builder.field("test");
-                return sortValue.toXContent(builder, format);
-            }
+        return Strings.toString((ToXContentFragment) (builder, params) -> {
+            builder.field("test");
+            return sortValue.toXContent(builder, format);
         });
     }
 }

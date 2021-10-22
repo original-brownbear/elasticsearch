@@ -17,11 +17,8 @@ import org.apache.lucene.util.BytesRef;
  */
 public abstract class Ordinals implements Accountable {
 
-    public static final ValuesHolder NO_VALUES = new ValuesHolder() {
-        @Override
-        public BytesRef lookupOrd(long ord) {
-            throw new UnsupportedOperationException();
-        }
+    public static final ValuesHolder NO_VALUES = ord -> {
+        throw new UnsupportedOperationException();
     };
 
     /**

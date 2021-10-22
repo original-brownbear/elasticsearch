@@ -390,7 +390,7 @@ public class MetadataIndexTemplateService {
     static void validateNotInUse(Metadata metadata, String... templateNameOrWildcard) {
         final Predicate<String> predicate;
         if (templateNameOrWildcard.length > 1) {
-            predicate = name -> Arrays.stream(templateNameOrWildcard).anyMatch(s -> Objects.equals(s, name));
+            predicate = name -> Arrays.asList(templateNameOrWildcard).contains(name);
         } else {
             predicate = name -> Regex.simpleMatch(templateNameOrWildcard[0], name);
         }

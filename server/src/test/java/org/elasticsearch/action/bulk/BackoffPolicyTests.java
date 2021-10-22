@@ -40,7 +40,7 @@ public class BackoffPolicyTests extends ESTestCase {
                 assertEquals(expectedRetries, retries.get());
             }
             // next doesn't call the callback when there isn't a backoff available
-            expectThrows(NoSuchElementException.class, () -> itr.next());
+            expectThrows(NoSuchElementException.class, itr::next);
             assertEquals(expectedRetries, retries.get());
         }
         {

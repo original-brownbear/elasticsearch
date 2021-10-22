@@ -50,8 +50,8 @@ public class ParsedAdjacencyMatrix extends ParsedMultiBucketAggregation<ParsedAd
     static {
         declareMultiBucketAggregationFields(
             PARSER,
-            parser -> ParsedBucket.fromXContent(parser),
-            parser -> ParsedBucket.fromXContent(parser)
+                ParsedBucket::fromXContent,
+                ParsedBucket::fromXContent
         );
     }
 

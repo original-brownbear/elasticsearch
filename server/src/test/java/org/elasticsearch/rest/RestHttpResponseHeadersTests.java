@@ -134,7 +134,7 @@ public class RestHttpResponseHeadersTests extends ESTestCase {
      * compared with the expected 'Allow' header String array.
      */
     private List<String> getMethodNameStringArray(List<RestRequest.Method> methodArray) {
-        return methodArray.stream().map(method -> method.toString()).collect(Collectors.toList());
+        return methodArray.stream().map(Enum::toString).collect(Collectors.toList());
     }
 
 }

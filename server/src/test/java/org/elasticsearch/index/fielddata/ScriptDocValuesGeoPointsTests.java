@@ -117,7 +117,7 @@ public class ScriptDocValuesGeoPointsTests extends ESTestCase {
             if (points[d].length > 0) {
                 assertEquals(points[d][0], geoPoints.getValue());
             } else {
-                Exception e = expectThrows(IllegalStateException.class, () -> geoPoints.getValue());
+                Exception e = expectThrows(IllegalStateException.class, geoPoints::getValue);
                 assertEquals("A document doesn't have a value for a field! " +
                     "Use doc[<field>].size()==0 to check if a document is missing a field!", e.getMessage());
                 e = expectThrows(IllegalStateException.class, () -> geoPoints.get(0));

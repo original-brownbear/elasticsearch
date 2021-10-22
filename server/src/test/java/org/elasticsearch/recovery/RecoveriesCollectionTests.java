@@ -125,8 +125,8 @@ public class RecoveriesCollectionTests extends ESIndexLevelReplicationTestCase {
             assertEquals(referencesToStore, resetRecovery.store().refCount());
             assertEquals(currentAsTarget, shard.recoveryStats().currentAsTarget());
             assertEquals(recoveryTarget.refCount(), 0);
-            expectThrows(ElasticsearchException.class, () -> recoveryTarget.store());
-            expectThrows(ElasticsearchException.class, () -> recoveryTarget.indexShard());
+            expectThrows(ElasticsearchException.class, recoveryTarget::store);
+            expectThrows(ElasticsearchException.class, recoveryTarget::indexShard);
             String resetTempFileName = resetRecovery.getTempNameForFile("foobar");
             assertNotEquals(tempFileName, resetTempFileName);
             assertEquals(currentAsTarget, shard.recoveryStats().currentAsTarget());

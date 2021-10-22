@@ -63,6 +63,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.AggregationInspectionHelper;
 import org.elasticsearch.search.lookup.LeafDocLookup;
+import org.elasticsearch.test.ESTestCase;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -648,12 +649,13 @@ public class MinAggregatorTests extends AggregatorTestCase {
             (v) -> LongPoint.decodeDimension(v, 0)
         );
 
-        testMinShortcutCase(() -> randomInt(), (n) -> new IntPoint("number", n.intValue()), (v) -> IntPoint.decodeDimension(v, 0));
+        testMinShortcutCase(ESTestCase::randomInt, (n) -> new IntPoint("number", n.intValue()), (v) -> IntPoint.decodeDimension(v, 0));
 
-        testMinShortcutCase(() -> randomFloat(), (n) -> new FloatPoint("number", n.floatValue()), (v) -> FloatPoint.decodeDimension(v, 0));
+        testMinShortcutCase(ESTestCase::randomFloat, (n) -> new FloatPoint("number", n.floatValue()),
+            (v) -> FloatPoint.decodeDimension(v, 0));
 
         testMinShortcutCase(
-            () -> randomDouble(),
+                ESTestCase::randomDouble,
             (n) -> new DoublePoint("number", n.doubleValue()),
             (v) -> DoublePoint.decodeDimension(v, 0)
         );

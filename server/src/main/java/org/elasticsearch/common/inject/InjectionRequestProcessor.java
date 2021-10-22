@@ -18,7 +18,6 @@ package org.elasticsearch.common.inject;
 
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.ErrorsException;
-import org.elasticsearch.common.inject.internal.InternalContext;
 import org.elasticsearch.common.inject.spi.InjectionPoint;
 import org.elasticsearch.common.inject.spi.InjectionRequest;
 import org.elasticsearch.common.inject.spi.StaticInjectionRequest;
@@ -107,14 +106,11 @@ class InjectionRequestProcessor extends AbstractProcessor {
 
         void injectMembers() {
             try {
-                injector.callInContext(new ContextualCallable<Void>() {
-                    @Override
-                    public Void call(InternalContext context) {
-                        for (SingleMemberInjector injector : memberInjectors) {
-                            injector.inject(errors, context, null);
-                        }
-                        return null;
+                injector.callInContext((ContextualCallable<Void>) context -> {
+                    for (SingleMemberInjector injector : memberInjectors) {
+                        injector.inject(errors, context, null);
                     }
+                    return null;
                 });
             } catch (ErrorsException e) {
                 throw new AssertionError();

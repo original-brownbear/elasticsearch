@@ -543,15 +543,12 @@ public class RecoveryTargetTests extends ESTestCase {
                 return new Index(in);
             }
         };
-        Thread modifyThread = new Thread() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 1000; i++) {
-                    index.addFileDetail(randomAlphaOfLength(10), 100, true);
-                }
-                stop.set(true);
+        Thread modifyThread = new Thread(() -> {
+            for (int i = 0; i < 1000; i++) {
+                index.addFileDetail(randomAlphaOfLength(10), 100, true);
             }
-        };
+            stop.set(true);
+        });
         readWriteIndex.start();
         modifyThread.start();
         modifyThread.join();

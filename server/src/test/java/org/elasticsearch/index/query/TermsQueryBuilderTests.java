@@ -73,7 +73,7 @@ public class TermsQueryBuilderTests extends AbstractQueryTestCase<TermsQueryBuil
                     choice.equals(INT_RANGE_FIELD_NAME) ||
                     choice.equals(DATE_RANGE_FIELD_NAME) ||
                     choice.equals(DATE_NANOS_FIELD_NAME), // TODO: needs testing for date_nanos type
-                () -> getRandomFieldName());
+                    AbstractQueryTestCase::getRandomFieldName);
             Object[] values = new Object[randomInt(5)];
             for (int i = 0; i < values.length; i++) {
                 values[i] = getRandomValueForFieldName(fieldName);
@@ -255,7 +255,7 @@ public class TermsQueryBuilderTests extends AbstractQueryTestCase<TermsQueryBuil
         assertEquals("query must be rewritten first", e.getMessage());
 
         // terms lookup removes null values
-        List<Object> nonNullTerms = randomTerms.stream().filter(x -> x != null).collect(Collectors.toList());
+        List<Object> nonNullTerms = randomTerms.stream().filter(Objects::nonNull).collect(Collectors.toList());
         QueryBuilder expected;
         if (nonNullTerms.isEmpty()) {
             expected = new MatchNoneQueryBuilder();

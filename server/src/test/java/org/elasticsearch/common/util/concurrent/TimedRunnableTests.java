@@ -106,7 +106,7 @@ public final class TimedRunnableTests extends ESTestCase {
         };
 
         final TimedRunnable timedRunnable = new TimedRunnable(runnable);
-        final RuntimeException thrown = expectThrows(RuntimeException.class, () -> timedRunnable.run());
+        final RuntimeException thrown = expectThrows(RuntimeException.class, timedRunnable::run);
         assertTrue(hasRun.get());
         assertSame(exception, thrown);
     }

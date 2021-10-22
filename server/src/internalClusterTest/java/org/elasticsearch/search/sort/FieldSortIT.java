@@ -83,8 +83,8 @@ public class FieldSortIT extends ESIntegTestCase {
         @Override
         protected Map<String, Function<Map<String, Object>, Object>> pluginScripts() {
             Map<String, Function<Map<String, Object>, Object>> scripts = new HashMap<>();
-            scripts.put("doc['number'].value", vars -> sortDoubleScript(vars));
-            scripts.put("doc['keyword'].value", vars -> sortStringScript(vars));
+            scripts.put("doc['number'].value", CustomScriptPlugin::sortDoubleScript);
+            scripts.put("doc['keyword'].value", CustomScriptPlugin::sortStringScript);
             return scripts;
         }
 

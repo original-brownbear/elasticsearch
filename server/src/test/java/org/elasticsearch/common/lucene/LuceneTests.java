@@ -85,21 +85,18 @@ public class LuceneTests extends ESTestCase {
 
         // Create a shadow Engine, which will freak out because there is no
         // index yet
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    latch.await();
-                    if (Lucene.waitForIndex(dir, 5000)) {
-                        succeeded.set(true);
-                    } else {
-                        fail("index should have eventually existed!");
-                    }
-                } catch (InterruptedException e) {
-                    // ignore interruptions
-                } catch (Exception e) {
-                    fail("should have been able to create the engine! " + e.getMessage());
+        Thread t = new Thread(() -> {
+            try {
+                latch.await();
+                if (Lucene.waitForIndex(dir, 5000)) {
+                    succeeded.set(true);
+                } else {
+                    fail("index should have eventually existed!");
                 }
+            } catch (InterruptedException e) {
+                // ignore interruptions
+            } catch (Exception e) {
+                fail("should have been able to create the engine! " + e.getMessage());
             }
         });
         t.start();

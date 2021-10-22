@@ -58,21 +58,18 @@ public class AsyncIOProcessorTests extends ESTestCase {
         Thread[] thread = new Thread[randomIntBetween(3, 10)];
         CountDownLatch latch = new CountDownLatch(thread.length);
         for (int i = 0; i < thread.length; i++) {
-            thread[i] = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        latch.countDown();
-                        latch.await();
-                        for (int i = 0; i < count; i++) {
-                            semaphore.acquire();
-                            processor.put(new Object(), (ex) -> semaphore.release());
-                        }
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
+            thread[i] = new Thread(() -> {
+                try {
+                    latch.countDown();
+                    latch.await();
+                    for (int i1 = 0; i1 < count; i1++) {
+                        semaphore.acquire();
+                        processor.put(new Object(), (ex) -> semaphore.release());
                     }
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
-            };
+            });
             thread[i].start();
         }
 
@@ -106,26 +103,23 @@ public class AsyncIOProcessorTests extends ESTestCase {
         Thread[] thread = new Thread[randomIntBetween(3, 10)];
         CountDownLatch latch = new CountDownLatch(thread.length);
         for (int i = 0; i < thread.length; i++) {
-            thread[i] = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        latch.countDown();
-                        latch.await();
-                        for (int i = 0; i < count; i++) {
-                            semaphore.acquire();
-                            processor.put(new Object(), (ex) -> {
-                                if (ex != null) {
-                                    actualFailed.incrementAndGet();
-                                }
-                                semaphore.release();
-                            });
-                        }
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
+            thread[i] = new Thread(() -> {
+                try {
+                    latch.countDown();
+                    latch.await();
+                    for (int i1 = 0; i1 < count; i1++) {
+                        semaphore.acquire();
+                        processor.put(new Object(), (ex) -> {
+                            if (ex != null) {
+                                actualFailed.incrementAndGet();
+                            }
+                            semaphore.release();
+                        });
                     }
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
-            };
+            });
             thread[i].start();
         }
 

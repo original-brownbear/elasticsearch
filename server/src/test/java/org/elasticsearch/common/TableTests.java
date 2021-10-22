@@ -20,13 +20,13 @@ public class TableTests extends ESTestCase {
 
     public void testFailOnStartRowWithoutHeader() {
         Table table = new Table();
-        Exception e = expectThrows(IllegalStateException.class, () -> table.startRow());
+        Exception e = expectThrows(IllegalStateException.class, table::startRow);
         assertThat(e.getMessage(), is("no headers added..."));
     }
 
     public void testFailOnEndHeadersWithoutStart() {
         Table table = new Table();
-        Exception e = expectThrows(IllegalStateException.class, () -> table.endHeaders());
+        Exception e = expectThrows(IllegalStateException.class, table::endHeaders);
         assertThat(e.getMessage(), is("no headers added..."));
     }
 
@@ -44,7 +44,7 @@ public class TableTests extends ESTestCase {
 
     public void testFailOnEndRowWithoutStart() {
         Table table = this.getTableWithHeaders();
-        Exception e = expectThrows(IllegalStateException.class, () -> table.endRow());
+        Exception e = expectThrows(IllegalStateException.class, table::endRow);
         assertThat(e.getMessage(), is("no row started..."));
     }
 
@@ -52,7 +52,7 @@ public class TableTests extends ESTestCase {
         Table table = this.getTableWithHeaders();
         table.startRow();
         table.addCell("foo");
-        Exception e = expectThrows(IllegalStateException.class, () -> table.endRow());
+        Exception e = expectThrows(IllegalStateException.class, table::endRow);
         assertThat(e.getMessage(), is("mismatch on number of cells 1 in a row compared to header 2"));
     }
 

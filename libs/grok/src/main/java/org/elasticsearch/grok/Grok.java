@@ -89,7 +89,7 @@ public final class Grok {
         String expression = toRegex(grokPattern);
         byte[] expressionBytes = expression.getBytes(StandardCharsets.UTF_8);
         this.compiledExpression = new Regex(expressionBytes, 0, expressionBytes.length, Option.DEFAULT, UTF8Encoding.INSTANCE,
-            message -> logCallBack.accept(message));
+                logCallBack::accept);
 
         List<GrokCaptureConfig> grokCaptureConfigs = new ArrayList<>();
         for (Iterator<NameEntry> entry = compiledExpression.namedBackrefIterator(); entry.hasNext();) {

@@ -196,7 +196,7 @@ public class BalanceConfigurationTests extends ESAllocationTestCase {
                 Collectors.toMap(
                     ShardRouting::shardId,
                     s -> 1,
-                    (a, b) -> a + b
+                        Integer::sum
             )).values().forEach(
                 count -> assertEquals(numberOfReplicas + 1, count.longValue())
             );

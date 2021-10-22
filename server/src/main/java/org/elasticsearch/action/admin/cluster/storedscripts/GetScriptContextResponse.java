@@ -48,7 +48,7 @@ public class GetScriptContextResponse extends ActionResponse implements StatusTo
 
     static {
         PARSER.declareObjectArray(ConstructingObjectParser.constructorArg(),
-            (parser, ctx) -> ScriptContextInfo.PARSER.apply(parser, ctx), CONTEXTS);
+                ScriptContextInfo.PARSER::apply, CONTEXTS);
     }
 
     GetScriptContextResponse(StreamInput in) throws IOException {

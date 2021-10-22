@@ -245,7 +245,7 @@ public abstract class NumberFieldMapperTests extends MapperTestCase {
 
     public void testDimension() throws IOException {
         // Test default setting
-        MapperService mapperService = createMapperService(fieldMapping(b -> minimalMapping(b)));
+        MapperService mapperService = createMapperService(fieldMapping(this::minimalMapping));
         NumberFieldMapper.NumberFieldType ft = (NumberFieldMapper.NumberFieldType) mapperService.fieldType("field");
         assertFalse(ft.isDimension());
 
@@ -262,7 +262,7 @@ public abstract class NumberFieldMapperTests extends MapperTestCase {
 
     public void testMetricType() throws IOException {
         // Test default setting
-        MapperService mapperService = createMapperService(fieldMapping(b -> minimalMapping(b)));
+        MapperService mapperService = createMapperService(fieldMapping(this::minimalMapping));
         NumberFieldMapper.NumberFieldType ft = (NumberFieldMapper.NumberFieldType) mapperService.fieldType("field");
         assertNull(ft.getMetricType());
 

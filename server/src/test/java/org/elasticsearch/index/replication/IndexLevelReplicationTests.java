@@ -101,18 +101,15 @@ public class IndexLevelReplicationTests extends ESIndexLevelReplicationTestCase 
             CountDownLatch latch = new CountDownLatch(2);
             int numDocs = randomIntBetween(100, 200);
             shards.appendDocs(1);// just append one to the translog so we can assert below
-            Thread thread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        latch.countDown();
-                        latch.await();
-                        shards.appendDocs(numDocs - 1);
-                    } catch (Exception e) {
-                        throw new AssertionError(e);
-                    }
+            Thread thread = new Thread(() -> {
+                try {
+                    latch.countDown();
+                    latch.await();
+                    shards.appendDocs(numDocs - 1);
+                } catch (Exception e) {
+                    throw new AssertionError(e);
                 }
-            };
+            });
             thread.start();
             IndexShard replica = shards.addReplica();
             Future<Void> future = shards.asyncRecoverReplica(replica,

@@ -116,9 +116,7 @@ public class ActionListenerTests extends ESTestCase {
             refList.add(reference);
             excList.add(exReference);
             boolean fail = i == listenerToFail;
-            CheckedConsumer<Boolean, ? extends Exception> handler = (o) -> {
-                reference.set(o);
-            };
+            CheckedConsumer<Boolean, ? extends Exception> handler = reference::set;
             listeners.add(ActionListener.wrap(handler, (e) -> {
                 exReference.set(e);
                 if (fail) {

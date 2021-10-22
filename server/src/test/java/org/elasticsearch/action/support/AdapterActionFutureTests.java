@@ -104,7 +104,7 @@ public class AdapterActionFutureTests extends ESTestCase {
         adapter.onFailure(exception);
         assertEquals(actionGetException, expectThrows(RuntimeException.class, adapter::actionGet).getClass());
         assertEquals(actionGetException, expectThrows(RuntimeException.class, () -> adapter.actionGet(10, TimeUnit.SECONDS)).getClass());
-        assertEquals(getException, expectThrows(ExecutionException.class, () -> adapter.get()).getCause().getClass());
+        assertEquals(getException, expectThrows(ExecutionException.class, adapter::get).getCause().getClass());
         assertEquals(getException, expectThrows(ExecutionException.class, () -> adapter.get(10, TimeUnit.SECONDS)).getCause().getClass());
     }
 }

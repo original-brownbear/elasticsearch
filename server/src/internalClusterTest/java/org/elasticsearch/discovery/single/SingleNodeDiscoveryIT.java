@@ -167,7 +167,7 @@ public class SingleNodeDiscoveryIT extends ESIntegTestCase {
                 other.beforeTest(random());
                 final ClusterState first = internalCluster().getInstance(ClusterService.class).state();
                 assertThat(first.nodes().getSize(), equalTo(1));
-                assertBusy(() -> mockAppender.assertAllExpectationsMatched());
+                assertBusy(mockAppender::assertAllExpectationsMatched);
             } finally {
                 Loggers.removeAppender(clusterLogger, mockAppender);
                 mockAppender.stop();

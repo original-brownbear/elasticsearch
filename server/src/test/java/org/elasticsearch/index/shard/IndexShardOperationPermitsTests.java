@@ -114,18 +114,16 @@ public class IndexShardOperationPermitsTests extends ESTestCase {
                     }
                 }
             };
-            Thread thread = new Thread() {
-                public void run() {
-                    latch.countDown();
-                    try {
-                        permits.acquire(future, threadPoolName, forceExecution, "");
-                    } catch (DummyException dummyException) {
-                        // ok, notify future
-                        assertTrue(failingListener);
-                        future.onFailure(dummyException);
-                    }
+            Thread thread = new Thread(() -> {
+                latch.countDown();
+                try {
+                    permits.acquire(future, threadPoolName, forceExecution, "");
+                } catch (DummyException dummyException) {
+                    // ok, notify future
+                    assertTrue(failingListener);
+                    future.onFailure(dummyException);
                 }
-            };
+            });
             futures.add(future);
             operationThreads.add(thread);
         }

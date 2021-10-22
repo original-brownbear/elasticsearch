@@ -27,7 +27,6 @@ import org.elasticsearch.rest.action.RestCancellableNodeClient;
 import org.elasticsearch.rest.action.RestResponseListener;
 
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -128,18 +127,15 @@ public class RestCatRecoveryAction extends AbstractCatAction {
             }
 
             // Sort ascending by shard id for readability
-            CollectionUtil.introSort(shardRecoveryStates, new Comparator<RecoveryState>() {
-                @Override
-                public int compare(RecoveryState o1, RecoveryState o2) {
-                    int id1 = o1.getShardId().id();
-                    int id2 = o2.getShardId().id();
-                    if (id1 < id2) {
-                        return -1;
-                    } else if (id1 > id2) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
+            CollectionUtil.introSort(shardRecoveryStates, (o1, o2) -> {
+                int id1 = o1.getShardId().id();
+                int id2 = o2.getShardId().id();
+                if (id1 < id2) {
+                    return -1;
+                } else if (id1 > id2) {
+                    return 1;
+                } else {
+                    return 0;
                 }
             });
 

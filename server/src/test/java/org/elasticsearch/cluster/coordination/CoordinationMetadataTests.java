@@ -78,7 +78,7 @@ public class CoordinationMetadataTests extends ESTestCase {
         EqualsHashCodeTestUtils.checkEqualsAndHashCode(initialConfig,
                 (CopyFunction<VotingConfiguration>) orig -> ESTestCase.copyWriteable(orig,
                         new NamedWriteableRegistry(Collections.emptyList()), VotingConfiguration::new),
-                cfg -> randomlyChangeVotingConfiguration(cfg));
+                this::randomlyChangeVotingConfiguration);
     }
 
     private static VotingConfiguration randomVotingConfig() {
@@ -91,7 +91,7 @@ public class CoordinationMetadataTests extends ESTestCase {
         EqualsHashCodeTestUtils.checkEqualsAndHashCode(tombstone,
                 (CopyFunction<VotingConfigExclusion>) orig -> ESTestCase.copyWriteable(orig,
                         new NamedWriteableRegistry(Collections.emptyList()), VotingConfigExclusion::new),
-                orig -> randomlyChangeVotingTombstone(orig));
+                this::randomlyChangeVotingTombstone);
     }
 
     public void testVotingTombstoneXContent() throws IOException {
@@ -162,7 +162,7 @@ public class CoordinationMetadataTests extends ESTestCase {
                         if (meta.getVotingConfigExclusions().isEmpty() == false && randomBoolean()) {
                             builder.clearVotingConfigExclusions();
                         } else {
-                            randomVotingTombstones().forEach(dn -> builder.addVotingConfigExclusion(dn));
+                            randomVotingTombstones().forEach(builder::addVotingConfigExclusion);
                         }
                         break;
                 }

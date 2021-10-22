@@ -291,7 +291,7 @@ public class DocumentMapperTests extends MapperServiceTestCase {
         assertNotNull(documentMapper.sourceMapper());
         assertNotNull(documentMapper.IndexFieldMapper());
         List<Class<?>> metadataMappers = new ArrayList<>(documentMapper.mappers().getMapping().getMetadataMappersMap().keySet());
-        Collections.sort(metadataMappers, Comparator.comparing(c -> c.getSimpleName()));
+        Collections.sort(metadataMappers, Comparator.comparing(Class::getSimpleName));
         assertMap(
             metadataMappers,
             matchesList().item(DocCountFieldMapper.class)

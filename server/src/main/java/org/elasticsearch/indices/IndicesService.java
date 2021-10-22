@@ -60,6 +60,12 @@ import org.elasticsearch.common.util.concurrent.EsThreadPoolExecutor;
 import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.index.AbstractIndexComponent;
+import org.elasticsearch.index.Index;
+import org.elasticsearch.index.IndexModule;
+import org.elasticsearch.index.IndexNotFoundException;
+import org.elasticsearch.index.IndexService;
+import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
@@ -76,11 +82,6 @@ import org.elasticsearch.env.ShardLock;
 import org.elasticsearch.env.ShardLockObtainFailedException;
 import org.elasticsearch.gateway.MetaStateService;
 import org.elasticsearch.gateway.MetadataStateFormat;
-import org.elasticsearch.index.Index;
-import org.elasticsearch.index.IndexModule;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.elasticsearch.index.IndexService;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
 import org.elasticsearch.index.bulk.stats.BulkStats;
 import org.elasticsearch.index.cache.request.ShardRequestCache;
@@ -357,7 +358,7 @@ public class IndicesService extends AbstractLifecycleComponent
             Executors.newFixedThreadPool(5, daemonThreadFactory(settings, "indices_shutdown"));
 
         // Copy indices because we modify it asynchronously in the body of the loop
-        final Set<Index> indices = this.indices.values().stream().map(s -> s.index()).collect(Collectors.toSet());
+        final Set<Index> indices = this.indices.values().stream().map(AbstractIndexComponent::index).collect(Collectors.toSet());
         final CountDownLatch latch = new CountDownLatch(indices.size());
         for (final Index index : indices) {
             indicesStopExecutor.execute(() -> {

@@ -106,7 +106,7 @@ public class FuzzinessTests extends ESTestCase {
     }
 
     public void testFromEditsIllegalArgs() {
-        int illegalValue = randomValueOtherThanMany(i -> i >= 0 && i <= 2, () -> randomInt());
+        int illegalValue = randomValueOtherThanMany(i -> i >= 0 && i <= 2, ESTestCase::randomInt);
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> Fuzziness.fromEdits(illegalValue));
         assertThat(e.getMessage(), equalTo("Valid edit distances are [0, 1, 2] but was [" + illegalValue + "]"));
     }

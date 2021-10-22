@@ -107,7 +107,7 @@ public class BulkByScrollTaskTests extends ESTestCase {
             int bulkRetries = between(0, 100);
             int searchRetries = between(0, 100);
             TimeValue throttled = timeValueNanos(between(0, 10000));
-            float requestsPerSecond = randomValueOtherThanMany(r -> r <= 0, () -> randomFloat());
+            float requestsPerSecond = randomValueOtherThanMany(r -> r <= 0, ESTestCase::randomFloat);
             String reasonCancelled = randomBoolean() ? null : "test";
             TimeValue throttledUntil = timeValueNanos(between(0, 1000));
             statuses[i] = new BulkByScrollTask.StatusOrException(new BulkByScrollTask.Status(i, total, updated, created, deleted, batches,

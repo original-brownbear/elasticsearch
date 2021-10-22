@@ -11,6 +11,7 @@ package org.elasticsearch.search.suggest.phrase;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.suggest.AbstractSuggestionBuilderTestCase;
 import org.elasticsearch.search.suggest.SuggestionSearchContext.SuggestionContext;
+import org.elasticsearch.test.ESTestCase;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -83,13 +84,13 @@ public class PhraseSuggestionBuilderTests extends AbstractSuggestionBuilderTestC
     protected void mutateSpecificParameters(PhraseSuggestionBuilder builder) throws IOException {
         switch (randomIntBetween(0, 12)) {
         case 0:
-            builder.maxErrors(randomValueOtherThan(builder.maxErrors(), () -> randomFloat()));
+            builder.maxErrors(randomValueOtherThan(builder.maxErrors(), ESTestCase::randomFloat));
             break;
         case 1:
-            builder.realWordErrorLikelihood(randomValueOtherThan(builder.realWordErrorLikelihood(), () -> randomFloat()));
+            builder.realWordErrorLikelihood(randomValueOtherThan(builder.realWordErrorLikelihood(), ESTestCase::randomFloat));
             break;
         case 2:
-            builder.confidence(randomValueOtherThan(builder.confidence(), () -> randomFloat()));
+            builder.confidence(randomValueOtherThan(builder.confidence(), ESTestCase::randomFloat));
             break;
         case 3:
             builder.gramSize(randomValueOtherThan(builder.gramSize(), () -> randomIntBetween(1, 5)));

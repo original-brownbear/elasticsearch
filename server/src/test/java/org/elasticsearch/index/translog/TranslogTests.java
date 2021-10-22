@@ -76,6 +76,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
@@ -1940,10 +1941,10 @@ public class TranslogTests extends ESTestCase {
         assertThat(failableTLog.getTragicException(), equalTo(expectedException));
         assertThat(fileChannels, is(not(empty())));
         assertThat("all file channels have to be closed",
-            fileChannels.stream().filter(f -> f.isOpen()).findFirst().isPresent(), is(false));
+            fileChannels.stream().filter(AbstractInterruptibleChannel::isOpen).findFirst().isPresent(), is(false));
 
         assertThat(failableTLog.isOpen(), is(false));
-        final AlreadyClosedException alreadyClosedException = expectThrows(AlreadyClosedException.class, () -> failableTLog.newSnapshot());
+        final AlreadyClosedException alreadyClosedException = expectThrows(AlreadyClosedException.class, failableTLog::newSnapshot);
         assertThat(alreadyClosedException.getMessage(),
             is("translog is already closed"));
 
@@ -3063,7 +3064,7 @@ public class TranslogTests extends ESTestCase {
         for (int i = 0; i <= rolls; i++) {
             assertFileIsPresent(translog, generation + i);
             final List<Long> storedPrimaryTerms = Stream.concat(translog.getReaders().stream(), Stream.of(translog.getCurrent()))
-                .map(t -> t.getPrimaryTerm()).collect(Collectors.toList());
+                .map(BaseTranslogReader::getPrimaryTerm).collect(Collectors.toList());
             assertThat(storedPrimaryTerms, equalTo(primaryTerms));
         }
 
@@ -3315,9 +3316,9 @@ public class TranslogTests extends ESTestCase {
         MisbehavingTranslog misbehavingTranslog = new MisbehavingTranslog(translogConfig, translogUUID, new TranslogDeletionPolicy(),
             () -> globalCheckpoint.get(), primaryTerm::get);
 
-        expectThrows(AssertionError.class, () -> misbehavingTranslog.callCloseDirectly());
-        expectThrows(AssertionError.class, () -> misbehavingTranslog.callCloseUsingIOUtils());
-        expectThrows(AssertionError.class, () -> misbehavingTranslog.callCloseUsingIOUtilsWithExceptionHandling());
+        expectThrows(AssertionError.class, misbehavingTranslog::callCloseDirectly);
+        expectThrows(AssertionError.class, misbehavingTranslog::callCloseUsingIOUtils);
+        expectThrows(AssertionError.class, misbehavingTranslog::callCloseUsingIOUtilsWithExceptionHandling);
         misbehavingTranslog.callCloseOnTragicEvent();
     }
 
@@ -3340,7 +3341,7 @@ public class TranslogTests extends ESTestCase {
         assertThat(translog.getMaxSeqNo(),
             equalTo(maxSeqNoPerGeneration.isEmpty() ? SequenceNumbers.NO_OPS_PERFORMED : Collections.max(maxSeqNoPerGeneration.values())));
         long expectedMaxSeqNo = maxSeqNoPerGeneration.entrySet().stream()
-            .filter(e -> e.getKey() >= translog.getMinFileGeneration()).mapToLong(e -> e.getValue())
+            .filter(e -> e.getKey() >= translog.getMinFileGeneration()).mapToLong(Map.Entry::getValue)
             .max().orElse(SequenceNumbers.NO_OPS_PERFORMED);
         assertThat(translog.getMaxSeqNo(), equalTo(expectedMaxSeqNo));
     }

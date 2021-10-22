@@ -64,7 +64,7 @@ public class FilterAggregatorFactory extends AggregatorFactory {
     @Override
     public Aggregator createInternal(Aggregator parent, CardinalityUpperBound cardinality, Map<String, Object> metadata)
         throws IOException {
-        return new FilterAggregator(name, () -> this.getWeight(), factories, context, parent, cardinality, metadata);
+        return new FilterAggregator(name, this::getWeight, factories, context, parent, cardinality, metadata);
     }
 
 }

@@ -44,7 +44,7 @@ public class CountedCollectorTests extends ESTestCase {
             switch (randomIntBetween(0, 2)) {
                 case 0:
                     state.add(0);
-                    executor.execute(() -> collector.countDown());
+                    executor.execute(collector::countDown);
                     break;
                 case 1:
                     state.add(1);

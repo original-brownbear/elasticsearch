@@ -70,12 +70,9 @@ class MembersInjectorImpl<T> implements MembersInjector<T> {
             return;
         }
 
-        injector.callInContext(new ContextualCallable<Void>() {
-            @Override
-            public Void call(InternalContext context) throws ErrorsException {
-                injectMembers(instance, errors, context);
-                return null;
-            }
+        injector.callInContext((ContextualCallable<Void>) context -> {
+            injectMembers(instance, errors, context);
+            return null;
         });
 
         notifyListeners(instance, errors);

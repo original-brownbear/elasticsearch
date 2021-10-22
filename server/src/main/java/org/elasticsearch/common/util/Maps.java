@@ -207,7 +207,7 @@ public class Maps {
                                                                                         Function<T, ? extends V> valueMapper) {
         return Collectors.collectingAndThen(Collectors.toMap(keyMapper, valueMapper, (v1, v2) -> {
             throw new IllegalStateException("Duplicate key (attempted merging values " + v1 + "  and " + v2 + ")");
-        }, () -> new TreeMap<K, V>()), Collections::unmodifiableNavigableMap);
+        }, (Supplier<TreeMap<K, V>>) TreeMap::new), Collections::unmodifiableNavigableMap);
     }
 
     /**

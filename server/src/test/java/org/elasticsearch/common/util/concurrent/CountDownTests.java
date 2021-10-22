@@ -25,29 +25,25 @@ public class CountDownTests extends ESTestCase {
         Thread[] threads = new Thread[between(3, 10)];
         final CountDownLatch latch = new CountDownLatch(1 + threads.length);
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread() {
-
-                @Override
-                public void run() {
-                    latch.countDown();
-                    try {
-                        latch.await();
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    while (true) {
-                        if(frequently()) {
-                            if (countDown.isCountedDown()) {
-                                break;
-                            }
-                        }
-                        if (countDown.countDown()) {
-                            count.incrementAndGet();
+            threads[i] = new Thread(() -> {
+                latch.countDown();
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                while (true) {
+                    if(frequently()) {
+                        if (countDown.isCountedDown()) {
                             break;
                         }
                     }
+                    if (countDown.countDown()) {
+                        count.incrementAndGet();
+                        break;
+                    }
                 }
-            };
+            });
             threads[i].start();
         }
         latch.countDown();

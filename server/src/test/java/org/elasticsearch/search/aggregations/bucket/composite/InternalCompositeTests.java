@@ -168,7 +168,7 @@ public class InternalCompositeTests extends InternalMultiBucketAggregationTestCa
             );
             buckets.add(bucket);
         }
-        Collections.sort(buckets, (o1, o2) -> o1.compareKey(o2));
+        Collections.sort(buckets, InternalComposite.InternalBucket::compareKey);
         CompositeKey lastBucket = buckets.size() > 0 ? buckets.get(buckets.size() - 1).getRawKey() : null;
         return new InternalComposite(
             name,

@@ -1392,21 +1392,18 @@ public class IndexShardTests extends IndexShardTestCase {
         Thread[] thread = new Thread[randomIntBetween(3, 5)];
         CountDownLatch latch = new CountDownLatch(thread.length);
         for (int i = 0; i < thread.length; i++) {
-            thread[i] = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        latch.countDown();
-                        latch.await();
-                        for (int i = 0; i < 10000; i++) {
-                            semaphore.acquire();
-                            shard.sync(new Translog.Location(randomLong(), randomLong(), randomInt()), (ex) -> semaphore.release());
-                        }
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
+            thread[i] = new Thread(() -> {
+                try {
+                    latch.countDown();
+                    latch.await();
+                    for (int i1 = 0; i1 < 10000; i1++) {
+                        semaphore.acquire();
+                        shard.sync(new Translog.Location(randomLong(), randomLong(), randomInt()), (ex) -> semaphore.release());
                     }
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
-            };
+            });
             thread[i].start();
         }
 
@@ -1828,17 +1825,14 @@ public class IndexShardTests extends IndexShardTestCase {
         CountDownLatch allPrimaryOperationLocksAcquired = new CountDownLatch(numThreads);
         CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
         for (int i = 0; i < indexThreads.length; i++) {
-            indexThreads[i] = new Thread() {
-                @Override
-                public void run() {
-                    try (Releasable operationLock = acquirePrimaryOperationPermitBlockingly(shard)) {
-                        allPrimaryOperationLocksAcquired.countDown();
-                        barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException | ExecutionException e) {
-                        throw new RuntimeException(e);
-                    }
+            indexThreads[i] = new Thread(() -> {
+                try (Releasable operationLock = acquirePrimaryOperationPermitBlockingly(shard)) {
+                    allPrimaryOperationLocksAcquired.countDown();
+                    barrier.await();
+                } catch (InterruptedException | BrokenBarrierException | ExecutionException e) {
+                    throw new RuntimeException(e);
                 }
-            };
+            });
             indexThreads[i].start();
         }
         AtomicBoolean relocated = new AtomicBoolean();
@@ -3024,7 +3018,7 @@ public class IndexShardTests extends IndexShardTestCase {
         assertTrue("at least 2 files, commit and data: " +storeFileMetadatas.toString(), storeFileMetadatas.size() > 1);
         AtomicBoolean stop = new AtomicBoolean(false);
         CountDownLatch latch = new CountDownLatch(1);
-        expectThrows(AlreadyClosedException.class, () -> newShard.getEngine()); // no engine
+        expectThrows(AlreadyClosedException.class, newShard::getEngine); // no engine
         Thread thread = new Thread(() -> {
             latch.countDown();
             while(stop.get() == false){
@@ -3539,9 +3533,9 @@ public class IndexShardTests extends IndexShardTestCase {
         if (randomBoolean()) {
             closeShards(indexShard);
 
-            expectThrows(AlreadyClosedException.class, () -> indexShard.seqNoStats());
-            expectThrows(AlreadyClosedException.class, () -> indexShard.commitStats());
-            expectThrows(AlreadyClosedException.class, () -> indexShard.storeStats());
+            expectThrows(AlreadyClosedException.class, indexShard::seqNoStats);
+            expectThrows(AlreadyClosedException.class, indexShard::commitStats);
+            expectThrows(AlreadyClosedException.class, indexShard::storeStats);
 
         } else {
             final SeqNoStats seqNoStats = indexShard.seqNoStats();

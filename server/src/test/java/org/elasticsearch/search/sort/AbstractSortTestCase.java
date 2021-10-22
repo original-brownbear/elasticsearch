@@ -191,7 +191,7 @@ public abstract class AbstractSortTestCase<T extends SortBuilder<T>> extends EST
         };
         return new SearchExecutionContext(0, 0, idxSettings, bitsetFilterCache, indexFieldDataLookup,
                 null, null, null, scriptService, xContentRegistry(), namedWriteableRegistry, null, searcher,
-                () -> randomNonNegativeLong(), null, null, () -> true, null, emptyMap()) {
+                ESTestCase::randomNonNegativeLong, null, null, () -> true, null, emptyMap()) {
 
             @Override
             public MappedFieldType getFieldType(String name) {

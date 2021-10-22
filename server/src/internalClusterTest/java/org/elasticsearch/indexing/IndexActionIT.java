@@ -138,16 +138,13 @@ public class IndexActionIT extends ESIntegTestCase {
         List<Callable<Void>> tasks = new ArrayList<>(taskCount);
         final Random random = random();
         for (int i=0;i< taskCount; i++ ) {
-            tasks.add(new Callable<Void>() {
-                @Override
-                public Void call() throws Exception {
-                    int docId = random.nextInt(docCount);
-                    IndexResponse indexResponse = indexDoc("test", Integer.toString(docId), "field1", "value");
-                    if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
-                        createdCounts.incrementAndGet(docId);
-                    }
-                    return null;
+            tasks.add(() -> {
+                int docId = random.nextInt(docCount);
+                IndexResponse indexResponse = indexDoc("test", Integer.toString(docId), "field1", "value");
+                if (indexResponse.getResult() == DocWriteResponse.Result.CREATED) {
+                    createdCounts.incrementAndGet(docId);
                 }
+                return null;
             });
         }
 

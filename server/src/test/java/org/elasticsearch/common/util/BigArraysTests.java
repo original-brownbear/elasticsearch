@@ -451,28 +451,28 @@ public class BigArraysTests extends ESTestCase {
     private List<BigArraysHelper> bigArrayCreators(final long maxSize, final boolean withBreaking) {
         final BigArrays byteBigArrays = newBigArraysInstance(maxSize, withBreaking);
         BigArraysHelper byteHelper = new BigArraysHelper(byteBigArrays,
-            (Long size) -> byteBigArrays.newByteArray(size),
-            (Long size) -> BigByteArray.estimateRamBytes(size));
+                byteBigArrays::newByteArray,
+                BigByteArray::estimateRamBytes);
         final BigArrays intBigArrays = newBigArraysInstance(maxSize, withBreaking);
         BigArraysHelper intHelper = new BigArraysHelper(intBigArrays,
-            (Long size) -> intBigArrays.newIntArray(size),
-            (Long size) -> BigIntArray.estimateRamBytes(size));
+                intBigArrays::newIntArray,
+                BigIntArray::estimateRamBytes);
         final BigArrays longBigArrays = newBigArraysInstance(maxSize, withBreaking);
         BigArraysHelper longHelper = new BigArraysHelper(longBigArrays,
-            (Long size) -> longBigArrays.newLongArray(size),
-            (Long size) -> BigLongArray.estimateRamBytes(size));
+                longBigArrays::newLongArray,
+                BigLongArray::estimateRamBytes);
         final BigArrays floatBigArrays = newBigArraysInstance(maxSize, withBreaking);
         BigArraysHelper floatHelper = new BigArraysHelper(floatBigArrays,
-            (Long size) -> floatBigArrays.newFloatArray(size),
-            (Long size) -> BigFloatArray.estimateRamBytes(size));
+                floatBigArrays::newFloatArray,
+                BigFloatArray::estimateRamBytes);
         final BigArrays doubleBigArrays = newBigArraysInstance(maxSize, withBreaking);
         BigArraysHelper doubleHelper = new BigArraysHelper(doubleBigArrays,
-            (Long size) -> doubleBigArrays.newDoubleArray(size),
-            (Long size) -> BigDoubleArray.estimateRamBytes(size));
+                doubleBigArrays::newDoubleArray,
+                BigDoubleArray::estimateRamBytes);
         final BigArrays objectBigArrays = newBigArraysInstance(maxSize, withBreaking);
         BigArraysHelper objectHelper = new BigArraysHelper(objectBigArrays,
-            (Long size) -> objectBigArrays.newObjectArray(size),
-            (Long size) -> BigObjectArray.estimateRamBytes(size));
+                objectBigArrays::newObjectArray,
+                BigObjectArray::estimateRamBytes);
         return Arrays.asList(byteHelper, intHelper, longHelper, floatHelper, doubleHelper, objectHelper);
     }
 

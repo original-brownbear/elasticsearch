@@ -142,7 +142,7 @@ public final class IndexWarmer {
                     }
                 });
             }
-            return () -> latch.await();
+            return latch::await;
         }
     }
 
