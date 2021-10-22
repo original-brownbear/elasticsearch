@@ -121,12 +121,12 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
 
     public ClusterState(long version, String stateUUID, ClusterState state) {
         this(state.clusterName, version, stateUUID, state.metadata(), state.routingTable(), state.nodes(), state.blocks(),
-                state.customs(), false);
+                state.customs(), false, state.routingNodes);
     }
 
     public ClusterState(ClusterName clusterName, long version, String stateUUID, Metadata metadata, RoutingTable routingTable,
                         DiscoveryNodes nodes, ClusterBlocks blocks, ImmutableOpenMap<String, Custom> customs,
-                        boolean wasReadFromDiff) {
+                        boolean wasReadFromDiff, RoutingNodes routingNodes) {
         this.version = version;
         this.stateUUID = stateUUID;
         this.clusterName = clusterName;
@@ -135,6 +135,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         this.nodes = nodes;
         this.blocks = blocks;
         this.customs = customs;
+        this.routingNodes = routingNodes;
         this.wasReadFromDiff = wasReadFromDiff;
     }
 
@@ -481,6 +482,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         private String uuid = UNKNOWN_UUID;
         private Metadata metadata = Metadata.EMPTY_METADATA;
         private RoutingTable routingTable = RoutingTable.EMPTY_ROUTING_TABLE;
+        private RoutingNodes routingNodes = null;
         private DiscoveryNodes nodes = DiscoveryNodes.EMPTY_NODES;
         private ClusterBlocks blocks = ClusterBlocks.EMPTY_CLUSTER_BLOCK;
         private final ImmutableOpenMap.Builder<String, Custom> customs;
@@ -514,6 +516,11 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
 
         public DiscoveryNodes nodes() {
             return nodes;
+        }
+
+        public Builder routingNodes(RoutingNodes routingNodes) {
+            this.routingNodes = routingNodes;
+            return this;
         }
 
         public Builder routingTable(RoutingTable routingTable) {
@@ -580,7 +587,8 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             if (UNKNOWN_UUID.equals(uuid)) {
                 uuid = UUIDs.randomBase64UUID();
             }
-            return new ClusterState(clusterName, version, uuid, metadata, routingTable, nodes, blocks, customs.build(), fromDiff);
+            return new ClusterState(clusterName, version, uuid, metadata, routingTable, nodes, blocks, customs.build(), fromDiff,
+                routingNodes);
         }
 
         public static byte[] toBytes(ClusterState state) throws IOException {
@@ -724,6 +732,9 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             builder.metadata(metadata.apply(state.metadata));
             builder.blocks(blocks.apply(state.blocks));
             builder.customs(customs.apply(state.customs));
+            if (builder.routingTable == state.routingTable && builder.nodes == state.nodes) {
+                builder.routingNodes(state.routingNodes);
+            }
             builder.fromDiff(true);
             return builder.build();
         }

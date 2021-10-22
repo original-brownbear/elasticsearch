@@ -887,6 +887,8 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
 
     private static class MetadataDiff implements Diff<Metadata> {
 
+        private static final Version RECORD_EMPTY_VERSION = Version.V_8_0_0;
+
         private final long version;
         private final String clusterUUID;
         private final boolean clusterUUIDCommitted;
@@ -897,8 +899,10 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
         private final Diff<ImmutableOpenMap<String, IndexMetadata>> indices;
         private final Diff<ImmutableOpenMap<String, IndexTemplateMetadata>> templates;
         private final Diff<ImmutableOpenMap<String, Custom>> customs;
+        private final boolean isEmpty;
 
         MetadataDiff(Metadata before, Metadata after) {
+            isEmpty = before == after;
             clusterUUID = after.clusterUUID;
             clusterUUIDCommitted = after.clusterUUIDCommitted;
             version = after.version;
@@ -917,6 +921,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
                 new DiffableUtils.DiffableValueReader<>(IndexTemplateMetadata::readFrom, IndexTemplateMetadata::readDiffFrom);
 
         MetadataDiff(StreamInput in) throws IOException {
+            isEmpty = in.getVersion().onOrAfter(RECORD_EMPTY_VERSION) && in.readBoolean();
             clusterUUID = in.readString();
             clusterUUIDCommitted = in.readBoolean();
             version = in.readLong();
@@ -935,6 +940,9 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
+            if (out.getVersion().onOrAfter(RECORD_EMPTY_VERSION)) {
+                out.writeBoolean(isEmpty);
+            }
             out.writeString(clusterUUID);
             out.writeBoolean(clusterUUIDCommitted);
             out.writeLong(version);
@@ -951,6 +959,9 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
 
         @Override
         public Metadata apply(Metadata part) {
+            if (isEmpty) {
+                return part;
+            }
             Builder builder = builder();
             builder.clusterUUID(clusterUUID);
             builder.clusterUUIDCommitted(clusterUUIDCommitted);
