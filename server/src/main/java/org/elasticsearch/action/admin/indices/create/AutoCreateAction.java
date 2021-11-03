@@ -31,6 +31,7 @@ import org.elasticsearch.cluster.metadata.MetadataCreateIndexService;
 import org.elasticsearch.cluster.metadata.MetadataIndexTemplateService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Priority;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -209,7 +210,7 @@ public final class AutoCreateAction extends ActionType<CreateIndexResponse> {
                         String indexName,
                         SystemIndexDescriptor descriptor
                     ) {
-                        String mappings = descriptor.getMappings();
+                        CompressedXContent mappings = descriptor.getMappings();
                         Settings settings = descriptor.getSettings();
                         String aliasName = descriptor.getAliasName();
 

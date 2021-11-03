@@ -70,11 +70,6 @@ public class RolloverRequestBuilder extends MasterNodeOperationRequestBuilder<Ro
         return this;
     }
 
-    public RolloverRequestBuilder mapping(String source) {
-        this.request.getCreateIndexRequest().mapping(source);
-        return this;
-    }
-
     /**
      * Sets the number of shard copies that should be active for creation of the
      * new rollover index to return. Defaults to {@link ActiveShardCount#DEFAULT}, which will

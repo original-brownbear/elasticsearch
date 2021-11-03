@@ -76,7 +76,7 @@ public class AnnotationIndexIT extends MlSingleNodeTestCase {
 
         // Create an old annotations index with both read and write aliases pointing at it.
         String oldIndex = randomFrom(AnnotationIndex.OLD_INDEX_NAMES);
-        CreateIndexRequest createIndexRequest = new CreateIndexRequest(oldIndex).mapping(AnnotationIndex.annotationsMapping())
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(oldIndex).mapping(AnnotationIndex.ANNOTATIONS_MAPPING)
             .settings(
                 Settings.builder()
                     .put(IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS, "0-1")

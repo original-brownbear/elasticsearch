@@ -701,37 +701,31 @@ public class MetadataCreateIndexService {
         List<CompressedXContent> templateMappings = MetadataIndexTemplateService.collectMappings(
             composableIndexTemplate,
             componentTemplates,
-            indexName,
-            xContentRegistry
+            indexName
         );
-        return collectV2Mappings("{}", templateMappings, xContentRegistry);
+        return collectV2Mappings(CompressedXContent.EMPTY_JSON, templateMappings, xContentRegistry);
     }
 
     public static List<Map<String, Object>> collectV2Mappings(
-        final String requestMappings,
+        final CompressedXContent requestMappings,
         final ClusterState currentState,
         final String templateName,
         final NamedXContentRegistry xContentRegistry,
         final String indexName
     ) throws Exception {
-        List<CompressedXContent> templateMappings = MetadataIndexTemplateService.collectMappings(
-            currentState,
-            templateName,
-            indexName,
-            xContentRegistry
-        );
+        List<CompressedXContent> templateMappings = MetadataIndexTemplateService.collectMappings(currentState, templateName, indexName);
         return collectV2Mappings(requestMappings, templateMappings, xContentRegistry);
     }
 
     public static List<Map<String, Object>> collectV2Mappings(
-        final String requestMappings,
+        final CompressedXContent requestMappings,
         final List<CompressedXContent> templateMappings,
         final NamedXContentRegistry xContentRegistry
     ) throws Exception {
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (CompressedXContent templateMapping : templateMappings) {
-            Map<String, Object> parsedTemplateMapping = MapperService.parseMapping(xContentRegistry, templateMapping.string());
+            Map<String, Object> parsedTemplateMapping = MapperService.parseMapping(xContentRegistry, templateMapping);
             result.add(parsedTemplateMapping);
         }
 
@@ -803,7 +797,7 @@ public class MetadataCreateIndexService {
      * definitions, as may result in an invalid field definition
      */
     static Map<String, Object> parseV1Mappings(
-        String mappingsJson,
+        CompressedXContent mappingsJson,
         List<CompressedXContent> templateMappings,
         NamedXContentRegistry xContentRegistry
     ) throws Exception {
@@ -811,7 +805,7 @@ public class MetadataCreateIndexService {
         // apply templates, merging the mappings into the request mapping if exists
         for (CompressedXContent mapping : templateMappings) {
             if (mapping != null) {
-                Map<String, Object> templateMapping = MapperService.parseMapping(xContentRegistry, mapping.string());
+                Map<String, Object> templateMapping = MapperService.parseMapping(xContentRegistry, mapping);
                 if (templateMapping.isEmpty()) {
                     // Someone provided an empty '{}' for mappings, which is okay, but to avoid
                     // tripping the below assertion, we can safely ignore it

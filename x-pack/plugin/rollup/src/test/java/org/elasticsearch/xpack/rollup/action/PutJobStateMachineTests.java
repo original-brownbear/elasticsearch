@@ -128,7 +128,7 @@ public class PutJobStateMachineTests extends ESTestCase {
         ArgumentCaptor<CreateIndexRequest> requestCaptor = ArgumentCaptor.forClass(CreateIndexRequest.class);
         doAnswer(invocation -> {
             assertNotNull(requestCaptor.getValue().mappings());
-            String mapping = requestCaptor.getValue().mappings();
+            String mapping = requestCaptor.getValue().mappings().string();
 
             // Make sure the version is present, and we have our date template (the most important aspects)
             assertThat(mapping, containsString("\"rollup-version\":\"" + Version.CURRENT.toString() + "\""));

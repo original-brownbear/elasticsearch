@@ -38,6 +38,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,7 +75,7 @@ import static org.mockito.Mockito.mock;
 
 public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
 
-    public void testLegacyNoopUpdate() {
+    public void testLegacyNoopUpdate() throws IOException {
         ClusterState state = ClusterState.EMPTY_STATE;
         PutRequest pr = new PutRequest("api", "id");
         pr.patterns(Arrays.asList("foo", "bar"));
@@ -88,11 +89,11 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             pr.aliases(Collections.singleton(new Alias("alias")));
         }
         pr.order(randomIntBetween(0, 10));
-        state = MetadataIndexTemplateService.innerPutTemplate(state, pr, new IndexTemplateMetadata.Builder("id"));
+        state = innerPutTemplate(state, pr);
 
         assertNotNull(state.metadata().templates().get("id"));
 
-        assertThat(MetadataIndexTemplateService.innerPutTemplate(state, pr, new IndexTemplateMetadata.Builder("id")), equalTo(state));
+        assertThat(innerPutTemplate(state, pr), equalTo(state));
     }
 
     public void testIndexTemplateInvalidNumberOfShards() {
@@ -799,7 +800,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
 
         MetadataIndexTemplateService.PutRequest req = new MetadataIndexTemplateService.PutRequest("cause", "v1-template");
         req.patterns(Arrays.asList("*", "baz"));
-        state = MetadataIndexTemplateService.innerPutTemplate(state, req, IndexTemplateMetadata.builder("v1-template"));
+        state = innerPutTemplate(state, req);
 
         assertWarnings(
             "legacy template [v1-template] has index patterns [*, baz] matching patterns from existing "
@@ -830,10 +831,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
 
         MetadataIndexTemplateService.PutRequest req = new MetadataIndexTemplateService.PutRequest("cause", "v1-template");
         req.patterns(Arrays.asList("egg*", "baz"));
-        IllegalArgumentException e = expectThrows(
-            IllegalArgumentException.class,
-            () -> MetadataIndexTemplateService.innerPutTemplate(state, req, IndexTemplateMetadata.builder("v1-template"))
-        );
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> innerPutTemplate(state, req));
 
         assertThat(
             e.getMessage(),
@@ -885,7 +883,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
 
         MetadataIndexTemplateService.PutRequest req = new MetadataIndexTemplateService.PutRequest("cause", "v1-template");
         req.patterns(Arrays.asList("fo*", "baz"));
-        state = MetadataIndexTemplateService.innerPutTemplate(state, req, IndexTemplateMetadata.builder("v1-template"));
+        state = innerPutTemplate(state, req);
 
         assertWarnings(
             "legacy template [v1-template] has index patterns [fo*, baz] matching patterns from existing "
@@ -935,10 +933,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
         MetadataIndexTemplateService.PutRequest req = new MetadataIndexTemplateService.PutRequest("cause", "v1-template");
         req.patterns(Arrays.asList("egg*", "baz"));
         final ClusterState finalState = state;
-        IllegalArgumentException e = expectThrows(
-            IllegalArgumentException.class,
-            () -> MetadataIndexTemplateService.innerPutTemplate(finalState, req, IndexTemplateMetadata.builder("v1-template"))
-        );
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> innerPutTemplate(finalState, req));
 
         assertThat(
             e.getMessage(),
@@ -1176,12 +1171,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
         );
         state = service.addIndexTemplateV2(state, true, "my-template", it);
 
-        List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(
-            state,
-            "my-template",
-            "my-index",
-            xContentRegistry()
-        );
+        List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(state, "my-template", "my-index");
 
         assertNotNull(mappings);
         assertThat(mappings.size(), equalTo(3));
@@ -1269,12 +1259,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
         );
         state = service.addIndexTemplateV2(state, true, "my-template", it);
 
-        List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(
-            state,
-            "my-template",
-            "my-index",
-            xContentRegistry()
-        );
+        List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(state, "my-template", "my-index");
 
         assertNotNull(mappings);
         assertThat(mappings.size(), equalTo(3));
@@ -1344,8 +1329,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(
                 state,
                 "logs-data-stream-template",
-                DataStream.getDefaultBackingIndexName("logs", 1L),
-                xContentRegistry()
+                DataStream.getDefaultBackingIndexName("logs", 1L)
             );
 
             assertNotNull(mappings);
@@ -1394,12 +1378,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             );
             state = service.addIndexTemplateV2(state, true, "timeseries-template", it);
 
-            List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(
-                state,
-                "timeseries-template",
-                "timeseries",
-                xContentRegistry()
-            );
+            List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(state, "timeseries-template", "timeseries");
 
             assertNotNull(mappings);
             assertThat(mappings.size(), equalTo(2));
@@ -1421,8 +1400,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             mappings = MetadataIndexTemplateService.collectMappings(
                 state,
                 "timeseries-template",
-                DataStream.getDefaultBackingIndexName("timeseries", 1L),
-                xContentRegistry()
+                DataStream.getDefaultBackingIndexName("timeseries", 1L)
             );
 
             assertNotNull(mappings);
@@ -1482,8 +1460,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(
                 state,
                 "logs-template",
-                DataStream.getDefaultBackingIndexName("logs", 1L),
-                xContentRegistry()
+                DataStream.getDefaultBackingIndexName("logs", 1L)
             );
 
             assertNotNull(mappings);
@@ -1537,8 +1514,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
             List<CompressedXContent> mappings = MetadataIndexTemplateService.collectMappings(
                 state,
                 "timeseries-template",
-                DataStream.getDefaultBackingIndexName("timeseries-template", 1L),
-                xContentRegistry()
+                DataStream.getDefaultBackingIndexName("timeseries-template", 1L)
             );
 
             assertNotNull(mappings);
@@ -2212,5 +2188,14 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
 
     public static void assertTemplatesEqual(ComposableIndexTemplate actual, ComposableIndexTemplate expected) {
         assertTrue(Objects.equals(actual, expected));
+    }
+
+    private static ClusterState innerPutTemplate(ClusterState clusterState, PutRequest request) throws IOException {
+        return MetadataIndexTemplateService.innerPutTemplate(
+            clusterState,
+            request,
+            request.mappings == null ? null : new CompressedXContent(request.mappings),
+            IndexTemplateMetadata.builder(request.name)
+        );
     }
 }

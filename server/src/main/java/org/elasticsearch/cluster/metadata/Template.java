@@ -23,7 +23,6 @@ import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentType;
 
@@ -59,7 +58,7 @@ public class Template extends AbstractDiffable<Template> implements ToXContentOb
             } else if (token == XContentParser.Token.VALUE_EMBEDDED_OBJECT) {
                 return new CompressedXContent(p.binaryValue());
             } else if (token == XContentParser.Token.START_OBJECT) {
-                return new CompressedXContent(Strings.toString(XContentFactory.jsonBuilder().map(p.mapOrdered())));
+                return CompressedXContent.fromMap(p.mapOrdered());
             } else {
                 throw new IllegalArgumentException("Unexpected token: " + token);
             }

@@ -21,6 +21,7 @@ import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
@@ -66,7 +67,7 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
 
     private Settings settings = Settings.EMPTY;
 
-    private String mappings = "{}";
+    private CompressedXContent mappings = CompressedXContent.EMPTY_JSON;
 
     private final Set<Alias> aliases = new HashSet<>();
 
@@ -91,10 +92,14 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
                 if (MapperService.SINGLE_MAPPING_NAME.equals(type) == false) {
                     throw new IllegalArgumentException("Expected to receive mapping type of [_doc] but got [" + type + "]");
                 }
-                mappings = in.readString();
+                mappings = new CompressedXContent(in.readString());
             }
         } else {
-            mappings = in.readString();
+            if (in.getVersion().onOrAfter(PutMappingRequest.MAPPINGS_AS_COMPRESSED_VERSION)) {
+                mappings = CompressedXContent.readCompressedString(in);
+            } else {
+                mappings = new CompressedXContent(in.readString());
+            }
         }
         int aliasesSize = in.readVInt();
         for (int i = 0; i < aliasesSize; i++) {
@@ -230,7 +235,7 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
      *     .mapping("{\"_doc\":{\"properties\": ... }}")
      * </pre>
      */
-    public CreateIndexRequest mapping(String mapping) {
+    public CreateIndexRequest mapping(CompressedXContent mapping) {
         this.mappings = mapping;
         return this;
     }
@@ -277,9 +282,7 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
             source = Map.of(MapperService.SINGLE_MAPPING_NAME, source.get(type));
         }
         try {
-            XContentBuilder builder = XContentFactory.jsonBuilder();
-            builder.map(source);
-            return mapping(Strings.toString(builder));
+            return mapping(CompressedXContent.fromMap(source));
         } catch (IOException e) {
             throw new ElasticsearchGenerationException("Failed to generate [" + source + "]", e);
         }
@@ -408,7 +411,7 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
         return this;
     }
 
-    public String mappings() {
+    public CompressedXContent mappings() {
         return this.mappings;
     }
 
@@ -455,15 +458,19 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
         out.writeString(index);
         writeSettingsToStream(settings, out);
         if (out.getVersion().before(Version.V_8_0_0)) {
-            if ("{}".equals(mappings)) {
+            if (CompressedXContent.EMPTY_JSON.equals(mappings)) {
                 out.writeVInt(0);
             } else {
                 out.writeVInt(1);
                 out.writeString(MapperService.SINGLE_MAPPING_NAME);
-                out.writeString(mappings);
+                out.writeString(mappings.string());
             }
         } else {
-            out.writeString(mappings);
+            if (out.getVersion().onOrAfter(PutMappingRequest.MAPPINGS_AS_COMPRESSED_VERSION)) {
+                mappings.writeTo(out);
+            } else {
+                out.writeString(mappings.string());
+            }
         }
         out.writeVInt(aliases.size());
         for (Alias alias : aliases) {

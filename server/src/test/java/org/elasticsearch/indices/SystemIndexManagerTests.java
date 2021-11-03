@@ -25,8 +25,8 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -35,7 +35,6 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.SystemIndexManager.UpgradeStatus;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.XContentBuilder;
 import org.junit.Before;
 
 import java.io.IOException;
@@ -43,7 +42,6 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 
-import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -212,7 +210,7 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
         assertThat(
-            manager.getUpgradeStatus(markShardsAvailable(createClusterState(Strings.toString(getMappings("1.0.0")))), DESCRIPTOR),
+            manager.getUpgradeStatus(markShardsAvailable(createClusterState(getMappings("1.0.0"))), DESCRIPTOR),
             equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE)
         );
     }
@@ -225,7 +223,7 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
         assertThat(
-            manager.getUpgradeStatus(markShardsAvailable(createClusterState(Strings.toString(getMappings(null)))), DESCRIPTOR),
+            manager.getUpgradeStatus(markShardsAvailable(createClusterState(getMappings(null))), DESCRIPTOR),
             equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE)
         );
     }
@@ -237,7 +235,7 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndices systemIndices = new SystemIndices(Map.of("MyIndex", FEATURE));
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
-        manager.clusterChanged(event(markShardsAvailable(createClusterState(Strings.toString(getMappings("1.0.0"))))));
+        manager.clusterChanged(event(markShardsAvailable(createClusterState(getMappings("1.0.0")))));
 
         verify(client, times(1)).execute(any(PutMappingAction.class), any(PutMappingRequest.class), any());
     }
@@ -250,7 +248,7 @@ public class SystemIndexManagerTests extends ESTestCase {
         SystemIndexManager manager = new SystemIndexManager(systemIndices, client);
 
         assertThat(
-            manager.getUpgradeStatus(markShardsAvailable(createClusterState(Strings.toString(getMappings(3)))), DESCRIPTOR),
+            manager.getUpgradeStatus(markShardsAvailable(createClusterState(getMappings(3))), DESCRIPTOR),
             equalTo(UpgradeStatus.NEEDS_MAPPINGS_UPDATE)
         );
     }
@@ -259,7 +257,7 @@ public class SystemIndexManagerTests extends ESTestCase {
         return createClusterState(SystemIndexManagerTests.DESCRIPTOR.getMappings());
     }
 
-    private static ClusterState.Builder createClusterState(String mappings) {
+    private static ClusterState.Builder createClusterState(CompressedXContent mappings) {
         return createClusterState(mappings, IndexMetadata.State.OPEN);
     }
 
@@ -267,7 +265,7 @@ public class SystemIndexManagerTests extends ESTestCase {
         return createClusterState(SystemIndexManagerTests.DESCRIPTOR.getMappings(), 6, state);
     }
 
-    private static ClusterState.Builder createClusterState(String mappings, IndexMetadata.State state) {
+    private static ClusterState.Builder createClusterState(CompressedXContent mappings, IndexMetadata.State state) {
         return createClusterState(mappings, 6, state);
     }
 
@@ -275,7 +273,7 @@ public class SystemIndexManagerTests extends ESTestCase {
         return createClusterState(SystemIndexManagerTests.DESCRIPTOR.getMappings(), format, IndexMetadata.State.OPEN);
     }
 
-    private static ClusterState.Builder createClusterState(String mappings, int format, IndexMetadata.State state) {
+    private static ClusterState.Builder createClusterState(CompressedXContent mappings, int format, IndexMetadata.State state) {
         IndexMetadata.Builder indexMeta = getIndexMetadata(SystemIndexManagerTests.DESCRIPTOR, mappings, format, state);
 
         Metadata.Builder metadataBuilder = new Metadata.Builder();
@@ -325,7 +323,7 @@ public class SystemIndexManagerTests extends ESTestCase {
 
     private static IndexMetadata.Builder getIndexMetadata(
         SystemIndexDescriptor descriptor,
-        String mappings,
+        CompressedXContent mappings,
         int format,
         IndexMetadata.State state
     ) {
@@ -347,7 +345,7 @@ public class SystemIndexManagerTests extends ESTestCase {
         }
         indexMetadata.state(state);
         if (mappings != null) {
-            indexMetadata.putMapping(mappings);
+            indexMetadata.putMapping(mappings.string());
         }
 
         return indexMetadata;
@@ -380,16 +378,13 @@ public class SystemIndexManagerTests extends ESTestCase {
             .build();
     }
 
-    private static XContentBuilder getMappings() {
+    private static CompressedXContent getMappings() {
         return getMappings(Version.CURRENT.toString());
     }
 
-    private static XContentBuilder getMappings(String version) {
+    private static CompressedXContent getMappings(String version) {
         try {
-            final XContentBuilder builder = jsonBuilder();
-
-            builder.startObject();
-            {
+            return new CompressedXContent(((builder, params) -> {
                 builder.startObject("_meta");
                 builder.field("version", version);
                 builder.endObject();
@@ -401,23 +396,18 @@ public class SystemIndexManagerTests extends ESTestCase {
                     builder.field("type", "boolean");
                     builder.endObject();
                 }
-                builder.endObject();
-            }
-
-            builder.endObject();
-            return builder;
+                return builder.endObject();
+            }));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to build " + SYSTEM_INDEX_NAME + " index mappings", e);
         }
     }
 
     // Prior to 7.12.0, .tasks had _meta.version: 3 so we need to be sure we can handle that
-    private static XContentBuilder getMappings(int version) {
+    private static CompressedXContent getMappings(int version) {
         try {
-            final XContentBuilder builder = jsonBuilder();
+            return new CompressedXContent(((builder, params) -> {
 
-            builder.startObject();
-            {
                 builder.startObject("_meta");
                 builder.field("version", version);
                 builder.endObject();
@@ -429,11 +419,8 @@ public class SystemIndexManagerTests extends ESTestCase {
                     builder.field("type", "boolean");
                     builder.endObject();
                 }
-                builder.endObject();
-            }
-
-            builder.endObject();
-            return builder;
+                return builder.endObject();
+            }));
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to build " + SYSTEM_INDEX_NAME + " index mappings", e);
         }

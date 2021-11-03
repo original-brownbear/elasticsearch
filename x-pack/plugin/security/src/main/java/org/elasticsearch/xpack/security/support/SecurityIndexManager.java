@@ -41,7 +41,6 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.indices.IndexClosedException;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.xcontent.XContentType;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -440,10 +439,8 @@ public class SecurityIndexManager implements ClusterStateListener {
                         state.concreteIndexName,
                         descriptorForVersion.getAliasName()
                     );
-                    PutMappingRequest request = new PutMappingRequest(state.concreteIndexName).source(
-                        descriptorForVersion.getMappings(),
-                        XContentType.JSON
-                    ).origin(descriptorForVersion.getOrigin());
+                    PutMappingRequest request = new PutMappingRequest(state.concreteIndexName).source(descriptorForVersion.getMappings())
+                        .origin(descriptorForVersion.getOrigin());
                     executeAsyncWithOrigin(
                         client.threadPool().getThreadContext(),
                         descriptorForVersion.getOrigin(),

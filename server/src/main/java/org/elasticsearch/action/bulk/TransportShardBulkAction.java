@@ -34,7 +34,6 @@ import org.elasticsearch.cluster.action.index.MappingUpdatedAction;
 import org.elasticsearch.cluster.action.shard.ShardStateAction;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
@@ -59,7 +58,6 @@ import org.elasticsearch.node.NodeClosedException;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
-import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
@@ -345,7 +343,7 @@ public class TransportShardBulkAction extends TransportWriteAction<BulkShardRequ
                 primary.mapperService()
                     .merge(
                         MapperService.SINGLE_MAPPING_NAME,
-                        new CompressedXContent(result.getRequiredMappingUpdate(), XContentType.JSON, ToXContent.EMPTY_PARAMS),
+                        result.getRequiredMappingUpdate().toCompressedXContent(),
                         MapperService.MergeReason.MAPPING_UPDATE_PREFLIGHT
                     );
             } catch (Exception e) {

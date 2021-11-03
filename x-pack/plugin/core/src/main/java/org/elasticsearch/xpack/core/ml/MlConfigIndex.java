@@ -8,9 +8,12 @@ package org.elasticsearch.xpack.core.ml;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
+
+import java.io.IOException;
 
 public final class MlConfigIndex {
 
@@ -28,12 +31,20 @@ public final class MlConfigIndex {
         return INDEX_NAME;
     }
 
-    public static String mapping() {
-        return TemplateUtils.loadTemplate(
-            "/org/elasticsearch/xpack/core/ml/config_index_mappings.json",
-            Version.CURRENT.toString(),
-            MAPPINGS_VERSION_VARIABLE
-        );
+    public static final CompressedXContent mapping;
+
+    static {
+        try {
+            mapping = new CompressedXContent(
+                TemplateUtils.loadTemplate(
+                    "/org/elasticsearch/xpack/core/ml/config_index_mappings.json",
+                    Version.CURRENT.toString(),
+                    MAPPINGS_VERSION_VARIABLE
+                )
+            );
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static Settings settings() {

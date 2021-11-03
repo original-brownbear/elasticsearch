@@ -10,8 +10,8 @@ package org.elasticsearch.action.admin.indices.rollover;
 
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
@@ -105,7 +105,7 @@ public class RolloverRequestTests extends ESTestCase {
         request.fromXContent(false, createParser(builder));
         Map<String, Condition<?>> conditions = request.getConditions();
         assertThat(conditions.size(), equalTo(2));
-        assertThat(request.getCreateIndexRequest().mappings(), containsString("not_analyzed"));
+        assertThat(request.getCreateIndexRequest().mappings().string(), containsString("not_analyzed"));
         assertThat(request.getCreateIndexRequest().aliases().size(), equalTo(1));
         assertThat(request.getCreateIndexRequest().settings().getAsInt("number_of_shards", 0), equalTo(10));
     }
@@ -126,10 +126,10 @@ public class RolloverRequestTests extends ESTestCase {
         request.fromXContent(false, createParser(builder));
 
         CreateIndexRequest createIndexRequest = request.getCreateIndexRequest();
-        String mapping = createIndexRequest.mappings();
+        CompressedXContent mapping = createIndexRequest.mappings();
         assertNotNull(mapping);
 
-        Map<String, Object> parsedMapping = XContentHelper.convertToMap(new BytesArray(mapping), false, XContentType.JSON).v2();
+        Map<String, Object> parsedMapping = XContentHelper.convertToMap(mapping.uncompressed(), false, XContentType.JSON).v2();
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) parsedMapping.get(MapperService.SINGLE_MAPPING_NAME);
@@ -228,7 +228,7 @@ public class RolloverRequestTests extends ESTestCase {
             Map<String, Condition<?>> conditions = request.getConditions();
             assertThat(conditions.size(), equalTo(2));
             assertThat(
-                request.getCreateIndexRequest().mappings(),
+                request.getCreateIndexRequest().mappings().string(),
                 equalTo("{\"_doc\":{\"properties\":{\"field1\":{\"index\":\"not_analyzed\",\"type\":\"string\"}}}}")
             );
         }

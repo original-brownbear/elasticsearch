@@ -225,7 +225,7 @@ public class TransportSimulateIndexTemplateAction extends TransportMasterNodeRea
 
         // empty request mapping as the user can't specify any explicit mappings via the simulate api
         List<Map<String, Object>> mappings = MetadataCreateIndexService.collectV2Mappings(
-            "{}",
+            CompressedXContent.EMPTY_JSON,
             simulatedState,
             matchingTemplate,
             xContentRegistry,

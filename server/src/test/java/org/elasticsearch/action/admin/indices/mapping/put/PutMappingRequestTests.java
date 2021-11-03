@@ -37,12 +37,7 @@ public class PutMappingRequestTests extends ESTestCase {
         assertNotNull("source validation should fail", ex);
         assertTrue(ex.getMessage().contains("source is missing"));
 
-        r.source("", XContentType.JSON);
-        ex = r.validate();
-        assertNotNull("source validation should fail", ex);
-        assertTrue(ex.getMessage().contains("source is empty"));
-
-        r.source("somevalidmapping", XContentType.JSON);
+        r.source("{}", XContentType.JSON);
         ex = r.validate();
         assertNull("validation should succeed", ex);
 

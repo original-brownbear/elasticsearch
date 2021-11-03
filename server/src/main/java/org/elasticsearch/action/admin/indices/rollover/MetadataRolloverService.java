@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.metadata.MetadataCreateIndexService;
 import org.elasticsearch.cluster.metadata.MetadataIndexAliasesService;
 import org.elasticsearch.cluster.metadata.MetadataIndexTemplateService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
@@ -466,7 +467,7 @@ public class MetadataRolloverService {
             }
             if ((request.settings().equals(Settings.EMPTY) == false)
                 || (request.aliases().size() > 0)
-                || (request.mappings().equals("{}") == false)) {
+                || (request.mappings().equals(CompressedXContent.EMPTY_JSON) == false)) {
                 throw new IllegalArgumentException(
                     "aliases, mappings, and index settings may not be specified when rolling over a data stream"
                 );

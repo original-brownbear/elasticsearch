@@ -132,7 +132,6 @@ import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
-import org.elasticsearch.xcontent.XContentType;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -849,7 +848,7 @@ public class IndicesService extends AbstractLifecycleComponent
                 .indices()
                 .preparePutMapping()
                 .setConcreteIndex(shardRouting.index()) // concrete index - no name clash, it uses uuid
-                .setSource(mapping.source().string(), XContentType.JSON)
+                .setSource(mapping.source())
                 .get();
         }, this);
         return indexShard;

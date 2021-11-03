@@ -185,7 +185,7 @@ public class DestinationIndexTests extends ESTestCase {
         assertThat(createIndexRequest.settings().getAsInt("index.number_of_shards", -1), equalTo(5));
         assertThat(createIndexRequest.settings().getAsInt("index.number_of_replicas", -1), equalTo(1));
 
-        try (XContentParser parser = createParser(JsonXContent.jsonXContent, createIndexRequest.mappings())) {
+        try (XContentParser parser = createParser(JsonXContent.jsonXContent, createIndexRequest.mappings().uncompressed())) {
             Map<String, Object> map = parser.map();
             assertThat(extractValue("_doc.properties.ml__incremental_id.type", map), equalTo("long"));
             assertThat(extractValue("_doc.properties.field_1", map), equalTo("field_1_mappings"));
@@ -316,7 +316,7 @@ public class DestinationIndexTests extends ESTestCase {
 
         PutMappingRequest putMappingRequest = putMappingRequestCaptor.getValue();
         assertThat(putMappingRequest.indices(), arrayContaining(DEST_INDEX));
-        try (XContentParser parser = createParser(JsonXContent.jsonXContent, putMappingRequest.source())) {
+        try (XContentParser parser = createParser(JsonXContent.jsonXContent, putMappingRequest.source().uncompressed())) {
             Map<String, Object> map = parser.map();
             assertThat(extractValue("properties.ml__incremental_id.type", map), equalTo("long"));
             return map;

@@ -49,7 +49,6 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.InvalidIndexTemplateException;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
@@ -84,23 +83,41 @@ import static org.elasticsearch.indices.cluster.IndicesClusterStateService.Alloc
 public class MetadataIndexTemplateService {
 
     public static final String DEFAULT_TIMESTAMP_FIELD = "@timestamp";
-    public static final String DEFAULT_TIMESTAMP_MAPPING = "{\n"
-        + "      \"properties\": {\n"
-        + "        \"@timestamp\": {\n"
-        + "          \"type\": \"date\"\n"
-        + "        }\n"
-        + "      }\n"
-        + "    }";
-    public static final String DEFAULT_TIMESTAMP_MAPPING_WITH_ROUTING = "{\n"
-        + "\"_routing\" : {\n"
-        + "        \"required\" : true\n"
-        + "      },"
-        + "      \"properties\": {\n"
-        + "        \"@timestamp\": {\n"
-        + "          \"type\": \"date\"\n"
-        + "        }\n"
-        + "      }\n"
-        + "    }";
+
+    private static final CompressedXContent DEFAULT_TIMESTAMP_MAPPING;
+
+    private static final CompressedXContent DEFAULT_TIMESTAMP_MAPPING_WITH_ROUTING;
+
+    static {
+        try {
+            DEFAULT_TIMESTAMP_MAPPING = wrapMappingsIfNecessary(
+                new CompressedXContent(
+                    (builder, params) -> builder.startObject("properties")
+                        .startObject("@timestamp")
+                        .field("type", "date")
+                        .endObject()
+                        .endObject()
+                ),
+                NamedXContentRegistry.EMPTY
+            );
+            DEFAULT_TIMESTAMP_MAPPING_WITH_ROUTING = wrapMappingsIfNecessary(
+                new CompressedXContent(
+                    (builder, params) -> builder.startObject("_routing")
+                        .field("required", true)
+                        .endObject()
+                        .startObject("properties")
+                        .startObject("@timestamp")
+                        .field("type", "date")
+                        .endObject()
+                        .endObject()
+                ),
+                NamedXContentRegistry.EMPTY
+            );
+        } catch (Exception e) {
+            throw new AssertionError("impossible", e);
+        }
+    }
+
     private static final Logger logger = LogManager.getLogger(MetadataIndexTemplateService.class);
     private final ClusterService clusterService;
     private final AliasValidator aliasValidator;
@@ -216,7 +233,7 @@ public class MetadataIndexTemplateService {
         }
 
         CompressedXContent mappings = template.template().mappings();
-        String stringMappings = wrapMappingsIfNecessary(mappings == null ? null : mappings.string(), xContentRegistry);
+        CompressedXContent stringMappings = wrapMappingsIfNecessary(mappings, xContentRegistry);
 
         // We may need to normalize index settings, so do that also
         Settings finalSettings = template.template().settings();
@@ -261,11 +278,7 @@ public class MetadataIndexTemplateService {
             }
         }
 
-        final Template finalTemplate = new Template(
-            finalSettings,
-            stringMappings == null ? null : new CompressedXContent(stringMappings),
-            template.template().aliases()
-        );
+        final Template finalTemplate = new Template(finalSettings, stringMappings, template.template().aliases());
         final ComponentTemplate finalComponentTemplate = new ComponentTemplate(finalTemplate, template.version(), template.metadata());
 
         if (finalComponentTemplate.equals(existing)) {
@@ -319,30 +332,29 @@ public class MetadataIndexTemplateService {
     }
 
     @Nullable
-    private static String wrapMappingsIfNecessary(@Nullable String mappings, NamedXContentRegistry xContentRegistry) throws Exception {
+    private static CompressedXContent wrapMappingsIfNecessary(@Nullable CompressedXContent mappings, NamedXContentRegistry xContentRegistry)
+        throws Exception {
         // Mappings in templates don't have to include _doc, so update
         // the mappings to include this single type if necessary
 
-        String stringMappings = mappings;
-        if (stringMappings != null) {
-            Map<String, Object> parsedMappings = MapperService.parseMapping(xContentRegistry, stringMappings);
+        CompressedXContent wrapped = mappings;
+        if (mappings != null) {
+            Map<String, Object> parsedMappings = MapperService.parseMapping(xContentRegistry, mappings);
             if (parsedMappings.size() > 0) {
                 if (parsedMappings.size() == 1) {
                     final String keyName = parsedMappings.keySet().iterator().next();
                     // Check if it's already wrapped in `_doc`, only rewrap if needed
                     if (MapperService.SINGLE_MAPPING_NAME.equals(keyName) == false) {
-                        stringMappings = Strings.toString(
-                            XContentFactory.jsonBuilder().startObject().field(MapperService.SINGLE_MAPPING_NAME, parsedMappings).endObject()
+                        wrapped = new CompressedXContent(
+                            (builder, params) -> builder.field(MapperService.SINGLE_MAPPING_NAME, parsedMappings)
                         );
                     }
                 } else {
-                    stringMappings = Strings.toString(
-                        XContentFactory.jsonBuilder().startObject().field(MapperService.SINGLE_MAPPING_NAME, parsedMappings).endObject()
-                    );
+                    wrapped = new CompressedXContent((builder, params) -> builder.field(MapperService.SINGLE_MAPPING_NAME, parsedMappings));
                 }
             }
         }
-        return stringMappings;
+        return wrapped;
     }
 
     /**
@@ -430,7 +442,7 @@ public class MetadataIndexTemplateService {
     static void validateNotInUse(Metadata metadata, String... templateNameOrWildcard) {
         final Predicate<String> predicate;
         if (templateNameOrWildcard.length > 1) {
-            predicate = name -> Arrays.stream(templateNameOrWildcard).anyMatch(s -> Objects.equals(s, name));
+            predicate = name -> Arrays.asList(templateNameOrWildcard).contains(name);
         } else {
             predicate = name -> Regex.simpleMatch(templateNameOrWildcard[0], name);
         }
@@ -580,13 +592,9 @@ public class MetadataIndexTemplateService {
             // If an inner template was specified, its mappings may need to be
             // adjusted (to add _doc) and it should be validated
             CompressedXContent mappings = innerTemplate.mappings();
-            String stringMappings = wrapMappingsIfNecessary(mappings == null ? null : mappings.string(), xContentRegistry);
+            CompressedXContent stringMappings = wrapMappingsIfNecessary(mappings, xContentRegistry);
 
-            final Template finalTemplate = new Template(
-                finalSettings,
-                stringMappings == null ? null : new CompressedXContent(stringMappings),
-                innerTemplate.aliases()
-            );
+            final Template finalTemplate = new Template(finalSettings, stringMappings, innerTemplate.aliases());
             finalIndexTemplate = new ComposableIndexTemplate(
                 template.indexPatterns(),
                 finalTemplate,
@@ -903,6 +911,16 @@ public class MetadataIndexTemplateService {
             return;
         }
 
+        final CompressedXContent mappings;
+        try {
+            mappings = request.mappings == null
+                ? null
+                : CompressedXContent.fromMap(MapperService.parseMapping(xContentRegistry, request.mappings));
+        } catch (Exception e) {
+            listener.onFailure(new MapperParsingException("Failed to parse mapping", e));
+            return;
+        }
+
         final IndexTemplateMetadata.Builder templateBuilder = IndexTemplateMetadata.builder(request.name);
 
         clusterService.submitStateUpdateTask(
@@ -916,8 +934,8 @@ public class MetadataIndexTemplateService {
 
                 @Override
                 public ClusterState execute(ClusterState currentState) throws Exception {
-                    validateTemplate(request.settings, request.mappings, indicesService, xContentRegistry);
-                    return innerPutTemplate(currentState, request, templateBuilder);
+                    validateTemplate(request.settings, mappings, indicesService, xContentRegistry);
+                    return innerPutTemplate(currentState, request, mappings, templateBuilder);
                 }
 
                 @Override
@@ -932,6 +950,7 @@ public class MetadataIndexTemplateService {
     static ClusterState innerPutTemplate(
         final ClusterState currentState,
         PutRequest request,
+        final CompressedXContent mappings,
         IndexTemplateMetadata.Builder templateBuilder
     ) {
         // Flag for whether this is updating an existing template or adding a new one
@@ -982,11 +1001,11 @@ public class MetadataIndexTemplateService {
         templateBuilder.patterns(request.indexPatterns);
         templateBuilder.settings(request.settings);
 
-        if (request.mappings != null) {
+        if (mappings != null) {
             try {
-                templateBuilder.putMapping(MapperService.SINGLE_MAPPING_NAME, request.mappings);
+                templateBuilder.putMapping(MapperService.SINGLE_MAPPING_NAME, mappings);
             } catch (Exception e) {
-                throw new MapperParsingException("Failed to parse mapping: {}", e, request.mappings);
+                throw new MapperParsingException("Failed to parse mapping: {}", e, mappings);
             }
         }
 
@@ -1136,12 +1155,8 @@ public class MetadataIndexTemplateService {
     /**
      * Collect the given v2 template into an ordered list of mappings.
      */
-    public static List<CompressedXContent> collectMappings(
-        final ClusterState state,
-        final String templateName,
-        final String indexName,
-        final NamedXContentRegistry xContentRegistry
-    ) throws Exception {
+    public static List<CompressedXContent> collectMappings(final ClusterState state, final String templateName, final String indexName)
+        throws Exception {
         final ComposableIndexTemplate template = state.metadata().templatesV2().get(templateName);
         assert template != null
             : "attempted to resolve mappings for a template [" + templateName + "] that did not exist in the cluster state";
@@ -1150,7 +1165,7 @@ public class MetadataIndexTemplateService {
         }
 
         final Map<String, ComponentTemplate> componentTemplates = state.metadata().componentTemplates();
-        return collectMappings(template, componentTemplates, indexName, xContentRegistry);
+        return collectMappings(template, componentTemplates, indexName);
     }
 
     /**
@@ -1159,8 +1174,7 @@ public class MetadataIndexTemplateService {
     public static List<CompressedXContent> collectMappings(
         final ComposableIndexTemplate template,
         final Map<String, ComponentTemplate> componentTemplates,
-        final String indexName,
-        final NamedXContentRegistry xContentRegistry
+        final String indexName
     ) throws Exception {
         Objects.requireNonNull(template, "Composable index template must be provided");
         List<CompressedXContent> mappings = template.composedOf()
@@ -1177,9 +1191,9 @@ public class MetadataIndexTemplateService {
             // add a default mapping for the `@timestamp` field, at the lowest precedence, to make bootstrapping data streams more
             // straightforward as all backing indices are required to have a timestamp field
             if (template.getDataStreamTemplate().isAllowCustomRouting()) {
-                mappings.add(0, new CompressedXContent(wrapMappingsIfNecessary(DEFAULT_TIMESTAMP_MAPPING_WITH_ROUTING, xContentRegistry)));
+                mappings.add(0, DEFAULT_TIMESTAMP_MAPPING_WITH_ROUTING);
             } else {
-                mappings.add(0, new CompressedXContent(wrapMappingsIfNecessary(DEFAULT_TIMESTAMP_MAPPING, xContentRegistry)));
+                mappings.add(0, DEFAULT_TIMESTAMP_MAPPING);
             }
         }
 
@@ -1380,7 +1394,7 @@ public class MetadataIndexTemplateService {
             String indexName = DataStream.BACKING_INDEX_PREFIX + temporaryIndexName;
             // Parse mappings to ensure they are valid after being composed
 
-            List<CompressedXContent> mappings = collectMappings(stateWithIndex, templateName, indexName, xContentRegistry);
+            List<CompressedXContent> mappings = collectMappings(stateWithIndex, templateName, indexName);
             try {
                 MapperService mapperService = tempIndexService.mapperService();
                 for (CompressedXContent mapping : mappings) {
@@ -1399,18 +1413,11 @@ public class MetadataIndexTemplateService {
 
     private static void validateTemplate(
         Settings validateSettings,
-        String mappings,
+        CompressedXContent mappings,
         IndicesService indicesService,
         NamedXContentRegistry xContentRegistry
     ) throws Exception {
         // First check to see if mappings are valid XContent
-        if (mappings != null) {
-            try {
-                new CompressedXContent(mappings);
-            } catch (Exception e) {
-                throw new MapperParsingException("Failed to parse mapping: {}", e, mappings);
-            }
-        }
 
         // Hard to validate settings if they're non-existent, so used empty ones if none were provided
         Settings settings = validateSettings;

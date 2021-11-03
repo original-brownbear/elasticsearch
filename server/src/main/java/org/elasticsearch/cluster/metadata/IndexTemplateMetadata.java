@@ -461,7 +461,7 @@ public class IndexTemplateMetadata extends AbstractDiffable<IndexTemplateMetadat
                                 Map<String, Object> mappingSource = MapBuilder.<String, Object>newMapBuilder()
                                     .put(mappingType, parser.mapOrdered())
                                     .map();
-                                builder.putMapping(mappingType, Strings.toString(XContentFactory.jsonBuilder().map(mappingSource)));
+                                builder.putMapping(mappingType, CompressedXContent.fromMap(mappingSource));
                             }
                         }
                     } else if ("aliases".equals(currentFieldName)) {

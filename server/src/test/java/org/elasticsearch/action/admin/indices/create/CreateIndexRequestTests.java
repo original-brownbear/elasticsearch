@@ -10,7 +10,7 @@ package org.elasticsearch.action.admin.indices.create;
 
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.action.admin.indices.alias.Alias;
-import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -34,8 +34,7 @@ public class CreateIndexRequestTests extends AbstractWireSerializingTestCase<Cre
 
     public void testSimpleSerialization() throws IOException {
         CreateIndexRequest request = new CreateIndexRequest("foo");
-        String mapping = Strings.toString(JsonXContent.contentBuilder().startObject().startObject("_doc").endObject().endObject());
-        request.mapping(mapping);
+        request.mapping(new CompressedXContent((builder, params) -> builder.startObject("_doc").endObject()));
 
         try (BytesStreamOutput output = new BytesStreamOutput()) {
             request.writeTo(output);
@@ -43,7 +42,7 @@ public class CreateIndexRequestTests extends AbstractWireSerializingTestCase<Cre
             try (StreamInput in = output.bytes().streamInput()) {
                 CreateIndexRequest serialized = new CreateIndexRequest(in);
                 assertEquals(request.index(), serialized.index());
-                assertEquals("{\"_doc\":{}}", serialized.mappings());
+                assertEquals("{\"_doc\":{}}", serialized.mappings().string());
             }
         }
     }

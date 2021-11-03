@@ -43,6 +43,7 @@ import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.persistent.AllocatedPersistentTask;
 import org.elasticsearch.tasks.TaskId;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -451,7 +452,8 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
         }
     }
 
-    private void createIndex(SystemIndexMigrationInfo migrationInfo, ActionListener<ShardsAcknowledgedResponse> listener) {
+    private void createIndex(SystemIndexMigrationInfo migrationInfo, ActionListener<ShardsAcknowledgedResponse> listener)
+        throws IOException {
         final CreateIndexClusterStateUpdateRequest createRequest = new CreateIndexClusterStateUpdateRequest(
             "migrate-system-index",
             migrationInfo.getNextIndexName(),

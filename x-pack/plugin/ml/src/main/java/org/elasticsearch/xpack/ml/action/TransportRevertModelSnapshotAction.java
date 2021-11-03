@@ -165,7 +165,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
         ActionListener<Boolean> jobExistsListener = ActionListener.wrap(
             r -> ElasticsearchMappings.addDocMappingIfMissing(
                 MlConfigIndex.indexName(),
-                MlConfigIndex::mapping,
+                () -> MlConfigIndex.mapping,
                 client,
                 state,
                 request.masterNodeTimeout(),

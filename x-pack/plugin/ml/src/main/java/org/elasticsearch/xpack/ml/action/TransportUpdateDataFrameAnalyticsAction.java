@@ -106,7 +106,7 @@ public class TransportUpdateDataFrameAnalyticsAction extends TransportMasterNode
         // all, but if we rewrite the job config we may add new fields that require the latest mappings
         ElasticsearchMappings.addDocMappingIfMissing(
             MlConfigIndex.indexName(),
-            MlConfigIndex::mapping,
+            () -> MlConfigIndex.mapping,
             client,
             state,
             request.masterNodeTimeout(),

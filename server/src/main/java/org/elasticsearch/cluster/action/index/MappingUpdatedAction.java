@@ -24,7 +24,6 @@ import org.elasticsearch.common.util.concurrent.RunOnce;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.mapper.Mapping;
-import org.elasticsearch.xcontent.XContentType;
 
 /**
  * Called by shards in the cluster when their mapping was dynamically updated and it needs to be updated
@@ -107,7 +106,7 @@ public class MappingUpdatedAction {
     protected void sendUpdateMapping(Index index, Mapping mappingUpdate, ActionListener<Void> listener) {
         PutMappingRequest putMappingRequest = new PutMappingRequest();
         putMappingRequest.setConcreteIndex(index);
-        putMappingRequest.source(mappingUpdate.toString(), XContentType.JSON);
+        putMappingRequest.source(mappingUpdate.toCompressedXContent());
         putMappingRequest.masterNodeTimeout(dynamicMappingUpdateTimeout);
         putMappingRequest.timeout(TimeValue.ZERO);
         client.execute(

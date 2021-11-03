@@ -12,6 +12,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.AcknowledgedRequestBuilder;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.ElasticsearchClient;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
@@ -71,6 +72,11 @@ public class PutMappingRequestBuilder extends AcknowledgedRequestBuilder<
      */
     public PutMappingRequestBuilder setSource(String mappingSource, XContentType xContentType) {
         request.source(mappingSource, xContentType);
+        return this;
+    }
+
+    public PutMappingRequestBuilder setSource(CompressedXContent mappingSource) {
+        request.source(mappingSource);
         return this;
     }
 

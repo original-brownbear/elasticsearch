@@ -21,10 +21,10 @@ import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.plugins.MapperPlugin;
-import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -147,7 +147,7 @@ public class ElasticsearchMappings {
 
     public static void addDocMappingIfMissing(
         String alias,
-        CheckedSupplier<String, IOException> mappingSupplier,
+        CheckedSupplier<CompressedXContent, IOException> mappingSupplier,
         Client client,
         ClusterState state,
         TimeValue masterNodeTimeout,
@@ -164,9 +164,9 @@ public class ElasticsearchMappings {
         final String[] indicesThatRequireAnUpdate = mappingRequiresUpdate(state, concreteIndices, Version.CURRENT);
         if (indicesThatRequireAnUpdate.length > 0) {
             try {
-                String mapping = mappingSupplier.get();
+                CompressedXContent mapping = mappingSupplier.get();
                 PutMappingRequest putMappingRequest = new PutMappingRequest(indicesThatRequireAnUpdate);
-                putMappingRequest.source(mapping, XContentType.JSON);
+                putMappingRequest.source(mapping);
                 putMappingRequest.origin(ML_ORIGIN);
                 putMappingRequest.masterNodeTimeout(masterNodeTimeout);
                 executeAsyncWithOrigin(client, ML_ORIGIN, PutMappingAction.INSTANCE, putMappingRequest, ActionListener.wrap(response -> {

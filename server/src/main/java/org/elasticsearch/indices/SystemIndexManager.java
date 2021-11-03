@@ -30,7 +30,6 @@ import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.gateway.GatewayService;
-import org.elasticsearch.xcontent.XContentType;
 
 import java.util.List;
 import java.util.Map;
@@ -182,7 +181,7 @@ public class SystemIndexManager implements ClusterStateListener {
     private void upgradeIndexMetadata(SystemIndexDescriptor descriptor, ActionListener<AcknowledgedResponse> listener) {
         final String indexName = descriptor.getPrimaryIndex();
 
-        PutMappingRequest request = new PutMappingRequest(indexName).source(descriptor.getMappings(), XContentType.JSON);
+        PutMappingRequest request = new PutMappingRequest(indexName).source(descriptor.getMappings());
 
         final OriginSettingClient originSettingClient = new OriginSettingClient(this.client, descriptor.getOrigin());
 

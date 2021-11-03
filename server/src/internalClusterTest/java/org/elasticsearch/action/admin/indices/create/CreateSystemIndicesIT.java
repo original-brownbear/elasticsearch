@@ -14,6 +14,7 @@ import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.indices.TestSystemIndexDescriptor;
@@ -118,7 +119,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
      * Fetch the mappings and settings for {@link TestSystemIndexDescriptor#INDEX_NAME} and verify that they match the expected values.
      * Note that in the case of the mappings, this is just a dumb string comparison, so order of keys matters.
      */
-    private void assertMappingsAndSettings(String expectedMappings, String concreteIndex) {
+    private void assertMappingsAndSettings(CompressedXContent expectedMappings, String concreteIndex) {
         final GetMappingsResponse getMappingsResponse = client().admin()
             .indices()
             .getMappings(new GetMappingsRequest().indices(INDEX_NAME))
@@ -133,7 +134,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
         final Map<String, Object> sourceAsMap = mappings.get(concreteIndex).getSourceAsMap();
 
         try {
-            assertThat(convertToXContent(sourceAsMap, XContentType.JSON).utf8ToString(), equalTo(expectedMappings));
+            assertThat(convertToXContent(sourceAsMap, XContentType.JSON), equalTo(expectedMappings.uncompressed()));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

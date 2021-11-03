@@ -20,8 +20,8 @@ public class PutMappingClusterStateUpdateRequest extends IndicesClusterStateUpda
 
     private final CompressedXContent source;
 
-    public PutMappingClusterStateUpdateRequest(String source) throws IOException {
-        this.source = new CompressedXContent(source);
+    public PutMappingClusterStateUpdateRequest(CompressedXContent source) throws IOException {
+        this.source = source;
     }
 
     public CompressedXContent source() {

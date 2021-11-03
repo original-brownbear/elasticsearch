@@ -24,6 +24,7 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
@@ -32,6 +33,7 @@ import org.elasticsearch.xpack.core.ml.job.persistence.ElasticsearchMappings;
 import org.elasticsearch.xpack.core.ml.utils.ExceptionsHelper;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -55,6 +57,22 @@ public class AnnotationIndex {
     public static final List<String> OLD_INDEX_NAMES = List.of(".ml-annotations-6");
 
     private static final String MAPPINGS_VERSION_VARIABLE = "xpack.ml.version";
+
+    public static CompressedXContent ANNOTATIONS_MAPPING;
+
+    static {
+        try {
+            ANNOTATIONS_MAPPING = new CompressedXContent(
+                TemplateUtils.loadTemplate(
+                    "/org/elasticsearch/xpack/core/ml/annotations_index_mappings.json",
+                    Version.CURRENT.toString(),
+                    MAPPINGS_VERSION_VARIABLE
+                )
+            );
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     /**
      * Create the .ml-annotations-6 index with correct mappings if it does not already exist. This index is read and written by the UI
@@ -98,7 +116,7 @@ public class AnnotationIndex {
         final ActionListener<Boolean> checkMappingsListener = ActionListener.wrap(
             success -> ElasticsearchMappings.addDocMappingIfMissing(
                 WRITE_ALIAS_NAME,
-                AnnotationIndex::annotationsMapping,
+                () -> AnnotationIndex.ANNOTATIONS_MAPPING,
                 client,
                 state,
                 masterNodeTimeout,
@@ -150,7 +168,7 @@ public class AnnotationIndex {
                     )
                 );
 
-                CreateIndexRequest createIndexRequest = new CreateIndexRequest(LATEST_INDEX_NAME).mapping(annotationsMapping())
+                CreateIndexRequest createIndexRequest = new CreateIndexRequest(LATEST_INDEX_NAME).mapping(ANNOTATIONS_MAPPING)
                     .settings(
                         Settings.builder()
                             .put(IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS, "0-1")
@@ -199,11 +217,4 @@ public class AnnotationIndex {
         finalListener.onResponse(false);
     }
 
-    public static String annotationsMapping() {
-        return TemplateUtils.loadTemplate(
-            "/org/elasticsearch/xpack/core/ml/annotations_index_mappings.json",
-            Version.CURRENT.toString(),
-            MAPPINGS_VERSION_VARIABLE
-        );
-    }
 }

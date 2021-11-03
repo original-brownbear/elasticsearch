@@ -31,6 +31,7 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -80,7 +81,7 @@ public class TransportCreateIndexAction extends TransportMasterNodeAction<Create
         final CreateIndexRequest request,
         final ClusterState state,
         final ActionListener<CreateIndexResponse> listener
-    ) {
+    ) throws IOException {
         String cause = request.cause();
         if (cause.isEmpty()) {
             cause = "api";

@@ -282,7 +282,7 @@ public class TransportOpenJobAction extends TransportMasterNodeAction<OpenJobAct
         );
         ElasticsearchMappings.addDocMappingIfMissing(
             MlConfigIndex.indexName(),
-            MlConfigIndex::mapping,
+            () -> MlConfigIndex.mapping,
             client,
             clusterState,
             masterNodeTimeout,

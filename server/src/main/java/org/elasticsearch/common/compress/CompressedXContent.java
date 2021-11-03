@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedOutputStream;
 import java.util.zip.DataFormatException;
@@ -41,6 +42,16 @@ public final class CompressedXContent {
 
     private static final ThreadLocal<InflaterAndBuffer> inflater1 = ThreadLocal.withInitial(InflaterAndBuffer::new);
     private static final ThreadLocal<InflaterAndBuffer> inflater2 = ThreadLocal.withInitial(InflaterAndBuffer::new);
+
+    public static final CompressedXContent EMPTY_JSON;
+
+    static {
+        try {
+            EMPTY_JSON = new CompressedXContent(((builder, params) -> builder));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     private static int crc32(BytesReference data) {
         CRC32 crc32 = new CRC32();
@@ -85,11 +96,11 @@ public final class CompressedXContent {
     /**
      * Create a {@link CompressedXContent} out of a {@link ToXContent} instance.
      */
-    public CompressedXContent(ToXContent xcontent, XContentType type, ToXContent.Params params) throws IOException {
+    public CompressedXContent(ToXContent xcontent, ToXContent.Params params) throws IOException {
         BytesStreamOutput bStream = new BytesStreamOutput();
         CRC32 crc32 = new CRC32();
         OutputStream checkedStream = new CheckedOutputStream(CompressorFactory.COMPRESSOR.threadLocalOutputStream(bStream), crc32);
-        try (XContentBuilder builder = XContentFactory.contentBuilder(type, checkedStream)) {
+        try (XContentBuilder builder = XContentFactory.contentBuilder(XContentType.JSON, checkedStream)) {
             if (xcontent.isFragment()) {
                 builder.startObject();
             }
@@ -98,9 +109,20 @@ public final class CompressedXContent {
                 builder.endObject();
             }
         }
-        this.bytes = BytesReference.toBytes(bStream.bytes());
+        this.bytes = bStream.copyBytes().array();
         this.crc32 = (int) crc32.getValue();
         assertConsistent();
+    }
+
+    public CompressedXContent(ToXContent xcontent) throws IOException {
+        this(xcontent, ToXContent.EMPTY_PARAMS);
+    }
+
+    public static CompressedXContent fromMap(Map<String, ?> map) throws IOException {
+        if (map.isEmpty()) {
+            return EMPTY_JSON;
+        }
+        return new CompressedXContent(((builder, params) -> builder.mapContents(map)), ToXContent.EMPTY_PARAMS);
     }
 
     /**

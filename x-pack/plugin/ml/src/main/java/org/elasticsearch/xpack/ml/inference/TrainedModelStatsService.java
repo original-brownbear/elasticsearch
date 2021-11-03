@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.component.LifecycleListener;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.indices.InvalidAliasNameException;
 import org.elasticsearch.script.Script;
@@ -257,7 +258,7 @@ public class TrainedModelStatsService {
             ActionListener.wrap(
                 r -> ElasticsearchMappings.addDocMappingIfMissing(
                     MlStatsIndex.writeAlias(),
-                    MlStatsIndex::wrappedMapping,
+                    () -> new CompressedXContent(MlStatsIndex.wrappedMapping()),
                     client,
                     clusterState,
                     MasterNodeRequest.DEFAULT_MASTER_NODE_TIMEOUT,

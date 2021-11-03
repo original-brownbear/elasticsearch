@@ -274,7 +274,7 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
                 .get()
                 .getMappings()
                 .get("test");
-            assertThat(mappingMetadata.source().string(), equalTo(masterMappingMetadata.source().string()));
+            assertThat(mappingMetadata.source(), equalTo(masterMappingMetadata.source()));
             assertThat(mappingMetadata, equalTo(masterMappingMetadata));
         }
     }

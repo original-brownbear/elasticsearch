@@ -20,6 +20,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.CollectionUtils;
@@ -51,7 +52,9 @@ import static org.elasticsearch.action.ValidateActions.addValidationError;
  */
 public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> implements IndicesRequest.Replaceable {
 
-    private static ObjectHashSet<String> RESERVED_FIELDS = ObjectHashSet.from(
+    public static final Version MAPPINGS_AS_COMPRESSED_VERSION = Version.V_8_1_0;
+
+    private static final ObjectHashSet<String> RESERVED_FIELDS = ObjectHashSet.from(
         "_uid",
         "_id",
         "_type",
@@ -71,7 +74,7 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
 
     private IndicesOptions indicesOptions = IndicesOptions.fromOptions(false, false, true, true);
 
-    private String source;
+    private CompressedXContent source;
     private String origin = "";
 
     private Index concreteIndex;
@@ -88,7 +91,11 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
                 throw new IllegalArgumentException("Expected type [_doc] but received [" + type + "]");
             }
         }
-        source = in.readString();
+        if (in.getVersion().onOrAfter(MAPPINGS_AS_COMPRESSED_VERSION)) {
+            source = CompressedXContent.readCompressedString(in);
+        } else {
+            source = new CompressedXContent(in.readString());
+        }
         concreteIndex = in.readOptionalWriteable(Index::new);
         origin = in.readOptionalString();
         if (in.getVersion().onOrAfter(Version.V_7_9_0)) {
@@ -111,8 +118,6 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
         ActionRequestValidationException validationException = null;
         if (source == null) {
             validationException = addValidationError("mapping source is missing", validationException);
-        } else if (source.isEmpty()) {
-            validationException = addValidationError("mapping source is empty", validationException);
         }
         if (concreteIndex != null && CollectionUtils.isEmpty(indices) == false) {
             validationException = addValidationError(
@@ -177,7 +182,7 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
     /**
      * The mapping source definition.
      */
-    public String source() {
+    public CompressedXContent source() {
         return source;
     }
 
@@ -287,13 +292,22 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
         return source(new BytesArray(mappingSource), xContentType);
     }
 
+    public PutMappingRequest source(CompressedXContent source) {
+        this.source = source;
+        return this;
+    }
+
     /**
      * The mapping source definition.
      */
     public PutMappingRequest source(BytesReference mappingSource, XContentType xContentType) {
         Objects.requireNonNull(xContentType);
         try {
-            this.source = XContentHelper.convertToJson(mappingSource, false, false, xContentType);
+            if (xContentType == XContentType.JSON) {
+                this.source = new CompressedXContent(mappingSource);
+            } else {
+                this.source = new CompressedXContent(XContentHelper.convertToJson(mappingSource, false, false, xContentType));
+            }
             return this;
         } catch (IOException e) {
             throw new UncheckedIOException("failed to convert source to json", e);
@@ -317,7 +331,11 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
         if (out.getVersion().before(Version.V_8_0_0)) {
             out.writeOptionalString(MapperService.SINGLE_MAPPING_NAME);
         }
-        out.writeString(source);
+        if (out.getVersion().onOrAfter(MAPPINGS_AS_COMPRESSED_VERSION)) {
+            source.writeTo(out);
+        } else {
+            out.writeString(source.string());
+        }
         out.writeOptionalWriteable(concreteIndex);
         out.writeOptionalString(origin);
         if (out.getVersion().onOrAfter(Version.V_7_9_0)) {

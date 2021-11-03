@@ -32,8 +32,8 @@ import org.elasticsearch.cluster.metadata.MetadataIndexAliasesService;
 import org.elasticsearch.cluster.metadata.Template;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.CheckedFunction;
@@ -61,7 +61,6 @@ import org.elasticsearch.test.ClusterServiceUtils;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.xcontent.json.JsonXContent;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -276,8 +275,9 @@ public class MetadataRolloverServiceTests extends ESTestCase {
             equalTo("aliases, mappings, and index settings may not be specified when rolling over a data stream")
         );
 
-        String mapping = Strings.toString(JsonXContent.contentBuilder().startObject().startObject("_doc").endObject().endObject());
-        CreateIndexRequest mappingReq = new CreateIndexRequest().mapping(mapping);
+        CreateIndexRequest mappingReq = new CreateIndexRequest().mapping(
+            new CompressedXContent((builder, params) -> builder.startObject("_doc").endObject())
+        );
         exception = expectThrows(
             IllegalArgumentException.class,
             () -> MetadataRolloverService.validate(metadata, randomDataStream.getName(), null, mappingReq)
@@ -326,7 +326,7 @@ public class MetadataRolloverServiceTests extends ESTestCase {
         );
     }
 
-    public void testCreateIndexRequest() {
+    public void testCreateIndexRequest() throws IOException {
         String alias = randomAlphaOfLength(10);
         String rolloverIndex = randomAlphaOfLength(10);
         final RolloverRequest rolloverRequest = new RolloverRequest(alias, randomAlphaOfLength(10));
@@ -349,7 +349,7 @@ public class MetadataRolloverServiceTests extends ESTestCase {
         assertThat(createIndexRequest.cause(), equalTo("rollover_index"));
     }
 
-    public void testCreateIndexRequestForDataStream() {
+    public void testCreateIndexRequestForDataStream() throws IOException {
         DataStream dataStream = DataStreamTestHelper.randomInstance();
         final String newWriteIndexName = DataStream.getDefaultBackingIndexName(dataStream.getName(), dataStream.getGeneration() + 1);
         final RolloverRequest rolloverRequest = new RolloverRequest(dataStream.getName(), randomAlphaOfLength(10));

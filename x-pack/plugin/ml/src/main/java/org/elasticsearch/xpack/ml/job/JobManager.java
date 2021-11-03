@@ -275,7 +275,7 @@ public class JobManager {
         ActionListener<Boolean> addDocMappingsListener = ActionListener.wrap(
             indicesCreated -> ElasticsearchMappings.addDocMappingIfMissing(
                 MlConfigIndex.indexName(),
-                MlConfigIndex::mapping,
+                () -> MlConfigIndex.mapping,
                 client,
                 state,
                 request.masterNodeTimeout(),
@@ -346,7 +346,7 @@ public class JobManager {
         // all, but if we rewrite the job config we may add new fields that require the latest mappings
         Runnable checkMappingsAreUpToDate = () -> ElasticsearchMappings.addDocMappingIfMissing(
             MlConfigIndex.indexName(),
-            MlConfigIndex::mapping,
+            () -> MlConfigIndex.mapping,
             client,
             clusterService.state(),
             request.masterNodeTimeout(),

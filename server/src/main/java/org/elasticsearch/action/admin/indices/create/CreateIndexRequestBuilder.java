@@ -13,11 +13,14 @@ import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.master.AcknowledgedRequestBuilder;
 import org.elasticsearch.client.ElasticsearchClient;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Map;
 
 /**
@@ -90,7 +93,11 @@ public class CreateIndexRequestBuilder extends AcknowledgedRequestBuilder<
      * @param source The mapping source
      */
     public CreateIndexRequestBuilder setMapping(String source) {
-        request.mapping(source);
+        try {
+            request.mapping(new CompressedXContent(source));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         return this;
     }
 

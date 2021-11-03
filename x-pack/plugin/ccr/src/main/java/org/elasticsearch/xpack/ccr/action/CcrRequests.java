@@ -19,7 +19,6 @@ import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.ccr.CcrSettings;
 
 import java.util.Arrays;
@@ -43,7 +42,7 @@ public final class CcrRequests {
     public static PutMappingRequest putMappingRequest(String followerIndex, MappingMetadata mappingMetadata) {
         PutMappingRequest putMappingRequest = new PutMappingRequest(followerIndex);
         putMappingRequest.origin("ccr");
-        putMappingRequest.source(mappingMetadata.source().string(), XContentType.JSON);
+        putMappingRequest.source(mappingMetadata.source());
         putMappingRequest.masterNodeTimeout(TimeValue.MAX_VALUE);
         return putMappingRequest;
     }

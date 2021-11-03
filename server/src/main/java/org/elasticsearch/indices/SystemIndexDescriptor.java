@@ -16,13 +16,17 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xcontent.json.JsonXContent;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -61,7 +65,7 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
     private final CharacterRunAutomaton indexPatternAutomaton;
 
     /** For internally-managed indices, contains the index mappings JSON */
-    private final String mappings;
+    private final CompressedXContent mappings;
 
     /** For internally-managed indices, contains the index settings */
     private final Settings settings;
@@ -195,7 +199,7 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         String indexPattern,
         String primaryIndex,
         String description,
-        String mappings,
+        @Nullable CompressedXContent mappings,
         Settings settings,
         String aliasName,
         int indexFormat,
@@ -249,12 +253,15 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         Objects.requireNonNull(type, "type must not be null");
         if (type.isManaged()) {
             Objects.requireNonNull(settings, "Must supply settings for a managed system index");
-            Strings.requireNonEmpty(mappings, "Must supply mappings for a managed system index");
+            Objects.requireNonNull(mappings, "Must supply mappings for a managed system index");
             Strings.requireNonEmpty(primaryIndex, "Must supply primaryIndex for a managed system index");
             Strings.requireNonEmpty(versionMetaKey, "Must supply versionMetaKey for a managed system index");
             Strings.requireNonEmpty(origin, "Must supply origin for a managed system index");
-            this.mappingVersion = extractVersionFromMappings(mappings, versionMetaKey);
-            ;
+            try {
+                this.mappingVersion = extractVersionFromMappings(mappings, versionMetaKey);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         } else {
             this.mappingVersion = null;
         }
@@ -336,8 +343,12 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         this.minimumNodeVersion = minimumNodeVersion;
         this.type = type;
         this.allowedElasticProductOrigins = allowedElasticProductOrigins;
-        this.hasDynamicMappings = this.mappings != null
-            && findDynamicMapping(XContentHelper.convertToMap(JsonXContent.jsonXContent, mappings, false));
+        try {
+            this.hasDynamicMappings = this.mappings != null
+                && findDynamicMapping(XContentHelper.convertToMap(JsonXContent.jsonXContent, mappings.uncompressed().streamInput(), false));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
 
         final List<SystemIndexDescriptor> sortedPriorSystemIndexDescriptors;
         if (priorSystemIndexDescriptors.isEmpty() || priorSystemIndexDescriptors.size() == 1) {
@@ -405,7 +416,7 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         return "SystemIndexDescriptor[pattern=[" + indexPattern + "], description=[" + description + "], aliasName=[" + aliasName + "]]";
     }
 
-    public String getMappings() {
+    public CompressedXContent getMappings() {
         return mappings;
     }
 
@@ -570,7 +581,7 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         private String indexPattern;
         private String primaryIndex;
         private String description;
-        private String mappings = null;
+        private CompressedXContent mappings = null;
         private Settings settings = null;
         private String aliasName = null;
         private int indexFormat = 0;
@@ -601,12 +612,25 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
         }
 
         public Builder setMappings(XContentBuilder mappingsBuilder) {
-            mappings = mappingsBuilder == null ? null : Strings.toString(mappingsBuilder);
+            try {
+                mappings = mappingsBuilder == null ? null : new CompressedXContent(Strings.toString(mappingsBuilder));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return this;
+        }
+
+        public Builder setMappings(CompressedXContent mappings) {
+            this.mappings = mappings;
             return this;
         }
 
         public Builder setMappings(String mappings) {
-            this.mappings = mappings;
+            try {
+                this.mappings = mappings == null ? null : new CompressedXContent(mappings);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
             return this;
         }
 
@@ -756,8 +780,12 @@ public class SystemIndexDescriptor implements IndexPatternMatcher, Comparable<Sy
     }
 
     @SuppressWarnings("unchecked")
-    private static Version extractVersionFromMappings(String mappings, String versionMetaKey) {
-        final Map<String, Object> mappingsMap = XContentHelper.convertToMap(XContentType.JSON.xContent(), mappings, false);
+    private static Version extractVersionFromMappings(CompressedXContent mappings, String versionMetaKey) throws IOException {
+        final Map<String, Object> mappingsMap = XContentHelper.convertToMap(
+            XContentType.JSON.xContent(),
+            mappings.uncompressed().streamInput(),
+            false
+        );
         final Map<String, Object> doc = (Map<String, Object>) mappingsMap.get("_doc");
         final Map<String, Object> meta;
         if (doc == null) {
