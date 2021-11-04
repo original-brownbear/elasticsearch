@@ -31,11 +31,11 @@ public final class MlConfigIndex {
         return INDEX_NAME;
     }
 
-    public static final CompressedXContent mapping;
+    public static final CompressedXContent MAPPING;
 
     static {
         try {
-            mapping = new CompressedXContent(
+            MAPPING = new CompressedXContent(
                 TemplateUtils.loadTemplate(
                     "/org/elasticsearch/xpack/core/ml/config_index_mappings.json",
                     Version.CURRENT.toString(),

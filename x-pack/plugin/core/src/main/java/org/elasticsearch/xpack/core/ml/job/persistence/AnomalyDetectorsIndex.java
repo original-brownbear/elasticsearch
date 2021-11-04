@@ -14,9 +14,12 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.ml.utils.MlIndexAndAlias;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
+
+import java.io.IOException;
 
 import static org.elasticsearch.xpack.core.ClientHelper.ML_ORIGIN;
 import static org.elasticsearch.xpack.core.ClientHelper.executeAsyncWithOrigin;
@@ -124,15 +127,21 @@ public final class AnomalyDetectorsIndex {
         );
     }
 
-    public static String wrappedResultsMapping() {
-        return "{\n\"_doc\" : " + resultsMapping() + "\n}";
-    }
+    public static final CompressedXContent resultsMapping;
 
-    public static String resultsMapping() {
-        return TemplateUtils.loadTemplate(
-            RESOURCE_PATH + "results_index_mappings.json",
-            Version.CURRENT.toString(),
-            RESULTS_MAPPINGS_VERSION_VARIABLE
-        );
+    public static final CompressedXContent wrappedResultsMapping;
+
+    static {
+        try {
+            final String resultMappingString = TemplateUtils.loadTemplate(
+                RESOURCE_PATH + "results_index_mappings.json",
+                Version.CURRENT.toString(),
+                RESULTS_MAPPINGS_VERSION_VARIABLE
+            );
+            resultsMapping = new CompressedXContent(resultMappingString);
+            wrappedResultsMapping = new CompressedXContent("{\n\"_doc\" : " + resultMappingString + "\n}");
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 }

@@ -20,7 +20,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.engine.DocumentMissingException;
 import org.elasticsearch.license.XPackLicenseState;
@@ -267,7 +266,7 @@ public class OpenJobPersistentTasksExecutor extends AbstractJobPersistentTasksEx
         // This writes to the results index, which might need updating
         ElasticsearchMappings.addDocMappingIfMissing(
             AnomalyDetectorsIndex.jobResultsAliasedName(params.getJobId()),
-            () -> new CompressedXContent(AnomalyDetectorsIndex.wrappedResultsMapping()),
+            AnomalyDetectorsIndex.wrappedResultsMapping,
             client,
             clusterState,
             PERSISTENT_TASK_MASTER_NODE_TIMEOUT,

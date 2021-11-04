@@ -215,7 +215,7 @@ public final class DatafeedManager {
         // all, but if we rewrite the datafeed config we may add new fields that require the latest mappings
         ElasticsearchMappings.addDocMappingIfMissing(
             MlConfigIndex.indexName(),
-            () -> MlConfigIndex.mapping,
+            MlConfigIndex.MAPPING,
             client,
             state,
             request.masterNodeTimeout(),
@@ -311,7 +311,7 @@ public final class DatafeedManager {
             }
             ElasticsearchMappings.addDocMappingIfMissing(
                 MlConfigIndex.indexName(),
-                () -> MlConfigIndex.mapping,
+                MlConfigIndex.MAPPING,
                 client,
                 clusterState,
                 request.masterNodeTimeout(),

@@ -20,7 +20,6 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexNotFoundException;
@@ -162,7 +161,7 @@ public class DataFrameAnalyticsManager {
         ActionListener<Boolean> createIndexListener = ActionListener.wrap(
             aBoolean -> ElasticsearchMappings.addDocMappingIfMissing(
                 MlStatsIndex.writeAlias(),
-                () -> new CompressedXContent(MlStatsIndex.wrappedMapping()),
+                MlStatsIndex.wrappedMapping,
                 client,
                 clusterState,
                 masterNodeTimeout,

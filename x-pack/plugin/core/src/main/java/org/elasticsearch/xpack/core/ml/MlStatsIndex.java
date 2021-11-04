@@ -11,9 +11,12 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.ml.utils.MlIndexAndAlias;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
+
+import java.io.IOException;
 
 /**
  * Describes the indices where ML is storing various stats about the users jobs.
@@ -26,16 +29,21 @@ public class MlStatsIndex {
 
     private MlStatsIndex() {}
 
-    public static String wrappedMapping() {
-        return "{\n\"_doc\" : " + mapping() + "\n}";
-    }
+    public static final CompressedXContent mapping;
+    public static final CompressedXContent wrappedMapping;
 
-    public static String mapping() {
-        return TemplateUtils.loadTemplate(
-            "/org/elasticsearch/xpack/core/ml/stats_index_mappings.json",
-            Version.CURRENT.toString(),
-            MAPPINGS_VERSION_VARIABLE
-        );
+    static {
+        try {
+            final String mappingString = TemplateUtils.loadTemplate(
+                "/org/elasticsearch/xpack/core/ml/stats_index_mappings.json",
+                Version.CURRENT.toString(),
+                MAPPINGS_VERSION_VARIABLE
+            );
+            mapping = new CompressedXContent(mappingString);
+            wrappedMapping = new CompressedXContent("{\n\"_doc\" : " + mappingString + "\n}");
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static String indexPattern() {

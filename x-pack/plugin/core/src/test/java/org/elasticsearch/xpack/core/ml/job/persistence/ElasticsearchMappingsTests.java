@@ -42,10 +42,8 @@ import org.elasticsearch.xpack.core.ml.job.results.ReservedFieldNames;
 import org.elasticsearch.xpack.core.ml.job.results.Result;
 import org.mockito.ArgumentCaptor;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -180,7 +178,7 @@ public class ElasticsearchMappingsTests extends ESTestCase {
     }
 
     @SuppressWarnings({ "unchecked" })
-    public void testAddDocMappingIfMissing() {
+    public void testAddDocMappingIfMissing() throws IOException {
         ThreadPool threadPool = mock(ThreadPool.class);
         when(threadPool.getThreadContext()).thenReturn(new ThreadContext(Settings.EMPTY));
         Client client = mock(Client.class);
@@ -194,7 +192,7 @@ public class ElasticsearchMappingsTests extends ESTestCase {
         ClusterState clusterState = getClusterStateWithMappingsWithMetadata(Collections.singletonMap("index-name", "0.0"));
         ElasticsearchMappings.addDocMappingIfMissing(
             "index-name",
-            () -> new CompressedXContent("{\"_doc\":{\"properties\":{\"some-field\":{\"type\":\"long\"}}}}"),
+            new CompressedXContent("{\"_doc\":{\"properties\":{\"some-field\":{\"type\":\"long\"}}}}"),
             client,
             clusterState,
             MasterNodeRequest.DEFAULT_MASTER_NODE_TIMEOUT,
@@ -208,7 +206,7 @@ public class ElasticsearchMappingsTests extends ESTestCase {
 
         PutMappingRequest request = requestCaptor.getValue();
         assertThat(request.indices(), equalTo(new String[] { "index-name" }));
-        assertThat(request.source(), equalTo("{\"_doc\":{\"properties\":{\"some-field\":{\"type\":\"long\"}}}}"));
+        assertThat(request.source().string(), equalTo("{\"_doc\":{\"properties\":{\"some-field\":{\"type\":\"long\"}}}}"));
     }
 
     private ClusterState getClusterStateWithMappingsWithMetadata(Map<String, Object> namesAndVersions) {
@@ -253,11 +251,11 @@ public class ElasticsearchMappingsTests extends ESTestCase {
 
     private Set<String> collectResultsDocFieldNames() throws IOException {
         // Only the mappings for the results index should be added below. Do NOT add mappings for other indexes here.
-        return collectFieldNames(AnomalyDetectorsIndex.resultsMapping());
+        return collectFieldNames(AnomalyDetectorsIndex.resultsMapping);
     }
 
-    private Set<String> collectFieldNames(String mapping) throws IOException {
-        BufferedInputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(mapping.getBytes(StandardCharsets.UTF_8)));
+    private Set<String> collectFieldNames(CompressedXContent mapping) throws IOException {
+        InputStream inputStream = mapping.uncompressed().streamInput();
         JsonParser parser = new JsonFactory().createParser(inputStream);
         Set<String> fieldNames = new HashSet<>();
         boolean isAfterPropertiesStart = false;

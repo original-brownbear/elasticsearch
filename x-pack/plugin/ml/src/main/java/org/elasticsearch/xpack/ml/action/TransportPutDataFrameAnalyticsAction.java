@@ -253,7 +253,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
         }
         ElasticsearchMappings.addDocMappingIfMissing(
             MlConfigIndex.indexName(),
-            () -> MlConfigIndex.mapping,
+            MlConfigIndex.MAPPING,
             client,
             clusterState,
             masterNodeTimeout,

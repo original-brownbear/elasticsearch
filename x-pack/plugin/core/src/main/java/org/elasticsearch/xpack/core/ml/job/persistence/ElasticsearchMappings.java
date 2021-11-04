@@ -19,14 +19,12 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
-import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.plugins.MapperPlugin;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -147,7 +145,7 @@ public class ElasticsearchMappings {
 
     public static void addDocMappingIfMissing(
         String alias,
-        CheckedSupplier<CompressedXContent, IOException> mappingSupplier,
+        CompressedXContent mapping,
         Client client,
         ClusterState state,
         TimeValue masterNodeTimeout,
@@ -163,28 +161,23 @@ public class ElasticsearchMappings {
 
         final String[] indicesThatRequireAnUpdate = mappingRequiresUpdate(state, concreteIndices, Version.CURRENT);
         if (indicesThatRequireAnUpdate.length > 0) {
-            try {
-                CompressedXContent mapping = mappingSupplier.get();
-                PutMappingRequest putMappingRequest = new PutMappingRequest(indicesThatRequireAnUpdate);
-                putMappingRequest.source(mapping);
-                putMappingRequest.origin(ML_ORIGIN);
-                putMappingRequest.masterNodeTimeout(masterNodeTimeout);
-                executeAsyncWithOrigin(client, ML_ORIGIN, PutMappingAction.INSTANCE, putMappingRequest, ActionListener.wrap(response -> {
-                    if (response.isAcknowledged()) {
-                        listener.onResponse(true);
-                    } else {
-                        listener.onFailure(
-                            new ElasticsearchException(
-                                "Attempt to put missing mapping in indices "
-                                    + Arrays.toString(indicesThatRequireAnUpdate)
-                                    + " was not acknowledged"
-                            )
-                        );
-                    }
-                }, listener::onFailure));
-            } catch (IOException e) {
-                listener.onFailure(e);
-            }
+            PutMappingRequest putMappingRequest = new PutMappingRequest(indicesThatRequireAnUpdate);
+            putMappingRequest.source(mapping);
+            putMappingRequest.origin(ML_ORIGIN);
+            putMappingRequest.masterNodeTimeout(masterNodeTimeout);
+            executeAsyncWithOrigin(client, ML_ORIGIN, PutMappingAction.INSTANCE, putMappingRequest, ActionListener.wrap(response -> {
+                if (response.isAcknowledged()) {
+                    listener.onResponse(true);
+                } else {
+                    listener.onFailure(
+                        new ElasticsearchException(
+                            "Attempt to put missing mapping in indices "
+                                + Arrays.toString(indicesThatRequireAnUpdate)
+                                + " was not acknowledged"
+                        )
+                    );
+                }
+            }, listener::onFailure));
         } else {
             logger.trace("Mappings are up to date.");
             listener.onResponse(true);

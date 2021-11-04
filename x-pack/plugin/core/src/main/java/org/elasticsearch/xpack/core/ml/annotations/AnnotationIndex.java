@@ -116,7 +116,7 @@ public class AnnotationIndex {
         final ActionListener<Boolean> checkMappingsListener = ActionListener.wrap(
             success -> ElasticsearchMappings.addDocMappingIfMissing(
                 WRITE_ALIAS_NAME,
-                () -> AnnotationIndex.ANNOTATIONS_MAPPING,
+                AnnotationIndex.ANNOTATIONS_MAPPING,
                 client,
                 state,
                 masterNodeTimeout,

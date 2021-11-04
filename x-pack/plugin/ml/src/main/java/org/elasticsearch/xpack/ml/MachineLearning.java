@@ -1518,7 +1518,7 @@ public class MachineLearning extends Plugin
                 .setIndexPattern(MlConfigIndex.indexName() + "*")
                 .setPrimaryIndex(MlConfigIndex.indexName())
                 .setDescription("Contains ML configuration data")
-                .setMappings(MlConfigIndex.mapping)
+                .setMappings(MlConfigIndex.MAPPING)
                 .setSettings(MlConfigIndex.settings())
                 .setVersionMetaKey("version")
                 .setOrigin(ML_ORIGIN)

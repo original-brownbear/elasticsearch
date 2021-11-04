@@ -20,7 +20,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateListener;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
@@ -585,7 +584,7 @@ public class AutodetectProcessManager implements ClusterStateListener {
         ActionListener<Boolean> annotationsIndexUpdateHandler = ActionListener.wrap(
             ack -> ElasticsearchMappings.addDocMappingIfMissing(
                 AnomalyDetectorsIndex.jobResultsAliasedName(jobId),
-                () -> new CompressedXContent(AnomalyDetectorsIndex.wrappedResultsMapping()),
+                AnomalyDetectorsIndex.wrappedResultsMapping,
                 client,
                 clusterState,
                 masterNodeTimeout,
@@ -597,7 +596,7 @@ public class AutodetectProcessManager implements ClusterStateListener {
                 logger.warn(new ParameterizedMessage("[{}] ML annotations index could not be updated with latest mappings", jobId), e);
                 ElasticsearchMappings.addDocMappingIfMissing(
                     AnomalyDetectorsIndex.jobResultsAliasedName(jobId),
-                    () -> new CompressedXContent(AnomalyDetectorsIndex.wrappedResultsMapping()),
+                    AnomalyDetectorsIndex.wrappedResultsMapping,
                     client,
                     clusterState,
                     masterNodeTimeout,

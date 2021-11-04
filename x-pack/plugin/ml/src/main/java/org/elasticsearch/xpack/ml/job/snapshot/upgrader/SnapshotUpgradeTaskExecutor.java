@@ -18,7 +18,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.XPackLicenseState;
 import org.elasticsearch.persistent.AllocatedPersistentTask;
@@ -205,7 +204,7 @@ public class SnapshotUpgradeTaskExecutor extends AbstractJobPersistentTasksExecu
         ActionListener<Boolean> annotationsIndexUpdateHandler = ActionListener.wrap(
             ack -> ElasticsearchMappings.addDocMappingIfMissing(
                 AnomalyDetectorsIndex.jobResultsAliasedName(jobId),
-                () -> new CompressedXContent(AnomalyDetectorsIndex.wrappedResultsMapping()),
+                AnomalyDetectorsIndex.wrappedResultsMapping,
                 client,
                 clusterState,
                 MlTasks.PERSISTENT_TASK_MASTER_NODE_TIMEOUT,
@@ -217,7 +216,7 @@ public class SnapshotUpgradeTaskExecutor extends AbstractJobPersistentTasksExecu
                 logger.warn(new ParameterizedMessage("[{}] ML annotations index could not be updated with latest mappings", jobId), e);
                 ElasticsearchMappings.addDocMappingIfMissing(
                     AnomalyDetectorsIndex.jobResultsAliasedName(jobId),
-                    () -> new CompressedXContent(AnomalyDetectorsIndex.wrappedResultsMapping()),
+                    AnomalyDetectorsIndex.wrappedResultsMapping,
                     client,
                     clusterState,
                     MlTasks.PERSISTENT_TASK_MASTER_NODE_TIMEOUT,

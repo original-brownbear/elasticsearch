@@ -58,7 +58,7 @@ public class MlIndexTemplateRegistry extends IndexTemplateRegistry {
     private static IndexTemplateConfig anomalyDetectionResultsTemplate() {
         Map<String, String> variables = new HashMap<>();
         variables.put(VERSION_ID_PATTERN, String.valueOf(Version.CURRENT.id));
-        variables.put("xpack.ml.anomalydetection.results.mappings", AnomalyDetectorsIndex.resultsMapping());
+        variables.put("xpack.ml.anomalydetection.results.mappings", AnomalyDetectorsIndex.resultsMapping.string());
 
         return new IndexTemplateConfig(
             AnomalyDetectorsIndex.jobResultsIndexPrefix(),
@@ -86,7 +86,7 @@ public class MlIndexTemplateRegistry extends IndexTemplateRegistry {
     private static IndexTemplateConfig statsTemplate() {
         Map<String, String> variables = new HashMap<>();
         variables.put(VERSION_ID_PATTERN, String.valueOf(Version.CURRENT.id));
-        variables.put("xpack.ml.stats.mappings", MlStatsIndex.mapping());
+        variables.put("xpack.ml.stats.mappings", MlStatsIndex.mapping.string());
         variables.put(INDEX_LIFECYCLE_NAME, ML_SIZE_BASED_ILM_POLICY_NAME);
         variables.put(INDEX_LIFECYCLE_ROLLOVER_ALIAS, MlStatsIndex.writeAlias());
 
