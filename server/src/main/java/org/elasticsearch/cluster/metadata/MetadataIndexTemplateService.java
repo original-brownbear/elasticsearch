@@ -28,7 +28,6 @@ import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.ValidationException;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.DeprecationLogger;
@@ -48,11 +47,7 @@ import org.elasticsearch.indices.IndexTemplateMissingException;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.InvalidIndexTemplateException;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
-import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xcontent.XContentType;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1201,17 +1196,9 @@ public class MetadataIndexTemplateService {
         if (indexName.startsWith(DataStream.BACKING_INDEX_PREFIX)) {
             // Only if template has data stream definition this should be added and
             // adding this template last, since _timestamp field should have highest precedence:
-            Optional.ofNullable(template.getDataStreamTemplate())
-                .map(ComposableIndexTemplate.DataStreamTemplate::getDataStreamMappingSnippet)
-                .map(mapping -> {
-                    try (XContentBuilder builder = XContentBuilder.builder(XContentType.JSON.xContent())) {
-                        builder.value(mapping);
-                        return new CompressedXContent(BytesReference.bytes(builder));
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                })
-                .ifPresent(mappings::add);
+            if (template.getDataStreamTemplate() != null) {
+                mappings.add(ComposableIndexTemplate.DataStreamTemplate.DATA_STREAM_MAPPING_SNIPPET);
+            }
         }
         return Collections.unmodifiableList(mappings);
     }
