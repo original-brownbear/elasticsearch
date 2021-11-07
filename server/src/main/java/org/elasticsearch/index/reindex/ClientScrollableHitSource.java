@@ -199,11 +199,11 @@ public class ClientScrollableHitSource extends ScrollableHitSource {
 
         @Override
         public String getRouting() {
-            return fieldValue(RoutingFieldMapper.NAME);
+            return fieldValue();
         }
 
-        private <T> T fieldValue(String fieldName) {
-            DocumentField field = delegate.field(fieldName);
+        private <T> T fieldValue() {
+            DocumentField field = delegate.field(RoutingFieldMapper.NAME);
             return field == null ? null : field.getValue();
         }
     }

@@ -1126,10 +1126,6 @@ public class NumberFieldMapper extends FieldMapper {
             return type.parse(value, false).doubleValue();
         }
 
-        public NumericType numericType() {
-            return type.numericType();
-        }
-
         @Override
         public Query termQuery(Object value, SearchExecutionContext context) {
             failIfNotIndexed();

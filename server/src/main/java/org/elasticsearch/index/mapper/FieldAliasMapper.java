@@ -127,7 +127,7 @@ public final class FieldAliasMapper extends Mapper {
     }
 
     public static class Builder extends Mapper.Builder {
-        private String name;
+        private final String name;
         private String path;
 
         protected Builder(String name) {

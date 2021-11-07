@@ -275,16 +275,6 @@ public class TextFieldMapper extends FieldMapper {
             );
         }
 
-        public Builder index(boolean index) {
-            this.index.setValue(index);
-            return this;
-        }
-
-        public Builder store(boolean store) {
-            this.store.setValue(store);
-            return this;
-        }
-
         public Builder fielddata(boolean fielddata) {
             this.fieldData.setValue(fielddata);
             return this;
@@ -1103,7 +1093,7 @@ public class TextFieldMapper extends FieldMapper {
         b.index.toXContent(builder, includeDefaults);
         b.store.toXContent(builder, includeDefaults);
         this.multiFields.toXContent(builder, params);
-        this.copyTo.toXContent(builder, params);
+        this.copyTo.toXContent(builder);
         b.meta.toXContent(builder, includeDefaults);
         b.indexOptions.toXContent(builder, includeDefaults);
         b.termVectors.toXContent(builder, includeDefaults);

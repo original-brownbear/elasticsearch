@@ -22,7 +22,6 @@ import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.index.seqno.SequenceNumbers;
 import org.elasticsearch.search.lookup.SearchLookup;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -201,7 +200,7 @@ public class SeqNoFieldMapper extends MetadataFieldMapper {
     }
 
     @Override
-    public void postParse(DocumentParserContext context) throws IOException {
+    public void postParse(DocumentParserContext context) {
         // In the case of nested docs, let's fill nested docs with the original
         // so that Lucene doesn't write a Bitset for documents that
         // don't have the field. This is consistent with the default value

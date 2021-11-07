@@ -238,7 +238,7 @@ public class TransportSimulateIndexTemplateAction extends TransportMasterNodeRea
                 MapperService mapperService = tempIndexService.mapperService();
                 for (Map<String, Object> mapping : mappings) {
                     if (mapping.isEmpty() == false) {
-                        mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mapping, MapperService.MergeReason.INDEX_TEMPLATE);
+                        mapperService.merge(mapping, MapperService.MergeReason.INDEX_TEMPLATE);
                     }
                 }
 

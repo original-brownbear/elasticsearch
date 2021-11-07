@@ -359,7 +359,7 @@ public final class FlattenedFieldMapper extends FieldMapper {
         @Override
         public IndexFieldData.Builder fielddataBuilder(String fullyQualifiedIndexName, Supplier<SearchLookup> searchLookup) {
             failIfNoDocValues();
-            return new KeyedFlattenedFieldData.Builder(name(), key, CoreValuesSourceType.KEYWORD);
+            return new KeyedFlattenedFieldData.Builder(name(), key);
         }
 
         @Override
@@ -375,7 +375,7 @@ public final class FlattenedFieldMapper extends FieldMapper {
 
     // Wraps a raw Lucene TermsEnum to strip values of fieldnames
     static class TranslatingTermsEnum extends TermsEnum {
-        TermsEnum delegate;
+        final TermsEnum delegate;
 
         TranslatingTermsEnum(TermsEnum delegate) {
             this.delegate = delegate;
@@ -558,10 +558,10 @@ public final class FlattenedFieldMapper extends FieldMapper {
             private final String key;
             private final ValuesSourceType valuesSourceType;
 
-            Builder(String fieldName, String key, ValuesSourceType valuesSourceType) {
+            Builder(String fieldName, String key) {
                 this.fieldName = fieldName;
                 this.key = key;
-                this.valuesSourceType = valuesSourceType;
+                this.valuesSourceType = CoreValuesSourceType.KEYWORD;
             }
 
             @Override

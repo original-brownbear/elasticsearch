@@ -118,10 +118,6 @@ public class MappingParserContext {
         return false;
     }
 
-    protected Function<String, SimilarityProvider> similarityLookupService() {
-        return similarityLookupService;
-    }
-
     /**
      * The {@linkplain ScriptCompiler} to compile scripts needed by the {@linkplain Mapper}.
      */

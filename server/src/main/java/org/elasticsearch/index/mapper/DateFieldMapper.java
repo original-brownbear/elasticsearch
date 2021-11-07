@@ -108,8 +108,8 @@ public final class DateFieldMapper extends FieldMapper {
             }
 
             @Override
-            protected Query distanceFeatureQuery(String field, float boost, long origin, TimeValue pivot) {
-                return LongPoint.newDistanceFeatureQuery(field, boost, origin, pivot.getMillis());
+            protected Query distanceFeatureQuery(String field, long origin, TimeValue pivot) {
+                return LongPoint.newDistanceFeatureQuery(field, (float) 1.0, origin, pivot.getMillis());
             }
         },
         NANOSECONDS(DATE_NANOS_CONTENT_TYPE, NumericType.DATE_NANOSECONDS) {
@@ -149,8 +149,8 @@ public final class DateFieldMapper extends FieldMapper {
             }
 
             @Override
-            protected Query distanceFeatureQuery(String field, float boost, long origin, TimeValue pivot) {
-                return LongPoint.newDistanceFeatureQuery(field, boost, origin, pivot.getNanos());
+            protected Query distanceFeatureQuery(String field, long origin, TimeValue pivot) {
+                return LongPoint.newDistanceFeatureQuery(field, (float) 1.0, origin, pivot.getNanos());
             }
         };
 
@@ -210,7 +210,7 @@ public final class DateFieldMapper extends FieldMapper {
             throw new IllegalArgumentException("unknown resolution ordinal [" + ord + "]");
         }
 
-        protected abstract Query distanceFeatureQuery(String field, float boost, long origin, TimeValue pivot);
+        protected abstract Query distanceFeatureQuery(String field, long origin, TimeValue pivot);
     }
 
     private static DateFieldMapper toType(FieldMapper in) {
@@ -585,7 +585,7 @@ public final class DateFieldMapper extends FieldMapper {
             long originLong = parseToLong(origin, true, null, null, context::nowInMillis);
             TimeValue pivotTime = TimeValue.parseTimeValue(pivot, "distance_feature.pivot");
             // As we already apply boost in AbstractQueryBuilder::toQuery, we always passing a boost of 1.0 to distanceFeatureQuery
-            return resolution.distanceFeatureQuery(name(), 1.0f, originLong, pivotTime);
+            return resolution.distanceFeatureQuery(name(), originLong, pivotTime);
         }
 
         @Override
@@ -620,7 +620,7 @@ public final class DateFieldMapper extends FieldMapper {
             ZoneId timeZone,
             DateMathParser dateParser,
             QueryRewriteContext context
-        ) throws IOException {
+        ) {
             if (dateParser == null) {
                 if (from instanceof Number || to instanceof Number) {
                     // force epoch_millis

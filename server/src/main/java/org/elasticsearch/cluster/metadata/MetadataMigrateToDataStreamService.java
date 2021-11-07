@@ -169,11 +169,7 @@ public class MetadataMigrateToDataStreamService {
 
         MapperService mapperService = mapperSupplier.apply(im);
         mapperService.merge(im, MapperService.MergeReason.MAPPING_RECOVERY);
-        mapperService.merge(
-            "_doc",
-            Map.of(DataStreamTimestampFieldMapper.NAME, Map.of("enabled", true)),
-            MapperService.MergeReason.MAPPING_UPDATE
-        );
+        mapperService.merge(Map.of(DataStreamTimestampFieldMapper.NAME, Map.of("enabled", true)), MapperService.MergeReason.MAPPING_UPDATE);
         DocumentMapper mapper = mapperService.documentMapper();
 
         var imb = IndexMetadata.builder(im);

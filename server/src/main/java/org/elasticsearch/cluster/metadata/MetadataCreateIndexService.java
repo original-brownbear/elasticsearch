@@ -1204,7 +1204,7 @@ public class MetadataCreateIndexService {
         MapperService mapperService = indexService.mapperService();
         for (Map<String, Object> mapping : mappings) {
             if (mapping.isEmpty() == false) {
-                mapperService.merge(MapperService.SINGLE_MAPPING_NAME, mapping, MergeReason.INDEX_TEMPLATE);
+                mapperService.merge(mapping, MergeReason.INDEX_TEMPLATE);
             }
         }
 

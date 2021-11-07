@@ -56,8 +56,8 @@ public abstract class AbstractShapeGeometryFieldMapper<T> extends AbstractGeomet
         }
     }
 
-    protected Explicit<Boolean> coerce;
-    protected Explicit<Orientation> orientation;
+    protected final Explicit<Boolean> coerce;
+    protected final Explicit<Orientation> orientation;
 
     protected AbstractShapeGeometryFieldMapper(
         String simpleName,

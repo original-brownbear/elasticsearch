@@ -1421,12 +1421,7 @@ public class MetadataIndexTemplateService {
             createdIndex = dummyIndexService.index();
 
             if (mappings != null) {
-                dummyIndexService.mapperService()
-                    .merge(
-                        MapperService.SINGLE_MAPPING_NAME,
-                        MapperService.parseMapping(xContentRegistry, mappings),
-                        MergeReason.MAPPING_UPDATE
-                    );
+                dummyIndexService.mapperService().merge(MapperService.parseMapping(xContentRegistry, mappings), MergeReason.MAPPING_UPDATE);
             }
 
         } finally {

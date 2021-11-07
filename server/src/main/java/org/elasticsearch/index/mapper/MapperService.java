@@ -186,10 +186,6 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         return this.indexAnalyzers;
     }
 
-    public NamedAnalyzer getNamedAnalyzer(String analyzerName) {
-        return this.indexAnalyzers.get(analyzerName);
-    }
-
     public MappingParserContext parserContext() {
         return parserContextSupplier.get();
     }
@@ -253,7 +249,7 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     /**
      * Update local mapping by applying the incoming mapping that have already been merged with the current one on the master
      */
-    public void updateMapping(final IndexMetadata currentIndexMetadata, final IndexMetadata newIndexMetadata) throws IOException {
+    public void updateMapping(final IndexMetadata currentIndexMetadata, final IndexMetadata newIndexMetadata) {
         assert newIndexMetadata.getIndex().equals(index())
             : "index mismatch: expected " + index() + " but was " + newIndexMetadata.getIndex();
 
@@ -333,9 +329,9 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         return true;
     }
 
-    public void merge(String type, Map<String, Object> mappings, MergeReason reason) throws IOException {
+    public void merge(Map<String, Object> mappings, MergeReason reason) throws IOException {
         CompressedXContent content = new CompressedXContent(Strings.toString(XContentFactory.jsonBuilder().map(mappings)));
-        mergeAndApplyMappings(type, content, reason);
+        mergeAndApplyMappings(MapperService.SINGLE_MAPPING_NAME, content, reason);
     }
 
     public void merge(IndexMetadata indexMetadata, MergeReason reason) {
