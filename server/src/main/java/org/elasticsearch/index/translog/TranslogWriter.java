@@ -45,6 +45,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
 
+import static org.elasticsearch.index.translog.Translog.writeOperationNoSize;
+
 public class TranslogWriter extends BaseTranslogReader implements Closeable {
 
     private final ShardId shardId;
@@ -201,12 +203,10 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
     /**
      * Add the given bytes to the translog with the specified sequence number; returns the location the bytes were written to.
      *
-     * @param data  the bytes to write
-     * @param seqNo the sequence number associated with the operation
      * @return the location the bytes were written to
      * @throws IOException if writing to the translog resulted in an I/O exception
      */
-    public Translog.Location add(final BytesReference data, final long seqNo) throws IOException {
+    public Translog.Location add(final Translog.Operation operation) throws IOException {
         long bufferedBytesBeforeAdd = this.bufferedBytes;
         if (bufferedBytesBeforeAdd >= forceWriteThreshold) {
             writeBufferedOps(Long.MAX_VALUE, bufferedBytesBeforeAdd >= forceWriteThreshold * 4);
@@ -220,12 +220,20 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
             }
             assert bufferedBytes == buffer.size();
             final long offset = totalOffset;
-            totalOffset += data.length();
-            data.writeTo(buffer);
+            final long start = buffer.position();
+            buffer.skip(Integer.BYTES);
+            writeOperationNoSize(new BufferedChecksumStreamOutput(buffer), operation);
+            final long end = buffer.position();
+            final int operationSize = (int) (end - Integer.BYTES - start);
+            buffer.seek(start);
+            buffer.writeInt(operationSize);
+            buffer.seek(end);
+            totalOffset += (end - start);
 
             assert minSeqNo != SequenceNumbers.NO_OPS_PERFORMED || operationCounter == 0;
             assert maxSeqNo != SequenceNumbers.NO_OPS_PERFORMED || operationCounter == 0;
 
+            final long seqNo = operation.seqNo();
             minSeqNo = SequenceNumbers.min(minSeqNo, seqNo);
             maxSeqNo = SequenceNumbers.max(maxSeqNo, seqNo);
 
@@ -233,9 +241,9 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
 
             operationCounter++;
 
-            assert assertNoSeqNumberConflict(seqNo, data);
+            //assert assertNoSeqNumberConflict(seqNo, data);
 
-            location = new Translog.Location(generation, offset, data.length());
+            location = new Translog.Location(generation, offset, Math.toIntExact(end - start));
             bufferedBytes = buffer.size();
         }
 

@@ -1312,7 +1312,7 @@ public class TranslogTests extends ESTestCase {
             if (seqNo != SequenceNumbers.UNASSIGNED_SEQ_NO) {
                 seenSeqNos.add(seqNo);
             }
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), seqNo);
+            ////writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), seqNo);
         }
         assertThat(persistedSeqNos, empty());
         writer.sync();
@@ -1337,7 +1337,7 @@ public class TranslogTests extends ESTestCase {
         byte[] bytes = new byte[4];
         DataOutput out = EndiannessReverserUtil.wrapDataOutput(new ByteArrayDataOutput(bytes));
         out.writeInt(2048);
-        writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), randomNonNegativeLong());
+        //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), randomNonNegativeLong());
 
         if (reader instanceof TranslogReader) {
             ByteBuffer buffer = ByteBuffer.allocate(4);
@@ -1429,16 +1429,16 @@ public class TranslogTests extends ESTestCase {
             TranslogWriter writer = translog.getCurrent();
             int initialWriteCalls = writeCalls.get();
             byte[] bytes = new byte[256];
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 1);
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 2);
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 3);
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 4);
+            //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 1);
+            //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 2);
+            //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 3);
+            //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 4);
             assertThat(persistedSeqNos, empty());
             assertEquals(initialWriteCalls, writeCalls.get());
 
             if (randomBoolean()) {
                 // Since the buffer is full, this will flush before performing the add.
-                writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 5);
+                //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 5);
                 assertThat(persistedSeqNos, empty());
                 assertThat(writeCalls.get(), greaterThan(initialWriteCalls));
             } else {
@@ -1448,7 +1448,7 @@ public class TranslogTests extends ESTestCase {
                 assertThat(writeCalls.get(), greaterThan(initialWriteCalls));
 
                 // Add after we the read flushed the buffer
-                writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 5);
+                //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 5);
             }
 
             writer.sync();
@@ -1546,7 +1546,7 @@ public class TranslogTests extends ESTestCase {
             byte[] bytes = new byte[4];
             DataOutput out = EndiannessReverserUtil.wrapDataOutput(new ByteArrayDataOutput(new byte[4]));
             out.writeInt(1);
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 1);
+            //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 1);
             assertThat(persistedSeqNos, empty());
             startBlocking.set(true);
             Thread thread = new Thread(() -> {
@@ -1560,7 +1560,7 @@ public class TranslogTests extends ESTestCase {
             writeStarted.await();
 
             // Add will not block even though we are currently writing/syncing
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 2);
+            //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 2);
 
             blocker.countDown();
             // Sync against so that both operations are written
@@ -1578,7 +1578,7 @@ public class TranslogTests extends ESTestCase {
                 final byte[] bytes = new byte[4];
                 final DataOutput out = EndiannessReverserUtil.wrapDataOutput(new ByteArrayDataOutput(bytes));
                 out.writeInt(i);
-                writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), randomNonNegativeLong());
+                //writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), randomNonNegativeLong());
             }
             writer.sync();
             final Checkpoint writerCheckpoint = writer.getCheckpoint();
