@@ -64,6 +64,11 @@ public class RestController implements HttpServerTransport.Dispatcher {
     private static final String ELASTIC_PRODUCT_ORIGIN_HTTP_HEADER = "X-elastic-product-origin";
 
     private static final BytesReference FAVICON_RESPONSE;
+    public static final BytesRestResponse EMPTY_500 = new BytesRestResponse(
+        INTERNAL_SERVER_ERROR,
+        BytesRestResponse.TEXT_CONTENT_TYPE,
+        BytesArray.EMPTY
+    );
 
     static {
         try (InputStream stream = RestController.class.getResourceAsStream("/config/favicon.ico")) {
@@ -327,7 +332,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
                 e.addSuppressed(cause);
             }
             logger.warn("failed to send bad request response", e);
-            channel.sendResponse(new BytesRestResponse(INTERNAL_SERVER_ERROR, BytesRestResponse.TEXT_CONTENT_TYPE, BytesArray.EMPTY));
+            channel.sendResponse(EMPTY_500);
         }
     }
 
@@ -544,7 +549,7 @@ public class RestController implements HttpServerTransport.Dispatcher {
             channel.sendResponse(bytesRestResponse);
         } catch (final IOException e) {
             logger.warn("failed to send bad request response", e);
-            channel.sendResponse(new BytesRestResponse(INTERNAL_SERVER_ERROR, BytesRestResponse.TEXT_CONTENT_TYPE, BytesArray.EMPTY));
+            channel.sendResponse(EMPTY_500);
         }
     }
 

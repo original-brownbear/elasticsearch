@@ -55,13 +55,6 @@ public class BytesRestResponse extends RestResponse {
     }
 
     /**
-     * Creates a new plain text response.
-     */
-    public BytesRestResponse(RestStatus status, String responseMediaType, String content) {
-        this(status, responseMediaType, new BytesArray(content));
-    }
-
-    /**
      * Creates a binary response.
      */
     public BytesRestResponse(RestStatus status, String responseMediaType, byte[] content) {

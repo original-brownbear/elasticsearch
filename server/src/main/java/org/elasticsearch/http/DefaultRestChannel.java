@@ -25,7 +25,6 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -50,6 +49,9 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
     private final ThreadContext threadContext;
     private final HttpChannel httpChannel;
     private final CorsHandler corsHandler;
+
+    @Nullable
+    private Releasable toRelease;
 
     @Nullable
     private final HttpTracer tracerLog;
@@ -84,21 +86,14 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
         // We're sending a response so we know we won't be needing the request content again and release it
         httpRequest.release();
 
-        final ArrayList<Releasable> toClose = new ArrayList<>(3);
-        if (HttpUtils.shouldCloseConnection(httpRequest)) {
-            toClose.add(() -> CloseableChannel.closeChannel(httpChannel));
-        }
-
         boolean success = false;
         String opaque = null;
         String contentLength = null;
         try {
             final BytesReference content = restResponse.content();
             if (content instanceof Releasable) {
-                toClose.add((Releasable) content);
+                this.toRelease = (Releasable) content;
             }
-            toClose.add(this::releaseOutputBuffer);
-
             BytesReference finalContent = content;
             try {
                 if (request.method() == RestRequest.Method.HEAD) {
@@ -130,16 +125,24 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
 
             addCookies(httpResponse);
 
-            ActionListener<Void> listener = ActionListener.wrap(() -> Releasables.close(toClose));
+            ActionListener<Void> listener = ActionListener.wrap(this::releaseResources);
             httpChannel.sendResponse(httpResponse, listener);
             success = true;
         } finally {
             if (success == false) {
-                Releasables.close(toClose);
+                releaseResources();
             }
             if (tracerLog != null) {
                 tracerLog.traceResponse(restResponse, httpChannel, contentLength, opaque, request.getRequestId(), success);
             }
+        }
+    }
+
+    private void releaseResources() {
+        this.releaseOutputBuffer();
+        Releasables.close(toRelease);
+        if (HttpUtils.shouldCloseConnection(httpRequest)) {
+            CloseableChannel.closeChannel(httpChannel);
         }
     }
 
