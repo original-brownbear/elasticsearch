@@ -8,14 +8,22 @@
 
 package org.elasticsearch.http.netty4;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.util.concurrent.PromiseCombiner;
 
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.transport.netty4.NettyAllocator;
 
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
@@ -27,6 +35,17 @@ import java.util.PriorityQueue;
  * Implements HTTP pipelining ordering, ensuring that responses are completely served in the same order as their corresponding requests.
  */
 public class Netty4HttpPipeliningHandler extends ChannelDuplexHandler {
+
+    private static final String DO_NOT_SPLIT = "es.unsafe.do_not_split_http_responses";
+
+    private static final boolean DO_NOT_SPLIT_HTTP_RESPONSES;
+    private static final int SPLIT_THRESHOLD;
+
+    static {
+        DO_NOT_SPLIT_HTTP_RESPONSES = Booleans.parseBoolean(System.getProperty(DO_NOT_SPLIT), false);
+        // Netty will add some header bytes if it compresses this message. So we downsize slightly.
+        SPLIT_THRESHOLD = (int) (NettyAllocator.suggestedMaxAllocationSize() * 0.99);
+    }
 
     private final Logger logger;
 
@@ -98,7 +117,7 @@ public class Netty4HttpPipeliningHandler extends ChannelDuplexHandler {
         try {
             List<Tuple<Netty4HttpResponse, ChannelPromise>> readyResponses = write(response, promise);
             for (Tuple<Netty4HttpResponse, ChannelPromise> readyResponse : readyResponses) {
-                ctx.write(readyResponse.v1(), readyResponse.v2());
+                encodeAndWrite(ctx, readyResponse.v1(), readyResponse.v2());
             }
             success = true;
         } catch (IllegalStateException e) {
@@ -107,6 +126,22 @@ public class Netty4HttpPipeliningHandler extends ChannelDuplexHandler {
             if (success == false) {
                 promise.setFailure(new ClosedChannelException());
             }
+        }
+    }
+
+    private static void encodeAndWrite(ChannelHandlerContext ctx, Netty4HttpResponse msg, ChannelPromise listener) {
+        if (DO_NOT_SPLIT_HTTP_RESPONSES || msg.content().readableBytes() <= SPLIT_THRESHOLD) {
+            ctx.write(msg, listener);
+        } else {
+            HttpResponse response = new DefaultHttpResponse(msg.protocolVersion(), msg.status(), msg.headers());
+            final PromiseCombiner combiner = new PromiseCombiner(ctx.executor());
+            combiner.add(ctx.write(response));
+            ByteBuf content = msg.content();
+            while (content.readableBytes() > SPLIT_THRESHOLD) {
+                combiner.add(ctx.write(new DefaultHttpContent(content.readSlice(SPLIT_THRESHOLD))));
+            }
+            combiner.add(ctx.write(new DefaultLastHttpContent(content.readSlice(content.readableBytes()))));
+            combiner.finish(listener);
         }
     }
 
