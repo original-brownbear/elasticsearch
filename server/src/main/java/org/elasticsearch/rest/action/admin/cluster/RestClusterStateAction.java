@@ -16,20 +16,22 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
+import org.elasticsearch.http.ChunkedHttpBody;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.action.DispatchingRestToXContentListener;
-import org.elasticsearch.rest.action.RestCancellableNodeClient;
+import org.elasticsearch.rest.RestResponse;
+import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.action.RestActionListener;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -37,18 +39,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.LongSupplier;
 
-import static java.util.Collections.singletonMap;
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
 public class RestClusterStateAction extends BaseRestHandler {
 
     private final SettingsFilter settingsFilter;
 
-    private final ThreadPool threadPool;
-
-    public RestClusterStateAction(SettingsFilter settingsFilter, ThreadPool threadPool) {
+    public RestClusterStateAction(SettingsFilter settingsFilter) {
         this.settingsFilter = settingsFilter;
-        this.threadPool = threadPool;
     }
 
     @Override
@@ -104,25 +102,62 @@ public class RestClusterStateAction extends BaseRestHandler {
         }
         settingsFilter.addFilterSettingParams(request);
 
-        return channel -> new RestCancellableNodeClient(client, request.getHttpChannel()).execute(
-            ClusterStateAction.INSTANCE,
-            clusterStateRequest,
-            new DispatchingRestToXContentListener<RestClusterStateResponse>(
-                // Process serialization on MANAGEMENT pool since the serialization of the cluster state to XContent
-                // can be too slow to execute on an IO thread
-                threadPool.executor(ThreadPool.Names.MANAGEMENT),
-                channel,
-                request
-            ) {
-                @Override
-                protected ToXContent.Params getParams() {
-                    return new ToXContent.DelegatingMapParams(
-                        singletonMap(Metadata.CONTEXT_MODE_PARAM, Metadata.CONTEXT_MODE_API),
-                        request
-                    );
-                }
-            }.map(response -> new RestClusterStateResponse(clusterStateRequest, response, threadPool::relativeTimeInMillis))
-        );
+        return channel -> client.execute(ClusterStateAction.INSTANCE, clusterStateRequest, new RestActionListener<>(channel) {
+
+            @Override
+            protected void processResponse(ClusterStateResponse clusterStateResponse) throws Exception {
+                channel.sendResponse(new RestResponse() {
+                    @Override
+                    public String contentType() {
+                        return request.getXContentType().mediaType();
+                    }
+
+                    @Override
+                    public Object content() {
+                        return new ChunkedHttpBody() {
+
+                            private final OutputStreamPointer pointer = new OutputStreamPointer();
+                            private XContentBuilder generator = null;
+
+                            @Override
+                            public boolean serialize(OutputStream out, int sizeHint) throws IOException {
+                                pointer.pointer = out;
+                                pointer.written = 0L;
+                                if (generator == null) {
+                                    generator = new XContentBuilder(request.getXContentType().xContent(), pointer);
+                                }
+                                clusterStateResponse.getState().toXContent(generator, ToXContent.EMPTY_PARAMS);
+                                return false;
+                            }
+                        };
+                    }
+
+                    @Override
+                    public RestStatus status() {
+                        return RestStatus.OK;
+                    }
+                });
+            }
+        });
+    }
+
+    private static final class OutputStreamPointer extends OutputStream {
+
+        private OutputStream pointer;
+
+        private long written = 0L;
+
+        @Override
+        public void write(int b) throws IOException {
+            pointer.write(b);
+            written++;
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            pointer.write(b, off, len);
+            written += len;
+        }
     }
 
     private static final Set<String> RESPONSE_PARAMS;

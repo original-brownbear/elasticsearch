@@ -549,7 +549,7 @@ public class RestControllerTests extends ESTestCase {
             randomBoolean() ? new IllegalStateException("bad request") : new Throwable("bad request")
         );
         assertTrue(channel.getSendResponseCalled());
-        assertThat(channel.getRestResponse().content().utf8ToString(), containsString("bad request"));
+        assertThat(((BytesReference)channel.getRestResponse().content()).utf8ToString(), containsString("bad request"));
     }
 
     public void testDoesNotConsumeContent() throws Exception {
@@ -590,7 +590,7 @@ public class RestControllerTests extends ESTestCase {
         final AssertingChannel channel = new AssertingChannel(fakeRestRequest, true, RestStatus.BAD_REQUEST);
         restController.dispatchBadRequest(channel, client.threadPool().getThreadContext(), null);
         assertTrue(channel.getSendResponseCalled());
-        assertThat(channel.getRestResponse().content().utf8ToString(), containsString("unknown cause"));
+        assertThat(((BytesReference)channel.getRestResponse().content()).utf8ToString(), containsString("unknown cause"));
     }
 
     public void testFavicon() {
@@ -660,7 +660,7 @@ public class RestControllerTests extends ESTestCase {
             }
 
             @Override
-            public HttpResponse createResponse(RestStatus status, BytesReference content) {
+            public HttpResponse createResponse(RestStatus status, Object content) {
                 return null;
             }
 

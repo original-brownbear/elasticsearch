@@ -111,7 +111,7 @@ public class FakeRestRequest extends RestRequest {
         }
 
         @Override
-        public HttpResponse createResponse(RestStatus status, BytesReference unused) {
+        public HttpResponse createResponse(RestStatus status, Object unused) {
             Map<String, String> responseHeaders = new HashMap<>();
             return new HttpResponse() {
                 @Override

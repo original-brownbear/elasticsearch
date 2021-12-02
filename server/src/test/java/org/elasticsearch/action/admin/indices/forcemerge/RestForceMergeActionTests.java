@@ -10,6 +10,7 @@ package org.elasticsearch.action.admin.indices.forcemerge;
 
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.rest.AbstractRestChannel;
@@ -54,7 +55,8 @@ public class RestForceMergeActionTests extends RestActionTestCase {
         final RestResponse response = responseSetOnce.get();
         assertThat(response, notNullValue());
         assertThat(response.status(), is(RestStatus.BAD_REQUEST));
-        assertThat(response.content().utf8ToString(), containsString("request [POST /_forcemerge] does not support having a body"));
+        assertThat(((BytesReference) response.content()).utf8ToString(),
+            containsString("request [POST /_forcemerge] does not support having a body"));
     }
 
     protected void dispatchRequest(final RestRequest request, final RestChannel channel) {

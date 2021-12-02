@@ -21,8 +21,10 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.http.ChunkedHttpBody;
 import org.elasticsearch.http.HttpPipelinedMessage;
 import org.elasticsearch.http.HttpRequest;
+import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.transport.netty4.Netty4Utils;
@@ -233,8 +235,12 @@ public class Netty4HttpRequest implements HttpRequest, HttpPipelinedMessage {
     }
 
     @Override
-    public Netty4HttpResponse createResponse(RestStatus status, BytesReference contentRef) {
-        return new Netty4HttpResponse(request.headers(), request.protocolVersion(), status, contentRef, sequence);
+    public HttpResponse createResponse(RestStatus status, Object contentRef) {
+        if (contentRef instanceof BytesReference) {
+            return new Netty4HttpResponse(request.headers(), request.protocolVersion(), status, (BytesReference) contentRef, sequence);
+        } else {
+            return new Netty4ChunkedHttpResponse(request.headers(), request.protocolVersion(), status, (ChunkedHttpBody) contentRef, sequence);
+        }
     }
 
     @Override

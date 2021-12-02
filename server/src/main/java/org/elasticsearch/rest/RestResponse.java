@@ -9,7 +9,6 @@
 package org.elasticsearch.rest;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.core.Releasable;
 
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ public abstract class RestResponse {
      * The response content. Note, if the content is {@link Releasable} it
      * should automatically be released when done by the channel sending it.
      */
-    public abstract BytesReference content();
+    public abstract Object content();
 
     /**
      * The rest status code.

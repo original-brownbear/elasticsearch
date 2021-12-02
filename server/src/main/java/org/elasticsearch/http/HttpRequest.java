@@ -73,7 +73,7 @@ public interface HttpRequest {
     /**
      * Create an http response from this request and the supplied status and content.
      */
-    HttpResponse createResponse(RestStatus status, BytesReference content);
+    HttpResponse createResponse(RestStatus status, Object content);
 
     @Nullable
     Exception getInboundException();
