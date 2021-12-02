@@ -10,14 +10,10 @@ package org.elasticsearch.http.netty4;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.util.ReferenceCounted;
 
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -25,7 +21,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.MockBigArrays;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
-import org.elasticsearch.http.HttpPipelinedRequest;
+import org.elasticsearch.http.HttpChannel;
+import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.http.HttpServerTransport;
 import org.elasticsearch.http.NullDispatcher;
@@ -116,63 +113,24 @@ public class Netty4HttpServerPipeliningTests extends ESTestCase {
         }
 
         @Override
-        public ChannelHandler configureServerChannelHandler() {
-            return new CustomHttpChannelHandler(this, executorService);
-        }
-
-        @Override
         protected void doClose() {
             executorService.shutdown();
             super.doClose();
         }
 
+        @Override
+        public void incomingRequest(HttpRequest httpRequest, HttpChannel httpChannel) {
+            executorService.submit(new PossiblySlowRunnable(httpRequest, httpChannel));
+        }
     }
 
-    private class CustomHttpChannelHandler extends Netty4HttpServerTransport.HttpChannelHandler {
+    private static class PossiblySlowRunnable implements Runnable {
 
-        private final ExecutorService executorService;
+        private final HttpChannel channel;
+        private final HttpRequest pipelinedRequest;
 
-        CustomHttpChannelHandler(Netty4HttpServerTransport transport, ExecutorService executorService) {
-            super(transport, transport.handlingSettings);
-            this.executorService = executorService;
-        }
-
-        @Override
-        protected void initChannel(Channel ch) throws Exception {
-            super.initChannel(ch);
-            ch.pipeline().replace("handler", "handler", new PossiblySlowUpstreamHandler(executorService));
-        }
-
-    }
-
-    class PossiblySlowUpstreamHandler extends SimpleChannelInboundHandler<HttpPipelinedRequest> {
-
-        private final ExecutorService executorService;
-
-        PossiblySlowUpstreamHandler(ExecutorService executorService) {
-            this.executorService = executorService;
-        }
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, HttpPipelinedRequest msg) throws Exception {
-            executorService.submit(new PossiblySlowRunnable(ctx, msg));
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            logger.info("Caught exception", cause);
-            ctx.channel().close().sync();
-        }
-
-    }
-
-    class PossiblySlowRunnable implements Runnable {
-
-        private ChannelHandlerContext ctx;
-        private HttpPipelinedRequest pipelinedRequest;
-
-        PossiblySlowRunnable(ChannelHandlerContext ctx, HttpPipelinedRequest msg) {
-            this.ctx = ctx;
+        PossiblySlowRunnable(HttpRequest msg, HttpChannel channel) {
+            this.channel = channel;
             this.pipelinedRequest = msg;
         }
 
@@ -200,8 +158,7 @@ public class Netty4HttpServerPipeliningTests extends ESTestCase {
                     assert uri.matches("/\\d+");
                 }
 
-                final ChannelPromise promise = ctx.newPromise();
-                ctx.writeAndFlush(response, promise);
+                channel.sendResponse(response, ActionListener.wrap(() -> {}));
             } finally {
                 pipelinedRequest.release();
             }
