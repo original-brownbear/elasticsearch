@@ -55,8 +55,10 @@ public class RestForceMergeActionTests extends RestActionTestCase {
         final RestResponse response = responseSetOnce.get();
         assertThat(response, notNullValue());
         assertThat(response.status(), is(RestStatus.BAD_REQUEST));
-        assertThat(((BytesReference) response.content()).utf8ToString(),
-            containsString("request [POST /_forcemerge] does not support having a body"));
+        assertThat(
+            ((BytesReference) response.content()).utf8ToString(),
+            containsString("request [POST /_forcemerge] does not support having a body")
+        );
     }
 
     protected void dispatchRequest(final RestRequest request, final RestChannel channel) {

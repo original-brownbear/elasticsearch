@@ -16,6 +16,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
@@ -25,10 +26,12 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.RestActionListener;
+import org.elasticsearch.rest.action.RestCancellableNodeClient;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
+import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,14 +42,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.LongSupplier;
 
+import static java.util.Collections.singletonMap;
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
 public class RestClusterStateAction extends BaseRestHandler {
 
     private final SettingsFilter settingsFilter;
 
-    public RestClusterStateAction(SettingsFilter settingsFilter) {
+    private final ThreadPool threadPool;
+
+    public RestClusterStateAction(SettingsFilter settingsFilter, ThreadPool threadPool) {
         this.settingsFilter = settingsFilter;
+        this.threadPool = threadPool;
     }
 
     @Override
@@ -102,43 +109,60 @@ public class RestClusterStateAction extends BaseRestHandler {
         }
         settingsFilter.addFilterSettingParams(request);
 
-        return channel -> client.execute(ClusterStateAction.INSTANCE, clusterStateRequest, new RestActionListener<>(channel) {
+        final XContentType xContentType = request.getXContentType() == null ? XContentType.JSON : request.getXContentType();
+        return channel -> new RestCancellableNodeClient(client, request.getHttpChannel()).execute(
+            ClusterStateAction.INSTANCE,
+            clusterStateRequest,
+            new RestActionListener<>(channel) {
 
-            @Override
-            protected void processResponse(ClusterStateResponse clusterStateResponse) throws Exception {
-                channel.sendResponse(new RestResponse() {
-                    @Override
-                    public String contentType() {
-                        return request.getXContentType().mediaType();
-                    }
+                @Override
+                protected void processResponse(ClusterStateResponse clusterStateResponse) {
+                    channel.sendResponse(new RestResponse() {
+                        @Override
+                        public String contentType() {
+                            return xContentType.mediaType();
+                        }
 
-                    @Override
-                    public Object content() {
-                        return new ChunkedHttpBody() {
+                        @Override
+                        public Object content() {
+                            return new ChunkedHttpBody() {
 
-                            private final OutputStreamPointer pointer = new OutputStreamPointer();
-                            private XContentBuilder generator = null;
+                                private final OutputStreamPointer pointer = new OutputStreamPointer();
+                                private XContentBuilder generator = null;
 
-                            @Override
-                            public boolean serialize(OutputStream out, int sizeHint) throws IOException {
-                                pointer.pointer = out;
-                                pointer.written = 0L;
-                                if (generator == null) {
-                                    generator = new XContentBuilder(request.getXContentType().xContent(), pointer);
+                                @Override
+                                public boolean serialize(OutputStream out, int sizeHint) throws IOException {
+                                    pointer.pointer = out;
+                                    pointer.written = 0L;
+                                    if (generator == null) {
+                                        generator = new XContentBuilder(xContentType.xContent(), pointer);
+                                    }
+                                    new RestClusterStateResponse(
+                                        clusterStateRequest,
+                                        clusterStateResponse,
+                                        threadPool::relativeTimeInMillis
+                                    ).toXContent(
+                                        generator,
+                                        new ToXContent.DelegatingMapParams(
+                                            singletonMap(Metadata.CONTEXT_MODE_PARAM, Metadata.CONTEXT_MODE_API),
+                                            request
+                                        )
+                                    );
+                                    generator.flush();
+                                    generator.close();
+                                    return true;
                                 }
-                                clusterStateResponse.getState().toXContent(generator, ToXContent.EMPTY_PARAMS);
-                                return false;
-                            }
-                        };
-                    }
+                            };
+                        }
 
-                    @Override
-                    public RestStatus status() {
-                        return RestStatus.OK;
-                    }
-                });
+                        @Override
+                        public RestStatus status() {
+                            return RestStatus.OK;
+                        }
+                    });
+                }
             }
-        });
+        );
     }
 
     private static final class OutputStreamPointer extends OutputStream {

@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.security.rest.action.oauth2;
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.action.ActionRequestValidationException;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.rest.AbstractRestChannel;
@@ -54,8 +55,11 @@ public class RestGetTokenActionTests extends ESTestCase {
         RestResponse response = responseSetOnce.get();
         assertNotNull(response);
 
-        Map<String, Object> map = XContentHelper.convertToMap(response.content(), false, XContentType.fromMediaType(response.contentType()))
-            .v2();
+        Map<String, Object> map = XContentHelper.convertToMap(
+            (BytesReference) response.content(),
+            false,
+            XContentType.fromMediaType(response.contentType())
+        ).v2();
         assertThat(map, hasEntry("error", "unsupported_grant_type"));
         assertThat(map, hasEntry("error_description", ve.getMessage()));
         assertEquals(2, map.size());
@@ -89,8 +93,11 @@ public class RestGetTokenActionTests extends ESTestCase {
         RestResponse response = responseSetOnce.get();
         assertNotNull(response);
 
-        Map<String, Object> map = XContentHelper.convertToMap(response.content(), false, XContentType.fromMediaType(response.contentType()))
-            .v2();
+        Map<String, Object> map = XContentHelper.convertToMap(
+            (BytesReference) response.content(),
+            false,
+            XContentType.fromMediaType(response.contentType())
+        ).v2();
         assertEquals(RestStatus.OK, response.status());
         assertThat(map, hasEntry("type", "Bearer"));
         assertThat(map, hasEntry("access_token", createTokenResponse.getTokenString()));
@@ -123,8 +130,11 @@ public class RestGetTokenActionTests extends ESTestCase {
         RestResponse response = responseSetOnce.get();
         assertNotNull(response);
 
-        Map<String, Object> map = XContentHelper.convertToMap(response.content(), false, XContentType.fromMediaType(response.contentType()))
-            .v2();
+        Map<String, Object> map = XContentHelper.convertToMap(
+            (BytesReference) response.content(),
+            false,
+            XContentType.fromMediaType(response.contentType())
+        ).v2();
         assertThat(map, hasEntry("error", RestGetTokenAction.TokenRequestError._UNAUTHORIZED.name().toLowerCase(Locale.ROOT)));
         if (addBase64EncodedToken) {
             assertThat(map, hasEntry("error_description", "FAIL"));

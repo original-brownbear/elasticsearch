@@ -16,6 +16,7 @@ import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.license.XPackLicenseState;
@@ -120,7 +121,7 @@ public class RestInvalidateApiKeyActionTests extends ESTestCase {
             final RestResponse restResponse = responseSetOnce.get();
             assertNotNull(restResponse);
             final InvalidateApiKeyResponse actual = InvalidateApiKeyResponse.fromXContent(
-                createParser(XContentType.JSON.xContent(), restResponse.content())
+                createParser(XContentType.JSON.xContent(), (BytesReference) restResponse.content())
             );
             assertThat(actual.getInvalidatedApiKeys(), equalTo(invalidateApiKeyResponseExpected.getInvalidatedApiKeys()));
             assertThat(
@@ -195,7 +196,7 @@ public class RestInvalidateApiKeyActionTests extends ESTestCase {
             assertNotNull(restResponse);
             assertThat(restResponse.status(), is(RestStatus.OK));
             final InvalidateApiKeyResponse actual = InvalidateApiKeyResponse.fromXContent(
-                createParser(XContentType.JSON.xContent(), restResponse.content())
+                createParser(XContentType.JSON.xContent(), (BytesReference) restResponse.content())
             );
             if (isInvalidateRequestForOwnedKeysOnly) {
                 assertThat(actual.getInvalidatedApiKeys().size(), is(1));

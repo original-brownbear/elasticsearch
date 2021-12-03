@@ -239,7 +239,13 @@ public class Netty4HttpRequest implements HttpRequest, HttpPipelinedMessage {
         if (contentRef instanceof BytesReference) {
             return new Netty4HttpResponse(request.headers(), request.protocolVersion(), status, (BytesReference) contentRef, sequence);
         } else {
-            return new Netty4ChunkedHttpResponse(request.headers(), request.protocolVersion(), status, (ChunkedHttpBody) contentRef, sequence);
+            return new Netty4ChunkedHttpResponse(
+                request.headers(),
+                request.protocolVersion(),
+                status,
+                (ChunkedHttpBody) contentRef,
+                sequence
+            );
         }
     }
 

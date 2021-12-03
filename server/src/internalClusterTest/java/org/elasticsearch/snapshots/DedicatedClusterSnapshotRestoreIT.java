@@ -507,7 +507,7 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
             @Override
             public void sendResponse(RestResponse response) {
                 try {
-                    final String content = ((BytesReference)response.content()).utf8ToString();
+                    final String content = ((BytesReference) response.content()).utf8ToString();
                     assertThat(content, containsString("notsecretusername"));
                     assertThat(content, not(containsString("verysecretpassword")));
                 } catch (AssertionError ex) {
@@ -522,7 +522,8 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
         }
 
         RestClusterStateAction clusterStateAction = new RestClusterStateAction(
-            internalCluster().getInstance(SettingsFilter.class)
+            internalCluster().getInstance(SettingsFilter.class),
+            internalCluster().getInstance(ThreadPool.class)
         );
         RestRequest clusterStateRequest = new FakeRestRequest();
         final CountDownLatch clusterStateLatch = new CountDownLatch(1);

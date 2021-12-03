@@ -51,7 +51,10 @@ public class RestGetAliasesActionTests extends ESTestCase {
         );
         assertThat(restResponse.status(), equalTo(OK));
         assertThat(restResponse.contentType(), equalTo("application/json"));
-        assertThat(((BytesReference) restResponse.content()).utf8ToString(), equalTo("{\"index\":{\"aliases\":{\"foo\":{},\"foobar\":{}}}}"));
+        assertThat(
+            ((BytesReference) restResponse.content()).utf8ToString(),
+            equalTo("{\"index\":{\"aliases\":{\"foo\":{},\"foobar\":{}}}}")
+        );
     }
 
     public void testSimpleAliasWildcardMatchingNothing() throws Exception {
