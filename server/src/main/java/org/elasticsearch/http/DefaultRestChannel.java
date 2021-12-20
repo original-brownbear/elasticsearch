@@ -128,6 +128,8 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
             if (restResponse.content() instanceof BytesReference) {
                 contentLength = String.valueOf(((BytesReference) restResponse.content()).length());
                 setHeaderField(httpResponse, CONTENT_LENGTH, contentLength, false);
+            } else {
+                setHeaderField(httpResponse, "transfer-encoding", "chunked");
             }
 
             addCookies(httpResponse);
