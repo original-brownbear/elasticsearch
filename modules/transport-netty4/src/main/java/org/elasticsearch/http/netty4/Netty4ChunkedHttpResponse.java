@@ -10,7 +10,6 @@ package org.elasticsearch.http.netty4;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
@@ -23,22 +22,13 @@ import java.io.IOException;
 
 public class Netty4ChunkedHttpResponse extends DefaultHttpResponse implements HttpResponse, HttpPipelinedMessage {
 
-    private final HttpHeaders requestHeaders;
-
     private final ChunkedHttpBody body;
 
     private final int sequence;
 
-    public Netty4ChunkedHttpResponse(
-        HttpHeaders requestHeaders,
-        HttpVersion version,
-        RestStatus status,
-        ChunkedHttpBody body,
-        int sequence
-    ) {
+    public Netty4ChunkedHttpResponse(HttpVersion version, RestStatus status, ChunkedHttpBody body, int sequence) {
         super(version, HttpResponseStatus.valueOf(status.getStatus()));
         this.body = body;
-        this.requestHeaders = requestHeaders;
         this.sequence = sequence;
     }
 
@@ -50,10 +40,6 @@ public class Netty4ChunkedHttpResponse extends DefaultHttpResponse implements Ht
     @Override
     public boolean containsHeader(String name) {
         return headers().contains(name);
-    }
-
-    public HttpHeaders requestHeaders() {
-        return requestHeaders;
     }
 
     @Override

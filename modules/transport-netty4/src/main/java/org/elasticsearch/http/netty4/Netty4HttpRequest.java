@@ -237,15 +237,9 @@ public class Netty4HttpRequest implements HttpRequest, HttpPipelinedMessage {
     @Override
     public HttpResponse createResponse(RestStatus status, Object contentRef) {
         if (contentRef instanceof BytesReference) {
-            return new Netty4HttpResponse(request.headers(), request.protocolVersion(), status, (BytesReference) contentRef, sequence);
+            return new Netty4HttpResponse(request.protocolVersion(), status, (BytesReference) contentRef, sequence);
         } else {
-            return new Netty4ChunkedHttpResponse(
-                request.headers(),
-                request.protocolVersion(),
-                status,
-                (ChunkedHttpBody) contentRef,
-                sequence
-            );
+            return new Netty4ChunkedHttpResponse(request.protocolVersion(), status, (ChunkedHttpBody) contentRef, sequence);
         }
     }
 
