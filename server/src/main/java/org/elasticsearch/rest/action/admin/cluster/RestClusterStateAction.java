@@ -116,7 +116,7 @@ public class RestClusterStateAction extends BaseRestHandler {
             new RestActionListener<>(channel) {
 
                 @Override
-                protected void processResponse(ClusterStateResponse clusterStateResponse) {
+                protected void processResponse(ClusterStateResponse response) {
                     channel.sendResponse(new RestResponse() {
                         @Override
                         public String contentType() {
@@ -135,19 +135,17 @@ public class RestClusterStateAction extends BaseRestHandler {
                                     pointer.pointer = out;
                                     pointer.written = 0L;
                                     if (generator == null) {
-                                        generator = new XContentBuilder(xContentType.xContent(), pointer);
+                                        generator = channel.newBuilder();
                                     }
-                                    new RestClusterStateResponse(
-                                        clusterStateRequest,
-                                        clusterStateResponse,
-                                        threadPool::relativeTimeInMillis
-                                    ).toXContent(
-                                        generator,
-                                        new ToXContent.DelegatingMapParams(
-                                            singletonMap(Metadata.CONTEXT_MODE_PARAM, Metadata.CONTEXT_MODE_API),
-                                            request
-                                        )
-                                    );
+                                    // TODO: this needs filtering and such working
+                                    new RestClusterStateResponse(clusterStateRequest, response, threadPool::relativeTimeInMillis)
+                                        .toXContent(
+                                            generator,
+                                            new ToXContent.DelegatingMapParams(
+                                                singletonMap(Metadata.CONTEXT_MODE_PARAM, Metadata.CONTEXT_MODE_API),
+                                                request
+                                            )
+                                        );
                                     generator.flush();
                                     generator.close();
                                     return true;
