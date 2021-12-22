@@ -39,7 +39,7 @@ public class OsService implements ReportingService<OsInfo> {
         this.probe = OsProbe.getInstance();
         TimeValue refreshInterval = REFRESH_INTERVAL_SETTING.get(settings);
         this.info = probe.osInfo(refreshInterval.millis(), EsExecutors.allocatedProcessors(settings));
-        this.osStatsCache = new OsStatsCache(refreshInterval, probe.osStats());
+        this.osStatsCache = new OsStatsCache(refreshInterval);
         logger.debug("using refresh_interval [{}]", refreshInterval);
     }
 
@@ -53,13 +53,21 @@ public class OsService implements ReportingService<OsInfo> {
     }
 
     private class OsStatsCache extends SingleObjectCache<OsStats> {
-        OsStatsCache(TimeValue interval, OsStats initValue) {
-            super(interval, initValue);
+        OsStatsCache(TimeValue interval) {
+            super(interval, OsStats.EMPTY);
         }
 
         @Override
         protected OsStats refresh() {
             return probe.osStats();
+        }
+
+        @Override
+        protected boolean needsRefresh() {
+            if (super.needsRefresh()) {
+                return true;
+            }
+            return getNoRefresh() == OsStats.EMPTY;
         }
     }
 }

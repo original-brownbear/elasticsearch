@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.util.Constants;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.Tuple;
@@ -60,7 +61,7 @@ public class FsProbe {
         return new FsInfo(System.currentTimeMillis(), ioStats, paths);
     }
 
-    final FsInfo.IoStats ioStats(final Set<Tuple<Integer, Integer>> devicesNumbers, final FsInfo previous) {
+    final FsInfo.IoStats ioStats(final Set<Tuple<Integer, Integer>> devicesNumbers, @Nullable final FsInfo previous) {
         try {
             final Map<Tuple<Integer, Integer>, FsInfo.DeviceStats> deviceMap = new HashMap<>();
             if (previous != null && previous.getIoStats() != null && previous.getIoStats().devicesStats != null) {

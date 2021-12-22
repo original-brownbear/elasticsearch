@@ -177,7 +177,7 @@ public class FsInfo implements Iterable<FsInfo.Path>, Writeable, ToXContentFragm
             final long currentWritesCompleted,
             final long currentSectorsWritten,
             final long currentIOTime,
-            final DeviceStats previousDeviceStats
+            @Nullable final DeviceStats previousDeviceStats
         ) {
             this(
                 majorDeviceNumber,

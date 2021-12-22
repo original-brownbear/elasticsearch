@@ -24,6 +24,8 @@ import java.util.Objects;
 
 public class OsStats implements Writeable, ToXContentFragment {
 
+    public static final OsStats EMPTY = new OsStats(0L, new Cpu((short) 0, null), new Mem(0L, 0L, 0L), new Swap(0L, 0L), null);
+
     private final long timestamp;
     private final Cpu cpu;
     private final Mem mem;

@@ -43,21 +43,44 @@ public class FsService {
 
     public FsService(final Settings settings, final NodeEnvironment nodeEnvironment) {
         final FsProbe probe = new FsProbe(nodeEnvironment);
-        final FsInfo initialValue = stats(probe, null);
         if (ALWAYS_REFRESH_SETTING.get(settings)) {
             assert REFRESH_INTERVAL_SETTING.exists(settings) == false;
             logger.debug("bypassing refresh_interval");
-            fsInfoSupplier = () -> stats(probe, initialValue);
+            fsInfoSupplier = new Supplier<>() {
+
+                private FsInfo initial;
+
+                @Override
+                public FsInfo get() {
+                    if (initial == null) {
+                        initial = stats(probe, null);
+                    }
+                    return stats(probe, initial);
+                }
+            };
         } else {
             final TimeValue refreshInterval = REFRESH_INTERVAL_SETTING.get(settings);
             logger.debug("using refresh_interval [{}]", refreshInterval);
-            final FsInfoCache fsInfoCache = new FsInfoCache(refreshInterval, initialValue, probe);
-            fsInfoSupplier = () -> {
-                try {
-                    return fsInfoCache.getOrRefresh();
-                } catch (UncheckedIOException e) {
-                    logger.debug("unexpected exception reading filesystem info", e);
-                    return null;
+            fsInfoSupplier = new Supplier<>() {
+
+                private FsInfoCache cache;
+
+                @Override
+                public FsInfo get() {
+                    try {
+                        if (cache == null) {
+                            final FsInfo initial = stats(probe, null);
+                            if (initial == null) {
+                                // try to init this again on the next run
+                                return null;
+                            }
+                            cache = new FsInfoCache(refreshInterval, stats(probe, initial), probe);
+                        }
+                        return cache.getOrRefresh();
+                    } catch (UncheckedIOException e) {
+                        logger.debug("unexpected exception reading filesystem info", e);
+                        return null;
+                    }
                 }
             };
         }

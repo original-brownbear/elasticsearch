@@ -35,7 +35,7 @@ public final class ProcessService implements ReportingService<ProcessInfo> {
     public ProcessService(Settings settings) {
         this.probe = ProcessProbe.getInstance();
         final TimeValue refreshInterval = REFRESH_INTERVAL_SETTING.get(settings);
-        processStatsCache = new ProcessStatsCache(refreshInterval, probe.processStats());
+        processStatsCache = new ProcessStatsCache(refreshInterval);
         this.info = probe.processInfo(refreshInterval.millis());
         logger.debug("using refresh_interval [{}]", refreshInterval);
     }
@@ -50,13 +50,21 @@ public final class ProcessService implements ReportingService<ProcessInfo> {
     }
 
     private class ProcessStatsCache extends SingleObjectCache<ProcessStats> {
-        ProcessStatsCache(TimeValue interval, ProcessStats initValue) {
-            super(interval, initValue);
+        ProcessStatsCache(TimeValue interval) {
+            super(interval, ProcessStats.EMPTY);
         }
 
         @Override
         protected ProcessStats refresh() {
             return probe.processStats();
+        }
+
+        @Override
+        protected boolean needsRefresh() {
+            if (super.needsRefresh()) {
+                return true;
+            }
+            return getNoRefresh() == ProcessStats.EMPTY;
         }
     }
 }

@@ -20,6 +20,8 @@ import java.io.IOException;
 
 public class ProcessStats implements Writeable, ToXContentFragment {
 
+    public static final ProcessStats EMPTY = new ProcessStats(0L, 0L, 0L, null, null);
+
     private final long timestamp;
     private final long openFileDescriptors;
     private final long maxFileDescriptors;
