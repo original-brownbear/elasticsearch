@@ -229,7 +229,10 @@ public class NioHttpRequest implements HttpRequest {
             assert contentRef instanceof ChunkedHttpBody;
             final BytesStreamOutput tmp = new BytesStreamOutput();
             try {
-                ((ChunkedHttpBody) contentRef).serialize(tmp, Integer.MAX_VALUE);
+                final boolean done = ((ChunkedHttpBody) contentRef).serialize(tmp, Integer.MAX_VALUE);
+                if (done == false) {
+                    throw new AssertionError("response too large");
+                }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
