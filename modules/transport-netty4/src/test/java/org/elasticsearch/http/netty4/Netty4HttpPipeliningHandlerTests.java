@@ -9,20 +9,19 @@
 package org.elasticsearch.http.netty4;
 
 import io.netty.buffer.ByteBufUtil;
-import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.QueryStringDecoder;
 
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.http.HttpPipelinedRequest;
-import org.elasticsearch.http.HttpPipelinedResponse;
+import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESTestCase;
@@ -44,6 +43,9 @@ import java.util.stream.IntStream;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 public class Netty4HttpPipeliningHandlerTests extends ESTestCase {
 
@@ -77,13 +79,17 @@ public class Netty4HttpPipeliningHandlerTests extends ESTestCase {
 
     public void testThatPipeliningWorksWithFastSerializedRequests() throws InterruptedException {
         final int numberOfRequests = randomIntBetween(2, 128);
-        final EmbeddedChannel embeddedChannel = new EmbeddedChannel(
-            new Netty4HttpPipeliningHandler(logger, numberOfRequests),
-            new WorkEmulatorHandler()
-        );
+        final Netty4HttpServerTransport transport = mock(Netty4HttpServerTransport.class);
+        final EmbeddedChannel embeddedChannel = new EmbeddedChannel(new Netty4HttpPipeliningHandler(logger, numberOfRequests, transport));
+        doAnswer(invocation -> {
+            emulateWork(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(transport).incomingRequest(any(), any());
 
+        final Netty4HttpChannel netty4HttpChannel = new Netty4HttpChannel(embeddedChannel);
+        embeddedChannel.attr(Netty4HttpServerTransport.HTTP_CHANNEL_KEY).set(netty4HttpChannel);
         for (int i = 0; i < numberOfRequests; i++) {
-            embeddedChannel.writeInbound(createHttpRequest("/" + String.valueOf(i)));
+            embeddedChannel.writeInbound(createHttpRequest("/" + i));
         }
 
         final List<CountDownLatch> latches = new ArrayList<>();
@@ -106,13 +112,17 @@ public class Netty4HttpPipeliningHandlerTests extends ESTestCase {
 
     public void testThatPipeliningWorksWhenSlowRequestsInDifferentOrder() throws InterruptedException {
         final int numberOfRequests = randomIntBetween(2, 128);
-        final EmbeddedChannel embeddedChannel = new EmbeddedChannel(
-            new Netty4HttpPipeliningHandler(logger, numberOfRequests),
-            new WorkEmulatorHandler()
-        );
+        final Netty4HttpServerTransport transport = mock(Netty4HttpServerTransport.class);
+        final EmbeddedChannel embeddedChannel = new EmbeddedChannel(new Netty4HttpPipeliningHandler(logger, numberOfRequests, transport));
+        doAnswer(invocation -> {
+            emulateWork(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(transport).incomingRequest(any(Netty4HttpRequest.class), any(Netty4HttpChannel.class));
+        final Netty4HttpChannel netty4HttpChannel = new Netty4HttpChannel(embeddedChannel);
+        embeddedChannel.attr(Netty4HttpServerTransport.HTTP_CHANNEL_KEY).set(netty4HttpChannel);
 
         for (int i = 0; i < numberOfRequests; i++) {
-            embeddedChannel.writeInbound(createHttpRequest("/" + String.valueOf(i)));
+            embeddedChannel.writeInbound(createHttpRequest("/" + i));
         }
 
         // random order execution
@@ -138,13 +148,17 @@ public class Netty4HttpPipeliningHandlerTests extends ESTestCase {
 
     public void testThatPipeliningClosesConnectionWithTooManyEvents() throws InterruptedException {
         final int numberOfRequests = randomIntBetween(2, 128);
-        final EmbeddedChannel embeddedChannel = new EmbeddedChannel(
-            new Netty4HttpPipeliningHandler(logger, numberOfRequests),
-            new WorkEmulatorHandler()
-        );
+        final Netty4HttpServerTransport transport = mock(Netty4HttpServerTransport.class);
+        final EmbeddedChannel embeddedChannel = new EmbeddedChannel(new Netty4HttpPipeliningHandler(logger, numberOfRequests, transport));
+        doAnswer(invocation -> {
+            emulateWork(invocation.getArgument(0), invocation.getArgument(1));
+            return null;
+        }).when(transport).incomingRequest(any(Netty4HttpRequest.class), any(Netty4HttpChannel.class));
+        final Netty4HttpChannel netty4HttpChannel = new Netty4HttpChannel(embeddedChannel);
+        embeddedChannel.attr(Netty4HttpServerTransport.HTTP_CHANNEL_KEY).set(netty4HttpChannel);
 
         for (int i = 0; i < 1 + numberOfRequests + 1; i++) {
-            embeddedChannel.writeInbound(createHttpRequest("/" + Integer.toString(i)));
+            embeddedChannel.writeInbound(createHttpRequest("/" + i));
         }
 
         final List<CountDownLatch> latches = new ArrayList<>();
@@ -166,16 +180,19 @@ public class Netty4HttpPipeliningHandlerTests extends ESTestCase {
         assertFalse(embeddedChannel.isOpen());
     }
 
-    public void testPipeliningRequestsAreReleased() throws InterruptedException {
+    public void testPipeliningRequestsAreReleased() {
         final int numberOfRequests = 10;
-        final EmbeddedChannel embeddedChannel = new EmbeddedChannel(new Netty4HttpPipeliningHandler(logger, numberOfRequests + 1));
+        final Netty4HttpServerTransport transport = mock(Netty4HttpServerTransport.class);
+        final EmbeddedChannel embeddedChannel = new EmbeddedChannel(
+            new Netty4HttpPipeliningHandler(logger, numberOfRequests + 1, transport)
+        );
 
         for (int i = 0; i < numberOfRequests; i++) {
             embeddedChannel.writeInbound(createHttpRequest("/" + i));
         }
 
-        HttpPipelinedRequest inbound;
-        ArrayList<HttpPipelinedRequest> requests = new ArrayList<>();
+        Netty4HttpRequest inbound;
+        ArrayList<Netty4HttpRequest> requests = new ArrayList<>();
         while ((inbound = embeddedChannel.readInbound()) != null) {
             requests.add(inbound);
         }
@@ -184,8 +201,8 @@ public class Netty4HttpPipeliningHandlerTests extends ESTestCase {
         for (int i = 1; i < requests.size(); ++i) {
             ChannelPromise promise = embeddedChannel.newPromise();
             promises.add(promise);
-            HttpPipelinedRequest pipelinedRequest = requests.get(i);
-            HttpPipelinedResponse resp = pipelinedRequest.createResponse(RestStatus.OK, BytesArray.EMPTY);
+            Netty4HttpRequest pipelinedRequest = requests.get(i);
+            HttpResponse resp = pipelinedRequest.createResponse(RestStatus.OK, BytesArray.EMPTY);
             embeddedChannel.writeAndFlush(resp, promise);
         }
 
@@ -207,39 +224,33 @@ public class Netty4HttpPipeliningHandlerTests extends ESTestCase {
         assertThat(data, is(expectedContent));
     }
 
-    private Netty4HttpRequest createHttpRequest(String uri) {
-        return new Netty4HttpRequest(new DefaultFullHttpRequest(HTTP_1_1, HttpMethod.GET, uri));
+    private FullHttpRequest createHttpRequest(String uri) {
+        return new DefaultFullHttpRequest(HTTP_1_1, HttpMethod.GET, uri);
     }
 
-    private class WorkEmulatorHandler extends SimpleChannelInboundHandler<HttpPipelinedRequest> {
+    private void emulateWork(HttpRequest request, Netty4HttpChannel channel) {
+        final QueryStringDecoder decoder = new QueryStringDecoder(request.uri());
 
-        @Override
-        protected void channelRead0(final ChannelHandlerContext ctx, HttpPipelinedRequest pipelinedRequest) {
-            final org.elasticsearch.http.HttpRequest request = pipelinedRequest.getDelegateRequest();
-            final QueryStringDecoder decoder = new QueryStringDecoder(request.uri());
+        final String uri = decoder.path().replace("/", "");
+        final BytesReference content = new BytesArray(uri.getBytes(StandardCharsets.UTF_8));
+        HttpResponse httpResponse = request.createResponse(RestStatus.OK, content);
+        httpResponse.addHeader(CONTENT_LENGTH.toString(), Integer.toString(content.length()));
 
-            final String uri = decoder.path().replace("/", "");
-            final BytesReference content = new BytesArray(uri.getBytes(StandardCharsets.UTF_8));
-            HttpResponse httpResponse = pipelinedRequest.createResponse(RestStatus.OK, content);
-            httpResponse.addHeader(CONTENT_LENGTH.toString(), Integer.toString(content.length()));
+        final CountDownLatch waitingLatch = new CountDownLatch(1);
+        waitingRequests.put(uri, waitingLatch);
+        final CountDownLatch finishingLatch = new CountDownLatch(1);
+        finishingRequests.put(uri, finishingLatch);
 
-            final CountDownLatch waitingLatch = new CountDownLatch(1);
-            waitingRequests.put(uri, waitingLatch);
-            final CountDownLatch finishingLatch = new CountDownLatch(1);
-            finishingRequests.put(uri, finishingLatch);
-
-            handlerService.submit(() -> {
-                try {
-                    waitingLatch.await(1000, TimeUnit.SECONDS);
-                    final ChannelPromise promise = ctx.newPromise();
-                    eventLoopService.submit(() -> {
-                        ctx.write(httpResponse, promise);
-                        finishingLatch.countDown();
-                    });
-                } catch (InterruptedException e) {
-                    fail(e.toString());
-                }
-            });
-        }
+        handlerService.submit(() -> {
+            try {
+                waitingLatch.await(1000, TimeUnit.SECONDS);
+                eventLoopService.submit(() -> {
+                    channel.sendResponse(httpResponse, ActionListener.wrap(() -> {}));
+                    finishingLatch.countDown();
+                });
+            } catch (InterruptedException e) {
+                fail(e.toString());
+            }
+        });
     }
 }

@@ -15,6 +15,7 @@ import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
@@ -107,7 +108,7 @@ public class RestCreateApiKeyActionTests extends ESTestCase {
             final RestResponse restResponse = responseSetOnce.get();
             assertNotNull(restResponse);
             assertThat(
-                CreateApiKeyResponse.fromXContent(createParser(XContentType.JSON.xContent(), restResponse.content())),
+                CreateApiKeyResponse.fromXContent(createParser(XContentType.JSON.xContent(), (BytesReference) restResponse.content())),
                 equalTo(expected)
             );
         }

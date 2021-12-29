@@ -13,6 +13,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.http.HttpChannel;
@@ -226,9 +227,9 @@ public class SecurityRestFilterTests extends ESTestCase {
         RestResponse restResponse = response.getValue();
         assertThat(restResponse.status(), is(expectedRestStatus));
         if (traceExists) {
-            assertThat(restResponse.content().utf8ToString(), containsString(ElasticsearchException.STACK_TRACE));
+            assertThat(((BytesReference) restResponse.content()).utf8ToString(), containsString(ElasticsearchException.STACK_TRACE));
         } else {
-            assertThat(restResponse.content().utf8ToString(), not(containsString(ElasticsearchException.STACK_TRACE)));
+            assertThat(((BytesReference) restResponse.content()).utf8ToString(), not(containsString(ElasticsearchException.STACK_TRACE)));
         }
         verifyNoMoreInteractions(restHandler);
     }

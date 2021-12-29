@@ -72,8 +72,8 @@ class TestHttpRequest implements HttpRequest {
     }
 
     @Override
-    public HttpResponse createResponse(RestStatus status, BytesReference content) {
-        return new TestHttpResponse(status, content);
+    public HttpResponse createResponse(RestStatus status, Object content) {
+        return new TestHttpResponse(status, (BytesReference) content);
     }
 
     @Override

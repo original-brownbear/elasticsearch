@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.security.rest.action.user;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.XPackLicenseState;
@@ -80,7 +81,7 @@ public class RestHasPrivilegesActionTests extends ESTestCase {
             assertThat(channel.capturedResponse(), notNullValue());
             assertThat(channel.capturedResponse().status(), equalTo(RestStatus.INTERNAL_SERVER_ERROR));
             assertThat(
-                channel.capturedResponse().content().utf8ToString(),
+                ((BytesReference) channel.capturedResponse().content()).utf8ToString(),
                 containsString("Security is not enabled but a security rest handler is registered")
             );
         }

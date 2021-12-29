@@ -16,6 +16,7 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.TransportAction;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -133,7 +134,7 @@ public class RestValidateQueryActionTests extends AbstractSearchTestCase {
         // THEN query is marked as invalid
         assertThat(channel.responses().get(), equalTo(1));
         assertThat(channel.errors().get(), equalTo(0));
-        assertThat(channel.capturedResponse().content().utf8ToString(), containsString("{\"valid\":false}"));
+        assertThat(((BytesReference) channel.capturedResponse().content()).utf8ToString(), containsString("{\"valid\":false}"));
     }
 
     public void testRestValidateQueryAction_malformedQuery() throws Exception {
@@ -149,7 +150,7 @@ public class RestValidateQueryActionTests extends AbstractSearchTestCase {
         // THEN query is marked as invalid
         assertThat(channel.responses().get(), equalTo(1));
         assertThat(channel.errors().get(), equalTo(0));
-        assertThat(channel.capturedResponse().content().utf8ToString(), containsString("{\"valid\":false}"));
+        assertThat(((BytesReference) channel.capturedResponse().content()).utf8ToString(), containsString("{\"valid\":false}"));
     }
 
     private RestRequest createRestRequest(String content) {

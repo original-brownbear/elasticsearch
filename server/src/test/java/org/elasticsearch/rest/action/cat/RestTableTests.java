@@ -9,6 +9,7 @@
 package org.elasticsearch.rest.action.cat;
 
 import org.elasticsearch.common.Table;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.rest.AbstractRestChannel;
 import org.elasticsearch.rest.RestResponse;
@@ -277,7 +278,7 @@ public class RestTableTests extends ESTestCase {
 
     private void assertResponse(Map<String, List<String>> headers, String mediaType, String body) throws Exception {
         RestResponse response = assertResponseContentType(headers, mediaType);
-        assertThat(response.content().utf8ToString(), equalTo(body));
+        assertThat(((BytesReference) response.content()).utf8ToString(), equalTo(body));
     }
 
     private List<String> getHeaderNames(List<RestTable.DisplayHeader> headers) {

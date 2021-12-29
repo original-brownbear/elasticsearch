@@ -93,13 +93,13 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
         String opaque = null;
         String contentLength = null;
         try {
-            final BytesReference content = restResponse.content();
+            final Object content = restResponse.content();
             if (content instanceof Releasable) {
                 toClose.add((Releasable) content);
             }
             toClose.add(this::releaseOutputBuffer);
 
-            BytesReference finalContent = content;
+            Object finalContent = content;
             try {
                 if (request.method() == RestRequest.Method.HEAD) {
                     finalContent = BytesArray.EMPTY;
@@ -125,8 +125,12 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
             // If our response doesn't specify a content-type header, set one
             setHeaderField(httpResponse, CONTENT_TYPE, restResponse.contentType(), false);
             // If our response has no content-length, calculate and set one
-            contentLength = String.valueOf(restResponse.content().length());
-            setHeaderField(httpResponse, CONTENT_LENGTH, contentLength, false);
+            if (restResponse.content() instanceof BytesReference) {
+                contentLength = String.valueOf(((BytesReference) restResponse.content()).length());
+                setHeaderField(httpResponse, CONTENT_LENGTH, contentLength, false);
+            } else {
+                setHeaderField(httpResponse, "transfer-encoding", "chunked");
+            }
 
             addCookies(httpResponse);
 

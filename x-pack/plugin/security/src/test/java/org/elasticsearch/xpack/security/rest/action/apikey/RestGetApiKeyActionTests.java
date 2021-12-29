@@ -15,6 +15,7 @@ import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.client.internal.node.NodeClient;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.MapBuilder;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
@@ -132,7 +133,7 @@ public class RestGetApiKeyActionTests extends ESTestCase {
                 (replyEmptyResponse && params.get("id") != null) ? is(RestStatus.NOT_FOUND) : is(RestStatus.OK)
             );
             final GetApiKeyResponse actual = GetApiKeyResponse.fromXContent(
-                createParser(XContentType.JSON.xContent(), restResponse.content())
+                createParser(XContentType.JSON.xContent(), (BytesReference) restResponse.content())
             );
             if (replyEmptyResponse) {
                 assertThat(actual.getApiKeyInfos().length, is(0));
@@ -222,7 +223,7 @@ public class RestGetApiKeyActionTests extends ESTestCase {
             assertNotNull(restResponse);
             assertThat(restResponse.status(), is(RestStatus.OK));
             final GetApiKeyResponse actual = GetApiKeyResponse.fromXContent(
-                createParser(XContentType.JSON.xContent(), restResponse.content())
+                createParser(XContentType.JSON.xContent(), (BytesReference) restResponse.content())
             );
             if (isGetRequestForOwnedKeysOnly) {
                 assertThat(actual.getApiKeyInfos().length, is(1));

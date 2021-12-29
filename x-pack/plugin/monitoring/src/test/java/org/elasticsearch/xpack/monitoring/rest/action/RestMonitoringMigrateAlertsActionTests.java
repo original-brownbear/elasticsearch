@@ -7,6 +7,7 @@
 
 package org.elasticsearch.xpack.monitoring.rest.action;
 
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
@@ -58,6 +59,6 @@ public class RestMonitoringMigrateAlertsActionTests extends ESTestCase {
         RestResponse response = RestMonitoringMigrateAlertsAction.getRestBuilderListener(channel).buildResponse(restResponse);
 
         assertThat(response.status(), is(RestStatus.OK));
-        assertThat(response.content().utf8ToString(), startsWith("{\"exporters\":["));
+        assertThat(((BytesReference) response.content()).utf8ToString(), startsWith("{\"exporters\":["));
     }
 }

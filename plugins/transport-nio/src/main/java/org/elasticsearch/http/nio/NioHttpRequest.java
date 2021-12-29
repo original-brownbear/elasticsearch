@@ -21,10 +21,14 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
 
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.http.ChunkedHttpBody;
 import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
@@ -217,8 +221,21 @@ public class NioHttpRequest implements HttpRequest {
     }
 
     @Override
-    public NioHttpResponse createResponse(RestStatus status, BytesReference contentRef) {
-        return new NioHttpResponse(request.protocolVersion(), status, contentRef);
+    public NioHttpResponse createResponse(RestStatus status, Object contentRef) {
+        final BytesReference bytes;
+        if (contentRef instanceof BytesReference) {
+            bytes = (BytesReference) contentRef;
+        } else {
+            assert contentRef instanceof ChunkedHttpBody;
+            final BytesStreamOutput tmp = new BytesStreamOutput();
+            try {
+                ((ChunkedHttpBody) contentRef).serialize(tmp, Integer.MAX_VALUE);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            bytes = tmp.bytes();
+        }
+        return new NioHttpResponse(request.protocolVersion(), status, bytes);
     }
 
     @Override

@@ -10,6 +10,7 @@ import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestRequest;
@@ -113,7 +114,7 @@ public class RestMonitoringBulkActionTests extends ESTestCase {
 
         assertThat(restResponse.status(), is(RestStatus.OK));
         assertThat(
-            restResponse.content().utf8ToString(),
+            ((BytesReference) restResponse.content()).utf8ToString(),
             is("{\"took\":" + response.getTookInMillis() + ",\"ignored\":false,\"errors\":false}")
         );
     }
@@ -124,7 +125,7 @@ public class RestMonitoringBulkActionTests extends ESTestCase {
 
         assertThat(restResponse.status(), is(RestStatus.OK));
         assertThat(
-            restResponse.content().utf8ToString(),
+            ((BytesReference) restResponse.content()).utf8ToString(),
             is("{\"took\":" + response.getTookInMillis() + ",\"ignored\":true,\"errors\":false}")
         );
     }
@@ -144,7 +145,7 @@ public class RestMonitoringBulkActionTests extends ESTestCase {
 
         assertThat(restResponse.status(), is(RestStatus.INTERNAL_SERVER_ERROR));
         assertThat(
-            restResponse.content().utf8ToString(),
+            ((BytesReference) restResponse.content()).utf8ToString(),
             is("{\"took\":" + response.getTookInMillis() + ",\"ignored\":false,\"errors\":true,\"error\":" + errorJson + "}")
         );
     }

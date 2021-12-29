@@ -9,6 +9,7 @@
 package org.elasticsearch.rest.action.admin.indices;
 
 import org.elasticsearch.cluster.metadata.AliasMetadata;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.test.ESTestCase;
@@ -50,7 +51,10 @@ public class RestGetAliasesActionTests extends ESTestCase {
         );
         assertThat(restResponse.status(), equalTo(OK));
         assertThat(restResponse.contentType(), equalTo("application/json"));
-        assertThat(restResponse.content().utf8ToString(), equalTo("{\"index\":{\"aliases\":{\"foo\":{},\"foobar\":{}}}}"));
+        assertThat(
+            ((BytesReference) restResponse.content()).utf8ToString(),
+            equalTo("{\"index\":{\"aliases\":{\"foo\":{},\"foobar\":{}}}}")
+        );
     }
 
     public void testSimpleAliasWildcardMatchingNothing() throws Exception {
@@ -65,7 +69,7 @@ public class RestGetAliasesActionTests extends ESTestCase {
         );
         assertThat(restResponse.status(), equalTo(OK));
         assertThat(restResponse.contentType(), equalTo("application/json"));
-        assertThat(restResponse.content().utf8ToString(), equalTo("{}"));
+        assertThat(((BytesReference) restResponse.content()).utf8ToString(), equalTo("{}"));
     }
 
     public void testMultipleAliasWildcardsSomeMatching() throws Exception {
@@ -82,7 +86,7 @@ public class RestGetAliasesActionTests extends ESTestCase {
         );
         assertThat(restResponse.status(), equalTo(OK));
         assertThat(restResponse.contentType(), equalTo("application/json"));
-        assertThat(restResponse.content().utf8ToString(), equalTo("{\"index\":{\"aliases\":{\"foobar\":{}}}}"));
+        assertThat(((BytesReference) restResponse.content()).utf8ToString(), equalTo("{\"index\":{\"aliases\":{\"foobar\":{}}}}"));
     }
 
     public void testAliasWildcardsIncludeAndExcludeAll() throws Exception {
@@ -97,7 +101,7 @@ public class RestGetAliasesActionTests extends ESTestCase {
         );
         assertThat(restResponse.status(), equalTo(OK));
         assertThat(restResponse.contentType(), equalTo("application/json"));
-        assertThat(restResponse.content().utf8ToString(), equalTo("{}"));
+        assertThat(((BytesReference) restResponse.content()).utf8ToString(), equalTo("{}"));
     }
 
     public void testAliasWildcardsIncludeAndExcludeSome() throws Exception {
@@ -114,7 +118,7 @@ public class RestGetAliasesActionTests extends ESTestCase {
         );
         assertThat(restResponse.status(), equalTo(OK));
         assertThat(restResponse.contentType(), equalTo("application/json"));
-        assertThat(restResponse.content().utf8ToString(), equalTo("{\"index\":{\"aliases\":{\"foo\":{}}}}"));
+        assertThat(((BytesReference) restResponse.content()).utf8ToString(), equalTo("{\"index\":{\"aliases\":{\"foo\":{}}}}"));
     }
 
     public void testAliasWildcardsIncludeAndExcludeSomeAndExplicitMissing() throws Exception {
@@ -139,7 +143,7 @@ public class RestGetAliasesActionTests extends ESTestCase {
         assertThat(restResponse.status(), equalTo(NOT_FOUND));
         assertThat(restResponse.contentType(), equalTo("application/json"));
         assertThat(
-            restResponse.content().utf8ToString(),
+            ((BytesReference) restResponse.content()).utf8ToString(),
             equalTo("{\"error\":\"alias [missing] missing\",\"status\":404,\"index\":{\"aliases\":{\"foo\":{}}}}")
         );
     }
@@ -156,6 +160,6 @@ public class RestGetAliasesActionTests extends ESTestCase {
         );
         assertThat(restResponse.status(), equalTo(OK));
         assertThat(restResponse.contentType(), equalTo("application/json"));
-        assertThat(restResponse.content().utf8ToString(), equalTo("{}"));
+        assertThat(((BytesReference) restResponse.content()).utf8ToString(), equalTo("{}"));
     }
 }

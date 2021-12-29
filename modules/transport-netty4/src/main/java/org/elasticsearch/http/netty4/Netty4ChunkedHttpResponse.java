@@ -5,25 +5,30 @@
  * in compliance with, at your election, the Elastic License 2.0 or the Server
  * Side Public License, v 1.
  */
-
 package org.elasticsearch.http.netty4;
 
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 
-import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.http.ChunkedHttpBody;
 import org.elasticsearch.http.HttpPipelinedMessage;
 import org.elasticsearch.http.HttpResponse;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.transport.netty4.Netty4Utils;
 
-public class Netty4HttpResponse extends DefaultFullHttpResponse implements HttpResponse, HttpPipelinedMessage {
+import java.io.IOException;
+
+public class Netty4ChunkedHttpResponse extends DefaultHttpResponse implements HttpResponse, HttpPipelinedMessage {
+
+    private final ChunkedHttpBody body;
 
     private final int sequence;
 
-    Netty4HttpResponse(HttpVersion version, RestStatus status, BytesReference content, int sequence) {
-        super(version, HttpResponseStatus.valueOf(status.getStatus()), Netty4Utils.toByteBuf(content));
+    public Netty4ChunkedHttpResponse(HttpVersion version, RestStatus status, ChunkedHttpBody body, int sequence) {
+        super(version, HttpResponseStatus.valueOf(status.getStatus()));
+        this.body = body;
         this.sequence = sequence;
     }
 
@@ -40,5 +45,10 @@ public class Netty4HttpResponse extends DefaultFullHttpResponse implements HttpR
     @Override
     public int getSequence() {
         return sequence;
+    }
+
+    public boolean serializeChunk(ByteBuf buffer) throws IOException {
+        ByteBufOutputStream out = new ByteBufOutputStream(buffer);
+        return body.serialize(out, buffer.maxFastWritableBytes());
     }
 }

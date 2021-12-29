@@ -349,7 +349,7 @@ public class DefaultRestChannelTests extends ESTestCase {
         final String httpConnectionHeaderValue = close ? DefaultRestChannel.CLOSE : DefaultRestChannel.KEEP_ALIVE;
         final RestRequest request = RestRequest.request(parserConfig(), new TestHttpRequest(httpVersion, null, "/") {
             @Override
-            public HttpResponse createResponse(RestStatus status, BytesReference content) {
+            public HttpResponse createResponse(RestStatus status, Object content) {
                 throw new IllegalArgumentException("test");
             }
         }, httpChannel);

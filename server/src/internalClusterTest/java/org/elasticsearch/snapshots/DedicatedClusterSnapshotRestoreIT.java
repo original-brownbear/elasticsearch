@@ -35,6 +35,7 @@ import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.CloseableChannel;
 import org.elasticsearch.common.settings.Settings;
@@ -502,9 +503,10 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
         getRepoAction.handleRequest(getRepoRequest, new AbstractRestChannel(getRepoRequest, true) {
             @Override
             public void sendResponse(RestResponse response) {
+                final String content = ((BytesReference) response.content()).utf8ToString();
                 try {
-                    assertThat(response.content().utf8ToString(), containsString("notsecretusername"));
-                    assertThat(response.content().utf8ToString(), not(containsString("verysecretpassword")));
+                    assertThat(content, containsString("notsecretusername"));
+                    assertThat(content, not(containsString("verysecretpassword")));
                 } catch (AssertionError ex) {
                     getRepoError.set(ex);
                 }
@@ -527,8 +529,9 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
             @Override
             public void sendResponse(RestResponse response) {
                 try {
-                    assertThat(response.content().utf8ToString(), containsString("notsecretusername"));
-                    assertThat(response.content().utf8ToString(), not(containsString("verysecretpassword")));
+                    final String content = ((BytesReference) response.content()).utf8ToString();
+                    assertThat(content, containsString("notsecretusername"));
+                    assertThat(content, not(containsString("verysecretpassword")));
                 } catch (AssertionError ex) {
                     clusterStateError.set(ex);
                 } finally {

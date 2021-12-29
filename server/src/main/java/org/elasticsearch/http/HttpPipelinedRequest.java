@@ -61,7 +61,7 @@ public class HttpPipelinedRequest implements HttpRequest, HttpPipelinedMessage {
     }
 
     @Override
-    public HttpPipelinedResponse createResponse(RestStatus status, BytesReference content) {
+    public HttpPipelinedResponse createResponse(RestStatus status, Object content) {
         return new HttpPipelinedResponse(sequence, delegate.createResponse(status, content));
     }
 
