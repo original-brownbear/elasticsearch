@@ -151,6 +151,8 @@ public interface XContentParser extends Closeable {
 
     String text() throws IOException;
 
+    String textUnsafe() throws IOException;
+
     String textOrNull() throws IOException;
 
     CharBuffer charBufferOrNull() throws IOException;
@@ -213,6 +215,8 @@ public interface XContentParser extends Closeable {
     boolean isBooleanValue() throws IOException;
 
     boolean booleanValue() throws IOException;
+
+    boolean booleanValueUnsafe() throws IOException;
 
     /**
      * Reads a plain binary value that was written via one of the following methods:

@@ -88,6 +88,11 @@ public abstract class DelegatingXContentParser implements XContentParser {
     }
 
     @Override
+    public String textUnsafe() throws IOException {
+        return delegate().textUnsafe();
+    }
+
+    @Override
     public String textOrNull() throws IOException {
         return delegate().textOrNull();
     }
@@ -200,6 +205,11 @@ public abstract class DelegatingXContentParser implements XContentParser {
     @Override
     public boolean booleanValue() throws IOException {
         return delegate().booleanValue();
+    }
+
+    @Override
+    public boolean booleanValueUnsafe() throws IOException {
+        return delegate().booleanValueUnsafe();
     }
 
     @Override

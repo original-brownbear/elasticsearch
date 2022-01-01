@@ -95,6 +95,11 @@ public abstract class FilterXContentParser implements XContentParser {
     }
 
     @Override
+    public String textUnsafe() throws IOException {
+        return in.textUnsafe();
+    }
+
+    @Override
     public String textOrNull() throws IOException {
         return in.textOrNull();
     }
@@ -207,6 +212,11 @@ public abstract class FilterXContentParser implements XContentParser {
     @Override
     public boolean booleanValue() throws IOException {
         return in.booleanValue();
+    }
+
+    @Override
+    public boolean booleanValueUnsafe() throws IOException {
+        return in.booleanValueUnsafe();
     }
 
     @Override

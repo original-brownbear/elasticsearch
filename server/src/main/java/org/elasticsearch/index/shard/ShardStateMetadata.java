@@ -114,7 +114,7 @@ public final class ShardStateMetadata {
                     if (PRIMARY_KEY.equals(currentFieldName)) {
                         primary = parser.booleanValue();
                     } else if (INDEX_UUID_KEY.equals(currentFieldName)) {
-                        indexUUID = parser.text();
+                        indexUUID = parser.textUnsafe();
                     } else {
                         throw new CorruptStateException("unexpected field in shard state [" + currentFieldName + "]");
                     }

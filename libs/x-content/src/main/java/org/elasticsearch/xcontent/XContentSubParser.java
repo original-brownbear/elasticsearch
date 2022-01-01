@@ -125,6 +125,11 @@ public class XContentSubParser implements XContentParser {
     }
 
     @Override
+    public String textUnsafe() throws IOException {
+        return parser.textUnsafe();
+    }
+
+    @Override
     public String textOrNull() throws IOException {
         return parser.textOrNull();
     }
@@ -237,6 +242,11 @@ public class XContentSubParser implements XContentParser {
     @Override
     public boolean booleanValue() throws IOException {
         return parser.booleanValue();
+    }
+
+    @Override
+    public boolean booleanValueUnsafe() throws IOException {
+        return parser.booleanValueUnsafe();
     }
 
     @Override

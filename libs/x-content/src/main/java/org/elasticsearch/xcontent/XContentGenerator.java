@@ -132,7 +132,7 @@ public interface XContentGenerator extends Closeable, Flushable {
                 if (parser.hasTextCharacters()) {
                     writeString(parser.textCharacters(), parser.textOffset(), parser.textLength());
                 } else {
-                    writeString(parser.text());
+                    writeString(parser.textUnsafe());
                 }
                 break;
             case VALUE_NUMBER:

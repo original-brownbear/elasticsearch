@@ -122,7 +122,7 @@ public final class ObjectParser<Value, Context> extends AbstractObjectParser<Val
             XContentParser.Token t = parser.currentToken();
             switch (t) {
                 case VALUE_STRING:
-                    consumer.accept(value, field, parser.text());
+                    consumer.accept(value, field, parser.textUnsafe());
                     break;
                 case VALUE_NUMBER:
                     consumer.accept(value, field, parser.numberValue());

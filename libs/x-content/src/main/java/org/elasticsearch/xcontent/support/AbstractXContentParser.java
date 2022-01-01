@@ -97,10 +97,8 @@ public abstract class AbstractXContentParser implements XContentParser {
         if (token == Token.VALUE_STRING) {
             return Booleans.parseBoolean(textCharacters(), textOffset(), textLength(), false /* irrelevant */);
         }
-        return doBooleanValue();
+        return booleanValueUnsafe();
     }
-
-    protected abstract boolean doBooleanValue() throws IOException;
 
     @Override
     public short shortValue() throws IOException {
@@ -395,11 +393,11 @@ public abstract class AbstractXContentParser implements XContentParser {
             : "Supplied current token [" + currentToken + "] is different from actual parser current token [" + parser.currentToken() + "]";
         switch (currentToken) {
             case VALUE_STRING:
-                return parser.text();
+                return parser.textUnsafe();
             case VALUE_NUMBER:
                 return parser.numberValue();
             case VALUE_BOOLEAN:
-                return parser.booleanValue();
+                return parser.booleanValueUnsafe();
             case START_OBJECT: {
                 final Map<String, Object> map = mapFactory.get();
                 return parser.nextToken() != Token.FIELD_NAME ? map : readMapEntries(parser, mapFactory, map);

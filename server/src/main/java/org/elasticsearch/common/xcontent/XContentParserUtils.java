@@ -98,7 +98,7 @@ public final class XContentParserUtils {
         Object value = null;
         if (token == Token.VALUE_STRING) {
             // binary values will be parsed back and returned as base64 strings when reading from json and yaml
-            value = parser.text();
+            value = parser.textUnsafe();
         } else if (token == Token.VALUE_NUMBER) {
             value = parser.numberValue();
         } else if (token == Token.VALUE_BOOLEAN) {

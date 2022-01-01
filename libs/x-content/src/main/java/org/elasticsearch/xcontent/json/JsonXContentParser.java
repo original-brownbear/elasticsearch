@@ -66,7 +66,7 @@ public class JsonXContentParser extends AbstractXContentParser {
     }
 
     @Override
-    protected boolean doBooleanValue() throws IOException {
+    public boolean booleanValueUnsafe() throws IOException {
         return parser.getBooleanValue();
     }
 
@@ -79,6 +79,11 @@ public class JsonXContentParser extends AbstractXContentParser {
     }
 
     @Override
+    public String textUnsafe() throws IOException {
+        return parser.getText();
+    }
+
+    @Override
     public CharBuffer charBuffer() throws IOException {
         return CharBuffer.wrap(parser.getTextCharacters(), parser.getTextOffset(), parser.getTextLength());
     }
@@ -87,7 +92,7 @@ public class JsonXContentParser extends AbstractXContentParser {
     public Object objectText() throws IOException {
         JsonToken currentToken = parser.getCurrentToken();
         if (currentToken == JsonToken.VALUE_STRING) {
-            return text();
+            return textUnsafe();
         } else if (currentToken == JsonToken.VALUE_NUMBER_INT || currentToken == JsonToken.VALUE_NUMBER_FLOAT) {
             return parser.getNumberValue();
         } else if (currentToken == JsonToken.VALUE_TRUE) {

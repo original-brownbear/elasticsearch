@@ -1917,7 +1917,7 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
                     if ("version".equals(currentFieldName)) {
                         builder.version = parser.longValue();
                     } else if ("cluster_uuid".equals(currentFieldName) || "uuid".equals(currentFieldName)) {
-                        builder.clusterUUID = parser.text();
+                        builder.clusterUUID = parser.textUnsafe();
                     } else if ("cluster_uuid_committed".equals(currentFieldName)) {
                         builder.clusterUUIDCommitted = parser.booleanValue();
                     } else {

@@ -683,9 +683,9 @@ public final class Settings implements ToXContentFragment {
                 List<String> list = new ArrayList<>();
                 while (parser.nextToken() != XContentParser.Token.END_ARRAY) {
                     if (parser.currentToken() == XContentParser.Token.VALUE_STRING) {
-                        list.add(parser.text());
+                        list.add(parser.textUnsafe());
                     } else if (parser.currentToken() == XContentParser.Token.VALUE_NUMBER) {
-                        list.add(parser.text()); // just use the string representation here
+                        list.add(parser.textUnsafe()); // just use the string representation here
                     } else if (parser.currentToken() == XContentParser.Token.VALUE_BOOLEAN) {
                         list.add(String.valueOf(parser.text()));
                     } else {

@@ -1740,7 +1740,7 @@ public class Setting<T> implements ToXContentObject {
             xContentParser.nextToken();
             return XContentParserUtils.parseList(xContentParser, p -> {
                 XContentParserUtils.ensureExpectedToken(XContentParser.Token.VALUE_STRING, p.currentToken(), p);
-                return p.text();
+                return p.textUnsafe();
             });
         } catch (IOException e) {
             throw new IllegalArgumentException("failed to parse array", e);

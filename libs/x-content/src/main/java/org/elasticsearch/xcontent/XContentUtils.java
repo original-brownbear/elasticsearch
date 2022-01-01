@@ -21,7 +21,7 @@ public final class XContentUtils {
         if (token == XContentParser.Token.VALUE_NULL) {
             return null;
         } else if (token == XContentParser.Token.VALUE_STRING) {
-            return parser.text();
+            return parser.textUnsafe();
         } else if (token == XContentParser.Token.VALUE_NUMBER) {
             XContentParser.NumberType numberType = parser.numberType();
             if (numberType == XContentParser.NumberType.INT) {

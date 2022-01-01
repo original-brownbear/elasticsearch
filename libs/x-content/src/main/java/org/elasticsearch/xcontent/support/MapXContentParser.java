@@ -57,7 +57,7 @@ public class MapXContentParser extends AbstractXContentParser {
     }
 
     @Override
-    protected boolean doBooleanValue() throws IOException {
+    public boolean booleanValueUnsafe() throws IOException {
         if (iterator != null && iterator.currentValue() instanceof Boolean) {
             return (Boolean) iterator.currentValue();
         } else {
@@ -149,6 +149,11 @@ public class MapXContentParser extends AbstractXContentParser {
         } else {
             throw new IllegalStateException("Cannot get text for the current token " + currentToken());
         }
+    }
+
+    @Override
+    public String textUnsafe() throws IOException {
+        return text();
     }
 
     @Override
