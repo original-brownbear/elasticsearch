@@ -147,7 +147,7 @@ public final class NodeMetadata {
 
     static class NodeMetadataStateFormat extends MetadataStateFormat<NodeMetadata> {
 
-        private ObjectParser<Builder, Void> objectParser;
+        private final ObjectParser<Builder, Void> objectParser;
 
         /**
          * @param ignoreUnknownFields whether to ignore unknown fields or not. Normally we are strict about this, but

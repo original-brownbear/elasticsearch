@@ -304,17 +304,17 @@ public class BlobStoreIndexShardSnapshot implements ToXContentFragment {
                     token = parser.nextToken();
                     if (token.isValue()) {
                         if (NAME.equals(currentFieldName)) {
-                            name = parser.text();
+                            name = parser.textUnsafe();
                         } else if (PHYSICAL_NAME.equals(currentFieldName)) {
-                            physicalName = parser.text();
+                            physicalName = parser.textUnsafe();
                         } else if (LENGTH.equals(currentFieldName)) {
                             length = parser.longValue();
                         } else if (CHECKSUM.equals(currentFieldName)) {
-                            checksum = parser.text();
+                            checksum = parser.textUnsafe();
                         } else if (PART_SIZE.equals(currentFieldName)) {
                             partSize = new ByteSizeValue(parser.longValue());
                         } else if (WRITTEN_BY.equals(currentFieldName)) {
-                            writtenBy = parser.text();
+                            writtenBy = parser.textUnsafe();
                         } else if (META_HASH.equals(currentFieldName)) {
                             metaHash.bytes = parser.binaryValue();
                             metaHash.offset = 0;

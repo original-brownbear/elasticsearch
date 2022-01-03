@@ -259,7 +259,7 @@ public abstract class AbstractObjectParser<Value, Context> {
     }
 
     public void declareString(BiConsumer<Value, String> consumer, ParseField field) {
-        declareField(consumer, XContentParser::text, field, ValueType.STRING);
+        declareField(consumer, XContentParser::textUnsafe, field, ValueType.STRING);
     }
 
     /**
@@ -267,7 +267,7 @@ public abstract class AbstractObjectParser<Value, Context> {
      * Throws if the next token is not a string.
      */
     public <T> void declareString(BiConsumer<Value, T> consumer, Function<String, T> fromStringFunction, ParseField field) {
-        declareField(consumer, p -> fromStringFunction.apply(p.text()), field, ValueType.STRING);
+        declareField(consumer, p -> fromStringFunction.apply(p.textUnsafe()), field, ValueType.STRING);
     }
 
     public void declareStringOrNull(BiConsumer<Value, String> consumer, ParseField field) {
@@ -305,7 +305,7 @@ public abstract class AbstractObjectParser<Value, Context> {
     }
 
     public void declareStringArray(BiConsumer<Value, List<String>> consumer, ParseField field) {
-        declareFieldArray(consumer, (p, c) -> p.text(), field, ValueType.STRING_ARRAY);
+        declareFieldArray(consumer, (p, c) -> p.textUnsafe(), field, ValueType.STRING_ARRAY);
     }
 
     public void declareDoubleArray(BiConsumer<Value, List<Double>> consumer, ParseField field) {

@@ -46,7 +46,7 @@ final class DynamicFieldsBuilder {
      */
     void createDynamicFieldFromValue(final DocumentParserContext context, XContentParser.Token token, String name) throws IOException {
         if (token == XContentParser.Token.VALUE_STRING) {
-            String text = context.parser().text();
+            String text = context.parser().textUnsafe();
 
             boolean parseableAsLong = false;
             try {

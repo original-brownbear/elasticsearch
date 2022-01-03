@@ -244,10 +244,11 @@ public abstract class AbstractXContentParser implements XContentParser {
 
     @Override
     public final String textOrNull() throws IOException {
-        if (currentToken() == Token.VALUE_NULL) {
-            return null;
-        }
-        return text();
+        return switch (currentToken()) {
+            case VALUE_NULL -> null;
+            case VALUE_STRING -> textUnsafe();
+            default -> text();
+        };
     }
 
     @Override

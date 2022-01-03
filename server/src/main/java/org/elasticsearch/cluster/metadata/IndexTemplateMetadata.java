@@ -19,6 +19,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.xcontent.ToXContent;
@@ -487,7 +488,8 @@ public class IndexTemplateMetadata extends AbstractDiffable<IndexTemplateMetadat
                     } else if ("index_patterns".equals(currentFieldName)) {
                         List<String> index_patterns = new ArrayList<>();
                         while ((token = parser.nextToken()) != XContentParser.Token.END_ARRAY) {
-                            index_patterns.add(parser.text());
+                            XContentParserUtils.ensureExpectedToken(XContentParser.Token.VALUE_STRING, token, parser);
+                            index_patterns.add(parser.textUnsafe());
                         }
                         builder.patterns(index_patterns);
                     }

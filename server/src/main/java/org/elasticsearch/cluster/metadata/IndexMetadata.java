@@ -1695,7 +1695,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                                 Set<String> allocationIds = new HashSet<>();
                                 while ((token = parser.nextToken()) != XContentParser.Token.END_ARRAY) {
                                     if (token == XContentParser.Token.VALUE_STRING) {
-                                        allocationIds.add(parser.text());
+                                        allocationIds.add(parser.textUnsafe());
                                     }
                                 }
                                 builder.putInSyncAllocationIds(Integer.valueOf(shardId), allocationIds);
@@ -1751,7 +1751,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                     }
                 } else if (token.isValue()) {
                     if (KEY_STATE.equals(currentFieldName)) {
-                        builder.state(State.fromString(parser.text()));
+                        builder.state(State.fromString(parser.textUnsafe()));
                     } else if (KEY_VERSION.equals(currentFieldName)) {
                         builder.version(parser.longValue());
                     } else if (KEY_MAPPING_VERSION.equals(currentFieldName)) {

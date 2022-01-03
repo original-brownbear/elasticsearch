@@ -702,7 +702,7 @@ public final class Settings implements ToXContentFragment {
             } else if (parser.currentToken() == XContentParser.Token.VALUE_STRING
                 || parser.currentToken() == XContentParser.Token.VALUE_NUMBER) {
                     String key = keyBuilder.toString();
-                    String value = parser.text();
+                    String value = parser.textUnsafe();
                     validateValue(key, value, parser, allowNullValues);
                     builder.put(key, value);
                 } else if (parser.currentToken() == XContentParser.Token.VALUE_BOOLEAN) {
