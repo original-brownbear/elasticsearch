@@ -251,7 +251,7 @@ public class ObjectMapper extends Mapper implements Cloneable {
         this.enabled = enabled;
         this.dynamic = dynamic;
         if (mappers == null) {
-            this.mappers = new CopyOnWriteHashMap<>();
+            this.mappers = CopyOnWriteHashMap.empty();
         } else {
             this.mappers = CopyOnWriteHashMap.copyOf(mappers);
         }
@@ -271,7 +271,7 @@ public class ObjectMapper extends Mapper implements Cloneable {
     ObjectMapper copyAndReset() {
         ObjectMapper copy = clone();
         // reset the sub mappers
-        copy.mappers = new CopyOnWriteHashMap<>();
+        copy.mappers = CopyOnWriteHashMap.empty();
         return copy;
     }
 

@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.stream.Stream;
 
 /**
  * An immutable map whose writes result in a new copy of the map to be created.
@@ -47,6 +46,8 @@ public final class CopyOnWriteHashMap<K, V> extends AbstractMap<K, V> {
     private static final int HASH_BITS = 6;
     private static final int HASH_MASK = 0x3F;
 
+    private static final CopyOnWriteHashMap<?, ?> EMPTY = new CopyOnWriteHashMap<>();
+
     /**
      * Return a copy of the provided map.
      */
@@ -57,8 +58,16 @@ public final class CopyOnWriteHashMap<K, V> extends AbstractMap<K, V> {
             final CopyOnWriteHashMap<K, V> cowMap = (CopyOnWriteHashMap<K, V>) map;
             return cowMap;
         } else {
+            if (map.isEmpty()) {
+                return empty();
+            }
             return new CopyOnWriteHashMap<K, V>().copyAndPutAll(map);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> CopyOnWriteHashMap<K, V> empty() {
+        return (CopyOnWriteHashMap<K, V>) EMPTY;
     }
 
     /**
@@ -459,7 +468,7 @@ public final class CopyOnWriteHashMap<K, V> extends AbstractMap<K, V> {
     /**
      * Create a new empty map.
      */
-    public CopyOnWriteHashMap() {
+    private CopyOnWriteHashMap() {
         this(new InnerNode<K, V>(), 0);
     }
 
@@ -511,19 +520,11 @@ public final class CopyOnWriteHashMap<K, V> extends AbstractMap<K, V> {
      * Same as {@link #copyAndPut(Object, Object)} but for an arbitrary number of entries.
      */
     public CopyOnWriteHashMap<K, V> copyAndPutAll(Map<? extends K, ? extends V> other) {
-        return copyAndPutAll(other.entrySet());
-    }
-
-    public <K1 extends K, V1 extends V> CopyOnWriteHashMap<K, V> copyAndPutAll(Iterable<Entry<K1, V1>> entries) {
         CopyOnWriteHashMap<K, V> result = this;
-        for (Entry<K1, V1> entry : entries) {
+        for (Entry<? extends K, ? extends V> entry : other.entrySet()) {
             result = result.copyAndPut(entry.getKey(), entry.getValue());
         }
         return result;
-    }
-
-    public <K1 extends K, V1 extends V> CopyOnWriteHashMap<K, V> copyAndPutAll(Stream<Entry<K1, V1>> entries) {
-        return copyAndPutAll(entries::iterator);
     }
 
     /**
@@ -537,6 +538,9 @@ public final class CopyOnWriteHashMap<K, V> extends AbstractMap<K, V> {
         final InnerNode<K, V> newRoot = root.remove(key, hash);
         if (root == newRoot) {
             return this;
+        } else if (size == 1) {
+            // we removed something from a map of size == 1 -> empty
+            return empty();
         } else {
             return new CopyOnWriteHashMap<>(newRoot, size - 1);
         }

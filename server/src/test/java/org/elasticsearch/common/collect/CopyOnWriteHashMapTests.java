@@ -51,7 +51,7 @@ public class CopyOnWriteHashMapTests extends ESTestCase {
             final int numOps = randomInt(10 + hashBits * 100);
 
             Map<O, Integer> ref = new HashMap<>();
-            CopyOnWriteHashMap<O, Integer> map = new CopyOnWriteHashMap<>();
+            CopyOnWriteHashMap<O, Integer> map = CopyOnWriteHashMap.empty();
             assertEquals(ref, map);
             final int hashBase = randomInt();
             for (int i = 0; i < numOps; ++i) {
@@ -89,7 +89,7 @@ public class CopyOnWriteHashMapTests extends ESTestCase {
     }
 
     public void testCollision() {
-        CopyOnWriteHashMap<O, Integer> map = new CopyOnWriteHashMap<>();
+        CopyOnWriteHashMap<O, Integer> map = CopyOnWriteHashMap.empty();
         map = map.copyAndPut(new O(3, 0), 2);
         assertEquals((Integer) 2, map.get(new O(3, 0)));
         assertNull(map.get(new O(5, 0)));
@@ -109,14 +109,14 @@ public class CopyOnWriteHashMapTests extends ESTestCase {
 
     public void testUnsupportedAPIs() {
         try {
-            new CopyOnWriteHashMap<>().put("a", "b");
+            CopyOnWriteHashMap.empty().put("a", "b");
             fail();
         } catch (UnsupportedOperationException e) {
             // expected
         }
 
         try {
-            new CopyOnWriteHashMap<>().copyAndPut("a", "b").remove("a");
+            CopyOnWriteHashMap.empty().copyAndPut("a", "b").remove("a");
             fail();
         } catch (UnsupportedOperationException e) {
             // expected
@@ -125,14 +125,14 @@ public class CopyOnWriteHashMapTests extends ESTestCase {
 
     public void testUnsupportedValues() {
         try {
-            new CopyOnWriteHashMap<>().copyAndPut("a", null);
+            CopyOnWriteHashMap.empty().copyAndPut("a", null);
             fail();
         } catch (IllegalArgumentException e) {
             // expected
         }
 
         try {
-            new CopyOnWriteHashMap<>().copyAndPut(null, "b");
+            CopyOnWriteHashMap.empty().copyAndPut(null, "b");
             fail();
         } catch (IllegalArgumentException e) {
             // expected
