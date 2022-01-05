@@ -16,7 +16,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -54,24 +53,16 @@ public class NestedObjectMapper extends ObjectMapper {
         }
     }
 
-    public static class TypeParser extends ObjectMapper.TypeParser {
+    public static final Mapper.TypeParser PARSER = new ObjectMapper.TypeParser() {
         @Override
         public Mapper.Builder parse(String name, Map<String, Object> node, MappingParserContext parserContext)
             throws MapperParsingException {
             NestedObjectMapper.Builder builder = new NestedObjectMapper.Builder(name, parserContext.indexVersionCreated());
             parseNested(name, node, builder);
-            for (Iterator<Map.Entry<String, Object>> iterator = node.entrySet().iterator(); iterator.hasNext();) {
-                Map.Entry<String, Object> entry = iterator.next();
-                String fieldName = entry.getKey();
-                Object fieldNode = entry.getValue();
-                if (parseObjectOrDocumentTypeProperties(fieldName, fieldNode, parserContext, builder)) {
-                    iterator.remove();
-                }
-            }
-            return builder;
+            return parse(node, parserContext, builder);
         }
 
-        protected static void parseNested(String name, Map<String, Object> node, NestedObjectMapper.Builder builder) {
+        private static void parseNested(String name, Map<String, Object> node, NestedObjectMapper.Builder builder) {
             Object fieldNode = node.get("include_in_parent");
             if (fieldNode != null) {
                 boolean includeInParent = XContentMapValues.nodeBooleanValue(fieldNode, name + ".include_in_parent");
@@ -85,7 +76,7 @@ public class NestedObjectMapper extends ObjectMapper {
                 node.remove("include_in_root");
             }
         }
-    }
+    };
 
     private Explicit<Boolean> includeInRoot;
     private Explicit<Boolean> includeInParent;

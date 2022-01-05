@@ -113,11 +113,16 @@ public class ObjectMapper extends Mapper implements Cloneable {
         }
     }
 
+    public static final Mapper.TypeParser PARSER = new TypeParser();
+
     public static class TypeParser implements Mapper.TypeParser {
         @Override
         public Mapper.Builder parse(String name, Map<String, Object> node, MappingParserContext parserContext)
             throws MapperParsingException {
-            ObjectMapper.Builder builder = new Builder(name);
+            return parse(node, parserContext, new Builder(name));
+        }
+
+        static Mapper.Builder parse(Map<String, Object> node, MappingParserContext parserContext, Builder builder) {
             for (Iterator<Map.Entry<String, Object>> iterator = node.entrySet().iterator(); iterator.hasNext();) {
                 Map.Entry<String, Object> entry = iterator.next();
                 String fieldName = entry.getKey();

@@ -14,7 +14,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -112,19 +111,15 @@ public final class FieldAliasMapper extends Mapper {
         }
     }
 
-    public static class TypeParser implements Mapper.TypeParser {
-        @Override
-        public Mapper.Builder parse(String name, Map<String, Object> node, MappingParserContext parserContext)
-            throws MapperParsingException {
-            FieldAliasMapper.Builder builder = new FieldAliasMapper.Builder(name);
-            Object pathField = node.remove(Names.PATH);
-            String path = XContentMapValues.nodeStringValue(pathField, null);
-            if (path == null) {
-                throw new MapperParsingException("The [path] property must be specified for field [" + name + "].");
-            }
-            return builder.path(path);
+    public static final TypeParser PARSER = (name, node, parserContext) -> {
+        Builder builder = new Builder(name);
+        Object pathField = node.remove(Names.PATH);
+        String path = XContentMapValues.nodeStringValue(pathField, null);
+        if (path == null) {
+            throw new MapperParsingException("The [path] property must be specified for field [" + name + "].");
         }
-    }
+        return builder.path(path);
+    };
 
     public static class Builder extends Mapper.Builder {
         private String name;
