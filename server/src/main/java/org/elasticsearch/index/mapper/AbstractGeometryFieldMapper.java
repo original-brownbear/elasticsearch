@@ -111,8 +111,8 @@ public abstract class AbstractGeometryFieldMapper<T> extends FieldMapper {
         }
     }
 
-    private final Explicit<Boolean> ignoreMalformed;
-    private final Explicit<Boolean> ignoreZValue;
+    protected final Explicit<Boolean> ignoreMalformed;
+    protected final Explicit<Boolean> ignoreZValue;
     private final Parser<T> parser;
 
     protected AbstractGeometryFieldMapper(

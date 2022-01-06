@@ -62,29 +62,25 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
 
     public static final String CONTENT_TYPE = "geo_point";
 
-    private static Builder builder(FieldMapper in) {
-        return ((GeoPointFieldMapper) in).builder;
-    }
-
     public static class Builder extends FieldMapper.Builder {
 
         final Parameter<Explicit<Boolean>> ignoreMalformed;
-        final Parameter<Explicit<Boolean>> ignoreZValue = ignoreZValueParam(m -> builder(m).ignoreZValue.get());
+        final Parameter<Explicit<Boolean>> ignoreZValue = ignoreZValueParam(m -> ((GeoPointFieldMapper) m).ignoreZValue);
         final Parameter<GeoPoint> nullValue;
-        final Parameter<Boolean> indexed = Parameter.indexParam(m -> builder(m).indexed.get(), true);
-        final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> builder(m).hasDocValues.get(), true);
-        final Parameter<Boolean> stored = Parameter.storeParam(m -> builder(m).stored.get(), false);
-        private final Parameter<Script> script = Parameter.scriptParam(m -> builder(m).script.get());
-        private final Parameter<String> onScriptError = Parameter.onScriptErrorParam(m -> builder(m).onScriptError.get(), script);
+        final Parameter<Boolean> indexed = Parameter.indexParam(m -> m.fieldType().isSearchable(), true);
+        final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> m.fieldType().hasDocValues(), true);
+        final Parameter<Boolean> stored = Parameter.storeParam(m -> m.fieldType().isStored(), false);
+        private final Parameter<Script> script = Parameter.scriptParam(m -> ((GeoPointFieldMapper) m).script);
+        private final Parameter<String> onScriptError = Parameter.onScriptErrorParam(m -> ((GeoPointFieldMapper) m).onScriptError, script);
         final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
         private final ScriptCompiler scriptCompiler;
 
         public Builder(String name, ScriptCompiler scriptCompiler, boolean ignoreMalformedByDefault) {
             super(name);
-            this.ignoreMalformed = ignoreMalformedParam(m -> builder(m).ignoreMalformed.get(), ignoreMalformedByDefault);
+            this.ignoreMalformed = ignoreMalformedParam(m -> ((GeoPointFieldMapper) m).ignoreMalformed, ignoreMalformedByDefault);
             this.nullValue = nullValueParam(
-                m -> builder(m).nullValue.get(),
+                m -> ((GeoPointFieldMapper) m).nullValue,
                 (n, c, o) -> parseNullValue(o, ignoreZValue.get().value(), ignoreMalformed.get().value()),
                 () -> null
             ).acceptsNull();
@@ -161,7 +157,10 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
         (n, c) -> new Builder(n, c.scriptCompiler(), IGNORE_MALFORMED_SETTING.get(c.getSettings()))
     );
 
-    private final Builder builder;
+    private final boolean ignoreMalformedByDefault;
+    private final ScriptCompiler scriptCompiler;
+    private final String onScriptError;
+    private final Script script;
     private final FieldValues<GeoPoint> scriptValues;
 
     public GeoPointFieldMapper(
@@ -182,19 +181,25 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
             copyTo,
             parser
         );
-        this.builder = builder;
+        this.ignoreMalformedByDefault = builder.ignoreMalformed.getDefaultValue().value();
+        this.scriptCompiler = builder.scriptCompiler;
+        this.script = builder.script.get();
+        this.onScriptError = builder.onScriptError.get();
         this.scriptValues = null;
     }
 
     public GeoPointFieldMapper(String simpleName, MappedFieldType mappedFieldType, Parser<GeoPoint> parser, Builder builder) {
         super(simpleName, mappedFieldType, MultiFields.empty(), CopyTo.empty(), parser, builder.onScriptError.get());
-        this.builder = builder;
+        this.ignoreMalformedByDefault = builder.ignoreMalformed.getDefaultValue().value();
+        this.scriptCompiler = builder.scriptCompiler;
+        this.script = builder.script.get();
+        this.onScriptError = builder.onScriptError.get();
         this.scriptValues = builder.scriptValues();
     }
 
     @Override
     public FieldMapper.Builder getMergeBuilder() {
-        return new Builder(simpleName(), builder.scriptCompiler, builder.ignoreMalformed.getDefaultValue().value()).init(this);
+        return new Builder(simpleName(), scriptCompiler, ignoreMalformedByDefault).init(this);
     }
 
     @Override
