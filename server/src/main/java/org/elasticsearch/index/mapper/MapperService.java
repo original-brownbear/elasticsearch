@@ -221,24 +221,11 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
     /**
      * Parses the mappings (formatted as JSON) into a map
      */
-    public static Map<String, Object> parseMapping(NamedXContentRegistry xContentRegistry, String mappingSource) throws IOException {
-        if ("{}".equals(mappingSource)) {
-            // empty JSON is a common default value so it makes sense to optimize for it a little
-            return Map.of();
-        }
-        try (
-            XContentParser parser = XContentType.JSON.xContent()
-                .createParser(xContentRegistry, LoggingDeprecationHandler.INSTANCE, mappingSource)
-        ) {
-            return parser.map();
-        }
-    }
-
-    /**
-     * Parses the mappings (formatted as JSON) into a map
-     */
     public static Map<String, Object> parseMapping(NamedXContentRegistry xContentRegistry, CompressedXContent mappingSource)
         throws IOException {
+        if (CompressedXContent.EMPTY_JSON.equals(mappingSource)) {
+            return Map.of();
+        }
         try (
             InputStream in = CompressorFactory.COMPRESSOR.threadLocalInputStream(mappingSource.compressedReference().streamInput());
             XContentParser parser = XContentType.JSON.xContent()

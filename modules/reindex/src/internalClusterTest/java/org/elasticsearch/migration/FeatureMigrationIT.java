@@ -28,6 +28,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.indices.AssociatedIndexDescriptor;
 import org.elasticsearch.indices.SystemIndexDescriptor;
@@ -36,8 +37,6 @@ import org.elasticsearch.plugins.SystemIndexPlugin;
 import org.elasticsearch.reindex.ReindexPlugin;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.upgrades.FeatureMigrationResults;
-import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xcontent.json.JsonXContent;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -317,7 +316,7 @@ public class FeatureMigrationIT extends ESIntegTestCase {
             );
         }
         if (descriptor.getMappings() == null) {
-            createRequest.setMapping(createSimpleMapping(false, descriptor.isInternal()));
+            createRequest.setMapping(createSimpleMapping(false, descriptor.isInternal()).string());
         }
         CreateIndexResponse response = createRequest.get();
         assertTrue(response.isShardsAcknowledged());
@@ -400,10 +399,9 @@ public class FeatureMigrationIT extends ESIntegTestCase {
             .build();
     }
 
-    static String createSimpleMapping(boolean descriptorManaged, boolean descriptorInternal) {
-        try (XContentBuilder builder = JsonXContent.contentBuilder()) {
-            builder.startObject();
-            {
+    static CompressedXContent createSimpleMapping(boolean descriptorManaged, boolean descriptorInternal) {
+        try {
+            return new CompressedXContent((builder, params) -> {
                 builder.startObject("_meta");
                 builder.field(VERSION_META_KEY, META_VERSION);
                 builder.field(DESCRIPTOR_MANAGED_META_KEY, descriptorManaged);
@@ -417,10 +415,8 @@ public class FeatureMigrationIT extends ESIntegTestCase {
                     builder.field("type", "keyword");
                     builder.endObject();
                 }
-                builder.endObject();
-            }
-            builder.endObject();
-            return Strings.toString(builder);
+                return builder.endObject();
+            });
         } catch (IOException e) {
             // Just rethrow, it should be impossible for this to throw here
             throw new AssertionError(e);

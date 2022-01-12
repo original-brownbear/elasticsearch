@@ -15,6 +15,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.indices.SystemIndexDescriptor;
+import org.elasticsearch.indices.SystemIndexDescriptorTests;
 import org.elasticsearch.indices.SystemIndices;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
@@ -27,7 +28,6 @@ import static org.mockito.Mockito.mock;
 
 public class SystemIndexMetadataUpgradeServiceTests extends ESTestCase {
 
-    private static final String MAPPINGS = "{ \"_doc\": { \"_meta\": { \"version\": \"7.4.0\" } } }";
     private static final String SYSTEM_INDEX_NAME = ".myindex-1";
     private static final String SYSTEM_ALIAS_NAME = ".myindex-alias";
     private static final SystemIndexDescriptor DESCRIPTOR = SystemIndexDescriptor.builder()
@@ -35,7 +35,7 @@ public class SystemIndexMetadataUpgradeServiceTests extends ESTestCase {
         .setPrimaryIndex(SYSTEM_INDEX_NAME)
         .setAliasName(SYSTEM_ALIAS_NAME)
         .setSettings(getSettingsBuilder().build())
-        .setMappings(MAPPINGS)
+        .setMappings(SystemIndexDescriptorTests.MAPPINGS)
         .setVersionMetaKey("version")
         .setOrigin("FAKE_ORIGIN")
         .build();

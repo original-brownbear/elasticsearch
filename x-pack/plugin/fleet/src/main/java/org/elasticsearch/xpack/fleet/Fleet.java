@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
@@ -136,126 +137,154 @@ public class Fleet extends Plugin implements SystemIndexPlugin {
         PutIndexTemplateRequest request = new PutIndexTemplateRequest();
         request.source(loadTemplateSource("/fleet-actions.json"), XContentType.JSON);
 
-        return SystemIndexDescriptor.builder()
-            .setType(Type.EXTERNAL_MANAGED)
-            .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
-            .setOrigin(FLEET_ORIGIN)
-            .setVersionMetaKey(VERSION_KEY)
-            .setMappings(request.mappings())
-            .setSettings(request.settings())
-            .setPrimaryIndex(".fleet-actions-" + CURRENT_INDEX_VERSION)
-            .setIndexPattern(".fleet-actions~(-results*)")
-            .setAliasName(".fleet-actions")
-            .setDescription("Fleet agents")
-            .build();
+        try {
+            return SystemIndexDescriptor.builder()
+                .setType(Type.EXTERNAL_MANAGED)
+                .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
+                .setOrigin(FLEET_ORIGIN)
+                .setVersionMetaKey(VERSION_KEY)
+                .setMappings(CompressedXContent.fromJSON(request.mappings()))
+                .setSettings(request.settings())
+                .setPrimaryIndex(".fleet-actions-" + CURRENT_INDEX_VERSION)
+                .setIndexPattern(".fleet-actions~(-results*)")
+                .setAliasName(".fleet-actions")
+                .setDescription("Fleet agents")
+                .build();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private SystemIndexDescriptor fleetAgentsSystemIndexDescriptor() {
         PutIndexTemplateRequest request = new PutIndexTemplateRequest();
         request.source(loadTemplateSource("/fleet-agents.json"), XContentType.JSON);
 
-        return SystemIndexDescriptor.builder()
-            .setType(Type.EXTERNAL_MANAGED)
-            .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
-            .setOrigin(FLEET_ORIGIN)
-            .setVersionMetaKey(VERSION_KEY)
-            .setMappings(request.mappings())
-            .setSettings(request.settings())
-            .setPrimaryIndex(".fleet-agents-" + CURRENT_INDEX_VERSION)
-            .setIndexPattern(".fleet-agents*")
-            .setAliasName(".fleet-agents")
-            .setDescription("Configuration of fleet servers")
-            .build();
+        try {
+            return SystemIndexDescriptor.builder()
+                .setType(Type.EXTERNAL_MANAGED)
+                .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
+                .setOrigin(FLEET_ORIGIN)
+                .setVersionMetaKey(VERSION_KEY)
+                .setMappings(CompressedXContent.fromJSON(request.mappings()))
+                .setSettings(request.settings())
+                .setPrimaryIndex(".fleet-agents-" + CURRENT_INDEX_VERSION)
+                .setIndexPattern(".fleet-agents*")
+                .setAliasName(".fleet-agents")
+                .setDescription("Configuration of fleet servers")
+                .build();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private SystemIndexDescriptor fleetEnrollmentApiKeysSystemIndexDescriptor() {
         PutIndexTemplateRequest request = new PutIndexTemplateRequest();
         request.source(loadTemplateSource("/fleet-enrollment-api-keys.json"), XContentType.JSON);
 
-        return SystemIndexDescriptor.builder()
-            .setType(Type.EXTERNAL_MANAGED)
-            .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
-            .setOrigin(FLEET_ORIGIN)
-            .setVersionMetaKey(VERSION_KEY)
-            .setMappings(request.mappings())
-            .setSettings(request.settings())
-            .setPrimaryIndex(".fleet-enrollment-api-keys-" + CURRENT_INDEX_VERSION)
-            .setIndexPattern(".fleet-enrollment-api-keys*")
-            .setAliasName(".fleet-enrollment-api-keys")
-            .setDescription("Fleet API Keys for enrollment")
-            .build();
+        try {
+            return SystemIndexDescriptor.builder()
+                .setType(Type.EXTERNAL_MANAGED)
+                .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
+                .setOrigin(FLEET_ORIGIN)
+                .setVersionMetaKey(VERSION_KEY)
+                .setMappings(CompressedXContent.fromJSON(request.mappings()))
+                .setSettings(request.settings())
+                .setPrimaryIndex(".fleet-enrollment-api-keys-" + CURRENT_INDEX_VERSION)
+                .setIndexPattern(".fleet-enrollment-api-keys*")
+                .setAliasName(".fleet-enrollment-api-keys")
+                .setDescription("Fleet API Keys for enrollment")
+                .build();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private SystemIndexDescriptor fleetPoliciesSystemIndexDescriptor() {
         PutIndexTemplateRequest request = new PutIndexTemplateRequest();
         request.source(loadTemplateSource("/fleet-policies.json"), XContentType.JSON);
 
-        return SystemIndexDescriptor.builder()
-            .setType(Type.EXTERNAL_MANAGED)
-            .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
-            .setOrigin(FLEET_ORIGIN)
-            .setVersionMetaKey(VERSION_KEY)
-            .setMappings(request.mappings())
-            .setSettings(request.settings())
-            .setPrimaryIndex(".fleet-policies-" + CURRENT_INDEX_VERSION)
-            .setIndexPattern(".fleet-policies-[0-9]+*")
-            .setAliasName(".fleet-policies")
-            .setDescription("Fleet Policies")
-            .build();
+        try {
+            return SystemIndexDescriptor.builder()
+                .setType(Type.EXTERNAL_MANAGED)
+                .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
+                .setOrigin(FLEET_ORIGIN)
+                .setVersionMetaKey(VERSION_KEY)
+                .setMappings(CompressedXContent.fromJSON(request.mappings()))
+                .setSettings(request.settings())
+                .setPrimaryIndex(".fleet-policies-" + CURRENT_INDEX_VERSION)
+                .setIndexPattern(".fleet-policies-[0-9]+*")
+                .setAliasName(".fleet-policies")
+                .setDescription("Fleet Policies")
+                .build();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private SystemIndexDescriptor fleetPoliciesLeaderSystemIndexDescriptor() {
         PutIndexTemplateRequest request = new PutIndexTemplateRequest();
         request.source(loadTemplateSource("/fleet-policies-leader.json"), XContentType.JSON);
 
-        return SystemIndexDescriptor.builder()
-            .setType(Type.EXTERNAL_MANAGED)
-            .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
-            .setOrigin(FLEET_ORIGIN)
-            .setVersionMetaKey(VERSION_KEY)
-            .setMappings(request.mappings())
-            .setSettings(request.settings())
-            .setPrimaryIndex(".fleet-policies-leader-" + CURRENT_INDEX_VERSION)
-            .setIndexPattern(".fleet-policies-leader*")
-            .setAliasName(".fleet-policies-leader")
-            .setDescription("Fleet Policies leader")
-            .build();
+        try {
+            return SystemIndexDescriptor.builder()
+                .setType(Type.EXTERNAL_MANAGED)
+                .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
+                .setOrigin(FLEET_ORIGIN)
+                .setVersionMetaKey(VERSION_KEY)
+                .setMappings(CompressedXContent.fromJSON(request.mappings()))
+                .setSettings(request.settings())
+                .setPrimaryIndex(".fleet-policies-leader-" + CURRENT_INDEX_VERSION)
+                .setIndexPattern(".fleet-policies-leader*")
+                .setAliasName(".fleet-policies-leader")
+                .setDescription("Fleet Policies leader")
+                .build();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private SystemIndexDescriptor fleetServersSystemIndexDescriptors() {
         PutIndexTemplateRequest request = new PutIndexTemplateRequest();
         request.source(loadTemplateSource("/fleet-servers.json"), XContentType.JSON);
 
-        return SystemIndexDescriptor.builder()
-            .setType(Type.EXTERNAL_MANAGED)
-            .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
-            .setOrigin(FLEET_ORIGIN)
-            .setVersionMetaKey(VERSION_KEY)
-            .setMappings(request.mappings())
-            .setSettings(request.settings())
-            .setPrimaryIndex(".fleet-servers-" + CURRENT_INDEX_VERSION)
-            .setIndexPattern(".fleet-servers*")
-            .setAliasName(".fleet-servers")
-            .setDescription("Fleet servers")
-            .build();
+        try {
+            return SystemIndexDescriptor.builder()
+                .setType(Type.EXTERNAL_MANAGED)
+                .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
+                .setOrigin(FLEET_ORIGIN)
+                .setVersionMetaKey(VERSION_KEY)
+                .setMappings(CompressedXContent.fromJSON(request.mappings()))
+                .setSettings(request.settings())
+                .setPrimaryIndex(".fleet-servers-" + CURRENT_INDEX_VERSION)
+                .setIndexPattern(".fleet-servers*")
+                .setAliasName(".fleet-servers")
+                .setDescription("Fleet servers")
+                .build();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private SystemIndexDescriptor fleetArtifactsSystemIndexDescriptors() {
         PutIndexTemplateRequest request = new PutIndexTemplateRequest();
         request.source(loadTemplateSource("/fleet-artifacts.json"), XContentType.JSON);
 
-        return SystemIndexDescriptor.builder()
-            .setType(Type.EXTERNAL_MANAGED)
-            .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
-            .setOrigin(FLEET_ORIGIN)
-            .setVersionMetaKey(VERSION_KEY)
-            .setMappings(request.mappings())
-            .setSettings(request.settings())
-            .setPrimaryIndex(".fleet-artifacts-" + CURRENT_INDEX_VERSION)
-            .setIndexPattern(".fleet-artifacts*")
-            .setAliasName(".fleet-artifacts")
-            .setDescription("Fleet artifacts")
-            .build();
+        try {
+            return SystemIndexDescriptor.builder()
+                .setType(Type.EXTERNAL_MANAGED)
+                .setAllowedElasticProductOrigins(ALLOWED_PRODUCTS)
+                .setOrigin(FLEET_ORIGIN)
+                .setVersionMetaKey(VERSION_KEY)
+                .setMappings(CompressedXContent.fromJSON(request.mappings()))
+                .setSettings(request.settings())
+                .setPrimaryIndex(".fleet-artifacts-" + CURRENT_INDEX_VERSION)
+                .setIndexPattern(".fleet-artifacts*")
+                .setAliasName(".fleet-artifacts")
+                .setDescription("Fleet artifacts")
+                .build();
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     private SystemDataStreamDescriptor fleetActionsResultsDescriptor() {

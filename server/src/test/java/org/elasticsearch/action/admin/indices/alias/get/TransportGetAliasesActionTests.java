@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Tuple;
@@ -27,6 +28,7 @@ import org.elasticsearch.indices.SystemIndices.SystemIndexAccessLevel;
 import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.test.ESTestCase;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -308,7 +310,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
         assertThat(result.get("logs-foo"), contains(new DataStreamAlias("logs", List.of("logs-bar", "logs-foo"), null, null)));
     }
 
-    public void testNetNewSystemIndicesDontErrorWhenNotRequested() {
+    public void testNetNewSystemIndicesDontErrorWhenNotRequested() throws IOException {
         GetAliasesRequest aliasesRequest = new GetAliasesRequest();
         // `.b` will be the "net new" system index this test case
         ClusterState clusterState = systemIndexTestClusterState();
@@ -319,7 +321,7 @@ public class TransportGetAliasesActionTests extends ESTestCase {
             .setAliasName(".y")
             .setPrimaryIndex(".b")
             .setDescription(this.getTestName())
-            .setMappings("{\"_meta\":  {\"version\":  \"1.0.0\"}}")
+            .setMappings(CompressedXContent.fromJSON("{\"_meta\":  {\"version\":  \"1.0.0\"}}"))
             .setSettings(Settings.EMPTY)
             .setVersionMetaKey("version")
             .setOrigin(this.getTestName())

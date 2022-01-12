@@ -22,6 +22,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.MetadataCreateIndexService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.indices.SystemIndexDescriptor;
@@ -31,6 +32,7 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -83,7 +85,7 @@ public class TransportCreateIndexAction extends TransportMasterNodeAction<Create
         final CreateIndexRequest request,
         final ClusterState state,
         final ActionListener<CreateIndexResponse> listener
-    ) {
+    ) throws IOException {
         String cause = request.cause();
         if (cause.isEmpty()) {
             cause = "api";
@@ -156,7 +158,7 @@ public class TransportCreateIndexAction extends TransportMasterNodeAction<Create
         String cause,
         String indexName,
         long nameResolvedAt
-    ) {
+    ) throws IOException {
         Set<Alias> aliases = request.aliases().stream().peek(alias -> {
             if (systemIndices.isSystemName(alias.name())) {
                 alias.isHidden(true);
@@ -165,7 +167,7 @@ public class TransportCreateIndexAction extends TransportMasterNodeAction<Create
         return new CreateIndexClusterStateUpdateRequest(cause, indexName, request.index()).ackTimeout(request.timeout())
             .masterNodeTimeout(request.masterNodeTimeout())
             .settings(request.settings())
-            .mappings(request.mappings())
+            .mappings(CompressedXContent.fromJSON(request.mappings()))
             .aliases(aliases)
             .nameResolvedInstant(nameResolvedAt)
             .waitForActiveShards(request.waitForActiveShards());

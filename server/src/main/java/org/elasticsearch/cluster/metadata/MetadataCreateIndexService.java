@@ -708,7 +708,7 @@ public class MetadataCreateIndexService {
     }
 
     public static List<CompressedXContent> collectV2Mappings(
-        @Nullable final String requestMappings,
+        @Nullable final CompressedXContent requestMappings,
         final ClusterState currentState,
         final String templateName,
         final NamedXContentRegistry xContentRegistry,
@@ -719,7 +719,7 @@ public class MetadataCreateIndexService {
     }
 
     private static List<CompressedXContent> collectV2Mappings(
-        @Nullable final String requestMappings,
+        @Nullable final CompressedXContent requestMappings,
         final List<CompressedXContent> templateMappings,
         final NamedXContentRegistry xContentRegistry
     ) throws Exception {
@@ -798,7 +798,7 @@ public class MetadataCreateIndexService {
      * definitions, as may result in an invalid field definition
      */
     static Map<String, Object> parseV1Mappings(
-        String mappingsJson,
+        CompressedXContent mappingsJson,
         List<CompressedXContent> templateMappings,
         NamedXContentRegistry xContentRegistry
     ) throws IOException {

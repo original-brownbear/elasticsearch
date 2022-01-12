@@ -34,6 +34,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -145,7 +146,7 @@ public class TransportRollupAction extends AcknowledgedTransportMasterNodeAction
             tmpIndexName,
             tmpIndexName
         ).settings(MetadataRolloverService.HIDDEN_INDEX_SETTINGS)
-            .mappings(XContentHelper.convertToJson(BytesReference.bytes(mapping), false, XContentType.JSON));
+            .mappings(CompressedXContent.fromJSON(XContentHelper.convertToJson(BytesReference.bytes(mapping), false, XContentType.JSON)));
 
         RollupIndexerAction.Request rollupIndexerRequest = new RollupIndexerAction.Request(request);
         ResizeRequest resizeRequest = new ResizeRequest(request.getRollupIndex(), tmpIndexName);

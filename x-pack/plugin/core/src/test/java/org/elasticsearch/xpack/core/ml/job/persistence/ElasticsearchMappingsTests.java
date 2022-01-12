@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.get.GetResult;
@@ -193,8 +194,8 @@ public class ElasticsearchMappingsTests extends ESTestCase {
         ClusterState clusterState = getClusterStateWithMappingsWithMetadata(Collections.singletonMap("index-name", "0.0"));
         ElasticsearchMappings.addDocMappingIfMissing(
             "index-name",
-            () -> """
-                {"_doc":{"properties":{"some-field":{"type":"long"}}}}""",
+            () -> CompressedXContent.fromJSON("""
+                {"_doc":{"properties":{"some-field":{"type":"long"}}}}"""),
             client,
             clusterState,
             MasterNodeRequest.DEFAULT_MASTER_NODE_TIMEOUT,

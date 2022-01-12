@@ -21,6 +21,7 @@ import org.elasticsearch.action.support.master.AcknowledgedRequest;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
@@ -219,6 +220,11 @@ public class CreateIndexRequest extends AcknowledgedRequest<CreateIndexRequest> 
      */
     public CreateIndexRequest settings(Map<String, ?> source) {
         this.settings = Settings.builder().loadFromMap(source).build();
+        return this;
+    }
+
+    public CreateIndexRequest mapping(CompressedXContent mapping) {
+        this.mappings = mapping.string();
         return this;
     }
 

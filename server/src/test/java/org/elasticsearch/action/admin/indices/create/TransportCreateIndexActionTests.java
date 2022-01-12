@@ -28,6 +28,7 @@ import org.elasticsearch.transport.TransportService;
 import org.junit.Before;
 import org.mockito.ArgumentCaptor;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -84,7 +85,7 @@ public class TransportCreateIndexActionTests extends ESTestCase {
         );
     }
 
-    public void testSystemIndicesCannotBeCreatedUnhidden() {
+    public void testSystemIndicesCannotBeCreatedUnhidden() throws IOException {
         CreateIndexRequest request = new CreateIndexRequest();
         request.settings(Settings.builder().put(IndexMetadata.SETTING_INDEX_HIDDEN, false).build());
         request.index(SYSTEM_INDEX_NAME);
@@ -103,7 +104,7 @@ public class TransportCreateIndexActionTests extends ESTestCase {
         assertThat(e.getMessage(), equalTo("Cannot create system index [.my-system] with [index.hidden] set to 'false'"));
     }
 
-    public void testSystemIndicesCreatedHiddenByDefault() {
+    public void testSystemIndicesCreatedHiddenByDefault() throws IOException {
         CreateIndexRequest request = new CreateIndexRequest();
         request.index(SYSTEM_INDEX_NAME);
 
@@ -122,7 +123,7 @@ public class TransportCreateIndexActionTests extends ESTestCase {
         assertTrue(processedRequest.settings().getAsBoolean(SETTING_INDEX_HIDDEN, false));
     }
 
-    public void testSystemAliasCreatedHiddenByDefault() {
+    public void testSystemAliasCreatedHiddenByDefault() throws IOException {
         CreateIndexRequest request = new CreateIndexRequest();
         request.index(SYSTEM_INDEX_NAME);
         request.alias(new Alias(SYSTEM_ALIAS_NAME));

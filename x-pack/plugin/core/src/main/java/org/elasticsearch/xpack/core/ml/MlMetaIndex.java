@@ -8,8 +8,11 @@ package org.elasticsearch.xpack.core.ml;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
+
+import java.io.IOException;
 
 public final class MlMetaIndex {
 
@@ -26,12 +29,18 @@ public final class MlMetaIndex {
         return INDEX_NAME;
     }
 
-    public static String mapping() {
-        return TemplateUtils.loadTemplate(
-            "/org/elasticsearch/xpack/core/ml/meta_index_mappings.json",
-            Version.CURRENT.toString(),
-            MAPPINGS_VERSION_VARIABLE
-        );
+    public static CompressedXContent mapping() {
+        try {
+            return CompressedXContent.fromJSON(
+                TemplateUtils.loadTemplate(
+                    "/org/elasticsearch/xpack/core/ml/meta_index_mappings.json",
+                    Version.CURRENT.toString(),
+                    MAPPINGS_VERSION_VARIABLE
+                )
+            );
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static Settings settings() {

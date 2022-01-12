@@ -11,13 +11,16 @@ package org.elasticsearch.indices;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.indices.SystemIndexDescriptor.Type;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.xcontent.json.JsonXContent;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +30,21 @@ import static org.hamcrest.Matchers.equalTo;
 
 public class SystemIndexDescriptorTests extends ESTestCase {
 
-    private static final String MAPPINGS = "{ \"_doc\": { \"_meta\": { \"version\": \"7.4.0\" } } }";
+    public static final CompressedXContent MAPPINGS;
+
+    static {
+        try {
+            MAPPINGS = new CompressedXContent(
+                ((builder, params) -> builder.startObject(MapperService.SINGLE_MAPPING_NAME)
+                    .startObject("_meta")
+                    .field("version", "7.4.0")
+                    .endObject()
+                    .endObject())
+            );
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     /**
      * Tests the various validation rules that are applied when creating a new system index descriptor.
@@ -207,7 +224,6 @@ public class SystemIndexDescriptorTests extends ESTestCase {
     }
 
     public void testGetDescriptorCompatibleWith() {
-        final String mappings = "{ \"_doc\": { \"_meta\": { \"version\": \"7.4.0\" } } }";
         final SystemIndexDescriptor prior = SystemIndexDescriptor.builder()
             .setIndexPattern(".system*")
             .setDescription("system stuff")
@@ -215,7 +231,7 @@ public class SystemIndexDescriptorTests extends ESTestCase {
             .setAliasName(".system")
             .setType(Type.INTERNAL_MANAGED)
             .setSettings(Settings.EMPTY)
-            .setMappings(mappings)
+            .setMappings(MAPPINGS)
             .setVersionMetaKey("version")
             .setOrigin("system")
             .setMinimumNodeVersion(Version.V_7_0_0)
@@ -227,7 +243,7 @@ public class SystemIndexDescriptorTests extends ESTestCase {
             .setAliasName(".system")
             .setType(Type.INTERNAL_MANAGED)
             .setSettings(Settings.EMPTY)
-            .setMappings(mappings)
+            .setMappings(MAPPINGS)
             .setVersionMetaKey("version")
             .setOrigin("system")
             .setPriorSystemIndexDescriptors(List.of(prior))

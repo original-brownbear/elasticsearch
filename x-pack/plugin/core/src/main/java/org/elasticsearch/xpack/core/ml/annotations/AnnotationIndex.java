@@ -24,6 +24,7 @@ import org.elasticsearch.client.internal.Requests;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
@@ -32,6 +33,7 @@ import org.elasticsearch.xpack.core.ml.job.persistence.ElasticsearchMappings;
 import org.elasticsearch.xpack.core.ml.utils.ExceptionsHelper;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.SortedMap;
 
@@ -210,11 +212,17 @@ public class AnnotationIndex {
         finalListener.onResponse(false);
     }
 
-    public static String annotationsMapping() {
-        return TemplateUtils.loadTemplate(
-            "/org/elasticsearch/xpack/core/ml/annotations_index_mappings.json",
-            Version.CURRENT.toString(),
-            MAPPINGS_VERSION_VARIABLE
-        );
+    public static CompressedXContent annotationsMapping() {
+        try {
+            return CompressedXContent.fromJSON(
+                TemplateUtils.loadTemplate(
+                    "/org/elasticsearch/xpack/core/ml/annotations_index_mappings.json",
+                    Version.CURRENT.toString(),
+                    MAPPINGS_VERSION_VARIABLE
+                )
+            );
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 }

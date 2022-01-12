@@ -14,10 +14,12 @@ import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.Requests;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.ml.utils.MlIndexAndAlias;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
 
+import java.io.IOException;
 import java.util.Locale;
 
 import static org.elasticsearch.xpack.core.ClientHelper.ML_ORIGIN;
@@ -126,11 +128,15 @@ public final class AnomalyDetectorsIndex {
         );
     }
 
-    public static String wrappedResultsMapping() {
-        return String.format(Locale.ROOT, """
-            {
-            "_doc" : %s
-            }""", resultsMapping());
+    public static CompressedXContent wrappedResultsMapping() {
+        try {
+            return CompressedXContent.fromJSON(String.format(Locale.ROOT, """
+                {
+                "_doc" : %s
+                }""", resultsMapping()));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static String resultsMapping() {

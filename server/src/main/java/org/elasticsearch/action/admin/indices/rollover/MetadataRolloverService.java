@@ -24,6 +24,7 @@ import org.elasticsearch.cluster.metadata.MetadataCreateIndexService;
 import org.elasticsearch.cluster.metadata.MetadataIndexAliasesService;
 import org.elasticsearch.cluster.metadata.MetadataIndexTemplateService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
@@ -35,6 +36,7 @@ import org.elasticsearch.snapshots.SnapshotInProgressException;
 import org.elasticsearch.snapshots.SnapshotsService;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -338,7 +340,7 @@ public class MetadataRolloverService {
         CreateIndexRequest createIndexRequest,
         final SystemDataStreamDescriptor descriptor,
         Instant now
-    ) {
+    ) throws IOException {
         Settings settings = descriptor != null ? Settings.EMPTY : HIDDEN_INDEX_SETTINGS;
         return prepareCreateIndexRequest(targetIndexName, targetIndexName, "rollover_data_stream", createIndexRequest, settings)
             .dataStreamName(dataStreamName)
@@ -350,7 +352,7 @@ public class MetadataRolloverService {
         final String providedIndexName,
         final String targetIndexName,
         CreateIndexRequest createIndexRequest
-    ) {
+    ) throws IOException {
         return prepareCreateIndexRequest(providedIndexName, targetIndexName, "rollover_index", createIndexRequest, null);
     }
 
@@ -360,7 +362,7 @@ public class MetadataRolloverService {
         final String cause,
         CreateIndexRequest createIndexRequest,
         Settings settings
-    ) {
+    ) throws IOException {
         Settings.Builder b = Settings.builder().put(createIndexRequest.settings());
         if (settings != null) {
             b.put(settings);
@@ -370,7 +372,7 @@ public class MetadataRolloverService {
             .settings(b.build())
             .aliases(createIndexRequest.aliases())
             .waitForActiveShards(ActiveShardCount.NONE) // not waiting for shards here, will wait on the alias switch operation
-            .mappings(createIndexRequest.mappings())
+            .mappings(CompressedXContent.fromJSON(createIndexRequest.mappings()))
             .performReroute(false);
     }
 

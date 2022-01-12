@@ -20,6 +20,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.CollectionUtils;
@@ -278,6 +279,10 @@ public class PutMappingRequest extends AcknowledgedRequest<PutMappingRequest> im
         } catch (IOException e) {
             throw new ElasticsearchGenerationException("Failed to generate [" + mappingSource + "]", e);
         }
+    }
+
+    public PutMappingRequest source(CompressedXContent source) {
+        return source(source.uncompressed(), XContentType.JSON);
     }
 
     /**

@@ -59,7 +59,7 @@ public class SystemIndexManagerIT extends ESIntegTestCase {
         assertAcked(prepareCreate(INDEX_NAME));
         ensureGreen(INDEX_NAME);
 
-        assertMappingsAndSettings(TestSystemIndexDescriptor.getOldMappings());
+        assertMappingsAndSettings(TestSystemIndexDescriptor.getOldMappings().string());
 
         // Poke the test descriptor so that the mappings are now "updated"
         TestSystemIndexDescriptor.useNewMappings.set(true);
@@ -67,7 +67,7 @@ public class SystemIndexManagerIT extends ESIntegTestCase {
         // Cause a cluster state update, so that the SystemIndexManager will update the mappings in our index
         triggerClusterStateUpdates();
 
-        assertBusy(() -> assertMappingsAndSettings(TestSystemIndexDescriptor.getNewMappings()));
+        assertBusy(() -> assertMappingsAndSettings(TestSystemIndexDescriptor.getNewMappings().string()));
     }
 
     /**
@@ -82,7 +82,7 @@ public class SystemIndexManagerIT extends ESIntegTestCase {
         assertAcked(prepareCreate(INDEX_NAME));
         ensureGreen(INDEX_NAME);
 
-        assertMappingsAndSettings(TestSystemIndexDescriptor.getNewMappings());
+        assertMappingsAndSettings(TestSystemIndexDescriptor.getNewMappings().string());
 
         // Poke the test descriptor so that the mappings are now out-dated.
         TestSystemIndexDescriptor.useNewMappings.set(false);
@@ -91,7 +91,7 @@ public class SystemIndexManagerIT extends ESIntegTestCase {
         triggerClusterStateUpdates();
 
         // Mappings should be unchanged.
-        assertBusy(() -> assertMappingsAndSettings(TestSystemIndexDescriptor.getNewMappings()));
+        assertBusy(() -> assertMappingsAndSettings(TestSystemIndexDescriptor.getNewMappings().string()));
     }
 
     /**

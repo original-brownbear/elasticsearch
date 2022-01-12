@@ -184,7 +184,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
         runnable.run();
         ensureGreen(INDEX_NAME);
 
-        assertMappingsAndSettings(TestSystemIndexDescriptor.getOldMappings(), concreteIndex);
+        assertMappingsAndSettings(TestSystemIndexDescriptor.getOldMappings().string(), concreteIndex);
 
         // Remove the index and alias...
         assertAcked(client().admin().indices().prepareAliases().removeAlias(concreteIndex, INDEX_NAME).get());
@@ -197,7 +197,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
         runnable.run();
         ensureGreen(INDEX_NAME);
 
-        assertMappingsAndSettings(TestSystemIndexDescriptor.getNewMappings(), concreteIndex);
+        assertMappingsAndSettings(TestSystemIndexDescriptor.getNewMappings().string(), concreteIndex);
         assertAliases(concreteIndex);
     }
 

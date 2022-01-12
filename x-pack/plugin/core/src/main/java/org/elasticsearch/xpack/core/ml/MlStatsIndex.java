@@ -11,10 +11,12 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.ml.utils.MlIndexAndAlias;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
 
+import java.io.IOException;
 import java.util.Locale;
 
 /**
@@ -28,11 +30,15 @@ public class MlStatsIndex {
 
     private MlStatsIndex() {}
 
-    public static String wrappedMapping() {
-        return String.format(Locale.ROOT, """
-            {
-            "_doc" : %s
-            }""", mapping());
+    public static CompressedXContent wrappedMapping() {
+        try {
+            return CompressedXContent.fromJSON(String.format(Locale.ROOT, """
+                {
+                "_doc" : %s
+                }""", mapping()));
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static String mapping() {

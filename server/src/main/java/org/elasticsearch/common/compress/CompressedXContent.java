@@ -45,6 +45,16 @@ public final class CompressedXContent {
 
     private static final ThreadLocal<InflaterAndBuffer> inflater = ThreadLocal.withInitial(InflaterAndBuffer::new);
 
+    public static final CompressedXContent EMPTY_JSON;
+
+    static {
+        try {
+            EMPTY_JSON = fromJSON("{}");
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     private static String sha256(BytesReference data) {
         MessageDigest messageDigest = MessageDigests.sha256();
         try {

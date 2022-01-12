@@ -7,8 +7,6 @@
 
 package org.elasticsearch.xpack.security.support;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.elasticsearch.Version;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -43,20 +41,15 @@ public class SecuritySystemIndices {
     public static final String INTERNAL_SECURITY_PROFILE_INDEX_8 = ".security-profile-8";
     public static final String SECURITY_PROFILE_ALIAS = ".security-profile";
 
-    private final Logger logger = LogManager.getLogger();
-
-    private final SystemIndexDescriptor mainDescriptor;
-    private final SystemIndexDescriptor tokenDescriptor;
-    private final SystemIndexDescriptor profileDescriptor;
+    private static final SystemIndexDescriptor mainDescriptor = getSecurityMainIndexDescriptor();
+    private static final SystemIndexDescriptor tokenDescriptor = getSecurityTokenIndexDescriptor();
+    private static final SystemIndexDescriptor profileDescriptor = getSecurityProfileIndexDescriptor();
     private final AtomicBoolean initialized;
     private SecurityIndexManager mainIndexManager;
     private SecurityIndexManager tokenIndexManager;
     private SecurityIndexManager profileIndexManager;
 
     public SecuritySystemIndices() {
-        this.mainDescriptor = getSecurityMainIndexDescriptor();
-        this.tokenDescriptor = getSecurityTokenIndexDescriptor();
-        this.profileDescriptor = getSecurityProfileIndexDescriptor();
         this.initialized = new AtomicBoolean(false);
         this.mainIndexManager = null;
         this.tokenIndexManager = null;
@@ -98,7 +91,7 @@ public class SecuritySystemIndices {
         }
     }
 
-    private SystemIndexDescriptor getSecurityMainIndexDescriptor() {
+    private static SystemIndexDescriptor getSecurityMainIndexDescriptor() {
         return SystemIndexDescriptor.builder()
             // This can't just be `.security-*` because that would overlap with the tokens index pattern
             .setIndexPattern(".security-[0-9]+*")
@@ -114,7 +107,7 @@ public class SecuritySystemIndices {
             .build();
     }
 
-    private Settings getMainIndexSettings() {
+    private static Settings getMainIndexSettings() {
         return Settings.builder()
             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
@@ -130,7 +123,7 @@ public class SecuritySystemIndices {
             .build();
     }
 
-    private XContentBuilder getMainIndexMappings() {
+    private static XContentBuilder getMainIndexMappings() {
         try {
             final XContentBuilder builder = jsonBuilder();
             builder.startObject();
@@ -511,15 +504,11 @@ public class SecuritySystemIndices {
 
             return builder;
         } catch (IOException e) {
-            logger.fatal("Failed to build " + RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7 + " index mappings", e);
-            throw new UncheckedIOException(
-                "Failed to build " + RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7 + " index mappings",
-                e
-            );
+            throw new AssertionError("Failed to build " + RestrictedIndicesNames.INTERNAL_SECURITY_MAIN_INDEX_7 + " index mappings", e);
         }
     }
 
-    private SystemIndexDescriptor getSecurityTokenIndexDescriptor() {
+    private static SystemIndexDescriptor getSecurityTokenIndexDescriptor() {
         return SystemIndexDescriptor.builder()
             .setIndexPattern(".security-tokens-[0-9]+*")
             .setPrimaryIndex(RestrictedIndicesNames.INTERNAL_SECURITY_TOKENS_INDEX_7)
@@ -545,7 +534,7 @@ public class SecuritySystemIndices {
             .build();
     }
 
-    private XContentBuilder getTokenIndexMappings() {
+    private static XContentBuilder getTokenIndexMappings() {
         try {
             final XContentBuilder builder = jsonBuilder();
 
@@ -696,7 +685,7 @@ public class SecuritySystemIndices {
         }
     }
 
-    private SystemIndexDescriptor getSecurityProfileIndexDescriptor() {
+    private static SystemIndexDescriptor getSecurityProfileIndexDescriptor() {
         return SystemIndexDescriptor.builder()
             .setIndexPattern(".security-profile-[0-9]+*")
             .setPrimaryIndex(INTERNAL_SECURITY_PROFILE_INDEX_8)
@@ -711,7 +700,7 @@ public class SecuritySystemIndices {
             .build();
     }
 
-    private Settings getProfileIndexSettings() {
+    private static Settings getProfileIndexSettings() {
         return Settings.builder()
             .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
@@ -727,7 +716,7 @@ public class SecuritySystemIndices {
             .build();
     }
 
-    private XContentBuilder getProfileIndexMappings() {
+    private static XContentBuilder getProfileIndexMappings() {
         try {
             final XContentBuilder builder = jsonBuilder();
             builder.startObject();
@@ -830,8 +819,7 @@ public class SecuritySystemIndices {
             builder.endObject();
             return builder;
         } catch (IOException e) {
-            logger.fatal("Failed to build profile index mappings", e);
-            throw new UncheckedIOException("Failed to build profile index mappings", e);
+            throw new AssertionError("Failed to build profile index mappings", e);
         }
     }
 }

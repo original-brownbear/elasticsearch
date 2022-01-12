@@ -8,9 +8,12 @@ package org.elasticsearch.xpack.core.ml.inference.persistence;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xpack.core.template.TemplateUtils;
+
+import java.io.IOException;
 
 /**
  * Class containing the index constants so that the index version, name, and prefix are available to a wider audience.
@@ -45,12 +48,18 @@ public final class InferenceIndexConstants {
 
     private static final String MAPPINGS_VERSION_VARIABLE = "xpack.ml.version";
 
-    public static String mapping() {
-        return TemplateUtils.loadTemplate(
-            "/org/elasticsearch/xpack/core/ml/inference_index_mappings.json",
-            Version.CURRENT.toString(),
-            MAPPINGS_VERSION_VARIABLE
-        );
+    public static CompressedXContent mapping() {
+        try {
+            return CompressedXContent.fromJSON(
+                TemplateUtils.loadTemplate(
+                    "/org/elasticsearch/xpack/core/ml/inference_index_mappings.json",
+                    Version.CURRENT.toString(),
+                    MAPPINGS_VERSION_VARIABLE
+                )
+            );
+        } catch (IOException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static String nativeDefinitionStore() {

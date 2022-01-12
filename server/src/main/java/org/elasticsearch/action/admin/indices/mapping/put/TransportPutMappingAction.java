@@ -178,7 +178,7 @@ public class TransportPutMappingAction extends AcknowledgedTransportMasterNodeAc
         for (Index index : concreteIndices) {
             final SystemIndexDescriptor descriptor = systemIndices.findMatchingDescriptor(index.getName());
             if (descriptor != null && descriptor.isAutomaticallyManaged() && descriptor.hasDynamicMappings() == false) {
-                final String descriptorMappings = descriptor.getMappings();
+                final String descriptorMappings = descriptor.getMappings().string();
                 // Technically we could trip over a difference in whitespace here, but then again nobody should be trying to manually
                 // update a descriptor's mappings.
                 if (descriptorMappings.equals(requestMappings) == false) {
