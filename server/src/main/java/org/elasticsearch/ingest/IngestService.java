@@ -25,10 +25,7 @@ import org.elasticsearch.action.ingest.DeletePipelineRequest;
 import org.elasticsearch.action.ingest.PutPipelineRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
-import org.elasticsearch.cluster.AckedClusterStateUpdateTask;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateApplier;
+import org.elasticsearch.cluster.*;
 import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
@@ -288,7 +285,7 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
             public ClusterState execute(ClusterState currentState) {
                 return innerDelete(request, currentState);
             }
-        });
+        }, new ClusterStateTaskExecutor.GenericExecutor());
     }
 
     static ClusterState innerDelete(DeletePipelineRequest request, ClusterState currentState) {
@@ -441,7 +438,7 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
                 public ClusterState execute(ClusterState currentState) {
                     return innerPut(request, currentState);
                 }
-            });
+            }, new ClusterStateTaskExecutor.GenericExecutor());
         }, listener::onFailure));
     }
 

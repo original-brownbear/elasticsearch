@@ -10,10 +10,7 @@ package org.elasticsearch.cluster.metadata;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateListener;
-import org.elasticsearch.cluster.ClusterStateUpdateTask;
+import org.elasticsearch.cluster.*;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.settings.Settings;
@@ -61,8 +58,8 @@ public class SystemIndexMetadataUpgradeService implements ClusterStateListener {
                             updateTaskPending = true;
                             clusterService.submitStateUpdateTask(
                                 "system_index_metadata_upgrade_service {system metadata change}",
-                                new SystemIndexMetadataUpdateTask()
-                            );
+                                new SystemIndexMetadataUpdateTask(),
+                            new ClusterStateTaskExecutor.GenericExecutor());
                             break;
                         }
                     }

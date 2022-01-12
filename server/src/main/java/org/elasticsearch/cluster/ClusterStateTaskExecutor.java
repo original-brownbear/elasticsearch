@@ -148,4 +148,14 @@ public interface ClusterStateTaskExecutor<T> {
             return failure;
         }
     }
+
+    final class GenericExecutor implements ClusterStateTaskExecutor<ClusterStateUpdateTask> {
+
+        @Override
+        public ClusterTasksResult<ClusterStateUpdateTask> execute(ClusterState currentState, List<ClusterStateUpdateTask> tasks)
+                throws Exception {
+            assert tasks.size() == 1 : "generic executor should only be used with a single task";
+            return ClusterTasksResult.<ClusterStateUpdateTask>builder().successes(tasks).build(tasks.get(0).execute(currentState));
+        }
+    }
 }

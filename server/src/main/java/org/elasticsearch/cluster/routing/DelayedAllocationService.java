@@ -10,10 +10,7 @@ package org.elasticsearch.cluster.routing;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.cluster.ClusterChangedEvent;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateListener;
-import org.elasticsearch.cluster.ClusterStateUpdateTask;
+import org.elasticsearch.cluster.*;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
@@ -81,11 +78,12 @@ public class DelayedAllocationService extends AbstractLifecycleComponent impleme
         public void schedule() {
             cancellable = threadPool.schedule(new AbstractRunnable() {
                 @Override
-                protected void doRun() throws Exception {
+                protected void doRun() {
                     if (cancelScheduling.get()) {
                         return;
                     }
-                    clusterService.submitStateUpdateTask(CLUSTER_UPDATE_TASK_SOURCE, DelayedRerouteTask.this);
+                    clusterService.submitStateUpdateTask(
+                        CLUSTER_UPDATE_TASK_SOURCE, DelayedRerouteTask.this, new ClusterStateTaskExecutor.GenericExecutor());
                 }
 
                 @Override

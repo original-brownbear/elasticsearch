@@ -234,11 +234,12 @@ public class ClusterService extends AbstractLifecycleComponent {
      *                   task
      */
     @Deprecated
-    public <T extends ClusterStateTaskConfig & ClusterStateTaskExecutor<T> & ClusterStateTaskListener> void submitStateUpdateTask(
+    public <T extends ClusterStateTaskConfig & ClusterStateTaskListener> void submitStateUpdateTask(
         String source,
-        T updateTask
+        T updateTask,
+        ClusterStateTaskExecutor<T> executor
     ) {
-        submitStateUpdateTask(source, updateTask, updateTask, updateTask, updateTask);
+        submitStateUpdateTask(source, updateTask, updateTask, executor, updateTask);
     }
 
     /**

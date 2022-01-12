@@ -18,6 +18,7 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.TransportMasterNodeReadAction;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ClusterStateObserver;
+import org.elasticsearch.cluster.ClusterStateTaskExecutor;
 import org.elasticsearch.cluster.ClusterStateUpdateTask;
 import org.elasticsearch.cluster.LocalClusterUpdateTask;
 import org.elasticsearch.cluster.NotMasterException;
@@ -40,6 +41,8 @@ import org.elasticsearch.transport.TransportService;
 
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+
+import static org.elasticsearch.cluster.LocalClusterUpdateTask.unchanged;
 
 public class TransportClusterHealthAction extends TransportMasterNodeReadAction<ClusterHealthRequest, ClusterHealthResponse> {
 
@@ -109,34 +112,34 @@ public class TransportClusterHealthAction extends TransportMasterNodeReadAction<
         assert request.waitForEvents() != null;
         if (request.local()) {
             clusterService.submitStateUpdateTask(
-                "cluster_health (wait_for_events [" + request.waitForEvents() + "])",
-                new LocalClusterUpdateTask(request.waitForEvents()) {
-                    @Override
-                    public ClusterTasksResult<LocalClusterUpdateTask> execute(ClusterState currentState) {
-                        return unchanged();
-                    }
+                    "cluster_health (wait_for_events [" + request.waitForEvents() + "])",
+                    new LocalClusterUpdateTask(request.waitForEvents()) {
+                        @Override
+                        public ClusterTasksResult<LocalClusterUpdateTask> execute(ClusterState currentState) {
+                            return unchanged();
+                        }
 
-                    @Override
-                    public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
-                        final long timeoutInMillis = Math.max(0, endTimeRelativeMillis - threadPool.relativeTimeInMillis());
-                        final TimeValue newTimeout = TimeValue.timeValueMillis(timeoutInMillis);
-                        request.timeout(newTimeout);
-                        executeHealth(
-                            request,
-                            clusterService.state(),
-                            listener,
-                            waitCount,
-                            observedState -> waitForEventsAndExecuteHealth(request, listener, waitCount, endTimeRelativeMillis)
-                        );
-                    }
+                        @Override
+                        public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
+                            final long timeoutInMillis = Math.max(0, endTimeRelativeMillis - threadPool.relativeTimeInMillis());
+                            final TimeValue newTimeout = TimeValue.timeValueMillis(timeoutInMillis);
+                            request.timeout(newTimeout);
+                            executeHealth(
+                                    request,
+                                    clusterService.state(),
+                                    listener,
+                                    waitCount,
+                                    observedState -> waitForEventsAndExecuteHealth(request, listener, waitCount, endTimeRelativeMillis)
+                            );
+                        }
 
-                    @Override
-                    public void onFailure(String source, Exception e) {
-                        logger.error(() -> new ParameterizedMessage("unexpected failure during [{}]", source), e);
-                        listener.onFailure(e);
+                        @Override
+                        public void onFailure(String source, Exception e) {
+                            logger.error(() -> new ParameterizedMessage("unexpected failure during [{}]", source), e);
+                            listener.onFailure(e);
+                        }
                     }
-                }
-            );
+                    , (ClusterStateTaskExecutor<LocalClusterUpdateTask>) (currentState, tasks) -> unchanged());
         } else {
             final TimeValue taskTimeout = TimeValue.timeValueMillis(Math.max(0, endTimeRelativeMillis - threadPool.relativeTimeInMillis()));
             clusterService.submitStateUpdateTask(
@@ -186,7 +189,7 @@ public class TransportClusterHealthAction extends TransportMasterNodeReadAction<
                             listener.onFailure(e);
                         }
                     }
-                }
+                }, new ClusterStateTaskExecutor.GenericExecutor()
             );
         }
     }

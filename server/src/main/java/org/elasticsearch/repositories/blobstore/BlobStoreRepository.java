@@ -32,11 +32,7 @@ import org.elasticsearch.action.support.GroupedActionListener;
 import org.elasticsearch.action.support.ListenableActionFuture;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.ThreadedActionListener;
-import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.ClusterStateUpdateTask;
-import org.elasticsearch.cluster.RepositoryCleanupInProgress;
-import org.elasticsearch.cluster.SnapshotDeletionsInProgress;
-import org.elasticsearch.cluster.SnapshotsInProgress;
+import org.elasticsearch.cluster.*;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.metadata.RepositoriesMetadata;
@@ -503,7 +499,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         executeConsistentStateUpdate(createUpdateTask, source, onFailure);
                     }
                 }
-            });
+            }, new ClusterStateTaskExecutor.GenericExecutor());
         }, onFailure));
     }
 
@@ -1843,7 +1839,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                                 );
                                             });
                                         }
-                                    }
+                                    }, new ClusterStateTaskExecutor.GenericExecutor()
                                 ),
                                 onFailure
                             ),
@@ -2081,7 +2077,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 public void clusterStateProcessed(String source, ClusterState oldState, ClusterState newState) {
                     listener.onResponse(null);
                 }
-            }
+            }, new ClusterStateTaskExecutor.GenericExecutor()
         );
     }
 
@@ -2230,7 +2226,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     logger.trace("[{}] successfully set pending repository generation to [{}]", metadata.name(), newGen);
                     setPendingStep.onResponse(newGen);
                 }
-            }
+            }, new ClusterStateTaskExecutor.GenericExecutor()
         );
 
         final StepListener<RepositoryData> filterRepositoryDataStep = new StepListener<>();
@@ -2370,8 +2366,8 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             return newRepositoryData;
                         }));
                     }
-                }
-            );
+                },
+            new ClusterStateTaskExecutor.GenericExecutor());
         }, listener::onFailure);
     }
 
