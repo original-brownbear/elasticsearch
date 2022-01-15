@@ -43,15 +43,26 @@ public class FsService {
 
     public FsService(final Settings settings, final NodeEnvironment nodeEnvironment) {
         final FsProbe probe = new FsProbe(nodeEnvironment);
-        final FsInfo initialValue = stats(probe, null);
         if (ALWAYS_REFRESH_SETTING.get(settings)) {
             assert REFRESH_INTERVAL_SETTING.exists(settings) == false;
             logger.debug("bypassing refresh_interval");
-            fsInfoSupplier = () -> stats(probe, initialValue);
+            fsInfoSupplier = new Supplier<>() {
+
+                private volatile FsInfo initialValue;
+
+                @Override
+                public FsInfo get() {
+                    final FsInfo result = stats(probe, initialValue);
+                    if (initialValue == null) {
+                        initialValue = result;
+                    }
+                    return result;
+                }
+            };
         } else {
             final TimeValue refreshInterval = REFRESH_INTERVAL_SETTING.get(settings);
             logger.debug("using refresh_interval [{}]", refreshInterval);
-            final FsInfoCache fsInfoCache = new FsInfoCache(refreshInterval, initialValue, probe);
+            final FsInfoCache fsInfoCache = new FsInfoCache(refreshInterval, probe);
             fsInfoSupplier = () -> {
                 try {
                     return fsInfoCache.getOrRefresh();
@@ -78,22 +89,21 @@ public class FsService {
 
     private static class FsInfoCache extends SingleObjectCache<FsInfo> {
 
-        private final FsInfo initialValue;
+        private volatile FsInfo initialValue;
         private final FsProbe probe;
 
-        FsInfoCache(TimeValue interval, FsInfo initialValue, FsProbe probe) {
-            super(interval, initialValue);
-            this.initialValue = initialValue;
+        FsInfoCache(TimeValue interval, FsProbe probe) {
+            super(interval, null);
             this.probe = probe;
         }
 
         @Override
         protected FsInfo refresh() {
-            try {
-                return probe.stats(initialValue);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+            final FsInfo result = stats(probe, initialValue);
+            if (initialValue == null) {
+                initialValue = result;
             }
+            return result;
         }
 
     }

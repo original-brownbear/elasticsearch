@@ -7,6 +7,7 @@
  */
 package org.elasticsearch.common.util;
 
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 
 import java.util.concurrent.locks.Lock;
@@ -23,10 +24,7 @@ public abstract class SingleObjectCache<T> {
     private final TimeValue refreshInterval;
     protected long lastRefreshTimestamp = 0;
 
-    protected SingleObjectCache(TimeValue refreshInterval, T initialValue) {
-        if (initialValue == null) {
-            throw new IllegalArgumentException("initialValue must not be null");
-        }
+    protected SingleObjectCache(TimeValue refreshInterval, @Nullable T initialValue) {
         this.refreshInterval = refreshInterval;
         cached = initialValue;
     }
@@ -66,6 +64,9 @@ public abstract class SingleObjectCache<T> {
      * Returns <code>true</code> iff the cache needs to be refreshed.
      */
     protected boolean needsRefresh() {
+        if (cached == null) {
+            return true;
+        }
         if (refreshInterval.millis() == 0) {
             return true;
         }
