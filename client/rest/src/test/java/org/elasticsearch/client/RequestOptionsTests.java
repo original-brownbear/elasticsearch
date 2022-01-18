@@ -193,12 +193,9 @@ public class RequestOptionsTests extends RestClientTestCase {
                 mutant.setHttpAsyncResponseConsumerFactory(new HeapBufferedResponseConsumerFactory(5));
                 return mutant.build();
             case 2:
-                mutant.setWarningsHandler(new WarningsHandler() {
-                    @Override
-                    public boolean warningsShouldFailRequest(List<String> warnings) {
-                        fail("never called");
-                        return false;
-                    }
+                mutant.setWarningsHandler(warnings -> {
+                    fail("never called");
+                    return false;
                 });
                 return mutant.build();
             default:

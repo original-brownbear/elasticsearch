@@ -173,14 +173,11 @@ class BindingProcessor extends AbstractProcessor {
                     return null;
                 }
 
-                uninitializedBindings.add(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            ((InjectorImpl) binding.getInjector()).initializeBinding(binding, errors.withSource(source));
-                        } catch (ErrorsException e) {
-                            errors.merge(e.getErrors());
-                        }
+                uninitializedBindings.add(() -> {
+                    try {
+                        ((InjectorImpl) binding.getInjector()).initializeBinding(binding, errors.withSource(source));
+                    } catch (ErrorsException e) {
+                        errors.merge(e.getErrors());
                     }
                 });
 

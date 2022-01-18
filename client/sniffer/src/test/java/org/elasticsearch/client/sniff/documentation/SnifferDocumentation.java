@@ -20,7 +20,6 @@
 package org.elasticsearch.client.sniff.documentation;
 
 import org.apache.http.HttpHost;
-import org.elasticsearch.client.Node;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.sniff.ElasticsearchNodesSniffer;
 import org.elasticsearch.client.sniff.NodesSniffer;
@@ -28,7 +27,6 @@ import org.elasticsearch.client.sniff.SniffOnFailureListener;
 import org.elasticsearch.client.sniff.Sniffer;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -120,12 +118,9 @@ public class SnifferDocumentation {
             RestClient restClient = RestClient.builder(
                 new HttpHost("localhost", 9200, "http"))
                 .build();
-            NodesSniffer nodesSniffer = new NodesSniffer() {
-                    @Override
-                    public List<Node> sniff() throws IOException {
-                        return null; // <1>
-                    }
-                };
+            NodesSniffer nodesSniffer = () -> {
+                return null; // <1>
+            };
             Sniffer sniffer = Sniffer.builder(restClient)
                 .setNodesSniffer(nodesSniffer).build();
             //end::custom-nodes-sniffer

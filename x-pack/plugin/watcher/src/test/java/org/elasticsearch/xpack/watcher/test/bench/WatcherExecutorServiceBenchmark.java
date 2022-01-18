@@ -99,13 +99,10 @@ public class WatcherExecutorServiceBenchmark {
             for (int i = 0; i < numThreads; i++) {
                 final int begin = i * watchersPerThread;
                 final int end = (i + 1) * watchersPerThread;
-                Runnable r = new Runnable() {
-                    @Override
-                    public void run() {
-                        while (true) {
-                            for (int j = begin; j < end; j++) {
-                                scheduler.trigger("_name" + j);
-                            }
+                Runnable r = () -> {
+                    while (true) {
+                        for (int j = begin; j < end; j++) {
+                            scheduler.trigger("_name" + j);
                         }
                     }
                 };
@@ -145,13 +142,10 @@ public class WatcherExecutorServiceBenchmark {
             for (int i = 0; i < numThreads; i++) {
                 final int begin = i * watchersPerThread;
                 final int end = (i + 1) * watchersPerThread;
-                Runnable r = new Runnable() {
-                    @Override
-                    public void run() {
-                        while (true) {
-                            for (int j = begin; j < end; j++) {
-                                scheduler.trigger("_name" + j);
-                            }
+                Runnable r = () -> {
+                    while (true) {
+                        for (int j = begin; j < end; j++) {
+                            scheduler.trigger("_name" + j);
                         }
                     }
                 };

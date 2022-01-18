@@ -22,7 +22,6 @@ import org.elasticsearch.xpack.ml.job.persistence.JobResultsProvider;
 import org.elasticsearch.xpack.ml.job.persistence.MockBatchedDocumentsIterator;
 import org.junit.Before;
 import org.mockito.MockitoAnnotations;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
@@ -337,18 +336,15 @@ public class ScoresUpdaterTests extends ESTestCase {
 
     @SuppressWarnings("unchecked")
     private void givenNormalizerRaisesBigChangeFlag() {
-        doAnswer(new Answer<Void>() {
-            @Override
-            public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
-                List<Normalizable> normalizables = (List<Normalizable>) invocationOnMock.getArguments()[1];
-                for (Normalizable normalizable : normalizables) {
-                    normalizable.raiseBigChangeFlag();
-                    for (Normalizable child : normalizable.getChildren()) {
-                        child.raiseBigChangeFlag();
-                    }
+        doAnswer((Answer<Void>) invocationOnMock -> {
+            List<Normalizable> normalizables = (List<Normalizable>) invocationOnMock.getArguments()[1];
+            for (Normalizable normalizable : normalizables) {
+                normalizable.raiseBigChangeFlag();
+                for (Normalizable child : normalizable.getChildren()) {
+                    child.raiseBigChangeFlag();
                 }
-                return null;
             }
+            return null;
         }).when(normalizer).normalize(anyInt(), anyList(), anyString());
     }
 

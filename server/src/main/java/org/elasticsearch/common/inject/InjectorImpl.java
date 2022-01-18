@@ -196,12 +196,7 @@ class InjectorImpl implements Injector, Lookups {
 
         static <T> InternalFactory<Provider<T>> createInternalFactory(Binding<T> providedBinding) {
             final Provider<T> provider = providedBinding.getProvider();
-            return new InternalFactory<Provider<T>>() {
-                @Override
-                public Provider<T> get(Errors errors, InternalContext context, Dependency<?> dependency) {
-                    return provider;
-                }
-            };
+            return (errors, context, dependency) -> provider;
         }
 
         @Override
@@ -443,22 +438,19 @@ class InjectorImpl implements Injector, Lookups {
         final Key<? extends Provider<T>> providerKey = (Key<? extends Provider<T>>) Key.get(providerType);
         final BindingImpl<? extends Provider<?>> providerBinding = getBindingOrThrow(providerKey, errors);
 
-        InternalFactory<T> internalFactory = new InternalFactory<T>() {
-            @Override
-            public T get(Errors errors, InternalContext context, Dependency<?> dependency) throws ErrorsException {
-                errors = errors.withSource(providerKey);
-                Provider<?> provider = providerBinding.getInternalFactory().get(errors, context, dependency);
-                try {
-                    Object o = provider.get();
-                    if (o != null && rawType.isInstance(o) == false) {
-                        throw errors.subtypeNotProvided(providerType, rawType).toException();
-                    }
-                    @SuppressWarnings("unchecked") // protected by isInstance() check above
-                    T t = (T) o;
-                    return t;
-                } catch (RuntimeException e) {
-                    throw errors.errorInProvider(e).toException();
+        InternalFactory<T> internalFactory = (errors1, context, dependency) -> {
+            errors1 = errors1.withSource(providerKey);
+            Provider<?> provider = providerBinding.getInternalFactory().get(errors1, context, dependency);
+            try {
+                Object o = provider.get();
+                if (o != null && rawType.isInstance(o) == false) {
+                    throw errors1.subtypeNotProvided(providerType, rawType).toException();
                 }
+                @SuppressWarnings("unchecked") // protected by isInstance() check above
+                T t = (T) o;
+                return t;
+            } catch (RuntimeException e) {
+                throw errors1.errorInProvider(e).toException();
             }
         };
 
@@ -497,12 +489,8 @@ class InjectorImpl implements Injector, Lookups {
         final Key<? extends T> targetKey = Key.get(subclass);
         final BindingImpl<? extends T> targetBinding = getBindingOrThrow(targetKey, errors);
 
-        InternalFactory<T> internalFactory = new InternalFactory<T>() {
-            @Override
-            public T get(Errors errors, InternalContext context, Dependency<?> dependency) throws ErrorsException {
-                return targetBinding.getInternalFactory().get(errors.withSource(targetKey), context, dependency);
-            }
-        };
+        InternalFactory<T> internalFactory = (errors1, context, dependency) -> targetBinding.getInternalFactory()
+            .get(errors1.withSource(targetKey), context, dependency);
 
         return new LinkedBindingImpl<>(
             this,
@@ -694,19 +682,15 @@ class InjectorImpl implements Injector, Lookups {
         final InternalFactory<? extends T> factory = getInternalFactory(key, errors);
         // ES: optimize for a common case of read only instance getting from the parent...
         if (factory instanceof InternalFactory.Instance) {
-            return new Provider<T>() {
-                @Override
-                @SuppressWarnings("unchecked")
-                public T get() {
-                    try {
-                        return (T) ((InternalFactory.Instance<?>) factory).get(null, null, null);
-                    } catch (ErrorsException e) {
-                        // ignore
-                    }
-                    // should never happen...
-                    assert false;
-                    return null;
+            return () -> {
+                try {
+                    return (T) (factory).get(null, null, null);
+                } catch (ErrorsException e) {
+                    // ignore
                 }
+                // should never happen...
+                assert false;
+                return null;
             };
         }
 
@@ -716,15 +700,12 @@ class InjectorImpl implements Injector, Lookups {
             public T get() {
                 final Errors errors = new Errors(dependency);
                 try {
-                    T t = callInContext(new ContextualCallable<T>() {
-                        @Override
-                        public T call(InternalContext context) throws ErrorsException {
-                            context.setDependency(dependency);
-                            try {
-                                return factory.get(errors, context, dependency);
-                            } finally {
-                                context.setDependency(null);
-                            }
+                    T t = callInContext((ContextualCallable<T>) context -> {
+                        context.setDependency(dependency);
+                        try {
+                            return factory.get(errors, context, dependency);
+                        } finally {
+                            context.setDependency(null);
                         }
                     });
                     errors.throwIfNewErrors(0);

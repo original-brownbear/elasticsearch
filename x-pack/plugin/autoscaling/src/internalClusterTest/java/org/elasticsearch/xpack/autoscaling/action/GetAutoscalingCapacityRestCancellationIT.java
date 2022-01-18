@@ -39,7 +39,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CancellationException;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.elasticsearch.action.support.ActionTestUtils.wrapAsRestResponseListener;
 import static org.elasticsearch.common.xcontent.XContentHelper.convertToMap;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;

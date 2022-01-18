@@ -250,12 +250,10 @@ public abstract class ShapeQueryBuilderTests extends AbstractQueryTestCase<Shape
         try {
             XContentBuilder builder = XContentFactory.jsonBuilder().prettyPrint();
             builder.startObject();
-            builder.field(expectedShapePath, new ToXContentObject() {
-                @Override
-                public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-                    return GeoJson.toXContent(indexedShapeToReturn, builder, null);
-                }
-            });
+            builder.field(
+                expectedShapePath,
+                (ToXContentObject) (builder1, params) -> GeoJson.toXContent(indexedShapeToReturn, builder1, null)
+            );
             builder.field(randomAlphaOfLengthBetween(10, 20), "something");
             builder.endObject();
             json = Strings.toString(builder);
