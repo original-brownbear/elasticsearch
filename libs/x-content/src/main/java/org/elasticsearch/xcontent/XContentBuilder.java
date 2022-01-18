@@ -157,9 +157,9 @@ public final class XContentBuilder implements Closeable, Flushable {
             dateTransformers.putAll(addlDateTransformers);
         }
 
-        WRITERS = Collections.unmodifiableMap(writers);
-        HUMAN_READABLE_TRANSFORMERS = Collections.unmodifiableMap(humanReadableTransformer);
-        DATE_TRANSFORMERS = Collections.unmodifiableMap(dateTransformers);
+        WRITERS = Map.copyOf(writers);
+        HUMAN_READABLE_TRANSFORMERS = Map.copyOf(humanReadableTransformer);
+        DATE_TRANSFORMERS = Map.copyOf(dateTransformers);
     }
 
     @FunctionalInterface
@@ -317,12 +317,6 @@ public final class XContentBuilder implements Closeable, Flushable {
     ////////////////////////////////////////////////////////////////////////////
     // Structure (object, array, field, null values...)
     //////////////////////////////////
-
-    public XContentBuilder object(String name, CheckedConsumer<XContentBuilder, IOException> callback) throws IOException {
-        field(name).startObject();
-        callback.accept(this);
-        return endObject();
-    }
 
     public XContentBuilder startObject() throws IOException {
         generator.writeStartObject();
@@ -678,22 +672,6 @@ public final class XContentBuilder implements Closeable, Flushable {
         return this;
     }
 
-    public XContentBuilder array(String name, BigDecimal[] values) throws IOException {
-        return field(name).values(values);
-    }
-
-    private XContentBuilder values(BigDecimal[] values) throws IOException {
-        if (values == null) {
-            return nullValue();
-        }
-        startArray();
-        for (BigDecimal b : values) {
-            value(b);
-        }
-        endArray();
-        return this;
-    }
-
     public XContentBuilder value(BigDecimal value) throws IOException {
         if (value == null) {
             return nullValue();
@@ -845,17 +823,6 @@ public final class XContentBuilder implements Closeable, Flushable {
     }
 
     ////////////////////////////////////////////////////////////////////////////
-    // Path
-    //////////////////////////////////
-
-    public XContentBuilder value(Path value) throws IOException {
-        if (value == null) {
-            return nullValue();
-        }
-        return value(value.toString());
-    }
-
-    ////////////////////////////////////////////////////////////////////////////
     // Objects
     //
     // These methods are used when the type of value is unknown. It tries to fallback
@@ -893,7 +860,7 @@ public final class XContentBuilder implements Closeable, Flushable {
             writer.write(this, value);
         } else if (value instanceof Path) {
             // Path implements Iterable<Path> and causes endless recursion and a StackOverFlow if treated as an Iterable here
-            value((Path) value);
+            value(value.toString());
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")
             final Map<String, ?> valueMap = (Map<String, ?>) value;
@@ -1000,6 +967,10 @@ public final class XContentBuilder implements Closeable, Flushable {
         return map(values, true, true);
     }
 
+    public XContentBuilder unSafeMap(Map<String, ?> values) throws IOException {
+        return map(values, false, true);
+    }
+
     public XContentBuilder stringStringMap(String name, Map<String, String> values) throws IOException {
         field(name);
         if (values == null) {
@@ -1039,7 +1010,7 @@ public final class XContentBuilder implements Closeable, Flushable {
         // checks that the map does not contain references to itself because
         // iterating over map entries will cause a stackoverflow error
         if (ensureNoSelfReferences) {
-            ensureNoSelfReferences(values);
+            ensureNoSelfReferences(values.values(), values);
         }
 
         if (writeStartAndEndHeaders) {
@@ -1061,26 +1032,18 @@ public final class XContentBuilder implements Closeable, Flushable {
     }
 
     private XContentBuilder value(Iterable<?> values, boolean ensureNoSelfReferences) throws IOException {
-        if (values == null) {
-            return nullValue();
+        assert values instanceof Path == false;
+        // checks that the iterable does not contain references to itself because
+        // iterating over entries will cause a stackoverflow error
+        if (ensureNoSelfReferences) {
+            ensureNoSelfReferences(values);
         }
-
-        if (values instanceof Path) {
-            // treat as single value
-            value((Path) values);
-        } else {
-            // checks that the iterable does not contain references to itself because
-            // iterating over entries will cause a stackoverflow error
-            if (ensureNoSelfReferences) {
-                ensureNoSelfReferences(values);
-            }
-            startArray();
-            for (Object value : values) {
-                // pass ensureNoSelfReferences=false as we already performed the check at a higher level
-                unknownValue(value, false);
-            }
-            endArray();
+        startArray();
+        for (Object value : values) {
+            // pass ensureNoSelfReferences=false as we already performed the check at a higher level
+            unknownValue(value, false);
         }
+        endArray();
         return this;
     }
 
@@ -1225,10 +1188,10 @@ public final class XContentBuilder implements Closeable, Flushable {
         }
     }
 
-    private static void ensureNoSelfReferences(Object value) {
+    private static void ensureNoSelfReferences(Iterable<?> value) {
         Iterable<?> it = convert(value);
         if (it != null) {
-            ensureNoSelfReferences(it, value, Collections.newSetFromMap(new IdentityHashMap<>()));
+            ensureNoSelfReferences(it, value);
         }
     }
 
@@ -1247,16 +1210,37 @@ public final class XContentBuilder implements Closeable, Flushable {
         }
     }
 
-    private static void ensureNoSelfReferences(final Iterable<?> value, Object originalReference, final Set<Object> ancestors) {
-        if (value != null) {
-            if (ancestors.add(originalReference) == false) {
-                throw new IllegalArgumentException("Iterable object is self-referencing itself");
+    private static void ensureNoSelfReferences(final Iterable<?> value, Object originalReference) {
+        assert value != null;
+        Set<Object> ancestors = null;
+        for (Object o : value) {
+            Iterable<?> converted = convert(o);
+            if (converted == null) {
+                continue;
             }
-            for (Object o : value) {
-                ensureNoSelfReferences(convert(o), o, ancestors);
+            if (ancestors == null) {
+                ancestors = Collections.newSetFromMap(new IdentityHashMap<>());
+                ancestors.add(originalReference);
             }
+            ensureNoSelfReferences(converted, o, ancestors);
+        }
+        if (ancestors != null) {
             ancestors.remove(originalReference);
         }
+    }
+
+    private static void ensureNoSelfReferences(final Iterable<?> value, Object originalReference, final Set<Object> ancestors) {
+        assert value != null;
+        if (ancestors.add(originalReference) == false) {
+            throw new IllegalArgumentException("Iterable object is self-referencing itself");
+        }
+        for (Object o : value) {
+            Iterable<?> converted = convert(o);
+            if (converted != null) {
+                ensureNoSelfReferences(converted, o, ancestors);
+            }
+        }
+        ancestors.remove(originalReference);
     }
 
 }
