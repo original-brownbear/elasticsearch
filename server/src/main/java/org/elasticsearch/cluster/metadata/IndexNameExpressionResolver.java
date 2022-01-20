@@ -60,11 +60,6 @@ public class IndexNameExpressionResolver {
 
     public static final String EXCLUDED_DATA_STREAMS_KEY = "es.excluded_ds";
     public static final Version SYSTEM_INDEX_ENFORCEMENT_VERSION = Version.V_8_0_0;
-
-    private final DateMathExpressionResolver dateMathExpressionResolver = new DateMathExpressionResolver();
-    private final WildcardExpressionResolver wildcardExpressionResolver = new WildcardExpressionResolver();
-    private final List<ExpressionResolver> expressionResolvers = List.of(dateMathExpressionResolver, wildcardExpressionResolver);
-
     private final ThreadContext threadContext;
     private final SystemIndices systemIndices;
 
@@ -195,9 +190,7 @@ public class IndexNameExpressionResolver {
         }
 
         List<String> expressions = Arrays.asList(indexExpressions);
-        for (ExpressionResolver expressionResolver : expressionResolvers) {
-            expressions = expressionResolver.resolve(context, expressions);
-        }
+        expressions = resolveDateAndWildcardExpressions(expressions, context);
         return ((expressions == null) ? List.<String>of() : expressions).stream()
             .map(x -> state.metadata().getIndicesLookup().get(x))
             .filter(Objects::nonNull)
@@ -229,9 +222,7 @@ public class IndexNameExpressionResolver {
         );
 
         List<String> expressions = List.of(request.index());
-        for (ExpressionResolver expressionResolver : expressionResolvers) {
-            expressions = expressionResolver.resolve(context, expressions);
-        }
+        expressions = resolveDateAndWildcardExpressions(expressions, context);
 
         if (expressions.size() == 1) {
             IndexAbstraction ia = state.metadata().getIndicesLookup().get(expressions.get(0));
@@ -352,9 +343,7 @@ public class IndexNameExpressionResolver {
             ? options.allowNoIndices() == false
             : options.ignoreUnavailable() == false;
         List<String> expressions = Arrays.asList(indexExpressions);
-        for (ExpressionResolver expressionResolver : expressionResolvers) {
-            expressions = expressionResolver.resolve(context, expressions);
-        }
+        expressions = resolveDateAndWildcardExpressions(expressions, context);
 
         if (expressions.isEmpty()) {
             if (options.allowNoIndices() == false) {
@@ -644,15 +633,23 @@ public class IndexNameExpressionResolver {
      *         If the data stream, index or alias contains date math then that is resolved too.
      */
     public boolean hasIndexAbstraction(String indexAbstraction, ClusterState state) {
-        String resolvedAliasOrIndex = DateMathExpressionResolver.resolveExpression(indexAbstraction);
+        String resolvedAliasOrIndex = resolveDateMathExpression(indexAbstraction);
         return state.metadata().hasIndexAbstraction(resolvedAliasOrIndex);
     }
 
     /**
      * @return If the specified string is data math expression then this method returns the resolved expression.
      */
-    public String resolveDateMathExpression(String dateExpression) {
-        return DateMathExpressionResolver.resolveExpression(dateExpression);
+    public static String resolveDateMathExpression(String dateExpression) {
+        return resolveDateMathExpression(dateExpression, System::currentTimeMillis);
+    }
+
+    public static List<String> resolveDateMathExpressions(Context context, List<String> expressions) {
+        List<String> result = new ArrayList<>(expressions.size());
+        for (String expression : expressions) {
+            result.add(resolveDateMathExpression(expression, context::getStartTime));
+        }
+        return result;
     }
 
     /**
@@ -660,7 +657,7 @@ public class IndexNameExpressionResolver {
      * @return If the specified string is data math expression then this method returns the resolved expression.
      */
     public String resolveDateMathExpression(String dateExpression, long time) {
-        return DateMathExpressionResolver.resolveExpression(dateExpression, () -> time);
+        return resolveDateMathExpression(dateExpression, () -> time);
     }
 
     /**
@@ -678,10 +675,55 @@ public class IndexNameExpressionResolver {
             getNetNewSystemIndexPredicate()
         );
         List<String> resolvedExpressions = Arrays.asList(expressions);
-        for (ExpressionResolver expressionResolver : expressionResolvers) {
-            resolvedExpressions = expressionResolver.resolve(context, resolvedExpressions);
-        }
+        resolvedExpressions = resolveDateAndWildcardExpressions(resolvedExpressions, context);
         return Set.copyOf(resolvedExpressions);
+    }
+
+    public static List<String> resolveWildcardExpressions(Context context, List<String> expressions) {
+        IndicesOptions options = context.getOptions();
+        Metadata metadata = context.getState().metadata();
+        // only check open/closed since if we do not expand to open or closed it doesn't make sense to
+        // expand to hidden
+        if (options.expandWildcardsClosed() == false && options.expandWildcardsOpen() == false) {
+            return expressions;
+        }
+
+        if (isEmptyOrTrivialWildcard(expressions)) {
+            List<String> resolvedExpressions = resolveEmptyOrTrivialWildcard(context);
+            if (context.includeDataStreams()) {
+                final IndexMetadata.State excludeState = excludeState(options);
+                final Map<String, IndexAbstraction> dataStreamsAbstractions = metadata.getIndicesLookup()
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> entry.getValue().getType() == Type.DATA_STREAM)
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                // dedup backing indices if expand hidden indices option is true
+                Set<String> resolvedIncludingDataStreams = new HashSet<>(resolvedExpressions);
+                resolvedIncludingDataStreams.addAll(
+                    expand(
+                        context,
+                        excludeState,
+                        dataStreamsAbstractions,
+                        expressions.isEmpty() ? "_all" : expressions.get(0),
+                        options.expandWildcardsHidden()
+                    )
+                );
+                return new ArrayList<>(resolvedIncludingDataStreams);
+            }
+            return resolvedExpressions;
+        }
+
+        Set<String> result = innerResolveWildcard(context, expressions, options, metadata);
+
+        if (result == null) {
+            return expressions;
+        }
+        if (result.isEmpty() && options.allowNoIndices() == false) {
+            IndexNotFoundException infe = new IndexNotFoundException((String) null);
+            infe.setResources("index_or_alias", expressions.toArray(new String[0]));
+            throw infe;
+        }
+        return new ArrayList<>(result);
     }
 
     /**
@@ -803,9 +845,7 @@ public class IndexNameExpressionResolver {
             getSystemIndexAccessPredicate(),
             getNetNewSystemIndexPredicate()
         );
-        for (ExpressionResolver expressionResolver : expressionResolvers) {
-            resolvedExpressions = expressionResolver.resolve(context, resolvedExpressions);
-        }
+        resolvedExpressions = resolveDateAndWildcardExpressions(resolvedExpressions, context);
 
         // TODO: it appears that this can never be true?
         if (isAllIndices(resolvedExpressions)) {
@@ -910,6 +950,10 @@ public class IndexNameExpressionResolver {
             return null;
         }
         return routings;
+    }
+
+    private static List<String> resolveDateAndWildcardExpressions(List<String> resolvedExpressions, Context context) {
+        return resolveWildcardExpressions(context, resolveDateMathExpressions(context, resolvedExpressions));
     }
 
     /**
@@ -1182,511 +1226,432 @@ public class IndexNameExpressionResolver {
         }
     }
 
-    private interface ExpressionResolver {
+    private static final DateFormatter DEFAULT_DATE_FORMATTER = DateFormatter.forPattern("uuuu.MM.dd");
+    private static final String EXPRESSION_LEFT_BOUND = "<";
+    private static final String EXPRESSION_RIGHT_BOUND = ">";
+    private static final char LEFT_BOUND = '{';
+    private static final char RIGHT_BOUND = '}';
+    private static final char ESCAPE_CHAR = '\\';
+    private static final char TIME_ZONE_BOUND = '|';
 
-        /**
-         * Resolves the list of expressions into other expressions if possible (possible concrete indices and aliases, but
-         * that isn't required). The provided implementations can also be left untouched.
-         *
-         * @return a new list with expressions based on the provided expressions
-         */
-        List<String> resolve(Context context, List<String> expressions);
-
-    }
-
-    /**
-     * Resolves alias/index name expressions with wildcards into the corresponding concrete indices/aliases
-     */
-    static final class WildcardExpressionResolver implements ExpressionResolver {
-
-        @Override
-        public List<String> resolve(Context context, List<String> expressions) {
-            IndicesOptions options = context.getOptions();
-            Metadata metadata = context.getState().metadata();
-            // only check open/closed since if we do not expand to open or closed it doesn't make sense to
-            // expand to hidden
-            if (options.expandWildcardsClosed() == false && options.expandWildcardsOpen() == false) {
-                return expressions;
-            }
-
-            if (isEmptyOrTrivialWildcard(expressions)) {
-                List<String> resolvedExpressions = resolveEmptyOrTrivialWildcard(context);
-                if (context.includeDataStreams()) {
-                    final IndexMetadata.State excludeState = excludeState(options);
-                    final Map<String, IndexAbstraction> dataStreamsAbstractions = metadata.getIndicesLookup()
-                        .entrySet()
-                        .stream()
-                        .filter(entry -> entry.getValue().getType() == IndexAbstraction.Type.DATA_STREAM)
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                    // dedup backing indices if expand hidden indices option is true
-                    Set<String> resolvedIncludingDataStreams = new HashSet<>(resolvedExpressions);
-                    resolvedIncludingDataStreams.addAll(
-                        expand(
-                            context,
-                            excludeState,
-                            dataStreamsAbstractions,
-                            expressions.isEmpty() ? "_all" : expressions.get(0),
-                            options.expandWildcardsHidden()
-                        )
-                    );
-                    return new ArrayList<>(resolvedIncludingDataStreams);
-                }
-                return resolvedExpressions;
-            }
-
-            Set<String> result = innerResolve(context, expressions, options, metadata);
-
-            if (result == null) {
-                return expressions;
-            }
-            if (result.isEmpty() && options.allowNoIndices() == false) {
-                IndexNotFoundException infe = new IndexNotFoundException((String) null);
-                infe.setResources("index_or_alias", expressions.toArray(new String[0]));
-                throw infe;
-            }
-            return new ArrayList<>(result);
+    @SuppressWarnings("fallthrough")
+    private static String resolveDateMathExpression(String expression, LongSupplier getTime) {
+        if (expression.startsWith(EXPRESSION_LEFT_BOUND) == false || expression.endsWith(EXPRESSION_RIGHT_BOUND) == false) {
+            return expression;
         }
 
-        private Set<String> innerResolve(Context context, List<String> expressions, IndicesOptions options, Metadata metadata) {
-            Set<String> result = null;
-            boolean wildcardSeen = false;
-            for (int i = 0; i < expressions.size(); i++) {
-                String expression = expressions.get(i);
-                if (Strings.isEmpty(expression)) {
-                    throw indexNotFoundException(expression);
-                }
-                validateAliasOrIndex(expression);
-                if (aliasOrIndexExists(context, options, metadata, expression)) {
-                    if (result != null) {
-                        result.add(expression);
-                    }
-                    continue;
-                }
-                final boolean add;
-                if (expression.charAt(0) == '-' && wildcardSeen) {
-                    add = false;
-                    expression = expression.substring(1);
+        boolean escape = false;
+        boolean inDateFormat = false;
+        boolean inPlaceHolder = false;
+        final StringBuilder beforePlaceHolderSb = new StringBuilder();
+        StringBuilder inPlaceHolderSb = new StringBuilder();
+        final char[] text = expression.toCharArray();
+        final int from = 1;
+        final int length = text.length - 1;
+        for (int i = from; i < length; i++) {
+            boolean escapedChar = escape;
+            if (escape) {
+                escape = false;
+            }
+
+            char c = text[i];
+            if (c == ESCAPE_CHAR) {
+                if (escapedChar) {
+                    beforePlaceHolderSb.append(c);
+                    escape = false;
                 } else {
-                    add = true;
+                    escape = true;
                 }
-                if (result == null) {
-                    // add all the previous ones...
-                    result = new HashSet<>(expressions.subList(0, i));
-                }
-                if (Regex.isSimpleMatchPattern(expression) == false) {
-                    // TODO why does wildcard resolver throw exceptions regarding non wildcarded expressions? This should not be done here.
-                    if (options.ignoreUnavailable() == false) {
-                        IndexAbstraction indexAbstraction = metadata.getIndicesLookup().get(expression);
-                        if (indexAbstraction == null) {
-                            throw indexNotFoundException(expression);
-                        } else if (indexAbstraction.getType() == IndexAbstraction.Type.ALIAS && options.ignoreAliases()) {
-                            throw aliasesNotSupportedException(expression);
-                        } else if (indexAbstraction.isDataStreamRelated() && context.includeDataStreams() == false) {
-                            throw indexNotFoundException(expression);
+                continue;
+            }
+            if (inPlaceHolder) {
+                switch (c) {
+                    case LEFT_BOUND:
+                        if (inDateFormat && escapedChar) {
+                            inPlaceHolderSb.append(c);
+                        } else if (inDateFormat == false) {
+                            inDateFormat = true;
+                            inPlaceHolderSb.append(c);
+                        } else {
+                            throw new ElasticsearchParseException(
+                                "invalid dynamic name expression [{}]." + " invalid character in placeholder at position [{}]",
+                                new String(text, from, length),
+                                i
+                            );
                         }
-                    }
-                    if (add) {
-                        result.add(expression);
-                    } else {
-                        result.remove(expression);
-                    }
-                    continue;
+                        break;
+
+                    case RIGHT_BOUND:
+                        if (inDateFormat && escapedChar) {
+                            inPlaceHolderSb.append(c);
+                        } else if (inDateFormat) {
+                            inDateFormat = false;
+                            inPlaceHolderSb.append(c);
+                        } else {
+                            String inPlaceHolderString = inPlaceHolderSb.toString();
+                            int dateTimeFormatLeftBoundIndex = inPlaceHolderString.indexOf(LEFT_BOUND);
+                            String mathExpression;
+                            String dateFormatterPattern;
+                            DateFormatter dateFormatter;
+                            final ZoneId timeZone;
+                            if (dateTimeFormatLeftBoundIndex < 0) {
+                                mathExpression = inPlaceHolderString;
+                                dateFormatter = DEFAULT_DATE_FORMATTER;
+                                timeZone = ZoneOffset.UTC;
+                            } else {
+                                if (inPlaceHolderString.lastIndexOf(RIGHT_BOUND) != inPlaceHolderString.length() - 1) {
+                                    throw new ElasticsearchParseException(
+                                        "invalid dynamic name expression [{}]. missing closing `}`" + " for date math format",
+                                        inPlaceHolderString
+                                    );
+                                }
+                                if (dateTimeFormatLeftBoundIndex == inPlaceHolderString.length() - 2) {
+                                    throw new ElasticsearchParseException(
+                                        "invalid dynamic name expression [{}]. missing date format",
+                                        inPlaceHolderString
+                                    );
+                                }
+                                mathExpression = inPlaceHolderString.substring(0, dateTimeFormatLeftBoundIndex);
+                                String patternAndTZid = inPlaceHolderString.substring(
+                                    dateTimeFormatLeftBoundIndex + 1,
+                                    inPlaceHolderString.length() - 1
+                                );
+                                int formatPatternTimeZoneSeparatorIndex = patternAndTZid.indexOf(TIME_ZONE_BOUND);
+                                if (formatPatternTimeZoneSeparatorIndex != -1) {
+                                    dateFormatterPattern = patternAndTZid.substring(0, formatPatternTimeZoneSeparatorIndex);
+                                    timeZone = DateUtils.of(patternAndTZid.substring(formatPatternTimeZoneSeparatorIndex + 1));
+                                } else {
+                                    dateFormatterPattern = patternAndTZid;
+                                    timeZone = ZoneOffset.UTC;
+                                }
+                                dateFormatter = DateFormatter.forPattern(dateFormatterPattern);
+                            }
+
+                            DateFormatter formatter = dateFormatter.withZone(timeZone);
+                            DateMathParser dateMathParser = formatter.toDateMathParser();
+                            Instant instant = dateMathParser.parse(mathExpression, getTime, false, timeZone);
+
+                            String time = formatter.format(instant);
+                            beforePlaceHolderSb.append(time);
+                            inPlaceHolderSb = new StringBuilder();
+                            inPlaceHolder = false;
+                        }
+                        break;
+
+                    default:
+                        inPlaceHolderSb.append(c);
                 }
-
-                final IndexMetadata.State excludeState = excludeState(options);
-                final Map<String, IndexAbstraction> matches = matches(context, metadata, expression);
-                Set<String> expand = expand(context, excludeState, matches, expression, options.expandWildcardsHidden());
-                if (add) {
-                    result.addAll(expand);
-                } else {
-                    result.removeAll(expand);
-                }
-                if (options.allowNoIndices() == false && matches.isEmpty()) {
-                    throw indexNotFoundException(expression);
-                }
-                if (Regex.isSimpleMatchPattern(expression)) {
-                    wildcardSeen = true;
-                }
-            }
-            return result;
-        }
-
-        private static void validateAliasOrIndex(String expression) {
-            // Expressions can not start with an underscore. This is reserved for APIs. If the check gets here, the API
-            // does not exist and the path is interpreted as an expression. If the expression begins with an underscore,
-            // throw a specific error that is different from the [[IndexNotFoundException]], which is typically thrown
-            // if the expression can't be found.
-            if (expression.charAt(0) == '_') {
-                throw new InvalidIndexNameException(expression, "must not start with '_'.");
-            }
-        }
-
-        private static boolean aliasOrIndexExists(Context context, IndicesOptions options, Metadata metadata, String expression) {
-            IndexAbstraction indexAbstraction = metadata.getIndicesLookup().get(expression);
-            if (indexAbstraction == null) {
-                return false;
-            }
-
-            // treat aliases as unavailable indices when ignoreAliases is set to true (e.g. delete index and update aliases api)
-            if (indexAbstraction.getType() == IndexAbstraction.Type.ALIAS && options.ignoreAliases()) {
-                return false;
-            }
-
-            if (indexAbstraction.isDataStreamRelated() && context.includeDataStreams() == false) {
-                return false;
-            }
-
-            return true;
-        }
-
-        private static IndexNotFoundException indexNotFoundException(String expression) {
-            IndexNotFoundException infe = new IndexNotFoundException(expression);
-            infe.setResources("index_or_alias", expression);
-            return infe;
-        }
-
-        private static IndexMetadata.State excludeState(IndicesOptions options) {
-            final IndexMetadata.State excludeState;
-            if (options.expandWildcardsOpen() && options.expandWildcardsClosed()) {
-                excludeState = null;
-            } else if (options.expandWildcardsOpen() && options.expandWildcardsClosed() == false) {
-                excludeState = IndexMetadata.State.CLOSE;
-            } else if (options.expandWildcardsClosed() && options.expandWildcardsOpen() == false) {
-                excludeState = IndexMetadata.State.OPEN;
             } else {
-                assert false : "this shouldn't get called if wildcards expand to none";
-                excludeState = null;
+                switch (c) {
+                    case LEFT_BOUND:
+                        if (escapedChar) {
+                            beforePlaceHolderSb.append(c);
+                        } else {
+                            inPlaceHolder = true;
+                        }
+                        break;
+
+                    case RIGHT_BOUND:
+                        if (escapedChar == false) {
+                            throw new ElasticsearchParseException(
+                                "invalid dynamic name expression [{}]."
+                                    + " invalid character at position [{}]. `{` and `}` are reserved characters and"
+                                    + " should be escaped when used as part of the index name using `\\` (e.g. `\\{text\\}`)",
+                                new String(text, from, length),
+                                i
+                            );
+                        }
+                    default:
+                        beforePlaceHolderSb.append(c);
+                }
             }
-            return excludeState;
         }
 
-        public static Map<String, IndexAbstraction> matches(Context context, Metadata metadata, String expression) {
-            if (Regex.isMatchAllPattern(expression)) {
-                return filterIndicesLookup(context, metadata.getIndicesLookup(), null, context.getOptions());
-            } else if (expression.indexOf("*") == expression.length() - 1) {
-                return suffixWildcard(context, metadata, expression);
-            } else {
-                return otherWildcard(context, metadata, expression);
-            }
-        }
-
-        private static Map<String, IndexAbstraction> suffixWildcard(Context context, Metadata metadata, String expression) {
-            assert expression.length() >= 2 : "expression [" + expression + "] should have at least a length of 2";
-            String fromPrefix = expression.substring(0, expression.length() - 1);
-            char[] toPrefixCharArr = fromPrefix.toCharArray();
-            toPrefixCharArr[toPrefixCharArr.length - 1]++;
-            String toPrefix = new String(toPrefixCharArr);
-            SortedMap<String, IndexAbstraction> subMap = metadata.getIndicesLookup().subMap(fromPrefix, toPrefix);
-            return filterIndicesLookup(context, subMap, null, context.getOptions());
-        }
-
-        private static Map<String, IndexAbstraction> otherWildcard(Context context, Metadata metadata, String expression) {
-            final String pattern = expression;
-            return filterIndicesLookup(
-                context,
-                metadata.getIndicesLookup(),
-                e -> Regex.simpleMatch(pattern, e.getKey()),
-                context.getOptions()
+        if (inPlaceHolder) {
+            throw new ElasticsearchParseException(
+                "invalid dynamic name expression [{}]. date math placeholder is open ended",
+                new String(text, from, length)
             );
         }
-
-        private static Map<String, IndexAbstraction> filterIndicesLookup(
-            Context context,
-            SortedMap<String, IndexAbstraction> indicesLookup,
-            Predicate<? super Map.Entry<String, IndexAbstraction>> filter,
-            IndicesOptions options
-        ) {
-            boolean shouldConsumeStream = false;
-            Stream<Map.Entry<String, IndexAbstraction>> stream = indicesLookup.entrySet().stream();
-            if (options.ignoreAliases()) {
-                shouldConsumeStream = true;
-                stream = stream.filter(e -> e.getValue().getType() != IndexAbstraction.Type.ALIAS);
-            }
-            if (filter != null) {
-                shouldConsumeStream = true;
-                stream = stream.filter(filter);
-            }
-            if (context.includeDataStreams() == false) {
-                shouldConsumeStream = true;
-                stream = stream.filter(e -> e.getValue().isDataStreamRelated() == false);
-            }
-            if (shouldConsumeStream) {
-                return stream.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            } else {
-                return indicesLookup;
-            }
+        if (beforePlaceHolderSb.length() == 0) {
+            throw new ElasticsearchParseException("nothing captured");
         }
+        return beforePlaceHolderSb.toString();
+    }
 
-        private static Set<String> expand(
-            Context context,
-            IndexMetadata.State excludeState,
-            Map<String, IndexAbstraction> matches,
-            String expression,
-            boolean includeHidden
-        ) {
-            Set<String> expand = new HashSet<>();
-            for (Map.Entry<String, IndexAbstraction> entry : matches.entrySet()) {
-                String aliasOrIndexName = entry.getKey();
-                IndexAbstraction indexAbstraction = entry.getValue();
-
-                if (indexAbstraction.isSystem()) {
-                    if (context.netNewSystemIndexPredicate.test(indexAbstraction.getName())
-                        && context.systemIndexAccessPredicate.test(indexAbstraction.getName()) == false) {
-                        continue;
-                    }
-                    if (indexAbstraction.getType() == Type.DATA_STREAM || indexAbstraction.getParentDataStream() != null) {
-                        if (context.systemIndexAccessPredicate.test(indexAbstraction.getName()) == false) {
-                            continue;
-                        }
+    private static Set<String> innerResolveWildcard(Context context, List<String> expressions, IndicesOptions options, Metadata metadata) {
+        Set<String> result = null;
+        boolean wildcardSeen = false;
+        for (int i = 0; i < expressions.size(); i++) {
+            String expression = expressions.get(i);
+            if (Strings.isEmpty(expression)) {
+                throw indexNotFoundException(expression);
+            }
+            validateAliasOrIndex(expression);
+            if (aliasOrIndexExists(context, options, metadata, expression)) {
+                if (result != null) {
+                    result.add(expression);
+                }
+                continue;
+            }
+            final boolean add;
+            if (expression.charAt(0) == '-' && wildcardSeen) {
+                add = false;
+                expression = expression.substring(1);
+            } else {
+                add = true;
+            }
+            if (result == null) {
+                // add all the previous ones...
+                result = new HashSet<>(expressions.subList(0, i));
+            }
+            if (Regex.isSimpleMatchPattern(expression) == false) {
+                // TODO why does wildcard resolver throw exceptions regarding non wildcarded expressions? This should not be done here.
+                if (options.ignoreUnavailable() == false) {
+                    IndexAbstraction indexAbstraction = metadata.getIndicesLookup().get(expression);
+                    if (indexAbstraction == null) {
+                        throw indexNotFoundException(expression);
+                    } else if (indexAbstraction.getType() == IndexAbstraction.Type.ALIAS && options.ignoreAliases()) {
+                        throw aliasesNotSupportedException(expression);
+                    } else if (indexAbstraction.isDataStreamRelated() && context.includeDataStreams() == false) {
+                        throw indexNotFoundException(expression);
                     }
                 }
-
-                if (indexAbstraction.isHidden() == false || includeHidden || implicitHiddenMatch(aliasOrIndexName, expression)) {
-                    if (context.isPreserveAliases() && indexAbstraction.getType() == IndexAbstraction.Type.ALIAS) {
-                        expand.add(aliasOrIndexName);
-                    } else {
-                        for (Index index : indexAbstraction.getIndices()) {
-                            IndexMetadata meta = context.state.metadata().index(index);
-                            if (excludeState == null || meta.getState() != excludeState) {
-                                expand.add(meta.getIndex().getName());
-                            }
-                        }
-                        if (context.isPreserveDataStreams() && indexAbstraction.getType() == IndexAbstraction.Type.DATA_STREAM) {
-                            expand.add(indexAbstraction.getName());
-                        }
-                    }
+                if (add) {
+                    result.add(expression);
+                } else {
+                    result.remove(expression);
                 }
+                continue;
             }
-            return expand;
-        }
 
-        private static boolean implicitHiddenMatch(String itemName, String expression) {
-            return itemName.startsWith(".") && expression.startsWith(".") && Regex.isSimpleMatchPattern(expression);
-        }
-
-        private boolean isEmptyOrTrivialWildcard(List<String> expressions) {
-            return expressions.isEmpty()
-                || (expressions.size() == 1 && (Metadata.ALL.equals(expressions.get(0)) || Regex.isMatchAllPattern(expressions.get(0))));
-        }
-
-        private static List<String> resolveEmptyOrTrivialWildcard(Context context) {
-            final String[] allIndices = resolveEmptyOrTrivialWildcardToAllIndices(context.getOptions(), context.getState().metadata());
-            if (context.systemIndexAccessLevel == SystemIndexAccessLevel.ALL) {
-                return List.of(allIndices);
+            final IndexMetadata.State excludeState = excludeState(options);
+            final Map<String, IndexAbstraction> matches = matchesWildcardExpression(context, metadata, expression);
+            Set<String> expand = expand(context, excludeState, matches, expression, options.expandWildcardsHidden());
+            if (add) {
+                result.addAll(expand);
             } else {
-                return resolveEmptyOrTrivialWildcardWithAllowedSystemIndices(context, allIndices);
+                result.removeAll(expand);
+            }
+            if (options.allowNoIndices() == false && matches.isEmpty()) {
+                throw indexNotFoundException(expression);
+            }
+            if (Regex.isSimpleMatchPattern(expression)) {
+                wildcardSeen = true;
             }
         }
+        return result;
+    }
 
-        private static List<String> resolveEmptyOrTrivialWildcardWithAllowedSystemIndices(Context context, String[] allIndices) {
-            return Arrays.stream(allIndices).filter(name -> {
-                if (name.startsWith(".")) {
-                    IndexAbstraction abstraction = context.state.metadata().getIndicesLookup().get(name);
-                    assert abstraction != null : "null abstraction for " + name + " but was in array of all indices";
-                    if (abstraction.isSystem()) {
-                        if (context.netNewSystemIndexPredicate.test(name)) {
-                            if (SystemIndexAccessLevel.BACKWARDS_COMPATIBLE_ONLY.equals(context.systemIndexAccessLevel)) {
-                                return false;
-                            } else {
-                                return context.systemIndexAccessPredicate.test(name);
-                            }
-                        } else if (abstraction.getType() == Type.DATA_STREAM || abstraction.getParentDataStream() != null) {
-                            return context.systemIndexAccessPredicate.test(name);
-                        }
-                    } else {
-                        return true;
-                    }
-                }
-                return true;
-            }).collect(Collectors.toUnmodifiableList());
-        }
-
-        private static String[] resolveEmptyOrTrivialWildcardToAllIndices(IndicesOptions options, Metadata metadata) {
-            if (options.expandWildcardsOpen() && options.expandWildcardsClosed() && options.expandWildcardsHidden()) {
-                return metadata.getConcreteAllIndices();
-            } else if (options.expandWildcardsOpen() && options.expandWildcardsClosed()) {
-                return metadata.getConcreteVisibleIndices();
-            } else if (options.expandWildcardsOpen() && options.expandWildcardsHidden()) {
-                return metadata.getConcreteAllOpenIndices();
-            } else if (options.expandWildcardsOpen()) {
-                return metadata.getConcreteVisibleOpenIndices();
-            } else if (options.expandWildcardsClosed() && options.expandWildcardsHidden()) {
-                return metadata.getConcreteAllClosedIndices();
-            } else if (options.expandWildcardsClosed()) {
-                return metadata.getConcreteVisibleClosedIndices();
-            } else {
-                return Strings.EMPTY_ARRAY;
-            }
+    private static void validateAliasOrIndex(String expression) {
+        // Expressions can not start with an underscore. This is reserved for APIs. If the check gets here, the API
+        // does not exist and the path is interpreted as an expression. If the expression begins with an underscore,
+        // throw a specific error that is different from the [[IndexNotFoundException]], which is typically thrown
+        // if the expression can't be found.
+        if (expression.charAt(0) == '_') {
+            throw new InvalidIndexNameException(expression, "must not start with '_'.");
         }
     }
 
-    public static final class DateMathExpressionResolver implements ExpressionResolver {
-
-        private static final DateFormatter DEFAULT_DATE_FORMATTER = DateFormatter.forPattern("uuuu.MM.dd");
-        private static final String EXPRESSION_LEFT_BOUND = "<";
-        private static final String EXPRESSION_RIGHT_BOUND = ">";
-        private static final char LEFT_BOUND = '{';
-        private static final char RIGHT_BOUND = '}';
-        private static final char ESCAPE_CHAR = '\\';
-        private static final char TIME_ZONE_BOUND = '|';
-
-        @Override
-        public List<String> resolve(final Context context, List<String> expressions) {
-            List<String> result = new ArrayList<>(expressions.size());
-            for (String expression : expressions) {
-                result.add(resolveExpression(expression, context::getStartTime));
-            }
-            return result;
+    private static boolean aliasOrIndexExists(Context context, IndicesOptions options, Metadata metadata, String expression) {
+        IndexAbstraction indexAbstraction = metadata.getIndicesLookup().get(expression);
+        if (indexAbstraction == null) {
+            return false;
         }
 
-        static String resolveExpression(String expression) {
-            return resolveExpression(expression, System::currentTimeMillis);
+        // treat aliases as unavailable indices when ignoreAliases is set to true (e.g. delete index and update aliases api)
+        if (indexAbstraction.getType() == IndexAbstraction.Type.ALIAS && options.ignoreAliases()) {
+            return false;
         }
 
-        @SuppressWarnings("fallthrough")
-        static String resolveExpression(String expression, LongSupplier getTime) {
-            if (expression.startsWith(EXPRESSION_LEFT_BOUND) == false || expression.endsWith(EXPRESSION_RIGHT_BOUND) == false) {
-                return expression;
-            }
+        if (indexAbstraction.isDataStreamRelated() && context.includeDataStreams() == false) {
+            return false;
+        }
 
-            boolean escape = false;
-            boolean inDateFormat = false;
-            boolean inPlaceHolder = false;
-            final StringBuilder beforePlaceHolderSb = new StringBuilder();
-            StringBuilder inPlaceHolderSb = new StringBuilder();
-            final char[] text = expression.toCharArray();
-            final int from = 1;
-            final int length = text.length - 1;
-            for (int i = from; i < length; i++) {
-                boolean escapedChar = escape;
-                if (escape) {
-                    escape = false;
-                }
+        return true;
+    }
 
-                char c = text[i];
-                if (c == ESCAPE_CHAR) {
-                    if (escapedChar) {
-                        beforePlaceHolderSb.append(c);
-                        escape = false;
-                    } else {
-                        escape = true;
-                    }
+    private static IndexNotFoundException indexNotFoundException(String expression) {
+        IndexNotFoundException infe = new IndexNotFoundException(expression);
+        infe.setResources("index_or_alias", expression);
+        return infe;
+    }
+
+    private static IndexMetadata.State excludeState(IndicesOptions options) {
+        final IndexMetadata.State excludeState;
+        if (options.expandWildcardsOpen() && options.expandWildcardsClosed()) {
+            excludeState = null;
+        } else if (options.expandWildcardsOpen() && options.expandWildcardsClosed() == false) {
+            excludeState = IndexMetadata.State.CLOSE;
+        } else if (options.expandWildcardsClosed() && options.expandWildcardsOpen() == false) {
+            excludeState = IndexMetadata.State.OPEN;
+        } else {
+            assert false : "this shouldn't get called if wildcards expand to none";
+            excludeState = null;
+        }
+        return excludeState;
+    }
+
+    public static Map<String, IndexAbstraction> matchesWildcardExpression(Context context, Metadata metadata, String expression) {
+        if (Regex.isMatchAllPattern(expression)) {
+            return filterIndicesLookup(context, metadata.getIndicesLookup(), null, context.getOptions());
+        } else if (expression.indexOf("*") == expression.length() - 1) {
+            return suffixWildcard(context, metadata, expression);
+        } else {
+            return otherWildcard(context, metadata, expression);
+        }
+    }
+
+    private static Map<String, IndexAbstraction> suffixWildcard(Context context, Metadata metadata, String expression) {
+        assert expression.length() >= 2 : "expression [" + expression + "] should have at least a length of 2";
+        String fromPrefix = expression.substring(0, expression.length() - 1);
+        char[] toPrefixCharArr = fromPrefix.toCharArray();
+        toPrefixCharArr[toPrefixCharArr.length - 1]++;
+        String toPrefix = new String(toPrefixCharArr);
+        SortedMap<String, IndexAbstraction> subMap = metadata.getIndicesLookup().subMap(fromPrefix, toPrefix);
+        return filterIndicesLookup(context, subMap, null, context.getOptions());
+    }
+
+    private static Map<String, IndexAbstraction> otherWildcard(Context context, Metadata metadata, String expression) {
+        return filterIndicesLookup(
+            context,
+            metadata.getIndicesLookup(),
+            e -> Regex.simpleMatch(expression, e.getKey()),
+            context.getOptions()
+        );
+    }
+
+    private static Map<String, IndexAbstraction> filterIndicesLookup(
+        Context context,
+        SortedMap<String, IndexAbstraction> indicesLookup,
+        Predicate<? super Map.Entry<String, IndexAbstraction>> filter,
+        IndicesOptions options
+    ) {
+        boolean shouldConsumeStream = false;
+        Stream<Map.Entry<String, IndexAbstraction>> stream = indicesLookup.entrySet().stream();
+        if (options.ignoreAliases()) {
+            shouldConsumeStream = true;
+            stream = stream.filter(e -> e.getValue().getType() != IndexAbstraction.Type.ALIAS);
+        }
+        if (filter != null) {
+            shouldConsumeStream = true;
+            stream = stream.filter(filter);
+        }
+        if (context.includeDataStreams() == false) {
+            shouldConsumeStream = true;
+            stream = stream.filter(e -> e.getValue().isDataStreamRelated() == false);
+        }
+        if (shouldConsumeStream) {
+            return stream.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        } else {
+            return indicesLookup;
+        }
+    }
+
+    private static Set<String> expand(
+        Context context,
+        IndexMetadata.State excludeState,
+        Map<String, IndexAbstraction> matches,
+        String expression,
+        boolean includeHidden
+    ) {
+        Set<String> expand = new HashSet<>();
+        for (Map.Entry<String, IndexAbstraction> entry : matches.entrySet()) {
+            String aliasOrIndexName = entry.getKey();
+            IndexAbstraction indexAbstraction = entry.getValue();
+
+            if (indexAbstraction.isSystem()) {
+                if (context.netNewSystemIndexPredicate.test(indexAbstraction.getName())
+                    && context.systemIndexAccessPredicate.test(indexAbstraction.getName()) == false) {
                     continue;
                 }
-                if (inPlaceHolder) {
-                    switch (c) {
-                        case LEFT_BOUND:
-                            if (inDateFormat && escapedChar) {
-                                inPlaceHolderSb.append(c);
-                            } else if (inDateFormat == false) {
-                                inDateFormat = true;
-                                inPlaceHolderSb.append(c);
-                            } else {
-                                throw new ElasticsearchParseException(
-                                    "invalid dynamic name expression [{}]." + " invalid character in placeholder at position [{}]",
-                                    new String(text, from, length),
-                                    i
-                                );
-                            }
-                            break;
-
-                        case RIGHT_BOUND:
-                            if (inDateFormat && escapedChar) {
-                                inPlaceHolderSb.append(c);
-                            } else if (inDateFormat) {
-                                inDateFormat = false;
-                                inPlaceHolderSb.append(c);
-                            } else {
-                                String inPlaceHolderString = inPlaceHolderSb.toString();
-                                int dateTimeFormatLeftBoundIndex = inPlaceHolderString.indexOf(LEFT_BOUND);
-                                String mathExpression;
-                                String dateFormatterPattern;
-                                DateFormatter dateFormatter;
-                                final ZoneId timeZone;
-                                if (dateTimeFormatLeftBoundIndex < 0) {
-                                    mathExpression = inPlaceHolderString;
-                                    dateFormatter = DEFAULT_DATE_FORMATTER;
-                                    timeZone = ZoneOffset.UTC;
-                                } else {
-                                    if (inPlaceHolderString.lastIndexOf(RIGHT_BOUND) != inPlaceHolderString.length() - 1) {
-                                        throw new ElasticsearchParseException(
-                                            "invalid dynamic name expression [{}]. missing closing `}`" + " for date math format",
-                                            inPlaceHolderString
-                                        );
-                                    }
-                                    if (dateTimeFormatLeftBoundIndex == inPlaceHolderString.length() - 2) {
-                                        throw new ElasticsearchParseException(
-                                            "invalid dynamic name expression [{}]. missing date format",
-                                            inPlaceHolderString
-                                        );
-                                    }
-                                    mathExpression = inPlaceHolderString.substring(0, dateTimeFormatLeftBoundIndex);
-                                    String patternAndTZid = inPlaceHolderString.substring(
-                                        dateTimeFormatLeftBoundIndex + 1,
-                                        inPlaceHolderString.length() - 1
-                                    );
-                                    int formatPatternTimeZoneSeparatorIndex = patternAndTZid.indexOf(TIME_ZONE_BOUND);
-                                    if (formatPatternTimeZoneSeparatorIndex != -1) {
-                                        dateFormatterPattern = patternAndTZid.substring(0, formatPatternTimeZoneSeparatorIndex);
-                                        timeZone = DateUtils.of(patternAndTZid.substring(formatPatternTimeZoneSeparatorIndex + 1));
-                                    } else {
-                                        dateFormatterPattern = patternAndTZid;
-                                        timeZone = ZoneOffset.UTC;
-                                    }
-                                    dateFormatter = DateFormatter.forPattern(dateFormatterPattern);
-                                }
-
-                                DateFormatter formatter = dateFormatter.withZone(timeZone);
-                                DateMathParser dateMathParser = formatter.toDateMathParser();
-                                Instant instant = dateMathParser.parse(mathExpression, getTime, false, timeZone);
-
-                                String time = formatter.format(instant);
-                                beforePlaceHolderSb.append(time);
-                                inPlaceHolderSb = new StringBuilder();
-                                inPlaceHolder = false;
-                            }
-                            break;
-
-                        default:
-                            inPlaceHolderSb.append(c);
-                    }
-                } else {
-                    switch (c) {
-                        case LEFT_BOUND:
-                            if (escapedChar) {
-                                beforePlaceHolderSb.append(c);
-                            } else {
-                                inPlaceHolder = true;
-                            }
-                            break;
-
-                        case RIGHT_BOUND:
-                            if (escapedChar == false) {
-                                throw new ElasticsearchParseException(
-                                    "invalid dynamic name expression [{}]."
-                                        + " invalid character at position [{}]. `{` and `}` are reserved characters and"
-                                        + " should be escaped when used as part of the index name using `\\` (e.g. `\\{text\\}`)",
-                                    new String(text, from, length),
-                                    i
-                                );
-                            }
-                        default:
-                            beforePlaceHolderSb.append(c);
+                if (indexAbstraction.getType() == Type.DATA_STREAM || indexAbstraction.getParentDataStream() != null) {
+                    if (context.systemIndexAccessPredicate.test(indexAbstraction.getName()) == false) {
+                        continue;
                     }
                 }
             }
 
-            if (inPlaceHolder) {
-                throw new ElasticsearchParseException(
-                    "invalid dynamic name expression [{}]. date math placeholder is open ended",
-                    new String(text, from, length)
-                );
+            if (indexAbstraction.isHidden() == false || includeHidden || implicitHiddenMatch(aliasOrIndexName, expression)) {
+                if (context.isPreserveAliases() && indexAbstraction.getType() == IndexAbstraction.Type.ALIAS) {
+                    expand.add(aliasOrIndexName);
+                } else {
+                    for (Index index : indexAbstraction.getIndices()) {
+                        IndexMetadata meta = context.state.metadata().index(index);
+                        if (excludeState == null || meta.getState() != excludeState) {
+                            expand.add(meta.getIndex().getName());
+                        }
+                    }
+                    if (context.isPreserveDataStreams() && indexAbstraction.getType() == IndexAbstraction.Type.DATA_STREAM) {
+                        expand.add(indexAbstraction.getName());
+                    }
+                }
             }
-            if (beforePlaceHolderSb.length() == 0) {
-                throw new ElasticsearchParseException("nothing captured");
-            }
-            return beforePlaceHolderSb.toString();
         }
+        return expand;
+    }
+
+    private static boolean implicitHiddenMatch(String itemName, String expression) {
+        return itemName.startsWith(".") && expression.startsWith(".") && Regex.isSimpleMatchPattern(expression);
+    }
+
+    private static boolean isEmptyOrTrivialWildcard(List<String> expressions) {
+        return expressions.isEmpty()
+            || (expressions.size() == 1 && (Metadata.ALL.equals(expressions.get(0)) || Regex.isMatchAllPattern(expressions.get(0))));
+    }
+
+    private static List<String> resolveEmptyOrTrivialWildcard(Context context) {
+        final String[] allIndices = resolveEmptyOrTrivialWildcardToAllIndices(context.getOptions(), context.getState().metadata());
+        if (context.systemIndexAccessLevel == SystemIndexAccessLevel.ALL) {
+            return List.of(allIndices);
+        } else {
+            return resolveEmptyOrTrivialWildcardWithAllowedSystemIndices(context, allIndices);
+        }
+    }
+
+    private static List<String> resolveEmptyOrTrivialWildcardWithAllowedSystemIndices(Context context, String[] allIndices) {
+        return Arrays.stream(allIndices).filter(name -> {
+            if (name.startsWith(".")) {
+                IndexAbstraction abstraction = context.state.metadata().getIndicesLookup().get(name);
+                assert abstraction != null : "null abstraction for " + name + " but was in array of all indices";
+                if (abstraction.isSystem()) {
+                    if (context.netNewSystemIndexPredicate.test(name)) {
+                        if (SystemIndexAccessLevel.BACKWARDS_COMPATIBLE_ONLY.equals(context.systemIndexAccessLevel)) {
+                            return false;
+                        } else {
+                            return context.systemIndexAccessPredicate.test(name);
+                        }
+                    } else if (abstraction.getType() == Type.DATA_STREAM || abstraction.getParentDataStream() != null) {
+                        return context.systemIndexAccessPredicate.test(name);
+                    }
+                } else {
+                    return true;
+                }
+            }
+            return true;
+        }).collect(Collectors.toUnmodifiableList());
+    }
+
+    private static String[] resolveEmptyOrTrivialWildcardToAllIndices(IndicesOptions options, Metadata metadata) {
+        if (options.expandWildcardsOpen()) {
+            if (options.expandWildcardsClosed()) {
+                if (options.expandWildcardsHidden()) {
+                    return metadata.getConcreteAllIndices();
+                }
+                return metadata.getConcreteVisibleIndices();
+            }
+            if (options.expandWildcardsHidden()) {
+                return metadata.getConcreteAllOpenIndices();
+            }
+            return metadata.getConcreteVisibleOpenIndices();
+        }
+        if (options.expandWildcardsClosed()) {
+            if (options.expandWildcardsHidden()) {
+                return metadata.getConcreteAllClosedIndices();
+            }
+            return metadata.getConcreteVisibleClosedIndices();
+        }
+        return Strings.EMPTY_ARRAY;
     }
 
     /**

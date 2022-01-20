@@ -35,7 +35,6 @@ import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.IndexScopedSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexModule;
@@ -110,11 +109,9 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
     private AliasValidator aliasValidator;
     private CreateIndexClusterStateUpdateRequest request;
     private SearchExecutionContext searchExecutionContext;
-    private IndexNameExpressionResolver indexNameExpressionResolver;
 
     @Before
     public void setupCreateIndexRequestAndAliasValidator() {
-        indexNameExpressionResolver = new IndexNameExpressionResolver(new ThreadContext(Settings.EMPTY), EmptySystemIndices.INSTANCE);
         aliasValidator = new AliasValidator();
         request = new CreateIndexClusterStateUpdateRequest("create index", "test", "test");
         Settings indexSettings = Settings.builder()
@@ -746,7 +743,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
                 aliasValidator,
                 xContentRegistry(),
                 searchExecutionContext,
-                indexNameExpressionResolver::resolveDateMathExpression,
+                IndexNameExpressionResolver::resolveDateMathExpression,
                 m -> false
             )
         );
@@ -765,7 +762,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             aliasValidator,
             xContentRegistry(),
             searchExecutionContext,
-            indexNameExpressionResolver::resolveDateMathExpression,
+            IndexNameExpressionResolver::resolveDateMathExpression,
             m -> false
         );
 
@@ -800,7 +797,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             aliasValidator,
             xContentRegistry(),
             searchExecutionContext,
-            indexNameExpressionResolver::resolveDateMathExpression,
+            IndexNameExpressionResolver::resolveDateMathExpression,
             m -> false
         );
 
@@ -897,7 +894,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             aliasValidator,
             xContentRegistry(),
             searchExecutionContext,
-            indexNameExpressionResolver::resolveDateMathExpression,
+            IndexNameExpressionResolver::resolveDateMathExpression,
             m -> false
         );
 
@@ -939,7 +936,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             aliasValidator,
             xContentRegistry(),
             searchExecutionContext,
-            indexNameExpressionResolver::resolveDateMathExpression,
+            IndexNameExpressionResolver::resolveDateMathExpression,
             m -> false
         );
 
