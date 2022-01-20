@@ -11,7 +11,6 @@ import org.elasticsearch.common.Randomness;
 import org.elasticsearch.test.ESTestCase;
 import org.hamcrest.Matchers;
 import org.junit.BeforeClass;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
@@ -37,11 +36,9 @@ public class CountingInputStreamTests extends ESTestCase {
     public void testWrappedMarkAndClose() throws Exception {
         AtomicBoolean isClosed = new AtomicBoolean(false);
         InputStream mockIn = mock(InputStream.class);
-        doAnswer(new Answer<Void>() {
-            public Void answer(InvocationOnMock invocation) {
-                isClosed.set(true);
-                return null;
-            }
+        doAnswer((Answer<Void>) invocation -> {
+            isClosed.set(true);
+            return null;
         }).when(mockIn).close();
         new CountingInputStream(mockIn, true).close();
         assertThat(isClosed.get(), Matchers.is(true));

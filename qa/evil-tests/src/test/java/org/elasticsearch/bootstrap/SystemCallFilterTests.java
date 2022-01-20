@@ -59,17 +59,14 @@ public class SystemCallFilterTests extends ESTestCase {
 
     // make sure thread inherits this too (its documented that way)
     public void testNoExecutionFromThread() throws Exception {
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Runtime.getRuntime().exec(EXECUTABLE);
-                    fail("should not have been able to execute!");
-                } catch (Exception expected) {
-                    // ok
-                }
+        Thread t = new Thread(() -> {
+            try {
+                Runtime.getRuntime().exec(EXECUTABLE);
+                fail("should not have been able to execute!");
+            } catch (Exception expected) {
+                // ok
             }
-        };
+        });
         t.start();
         t.join();
     }

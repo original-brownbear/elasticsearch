@@ -470,27 +470,19 @@ public class RestClientSingleHostTests extends RestClientTestCase {
         },
         FILTERED {
             protected WarningsHandler warningsHandler() {
-                return new WarningsHandler() {
-                    @Override
-                    public boolean warningsShouldFailRequest(List<String> warnings) {
-                        for (String warning : warnings) {
-                            if (false == warning.startsWith("ignorable")) {
-                                return true;
-                            }
+                return warnings -> {
+                    for (String warning : warnings) {
+                        if (false == warning.startsWith("ignorable")) {
+                            return true;
                         }
-                        return false;
                     }
+                    return false;
                 };
             }
         },
         EXACT {
             protected WarningsHandler warningsHandler() {
-                return new WarningsHandler() {
-                    @Override
-                    public boolean warningsShouldFailRequest(List<String> warnings) {
-                        return false == warnings.equals(Arrays.asList("exact"));
-                    }
-                };
+                return warnings -> false == warnings.equals(Arrays.asList("exact"));
             }
         };
 

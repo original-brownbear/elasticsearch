@@ -76,27 +76,21 @@ public class SimpleKdcLdapServer {
      * @param ldiff for ldap directory.
      * @throws Exception when KDC or Ldap server initialization fails
      */
+    @SuppressForbidden(reason = "set or clear system property krb5 debug in kerberos tests")
     public SimpleKdcLdapServer(final Path workDir, final String orgName, final String domainName, final Path ldiff) throws Exception {
         this.workDir = workDir;
         this.realm = domainName.toUpperCase(Locale.ROOT) + "." + orgName.toUpperCase(Locale.ROOT);
         this.baseDn = "dc=" + domainName + ",dc=" + orgName;
         this.ldiff = ldiff;
-        this.krb5DebugBackupConfigValue = AccessController.doPrivileged(new PrivilegedExceptionAction<Boolean>() {
-            @Override
-            @SuppressForbidden(reason = "set or clear system property krb5 debug in kerberos tests")
-            public Boolean run() throws Exception {
-                boolean oldDebugSetting = Boolean.parseBoolean(System.getProperty("sun.security.krb5.debug"));
-                System.setProperty("sun.security.krb5.debug", Boolean.TRUE.toString());
-                return oldDebugSetting;
-            }
+        this.krb5DebugBackupConfigValue = AccessController.doPrivileged((PrivilegedExceptionAction<Boolean>) () -> {
+            boolean oldDebugSetting = Boolean.parseBoolean(System.getProperty("sun.security.krb5.debug"));
+            System.setProperty("sun.security.krb5.debug", Boolean.TRUE.toString());
+            return oldDebugSetting;
         });
 
-        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-            @Override
-            public Void run() throws Exception {
-                assertBusy(() -> assertTrue("Failed to initialize SimpleKdcLdapServer", init()));
-                return null;
-            }
+        AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+            assertBusy(() -> assertTrue("Failed to initialize SimpleKdcLdapServer", init()));
+            return null;
         });
         logger.info("SimpleKdcLdapServer started.");
     }
@@ -232,27 +226,23 @@ public class SimpleKdcLdapServer {
      *
      * @throws PrivilegedActionException when privileged action threw exception
      */
+    @SuppressForbidden(reason = "set or clear system property krb5 debug in kerberos tests")
     public synchronized void stop() throws PrivilegedActionException {
-        AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-
-            @Override
-            @SuppressForbidden(reason = "set or clear system property krb5 debug in kerberos tests")
-            public Void run() throws Exception {
-                if (simpleKdc != null) {
-                    try {
-                        simpleKdc.stop();
-                    } catch (KrbException e) {
-                        throw ExceptionsHelper.convertToRuntime(e);
-                    } finally {
-                        System.setProperty("sun.security.krb5.debug", Boolean.toString(krb5DebugBackupConfigValue));
-                    }
+        AccessController.doPrivileged((PrivilegedExceptionAction<Void>) () -> {
+            if (simpleKdc != null) {
+                try {
+                    simpleKdc.stop();
+                } catch (KrbException e) {
+                    throw ExceptionsHelper.convertToRuntime(e);
+                } finally {
+                    System.setProperty("sun.security.krb5.debug", Boolean.toString(krb5DebugBackupConfigValue));
                 }
-
-                if (ldapServer != null) {
-                    ldapServer.shutDown(true);
-                }
-                return null;
             }
+
+            if (ldapServer != null) {
+                ldapServer.shutDown(true);
+            }
+            return null;
         });
         logger.info("SimpleKdcServer stoppped.");
     }

@@ -151,7 +151,7 @@ public final class ConfigurableClusterPrivileges {
                     final Collection<String> requestApplicationNames = privRequest.getApplicationNames();
                     return requestApplicationNames.isEmpty()
                         ? this.applicationNames.contains("*")
-                        : requestApplicationNames.stream().allMatch(application -> applicationPredicate.test(application));
+                        : requestApplicationNames.stream().allMatch(applicationPredicate);
                 }
                 return false;
             };

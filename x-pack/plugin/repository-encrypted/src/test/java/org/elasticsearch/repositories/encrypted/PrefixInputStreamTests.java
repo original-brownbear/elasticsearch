@@ -11,7 +11,6 @@ import org.elasticsearch.common.Randomness;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.test.ESTestCase;
 import org.hamcrest.Matchers;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import java.io.EOFException;
@@ -57,11 +56,9 @@ public class PrefixInputStreamTests extends ESTestCase {
         // test closeSource parameter
         AtomicBoolean isClosed = new AtomicBoolean(false);
         InputStream mockIn = mock(InputStream.class);
-        doAnswer(new Answer<Void>() {
-            public Void answer(InvocationOnMock invocation) {
-                isClosed.set(true);
-                return null;
-            }
+        doAnswer((Answer<Void>) invocation -> {
+            isClosed.set(true);
+            return null;
         }).when(mockIn).close();
         new PrefixInputStream(mockIn, 1 + Randomness.get().nextInt(32), true).close();
         assertThat(isClosed.get(), Matchers.is(true));

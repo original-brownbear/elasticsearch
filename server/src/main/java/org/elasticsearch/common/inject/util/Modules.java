@@ -51,10 +51,7 @@ import static org.elasticsearch.common.util.set.Sets.newHashSet;
 public final class Modules {
     private Modules() {}
 
-    public static final Module EMPTY_MODULE = new Module() {
-        @Override
-        public void configure(Binder binder) {}
-    };
+    public static final Module EMPTY_MODULE = binder -> {};
 
     /**
      * Returns a builder that creates a module that overlays override modules over the given

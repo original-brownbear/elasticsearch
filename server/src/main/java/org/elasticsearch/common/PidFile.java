@@ -27,7 +27,7 @@ public final class PidFile {
     private final Path path;
     private final boolean deleteOnExit;
 
-    private PidFile(Path path, boolean deleteOnExit, long pid) throws IOException {
+    private PidFile(Path path, boolean deleteOnExit, long pid) {
         this.path = path;
         this.deleteOnExit = deleteOnExit;
         this.pid = pid;
@@ -94,15 +94,12 @@ public final class PidFile {
     }
 
     private static void addShutdownHook(final Path path) {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException e) {
-                    throw new ElasticsearchException("Failed to delete pid file " + path, e);
-                }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                Files.deleteIfExists(path);
+            } catch (IOException e) {
+                throw new ElasticsearchException("Failed to delete pid file " + path, e);
             }
-        });
+        }));
     }
 }

@@ -62,7 +62,7 @@ public final class PutRoleMappingResponse {
             args -> (Boolean) args[0]
         );
         roleMappingParser.declareBoolean(constructorArg(), new ParseField("created"));
-        PARSER.declareObject(constructorArg(), roleMappingParser::parse, new ParseField("role_mapping"));
+        PARSER.declareObject(constructorArg(), roleMappingParser, new ParseField("role_mapping"));
     }
 
     public static PutRoleMappingResponse fromXContent(XContentParser parser) throws IOException {
