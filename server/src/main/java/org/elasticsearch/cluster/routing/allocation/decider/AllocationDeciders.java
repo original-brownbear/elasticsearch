@@ -17,7 +17,6 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * A composite {@link AllocationDecider} combining the "decision" of multiple
@@ -27,10 +26,10 @@ public class AllocationDeciders extends AllocationDecider {
 
     private static final Logger logger = LogManager.getLogger(AllocationDeciders.class);
 
-    private final Collection<AllocationDecider> allocations;
+    private final AllocationDecider[] allocations;
 
     public AllocationDeciders(Collection<AllocationDecider> allocations) {
-        this.allocations = Collections.unmodifiableCollection(allocations);
+        this.allocations = allocations.toArray(AllocationDecider[]::new);
     }
 
     @Override

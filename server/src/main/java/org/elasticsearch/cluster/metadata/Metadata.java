@@ -769,14 +769,18 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             if (metadata.getIndexUUID().equals(index.getUUID())) {
                 return metadata;
             }
-            throw new IndexNotFoundException(
-                index,
-                new IllegalStateException(
-                    "index uuid doesn't match expected: [" + index.getUUID() + "] but got: [" + metadata.getIndexUUID() + "]"
-                )
-            );
+            throwOnConflictingUUID(index, metadata);
         }
         throw new IndexNotFoundException(index);
+    }
+
+    private void throwOnConflictingUUID(Index index, IndexMetadata metadata) {
+        throw new IndexNotFoundException(
+            index,
+            new IllegalStateException(
+                "index uuid doesn't match expected: [" + index.getUUID() + "] but got: [" + metadata.getIndexUUID() + "]"
+            )
+        );
     }
 
     public ImmutableOpenMap<String, IndexMetadata> indices() {

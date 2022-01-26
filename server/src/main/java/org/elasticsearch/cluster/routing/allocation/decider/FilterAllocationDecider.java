@@ -75,6 +75,8 @@ public class FilterAllocationDecider extends AllocationDecider {
         key -> Setting.stringListSetting(key, value -> validateIpValue(key, value), Property.Dynamic, Property.NodeScope)
     );
 
+    private static final Decision YES_PASS = Decision.single(Decision.Type.YES, NAME, "node passes include/exclude/require filters");
+
     private volatile DiscoveryNodeFilters clusterRequireFilters;
     private volatile DiscoveryNodeFilters clusterIncludeFilters;
     private volatile DiscoveryNodeFilters clusterExcludeFilters;
@@ -125,7 +127,7 @@ public class FilterAllocationDecider extends AllocationDecider {
         decision = shouldIndexFilter(indexMetadata, node, allocation);
         if (decision != null) return decision;
 
-        return allocation.decision(Decision.YES, NAME, "node passes include/exclude/require filters");
+        return YES_PASS;
     }
 
     private Decision shouldFilter(ShardRouting shardRouting, DiscoveryNode node, RoutingAllocation allocation) {
@@ -135,7 +137,7 @@ public class FilterAllocationDecider extends AllocationDecider {
         decision = shouldIndexFilter(allocation.metadata().getIndexSafe(shardRouting.index()), node, allocation);
         if (decision != null) return decision;
 
-        return allocation.decision(Decision.YES, NAME, "node passes include/exclude/require filters");
+        return YES_PASS;
     }
 
     private Decision shouldFilter(IndexMetadata indexMd, DiscoveryNode node, RoutingAllocation allocation) {
@@ -145,7 +147,7 @@ public class FilterAllocationDecider extends AllocationDecider {
         decision = shouldIndexFilter(indexMd, node, allocation);
         if (decision != null) return decision;
 
-        return allocation.decision(Decision.YES, NAME, "node passes include/exclude/require filters");
+        return YES_PASS;
     }
 
     private Decision shouldIndexFilter(IndexMetadata indexMd, DiscoveryNode node, RoutingAllocation allocation) {
