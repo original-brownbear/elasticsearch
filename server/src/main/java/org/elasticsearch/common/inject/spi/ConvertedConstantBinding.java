@@ -19,8 +19,6 @@ package org.elasticsearch.common.inject.spi;
 import org.elasticsearch.common.inject.Binding;
 import org.elasticsearch.common.inject.Key;
 
-import java.util.Set;
-
 /**
  * A binding created from converting a bound instance to a new type. The source binding has the same
  * binding annotation but a different type.
@@ -31,18 +29,8 @@ import java.util.Set;
 public interface ConvertedConstantBinding<T> extends Binding<T>, HasDependencies {
 
     /**
-     * Returns the converted value.
-     */
-    T getValue();
-
-    /**
      * Returns the key for the source binding.
      */
     Key<String> getSourceKey();
 
-    /**
-     * Returns a singleton set containing only the converted key.
-     */
-    @Override
-    Set<Dependency<?>> getDependencies();
 }

@@ -59,11 +59,6 @@ public final class LinkedBindingImpl<T> extends BindingImpl<T> implements Linked
     }
 
     @Override
-    public BindingImpl<T> withKey(Key<T> key) {
-        return new LinkedBindingImpl<>(getSource(), key, getScoping(), targetKey);
-    }
-
-    @Override
     public void applyTo(Binder binder) {
         getScoping().applyTo(binder.withSource(getSource()).bind(getKey()).to(getLinkedKey()));
     }

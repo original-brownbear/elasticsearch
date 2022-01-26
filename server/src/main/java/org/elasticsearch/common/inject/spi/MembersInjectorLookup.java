@@ -23,8 +23,7 @@ import org.elasticsearch.common.inject.TypeLiteral;
 import java.util.Objects;
 
 /**
- * A lookup of the members injector for a type. Lookups are created explicitly in a module using
- * {@link org.elasticsearch.common.inject.Binder#getMembersInjector(Class) getMembersInjector()} statements:
+ * A lookup of the members injector for a type.
  * <pre>
  *     MembersInjector&lt;PaymentService&gt; membersInjector
  *         = getMembersInjector(PaymentService.class);</pre>

@@ -43,18 +43,13 @@ class MembersInjectorImpl<T> implements MembersInjector<T> {
     MembersInjectorImpl(
         InjectorImpl injector,
         TypeLiteral<T> typeLiteral,
-        EncounterImpl<T> encounter,
         List<SingleMemberInjector> memberInjectors
     ) {
         this.injector = injector;
         this.typeLiteral = typeLiteral;
         this.memberInjectors = memberInjectors;
-        this.userMembersInjectors = encounter.getMembersInjectors();
-        this.injectionListeners = encounter.getInjectionListeners();
-    }
-
-    public List<SingleMemberInjector> getMemberInjectors() {
-        return memberInjectors;
+        this.userMembersInjectors = List.of();
+        this.injectionListeners = List.of();
     }
 
     @Override
@@ -74,12 +69,9 @@ class MembersInjectorImpl<T> implements MembersInjector<T> {
             return;
         }
 
-        injector.callInContext(new ContextualCallable<Void>() {
-            @Override
-            public Void call(InternalContext context) throws ErrorsException {
-                injectMembers(instance, errors, context);
-                return null;
-            }
+        injector.callInContext((ContextualCallable<Void>) context -> {
+            injectMembers(instance, errors, context);
+            return null;
         });
 
         notifyListeners(instance, errors);

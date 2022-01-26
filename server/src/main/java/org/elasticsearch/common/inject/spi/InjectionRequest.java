@@ -24,8 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * A request to inject the instance fields and methods of an instance. Requests are created
- * explicitly in a module using {@link org.elasticsearch.common.inject.Binder#requestInjection(Object)
+ * A request to inject the instance fields and methods of an instance.
  * requestInjection()} statements:
  * <pre>
  *     requestInjection(serviceInstance);</pre>
@@ -52,10 +51,6 @@ public final class InjectionRequest<T> implements Element {
 
     public T getInstance() {
         return instance;
-    }
-
-    public TypeLiteral<T> getType() {
-        return type;
     }
 
     /**

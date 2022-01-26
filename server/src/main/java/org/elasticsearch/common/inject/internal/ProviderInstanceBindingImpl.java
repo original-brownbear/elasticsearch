@@ -21,8 +21,6 @@ import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Key;
 import org.elasticsearch.common.inject.Provider;
 import org.elasticsearch.common.inject.spi.BindingTargetVisitor;
-import org.elasticsearch.common.inject.spi.Dependency;
-import org.elasticsearch.common.inject.spi.HasDependencies;
 import org.elasticsearch.common.inject.spi.InjectionPoint;
 import org.elasticsearch.common.inject.spi.ProviderInstanceBinding;
 
@@ -75,20 +73,8 @@ public final class ProviderInstanceBindingImpl<T> extends BindingImpl<T> impleme
     }
 
     @Override
-    public Set<Dependency<?>> getDependencies() {
-        return providerInstance instanceof HasDependencies
-            ? Set.copyOf(((HasDependencies) providerInstance).getDependencies())
-            : Dependency.forInjectionPoints(injectionPoints);
-    }
-
-    @Override
     public BindingImpl<T> withScoping(Scoping scoping) {
         return new ProviderInstanceBindingImpl<>(getSource(), getKey(), scoping, injectionPoints, providerInstance);
-    }
-
-    @Override
-    public BindingImpl<T> withKey(Key<T> key) {
-        return new ProviderInstanceBindingImpl<>(getSource(), key, getScoping(), injectionPoints, providerInstance);
     }
 
     @Override

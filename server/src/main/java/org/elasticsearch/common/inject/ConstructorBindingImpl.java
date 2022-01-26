@@ -28,7 +28,6 @@ import org.elasticsearch.common.inject.spi.ConstructorBinding;
 import org.elasticsearch.common.inject.spi.Dependency;
 import org.elasticsearch.common.inject.spi.InjectionPoint;
 
-import java.util.HashSet;
 import java.util.Set;
 
 class ConstructorBindingImpl<T> extends BindingImpl<T> implements ConstructorBinding<T> {
@@ -79,14 +78,6 @@ class ConstructorBindingImpl<T> extends BindingImpl<T> implements ConstructorBin
             throw new IllegalStateException("Binding is not ready");
         }
         return factory.constructorInjector.getInjectableMembers();
-    }
-
-    @Override
-    public Set<Dependency<?>> getDependencies() {
-        Set<InjectionPoint> dependencies = new HashSet<>();
-        dependencies.add(getConstructor());
-        dependencies.addAll(getInjectableMembers());
-        return Dependency.forInjectionPoints(dependencies);
     }
 
     @Override

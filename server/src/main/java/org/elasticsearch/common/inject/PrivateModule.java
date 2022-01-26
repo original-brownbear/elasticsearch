@@ -16,11 +16,6 @@
 
 package org.elasticsearch.common.inject;
 
-import org.elasticsearch.common.inject.binder.AnnotatedBindingBuilder;
-import org.elasticsearch.common.inject.binder.AnnotatedElementBuilder;
-import org.elasticsearch.common.inject.binder.LinkedBindingBuilder;
-import org.elasticsearch.common.inject.spi.Message;
-
 /**
  * A module whose configuration information is hidden from its environment by default. Only bindings
  * that are explicitly exposed will be available to other modules and to the users of the injector.
@@ -32,8 +27,7 @@ import org.elasticsearch.common.inject.spi.Message;
  * nest multiple private modules, the result is a tree of environments where the injector's
  * environment is the root.
  * <p>
- * Guice EDSL bindings can be exposed with {@link #expose(Class) expose()}. {@literal @}{@link
- * org.elasticsearch.common.inject.Provides Provides} bindings can be exposed with the {@literal @}{@link
+ * {@literal @}{@link org.elasticsearch.common.inject.Provides Provides} bindings can be exposed with the {@literal @}{@link
  * Exposed} annotation:
  * <pre>
  * public class FooBarBazModule extends PrivateModule {
@@ -94,119 +88,10 @@ public abstract class PrivateModule implements Module {
     }
 
     /**
-     * Creates bindings and other configurations private to this module. Use {@link #expose(Class)
-     * expose()} to make the bindings in this module available externally.
+     * Creates bindings and other configurations private to this module.
      */
     protected abstract void configure();
 
-    /**
-     * Makes the binding for {@code key} available to other modules and the injector.
-     */
-    protected final <T> void expose(Key<T> key) {
-        binder.expose(key);
-    }
-
-    /**
-     * Makes a binding for {@code type} available to other modules and the injector. Use {@link
-     * AnnotatedElementBuilder#annotatedWith(Class) annotatedWith()} to expose {@code type} with a
-     * binding annotation.
-     */
-    protected final AnnotatedElementBuilder expose(Class<?> type) {
-        return binder.expose(type);
-    }
-
-    /**
-     * Makes a binding for {@code type} available to other modules and the injector. Use {@link
-     * AnnotatedElementBuilder#annotatedWith(Class) annotatedWith()} to expose {@code type} with a
-     * binding annotation.
-     */
-    protected final AnnotatedElementBuilder expose(TypeLiteral<?> type) {
-        return binder.expose(type);
-    }
-
     // everything below is copied from AbstractModule
 
-    /**
-     * Returns the current binder.
-     */
-    protected final PrivateBinder binder() {
-        return binder;
-    }
-
-    /**
-     * @see Binder#bind(Key)
-     */
-    protected final <T> LinkedBindingBuilder<T> bind(Key<T> key) {
-        return binder.bind(key);
-    }
-
-    /**
-     * @see Binder#bind(TypeLiteral)
-     */
-    protected final <T> AnnotatedBindingBuilder<T> bind(TypeLiteral<T> typeLiteral) {
-        return binder.bind(typeLiteral);
-    }
-
-    /**
-     * @see Binder#bind(Class)
-     */
-    protected final <T> AnnotatedBindingBuilder<T> bind(Class<T> clazz) {
-        return binder.bind(clazz);
-    }
-
-    /**
-     * @see Binder#install(Module)
-     */
-    protected final void install(Module module) {
-        binder.install(module);
-    }
-
-    /**
-     * @see Binder#addError(String, Object[])
-     */
-    protected final void addError(String message, Object... arguments) {
-        binder.addError(message, arguments);
-    }
-
-    /**
-     * @see Binder#addError(Throwable)
-     */
-    protected final void addError(Throwable t) {
-        binder.addError(t);
-    }
-
-    /**
-     * @see Binder#addError(Message)
-     */
-    protected final void addError(Message message) {
-        binder.addError(message);
-    }
-
-    /**
-     * @see Binder#getProvider(Key)
-     */
-    protected final <T> Provider<T> getProvider(Key<T> key) {
-        return binder.getProvider(key);
-    }
-
-    /**
-     * @see Binder#getProvider(Class)
-     */
-    protected final <T> Provider<T> getProvider(Class<T> type) {
-        return binder.getProvider(type);
-    }
-
-    /**
-     * @see Binder#getMembersInjector(Class)
-     */
-    protected <T> MembersInjector<T> getMembersInjector(Class<T> type) {
-        return binder.getMembersInjector(type);
-    }
-
-    /**
-     * @see Binder#getMembersInjector(TypeLiteral)
-     */
-    protected <T> MembersInjector<T> getMembersInjector(TypeLiteral<T> type) {
-        return binder.getMembersInjector(type);
-    }
 }

@@ -16,8 +16,6 @@
 
 package org.elasticsearch.common.inject.binder;
 
-import java.lang.annotation.Annotation;
-
 /**
  * See the EDSL examples at {@link org.elasticsearch.common.inject.Binder}.
  *
@@ -26,13 +24,4 @@ import java.lang.annotation.Annotation;
  */
 public interface AnnotatedElementBuilder {
 
-    /**
-     * See the EDSL examples at {@link org.elasticsearch.common.inject.Binder}.
-     */
-    void annotatedWith(Class<? extends Annotation> annotationType);
-
-    /**
-     * See the EDSL examples at {@link org.elasticsearch.common.inject.Binder}.
-     */
-    void annotatedWith(Annotation annotation);
 }

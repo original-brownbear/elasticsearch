@@ -23,8 +23,7 @@ import org.elasticsearch.common.inject.TypeLiteral;
  * one situation but only its methods and fields injected in another, Guice will notify this
  * listener once.
  * <p>
- * Useful for extra type checking, {@linkplain TypeEncounter#register(InjectionListener)
- * registering injection listeners}, and {@code TypeEncounter#bindInterceptor(
+ * Useful for extra type checking, and {@code TypeEncounter#bindInterceptor(
  *org.elasticsearch.common.inject.matcher.Matcher, org.aopalliance.intercept.MethodInterceptor[])
  * binding method interceptors}.
  *

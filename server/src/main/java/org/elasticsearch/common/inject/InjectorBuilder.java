@@ -79,9 +79,6 @@ class InjectorBuilder {
     }
 
     Injector build() {
-        if (shellBuilder == null) {
-            throw new AssertionError("Already built, builders are not reusable.");
-        }
 
         // Synchronize while we're building up the bindings and other injector state. This ensures that
         // the JIT bindings in the parent injector don't change while we're being built
@@ -167,20 +164,20 @@ class InjectorBuilder {
      * Loads eager singletons, or all singletons if we're in Stage.PRODUCTION. Bindings discovered
      * while we're binding these singletons are not be eager.
      */
-    public void loadEagerSingletons(InjectorImpl injector, Stage stage, Errors errors) {
+    public static void loadEagerSingletons(InjectorImpl injector, Stage stage, Errors errors) {
         for (final Binding<?> binding : injector.state.getExplicitBindingsThisLevel().values()) {
             loadEagerSingletons(injector, stage, errors, (BindingImpl<?>) binding);
         }
-        for (final Binding<?> binding : injector.jitBindings.values()) {
-            loadEagerSingletons(injector, stage, errors, (BindingImpl<?>) binding);
+        for (final BindingImpl<?> binding : injector.jitBindings.values()) {
+            loadEagerSingletons(injector, stage, errors, binding);
         }
     }
 
-    private void loadEagerSingletons(InjectorImpl injector, Stage stage, final Errors errors, BindingImpl<?> binding) {
+    private static void loadEagerSingletons(InjectorImpl injector, Stage stage, final Errors errors, BindingImpl<?> binding) {
         if (binding.getScoping().isEagerSingleton(stage)) {
             try {
                 injector.callInContext(new ContextualCallable<Void>() {
-                    Dependency<?> dependency = Dependency.get(binding.getKey());
+                    final Dependency<?> dependency = Dependency.get(binding.getKey());
 
                     @Override
                     public Void call(InternalContext context) {

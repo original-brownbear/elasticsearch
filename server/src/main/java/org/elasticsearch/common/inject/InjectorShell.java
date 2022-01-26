@@ -17,7 +17,6 @@
 package org.elasticsearch.common.inject;
 
 import org.elasticsearch.common.inject.internal.Errors;
-import org.elasticsearch.common.inject.internal.ErrorsException;
 import org.elasticsearch.common.inject.internal.InternalContext;
 import org.elasticsearch.common.inject.internal.InternalFactory;
 import org.elasticsearch.common.inject.internal.PrivateElementsImpl;
@@ -210,7 +209,7 @@ class InjectorShell {
         }
 
         @Override
-        public Injector get(Errors errors, InternalContext context, Dependency<?> dependency) throws ErrorsException {
+        public Injector get(Errors errors, InternalContext context, Dependency<?> dependency) {
             return injector;
         }
 

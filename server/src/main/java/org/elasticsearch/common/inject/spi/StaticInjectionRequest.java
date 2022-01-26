@@ -46,10 +46,6 @@ public final class StaticInjectionRequest implements Element {
         return source;
     }
 
-    public Class<?> getType() {
-        return type;
-    }
-
     /**
      * Returns the static methods and fields of {@code type} that will be injected to fulfill this
      * request.

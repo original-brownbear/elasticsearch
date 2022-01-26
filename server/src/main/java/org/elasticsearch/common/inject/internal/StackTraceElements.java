@@ -33,18 +33,12 @@ public class StackTraceElements {
 
         Class<?> declaringClass = member.getDeclaringClass();
 
-        String fileName = null;
-        int lineNumber = -1;
-
         Class<? extends Member> memberType = MoreTypes.memberType(member);
         String memberName = memberType == Constructor.class ? "<init>" : member.getName();
-        return new StackTraceElement(declaringClass.getName(), memberName, fileName, lineNumber);
+        return new StackTraceElement(declaringClass.getName(), memberName, null, -1);
     }
 
     public static Object forType(Class<?> implementation) {
-        String fileName = null;
-        int lineNumber = -1;
-
-        return new StackTraceElement(implementation.getName(), "class", fileName, lineNumber);
+        return new StackTraceElement(implementation.getName(), "class", null, -1);
     }
 }

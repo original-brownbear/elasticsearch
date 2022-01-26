@@ -74,17 +74,6 @@ public final class Guice {
      * stage.
      *
      * @throws CreationException if one or more errors occur during Injector
-     *                           creation
-     */
-    public static Injector createInjector(Stage stage, Module... modules) {
-        return createInjector(stage, Arrays.asList(modules));
-    }
-
-    /**
-     * Creates an injector for the given set of modules, in a given development
-     * stage.
-     *
-     * @throws CreationException if one or more errors occur during Injector
      *                           construction
      */
     public static Injector createInjector(Stage stage, Iterable<? extends Module> modules) {

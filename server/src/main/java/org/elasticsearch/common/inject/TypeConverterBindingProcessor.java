@@ -86,7 +86,7 @@ class TypeConverterBindingProcessor extends AbstractProcessor {
                 }
             });
 
-            internalConvertToTypes(new AbstractMatcher<TypeLiteral<?>>() {
+            internalConvertToTypes(new AbstractMatcher<>() {
                 @Override
                 public boolean matches(TypeLiteral<?> typeLiteral) {
                     return typeLiteral.getRawType() == Class.class;
@@ -149,7 +149,7 @@ class TypeConverterBindingProcessor extends AbstractProcessor {
     }
 
     private void convertToClasses(final Matcher<? super Class<?>> typeMatcher, TypeConverter converter) {
-        internalConvertToTypes(new AbstractMatcher<TypeLiteral<?>>() {
+        internalConvertToTypes(new AbstractMatcher<>() {
             @Override
             public boolean matches(TypeLiteral<?> typeLiteral) {
                 Type type = typeLiteral.getType();

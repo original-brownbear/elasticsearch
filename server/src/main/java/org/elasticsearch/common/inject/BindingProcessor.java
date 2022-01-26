@@ -50,7 +50,7 @@ import static java.util.Collections.unmodifiableSet;
 import static org.elasticsearch.common.util.set.Sets.newHashSet;
 
 /**
- * Handles {@link Binder#bind} and {@link Binder#bindConstant} elements.
+ * Handles {@link Binder#bind} elements.
  *
  * @author crazybob@google.com (Bob Lee)
  * @author jessewilson@google.com (Jesse Wilson)
@@ -109,7 +109,7 @@ class BindingProcessor extends AbstractProcessor {
             public Void visit(ProviderInstanceBinding<? extends T> binding) {
                 Provider<? extends T> provider = binding.getProviderInstance();
                 Set<InjectionPoint> injectionPoints = binding.getInjectionPoints();
-                Initializable<Provider<? extends T>> initializable = initializer.<Provider<? extends T>>requestInjection(
+                Initializable<Provider<? extends T>> initializable = initializer.requestInjection(
                     injector,
                     provider,
                     source,
@@ -129,7 +129,7 @@ class BindingProcessor extends AbstractProcessor {
                 InternalFactory<? extends T> scopedFactory = Scopes.scope(
                     key,
                     injector,
-                    (InternalFactory<? extends T>) boundProviderFactory,
+                    boundProviderFactory,
                     scoping
                 );
                 putBinding(new LinkedProviderBindingImpl<>(injector, key, source, scopedFactory, scoping, providerKey));
@@ -173,14 +173,11 @@ class BindingProcessor extends AbstractProcessor {
                     return null;
                 }
 
-                uninitializedBindings.add(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            ((InjectorImpl) binding.getInjector()).initializeBinding(binding, errors.withSource(source));
-                        } catch (ErrorsException e) {
-                            errors.merge(e.getErrors());
-                        }
+                uninitializedBindings.add(() -> {
+                    try {
+                        ((InjectorImpl) binding.getInjector()).initializeBinding(binding, errors.withSource(source));
+                    } catch (ErrorsException e) {
+                        errors.merge(e.getErrors());
                     }
                 });
 
@@ -229,7 +226,7 @@ class BindingProcessor extends AbstractProcessor {
         Annotations.checkForMisplacedScopeAnnotations(key.getRawType(), source, errors);
     }
 
-    <T> UntargettedBindingImpl<T> invalidBinding(InjectorImpl injector, Key<T> key, Object source) {
+    static <T> UntargettedBindingImpl<T> invalidBinding(InjectorImpl injector, Key<T> key, Object source) {
         return new UntargettedBindingImpl<>(injector, key, source);
     }
 
@@ -271,7 +268,7 @@ class BindingProcessor extends AbstractProcessor {
      * @param original the binding in the parent injector (candidate for an exposing binding)
      * @param binding  the binding to check (candidate for the exposed binding)
      */
-    private boolean isOkayDuplicate(Binding<?> original, BindingImpl<?> binding) {
+    private static boolean isOkayDuplicate(Binding<?> original, BindingImpl<?> binding) {
         if (original instanceof ExposedBindingImpl<?> exposed) {
             InjectorImpl exposedFrom = (InjectorImpl) exposed.getPrivateElements().getInjector();
             return (exposedFrom == binding.getInjector());

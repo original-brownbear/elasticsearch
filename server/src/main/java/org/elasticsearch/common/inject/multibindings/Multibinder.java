@@ -27,7 +27,6 @@ import org.elasticsearch.common.inject.Provider;
 import org.elasticsearch.common.inject.TypeLiteral;
 import org.elasticsearch.common.inject.binder.LinkedBindingBuilder;
 import org.elasticsearch.common.inject.internal.Errors;
-import org.elasticsearch.common.inject.spi.Dependency;
 import org.elasticsearch.common.inject.spi.HasDependencies;
 import org.elasticsearch.common.inject.spi.Message;
 import org.elasticsearch.common.inject.util.Types;
@@ -36,7 +35,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -44,7 +42,6 @@ import java.util.Set;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
-import static java.util.Collections.unmodifiableSet;
 
 /**
  * An API to bind multiple values separately, only to later inject them as a
@@ -112,54 +109,6 @@ public abstract class Multibinder<T> {
         return newSetBinder(binder, TypeLiteral.get(type));
     }
 
-    /**
-     * Returns a new multibinder that collects instances of {@code type} in a {@link Set} that is
-     * itself bound with {@code annotation}.
-     */
-    public static <T> Multibinder<T> newSetBinder(Binder binder, TypeLiteral<T> type, Annotation annotation) {
-        binder = binder.skipSources(RealMultibinder.class, Multibinder.class);
-        RealMultibinder<T> result = new RealMultibinder<>(
-            binder,
-            type,
-            annotation.toString(),
-            Key.get(Multibinder.<T>setOf(type), annotation)
-        );
-        binder.install(result);
-        return result;
-    }
-
-    /**
-     * Returns a new multibinder that collects instances of {@code type} in a {@link Set} that is
-     * itself bound with {@code annotation}.
-     */
-    public static <T> Multibinder<T> newSetBinder(Binder binder, Class<T> type, Annotation annotation) {
-        return newSetBinder(binder, TypeLiteral.get(type), annotation);
-    }
-
-    /**
-     * Returns a new multibinder that collects instances of {@code type} in a {@link Set} that is
-     * itself bound with {@code annotationType}.
-     */
-    public static <T> Multibinder<T> newSetBinder(Binder binder, TypeLiteral<T> type, Class<? extends Annotation> annotationType) {
-        binder = binder.skipSources(RealMultibinder.class, Multibinder.class);
-        RealMultibinder<T> result = new RealMultibinder<>(
-            binder,
-            type,
-            "@" + annotationType.getName(),
-            Key.get(Multibinder.<T>setOf(type), annotationType)
-        );
-        binder.install(result);
-        return result;
-    }
-
-    /**
-     * Returns a new multibinder that collects instances of {@code type} in a {@link Set} that is
-     * itself bound with {@code annotationType}.
-     */
-    public static <T> Multibinder<T> newSetBinder(Binder binder, Class<T> type, Class<? extends Annotation> annotationType) {
-        return newSetBinder(binder, TypeLiteral.get(type), annotationType);
-    }
-
     @SuppressWarnings("unchecked") // wrapping a T in a Set safely returns a Set<T>
     private static <T> TypeLiteral<Set<T>> setOf(TypeLiteral<T> elementType) {
         Type type = Types.setOf(elementType.getType());
@@ -210,7 +159,6 @@ public abstract class Multibinder<T> {
 
         /* a provider for each element in the set. null until initialization, non-null afterwards */
         private List<Provider<T>> providers;
-        private Set<Dependency<?>> dependencies;
 
         private RealMultibinder(Binder binder, TypeLiteral<T> elementType, String setName, Key<Set<T>> setKey) {
             this.binder = Objects.requireNonNull(binder, "binder");
@@ -241,17 +189,12 @@ public abstract class Multibinder<T> {
         @Inject
         public void initialize(Injector injector) {
             providers = new ArrayList<>();
-            Set<Dependency<?>> dependencies = new HashSet<>();
-            for (Binding<?> entry : injector.findBindingsByType(elementType)) {
+            for (Binding<T> entry : injector.findBindingsByType(elementType)) {
                 if (keyMatches(entry.getKey())) {
-                    @SuppressWarnings("unchecked") // protected by findBindingsByType()
-                    Binding<T> binding = (Binding<T>) entry;
-                    providers.add(binding.getProvider());
-                    dependencies.add(Dependency.get(binding.getKey()));
+                    providers.add(entry.getProvider());
                 }
             }
 
-            this.dependencies = unmodifiableSet(dependencies);
             this.binder = null;
         }
 
@@ -284,11 +227,6 @@ public abstract class Multibinder<T> {
 
         Key<Set<T>> getSetKey() {
             return setKey;
-        }
-
-        @Override
-        public Set<Dependency<?>> getDependencies() {
-            return dependencies;
         }
 
         @Override

@@ -60,11 +60,6 @@ public final class LinkedProviderBindingImpl<T> extends BindingImpl<T> implement
     }
 
     @Override
-    public BindingImpl<T> withKey(Key<T> key) {
-        return new LinkedProviderBindingImpl<>(getSource(), key, getScoping(), providerKey);
-    }
-
-    @Override
     public void applyTo(Binder binder) {
         getScoping().applyTo(binder.withSource(getSource()).bind(getKey()).toProvider(getProviderKey()));
     }

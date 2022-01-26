@@ -16,9 +16,6 @@
 
 package org.elasticsearch.common.inject.spi;
 
-import org.elasticsearch.common.inject.Key;
-import org.elasticsearch.common.inject.MembersInjector;
-import org.elasticsearch.common.inject.Provider;
 import org.elasticsearch.common.inject.TypeLiteral;
 
 /**
@@ -33,69 +30,4 @@ import org.elasticsearch.common.inject.TypeLiteral;
 @SuppressWarnings("overloads")
 public interface TypeEncounter<I> {
 
-    /**
-     * Records an error message for type {@code I} which will be presented to the user at a later
-     * time. Unlike throwing an exception, this enable us to continue configuring the Injector and
-     * discover more errors. Uses {@link String#format(String, Object[])} to insert the arguments
-     * into the message.
-     */
-    void addError(String message, Object... arguments);
-
-    /**
-     * Records an exception for type {@code I}, the full details of which will be logged, and the
-     * message of which will be presented to the user at a later time. If your type listener calls
-     * something that you worry may fail, you should catch the exception and pass it to this method.
-     */
-    void addError(Throwable t);
-
-    /**
-     * Records an error message to be presented to the user at a later time.
-     */
-    void addError(Message message);
-
-    /**
-     * Returns the provider used to obtain instances for the given injection key. The returned
-     * provider will not be valid until the injector has been created. The provider will throw an
-     * {@code IllegalStateException} if you try to use it beforehand.
-     */
-    <T> Provider<T> getProvider(Key<T> key);
-
-    /**
-     * Returns the provider used to obtain instances for the given injection type. The returned
-     * provider will not be valid until the injetor has been created. The provider will throw an
-     * {@code IllegalStateException} if you try to use it beforehand.
-     */
-    <T> Provider<T> getProvider(Class<T> type);
-
-    /**
-     * Returns the members injector used to inject dependencies into methods and fields on instances
-     * of the given type {@code T}. The returned members injector will not be valid until the main
-     * injector has been created. The members injector will throw an {@code IllegalStateException}
-     * if you try to use it beforehand.
-     *
-     * @param typeLiteral type to get members injector for
-     */
-    <T> MembersInjector<T> getMembersInjector(TypeLiteral<T> typeLiteral);
-
-    /**
-     * Returns the members injector used to inject dependencies into methods and fields on instances
-     * of the given type {@code T}. The returned members injector will not be valid until the main
-     * injector has been created. The members injector will throw an {@code IllegalStateException}
-     * if you try to use it beforehand.
-     *
-     * @param type type to get members injector for
-     */
-    <T> MembersInjector<T> getMembersInjector(Class<T> type);
-
-    /**
-     * Registers a members injector for type {@code I}. Guice will use the members injector after its
-     * performed its own injections on an instance of {@code I}.
-     */
-    void register(MembersInjector<? super I> membersInjector);
-
-    /**
-     * Registers an injection listener for type {@code I}. Guice will notify the listener after all
-     * injections have been performed on an instance of {@code I}.
-     */
-    void register(InjectionListener<? super I> listener);
 }

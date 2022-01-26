@@ -20,13 +20,8 @@ import org.elasticsearch.common.inject.Binder;
 import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Key;
 import org.elasticsearch.common.inject.spi.BindingTargetVisitor;
-import org.elasticsearch.common.inject.spi.Dependency;
 import org.elasticsearch.common.inject.spi.ExposedBinding;
 import org.elasticsearch.common.inject.spi.PrivateElements;
-
-import java.util.Set;
-
-import static java.util.Collections.singleton;
 
 public class ExposedBindingImpl<T> extends BindingImpl<T> implements ExposedBinding<T> {
 
@@ -48,11 +43,6 @@ public class ExposedBindingImpl<T> extends BindingImpl<T> implements ExposedBind
     }
 
     @Override
-    public Set<Dependency<?>> getDependencies() {
-        return singleton(Dependency.get(Key.get(Injector.class)));
-    }
-
-    @Override
     public PrivateElements getPrivateElements() {
         return privateElements;
     }
@@ -60,11 +50,6 @@ public class ExposedBindingImpl<T> extends BindingImpl<T> implements ExposedBind
     @Override
     public BindingImpl<T> withScoping(Scoping scoping) {
         return new ExposedBindingImpl<>(getSource(), getKey(), scoping, privateElements);
-    }
-
-    @Override
-    public ExposedBindingImpl<T> withKey(Key<T> key) {
-        return new ExposedBindingImpl<>(getSource(), key, getScoping(), privateElements);
     }
 
     @Override

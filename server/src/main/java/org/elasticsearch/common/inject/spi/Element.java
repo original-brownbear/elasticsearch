@@ -23,7 +23,7 @@ import org.elasticsearch.common.inject.Binder;
  * <p>
  * The elements of a module can be inspected, validated and rewritten. Use {@link
  * Elements#getElements(org.elasticsearch.common.inject.Module[]) Elements.getElements()} to read the elements
- * from a module, and {@link Elements#getModule(Iterable) Elements.getModule()} to rewrite them.
+ * from a module.
  * This can be used for static analysis and generation of Guice modules.
  *
  * @author jessewilson@google.com (Jesse Wilson)

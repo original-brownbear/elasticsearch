@@ -43,7 +43,7 @@ class ConstructorInjector<T> {
         ConstructionProxy<T> constructionProxy,
         SingleParameterInjector<?>[] parameterInjectors,
         MembersInjectorImpl<T> membersInjector
-    ) throws ErrorsException {
+    ) {
         this.injectableMembers = injectableMembers;
         this.constructionProxy = constructionProxy;
         this.parameterInjectors = parameterInjectors;

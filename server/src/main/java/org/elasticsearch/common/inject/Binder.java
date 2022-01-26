@@ -17,7 +17,6 @@
 package org.elasticsearch.common.inject;
 
 import org.elasticsearch.common.inject.binder.AnnotatedBindingBuilder;
-import org.elasticsearch.common.inject.binder.AnnotatedConstantBindingBuilder;
 import org.elasticsearch.common.inject.binder.LinkedBindingBuilder;
 import org.elasticsearch.common.inject.matcher.Matcher;
 import org.elasticsearch.common.inject.spi.Message;
@@ -161,13 +160,6 @@ import java.lang.annotation.Annotation;
  *         .annotatedWith(Names.named("blue"))
  *         .to(BlueService.class);</pre>
  *
- * Differentiating by names is a common enough use case that we provided a
- * standard annotation, {@link org.elasticsearch.common.inject.name.Named @Named}.  Because of
- * Guice's library support, binding by name is quite easier than in the
- * arbitrary binding annotation case we just saw.  However, remember that these
- * names will live in a single flat namespace with all the other names used in
- * your application.
- *
  * <p>The above list of examples is far from exhaustive.  If you can think of
  * how the concepts of one example might coexist with the concepts from another,
  * you can most likely weave the two together.  If the two concepts make no
@@ -176,8 +168,7 @@ import java.lang.annotation.Annotation;
  * the problems at runtime, as soon as you try to create your Injector.
  *
  * <p>The other methods of Binder such as {@link #bindScope},
- * {@link #install}, {@link #requestStaticInjection},
- * {@link #addError} and {@link #currentStage} are not part of the Binding EDSL;
+ * {@link #install}, {@link #requestStaticInjection} are not part of the Binding EDSL;
  * you can learn how to use these in the usual way, from the method
  * documentation.
  *
@@ -208,11 +199,6 @@ public interface Binder {
     <T> AnnotatedBindingBuilder<T> bind(Class<T> type);
 
     /**
-     * See the EDSL examples at {@link Binder}.
-     */
-    AnnotatedConstantBindingBuilder bindConstant();
-
-    /**
      * Upon successful creation, the {@link Injector} will inject instance fields
      * and methods of the given object.
      *
@@ -221,15 +207,6 @@ public interface Binder {
      * @since 2.0
      */
     <T> void requestInjection(TypeLiteral<T> type, T instance);
-
-    /**
-     * Upon successful creation, the {@link Injector} will inject instance fields
-     * and methods of the given object.
-     *
-     * @param instance for which members will be injected
-     * @since 2.0
-     */
-    void requestInjection(Object instance);
 
     /**
      * Upon successful creation, the {@link Injector} will inject static fields
@@ -243,11 +220,6 @@ public interface Binder {
      * Uses the given module to configure more bindings.
      */
     void install(Module module);
-
-    /**
-     * Gets the current stage.
-     */
-    Stage currentStage();
 
     /**
      * Records an error message which will be presented to the user at a later
@@ -284,16 +256,6 @@ public interface Binder {
     <T> Provider<T> getProvider(Key<T> key);
 
     /**
-     * Returns the provider used to obtain instances for the given injection type.
-     * The returned provider will not be valid until the {@link Injector} has been
-     * created. The provider will throw an {@code IllegalStateException} if you
-     * try to use it beforehand.
-     *
-     * @since 2.0
-     */
-    <T> Provider<T> getProvider(Class<T> type);
-
-    /**
      * Returns the members injector used to inject dependencies into methods and fields on instances
      * of the given type {@code T}. The returned members injector will not be valid until the main
      * {@link Injector} has been created. The members injector will throw an {@code
@@ -303,17 +265,6 @@ public interface Binder {
      * @since 2.0
      */
     <T> MembersInjector<T> getMembersInjector(TypeLiteral<T> typeLiteral);
-
-    /**
-     * Returns the members injector used to inject dependencies into methods and fields on instances
-     * of the given type {@code T}. The returned members injector will not be valid until the main
-     * {@link Injector} has been created. The members injector will throw an {@code
-     * IllegalStateException} if you try to use it beforehand.
-     *
-     * @param type type to get members injector for
-     * @since 2.0
-     */
-    <T> MembersInjector<T> getMembersInjector(Class<T> type);
 
     /**
      * Binds a type converter. The injector will use the given converter to

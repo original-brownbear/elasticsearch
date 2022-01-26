@@ -22,7 +22,7 @@ import org.elasticsearch.common.inject.spi.MembersInjectorLookup;
 import org.elasticsearch.common.inject.spi.ProviderLookup;
 
 /**
- * Handles {@link Binder#getProvider} and {@link Binder#getMembersInjector(TypeLiteral)} commands.
+ * Handles {@link Binder#getMembersInjector(TypeLiteral)} commands.
  *
  * @author crazybob@google.com (Bob Lee)
  * @author jessewilson@google.com (Jesse Wilson)

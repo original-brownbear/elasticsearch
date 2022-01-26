@@ -16,8 +16,6 @@
 
 package org.elasticsearch.common.inject.spi;
 
-import java.util.Set;
-
 /**
  * Implemented by {@link org.elasticsearch.common.inject.Binding bindings}, {@link org.elasticsearch.common.inject.Provider
  * providers} and instances that expose their dependencies explicitly.
@@ -27,12 +25,4 @@ import java.util.Set;
  */
 public interface HasDependencies {
 
-    /**
-     * Returns the known dependencies for this type. If this has dependencies whose values are not
-     * known statically, a dependency for the {@link org.elasticsearch.common.inject.Injector Injector} will be
-     * included in the returned set.
-     *
-     * @return a possibly empty set
-     */
-    Set<Dependency<?>> getDependencies();
 }

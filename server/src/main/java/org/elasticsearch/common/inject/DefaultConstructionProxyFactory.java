@@ -60,10 +60,6 @@ class DefaultConstructionProxyFactory<T> implements ConstructionProxyFactory<T> 
                 return injectionPoint;
             }
 
-            @Override
-            public Constructor<T> getConstructor() {
-                return constructor;
-            }
         };
     }
 }

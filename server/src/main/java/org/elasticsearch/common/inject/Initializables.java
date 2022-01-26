@@ -17,7 +17,6 @@
 package org.elasticsearch.common.inject;
 
 import org.elasticsearch.common.inject.internal.Errors;
-import org.elasticsearch.common.inject.internal.ErrorsException;
 
 /**
  * @author jessewilson@google.com (Jesse Wilson)
@@ -30,7 +29,7 @@ class Initializables {
     static <T> Initializable<T> of(final T instance) {
         return new Initializable<T>() {
             @Override
-            public T get(Errors errors) throws ErrorsException {
+            public T get(Errors errors) {
                 return instance;
             }
 

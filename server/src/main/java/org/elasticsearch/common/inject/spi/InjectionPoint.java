@@ -60,12 +60,6 @@ public final class InjectionPoint {
     private final Member member;
     private final List<Dependency<?>> dependencies;
 
-    private InjectionPoint(Member member, List<Dependency<?>> dependencies, boolean optional) {
-        this.member = member;
-        this.dependencies = dependencies;
-        this.optional = optional;
-    }
-
     InjectionPoint(TypeLiteral<?> type, Method method) {
         this.member = method;
 
@@ -223,19 +217,6 @@ public final class InjectionPoint {
             errors.missingConstructor(rawType);
             throw new ConfigurationException(errors.getMessages());
         }
-    }
-
-    /**
-     * Returns a new injection point for the injectable constructor of {@code type}.
-     *
-     * @param type a concrete type with exactly one constructor annotated {@literal @}{@link Inject},
-     *             or a no-arguments constructor that is not private.
-     * @throws ConfigurationException if there is no injectable constructor, more than one injectable
-     *                                constructor, or if parameters of the injectable constructor are malformed, such as a
-     *                                parameter with multiple binding annotations.
-     */
-    public static InjectionPoint forConstructorOf(Class<?> type) {
-        return forConstructorOf(TypeLiteral.get(type));
     }
 
     /**
@@ -405,7 +386,7 @@ public final class InjectionPoint {
             }
         };
 
-        Factory<Method> METHODS = new Factory<Method>() {
+        Factory<Method> METHODS = new Factory<>() {
             @Override
             public Method[] getMembers(Class<?> type) {
                 return type.getMethods();

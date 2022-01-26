@@ -483,12 +483,7 @@ public final class Errors {
         }
 
         List<Message> result = new ArrayList<>(root.errors);
-        CollectionUtil.timSort(result, new Comparator<Message>() {
-            @Override
-            public int compare(Message a, Message b) {
-                return a.getSource().compareTo(b.getSource());
-            }
-        });
+        CollectionUtil.timSort(result, Comparator.comparing(Message::getSource));
 
         return unmodifiableList(result);
     }
@@ -597,17 +592,17 @@ public final class Errors {
         abstract String toString(T t);
     }
 
-    private static final Collection<Converter<?>> converters = Arrays.asList(new Converter<Class>(Class.class) {
+    private static final Collection<Converter<?>> converters = Arrays.asList(new Converter<>(Class.class) {
         @Override
         public String toString(Class c) {
             return c.getName();
         }
-    }, new Converter<Member>(Member.class) {
+    }, new Converter<>(Member.class) {
         @Override
         public String toString(Member member) {
             return MoreTypes.toString(member);
         }
-    }, new Converter<Key>(Key.class) {
+    }, new Converter<>(Key.class) {
         @Override
         public String toString(Key key) {
             if (key.getAnnotationType() != null) {

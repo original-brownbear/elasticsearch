@@ -30,11 +30,9 @@ import org.elasticsearch.common.inject.Scope;
 import org.elasticsearch.common.inject.Stage;
 import org.elasticsearch.common.inject.TypeLiteral;
 import org.elasticsearch.common.inject.binder.AnnotatedBindingBuilder;
-import org.elasticsearch.common.inject.binder.AnnotatedConstantBindingBuilder;
 import org.elasticsearch.common.inject.binder.AnnotatedElementBuilder;
 import org.elasticsearch.common.inject.internal.AbstractBindingBuilder;
 import org.elasticsearch.common.inject.internal.BindingBuilder;
-import org.elasticsearch.common.inject.internal.ConstantBindingBuilderImpl;
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.ExposureBuilder;
 import org.elasticsearch.common.inject.internal.PrivateElementsImpl;
@@ -70,33 +68,12 @@ public final class Elements {
     /**
      * Records the elements executed by {@code modules}.
      */
-    public static List<Element> getElements(Iterable<? extends Module> modules) {
-        return getElements(Stage.DEVELOPMENT, modules);
-    }
-
-    /**
-     * Records the elements executed by {@code modules}.
-     */
     public static List<Element> getElements(Stage stage, Iterable<? extends Module> modules) {
         RecordingBinder binder = new RecordingBinder(stage);
         for (Module module : modules) {
             binder.install(module);
         }
         return Collections.unmodifiableList(binder.elements);
-    }
-
-    /**
-     * Returns the module composed of {@code elements}.
-     */
-    public static Module getModule(final Iterable<? extends Element> elements) {
-        return new Module() {
-            @Override
-            public void configure(Binder binder) {
-                for (Element element : elements) {
-                    element.applyTo(binder);
-                }
-            }
-        };
     }
 
     private static class RecordingBinder implements Binder, PrivateBinder {
@@ -121,7 +98,6 @@ public final class Elements {
                 Elements.class,
                 RecordingBinder.class,
                 AbstractModule.class,
-                ConstantBindingBuilderImpl.class,
                 AbstractBindingBuilder.class,
                 BindingBuilder.class
             );
@@ -165,12 +141,6 @@ public final class Elements {
         }
 
         @Override
-        @SuppressWarnings("unchecked") // it is safe to use the type literal for the raw type
-        public void requestInjection(Object instance) {
-            requestInjection((TypeLiteral) TypeLiteral.get(instance.getClass()), instance);
-        }
-
-        @Override
         public <T> void requestInjection(TypeLiteral<T> type, T instance) {
             elements.add(new InjectionRequest<>(getSource(), type, instance));
         }
@@ -180,11 +150,6 @@ public final class Elements {
             final MembersInjectorLookup<T> element = new MembersInjectorLookup<>(getSource(), typeLiteral);
             elements.add(element);
             return element.getMembersInjector();
-        }
-
-        @Override
-        public <T> MembersInjector<T> getMembersInjector(Class<T> type) {
-            return getMembersInjector(TypeLiteral.get(type));
         }
 
         @Override
@@ -225,11 +190,6 @@ public final class Elements {
         }
 
         @Override
-        public Stage currentStage() {
-            return stage;
-        }
-
-        @Override
         public void addError(String message, Object... arguments) {
             elements.add(new Message(getSource(), Errors.format(message, arguments)));
         }
@@ -261,20 +221,10 @@ public final class Elements {
         }
 
         @Override
-        public AnnotatedConstantBindingBuilder bindConstant() {
-            return new ConstantBindingBuilderImpl<Void>(this, elements, getSource());
-        }
-
-        @Override
         public <T> Provider<T> getProvider(final Key<T> key) {
             final ProviderLookup<T> element = new ProviderLookup<>(getSource(), key);
             elements.add(element);
             return element.getProvider();
-        }
-
-        @Override
-        public <T> Provider<T> getProvider(Class<T> type) {
-            return getProvider(Key.get(type));
         }
 
         @Override
@@ -310,34 +260,20 @@ public final class Elements {
             exposeInternal(key);
         }
 
-        @Override
-        public AnnotatedElementBuilder expose(Class<?> type) {
-            return exposeInternal(Key.get(type));
-        }
-
-        @Override
-        public AnnotatedElementBuilder expose(TypeLiteral<?> type) {
-            return exposeInternal(Key.get(type));
-        }
-
         private <T> AnnotatedElementBuilder exposeInternal(Key<T> key) {
             if (privateElements == null) {
                 addError("Cannot expose %s on a standard binder. " + "Exposed bindings are only applicable to private binders.", key);
                 return new AnnotatedElementBuilder() {
-                    @Override
-                    public void annotatedWith(Class<? extends Annotation> annotationType) {}
 
-                    @Override
-                    public void annotatedWith(Annotation annotation) {}
                 };
             }
 
-            ExposureBuilder<T> builder = new ExposureBuilder<>(this, getSource(), key);
+            ExposureBuilder<T> builder = new ExposureBuilder<>(getSource(), key);
             privateElements.addExposureBuilder(builder);
             return builder;
         }
 
-        private static Logger logger = LogManager.getLogger(Elements.class);
+        private static final Logger logger = LogManager.getLogger(Elements.class);
 
         protected Object getSource() {
             Object ret;

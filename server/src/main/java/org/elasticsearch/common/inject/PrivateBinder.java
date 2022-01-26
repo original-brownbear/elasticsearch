@@ -16,8 +16,6 @@
 
 package org.elasticsearch.common.inject;
 
-import org.elasticsearch.common.inject.binder.AnnotatedElementBuilder;
-
 /**
  * Returns a binder whose configuration information is hidden from its environment by default. See
  * {@link org.elasticsearch.common.inject.PrivateModule PrivateModule} for details.
@@ -31,20 +29,6 @@ public interface PrivateBinder extends Binder {
      * Makes the binding for {@code key} available to the enclosing environment
      */
     void expose(Key<?> key);
-
-    /**
-     * Makes a binding for {@code type} available to the enclosing environment. Use {@link
-     * org.elasticsearch.common.inject.binder.AnnotatedElementBuilder#annotatedWith(Class) annotatedWith()} to expose {@code type} with a
-     * binding annotation.
-     */
-    AnnotatedElementBuilder expose(Class<?> type);
-
-    /**
-     * Makes a binding for {@code type} available to the enclosing environment. Use {@link
-     * AnnotatedElementBuilder#annotatedWith(Class) annotatedWith()} to expose {@code type} with a
-     * binding annotation.
-     */
-    AnnotatedElementBuilder expose(TypeLiteral<?> type);
 
     @Override
     PrivateBinder withSource(Object source);
