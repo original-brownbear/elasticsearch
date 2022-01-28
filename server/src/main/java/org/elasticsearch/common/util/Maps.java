@@ -22,9 +22,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.Map.entry;
 
 public class Maps {
 
@@ -68,9 +65,39 @@ public class Maps {
         Objects.requireNonNull(map);
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
+        final V existing = map.get(key);
+        if (existing == null) {
+            return copyMapWithAddedEntry(map, key, value);
+        }
+        return copyMapWithReplacedEntry(map, key, value);
+    }
+
+    /**
+     * Replaces an existing entry in an immutable map by copying the underlying map and replacing the existing entry.
+     *
+     * @param map   the immutable map to replace in
+     * @param key   the key of the new entry
+     * @param value the value of the new entry
+     * @param <K>   the type of the keys in the map
+     * @param <V>   the type of the values in the map
+     * @return an immutable map that contains the items from the specified map and a mapping from the specified key to the specified value
+     */
+    @SuppressWarnings("unchecked")
+    public static <K, V> Map<K, V> copyMapWithReplacedEntry(Map<K, V> map, K key, V value) {
         assert checkIsImmutableMap(map, key, value);
-        return Stream.concat(map.entrySet().stream().filter(k -> key.equals(k.getKey()) == false), Stream.of(entry(key, value)))
-            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        @SuppressWarnings("rawtypes")
+        final Map.Entry<K, V>[] entries = new Map.Entry[map.size()];
+        int i = 0;
+        for (Map.Entry<K, V> existingEntry : map.entrySet()) {
+            final Map.Entry<K, V> newEntry;
+            if (existingEntry.getKey().equals(key)) {
+                newEntry = Map.entry(key, value);
+            } else {
+                newEntry = existingEntry;
+            }
+            entries[i++] = newEntry;
+        }
+        return Map.ofEntries(entries);
     }
 
     /**

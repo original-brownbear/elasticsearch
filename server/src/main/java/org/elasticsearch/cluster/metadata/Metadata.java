@@ -1387,11 +1387,11 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
             previousIndicesLookup = null;
 
             Map<String, DataStream> existingDataStream = Optional.ofNullable((DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE))
-                .map(dsmd -> new HashMap<>(dsmd.dataStreams()))
-                .orElse(new HashMap<>());
+                .map(DataStreamMetadata::dataStreams)
+                .orElse(Map.of());
             Map<String, DataStreamAlias> dataStreamAliases = Optional.ofNullable(
                 (DataStreamMetadata) this.customs.get(DataStreamMetadata.TYPE)
-            ).map(dsmd -> new HashMap<>(dsmd.getDataStreamAliases())).orElse(new HashMap<>());
+            ).map(DataStreamMetadata::getDataStreamAliases).orElse(Map.of());
 
             if (existingDataStream.containsKey(dataStream) == false) {
                 throw new IllegalArgumentException("alias [" + aliasName + "] refers to a non existing data stream [" + dataStream + "]");
@@ -1404,20 +1404,20 @@ public class Metadata implements Iterable<IndexMetadata>, Diffable<Metadata>, To
                 filterAsMap = null;
             }
 
+            final Map<String, DataStreamAlias> updatedAliasMap;
             DataStreamAlias alias = dataStreamAliases.get(aliasName);
             if (alias == null) {
                 String writeDataStream = isWriteDataStream != null && isWriteDataStream ? dataStream : null;
                 alias = new DataStreamAlias(aliasName, List.of(dataStream), writeDataStream, filterAsMap);
+                updatedAliasMap = Maps.copyMapWithAddedEntry(dataStreamAliases, aliasName, alias);
             } else {
                 DataStreamAlias copy = alias.update(dataStream, isWriteDataStream, filterAsMap);
                 if (copy == alias) {
                     return false;
                 }
-                alias = copy;
+                updatedAliasMap = Maps.copyMapWithReplacedEntry(dataStreamAliases, aliasName, copy);
             }
-            dataStreamAliases.put(aliasName, alias);
-
-            this.customs.put(DataStreamMetadata.TYPE, new DataStreamMetadata(existingDataStream, dataStreamAliases));
+            this.customs.put(DataStreamMetadata.TYPE, new DataStreamMetadata(existingDataStream, updatedAliasMap));
             return true;
         }
 
