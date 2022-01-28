@@ -84,17 +84,13 @@ public class Maps {
     @SuppressWarnings("unchecked")
     public static <K, V> Map<K, V> copyMapWithReplacedEntry(Map<K, V> map, K key, V value) {
         assert checkIsImmutableMap(map, key, value);
-        @SuppressWarnings("rawtypes")
-        final Map.Entry<K, V>[] entries = new Map.Entry[map.size()];
-        int i = 0;
-        for (Map.Entry<K, V> existingEntry : map.entrySet()) {
-            final Map.Entry<K, V> newEntry;
+        final Map.Entry<K, V>[] entries = map.entrySet().toArray(Map.Entry[]::new);
+        for (int i = 0, entriesLength = entries.length; i < entriesLength; i++) {
+            Map.Entry<K, V> existingEntry = entries[i];
             if (existingEntry.getKey().equals(key)) {
-                newEntry = Map.entry(key, value);
-            } else {
-                newEntry = existingEntry;
+                entries[i] = Map.entry(key, value);
+                break;
             }
-            entries[i++] = newEntry;
         }
         return Map.ofEntries(entries);
     }
