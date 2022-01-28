@@ -65,8 +65,7 @@ public class Maps {
         Objects.requireNonNull(map);
         Objects.requireNonNull(key);
         Objects.requireNonNull(value);
-        final V existing = map.get(key);
-        if (existing == null) {
+        if (map.containsKey(key) == false) {
             return copyMapWithAddedEntry(map, key, value);
         }
         return copyMapWithReplacedEntry(map, key, value);
