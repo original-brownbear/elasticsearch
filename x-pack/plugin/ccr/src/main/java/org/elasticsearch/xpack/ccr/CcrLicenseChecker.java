@@ -432,12 +432,6 @@ public class CcrLicenseChecker {
         };
     }
 
-    private static ThreadContext.StoredContext stashWithHeaders(ThreadContext threadContext, Map<String, String> headers) {
-        final ThreadContext.StoredContext storedContext = threadContext.stashContext();
-        threadContext.copyHeaders(headers.entrySet());
-        return storedContext;
-    }
-
     private static ElasticsearchStatusException indexMetadataNonCompliantRemoteLicense(
         final String leaderIndex,
         final RemoteClusterLicenseChecker.LicenseCheck licenseCheck

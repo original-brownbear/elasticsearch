@@ -64,7 +64,6 @@ public class ThreadContextTests extends ESTestCase {
         // foo is the only existing transient header that is cleared
         try (
             ThreadContext.StoredContext stashed = threadContext.newStoredContext(
-                false,
                 randomFrom(List.of("foo", "foo"), List.of("foo"), List.of("foo", "acme"))
             )
         ) {
@@ -105,30 +104,15 @@ public class ThreadContextTests extends ESTestCase {
         // test stashed missing header stays missing
         try (
             ThreadContext.StoredContext stashed = threadContext.newStoredContext(
-                randomBoolean(),
                 randomFrom(Arrays.asList("acme", "acme"), Arrays.asList("acme"))
             )
         ) {
             assertNull(threadContext.getTransient("acme"));
             threadContext.putTransient("acme", "foo");
         }
-        assertNull(threadContext.getTransient("acme"));
-
-        // test preserved response headers
-        try (
-            ThreadContext.StoredContext stashed = threadContext.newStoredContext(
-                true,
-                randomFrom(List.of("foo", "foo"), List.of("foo"), List.of("foo", "acme"))
-            )
-        ) {
-            threadContext.addResponseHeader("baz", "bar");
-            threadContext.addResponseHeader("foo", "baz");
-        }
         assertEquals("bar", threadContext.getResponseHeaders().get("foo").get(0));
-        assertEquals("baz", threadContext.getResponseHeaders().get("foo").get(1));
-        assertEquals(2, threadContext.getResponseHeaders().get("foo").size());
-        assertEquals("bar", threadContext.getResponseHeaders().get("baz").get(0));
-        assertEquals(1, threadContext.getResponseHeaders().get("baz").size());
+        assertNull(threadContext.getTransient("acme"));
+        assertNull(threadContext.getTransient("baz"));
     }
 
     public void testStashWithOrigin() {
@@ -332,7 +316,7 @@ public class ThreadContextTests extends ESTestCase {
         threadContext.addResponseHeader("Warning", "234567");
 
         BytesStreamOutput out = new BytesStreamOutput();
-        threadContext.writeTo(out);
+        threadContext.captureAsWriteable().writeTo(out);
         try (ThreadContext.StoredContext ctx = threadContext.stashContext()) {
             assertNull(threadContext.getHeader("foo"));
             assertNull(threadContext.getTransient("ctx.foo"));
@@ -373,7 +357,7 @@ public class ThreadContextTests extends ESTestCase {
             assertNotNull(threadContext.getTransient("ctx.foo"));
             assertEquals("1", threadContext.getHeader("default"));
             assertThat(threadContext.getResponseHeaders().keySet(), hasSize(1));
-            threadContext.writeTo(out);
+            threadContext.captureAsWriteable().writeTo(out);
         }
         {
             Settings otherSettings = Settings.builder().put("request.headers.default", "5").build();
@@ -404,7 +388,7 @@ public class ThreadContextTests extends ESTestCase {
             assertEquals("bar", threadContext.getHeader("foo"));
             assertNotNull(threadContext.getTransient("ctx.foo"));
             assertNull(threadContext.getHeader("default"));
-            threadContext.writeTo(out);
+            threadContext.captureAsWriteable().writeTo(out);
         }
         {
             Settings otherSettings = Settings.builder().put("request.headers.default", "5").build();

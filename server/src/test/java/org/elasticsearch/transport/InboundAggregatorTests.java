@@ -229,7 +229,7 @@ public class InboundAggregatorTests extends ESTestCase {
         aggregator.headerReceived(header);
 
         try (BytesStreamOutput streamOutput = new BytesStreamOutput()) {
-            threadContext.writeTo(streamOutput);
+            threadContext.captureAsWriteable().writeTo(streamOutput);
             streamOutput.writeString(actionName);
             streamOutput.write(randomByteArrayOfLength(10));
 

@@ -15,7 +15,6 @@ import org.elasticsearch.action.support.ContextPreservingActionListener;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.xpack.core.security.authc.AuthenticationField;
 import org.elasticsearch.xpack.core.security.authc.AuthenticationServiceField;
 import org.elasticsearch.xpack.core.security.authc.support.SecondaryAuthentication;
@@ -34,7 +33,7 @@ import java.util.stream.Collectors;
  */
 public final class ClientHelper {
 
-    private static Pattern authorizationHeaderPattern = Pattern.compile(
+    private static final Pattern authorizationHeaderPattern = Pattern.compile(
         "\\s*" + Pattern.quote("Authorization") + "\\s*",
         Pattern.CASE_INSENSITIVE
     );
@@ -52,7 +51,7 @@ public final class ClientHelper {
     /**
      * List of headers that are related to security
      */
-    public static final Set<String> SECURITY_HEADER_FILTERS = Sets.newHashSet(
+    public static final Set<String> SECURITY_HEADER_FILTERS = Set.of(
         AuthenticationServiceField.RUN_AS_USER_HEADER,
         AuthenticationField.AUTHENTICATION_KEY,
         SecondaryAuthentication.THREAD_CTX_KEY
