@@ -240,7 +240,7 @@ public class TextFieldMapper extends FieldMapper {
         final Parameter<FielddataFrequencyFilter> freqFilter = new Parameter<>(
             "fielddata_frequency_filter",
             true,
-            () -> DEFAULT_FILTER,
+            DEFAULT_FILTER,
             TextFieldMapper::parseFrequencyFilter,
             m -> ((TextFieldMapper) m).freqFilter,
             XContentBuilder::field,
@@ -257,7 +257,7 @@ public class TextFieldMapper extends FieldMapper {
         final Parameter<PrefixConfig> indexPrefixes = new Parameter<>(
             "index_prefixes",
             false,
-            () -> null,
+            (PrefixConfig) null,
             TextFieldMapper::parsePrefixConfig,
             m -> ((TextFieldMapper) m).indexPrefixes,
             XContentBuilder::field,

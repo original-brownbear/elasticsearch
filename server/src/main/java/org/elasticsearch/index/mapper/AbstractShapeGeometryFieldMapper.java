@@ -30,7 +30,7 @@ public abstract class AbstractShapeGeometryFieldMapper<T> extends AbstractGeomet
         return new Parameter<>(
             "orientation",
             true,
-            () -> IMPLICIT_RIGHT,
+            IMPLICIT_RIGHT,
             (n, c, o) -> new Explicit<>(Orientation.fromString(o.toString()), true),
             initializer,
             (b, f, v) -> b.field(f, v.value()),

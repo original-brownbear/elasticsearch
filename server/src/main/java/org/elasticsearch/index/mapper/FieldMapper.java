@@ -17,6 +17,7 @@ import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
@@ -634,6 +635,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         public final String name;
         private final List<String> deprecatedNames = new ArrayList<>();
         private final Supplier<T> defaultValue;
+        private final T defaultVal;
         private final TriFunction<String, MappingParserContext, Object, T> parser;
         private final Function<FieldMapper, T> initializer;
         private boolean acceptsNull = false;
@@ -670,12 +672,40 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Serializer<T> serializer,
             Function<T, String> conflictSerializer
         ) {
+            this(name, updateable, null, defaultValue, parser, initializer, serializer, conflictSerializer);
+        }
+
+        public Parameter(
+            String name,
+            boolean updateable,
+            T defaultValue,
+            TriFunction<String, MappingParserContext, Object, T> parser,
+            Function<FieldMapper, T> initializer,
+            Serializer<T> serializer,
+            Function<T, String> conflictSerializer
+        ) {
+            this(name, updateable, defaultValue, null, parser, initializer, serializer, conflictSerializer);
+        }
+
+        private Parameter(
+            String name,
+            boolean updateable,
+            @Nullable T defaultVal,
+            @Nullable Supplier<T> defaultValue,
+            TriFunction<String, MappingParserContext, Object, T> parser,
+            Function<FieldMapper, T> initializer,
+            Serializer<T> serializer,
+            Function<T, String> conflictSerializer
+        ) {
             this.name = name;
-            this.defaultValue = Objects.requireNonNull(defaultValue);
+            this.defaultValue = defaultValue;
+            this.defaultVal = defaultVal;
             this.value = null;
             this.parser = parser;
             this.initializer = initializer;
-            this.mergeValidator = (previous, toMerge, conflicts) -> updateable || Objects.equals(previous, toMerge);
+            this.mergeValidator = updateable
+                ? (previous, toMerge, conflicts) -> true
+                : (previous, toMerge, conflicts) -> Objects.equals(previous, toMerge);
             this.serializer = serializer;
             this.conflictSerializer = conflictSerializer;
         }
@@ -684,7 +714,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * Returns the current value of the parameter
          */
         public T getValue() {
-            return isSet ? value : defaultValue.get();
+            return isSet ? value : getDefaultValue();
         }
 
         @Override
@@ -696,7 +726,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * Returns the default value of the parameter
          */
         public T getDefaultValue() {
-            return defaultValue.get();
+            return defaultValue == null ? defaultVal : defaultValue.get();
         }
 
         /**
@@ -708,7 +738,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         }
 
         public boolean isConfigured() {
-            return isSet && Objects.equals(value, defaultValue.get()) == false;
+            return isSet && Objects.equals(value, getDefaultValue()) == false;
         }
 
         /**
@@ -862,7 +892,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 name,
                 updateable,
-                () -> defaultValue,
+                defaultValue,
                 (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
                 initializer,
                 XContentBuilder::field,
@@ -887,7 +917,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 name,
                 updateable,
-                defaultValue ? () -> Explicit.IMPLICIT_TRUE : () -> Explicit.IMPLICIT_FALSE,
+                defaultValue ? Explicit.IMPLICIT_TRUE : Explicit.IMPLICIT_FALSE,
                 (n, c, o) -> Explicit.explicitBoolean(XContentMapValues.nodeBooleanValue(o)),
                 initializer,
                 (b, n, v) -> b.field(n, v.value()),
@@ -911,7 +941,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 name,
                 updateable,
-                () -> defaultValue,
+                defaultValue,
                 (n, c, o) -> XContentMapValues.nodeIntegerValue(o),
                 initializer,
                 XContentBuilder::field,
@@ -945,7 +975,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 name,
                 updateable,
-                () -> defaultValue,
+                defaultValue,
                 (n, c, o) -> XContentMapValues.nodeStringValue(o),
                 initializer,
                 serializer,
@@ -960,7 +990,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Function<FieldMapper, List<String>> initializer,
             List<String> defaultValue
         ) {
-            return new Parameter<>(name, updateable, () -> defaultValue, (n, c, o) -> {
+            return new Parameter<>(name, updateable, defaultValue, (n, c, o) -> {
                 List<Object> values = (List<Object>) o;
                 List<String> strValues = new ArrayList<>();
                 for (Object item : values) {
@@ -982,16 +1012,17 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             String name,
             boolean updateable,
             Function<FieldMapper, String> initializer,
-            String... values
+            String defaultValue,
+            Set<String> acceptedValues
         ) {
-            assert values.length > 0;
-            Set<String> acceptedValues = new LinkedHashSet<>(Arrays.asList(values));
-            return stringParam(name, updateable, initializer, values[0]).addValidator(v -> {
+            assert acceptedValues.size() > 0;
+            assert acceptedValues.contains(defaultValue);
+            return stringParam(name, updateable, initializer, defaultValue).addValidator(v -> {
                 if (acceptedValues.contains(v)) {
                     return;
                 }
                 throw new MapperParsingException(
-                    "Unknown value [" + v + "] for field [" + name + "] - accepted values are " + acceptedValues.toString()
+                    "Unknown value [" + v + "] for field [" + name + "] - accepted values are " + acceptedValues
                 );
             });
         }
@@ -1035,7 +1066,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Set<T> values
         ) {
             assert values.size() > 0;
-            return new Parameter<T>(name, updateable, () -> defaultValue, (n, c, o) -> {
+            return new Parameter<T>(name, updateable, defaultValue, (n, c, o) -> {
                 if (o == null) {
                     return defaultValue;
                 }
@@ -1053,6 +1084,22 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             });
         }
 
+        public static Parameter<NamedAnalyzer> analyzerParam(
+            String name,
+            boolean updateable,
+            Function<FieldMapper, NamedAnalyzer> initializer,
+            Supplier<NamedAnalyzer> defaultAnalyzer
+        ) {
+            return new Parameter<>(name, updateable, defaultAnalyzer, (n, c, o) -> {
+                String analyzerName = o.toString();
+                NamedAnalyzer a = c.getIndexAnalyzers().get(analyzerName);
+                if (a == null) {
+                    throw new IllegalArgumentException("analyzer [" + analyzerName + "] has not been configured in mappings");
+                }
+                return a;
+            }, initializer, (b, n, v) -> b.field(n, v.name()), NamedAnalyzer::name);
+        }
+
         /**
          * Defines a parameter that takes an analyzer name
          * @param name              the parameter name
@@ -1064,7 +1111,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             String name,
             boolean updateable,
             Function<FieldMapper, NamedAnalyzer> initializer,
-            Supplier<NamedAnalyzer> defaultAnalyzer
+            NamedAnalyzer defaultAnalyzer
         ) {
             return new Parameter<>(name, updateable, defaultAnalyzer, (n, c, o) -> {
                 String analyzerName = o.toString();
@@ -1083,7 +1130,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 "meta",
                 true,
-                Collections::emptyMap,
+                Map.of(),
                 (n, c, o) -> TypeParsers.parseMeta(n, o),
                 m -> m.fieldType().meta(),
                 XContentBuilder::stringStringMap,
@@ -1109,7 +1156,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * @return a script parameter
          */
         public static Parameter<Script> scriptParam(Function<FieldMapper, Script> initializer) {
-            return new FieldMapper.Parameter<>("script", false, () -> null, (n, c, o) -> {
+            return new FieldMapper.Parameter<>("script", false, (Script) null, (n, c, o) -> {
                 if (o == null) {
                     return null;
                 }

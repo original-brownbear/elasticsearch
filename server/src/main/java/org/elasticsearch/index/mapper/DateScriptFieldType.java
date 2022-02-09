@@ -64,7 +64,7 @@ public class DateScriptFieldType extends AbstractScriptFieldType<DateFieldScript
         private final FieldMapper.Parameter<Locale> locale = new FieldMapper.Parameter<>(
             "locale",
             true,
-            () -> null,
+            (Locale) null,
             (n, c, o) -> o == null ? null : LocaleUtils.parse(o.toString()),
             RuntimeField.initializerNotSupported(),
             (b, n, v) -> {

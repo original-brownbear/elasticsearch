@@ -40,7 +40,7 @@ public final class TextParams {
             Function<FieldMapper, NamedAnalyzer> analyzerInitFunction,
             Function<FieldMapper, Integer> positionGapInitFunction
         ) {
-            this.indexAnalyzer = Parameter.analyzerParam("analyzer", false, analyzerInitFunction, indexAnalyzers::getDefaultIndexAnalyzer)
+            this.indexAnalyzer = Parameter.analyzerParam("analyzer", false, analyzerInitFunction, indexAnalyzers.getDefaultIndexAnalyzer())
                 .setSerializerCheck(
                     (id, ic, a) -> id
                         || ic
@@ -48,32 +48,28 @@ public final class TextParams {
                         || Objects.equals(a, getSearchQuoteAnalyzer()) == false
                 )
                 .addValidator(a -> a.checkAllowedInMode(AnalysisMode.INDEX_TIME));
+            final NamedAnalyzer defaultSearchAnalyzer = indexAnalyzers.get(AnalysisRegistry.DEFAULT_SEARCH_ANALYZER_NAME);
             this.searchAnalyzer = Parameter.analyzerParam(
                 "search_analyzer",
                 true,
                 m -> m.fieldType().getTextSearchInfo().getSearchAnalyzer(),
-                () -> {
+                defaultSearchAnalyzer == null ? indexAnalyzer : () -> {
                     if (indexAnalyzer.isConfigured() == false) {
-                        NamedAnalyzer defaultAnalyzer = indexAnalyzers.get(AnalysisRegistry.DEFAULT_SEARCH_ANALYZER_NAME);
-                        if (defaultAnalyzer != null) {
-                            return defaultAnalyzer;
-                        }
+                        return defaultSearchAnalyzer;
                     }
                     return indexAnalyzer.get();
                 }
             )
                 .setSerializerCheck((id, ic, a) -> id || ic || Objects.equals(a, getSearchQuoteAnalyzer()) == false)
                 .addValidator(a -> a.checkAllowedInMode(AnalysisMode.SEARCH_TIME));
+            final NamedAnalyzer defaultSearchQuotedAnalyzer = indexAnalyzers.get(AnalysisRegistry.DEFAULT_SEARCH_QUOTED_ANALYZER_NAME);
             this.searchQuoteAnalyzer = Parameter.analyzerParam(
                 "search_quote_analyzer",
                 true,
                 m -> m.fieldType().getTextSearchInfo().getSearchQuoteAnalyzer(),
-                () -> {
+                defaultSearchQuotedAnalyzer == null ? searchAnalyzer : () -> {
                     if (searchAnalyzer.isConfigured() == false && indexAnalyzer.isConfigured() == false) {
-                        NamedAnalyzer defaultAnalyzer = indexAnalyzers.get(AnalysisRegistry.DEFAULT_SEARCH_QUOTED_ANALYZER_NAME);
-                        if (defaultAnalyzer != null) {
-                            return defaultAnalyzer;
-                        }
+                        return defaultSearchQuotedAnalyzer;
                     }
                     return searchAnalyzer.get();
                 }
@@ -120,7 +116,7 @@ public final class TextParams {
         return new Parameter<>(
             "similarity",
             false,
-            () -> null,
+            (SimilarityProvider) null,
             (n, c, o) -> TypeParsers.resolveSimilarity(c, n, o),
             init,
             (b, f, v) -> b.field(f, v == null ? null : v.name()),

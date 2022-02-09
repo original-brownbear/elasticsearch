@@ -228,7 +228,7 @@ public final class DateFieldMapper extends FieldMapper {
         private final Parameter<Locale> locale = new Parameter<>(
             "locale",
             false,
-            () -> Locale.ROOT,
+            Locale.ROOT,
             (n, c, o) -> LocaleUtils.parse(o.toString()),
             m -> toType(m).locale,
             (xContentBuilder, n, v) -> xContentBuilder.field(n, v.toString()),

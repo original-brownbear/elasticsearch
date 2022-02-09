@@ -118,7 +118,7 @@ public class AggregateDoubleMetricFieldMapper extends FieldMapper {
 
         private final Parameter<Boolean> ignoreMalformed;
 
-        private final Parameter<EnumSet<Metric>> metrics = new Parameter<>(Names.METRICS, false, () -> Defaults.METRICS, (n, c, o) -> {
+        private final Parameter<EnumSet<Metric>> metrics = new Parameter<>(Names.METRICS, false, Defaults.METRICS, (n, c, o) -> {
             @SuppressWarnings("unchecked")
             List<String> metricsList = (List<String>) o;
             EnumSet<Metric> parsedMetrics = EnumSet.noneOf(Metric.class);
@@ -147,7 +147,7 @@ public class AggregateDoubleMetricFieldMapper extends FieldMapper {
         /**
          * Set the default metric so that query operations are delegated to it.
          */
-        private final Parameter<Metric> defaultMetric = new Parameter<>(Names.DEFAULT_METRIC, false, () -> null, (n, c, o) -> {
+        private final Parameter<Metric> defaultMetric = new Parameter<>(Names.DEFAULT_METRIC, false, (Metric) null, (n, c, o) -> {
             try {
                 return Metric.valueOf(o.toString());
             } catch (IllegalArgumentException e) {

@@ -35,7 +35,7 @@ public class CompositeRuntimeField implements RuntimeField {
         private final FieldMapper.Parameter<Script> script = new FieldMapper.Parameter<>(
             "script",
             false,
-            () -> null,
+            (Script) null,
             RuntimeField::parseScript,
             RuntimeField.initializerNotSupported(),
             XContentBuilder::field,
@@ -49,7 +49,7 @@ public class CompositeRuntimeField implements RuntimeField {
         private final FieldMapper.Parameter<Map<String, Object>> fields = new FieldMapper.Parameter<Map<String, Object>>(
             "fields",
             false,
-            Collections::emptyMap,
+            Map.of(),
             (f, p, o) -> parseFields(f, o),
             RuntimeField.initializerNotSupported(),
             XContentBuilder::field,

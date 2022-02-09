@@ -84,7 +84,7 @@ public class ScaledFloatFieldMapper extends FieldMapper {
         private final Parameter<Double> scalingFactor = new Parameter<>(
             "scaling_factor",
             false,
-            () -> null,
+            (Double) null,
             (n, c, o) -> XContentMapValues.nodeDoubleValue(o),
             m -> toType(m).scalingFactor,
             XContentBuilder::field,
@@ -100,7 +100,7 @@ public class ScaledFloatFieldMapper extends FieldMapper {
         private final Parameter<Double> nullValue = new Parameter<>(
             "null_value",
             false,
-            () -> null,
+            (Double) null,
             (n, c, o) -> o == null ? null : XContentMapValues.nodeDoubleValue(o),
             m -> toType(m).nullValue,
             XContentBuilder::field,

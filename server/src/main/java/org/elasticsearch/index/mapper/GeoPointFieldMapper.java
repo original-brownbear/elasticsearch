@@ -89,7 +89,6 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
             this.nullValue = nullValueParam(
                 m -> builder(m).nullValue.get(),
                 (n, c, o) -> parseNullValue(o, ignoreZValue.get().value(), ignoreMalformed.get().value()),
-                () -> null,
                 XContentBuilder::field
             ).acceptsNull();
             this.scriptCompiler = Objects.requireNonNull(scriptCompiler);

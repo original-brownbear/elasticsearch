@@ -26,10 +26,9 @@ public abstract class AbstractPointGeometryFieldMapper<T> extends AbstractGeomet
     public static <T> Parameter<T> nullValueParam(
         Function<FieldMapper, T> initializer,
         TriFunction<String, MappingParserContext, Object, T> parser,
-        Supplier<T> def,
         Serializer<T> serializer
     ) {
-        return new Parameter<T>("null_value", false, def, parser, initializer, serializer, Objects::toString);
+        return new Parameter<T>("null_value", false, (T) null, parser, initializer, serializer, Objects::toString);
     }
 
     protected final T nullValue;

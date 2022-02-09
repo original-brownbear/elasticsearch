@@ -84,7 +84,7 @@ public class BooleanFieldMapper extends FieldMapper {
         private final Parameter<Boolean> nullValue = new Parameter<>(
             "null_value",
             false,
-            () -> null,
+            (Boolean) null,
             (n, c, o) -> o == null ? null : XContentMapValues.nodeBooleanValue(o),
             m -> toType(m).nullValue,
             XContentBuilder::field,

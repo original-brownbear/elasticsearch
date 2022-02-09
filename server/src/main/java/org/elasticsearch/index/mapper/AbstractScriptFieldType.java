@@ -217,7 +217,7 @@ abstract class AbstractScriptFieldType<LeafFactory> extends MappedFieldType {
         final FieldMapper.Parameter<Script> script = new FieldMapper.Parameter<>(
             "script",
             true,
-            () -> null,
+            (Script) null,
             RuntimeField::parseScript,
             RuntimeField.initializerNotSupported(),
             XContentBuilder::field,

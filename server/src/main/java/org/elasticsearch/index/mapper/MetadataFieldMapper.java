@@ -55,7 +55,7 @@ public abstract class MetadataFieldMapper extends FieldMapper {
         return new Parameter<>(
             name,
             true,
-            defaultValue ? () -> Explicit.IMPLICIT_TRUE : () -> Explicit.IMPLICIT_FALSE,
+            defaultValue ? Explicit.IMPLICIT_TRUE : Explicit.IMPLICIT_FALSE,
             (n, c, o) -> Explicit.explicitBoolean(XContentMapValues.nodeBooleanValue(o)),
             initializer,
             (b, n, v) -> b.field(n, v.value()),

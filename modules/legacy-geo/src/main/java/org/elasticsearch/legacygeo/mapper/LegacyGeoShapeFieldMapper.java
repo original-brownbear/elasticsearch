@@ -154,7 +154,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
         Parameter<SpatialStrategy> strategy = new Parameter<>(
             "strategy",
             false,
-            () -> SpatialStrategy.RECURSIVE,
+            SpatialStrategy.RECURSIVE,
             (n, c, o) -> SpatialStrategy.fromString(o.toString()),
             m -> builder(m).strategy.get(),
             (b, f, v) -> b.field(f, v.getStrategyName()),
@@ -164,7 +164,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
         Parameter<Integer> treeLevels = new Parameter<>(
             "tree_levels",
             false,
-            () -> null,
+            (Integer) null,
             (n, c, o) -> o == null ? null : XContentMapValues.nodeIntegerValue(o),
             m -> builder(m).treeLevels.get(),
             (b, f, v) -> {
@@ -179,7 +179,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
         Parameter<DistanceUnit.Distance> precision = new Parameter<>(
             "precision",
             false,
-            () -> null,
+            (DistanceUnit.Distance) null,
             (n, c, o) -> o == null ? null : DistanceUnit.Distance.parseDistance(o.toString()),
             m -> builder(m).precision.get(),
             (b, f, v) -> {
@@ -194,7 +194,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
         Parameter<Double> distanceErrorPct = new Parameter<>(
             "distance_error_pct",
             true,
-            () -> null,
+            (Double) null,
             (n, c, o) -> o == null ? null : XContentMapValues.nodeDoubleValue(o),
             m -> builder(m).distanceErrorPct.get(),
             XContentBuilder::field,
@@ -203,7 +203,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
         Parameter<Boolean> pointsOnly = new Parameter<>(
             "points_only",
             false,
-            () -> null,
+            (Boolean) null,
             (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
             m -> builder(m).pointsOnly.get(),
             (b, f, v) -> {

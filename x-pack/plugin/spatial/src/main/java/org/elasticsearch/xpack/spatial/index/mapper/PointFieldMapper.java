@@ -68,7 +68,6 @@ public class PointFieldMapper extends AbstractPointGeometryFieldMapper<Cartesian
             this.nullValue = nullValueParam(
                 m -> builder(m).nullValue.get(),
                 (n, c, o) -> o == null ? null : parseNullValue(o, ignoreZValue.get().value(), ignoreMalformed.get().value()),
-                () -> null,
                 XContentBuilder::field
             ).acceptsNull();
         }

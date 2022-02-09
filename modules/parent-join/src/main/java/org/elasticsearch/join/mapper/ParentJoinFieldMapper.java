@@ -99,7 +99,7 @@ public final class ParentJoinFieldMapper extends FieldMapper {
         final Parameter<List<Relations>> relations = new Parameter<List<Relations>>(
             "relations",
             true,
-            Collections::emptyList,
+            List.of(),
             (n, c, o) -> Relations.parse(o),
             m -> toType(m).relations,
             XContentBuilder::field,

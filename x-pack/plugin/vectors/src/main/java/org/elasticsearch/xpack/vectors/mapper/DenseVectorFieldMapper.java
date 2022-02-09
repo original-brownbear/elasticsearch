@@ -69,7 +69,7 @@ public class DenseVectorFieldMapper extends FieldMapper implements PerFieldKnnVe
         private final Parameter<Integer> dims = new Parameter<>(
             "dims",
             false,
-            () -> null,
+            (Integer) null,
             (n, c, o) -> XContentMapValues.nodeIntegerValue(o),
             m -> toType(m).dims,
             XContentBuilder::field,
@@ -102,7 +102,7 @@ public class DenseVectorFieldMapper extends FieldMapper implements PerFieldKnnVe
         private final Parameter<IndexOptions> indexOptions = new Parameter<>(
             "index_options",
             false,
-            () -> null,
+            (IndexOptions) null,
             (n, c, o) -> o == null ? null : parseIndexOptions(n, o),
             m -> toType(m).indexOptions,
             XContentBuilder::field,

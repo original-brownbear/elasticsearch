@@ -137,7 +137,7 @@ public class NumberFieldMapper extends FieldMapper {
             this.nullValue = new Parameter<>(
                 "null_value",
                 false,
-                () -> null,
+                (Number) null,
                 (n, c, o) -> o == null ? null : type.parse(o, false),
                 m -> toType(m).nullValue,
                 XContentBuilder::field,

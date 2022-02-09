@@ -105,7 +105,7 @@ public class UnsignedLongFieldMapper extends FieldMapper {
             this.nullValue = new Parameter<>(
                 "null_value",
                 false,
-                () -> null,
+                (String) null,
                 (n, c, o) -> parseNullValueAsString(o),
                 m -> toType(m).nullValue,
                 XContentBuilder::field,

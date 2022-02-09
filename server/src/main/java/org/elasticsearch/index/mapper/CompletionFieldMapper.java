@@ -129,7 +129,7 @@ public class CompletionFieldMapper extends FieldMapper {
         private final Parameter<ContextMappings> contexts = new Parameter<>(
             "contexts",
             false,
-            () -> null,
+            (ContextMappings) null,
             (n, c, o) -> ContextMappings.load(o),
             m -> builder(m).contexts.get(),
             (b, n, c) -> {
@@ -162,14 +162,8 @@ public class CompletionFieldMapper extends FieldMapper {
             super(name);
             this.defaultAnalyzer = defaultAnalyzer;
             this.indexVersionCreated = indexVersionCreated;
-            this.analyzer = Parameter.analyzerParam("analyzer", false, m -> builder(m).analyzer.get(), () -> defaultAnalyzer)
-                .alwaysSerialize();
-            this.searchAnalyzer = Parameter.analyzerParam(
-                "search_analyzer",
-                true,
-                m -> builder(m).searchAnalyzer.get(),
-                analyzer::getValue
-            );
+            this.analyzer = Parameter.analyzerParam("analyzer", false, m -> builder(m).analyzer.get(), defaultAnalyzer).alwaysSerialize();
+            this.searchAnalyzer = Parameter.analyzerParam("search_analyzer", true, m -> builder(m).searchAnalyzer.get(), analyzer);
         }
 
         private static void validateInputLength(int maxInputLength) {

@@ -48,11 +48,16 @@ public class TokenCountFieldMapper extends FieldMapper {
         private final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
         private final Parameter<Boolean> store = Parameter.storeParam(m -> toType(m).store, false);
 
-        private final Parameter<NamedAnalyzer> analyzer = Parameter.analyzerParam("analyzer", true, m -> toType(m).analyzer, () -> null);
+        private final Parameter<NamedAnalyzer> analyzer = Parameter.analyzerParam(
+            "analyzer",
+            true,
+            m -> toType(m).analyzer,
+            (NamedAnalyzer) null
+        );
         private final Parameter<Integer> nullValue = new Parameter<>(
             "null_value",
             false,
-            () -> null,
+            (Integer) null,
             (n, c, o) -> o == null ? null : nodeIntegerValue(o),
             m -> toType(m).nullValue,
             XContentBuilder::field,
