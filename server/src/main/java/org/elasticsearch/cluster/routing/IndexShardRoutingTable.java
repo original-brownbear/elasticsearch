@@ -13,7 +13,6 @@ import org.elasticsearch.common.ExponentiallyWeightedMovingAverage;
 import org.elasticsearch.common.Randomness;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
@@ -65,35 +64,41 @@ public class IndexShardRoutingTable implements Iterable<ShardRouting> {
         this.shards = List.copyOf(shards);
 
         ShardRouting primary = null;
-        List<ShardRouting> replicas = new ArrayList<>();
-        List<ShardRouting> activeShards = new ArrayList<>();
-        List<ShardRouting> assignedShards = new ArrayList<>();
-        List<ShardRouting> allInitializingShards = new ArrayList<>();
-        Set<String> allAllocationIds = new HashSet<>();
+        ArrayList<ShardRouting> replicas = null;
+        ArrayList<ShardRouting> activeShards = null;
+        ArrayList<ShardRouting> assignedShards = null;
+        ArrayList<ShardRouting> allInitializingShards = null;
+        Set<String> allAllocationIds = null;
         boolean allShardsStarted = true;
-        for (ShardRouting shard : shards) {
+        for (ShardRouting shard : this.shards) {
             if (shard.primary()) {
                 primary = shard;
             } else {
-                replicas.add(shard);
+                replicas = addToOrCreateList(replicas, shard);
             }
             if (shard.active()) {
-                activeShards.add(shard);
+                activeShards = addToOrCreateList(activeShards, shard);
             }
             if (shard.initializing()) {
-                allInitializingShards.add(shard);
+                allInitializingShards = addToOrCreateList(allInitializingShards, shard);
             }
             if (shard.relocating()) {
                 // create the target initializing shard routing on the node the shard is relocating to
-                allInitializingShards.add(shard.getTargetRelocatingShard());
+                allInitializingShards = addToOrCreateList(allInitializingShards, shard.getTargetRelocatingShard());
+                if (allAllocationIds == null) {
+                    allAllocationIds = new HashSet<>();
+                }
                 allAllocationIds.add(shard.getTargetRelocatingShard().allocationId().getId());
 
                 assert shard.assignedToNode() : "relocating from unassigned " + shard;
                 assert shard.getTargetRelocatingShard().assignedToNode() : "relocating to unassigned " + shard.getTargetRelocatingShard();
-                assignedShards.add(shard.getTargetRelocatingShard());
+                assignedShards = addToOrCreateList(assignedShards, shard.getTargetRelocatingShard());
             }
             if (shard.assignedToNode()) {
-                assignedShards.add(shard);
+                assignedShards = addToOrCreateList(assignedShards, shard);
+                if (allAllocationIds == null) {
+                    allAllocationIds = new HashSet<>();
+                }
                 allAllocationIds.add(shard.allocationId().getId());
             }
             if (shard.state() != ShardRoutingState.STARTED) {
@@ -102,11 +107,17 @@ public class IndexShardRoutingTable implements Iterable<ShardRouting> {
         }
         this.allShardsStarted = allShardsStarted;
         this.primary = primary;
-        this.replicas = CollectionUtils.wrapUnmodifiableOrEmptySingleton(replicas);
-        this.activeShards = CollectionUtils.wrapUnmodifiableOrEmptySingleton(activeShards);
-        this.assignedShards = CollectionUtils.wrapUnmodifiableOrEmptySingleton(assignedShards);
-        this.allInitializingShards = CollectionUtils.wrapUnmodifiableOrEmptySingleton(allInitializingShards);
-        this.allAllocationIds = Collections.unmodifiableSet(allAllocationIds);
+        this.replicas = replicas == null ? List.of() : List.copyOf(replicas);
+        this.activeShards = activeShards == null ? List.of() : List.copyOf(activeShards);
+        this.assignedShards = assignedShards == null ? List.of() : List.copyOf(assignedShards);
+        this.allInitializingShards = allInitializingShards == null ? List.of() : List.copyOf(allInitializingShards);
+        this.allAllocationIds = allAllocationIds == null ? Set.of() : Set.copyOf(allAllocationIds);
+    }
+
+    private static ArrayList<ShardRouting> addToOrCreateList(@Nullable ArrayList<ShardRouting> list, ShardRouting shardRouting) {
+        final ArrayList<ShardRouting> updatedList = list == null ? new ArrayList<>() : list;
+        updatedList.add(shardRouting);
+        return updatedList;
     }
 
     /**
