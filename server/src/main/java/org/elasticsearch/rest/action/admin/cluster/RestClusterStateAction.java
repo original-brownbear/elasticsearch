@@ -34,14 +34,17 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.LongSupplier;
 
-import static java.util.Collections.singletonMap;
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
 public class RestClusterStateAction extends BaseRestHandler {
 
+    public static final Map<String, String> TO_XCONTENT_PARAMS = Map.of(
+        Metadata.CONTEXT_MODE_PARAM, Metadata.CONTEXT_MODE_API,
+        Metadata.MAPPINGS_BY_HASH_PARAM, "true");
     private final SettingsFilter settingsFilter;
 
     private final ThreadPool threadPool;
@@ -117,7 +120,7 @@ public class RestClusterStateAction extends BaseRestHandler {
                 @Override
                 protected ToXContent.Params getParams() {
                     return new ToXContent.DelegatingMapParams(
-                        singletonMap(Metadata.CONTEXT_MODE_PARAM, Metadata.CONTEXT_MODE_API),
+                        TO_XCONTENT_PARAMS,
                         request
                     );
                 }

@@ -77,6 +77,10 @@ public final class Settings implements ToXContentFragment {
 
     public static final Settings EMPTY = new Settings(Map.of(), null);
 
+    public static final String FLAT_SETTINGS = "flat_settings";
+
+    public static final MapParams FLAT_SETTINGS_PARAMS = new MapParams(Collections.singletonMap(FLAT_SETTINGS, "true"));
+
     /** The raw settings from the full key to raw string value. */
     private final NavigableMap<String, Object> settings;
 
@@ -614,7 +618,7 @@ public final class Settings implements ToXContentFragment {
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         Settings settings = SettingsFilter.filterSettings(params, this);
-        if (params.paramAsBoolean("flat_settings", false) == false) {
+        if (params.paramAsBoolean(FLAT_SETTINGS, false) == false) {
             toXContentFlat(builder, settings);
         } else {
             toXContent(builder, settings);
@@ -758,7 +762,7 @@ public final class Settings implements ToXContentFragment {
         }
     }
 
-    public static final Set<String> FORMAT_PARAMS = Set.of("settings_filter", "flat_settings");
+    public static final Set<String> FORMAT_PARAMS = Set.of("settings_filter", FLAT_SETTINGS);
 
     /**
      * Returns {@code true} if this settings object contains no settings
@@ -1494,7 +1498,7 @@ public final class Settings implements ToXContentFragment {
     public String toString() {
         try (XContentBuilder builder = XContentBuilder.builder(XContentType.JSON.xContent())) {
             builder.startObject();
-            toXContent(builder, new MapParams(Collections.singletonMap("flat_settings", "true")));
+            toXContent(builder, FLAT_SETTINGS_PARAMS);
             builder.endObject();
             return Strings.toString(builder);
         } catch (IOException e) {

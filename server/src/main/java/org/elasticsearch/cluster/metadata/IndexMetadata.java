@@ -1745,7 +1745,7 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
 
             builder.startObject(KEY_SETTINGS);
             if (context != Metadata.XContentContext.API) {
-                indexMetadata.getSettings().toXContent(builder, new MapParams(Collections.singletonMap("flat_settings", "true")));
+                indexMetadata.getSettings().toXContent(builder, Settings.FLAT_SETTINGS_PARAMS);
             } else {
                 indexMetadata.getSettings().toXContent(builder, params);
             }
@@ -1763,18 +1763,22 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                 }
                 builder.endArray();
             } else {
-                builder.startObject(KEY_MAPPINGS);
-                MappingMetadata mmd = indexMetadata.mapping();
-                if (mmd != null) {
-                    Map<String, Object> mapping = XContentHelper.convertToMap(mmd.source().uncompressed(), false).v2();
-                    if (mapping.size() == 1 && mapping.containsKey(mmd.type())) {
-                        // the type name is the root value, reduce it
-                        mapping = (Map<String, Object>) mapping.get(mmd.type());
+                if (params.paramAsBoolean(Metadata.MAPPINGS_BY_HASH_PARAM, false)) {
+                    builder.field(KEY_MAPPINGS, indexMetadata.mapping().getSha256());
+                } else {
+                    builder.startObject(KEY_MAPPINGS);
+                    MappingMetadata mmd = indexMetadata.mapping();
+                    if (mmd != null) {
+                        Map<String, Object> mapping = mmd.sourceAsMap();
+                        if (mapping.size() == 1 && mapping.containsKey(mmd.type())) {
+                            // the type name is the root value, reduce it
+                            mapping = (Map<String, Object>) mapping.get(mmd.type());
+                        }
+                        builder.field(mmd.type());
+                        builder.map(mapping);
                     }
-                    builder.field(mmd.type());
-                    builder.map(mapping);
+                    builder.endObject();
                 }
-                builder.endObject();
             }
 
             for (Map.Entry<String, DiffableStringMap> cursor : indexMetadata.customData.entrySet()) {
