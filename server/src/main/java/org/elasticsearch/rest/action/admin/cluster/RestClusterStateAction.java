@@ -43,8 +43,11 @@ import static org.elasticsearch.rest.RestRequest.Method.GET;
 public class RestClusterStateAction extends BaseRestHandler {
 
     public static final Map<String, String> TO_XCONTENT_PARAMS = Map.of(
-        Metadata.CONTEXT_MODE_PARAM, Metadata.CONTEXT_MODE_API,
-        Metadata.MAPPINGS_BY_HASH_PARAM, "true");
+        Metadata.CONTEXT_MODE_PARAM,
+        Metadata.CONTEXT_MODE_API,
+        Metadata.MAPPINGS_BY_HASH_PARAM,
+        "true"
+    );
     private final SettingsFilter settingsFilter;
 
     private final ThreadPool threadPool;
@@ -119,10 +122,7 @@ public class RestClusterStateAction extends BaseRestHandler {
             ) {
                 @Override
                 protected ToXContent.Params getParams() {
-                    return new ToXContent.DelegatingMapParams(
-                        TO_XCONTENT_PARAMS,
-                        request
-                    );
+                    return new ToXContent.DelegatingMapParams(TO_XCONTENT_PARAMS, request);
                 }
             }.map(response -> new RestClusterStateResponse(clusterStateRequest, response, threadPool::relativeTimeInMillis))
         );
