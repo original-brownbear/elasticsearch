@@ -1763,11 +1763,15 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                 }
                 builder.endArray();
             } else {
+                final MappingMetadata mmd = indexMetadata.mapping();
                 if (params.paramAsBoolean(Metadata.MAPPINGS_BY_HASH_PARAM, false)) {
-                    builder.field(KEY_MAPPINGS, indexMetadata.mapping().getSha256());
+                    if (mmd == null) {
+                        builder.nullField(KEY_MAPPINGS);
+                    } else {
+                        builder.field(KEY_MAPPINGS, indexMetadata.mapping().getSha256());
+                    }
                 } else {
                     builder.startObject(KEY_MAPPINGS);
-                    MappingMetadata mmd = indexMetadata.mapping();
                     if (mmd != null) {
                         Map<String, Object> mapping = mmd.sourceAsMap();
                         if (mapping.size() == 1 && mapping.containsKey(mmd.type())) {
