@@ -105,7 +105,11 @@ public class InputStreamStreamInput extends StreamInput {
     @Override
     protected void ensureCanReadBytes(int length) throws EOFException {
         if (length > sizeLimit) {
-            throw new EOFException("tried to read: " + length + " bytes but this stream is limited to: " + sizeLimit);
+            throwEOF(length);
         }
+    }
+
+    private void throwEOF(int length) throws EOFException {
+        throw new EOFException("tried to read: " + length + " bytes but this stream is limited to: " + sizeLimit);
     }
 }
