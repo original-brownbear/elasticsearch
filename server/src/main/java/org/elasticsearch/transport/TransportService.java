@@ -711,34 +711,7 @@ public class TransportService extends AbstractLifecycleComponent
                 // unwrap the connection and keep track of the connection to the proxy node instead of the proxy connection.
                 final Transport.Connection unwrappedConn = unwrapConnection(connection);
                 final Releasable unregisterChildNode = taskManager.registerChildConnection(request.getParentTask().getId(), unwrappedConn);
-                delegate = new TransportResponseHandler<>() {
-                    @Override
-                    public void handleResponse(T response) {
-                        unregisterChildNode.close();
-                        handler.handleResponse(response);
-                    }
-
-                    @Override
-                    public void handleException(TransportException exp) {
-                        unregisterChildNode.close();
-                        handler.handleException(exp);
-                    }
-
-                    @Override
-                    public String executor() {
-                        return handler.executor();
-                    }
-
-                    @Override
-                    public T read(StreamInput in) throws IOException {
-                        return handler.read(in);
-                    }
-
-                    @Override
-                    public String toString() {
-                        return getClass().getName() + "/[" + action + "]:" + handler.toString();
-                    }
-                };
+                delegate = new UnregisterChildNodeTransportResponseHandler<>(handler, unregisterChildNode, action);
             } else {
                 delegate = handler;
             }
@@ -1314,20 +1287,14 @@ public class TransportService extends AbstractLifecycleComponent
      * This handler wrapper ensures that the response thread executes with the correct thread context. Before any of the handle methods
      * are invoked we restore the context.
      */
-    public static final class ContextRestoreResponseHandler<T extends TransportResponse> implements TransportResponseHandler<T> {
+    public static final class ContextRestoreResponseHandler<T extends TransportResponse> extends DelegatingResponseHandler<T> {
 
-        private final TransportResponseHandler<T> delegate;
         private final Supplier<ThreadContext.StoredContext> contextSupplier;
         private volatile TimeoutHandler handler;
 
         public ContextRestoreResponseHandler(Supplier<ThreadContext.StoredContext> contextSupplier, TransportResponseHandler<T> delegate) {
-            this.delegate = delegate;
+            super(delegate);
             this.contextSupplier = contextSupplier;
-        }
-
-        @Override
-        public T read(StreamInput in) throws IOException {
-            return delegate.read(in);
         }
 
         @Override
@@ -1348,11 +1315,6 @@ public class TransportService extends AbstractLifecycleComponent
             try (ThreadContext.StoredContext ignore = contextSupplier.get()) {
                 delegate.handleException(exp);
             }
-        }
-
-        @Override
-        public String executor() {
-            return delegate.executor();
         }
 
         @Override
@@ -1542,4 +1504,32 @@ public class TransportService extends AbstractLifecycleComponent
         assert Version.CURRENT.major == Version.V_7_0_0.major + 1; // we can remove this whole block in v9
     }
 
+    private static final class UnregisterChildNodeTransportResponseHandler<T extends TransportResponse> extends DelegatingResponseHandler<
+        T> {
+        private final Releasable unregisterChildNode;
+        private final String action;
+
+        UnregisterChildNodeTransportResponseHandler(TransportResponseHandler<T> handler, Releasable unregisterChildNode, String action) {
+            super(handler);
+            this.unregisterChildNode = unregisterChildNode;
+            this.action = action;
+        }
+
+        @Override
+        public void handleResponse(T response) {
+            unregisterChildNode.close();
+            delegate.handleResponse(response);
+        }
+
+        @Override
+        public void handleException(TransportException exp) {
+            unregisterChildNode.close();
+            delegate.handleException(exp);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getName() + "/[" + action + "]:" + delegate.toString();
+        }
+    }
 }

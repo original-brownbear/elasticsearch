@@ -51,6 +51,7 @@ import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportResponse;
+import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 
 import java.io.IOException;
@@ -102,23 +103,33 @@ public class SearchTransportService {
         this.responseWrapper = responseWrapper;
     }
 
+    private static final TransportResponseHandler<SearchFreeContextResponse> FREE_CONTEXT_LISTENER = new ActionListenerResponseHandler<>(
+        new ActionListener<>() {
+            @Override
+            public void onResponse(SearchFreeContextResponse response) {
+                // no need to respond if it was freed or not
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+
+            }
+
+            @Override
+            public String toString() {
+                return "free context listener";
+            }
+        },
+        SearchFreeContextResponse::new
+    );
+
     public void sendFreeContext(Transport.Connection connection, final ShardSearchContextId contextId, OriginalIndices originalIndices) {
         transportService.sendRequest(
             connection,
             FREE_CONTEXT_ACTION_NAME,
             new SearchFreeContextRequest(originalIndices, contextId),
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(new ActionListener<SearchFreeContextResponse>() {
-                @Override
-                public void onResponse(SearchFreeContextResponse response) {
-                    // no need to respond if it was freed or not
-                }
-
-                @Override
-                public void onFailure(Exception e) {
-
-                }
-            }, SearchFreeContextResponse::new)
+            FREE_CONTEXT_LISTENER
         );
     }
 
@@ -620,7 +631,7 @@ public class SearchTransportService {
         }
     }
 
-    final class ConnectionCountingHandler<Response extends TransportResponse> extends ActionListenerResponseHandler<Response> {
+    static final class ConnectionCountingHandler<Response extends TransportResponse> extends ActionListenerResponseHandler<Response> {
         private final Map<String, Long> clientConnections;
         private final String nodeId;
 

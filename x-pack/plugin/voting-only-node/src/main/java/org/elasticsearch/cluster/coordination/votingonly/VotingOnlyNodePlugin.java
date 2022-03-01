@@ -22,7 +22,6 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.discovery.DiscoveryModule;
@@ -35,6 +34,7 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.DelegatingResponseHandler;
 import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportInterceptor;
@@ -47,7 +47,6 @@ import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xpack.core.action.XPackInfoFeatureAction;
 import org.elasticsearch.xpack.core.action.XPackUsageFeatureAction;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,13 +59,11 @@ public class VotingOnlyNodePlugin extends Plugin implements DiscoveryPlugin, Net
 
     private static final String VOTING_ONLY_ELECTION_STRATEGY = "supports_voting_only";
 
-    private final Settings settings;
     private final SetOnce<ThreadPool> threadPool;
 
     private final boolean isVotingOnlyNode;
 
     public VotingOnlyNodePlugin(Settings settings) {
-        this.settings = settings;
         threadPool = new SetOnce<>();
         isVotingOnlyNode = DiscoveryNode.hasRole(settings, DiscoveryNodeRole.VOTING_ONLY_NODE_ROLE);
     }
@@ -198,10 +195,10 @@ public class VotingOnlyNodePlugin extends Plugin implements DiscoveryPlugin, Net
             if (action.equals(PublicationTransportHandler.PUBLISH_STATE_ACTION_NAME)) {
                 final DiscoveryNode destinationNode = connection.getNode();
                 if (isFullMasterNode(destinationNode)) {
-                    sender.sendRequest(connection, action, request, options, new TransportResponseHandler<>() {
+                    sender.sendRequest(connection, action, request, options, new DelegatingResponseHandler<>(handler) {
                         @Override
                         public void handleResponse(TransportResponse response) {
-                            handler.handleException(
+                            delegate.handleException(
                                 new TransportException(
                                     new ElasticsearchException(
                                         "ignoring successful publish response used purely for state transfer: " + response
@@ -212,17 +209,7 @@ public class VotingOnlyNodePlugin extends Plugin implements DiscoveryPlugin, Net
 
                         @Override
                         public void handleException(TransportException exp) {
-                            handler.handleException(exp);
-                        }
-
-                        @Override
-                        public String executor() {
-                            return handler.executor();
-                        }
-
-                        @Override
-                        public TransportResponse read(StreamInput in) throws IOException {
-                            return handler.read(in);
+                            delegate.handleException(exp);
                         }
                     });
                 } else {
