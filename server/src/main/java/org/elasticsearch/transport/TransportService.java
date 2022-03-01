@@ -1287,7 +1287,7 @@ public class TransportService extends AbstractLifecycleComponent
      * This handler wrapper ensures that the response thread executes with the correct thread context. Before any of the handle methods
      * are invoked we restore the context.
      */
-    public static final class ContextRestoreResponseHandler<T extends TransportResponse> extends DelegatingResponseHandler<T> {
+    public static final class ContextRestoreResponseHandler<T extends TransportResponse> extends DelegatingTransportResponseHandler<T> {
 
         private final Supplier<ThreadContext.StoredContext> contextSupplier;
         private volatile TimeoutHandler handler;
@@ -1504,8 +1504,8 @@ public class TransportService extends AbstractLifecycleComponent
         assert Version.CURRENT.major == Version.V_7_0_0.major + 1; // we can remove this whole block in v9
     }
 
-    private static final class UnregisterChildNodeTransportResponseHandler<T extends TransportResponse> extends DelegatingResponseHandler<
-        T> {
+    private static final class UnregisterChildNodeTransportResponseHandler<T extends TransportResponse> extends
+        DelegatingTransportResponseHandler<T> {
         private final Releasable unregisterChildNode;
         private final String action;
 

@@ -11,10 +11,10 @@ import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.io.IOException;
 
-public abstract class DelegatingResponseHandler<T extends TransportResponse> implements TransportResponseHandler<T> {
+public abstract class DelegatingTransportResponseHandler<T extends TransportResponse> implements TransportResponseHandler<T> {
     protected final TransportResponseHandler<T> delegate;
 
-    protected DelegatingResponseHandler(TransportResponseHandler<T> delegate) {
+    protected DelegatingTransportResponseHandler(TransportResponseHandler<T> delegate) {
         this.delegate = delegate;
     }
 

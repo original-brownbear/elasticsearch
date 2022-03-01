@@ -34,7 +34,7 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.DelegatingResponseHandler;
+import org.elasticsearch.transport.DelegatingTransportResponseHandler;
 import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportException;
 import org.elasticsearch.transport.TransportInterceptor;
@@ -195,7 +195,7 @@ public class VotingOnlyNodePlugin extends Plugin implements DiscoveryPlugin, Net
             if (action.equals(PublicationTransportHandler.PUBLISH_STATE_ACTION_NAME)) {
                 final DiscoveryNode destinationNode = connection.getNode();
                 if (isFullMasterNode(destinationNode)) {
-                    sender.sendRequest(connection, action, request, options, new DelegatingResponseHandler<>(handler) {
+                    sender.sendRequest(connection, action, request, options, new DelegatingTransportResponseHandler<>(handler) {
                         @Override
                         public void handleResponse(TransportResponse response) {
                             delegate.handleException(
