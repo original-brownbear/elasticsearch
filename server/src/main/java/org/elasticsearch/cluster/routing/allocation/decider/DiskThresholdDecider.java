@@ -20,7 +20,6 @@ import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.cluster.routing.RoutingNode;
 import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
-import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.allocation.DiskThresholdSettings;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 import org.elasticsearch.common.Strings;
@@ -124,7 +123,7 @@ public class DiskThresholdDecider extends AllocationDecider {
         // no longer initializing because their recovery failed or was cancelled.
 
         // Where reserved space is unavailable (e.g. stats are out-of-sync) compute a conservative estimate for initialising shards
-        for (ShardRouting routing : node.shardsWithState(ShardRoutingState.INITIALIZING)) {
+        for (ShardRouting routing : node.initializingShards()) {
             if (routing.relocatingNodeId() == null) {
                 // in practice the only initializing-but-not-relocating shards with a nonzero expected shard size will be ones created
                 // by a resize (shrink/split/clone) operation which we expect to happen using hard links, so they shouldn't be taking
@@ -144,7 +143,7 @@ public class DiskThresholdDecider extends AllocationDecider {
         }
 
         if (subtractShardsMovingAway) {
-            for (ShardRouting routing : node.shardsWithState(ShardRoutingState.RELOCATING)) {
+            for (ShardRouting routing : node.relocatingShards()) {
                 String actualPath = clusterInfo.getDataPath(routing);
                 if (actualPath == null) {
                     // we might know the path of this shard from before when it was relocating

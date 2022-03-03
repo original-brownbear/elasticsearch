@@ -829,17 +829,22 @@ public class RoutingNodes extends AbstractCollection<RoutingNode> {
     }
 
     private void updateAssigned(ShardRouting oldShard, ShardRouting newShard) {
+        assert assertUpdateConsistent(oldShard, newShard);
+        node(oldShard.currentNodeId()).update(oldShard, newShard);
+        List<ShardRouting> shardsWithMatchingShardId = assignedShards.computeIfAbsent(oldShard.shardId(), k -> new ArrayList<>());
+        int previousShardIndex = shardsWithMatchingShardId.indexOf(oldShard);
+        assert previousShardIndex >= 0 : "shard to update " + oldShard + " does not exist in list of assigned shards";
+        shardsWithMatchingShardId.set(previousShardIndex, newShard);
+    }
+
+    private static boolean assertUpdateConsistent(ShardRouting oldShard, ShardRouting newShard) {
         assert oldShard.shardId().equals(newShard.shardId())
             : "can only update " + oldShard + " by shard with same shard id but was " + newShard;
         assert oldShard.unassigned() == false && newShard.unassigned() == false
             : "only assigned shards can be updated in list of assigned shards (prev: " + oldShard + ", new: " + newShard + ")";
         assert oldShard.currentNodeId().equals(newShard.currentNodeId())
             : "shard to update " + oldShard + " can only update " + oldShard + " by shard assigned to same node but was " + newShard;
-        node(oldShard.currentNodeId()).update(oldShard, newShard);
-        List<ShardRouting> shardsWithMatchingShardId = assignedShards.computeIfAbsent(oldShard.shardId(), k -> new ArrayList<>());
-        int previousShardIndex = shardsWithMatchingShardId.indexOf(oldShard);
-        assert previousShardIndex >= 0 : "shard to update " + oldShard + " does not exist in list of assigned shards";
-        shardsWithMatchingShardId.set(previousShardIndex, newShard);
+        return true;
     }
 
     private ShardRouting moveToUnassigned(ShardRouting shard, UnassignedInfo unassignedInfo) {
