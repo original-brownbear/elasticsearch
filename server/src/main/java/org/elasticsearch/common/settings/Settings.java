@@ -670,90 +670,88 @@ public final class Settings implements ToXContentFragment {
         }
         XContentParserUtils.ensureExpectedToken(XContentParser.Token.START_OBJECT, parser.currentToken(), parser);
         Builder innerBuilder = Settings.builder();
-        StringBuilder currentKeyBuilder = new StringBuilder();
-        fromXContent(parser, currentKeyBuilder, innerBuilder, allowNullValues);
+        fromXContent(parser, "", innerBuilder, allowNullValues);
         if (validateEndOfStream) {
-            // ensure we reached the end of the stream
-            XContentParser.Token lastToken = null;
-            try {
-                while (parser.isClosed() == false && (lastToken = parser.nextToken()) == null)
-                    ;
-            } catch (Exception e) {
-                throw new ElasticsearchParseException(
-                    "malformed, expected end of settings but encountered additional content starting at line number: [{}], "
-                        + "column number: [{}]",
-                    e,
-                    parser.getTokenLocation().lineNumber(),
-                    parser.getTokenLocation().columnNumber()
-                );
-            }
-            if (lastToken != null) {
-                throw new ElasticsearchParseException(
-                    "malformed, expected end of settings but encountered additional content starting at line number: [{}], "
-                        + "column number: [{}]",
-                    parser.getTokenLocation().lineNumber(),
-                    parser.getTokenLocation().columnNumber()
-                );
-            }
+            validateEndOfStream(parser);
         }
         return innerBuilder.build();
     }
 
-    private static void fromXContent(XContentParser parser, StringBuilder keyBuilder, Settings.Builder builder, boolean allowNullValues)
+    private static void validateEndOfStream(XContentParser parser) {
+        // ensure we reached the end of the stream
+        XContentParser.Token lastToken = null;
+        try {
+            while (parser.isClosed() == false && (lastToken = parser.nextToken()) == null)
+                ;
+        } catch (Exception e) {
+            throw new ElasticsearchParseException(
+                "malformed, expected end of settings but encountered additional content starting at line number: [{}], "
+                    + "column number: [{}]",
+                e,
+                parser.getTokenLocation().lineNumber(),
+                parser.getTokenLocation().columnNumber()
+            );
+        }
+        if (lastToken != null) {
+            throw new ElasticsearchParseException(
+                "malformed, expected end of settings but encountered additional content starting at line number: [{}], "
+                    + "column number: [{}]",
+                parser.getTokenLocation().lineNumber(),
+                parser.getTokenLocation().columnNumber()
+            );
+        }
+    }
+
+    private static void fromXContent(XContentParser parser, String prefix, Settings.Builder builder, boolean allowNullValues)
         throws IOException {
-        final int length = keyBuilder.length();
+        String key = prefix;
         while (parser.nextToken() != XContentParser.Token.END_OBJECT) {
-            if (parser.currentToken() == XContentParser.Token.FIELD_NAME) {
-                keyBuilder.setLength(length);
-                keyBuilder.append(parser.currentName());
-            } else if (parser.currentToken() == XContentParser.Token.START_OBJECT) {
-                keyBuilder.append('.');
-                fromXContent(parser, keyBuilder, builder, allowNullValues);
-            } else if (parser.currentToken() == XContentParser.Token.START_ARRAY) {
-                List<String> list = new ArrayList<>();
-                while (parser.nextToken() != XContentParser.Token.END_ARRAY) {
-                    if (parser.currentToken() == XContentParser.Token.VALUE_STRING) {
-                        list.add(parser.text());
-                    } else if (parser.currentToken() == XContentParser.Token.VALUE_NUMBER) {
-                        list.add(parser.text()); // just use the string representation here
-                    } else if (parser.currentToken() == XContentParser.Token.VALUE_BOOLEAN) {
-                        list.add(String.valueOf(parser.text()));
-                    } else {
-                        throw new IllegalStateException("only value lists are allowed in serialized settings");
-                    }
+            switch (parser.currentToken()) {
+                case FIELD_NAME -> {
+                    final String currentName = parser.currentName();
+                    key = prefix.isEmpty() ? currentName : prefix + currentName;
                 }
-                String key = keyBuilder.toString();
-                validateValue(key, list, parser, allowNullValues);
-                builder.putList(key, list);
-            } else if (parser.currentToken() == XContentParser.Token.VALUE_NULL) {
-                String key = keyBuilder.toString();
-                validateValue(key, null, parser, allowNullValues);
-                builder.putNull(key);
-            } else if (parser.currentToken() == XContentParser.Token.VALUE_STRING
-                || parser.currentToken() == XContentParser.Token.VALUE_NUMBER) {
-                    String key = keyBuilder.toString();
+                case START_OBJECT -> fromXContent(parser, key + '.', builder, allowNullValues);
+                case START_ARRAY -> {
+                    List<String> list = XContentParserUtils.parseList(parser, p -> {
+                        switch (p.currentToken()) {
+                            // just use the string representation for numbers and booleans
+                            case VALUE_STRING, VALUE_NUMBER, VALUE_BOOLEAN -> {
+                                return p.text();
+                            }
+                            default -> throw new IllegalStateException("only value lists are allowed in serialized settings");
+                        }
+                    });
+                    validateValue(key, list, parser, allowNullValues);
+                    builder.putList(key, list);
+                }
+                case VALUE_NULL -> {
+                    validateValue(key, null, parser, allowNullValues);
+                    builder.putNull(key);
+                }
+                case VALUE_STRING, VALUE_NUMBER, VALUE_BOOLEAN -> {
                     String value = parser.text();
                     validateValue(key, value, parser, allowNullValues);
                     builder.put(key, value);
-                } else if (parser.currentToken() == XContentParser.Token.VALUE_BOOLEAN) {
-                    String key = keyBuilder.toString();
-                    validateValue(key, parser.text(), parser, allowNullValues);
-                    builder.put(key, parser.booleanValue());
-                } else {
-                    XContentParserUtils.throwUnknownToken(parser.currentToken(), parser.getTokenLocation());
                 }
+                default -> XContentParserUtils.throwUnknownToken(parser.currentToken(), parser.getTokenLocation());
+            }
         }
     }
 
     private static void validateValue(String key, Object currentValue, XContentParser parser, boolean allowNullValues) {
         if (currentValue == null && allowNullValues == false) {
-            throw new ElasticsearchParseException(
-                "null-valued setting found for key [{}] found at line number [{}], column number [{}]",
-                key,
-                parser.getTokenLocation().lineNumber(),
-                parser.getTokenLocation().columnNumber()
-            );
+            throwOnNullValued(key, parser);
         }
+    }
+
+    private static void throwOnNullValued(String key, XContentParser parser) {
+        throw new ElasticsearchParseException(
+            "null-valued setting found for key [{}] found at line number [{}], column number [{}]",
+            key,
+            parser.getTokenLocation().lineNumber(),
+            parser.getTokenLocation().columnNumber()
+        );
     }
 
     public static final Set<String> FORMAT_PARAMS = Set.of("settings_filter", "flat_settings");
@@ -1047,7 +1045,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder putList(String setting, String... values) {
-            return putList(setting, Arrays.asList(values));
+            return putList(setting, List.of(values));
         }
 
         /**
@@ -1058,8 +1056,7 @@ public final class Settings implements ToXContentFragment {
          * @return The builder
          */
         public Builder putList(String setting, List<String> values) {
-            remove(setting);
-            map.put(setting, new ArrayList<>(values));
+            map.put(setting, List.copyOf(values));
             return this;
         }
 
@@ -1086,7 +1083,7 @@ public final class Settings implements ToXContentFragment {
         }
 
         private void processLegacyLists(Map<String, Object> map) {
-            String[] array = map.keySet().toArray(new String[map.size()]);
+            String[] array = map.keySet().toArray(Strings.EMPTY_ARRAY);
             for (String key : array) {
                 if (key.endsWith(".0")) { // let's only look at the head of the list and convert in order starting there.
                     int counter = 0;
