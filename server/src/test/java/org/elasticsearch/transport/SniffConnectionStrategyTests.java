@@ -93,7 +93,7 @@ public class SniffConnectionStrategyTests extends ESTestCase {
                         builder.add(node);
                     }
                     ClusterState build = ClusterState.builder(clusterName).nodes(builder.build()).build();
-                    channel.sendResponse(new ClusterStateResponse(clusterName, build, false));
+                    channel.sendResponse(new ClusterStateResponse(clusterName, build, false, false));
                 }
             );
             newService.start();

@@ -38,6 +38,9 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
     private String[] indices = Strings.EMPTY_ARRAY;
     private IndicesOptions indicesOptions = IndicesOptions.lenientExpandOpen();
 
+    private long knownVersion = -1L;
+    private long knownTerm = -1L;
+
     public ClusterStateRequest() {}
 
     public ClusterStateRequest(StreamInput in) throws IOException {
@@ -51,6 +54,10 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
         indicesOptions = IndicesOptions.readIndicesOptions(in);
         waitForTimeout = in.readTimeValue();
         waitForMetadataVersion = in.readOptionalLong();
+        if (in.getVersion().onOrAfter(TransportClusterStateAction.SKIP_KNOWN_VERSION)) {
+            knownVersion = in.readLong();
+            knownTerm = in.readLong();
+        }
     }
 
     @Override
@@ -65,6 +72,10 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
         indicesOptions.writeIndicesOptions(out);
         out.writeTimeValue(waitForTimeout);
         out.writeOptionalLong(waitForMetadataVersion);
+        if (out.getVersion().onOrAfter(TransportClusterStateAction.SKIP_KNOWN_VERSION)) {
+            out.writeLong(knownVersion);
+            out.writeLong(knownTerm);
+        }
     }
 
     @Override
@@ -184,6 +195,24 @@ public class ClusterStateRequest extends MasterNodeReadRequest<ClusterStateReque
         }
         this.waitForMetadataVersion = waitForMetadataVersion;
         return this;
+    }
+
+    public ClusterStateRequest knownVersion(long knownVersion) {
+        this.knownVersion = knownVersion;
+        return this;
+    }
+
+    public ClusterStateRequest knownTerm(long knownTerm) {
+        this.knownTerm = knownTerm;
+        return this;
+    }
+
+    public long knownVersion() {
+        return knownVersion;
+    }
+
+    public long knownTerm() {
+        return knownTerm;
     }
 
     @Override

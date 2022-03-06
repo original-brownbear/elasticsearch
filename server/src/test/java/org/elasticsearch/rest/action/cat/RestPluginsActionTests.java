@@ -125,7 +125,7 @@ public class RestPluginsActionTests extends ESTestCase {
         final ClusterName clusterName = new ClusterName("test");
 
         final ClusterState state = ClusterState.builder(clusterName).nodes(builder.build()).build();
-        ClusterStateResponse clusterStateResponse = new ClusterStateResponse(clusterName, state, false);
+        ClusterStateResponse clusterStateResponse = new ClusterStateResponse(clusterName, state, false, false);
 
         final List<NodeInfo> nodeInfos = new ArrayList<>();
         for (int i = 0; i < 3; i++) {

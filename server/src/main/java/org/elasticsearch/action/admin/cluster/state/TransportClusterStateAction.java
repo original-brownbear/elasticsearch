@@ -10,6 +10,7 @@ package org.elasticsearch.action.admin.cluster.state;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.TransportMasterNodeReadAction;
@@ -39,6 +40,8 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 public class TransportClusterStateAction extends TransportMasterNodeReadAction<ClusterStateRequest, ClusterStateResponse> {
+
+    public static final Version SKIP_KNOWN_VERSION = Version.V_8_2_0;
 
     private final Logger logger = LogManager.getLogger(getClass());
 
@@ -125,7 +128,7 @@ public class TransportClusterStateAction extends TransportMasterNodeReadAction<C
                     public void onTimeout(TimeValue timeout) {
                         try {
                             if (cancellableTask.notifyIfCancelled(listener) == false) {
-                                listener.onResponse(new ClusterStateResponse(state.getClusterName(), null, true));
+                                listener.onResponse(new ClusterStateResponse(state.getClusterName(), null, true, false));
                             }
                         } catch (Exception e) {
                             listener.onFailure(e);
@@ -137,6 +140,10 @@ public class TransportClusterStateAction extends TransportMasterNodeReadAction<C
 
     private ClusterStateResponse buildResponse(final ClusterStateRequest request, final ClusterState currentState) {
         logger.trace("Serving cluster state request using version {}", currentState.version());
+        if (request.knownVersion() == currentState.version() && request.knownTerm() == currentState.term()) {
+            return new ClusterStateResponse(currentState.getClusterName(), null, false, true);
+        }
+
         ClusterState.Builder builder = ClusterState.builder(currentState.getClusterName());
         builder.version(currentState.version());
         builder.stateUUID(currentState.stateUUID());
@@ -209,7 +216,7 @@ public class TransportClusterStateAction extends TransportMasterNodeReadAction<C
             }
         }
 
-        return new ClusterStateResponse(currentState.getClusterName(), builder.build(), false);
+        return new ClusterStateResponse(currentState.getClusterName(), builder.build(), false, false);
     }
 
 }

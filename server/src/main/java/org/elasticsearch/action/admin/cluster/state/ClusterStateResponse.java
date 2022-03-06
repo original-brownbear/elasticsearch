@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.core.Nullable;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -23,27 +24,38 @@ import java.util.Objects;
  */
 public class ClusterStateResponse extends ActionResponse {
 
-    private ClusterName clusterName;
-    private ClusterState clusterState;
-    private boolean waitForTimedOut = false;
+
+    private final ClusterName clusterName;
+    @Nullable
+    private final ClusterState clusterState;
+    private final boolean waitForTimedOut;
+    private final boolean matchedKnownVersion;
 
     public ClusterStateResponse(StreamInput in) throws IOException {
         super(in);
         clusterName = new ClusterName(in);
         clusterState = in.readOptionalWriteable(innerIn -> ClusterState.readFrom(innerIn, null));
         waitForTimedOut = in.readBoolean();
+        if (in.getVersion().onOrAfter(TransportClusterStateAction.SKIP_KNOWN_VERSION)) {
+            matchedKnownVersion = in.readBoolean();
+        } else {
+            matchedKnownVersion = false;
+        }
     }
 
-    public ClusterStateResponse(ClusterName clusterName, ClusterState clusterState, boolean waitForTimedOut) {
+    public ClusterStateResponse(ClusterName clusterName, @Nullable ClusterState clusterState, boolean waitForTimedOut,
+                                boolean matchedKnownVersion) {
         this.clusterName = clusterName;
         this.clusterState = clusterState;
         this.waitForTimedOut = waitForTimedOut;
+        this.matchedKnownVersion = matchedKnownVersion;
     }
 
     /**
      * The requested cluster state.  Only the parts of the cluster state that were
      * requested are included in the returned {@link ClusterState} instance.
      */
+    @Nullable
     public ClusterState getState() {
         return this.clusterState;
     }
@@ -63,11 +75,18 @@ public class ClusterStateResponse extends ActionResponse {
         return waitForTimedOut;
     }
 
+    public boolean isMatchedKnownVersion() {
+        return matchedKnownVersion;
+    }
+
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         clusterName.writeTo(out);
         out.writeOptionalWriteable(clusterState);
         out.writeBoolean(waitForTimedOut);
+        if (out.getVersion().onOrAfter(TransportClusterStateAction.SKIP_KNOWN_VERSION)) {
+            out.writeBoolean(matchedKnownVersion);
+        }
     }
 
     @Override

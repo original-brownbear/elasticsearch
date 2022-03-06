@@ -108,7 +108,7 @@ public class RestCatComponentTemplateActionTests extends RestActionTestCase {
     }
 
     private NoOpNodeClient buildNodeClient() {
-        ClusterStateResponse clusterStateResponse = new ClusterStateResponse(clusterName, clusterState, false);
+        ClusterStateResponse clusterStateResponse = new ClusterStateResponse(clusterName, clusterState, false, false);
 
         return new NoOpNodeClient(getTestName()) {
             @Override

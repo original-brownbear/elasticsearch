@@ -43,7 +43,7 @@ public class ClusterStateResponseTests extends AbstractWireSerializingTestCase<C
             }
             clusterState = clusterStateBuilder.build();
         }
-        return new ClusterStateResponse(clusterName, clusterState, randomBoolean());
+        return new ClusterStateResponse(clusterName, clusterState, randomBoolean(), false);
     }
 
     @Override
