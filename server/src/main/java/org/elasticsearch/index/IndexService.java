@@ -780,22 +780,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     public synchronized void updateMetadata(final IndexMetadata currentIndexMetadata, final IndexMetadata newIndexMetadata) {
         final boolean updateIndexSettings = indexSettings.updateIndexMetadata(newIndexMetadata);
 
-        if (Assertions.ENABLED && currentIndexMetadata != null) {
-            final long currentSettingsVersion = currentIndexMetadata.getSettingsVersion();
-            final long newSettingsVersion = newIndexMetadata.getSettingsVersion();
-            if (currentSettingsVersion == newSettingsVersion) {
-                assert updateIndexSettings == false;
-            } else {
-                assert updateIndexSettings;
-                assert currentSettingsVersion < newSettingsVersion
-                    : "expected current settings version ["
-                        + currentSettingsVersion
-                        + "] "
-                        + "to be less than new settings version ["
-                        + newSettingsVersion
-                        + "]";
-            }
-        }
+        assert assertLegalUpdate(currentIndexMetadata, newIndexMetadata, updateIndexSettings);
 
         if (updateIndexSettings) {
             for (final IndexShard shard : this.shards.values()) {
@@ -836,6 +821,30 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
 
         metadataListeners.forEach(c -> c.accept(newIndexMetadata));
+    }
+
+    private static boolean assertLegalUpdate(
+        IndexMetadata currentIndexMetadata,
+        IndexMetadata newIndexMetadata,
+        boolean updateIndexSettings
+    ) {
+        if (currentIndexMetadata != null) {
+            final long currentSettingsVersion = currentIndexMetadata.getSettingsVersion();
+            final long newSettingsVersion = newIndexMetadata.getSettingsVersion();
+            if (currentSettingsVersion == newSettingsVersion) {
+                assert updateIndexSettings == false;
+            } else {
+                assert updateIndexSettings;
+                assert currentSettingsVersion < newSettingsVersion
+                    : "expected current settings version ["
+                        + currentSettingsVersion
+                        + "] "
+                        + "to be less than new settings version ["
+                        + newSettingsVersion
+                        + "]";
+            }
+        }
+        return true;
     }
 
     private void updateFsyncTaskIfNecessary() {
