@@ -32,6 +32,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
@@ -157,32 +158,32 @@ public class TaskManager implements ClusterStateApplier {
         if (request.getParentTask().isSet()) {
             unregisterChildNode = registerChildConnection(request.getParentTask().getId(), localConnection);
         } else {
-            unregisterChildNode = () -> {};
+            unregisterChildNode = null;
         }
         final Task task;
         try {
             task = register(type, action.actionName, request);
         } catch (TaskCancelledException e) {
-            unregisterChildNode.close();
+            Releasables.close(unregisterChildNode);
             throw e;
         }
         // NOTE: ActionListener cannot infer Response, see https://bugs.openjdk.java.net/browse/JDK-8203195
         action.execute(task, request, new ActionListener<Response>() {
             @Override
             public void onResponse(Response response) {
-                try {
-                    Releasables.close(unregisterChildNode, () -> unregister(task));
-                } finally {
-                    onResponse.accept(task, response);
-                }
+                handle(response, onResponse);
             }
 
             @Override
             public void onFailure(Exception e) {
+                handle(e, onFailure);
+            }
+
+            private <T> void handle(T res, BiConsumer<Task, T> handler) {
                 try {
                     Releasables.close(unregisterChildNode, () -> unregister(task));
                 } finally {
-                    onFailure.accept(task, e);
+                    handler.accept(task, res);
                 }
             }
         });
@@ -251,6 +252,7 @@ public class TaskManager implements ClusterStateApplier {
      * Register a connection on which a child task will execute on the target connection. The returned {@link Releasable} must be called
      * to unregister the child connection once the child task is completed or failed.
      */
+    @Nullable
     public Releasable registerChildConnection(long taskId, Transport.Connection childConnection) {
         assert TransportService.unwrapConnection(childConnection) == childConnection : "Child connection must be unwrapped";
         final CancellableTaskHolder holder = cancellableTasks.get(taskId);
@@ -262,7 +264,7 @@ public class TaskManager implements ClusterStateApplier {
                 holder.unregisterChildConnection(childConnection);
             });
         }
-        return () -> {};
+        return null;
     }
 
     /**

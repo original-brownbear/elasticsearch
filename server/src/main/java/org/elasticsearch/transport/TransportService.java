@@ -711,34 +711,11 @@ public class TransportService extends AbstractLifecycleComponent
                 // unwrap the connection and keep track of the connection to the proxy node instead of the proxy connection.
                 final Transport.Connection unwrappedConn = unwrapConnection(connection);
                 final Releasable unregisterChildNode = taskManager.registerChildConnection(request.getParentTask().getId(), unwrappedConn);
-                delegate = new TransportResponseHandler<>() {
-                    @Override
-                    public void handleResponse(T response) {
-                        unregisterChildNode.close();
-                        handler.handleResponse(response);
-                    }
-
-                    @Override
-                    public void handleException(TransportException exp) {
-                        unregisterChildNode.close();
-                        handler.handleException(exp);
-                    }
-
-                    @Override
-                    public String executor() {
-                        return handler.executor();
-                    }
-
-                    @Override
-                    public T read(StreamInput in) throws IOException {
-                        return handler.read(in);
-                    }
-
-                    @Override
-                    public String toString() {
-                        return getClass().getName() + "/[" + action + "]:" + handler.toString();
-                    }
-                };
+                if (unregisterChildNode != null) {
+                    delegate = new UnregisterChildNodeTransportResponseHandler<>(unregisterChildNode, handler, action);
+                } else {
+                    delegate = handler;
+                }
             } else {
                 delegate = handler;
             }
@@ -845,51 +822,61 @@ public class TransportService extends AbstractLifecycleComponent
             }
             connection.sendRequest(requestId, action, request, options); // local node optimization happens upstream
         } catch (final Exception e) {
-            // usually happen either because we failed to connect to the node
-            // or because we failed serializing the message
-            final Transport.ResponseContext<? extends TransportResponse> contextToNotify = responseHandlers.remove(requestId);
-            // If holderToNotify == null then handler has already been taken care of.
-            if (contextToNotify != null) {
-                if (timeoutHandler != null) {
-                    timeoutHandler.cancel();
-                }
-                // callback that an exception happened, but on a different thread since we don't
-                // want handlers to worry about stack overflows. In the special case of running into a closing node we run on the current
-                // thread on a best effort basis though.
-                final SendRequestTransportException sendRequestException = new SendRequestTransportException(node, action, e);
-                final String executor = lifecycle.stoppedOrClosed() ? ThreadPool.Names.SAME : ThreadPool.Names.GENERIC;
-                threadPool.executor(executor).execute(new AbstractRunnable() {
-                    @Override
-                    public void onRejection(Exception e) {
-                        // if we get rejected during node shutdown we don't wanna bubble it up
-                        logger.debug(
-                            () -> new ParameterizedMessage(
-                                "failed to notify response handler on rejection, action: {}",
-                                contextToNotify.action()
-                            ),
-                            e
-                        );
-                    }
+            handleInternalSendRequestException(action, node, requestId, timeoutHandler, e);
+        }
+    }
 
-                    @Override
-                    public void onFailure(Exception e) {
-                        logger.warn(
-                            () -> new ParameterizedMessage(
-                                "failed to notify response handler on exception, action: {}",
-                                contextToNotify.action()
-                            ),
-                            e
-                        );
-                    }
-
-                    @Override
-                    protected void doRun() throws Exception {
-                        contextToNotify.handler().handleException(sendRequestException);
-                    }
-                });
-            } else {
-                logger.debug("Exception while sending request, handler likely already notified due to timeout", e);
+    private void handleInternalSendRequestException(
+        String action,
+        DiscoveryNode node,
+        long requestId,
+        TimeoutHandler timeoutHandler,
+        Exception e
+    ) {
+        // usually happen either because we failed to connect to the node
+        // or because we failed serializing the message
+        final Transport.ResponseContext<? extends TransportResponse> contextToNotify = responseHandlers.remove(requestId);
+        // If holderToNotify == null then handler has already been taken care of.
+        if (contextToNotify != null) {
+            if (timeoutHandler != null) {
+                timeoutHandler.cancel();
             }
+            // callback that an exception happened, but on a different thread since we don't
+            // want handlers to worry about stack overflows. In the special case of running into a closing node we run on the current
+            // thread on a best effort basis though.
+            final SendRequestTransportException sendRequestException = new SendRequestTransportException(node, action, e);
+            final String executor = lifecycle.stoppedOrClosed() ? ThreadPool.Names.SAME : ThreadPool.Names.GENERIC;
+            threadPool.executor(executor).execute(new AbstractRunnable() {
+                @Override
+                public void onRejection(Exception e) {
+                    // if we get rejected during node shutdown we don't wanna bubble it up
+                    logger.debug(
+                        () -> new ParameterizedMessage(
+                            "failed to notify response handler on rejection, action: {}",
+                            contextToNotify.action()
+                        ),
+                        e
+                    );
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    logger.warn(
+                        () -> new ParameterizedMessage(
+                            "failed to notify response handler on exception, action: {}",
+                            contextToNotify.action()
+                        ),
+                        e
+                    );
+                }
+
+                @Override
+                protected void doRun() {
+                    contextToNotify.handler().handleException(sendRequestException);
+                }
+            });
+        } else {
+            logger.debug("Exception while sending request, handler likely already notified due to timeout", e);
         }
     }
 
@@ -1542,4 +1529,37 @@ public class TransportService extends AbstractLifecycleComponent
         assert Version.CURRENT.major == Version.V_7_0_0.major + 1; // we can remove this whole block in v9
     }
 
+    private record UnregisterChildNodeTransportResponseHandler<T extends TransportResponse> (
+        Releasable unregisterChildNode,
+        TransportResponseHandler<T> handler,
+        String action
+    ) implements TransportResponseHandler<T> {
+
+        @Override
+        public void handleResponse(T response) {
+            unregisterChildNode.close();
+            handler.handleResponse(response);
+        }
+
+        @Override
+        public void handleException(TransportException exp) {
+            unregisterChildNode.close();
+            handler.handleException(exp);
+        }
+
+        @Override
+        public String executor() {
+            return handler.executor();
+        }
+
+        @Override
+        public T read(StreamInput in) throws IOException {
+            return handler.read(in);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getName() + "/[" + action + "]:" + handler.toString();
+        }
+    }
 }
