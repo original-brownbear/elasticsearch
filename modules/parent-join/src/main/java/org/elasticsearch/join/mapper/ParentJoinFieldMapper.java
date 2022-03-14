@@ -37,15 +37,14 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -127,16 +126,15 @@ public final class ParentJoinFieldMapper extends FieldMapper {
         @Override
         public ParentJoinFieldMapper build(MapperBuilderContext context) {
             checkObjectOrNested(context, name);
-            final Map<String, ParentIdFieldMapper> parentIdFields = new HashMap<>();
-            relations.get()
+            final Map<String, ParentIdFieldMapper> parentIdFields = relations.get()
                 .stream()
                 .map(relation -> new ParentIdFieldMapper(name + "#" + relation.parent(), eagerGlobalOrdinals.get()))
-                .forEach(mapper -> parentIdFields.put(mapper.name(), mapper));
+                .collect(Collectors.toUnmodifiableMap(Mapper::name, Function.identity()));
             Joiner joiner = new Joiner(name(), relations.get());
             return new ParentJoinFieldMapper(
                 name,
                 new JoinFieldType(context.buildFullName(name), joiner, meta.get()),
-                Collections.unmodifiableMap(parentIdFields),
+                parentIdFields,
                 eagerGlobalOrdinals.get(),
                 relations.get()
             );
@@ -206,7 +204,7 @@ public final class ParentJoinFieldMapper extends FieldMapper {
     private final boolean eagerGlobalOrdinals;
     private final List<Relations> relations;
 
-    protected ParentJoinFieldMapper(
+    private ParentJoinFieldMapper(
         String simpleName,
         MappedFieldType mappedFieldType,
         Map<String, ParentIdFieldMapper> parentIdFields,
@@ -230,9 +228,9 @@ public final class ParentJoinFieldMapper extends FieldMapper {
     }
 
     @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Iterator<Mapper> iterator() {
-        List<Mapper> mappers = new ArrayList<>(parentIdFields.values());
-        return mappers.iterator();
+        return (Iterator<Mapper>) (Iterator) parentIdFields.values().iterator();
     }
 
     @Override
