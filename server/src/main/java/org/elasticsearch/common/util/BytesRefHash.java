@@ -11,7 +11,6 @@ package org.elasticsearch.common.util;
 import com.carrotsearch.hppc.BitMixer;
 
 import org.apache.lucene.util.BytesRef;
-import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 
 /**
@@ -160,9 +159,7 @@ public final class BytesRefHash extends AbstractHash {
 
     @Override
     public void close() {
-        try (Releasable releasable = Releasables.wrap(bytes, hashes, startOffsets)) {
-            super.close();
-        }
+        Releasables.close(super::close, bytes, hashes, startOffsets);
     }
 
 }

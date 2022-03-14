@@ -27,7 +27,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.lucene.util.SetOnce;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetadata;
@@ -41,6 +40,7 @@ import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.repositories.blobstore.ChunkedBlobOutputStream;
@@ -374,11 +374,11 @@ class S3BlobContainer extends AbstractBlobContainer {
                 ),
                 e
             );
-            aex.set(ExceptionsHelper.useOrSuppress(aex.get(), e));
+            aex.set(ExceptionsUtil.useOrSuppress(aex.get(), e));
         } catch (AmazonClientException e) {
             // The AWS client threw any unexpected exception and did not execute the request at all so we do not
             // remove any keys from the outstanding deletes set.
-            aex.set(ExceptionsHelper.useOrSuppress(aex.get(), e));
+            aex.set(ExceptionsUtil.useOrSuppress(aex.get(), e));
         }
     }
 

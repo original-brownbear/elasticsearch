@@ -7,7 +7,7 @@
 package org.elasticsearch.xpack.security.transport.nio;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.internal.io.IOUtils;
 import org.elasticsearch.nio.FlushOperation;
 import org.elasticsearch.nio.Page;
@@ -90,7 +90,7 @@ public class SSLOutboundBuffer implements AutoCloseable {
             try {
                 p.close();
             } catch (Exception ex) {
-                closeException = ExceptionsHelper.useOrSuppress(closeException, ex);
+                closeException = ExceptionsUtil.useOrSuppress(closeException, ex);
             }
         }
         if (closeException != null) {

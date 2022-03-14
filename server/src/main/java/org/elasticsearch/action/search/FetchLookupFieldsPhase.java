@@ -9,11 +9,11 @@
 package org.elasticsearch.action.search;
 
 import org.apache.logging.log4j.util.Strings;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.document.DocumentField;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.concurrent.AtomicArray;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.fetch.subphase.LookupField;
@@ -97,7 +97,7 @@ final class FetchLookupFieldsPhase extends SearchPhase {
                     for (LookupField lookupField : cluster.lookupFields) {
                         final MultiSearchResponse.Item item = items.getResponses()[index];
                         if (item.isFailure()) {
-                            failure = ExceptionsHelper.useOrSuppress(failure, item.getFailure());
+                            failure = ExceptionsUtil.useOrSuppress(failure, item.getFailure());
                         } else if (failure == null) {
                             final List<Object> fetchedValues = new ArrayList<>();
                             for (SearchHit rightHit : item.getResponse().getHits()) {

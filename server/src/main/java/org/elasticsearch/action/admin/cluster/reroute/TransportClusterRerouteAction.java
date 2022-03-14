@@ -10,7 +10,6 @@ package org.elasticsearch.action.admin.cluster.reroute;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.action.admin.indices.shards.IndicesShardStoresAction;
@@ -37,6 +36,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.collect.ImmutableOpenIntMap;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -125,7 +125,7 @@ public class TransportClusterRerouteAction extends TransportMasterNodeAction<Clu
                     for (AbstractAllocateAllocationCommand command : entry.getValue()) {
                         final List<IndicesShardStoresResponse.StoreStatus> shardStatus = indexStatus.get(command.shardId());
                         if (shardStatus == null || shardStatus.isEmpty()) {
-                            e = ExceptionsHelper.useOrSuppress(
+                            e = ExceptionsUtil.useOrSuppress(
                                 e,
                                 new IllegalArgumentException(
                                     "No data for shard [" + command.shardId() + "] of index [" + index + "] found on any node"
@@ -136,7 +136,7 @@ public class TransportClusterRerouteAction extends TransportMasterNodeAction<Clu
                             final String nodeInCommand = command.node();
                             return nodeInCommand.equals(node.getName()) || nodeInCommand.equals(node.getId());
                         })) {
-                            e = ExceptionsHelper.useOrSuppress(
+                            e = ExceptionsUtil.useOrSuppress(
                                 e,
                                 new IllegalArgumentException(
                                     "No data for shard ["

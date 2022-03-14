@@ -10,7 +10,6 @@ package org.elasticsearch.action.fieldcaps;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.action.NoShardAvailableActionException;
@@ -24,6 +23,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.RunOnce;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.tasks.Task;
@@ -249,14 +249,14 @@ final class RequestDispatcher {
         synchronized Exception getFailure() {
             Exception first = null;
             for (Exception e : failures.values()) {
-                first = ExceptionsHelper.useOrSuppress(first, e);
+                first = ExceptionsUtil.useOrSuppress(first, e);
             }
             return first;
         }
 
         synchronized void setFailure(ShardId shardId, Exception failure) {
             assert unmatchedShardIds.contains(shardId) == false : "Shard " + shardId + " was unmatched already";
-            failures.compute(shardId, (k, curr) -> ExceptionsHelper.useOrSuppress(curr, failure));
+            failures.compute(shardId, (k, curr) -> ExceptionsUtil.useOrSuppress(curr, failure));
         }
 
         synchronized void addUnmatchedShardId(ShardId shardId) {

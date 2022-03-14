@@ -32,6 +32,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
@@ -564,7 +565,7 @@ public class TaskManager implements ClusterStateApplier {
                 try {
                     listener.run();
                 } catch (RuntimeException inner) {
-                    rootException = ExceptionsHelper.useOrSuppress(rootException, inner);
+                    rootException = ExceptionsUtil.useOrSuppress(rootException, inner);
                 }
             }
             ExceptionsHelper.reThrowIfNotNull(rootException);

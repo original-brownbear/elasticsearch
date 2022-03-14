@@ -10,6 +10,7 @@ package org.elasticsearch.index.shard;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.search.internal.ReaderContext;
 import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.transport.TransportRequest;
@@ -233,7 +234,7 @@ public interface SearchOperationListener {
                 try {
                     listener.validateReaderContext(readerContext, request);
                 } catch (Exception e) {
-                    exception = ExceptionsHelper.useOrSuppress(exception, e);
+                    exception = ExceptionsUtil.useOrSuppress(exception, e);
                 }
             }
             ExceptionsHelper.reThrowIfNotNull(exception);
