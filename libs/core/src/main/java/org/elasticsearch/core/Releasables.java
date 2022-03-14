@@ -18,20 +18,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public enum Releasables {
     ;
 
-    private static void close(Iterable<? extends Releasable> releasables, boolean ignoreException) {
+    /** Release the provided {@link Releasable}s. */
+    public static void close(Iterable<? extends Releasable> releasables) {
         try {
             // this does the right thing with respect to add suppressed and not wrapping errors etc.
             IOUtils.close(releasables);
         } catch (IOException e) {
-            if (ignoreException == false) {
-                throw new UncheckedIOException(e);
-            }
+            throw new UncheckedIOException(e);
         }
-    }
-
-    /** Release the provided {@link Releasable}s. */
-    public static void close(Iterable<? extends Releasable> releasables) {
-        close(releasables, false);
     }
 
     /** Release the provided {@link Releasable}. */

@@ -8,6 +8,8 @@
 
 package org.elasticsearch.nio.utils;
 
+import org.elasticsearch.core.ExceptionsUtil;
+
 import java.util.List;
 
 // TODO: This should eventually be removed once ExceptionsHelper is moved to a core library jar
@@ -21,19 +23,11 @@ public class ExceptionsHelper {
     public static <T extends Throwable> void rethrowAndSuppress(List<T> exceptions) throws T {
         T main = null;
         for (T ex : exceptions) {
-            main = useOrSuppress(main, ex);
+            main = ExceptionsUtil.useOrSuppress(main, ex);
         }
         if (main != null) {
             throw main;
         }
     }
 
-    private static <T extends Throwable> T useOrSuppress(T first, T second) {
-        if (first == null) {
-            return second;
-        } else {
-            first.addSuppressed(second);
-        }
-        return first;
-    }
 }

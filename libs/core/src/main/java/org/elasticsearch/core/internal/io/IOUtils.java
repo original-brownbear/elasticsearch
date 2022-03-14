@@ -150,7 +150,9 @@ public final class IOUtils {
      * @param objects objects to close
      */
     public static void closeWhileHandlingException(final Closeable... objects) {
-        closeWhileHandlingException(Arrays.asList(objects));
+        for (final Closeable object : objects) {
+            closeWhileHandlingException(object);
+        }
     }
 
     /**
