@@ -25,7 +25,6 @@ import org.apache.lucene.util.AttributeSource;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.automaton.ByteRunAutomaton;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.lucene.BytesRefs;
 import org.elasticsearch.common.lucene.Lucene;
@@ -36,7 +35,6 @@ import org.elasticsearch.index.fielddata.plain.SortedSetOrdinalsIndexFieldData;
 import org.elasticsearch.index.mapper.DocumentParserContext;
 import org.elasticsearch.index.mapper.FieldMapper;
 import org.elasticsearch.index.mapper.MappedFieldType;
-import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperBuilderContext;
 import org.elasticsearch.index.mapper.SourceValueFetcher;
 import org.elasticsearch.index.mapper.TermBasedFieldType;
@@ -53,9 +51,7 @@ import org.elasticsearch.xpack.versionfield.VersionEncoder.EncodedVersion;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -352,14 +348,6 @@ public class VersionStringFieldMapper extends FieldMapper {
         BytesRef encodedVersion = encoding.bytesRef;
         context.doc().add(new Field(fieldType().name(), encodedVersion, fieldType));
         context.doc().add(new SortedSetDocValuesField(fieldType().name(), encodedVersion));
-    }
-
-    @Override
-    public Iterator<Mapper> iterator() {
-        List<Mapper> subIterators = new ArrayList<>();
-        @SuppressWarnings("unchecked")
-        Iterator<Mapper> concat = Iterators.concat(super.iterator(), subIterators.iterator());
-        return concat;
     }
 
     public static DocValueFormat VERSION_DOCVALUE = new DocValueFormat() {

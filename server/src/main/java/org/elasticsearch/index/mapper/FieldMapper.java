@@ -318,19 +318,9 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
     }
 
     @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public Iterator<Mapper> iterator() {
-        Iterator<FieldMapper> multiFieldsIterator = multiFields.iterator();
-        return new Iterator<>() {
-            @Override
-            public boolean hasNext() {
-                return multiFieldsIterator.hasNext();
-            }
-
-            @Override
-            public Mapper next() {
-                return multiFieldsIterator.next();
-            }
-        };
+        return (Iterator<Mapper>) (Iterator) multiFields.iterator();
     }
 
     @Override
@@ -451,7 +441,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
     public static final class MultiFields implements Iterable<FieldMapper>, ToXContent {
 
-        private static final MultiFields EMPTY = new MultiFields(Collections.emptyMap());
+        private static final MultiFields EMPTY = new MultiFields(Map.of());
 
         public static MultiFields empty() {
             return EMPTY;
@@ -485,19 +475,21 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                 return mapperBuilders.isEmpty() == false;
             }
 
+            @SuppressWarnings("unchecked")
             public MultiFields build(Mapper.Builder mainFieldBuilder, MapperBuilderContext context) {
                 if (mapperBuilders.isEmpty()) {
                     return empty();
-                } else {
-                    Map<String, FieldMapper> mappers = new HashMap<>();
-                    context = context.createChildContext(mainFieldBuilder.name());
-                    for (Map.Entry<String, Function<MapperBuilderContext, FieldMapper>> entry : this.mapperBuilders.entrySet()) {
-                        String key = entry.getKey();
-                        FieldMapper mapper = entry.getValue().apply(context);
-                        mappers.put(key, mapper);
-                    }
-                    return new MultiFields(Collections.unmodifiableMap(mappers));
                 }
+                @SuppressWarnings("rawtypes")
+                Map.Entry<String, FieldMapper>[] mappers = new Map.Entry[this.mapperBuilders.size()];
+                context = context.createChildContext(mainFieldBuilder.name());
+                int i = 0;
+                for (Map.Entry<String, Function<MapperBuilderContext, FieldMapper>> entry : this.mapperBuilders.entrySet()) {
+                    String key = entry.getKey();
+                    FieldMapper mapper = entry.getValue().apply(context);
+                    mappers[i++] = Map.entry(key, mapper);
+                }
+                return new MultiFields(Map.ofEntries(mappers));
             }
         }
 
