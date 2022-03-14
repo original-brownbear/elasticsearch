@@ -43,30 +43,6 @@ public enum Releasables {
         }
     }
 
-    public static void close(@Nullable Releasable r1, @Nullable Releasable r2) {
-        try {
-            IOUtils.close(r1, r2);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static void close(@Nullable Releasable r1, @Nullable Releasable r2, @Nullable Releasable r3) {
-        try {
-            IOUtils.close(r1, r2, r3);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    public static void close(@Nullable Releasable r1, @Nullable Releasable r2, @Nullable Releasable r3, @Nullable Releasable r4) {
-        try {
-            IOUtils.close(r1, r2, r3, r4);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     /** Release the provided {@link Releasable}s. */
     public static void close(Releasable... releasables) {
         close(true, releasables);
