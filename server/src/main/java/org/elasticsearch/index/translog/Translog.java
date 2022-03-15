@@ -435,22 +435,6 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
     }
 
     /**
-     * Returns the size in bytes of the v files
-     */
-    public long sizeInBytes() {
-        return sizeInBytesByMinGen(-1);
-    }
-
-    long earliestLastModifiedAge() {
-        try (ReleasableLock ignored = readLock.acquire()) {
-            ensureOpen();
-            return findEarliestLastModifiedAge(System.currentTimeMillis(), readers, current);
-        } catch (IOException e) {
-            throw new TranslogException(shardId, "Unable to get the earliest last modified time for the transaction log");
-        }
-    }
-
-    /**
      * Returns the age of the oldest entry in the translog files in seconds
      */
     static long findEarliestLastModifiedAge(long currentTime, Iterable<TranslogReader> readers, TranslogWriter writer) throws IOException {
@@ -467,10 +451,14 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
     public int totalOperationsByMinGen(long minGeneration) {
         try (ReleasableLock ignored = readLock.acquire()) {
             ensureOpen();
-            return Stream.concat(readers.stream(), Stream.of(current))
-                .filter(r -> r.getGeneration() >= minGeneration)
-                .mapToInt(BaseTranslogReader::totalOperations)
-                .sum();
+            final TranslogWriter w = current;
+            int res = w.getGeneration() >= minGeneration ? w.totalOperations() : 0;
+            for (TranslogReader reader : readers) {
+                if (reader.getGeneration() >= minGeneration) {
+                    res += reader.totalOperations();
+                }
+            }
+            return res;
         }
     }
 
@@ -490,10 +478,14 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
     public long sizeInBytesByMinGen(long minGeneration) {
         try (ReleasableLock ignored = readLock.acquire()) {
             ensureOpen();
-            return Stream.concat(readers.stream(), Stream.of(current))
-                .filter(r -> r.getGeneration() >= minGeneration)
-                .mapToLong(BaseTranslogReader::sizeInBytes)
-                .sum();
+            final TranslogWriter w = current;
+            long res = w.getGeneration() >= minGeneration ? w.sizeInBytes() : 0L;
+            for (TranslogReader reader : readers) {
+                if (reader.generation >= minGeneration) {
+                    res += reader.sizeInBytes();
+                }
+            }
+            return res;
         }
     }
 
@@ -907,17 +899,45 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
      * return stats
      */
     public TranslogStats stats() {
-        // acquire lock to make the two numbers roughly consistent (no file change half way)
-        try (ReleasableLock lock = readLock.acquire()) {
+        int totalOperations;
+        long sizeInBytes;
+        int totalOperationsFromUncommitted = 0;
+        long bytesUncommitted = 0L;
+        final long currentTimeMillis = System.currentTimeMillis();
+        // acquire lock to make the numbers roughly consistent (no file change half way)
+        long earliestTime = currentTimeMillis;
+        try (ReleasableLock ignored = readLock.acquire()) {
+            ensureOpen();
             final long uncommittedGen = minGenerationForSeqNo(deletionPolicy.getLocalCheckpointOfSafeCommit() + 1, current, readers);
-            return new TranslogStats(
-                totalOperations(),
-                sizeInBytes(),
-                totalOperationsByMinGen(uncommittedGen),
-                sizeInBytesByMinGen(uncommittedGen),
-                earliestLastModifiedAge()
-            );
+            final TranslogWriter w = current;
+            totalOperations = w.totalOperations();
+            sizeInBytes = w.sizeInBytes();
+            if (w.getGeneration() >= uncommittedGen) {
+                totalOperationsFromUncommitted = w.totalOperations();
+                bytesUncommitted = w.sizeInBytes();
+            }
+            try {
+                earliestTime = Math.min(earliestTime, w.getLastModifiedTime());
+                for (TranslogReader reader : readers) {
+                    totalOperations += reader.totalOperations();
+                    sizeInBytes += reader.sizeInBytes();
+                    if (reader.getGeneration() >= uncommittedGen) {
+                        totalOperationsFromUncommitted += reader.totalOperations();
+                        bytesUncommitted += reader.sizeInBytes();
+                    }
+                    earliestTime = Math.min(reader.getLastModifiedTime(), earliestTime);
+                }
+            } catch (IOException e) {
+                throw new TranslogException(shardId, "Unable to get the earliest last modified time for the transaction log");
+            }
         }
+        return new TranslogStats(
+            totalOperations,
+            sizeInBytes,
+            totalOperationsFromUncommitted,
+            bytesUncommitted,
+            Math.max(0, currentTimeMillis - earliestTime)
+        );
     }
 
     public TranslogConfig getConfig() {
