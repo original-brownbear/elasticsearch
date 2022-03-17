@@ -9,12 +9,13 @@
 package org.elasticsearch.index.store;
 
 import org.apache.lucene.index.IndexFileNames;
-import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Nullable;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public enum LuceneFilesExtensions {
 
@@ -126,14 +127,8 @@ public enum LuceneFilesExtensions {
         return mmap;
     }
 
-    private static final Map<String, LuceneFilesExtensions> extensions;
-    static {
-        final Map<String, LuceneFilesExtensions> map = Maps.newMapWithExpectedSize(values().length);
-        for (LuceneFilesExtensions extension : values()) {
-            map.put(extension.extension, extension);
-        }
-        extensions = Collections.unmodifiableMap(map);
-    }
+    private static final Map<String, LuceneFilesExtensions> extensions = Arrays.stream(values())
+        .collect(Collectors.toUnmodifiableMap(e -> e.extension, Function.identity()));
 
     @Nullable
     public static LuceneFilesExtensions fromExtension(String ext) {
