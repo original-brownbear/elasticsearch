@@ -8,7 +8,7 @@
 
 package org.elasticsearch.core;
 
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * A enum representing versions of the REST API (particularly with regard to backwards compatibility).
@@ -32,8 +32,8 @@ public enum RestApiVersion {
         return fromMajorVersion(major - 1);
     }
 
-    public boolean matches(Function<RestApiVersion, Boolean> restApiVersionFunctions) {
-        return restApiVersionFunctions.apply(this);
+    public boolean matches(Predicate<RestApiVersion> restApiVersionFunctions) {
+        return restApiVersionFunctions.test(this);
     }
 
     private static RestApiVersion fromMajorVersion(int majorVersion) {
@@ -48,12 +48,28 @@ public enum RestApiVersion {
         return CURRENT;
     }
 
-    public static Function<RestApiVersion, Boolean> equalTo(RestApiVersion restApiVersion) {
-        return r -> r.major == restApiVersion.major;
+    public static Predicate<RestApiVersion> equalTo(RestApiVersion restApiVersion) {
+        switch (restApiVersion) {
+            case V_8 -> {
+                return r -> r.major == V_8.major;
+            }
+            case V_7 -> {
+                return r -> r.major == V_7.major;
+            }
+            default -> throw new AssertionError("impossible");
+        }
     }
 
-    public static Function<RestApiVersion, Boolean> onOrAfter(RestApiVersion restApiVersion) {
-        return r -> r.major >= restApiVersion.major;
+    public static Predicate<RestApiVersion> onOrAfter(RestApiVersion restApiVersion) {
+        switch (restApiVersion) {
+            case V_8 -> {
+                return r -> r.major >= V_8.major;
+            }
+            case V_7 -> {
+                return r -> r.major >= V_7.major;
+            }
+            default -> throw new AssertionError("impossible");
+        }
     }
 
 }
