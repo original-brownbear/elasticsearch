@@ -66,9 +66,6 @@ public class TransportGetBucketsAction extends HandledTransportAction<GetBuckets
                 client
             );
 
-        },
-            listener::onFailure
-
-        ));
+        }, listener));
     }
 }

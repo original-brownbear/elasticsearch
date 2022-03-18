@@ -93,7 +93,7 @@ public class TransportHasPrivilegesAction extends HandledTransportAction<HasPriv
                     applicationPrivilegeDescriptors,
                     listener
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

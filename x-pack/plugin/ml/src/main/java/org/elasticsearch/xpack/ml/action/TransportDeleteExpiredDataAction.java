@@ -147,7 +147,7 @@ public class TransportDeleteExpiredDataAction extends HandledTransportAction<
                     List<MlDataRemover> dataRemovers = createDataRemovers(jobs, taskId, anomalyDetectionAuditor);
                     deleteExpiredData(request, dataRemovers, listener, isTimedOutSupplier);
                 });
-            }, listener::onFailure));
+            }, listener));
         }
     }
 
@@ -191,7 +191,7 @@ public class TransportDeleteExpiredDataAction extends HandledTransportAction<
                     isTimedOutSupplier,
                     booleanResponse
                 ),
-                listener::onFailure
+                listener
             );
             // Removing expired ML data and artifacts requires multiple operations.
             // These are queued up and executed sequentially in the action listener,

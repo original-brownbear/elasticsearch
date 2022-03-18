@@ -60,6 +60,6 @@ final class PauseFollowerIndexStep extends AbstractUnfollowIndexStep {
                 throw new ElasticsearchException("pause follow request failed to be acknowledged");
             }
             listener.onResponse(null);
-        }, listener::onFailure));
+        }, listener));
     }
 }

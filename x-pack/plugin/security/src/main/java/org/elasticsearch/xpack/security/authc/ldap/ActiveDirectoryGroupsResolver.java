@@ -73,11 +73,11 @@ class ActiveDirectoryGroupsResolver implements GroupsResolver {
                     ActionListener.wrap((results) -> {
                         List<String> groups = results.stream().map(SearchResultEntry::getDN).toList();
                         listener.onResponse(groups);
-                    }, listener::onFailure),
+                    }, listener),
                     SearchRequest.NO_ATTRIBUTES
                 );
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override
@@ -110,7 +110,7 @@ class ActiveDirectoryGroupsResolver implements GroupsResolver {
                         .toList();
                     listener.onResponse(Filter.createORFilter(orFilters));
                 }
-            }, listener::onFailure),
+            }, listener),
             TOKEN_GROUPS
         );
     }

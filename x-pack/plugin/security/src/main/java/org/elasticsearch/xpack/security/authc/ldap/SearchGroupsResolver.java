@@ -77,17 +77,14 @@ class SearchGroupsResolver implements GroupsResolver {
                         userFilter,
                         Math.toIntExact(timeout.seconds()),
                         ignoreReferralErrors,
-                        ActionListener.wrap(
-                            (results) -> listener.onResponse(results.stream().map((r) -> r.getDN()).toList()),
-                            listener::onFailure
-                        ),
+                        ActionListener.wrap((results) -> listener.onResponse(results.stream().map((r) -> r.getDN()).toList()), listener),
                         SearchRequest.NO_ATTRIBUTES
                     );
                 } catch (LDAPException e) {
                     listener.onFailure(e);
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override
@@ -133,7 +130,7 @@ class SearchGroupsResolver implements GroupsResolver {
                 } else {
                     listener.onResponse(entry.getAttributeValue(userAttribute));
                 }
-            }, listener::onFailure),
+            }, listener),
             userAttribute
         );
     }

@@ -92,7 +92,7 @@ public class PlanExecutor {
                 }
                 listener.onFailure(new PlanningException(message + ", sql statement: [{}]", sql));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     public void sql(SqlConfiguration cfg, String sql, List<SqlTypedParamValue> params, ActionListener<Page> listener) {

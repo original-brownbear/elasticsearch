@@ -59,7 +59,7 @@ public class FileRealm extends CachingUsernamePasswordRealm {
         super.usageStats(ActionListener.wrap(stats -> {
             stats.put("size", userPasswdStore.usersCount());
             listener.onResponse(stats);
-        }, listener::onFailure));
+        }, listener));
     }
 
 }

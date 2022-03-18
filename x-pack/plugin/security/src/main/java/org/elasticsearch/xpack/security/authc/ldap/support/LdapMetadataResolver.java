@@ -74,7 +74,7 @@ public class LdapMetadataResolver {
                     } else {
                         listener.onResponse(toMap(entry::getAttribute));
                     }
-                }, listener::onFailure),
+                }, listener),
                 this.attributeNames
             );
         }

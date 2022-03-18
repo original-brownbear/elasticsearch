@@ -57,6 +57,6 @@ public class TransportGetRecordsAction extends HandledTransportAction<GetRecords
                 listener::onFailure,
                 client
             );
-        }, listener::onFailure));
+        }, listener));
     }
 }

@@ -82,7 +82,7 @@ public class SecondaryAuthenticator {
                     secondaryAuthentication.writeToContext(threadContext);
                 }
                 listener.onResponse(secondaryAuthentication);
-            }, listener::onFailure)
+            }, listener)
         );
     }
 

@@ -138,10 +138,7 @@ public class TransportExplainDataFrameAnalyticsAction extends HandledTransportAc
                 ).build();
                 extractedFieldsDetectorFactory.createFromSource(
                     config,
-                    ActionListener.wrap(
-                        extractedFieldsDetector -> explain(task, config, extractedFieldsDetector, listener),
-                        listener::onFailure
-                    )
+                    ActionListener.wrap(extractedFieldsDetector -> explain(task, config, extractedFieldsDetector, listener), listener)
                 );
             });
         } else {
@@ -149,7 +146,7 @@ public class TransportExplainDataFrameAnalyticsAction extends HandledTransportAc
                 request.getConfig(),
                 ActionListener.wrap(
                     extractedFieldsDetector -> explain(task, request.getConfig(), extractedFieldsDetector, listener),
-                    listener::onFailure
+                    listener
                 )
             );
         }
@@ -174,7 +171,7 @@ public class TransportExplainDataFrameAnalyticsAction extends HandledTransportAc
 
         ActionListener<MemoryEstimation> memoryEstimationListener = ActionListener.wrap(
             memoryEstimation -> listener.onResponse(new ExplainDataFrameAnalyticsAction.Response(fieldExtraction.v2(), memoryEstimation)),
-            listener::onFailure
+            listener
         );
 
         estimateMemoryUsage(task, config, fieldExtraction.v1(), memoryEstimationListener);
@@ -206,7 +203,7 @@ public class TransportExplainDataFrameAnalyticsAction extends HandledTransportAc
                 result -> listener.onResponse(
                     new MemoryEstimation(result.getExpectedMemoryWithoutDisk(), result.getExpectedMemoryWithDisk())
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

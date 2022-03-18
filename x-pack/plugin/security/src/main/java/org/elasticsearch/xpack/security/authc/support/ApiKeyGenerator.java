@@ -52,7 +52,7 @@ public class ApiKeyGenerator {
                 }
             }
             apiKeyService.createApiKey(authentication, request, roleDescriptors, listener);
-        }, listener::onFailure);
+        }, listener);
 
         final Subject effectiveSubject = AuthenticationContext.fromAuthentication(authentication).getEffectiveSubject();
 
@@ -66,6 +66,6 @@ public class ApiKeyGenerator {
             assert roleDescriptorsList.size() == 1;
             roleDescriptorsListener.onResponse(roleDescriptorsList.iterator().next());
 
-        }, roleDescriptorsListener::onFailure));
+        }, roleDescriptorsListener));
     }
 }

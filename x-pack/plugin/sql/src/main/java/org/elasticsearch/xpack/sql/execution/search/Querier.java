@@ -161,7 +161,7 @@ public class Querier {
                 }
             }, searchError -> closePointInTimeAfterError(client, pitId, searchError, listener));
             client.search(search, closePitOnErrorListener);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private static void closePointInTimeAfterError(Client client, String pointInTimeId, Exception e, ActionListener<?> listener) {
@@ -179,7 +179,7 @@ public class Querier {
             client.execute(
                 ClosePointInTimeAction.INSTANCE,
                 new ClosePointInTimeRequest(pointInTimeId),
-                wrap(clearPointInTimeResponse -> listener.onResponse(clearPointInTimeResponse.isSucceeded()), listener::onFailure)
+                wrap(clearPointInTimeResponse -> listener.onResponse(clearPointInTimeResponse.isSucceeded()), listener)
             );
         } else {
             listener.onResponse(true);

@@ -124,8 +124,8 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
         int nodeCount = mlNodeCount(state);
 
         // Step 5. return final ML usage
-        ActionListener<Map<String, Object>> inferenceUsageListener = ActionListener.wrap(inferenceUsage -> {
-            listener.onResponse(
+        ActionListener<Map<String, Object>> inferenceUsageListener = ActionListener.wrap(
+            inferenceUsage -> listener.onResponse(
                 new XPackUsageFeatureResponse(
                     new MachineLearningFeatureSetUsage(
                         MachineLearningField.ML_API_FEATURE.checkWithoutTracking(licenseState),
@@ -137,14 +137,15 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
                         nodeCount
                     )
                 )
-            );
-        }, listener::onFailure);
+            ),
+            listener
+        );
 
         // Step 4. Extract usage from data frame analytics configs and then get inference usage
         ActionListener<GetDataFrameAnalyticsAction.Response> dataframeAnalyticsListener = ActionListener.wrap(response -> {
             addDataFrameAnalyticsUsage(response, analyticsUsage);
             addInferenceUsage(inferenceUsageListener);
-        }, listener::onFailure);
+        }, listener);
 
         // Step 3. Extract usage from data frame analytics stats and then request data frame analytics configs
         ActionListener<GetDataFrameAnalyticsStatsAction.Response> dataframeAnalyticsStatsListener = ActionListener.wrap(response -> {
@@ -152,7 +153,7 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
             GetDataFrameAnalyticsAction.Request getDfaRequest = new GetDataFrameAnalyticsAction.Request(Metadata.ALL);
             getDfaRequest.setPageParams(new PageParams(0, 10_000));
             client.execute(GetDataFrameAnalyticsAction.INSTANCE, getDfaRequest, dataframeAnalyticsListener);
-        }, listener::onFailure);
+        }, listener);
 
         // Step 2. Extract usage from datafeeds stats and then request stats for data frame analytics
         ActionListener<GetDatafeedsStatsAction.Response> datafeedStatsListener = ActionListener.wrap(response -> {
@@ -162,7 +163,7 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
             );
             dataframeAnalyticsStatsRequest.setPageParams(new PageParams(0, 10_000));
             client.execute(GetDataFrameAnalyticsStatsAction.INSTANCE, dataframeAnalyticsStatsRequest, dataframeAnalyticsStatsListener);
-        }, listener::onFailure);
+        }, listener);
 
         // Step 1. Extract usage from jobs stats and then request stats for all datafeeds
         GetJobsStatsAction.Request jobStatsRequest = new GetJobsStatsAction.Request(Metadata.ALL);
@@ -171,8 +172,8 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
                 addJobsUsage(response, jobs.results(), jobsUsage);
                 GetDatafeedsStatsAction.Request datafeedStatsRequest = new GetDatafeedsStatsAction.Request(Metadata.ALL);
                 client.execute(GetDatafeedsStatsAction.INSTANCE, datafeedStatsRequest, datafeedStatsListener);
-            }, listener::onFailure)),
-            listener::onFailure
+            }, listener)),
+            listener
         );
 
         // Step 0. Kick off the chain of callbacks by requesting jobs stats
@@ -341,8 +342,8 @@ public class MachineLearningUsageTransportAction extends XPackUsageFeatureTransp
                 addTrainedModelStats(getModelsResponse, getStatsResponse, inferenceUsage);
                 addDeploymentStats(getStatsResponse, inferenceUsage);
                 listener.onResponse(inferenceUsage);
-            }, listener::onFailure));
-        }, listener::onFailure));
+            }, listener));
+        }, listener));
     }
 
     private void addDeploymentStats(GetTrainedModelsStatsAction.Response statsResponse, Map<String, Object> inferenceUsage) {

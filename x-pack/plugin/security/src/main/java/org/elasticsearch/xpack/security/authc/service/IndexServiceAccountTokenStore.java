@@ -119,7 +119,7 @@ public class IndexServiceAccountTokenStore extends CachingServiceAccountTokenSto
                         logger.trace("service account token [{}] not found in index", token.getQualifiedName());
                         listener.onResponse(new StoreAuthenticationResult(false, getTokenSource()));
                     }
-                }, listener::onFailure)
+                }, listener)
             )
         );
     }
@@ -159,7 +159,7 @@ public class IndexServiceAccountTokenStore extends CachingServiceAccountTokenSto
                         assert DocWriteResponse.Result.CREATED == response.getResult()
                             : "an successful response of an OpType.CREATE request must have result of CREATED";
                         listener.onResponse(CreateServiceAccountTokenResponse.created(token.getTokenName(), token.asBearerString()));
-                    }, listener::onFailure))
+                    }, listener))
                 );
             });
         } catch (IOException e) {
@@ -248,7 +248,7 @@ public class IndexServiceAccountTokenStore extends CachingServiceAccountTokenSto
                                 }
                             )
                         );
-                    }, listener::onFailure)
+                    }, listener)
                 );
             });
         }

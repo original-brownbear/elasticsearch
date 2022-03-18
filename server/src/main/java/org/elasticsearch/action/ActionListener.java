@@ -129,26 +129,22 @@ public interface ActionListener<Response> {
         CheckedConsumer<Response, ? extends Exception> onResponse,
         Consumer<Exception> onFailure
     ) {
-        return new ActionListener<Response>() {
-            @Override
-            public void onResponse(Response response) {
-                try {
-                    onResponse.accept(response);
-                } catch (Exception e) {
-                    onFailure(e);
-                }
-            }
+        return new WrappedActionListener<>(onResponse, onFailure);
+    }
 
-            @Override
-            public void onFailure(Exception e) {
-                onFailure.accept(e);
-            }
+    default <T> ActionListener<T> wrap(CheckedConsumer<T, ? extends Exception> onResponse) {
+        return wrap(onResponse, this);
+    }
 
-            @Override
-            public String toString() {
-                return "WrappedActionListener{" + onResponse + "}{" + onFailure + "}";
+    static <Response> ActionListener<Response> wrap(CheckedConsumer<Response, ? extends Exception> onResponse, ActionListener<?> listener) {
+        if (listener instanceof ActionListener.WrappedActionListener<?>) {
+            return wrap(onResponse, ((WrappedActionListener<?>) listener).onFailure);
+        } else if (listener instanceof ActionListener.DelegatingFailureActionListener<?, ?>
+            || listener instanceof ActionListener.MappedActionListener<?, ?>
+            || listener instanceof DelegatingActionListener<?>) {
+                return wrap(onResponse, ((Delegating<?, ?>) listener).delegate);
             }
-        };
+        return new WrappedDelegatingActionListener<>(onResponse, listener);
     }
 
     /**
@@ -448,6 +444,66 @@ public interface ActionListener<Response> {
         } catch (RuntimeException ex) {
             assert false : ex;
             throw ex;
+        }
+    }
+
+    final class WrappedDelegatingActionListener<R, T> extends Delegating<R, T> {
+        private final CheckedConsumer<R, ? extends Exception> onResponse;
+
+        public WrappedDelegatingActionListener(CheckedConsumer<R, ? extends Exception> onResponse, ActionListener<T> delegate) {
+            super(delegate);
+            this.onResponse = onResponse;
+        }
+
+        @Override
+        public void onResponse(R response) {
+            try {
+                onResponse.accept(response);
+            } catch (Exception e) {
+                onFailure(e);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "WrappedDelegatingActionListener{" + onResponse + "}{" + delegate + "}";
+        }
+    }
+
+    final class WrappedActionListener<Response> implements ActionListener<Response> {
+        private final CheckedConsumer<Response, ? extends Exception> onResponse;
+        private final Consumer<Exception> onFailure;
+
+        public WrappedActionListener(CheckedConsumer<Response, ? extends Exception> onResponse, Consumer<Exception> onFailure) {
+            this.onResponse = onResponse;
+            this.onFailure = onFailure;
+        }
+
+        @Override
+        public void onResponse(Response response) {
+            try {
+                onResponse.accept(response);
+            } catch (Exception e) {
+                onFailure(e);
+            }
+        }
+
+        @Override
+        public void onFailure(Exception e) {
+            try {
+                onFailure.accept(e);
+            } catch (RuntimeException ex) {
+                if (ex != e) {
+                    ex.addSuppressed(e);
+                }
+                assert false : new AssertionError("listener.onFailure failed", ex);
+                throw ex;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "WrappedActionListener{" + onResponse + "}{" + onFailure + "}";
         }
     }
 }

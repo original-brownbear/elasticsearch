@@ -107,7 +107,7 @@ class LdapUserSearchSessionFactory extends PoolingSessionFactory {
                     )
                 );
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**
@@ -214,7 +214,7 @@ class LdapUserSearchSessionFactory extends PoolingSessionFactory {
                 );
                 listener.onResponse(session);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

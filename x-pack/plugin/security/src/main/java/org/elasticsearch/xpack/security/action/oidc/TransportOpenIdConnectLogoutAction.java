@@ -79,9 +79,9 @@ public class TransportOpenIdConnectLogoutAction extends HandledTransportAction<O
                     }
                     OpenIdConnectLogoutResponse response = buildResponse(authentication, tokenMetadata);
                     listener.onResponse(response);
-                }, listener::onFailure));
-            }, listener::onFailure));
-        }, listener::onFailure));
+                }, listener));
+            }, listener));
+        }, listener));
     }
 
     private OpenIdConnectLogoutResponse buildResponse(Authentication authentication, Map<String, Object> tokenMetadata) {

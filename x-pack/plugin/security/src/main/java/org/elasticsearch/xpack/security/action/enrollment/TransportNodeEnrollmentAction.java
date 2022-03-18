@@ -159,6 +159,6 @@ public class TransportNodeEnrollmentAction extends HandledTransportAction<NodeEn
             } catch (CertificateEncodingException e) {
                 listener.onFailure(new ElasticsearchException("Unable to enroll node", e));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 }

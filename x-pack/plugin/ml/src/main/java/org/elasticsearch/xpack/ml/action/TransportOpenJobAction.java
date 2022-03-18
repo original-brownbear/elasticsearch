@@ -133,7 +133,7 @@ public class TransportOpenJobAction extends TransportMasterNodeAction<OpenJobAct
                 } else {
                     listener.onResponse(response);
                 }
-            }, listener::onFailure);
+            }, listener);
 
             // Wait for job to be started
             ActionListener<PersistentTasksCustomMetadata.PersistentTask<OpenJobAction.JobParams>> waitForJobToStart =
@@ -165,7 +165,7 @@ public class TransportOpenJobAction extends TransportMasterNodeAction<OpenJobAct
                     jobParams,
                     waitForJobToStart
                 ),
-                listener::onFailure
+                listener
             );
 
             // Tell the job tracker to refresh the memory requirement for this job and all other jobs that have persistent tasks
@@ -174,7 +174,7 @@ public class TransportOpenJobAction extends TransportMasterNodeAction<OpenJobAct
                     jobParams.getJobId(),
                     memoryRequirementRefreshListener
                 ),
-                listener::onFailure
+                listener
             );
 
             // Validate the model snapshot is supported
@@ -213,13 +213,13 @@ public class TransportOpenJobAction extends TransportMasterNodeAction<OpenJobAct
                         listener.onFailure(ExceptionsHelper.serverError("Unable to validate model snapshot", failure));
                     })
                 );
-            }, listener::onFailure);
+            }, listener);
 
             // Get the job config
             jobConfigProvider.getJob(jobParams.getJobId(), ActionListener.wrap(builder -> {
                 jobParams.setJob(builder.build());
                 getJobHandler.onResponse(null);
-            }, listener::onFailure));
+            }, listener));
         } else {
             listener.onFailure(LicenseUtils.newComplianceException(XPackField.MACHINE_LEARNING));
         }

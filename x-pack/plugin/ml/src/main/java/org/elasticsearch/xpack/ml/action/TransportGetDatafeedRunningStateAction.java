@@ -126,7 +126,7 @@ public class TransportGetDatafeedRunningStateAction extends TransportTasksAction
                 )
             );
             listener.onResponse(Response.fromResponses(missingResponses));
-        }, listener::onFailure);
+        }, listener);
 
         String[] nodesOfConcern = datafeedTasks.stream()
             .map(PersistentTasksCustomMetadata.PersistentTask::getExecutorNode)

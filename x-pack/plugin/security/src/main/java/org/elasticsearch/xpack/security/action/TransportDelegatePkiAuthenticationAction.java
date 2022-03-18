@@ -106,7 +106,7 @@ public final class TransportDelegatePkiAuthenticationAction extends HandledTrans
                             listener.onResponse(
                                 new DelegatePkiAuthenticationResponse(tokenResult.getAccessToken(), expiresIn, authentication)
                             );
-                        }, listener::onFailure)
+                        }, listener)
                     );
                 }, e -> {
                     logger.debug(

@@ -86,7 +86,7 @@ public class TransportInferTrainedModelDeploymentAction extends TransportTasksAc
                 }
                 String message = "Trained model [" + deploymentId + "] is not deployed";
                 listener.onFailure(ExceptionsHelper.conflictStatusException(message));
-            }, listener::onFailure));
+            }, listener));
             return;
         }
         if (allocation.getAllocationState() == AllocationState.STOPPING) {
@@ -140,7 +140,7 @@ public class TransportInferTrainedModelDeploymentAction extends TransportTasksAc
             request.getInferenceTimeout(),
             ActionListener.wrap(
                 pyTorchResult -> listener.onResponse(new InferTrainedModelDeploymentAction.Response(pyTorchResult)),
-                listener::onFailure
+                listener
             )
         );
     }

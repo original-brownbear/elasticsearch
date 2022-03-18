@@ -90,7 +90,7 @@ public final class ResizeRequestInterceptor implements RequestInterceptor {
                             )
                         );
                     }
-                }, listener::onFailure), threadContext)
+                }, listener), threadContext)
             );
         } else {
             listener.onResponse(null);

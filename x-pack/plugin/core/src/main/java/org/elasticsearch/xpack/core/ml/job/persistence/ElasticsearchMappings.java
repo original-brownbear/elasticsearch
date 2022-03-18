@@ -181,7 +181,7 @@ public class ElasticsearchMappings {
                             )
                         );
                     }
-                }, listener::onFailure));
+                }, listener));
             } catch (IOException e) {
                 listener.onFailure(e);
             }

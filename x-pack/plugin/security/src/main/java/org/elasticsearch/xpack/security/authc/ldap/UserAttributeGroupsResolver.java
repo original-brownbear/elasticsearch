@@ -72,7 +72,7 @@ class UserAttributeGroupsResolver implements GroupsResolver {
                     } else {
                         listener.onResponse(List.of(entry.getAttributeValues(attribute)));
                     }
-                }, listener::onFailure),
+                }, listener),
                 attribute
             );
         }

@@ -218,7 +218,7 @@ public class OpenIdConnectAuthenticator {
                     final JWT idToken = tokens.v2();
                     validateAccessToken(accessToken, idToken);
                     getUserClaims(accessToken, idToken, expectedNonce, true, listener);
-                }, listener::onFailure));
+                }, listener));
             } else {
                 final JWT idToken = response.getIDToken();
                 final AccessToken accessToken = response.getAccessToken();

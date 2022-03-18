@@ -53,6 +53,6 @@ public class TransportGetCategoriesAction extends HandledTransportAction<GetCate
                 listener::onFailure,
                 client
             );
-        }, listener::onFailure));
+        }, listener));
     }
 }

@@ -275,6 +275,6 @@ public class TransportMountSearchableSnapshotAction extends TransportMasterNodeA
                         .snapshotUuid(snapshotId.getUUID()),
                     listener
                 );
-        }, listener::onFailure), threadPool.executor(ThreadPool.Names.SNAPSHOT_META), null);
+        }, listener), threadPool.executor(ThreadPool.Names.SNAPSHOT_META), null);
     }
 }

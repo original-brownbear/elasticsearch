@@ -364,7 +364,7 @@ public final class LdapUtils {
                         + Thread.currentThread()
                         + "] to be an LDAPConnectionReader Thread. Probably the new library has changed the thread's name.";
                 listener.onResponse(Collections.unmodifiableList(searchResult.getSearchEntries()));
-            }, listener::onFailure),
+            }, listener),
             1
         );
         try {
@@ -509,7 +509,7 @@ public final class LdapUtils {
                 } else {
                     listener.onResponse(null);
                 }
-            }, listener::onFailure), 1);
+            }, listener), 1);
         }
     }
 
@@ -640,7 +640,7 @@ public final class LdapUtils {
                         );
                         listener.onResponse(resultWithValues);
                     }
-                }, listener::onFailure);
+                }, listener);
 
                 for (String referralUrl : referralUrls) {
                     try {

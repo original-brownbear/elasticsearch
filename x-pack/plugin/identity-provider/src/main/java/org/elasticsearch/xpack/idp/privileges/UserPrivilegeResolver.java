@@ -99,8 +99,8 @@ public class UserPrivilegeResolver {
                 UserPrivileges privileges = buildResult(response, service);
                 logger.debug("Resolved service privileges [{}]", privileges);
                 listener.onResponse(privileges);
-            }, listener::onFailure));
-        }, listener::onFailure));
+            }, listener));
+        }, listener));
 
     }
 
@@ -140,6 +140,6 @@ public class UserPrivilegeResolver {
                 builder.privileges(actions);
                 listener.onResponse(builder.build());
             }
-        }, listener::onFailure));
+        }, listener));
     }
 }

@@ -200,7 +200,7 @@ public class MlDailyMaintenanceService implements Releasable {
                 }
                 finalListener.onResponse(AcknowledgedResponse.TRUE);
             },
-            finalListener::onFailure
+            finalListener
         );
 
         executeAsyncWithOrigin(
@@ -230,7 +230,7 @@ public class MlDailyMaintenanceService implements Releasable {
                 }
                 finalListener.onResponse(AcknowledgedResponse.TRUE);
             },
-            finalListener::onFailure
+            finalListener
         );
 
         ActionListener<ListTasksResponse> listTasksActionListener = ActionListener.wrap(listTasksResponse -> {
@@ -259,12 +259,12 @@ public class MlDailyMaintenanceService implements Releasable {
                         ML_ORIGIN,
                         DeleteJobAction.INSTANCE,
                         request,
-                        ActionListener.wrap(response -> listener.onResponse(Tuple.tuple(request, response)), listener::onFailure)
+                        ActionListener.wrap(response -> listener.onResponse(Tuple.tuple(request, response)), listener)
                     )
                 );
             }
             chainTaskExecutor.execute(deleteJobsActionListener);
-        }, finalListener::onFailure);
+        }, finalListener);
 
         ActionListener<GetJobsAction.Response> getJobsActionListener = ActionListener.wrap(getJobsResponse -> {
             Set<String> jobsInStateDeleting = getJobsResponse.getResponse()
@@ -285,7 +285,7 @@ public class MlDailyMaintenanceService implements Releasable {
                 new ListTasksRequest().setActions(DeleteJobAction.NAME),
                 listTasksActionListener
             );
-        }, finalListener::onFailure);
+        }, finalListener);
 
         executeAsyncWithOrigin(client, ML_ORIGIN, GetJobsAction.INSTANCE, new GetJobsAction.Request("*"), getJobsActionListener);
     }

@@ -101,7 +101,7 @@ public abstract class AbstractTransportSetResetModeAction extends AcknowledgedTr
                 return;
             }
             wrappedListener.onResponse(acknowledgedResponse);
-        }, wrappedListener::onFailure);
+        }, wrappedListener);
 
         clusterService.submitStateUpdateTask(
             featureName() + "-set-reset-mode",

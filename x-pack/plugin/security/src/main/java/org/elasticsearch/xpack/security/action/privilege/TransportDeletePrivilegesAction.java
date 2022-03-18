@@ -53,7 +53,7 @@ public class TransportDeletePrivilegesAction extends HandledTransportAction<Dele
                 privileges -> listener.onResponse(
                     new DeletePrivilegesResponse(privileges.getOrDefault(request.application(), Collections.emptyList()))
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

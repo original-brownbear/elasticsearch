@@ -113,8 +113,8 @@ public class LdapSession implements Releasable {
             metadata(ActionListener.wrap(meta -> {
                 logger.debug("Resolved {} meta-data fields [{}] for user [{}]", meta.size(), meta, userDn);
                 listener.onResponse(new LdapUserData(groups, meta));
-            }, listener::onFailure));
-        }, listener::onFailure));
+            }, listener));
+        }, listener));
     }
 
     public static class LdapUserData {

@@ -110,10 +110,10 @@ public class TransportMlMemoryAction extends TransportMasterNodeAction<MlMemoryA
                         trainedModelCacheInfoResponse,
                         listener
                     ),
-                    listener::onFailure
+                    listener
                 )
             );
-        }, listener::onFailure);
+        }, listener);
 
         // Next get node stats related to the OS and JVM
         ActionListener<Void> memoryTrackerRefreshListener = ActionListener.wrap(
@@ -125,7 +125,7 @@ public class TransportMlMemoryAction extends TransportMasterNodeAction<MlMemoryA
                 .setJvm(true)
                 .setTimeout(request.timeout())
                 .execute(nodeStatsListener),
-            listener::onFailure
+            listener
         );
 
         // If the memory tracker has never been refreshed, do that first

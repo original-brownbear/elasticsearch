@@ -324,13 +324,13 @@ public final class SourceDestValidator {
             } else {
                 listener.onResponse(true);
             }
-        }, listener::onFailure);
+        }, listener);
 
         // We traverse the validations in reverse order as we chain the listeners from back to front
         for (int i = validations.size() - 1; i >= 0; i--) {
             SourceDestValidation validation = validations.get(i);
             final ActionListener<Context> previousValidationListener = validationListener;
-            validationListener = ActionListener.wrap(c -> validation.validate(c, previousValidationListener), listener::onFailure);
+            validationListener = ActionListener.wrap(c -> validation.validate(c, previousValidationListener), listener);
         }
 
         validationListener.onResponse(context);

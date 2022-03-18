@@ -109,7 +109,7 @@ public class TransportDeleteDataFrameAnalyticsAction extends AcknowledgedTranspo
 
         ActionListener<StopDataFrameAnalyticsAction.Response> stopListener = ActionListener.wrap(
             stopResponse -> normalDelete(parentTaskClient, clusterService.state(), request, listener),
-            listener::onFailure
+            listener
         );
 
         stopJob(parentTaskClient, request, stopListener);
@@ -171,7 +171,7 @@ public class TransportDeleteDataFrameAnalyticsAction extends AcknowledgedTranspo
         configProvider.get(id, ActionListener.wrap(config -> {
             DataFrameAnalyticsDeleter deleter = new DataFrameAnalyticsDeleter(parentTaskClient, auditor);
             deleter.deleteAllDocuments(config, request.timeout(), listener);
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

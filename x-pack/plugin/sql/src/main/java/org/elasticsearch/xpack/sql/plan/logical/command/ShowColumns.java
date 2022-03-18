@@ -88,7 +88,7 @@ public class ShowColumns extends Command {
                 fillInRows(IndexCompatibility.compatible(indexResult, version).get().mapping(), null, rows);
             }
             listener.onResponse(of(session, rows));
-        }, listener::onFailure));
+        }, listener));
     }
 
     static void fillInRows(Map<String, EsField> mapping, String prefix, List<List<?>> rows) {

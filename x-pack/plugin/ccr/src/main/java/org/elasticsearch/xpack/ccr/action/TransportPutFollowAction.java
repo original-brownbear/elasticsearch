@@ -298,7 +298,7 @@ public final class TransportPutFollowAction extends TransportMasterNodeAction<Pu
                     result -> listener.onResponse(new PutFollowAction.Response(true, result, r.isAcknowledged())),
                     listener::onFailure
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

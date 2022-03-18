@@ -42,6 +42,6 @@ public class TransportRefreshTokenAction extends HandledTransportAction<CreateTo
                 tokenResult.getAuthentication()
             );
             listener.onResponse(response);
-        }, listener::onFailure));
+        }, listener));
     }
 }

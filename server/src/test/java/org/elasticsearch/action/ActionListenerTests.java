@@ -108,31 +108,16 @@ public class ActionListenerTests extends ESTestCase {
         List<AtomicReference<Boolean>> refList = new ArrayList<>();
         List<AtomicReference<Exception>> excList = new ArrayList<>();
         List<ActionListener<Boolean>> listeners = new ArrayList<>();
-
-        final int listenerToFail = randomBoolean() ? -1 : randomIntBetween(0, numListeners - 1);
         for (int i = 0; i < numListeners; i++) {
             AtomicReference<Boolean> reference = new AtomicReference<>();
             AtomicReference<Exception> exReference = new AtomicReference<>();
             refList.add(reference);
             excList.add(exReference);
-            boolean fail = i == listenerToFail;
-            CheckedConsumer<Boolean, ? extends Exception> handler = (o) -> { reference.set(o); };
-            listeners.add(ActionListener.wrap(handler, (e) -> {
-                exReference.set(e);
-                if (fail) {
-                    throw new RuntimeException("double boom");
-                }
-            }));
+            CheckedConsumer<Boolean, ? extends Exception> handler = reference::set;
+            listeners.add(ActionListener.wrap(handler, exReference::set));
         }
 
-        try {
-            ActionListener.onFailure(listeners, new Exception("booom"));
-            assertTrue("unexpected succces listener to fail: " + listenerToFail, listenerToFail == -1);
-        } catch (RuntimeException ex) {
-            assertTrue("listener to fail: " + listenerToFail, listenerToFail >= 0);
-            assertNotNull(ex.getCause());
-            assertEquals("double boom", ex.getCause().getMessage());
-        }
+        ActionListener.onFailure(listeners, new Exception("booom"));
 
         for (int i = 0; i < numListeners; i++) {
             assertNull("listener index " + i, refList.get(i).get());

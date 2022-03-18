@@ -413,7 +413,7 @@ public final class TokenService {
                                 traceLog("create token", new ElasticsearchException("failed to create token document [{}]", indexResponse))
                             );
                         }
-                    }, listener::onFailure)
+                    }, listener)
                 )
             );
         }
@@ -470,7 +470,7 @@ public final class TokenService {
             } else {
                 listener.onResponse(new Tuple<>(userToken.getAuthentication(), userToken.getMetadata()));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**
@@ -607,7 +607,7 @@ public final class TokenService {
                             listener.onResponse(null);
                             return;
                         }
-                    }, listener::onFailure));
+                    }, listener));
                 } else {
                     logger.debug(() -> new ParameterizedMessage("invalid key {} key: {}", passphraseHash, keyCache.cache.keySet()));
                     listener.onResponse(null);
@@ -739,7 +739,7 @@ public final class TokenService {
                     } else {
                         invalidateAllTokens(tokenTuples, listener);
                     }
-                }, listener::onFailure));
+                }, listener));
             } else {
                 Predicate<Map<String, Object>> filter = null;
                 if (Strings.hasText(username)) {
@@ -752,7 +752,7 @@ public final class TokenService {
                     } else {
                         invalidateAllTokens(tokenTuples, listener);
                     }
-                }, listener::onFailure));
+                }, listener));
             }
         }
     }
@@ -787,7 +787,7 @@ public final class TokenService {
                 backoff,
                 "refresh_token",
                 null,
-                ActionListener.wrap(result -> indexInvalidation(userTokens, backoff, "access_token", result, listener), listener::onFailure)
+                ActionListener.wrap(result -> indexInvalidation(userTokens, backoff, "access_token", result, listener), listener)
             );
         } else {
             indexInvalidation(userTokens, backoff, "access_token", null, listener);
@@ -821,7 +821,7 @@ public final class TokenService {
                 } else {
                     listener.onResponse(newResult);
                 }
-            }, listener::onFailure));
+            }, listener));
         } else {
             indexInvalidation(idsOfRecentTokens, securityTokensIndex, backoff, srcPrefix, previousResult, listener);
         }
@@ -1663,7 +1663,7 @@ public final class TokenService {
                     );
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**
@@ -1723,7 +1723,7 @@ public final class TokenService {
                     );
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**
@@ -2458,7 +2458,7 @@ public final class TokenService {
                 } else {
                     listener.onFailure(new IllegalStateException("not acked"));
                 }
-            }, listener::onFailure)),
+            }, listener)),
             newExecutor()
         );
     }

@@ -134,10 +134,7 @@ public class RBACEngine implements AuthorizationEngine {
         final Authentication authentication = requestInfo.getAuthentication();
         rolesStore.getRoles(
             authentication,
-            ActionListener.wrap(
-                roleTuple -> listener.onResponse(new RBACAuthorizationInfo(roleTuple.v1(), roleTuple.v2())),
-                listener::onFailure
-            )
+            ActionListener.wrap(roleTuple -> listener.onResponse(new RBACAuthorizationInfo(roleTuple.v1(), roleTuple.v2())), listener)
         );
     }
 
@@ -292,7 +289,7 @@ public class RBACEngine implements AuthorizationEngine {
                         } else {
                             listener.onResponse(new IndexAuthorizationResult(true, null));
                         }
-                    }, listener::onFailure), ((SearchScrollRequest) request)::parseScrollId).run();
+                    }, listener), ((SearchScrollRequest) request)::parseScrollId).run();
                 } else {
                     // RBACEngine simply authorizes scroll related actions without filling in any DLS/FLS permissions.
                     // Scroll related actions have special security logic, where the security context of the initial search
@@ -352,7 +349,7 @@ public class RBACEngine implements AuthorizationEngine {
                         )
                     );
                 }
-            }, listener::onFailure));
+            }, listener));
         } else {
             try {
                 final IndexAuthorizationResult indexAuthorizationResult = authorizeIndexActionName(
@@ -378,7 +375,7 @@ public class RBACEngine implements AuthorizationEngine {
                                 )
                             );
                         }
-                    }, listener::onFailure));
+                    }, listener));
                 } else {
                     listener.onResponse(indexAuthorizationResult);
                 }

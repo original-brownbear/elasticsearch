@@ -134,18 +134,18 @@ public class SecurityUsageTransportAction extends XPackUsageFeatureTransportActi
         final ActionListener<Map<String, Object>> rolesStoreUsageListener = ActionListener.wrap(rolesStoreUsage -> {
             rolesUsageRef.set(rolesStoreUsage);
             doCountDown.run();
-        }, listener::onFailure);
+        }, listener);
 
         final ActionListener<Map<String, Object>> roleMappingStoreUsageListener = ActionListener.wrap(nativeRoleMappingStoreUsage -> {
             Map<String, Object> usage = singletonMap("native", nativeRoleMappingStoreUsage);
             roleMappingUsageRef.set(usage);
             doCountDown.run();
-        }, listener::onFailure);
+        }, listener);
 
         final ActionListener<Map<String, Object>> realmsUsageListener = ActionListener.wrap(realmsUsage -> {
             realmsUsageRef.set(realmsUsage);
             doCountDown.run();
-        }, listener::onFailure);
+        }, listener);
 
         if (rolesStore == null || enabled == false) {
             rolesStoreUsageListener.onResponse(Collections.emptyMap());

@@ -117,7 +117,7 @@ public class TransportGetJobModelSnapshotsUpgradeStatsAction extends TransportMa
                     new Response(new QueryPage<>(statsList, statsList.size(), GetJobModelSnapshotsUpgradeStatsAction.RESULTS_FIELD))
                 );
             }
-        }, listener::onFailure);
+        }, listener);
 
         // 1. Expand jobs - this will throw if a required job ID match isn't made
         jobConfigProvider.expandJobs(request.getJobId(), request.allowNoMatch(), true, expandIdsListener);

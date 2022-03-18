@@ -170,7 +170,7 @@ public final class TransportCreateTokenAction extends HandledTransportAction<Cre
                     authentication
                 );
                 listener.onResponse(response);
-            }, listener::onFailure)
+            }, listener)
         );
     }
 

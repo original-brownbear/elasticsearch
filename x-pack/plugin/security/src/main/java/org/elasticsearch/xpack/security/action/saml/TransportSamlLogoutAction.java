@@ -70,13 +70,13 @@ public final class TransportSamlLogoutAction extends HandledTransportAction<Saml
                             );
                         }
                         listener.onResponse(response);
-                    }, listener::onFailure));
-                }, listener::onFailure));
+                    }, listener));
+                }, listener));
             } catch (ElasticsearchException e) {
                 logger.debug("Internal exception during SAML logout", e);
                 listener.onFailure(e);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void invalidateRefreshToken(String refreshToken, ActionListener<TokensInvalidationResult> listener) {

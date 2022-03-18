@@ -42,7 +42,7 @@ public class TransportDeleteServiceAccountTokenAction extends HandledTransportAc
     ) {
         serviceAccountService.deleteIndexToken(
             request,
-            ActionListener.wrap(found -> listener.onResponse(new DeleteServiceAccountTokenResponse(found)), listener::onFailure)
+            ActionListener.wrap(found -> listener.onResponse(new DeleteServiceAccountTokenResponse(found)), listener)
         );
     }
 }

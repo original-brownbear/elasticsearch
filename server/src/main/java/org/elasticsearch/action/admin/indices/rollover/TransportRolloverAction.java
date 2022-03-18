@@ -134,8 +134,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
         client.execute(
             IndicesStatsAction.INSTANCE,
             statsRequest,
-
-            ActionListener.wrap(statsResponse -> {
+            listener.wrap(statsResponse -> {
                 // Now that we have the stats for the cluster, we need to know the names of the index for which we should evaluate
                 // conditions, as well as what our newly created index *would* be.
                 final MetadataRolloverService.NameResolution trialRolloverNames = rolloverService.resolveRolloverNames(
@@ -189,7 +188,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                     // conditions not met
                     listener.onResponse(trialRolloverResponse);
                 }
-            }, listener::onFailure)
+            })
         );
     }
 

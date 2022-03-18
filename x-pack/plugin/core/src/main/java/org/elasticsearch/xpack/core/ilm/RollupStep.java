@@ -59,11 +59,7 @@ public class RollupStep extends AsyncActionStep {
         }
         RollupAction.Request request = new RollupAction.Request(indexName, rollupIndexName, config).masterNodeTimeout(TimeValue.MAX_VALUE);
         // currently RollupAction always acknowledges action was complete when no exceptions are thrown.
-        getClient().execute(
-            RollupAction.INSTANCE,
-            request,
-            ActionListener.wrap(response -> listener.onResponse(null), listener::onFailure)
-        );
+        getClient().execute(RollupAction.INSTANCE, request, ActionListener.wrap(response -> listener.onResponse(null), listener));
     }
 
     public RollupActionConfig getConfig() {

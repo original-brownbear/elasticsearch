@@ -269,7 +269,7 @@ public class Exporters extends AbstractLifecycleComponent {
                 } else {
                     listener.onResponse(null);
                 }
-            }, listener::onFailure));
+            }, listener));
         } else {
             listener.onResponse(null);
         }

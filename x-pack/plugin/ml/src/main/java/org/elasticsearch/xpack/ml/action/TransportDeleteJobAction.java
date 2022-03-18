@@ -172,7 +172,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
             } else {
                 normalDeleteJob(parentTaskClient, request, state, finalListener);
             }
-        }, finalListener::onFailure);
+        }, finalListener);
 
         ActionListener<AcknowledgedResponse> datafeedDeleteListener = ActionListener.wrap(response -> {
             auditor.info(request.getJobId(), Messages.getMessage(Messages.JOB_AUDIT_DELETING, taskId));
@@ -184,10 +184,10 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
                         new Blocked(Blocked.Reason.DELETE, taskId),
                         markAsDeletingListener
                     ),
-                    finalListener::onFailure
+                    finalListener
                 )
             );
-        }, finalListener::onFailure);
+        }, finalListener);
 
         ActionListener<Boolean> jobExistsListener = ActionListener.wrap(
             response -> deleteDatafeedIfNecessary(request, datafeedDeleteListener),
@@ -349,7 +349,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
                         }
                     })
                 );
-            }, listener::onFailure)
+            }, listener)
         );
     }
 
@@ -378,7 +378,7 @@ public class TransportDeleteJobAction extends AcknowledgedTransportMasterNodeAct
             } else {
                 listener.onResponse(false);
             }
-        }, listener::onFailure);
+        }, listener);
 
         jobConfigProvider.getJob(jobId, jobListener);
     }

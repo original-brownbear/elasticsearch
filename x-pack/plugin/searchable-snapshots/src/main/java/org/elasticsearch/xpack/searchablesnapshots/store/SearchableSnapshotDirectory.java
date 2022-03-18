@@ -496,7 +496,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         final GroupedActionListener<Void> completionListener = new GroupedActionListener<>(ActionListener.wrap(voids -> {
             recoveryState.setPreWarmComplete();
             listener.onResponse(null);
-        }, listener::onFailure), snapshot().totalFileCount());
+        }, listener), snapshot().totalFileCount());
 
         for (BlobStoreIndexShardSnapshot.FileInfo file : snapshot().indexFiles()) {
             boolean hashEqualsContents = file.metadata().hashEqualsContents();

@@ -46,7 +46,7 @@ public class CompositeRoleMapper implements UserRoleMapper {
         GroupedActionListener<Set<String>> groupListener = new GroupedActionListener<>(
             ActionListener.wrap(
                 composite -> listener.onResponse(composite.stream().flatMap(Set::stream).collect(Collectors.toSet())),
-                listener::onFailure
+                listener
             ),
             delegates.size()
         );

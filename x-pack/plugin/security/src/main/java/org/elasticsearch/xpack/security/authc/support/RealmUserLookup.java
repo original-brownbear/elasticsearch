@@ -51,7 +51,7 @@ public class RealmUserLookup {
                 } else {
                     lookupUserListener.onResponse(null);
                 }
-            }, lookupUserListener::onFailure)),
+            }, lookupUserListener)),
             realms,
             threadContext
         );

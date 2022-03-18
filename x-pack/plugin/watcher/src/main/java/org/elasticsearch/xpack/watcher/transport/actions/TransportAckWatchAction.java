@@ -145,17 +145,17 @@ public class TransportAckWatchAction extends WatcherTransportAction<AckWatchRequ
                                 updateRequest,
                                 ActionListener.<UpdateResponse>wrap(
                                     (updateResponse) -> listener.onResponse(new AckWatchResponse(watch.status())),
-                                    listener::onFailure
+                                    listener
                                 ),
                                 client::update
                             );
                         }
-                    }, listener::onFailure),
+                    }, listener),
                     client::get
                 );
 
             }
 
-        }, listener::onFailure));
+        }, listener));
     }
 }

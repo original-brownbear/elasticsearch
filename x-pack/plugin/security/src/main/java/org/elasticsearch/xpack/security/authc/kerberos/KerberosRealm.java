@@ -258,7 +258,7 @@ public final class KerberosRealm extends Realm implements CachingRealm {
                 userPrincipalNameToUserCache.put(username, computedUser);
             }
             listener.onResponse(AuthenticationResult.success(computedUser));
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

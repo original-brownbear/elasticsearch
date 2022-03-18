@@ -167,7 +167,7 @@ public class NativePrivilegeStore {
                         cacheFetchedDescriptors(applicationNamesCacheKey, mapOfFetchedDescriptors, invalidationCount);
                     }
                     listener.onResponse(filterDescriptorsForPrivilegeNames(fetchedDescriptors, names));
-                }, listener::onFailure));
+                }, listener));
             }
         }
     }
@@ -345,7 +345,7 @@ public class NativePrivilegeStore {
                         privileges.stream().map(ApplicationPrivilegeDescriptor::getApplication).collect(Collectors.toUnmodifiableSet()),
                         createdNames
                     );
-                }, listener::onFailure),
+                }, listener),
                 privileges.size()
             );
             for (ApplicationPrivilegeDescriptor privilege : privileges) {
@@ -399,7 +399,7 @@ public class NativePrivilegeStore {
                         .map(NativePrivilegeStore::nameFromDocId)
                         .collect(TUPLES_TO_MAP);
                     clearCaches(listener, Collections.singleton(application), deletedNames);
-                }, listener::onFailure), names.size());
+                }, listener), names.size());
                 for (String name : names) {
                     ClientHelper.executeAsyncWithOrigin(
                         client.threadPool().getThreadContext(),

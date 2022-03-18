@@ -215,7 +215,7 @@ public class NativeRoleMappingStore implements UserRoleMapper {
             );
         } else {
             try {
-                inner.accept(request, ActionListener.wrap(r -> refreshRealms(listener, r), listener::onFailure));
+                inner.accept(request, ActionListener.wrap(r -> refreshRealms(listener, r), listener));
             } catch (Exception e) {
                 logger.error(new ParameterizedMessage("failed to modify role-mapping [{}]", name), e);
                 listener.onFailure(e);
@@ -340,7 +340,7 @@ public class NativeRoleMappingStore implements UserRoleMapper {
         if (securityIndex.isAvailable() == false) {
             reportStats(listener, Collections.emptyList());
         } else {
-            getMappings(ActionListener.wrap(mappings -> reportStats(listener, mappings), listener::onFailure));
+            getMappings(ActionListener.wrap(mappings -> reportStats(listener, mappings), listener));
         }
     }
 
@@ -402,7 +402,7 @@ public class NativeRoleMappingStore implements UserRoleMapper {
                 .collect(Collectors.toSet());
             logger.debug("Mapping user [{}] to roles [{}]", user, roles);
             listener.onResponse(roles);
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**

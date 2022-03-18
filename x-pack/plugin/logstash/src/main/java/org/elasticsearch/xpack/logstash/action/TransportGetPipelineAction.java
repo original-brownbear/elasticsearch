@@ -153,7 +153,7 @@ public class TransportGetPipelineAction extends HandledTransportAction<GetPipeli
                 .execute(
                     ActionListener.wrap(
                         searchResponse1 -> handleSearchResponse(searchResponse1, pipelineSources, clearScroll, listener),
-                        listener::onFailure
+                        listener
                     )
                 );
         }

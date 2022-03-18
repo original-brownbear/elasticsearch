@@ -128,7 +128,7 @@ public class RolloverStep extends AsyncActionStep {
             } else {
                 listener.onFailure(new IllegalStateException("unexepected exception on unconditional rollover"));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

@@ -38,8 +38,8 @@ public class TransformDeprecationChecker implements DeprecationChecker {
             issues,
             startPage,
             ActionListener.wrap(
-                allIssues -> { deprecationIssueListener.onResponse(new CheckResult(getName(), allIssues)); },
-                deprecationIssueListener::onFailure
+                allIssues -> deprecationIssueListener.onResponse(new CheckResult(getName(), allIssues)),
+                deprecationIssueListener
             )
         );
     }
@@ -70,6 +70,6 @@ public class TransformDeprecationChecker implements DeprecationChecker {
                 listener.onResponse(issues);
             }
 
-        }, listener::onFailure));
+        }, listener));
     }
 }

@@ -70,7 +70,7 @@ public class TransportGetTrainedModelsAction extends HandledTransportAction<Requ
                     request.getIncludes(),
                     ActionListener.wrap(
                         config -> listener.onResponse(responseBuilder.setModels(Collections.singletonList(config)).build()),
-                        listener::onFailure
+                        listener
                     )
                 );
             } else {
@@ -78,10 +78,10 @@ public class TransportGetTrainedModelsAction extends HandledTransportAction<Requ
                     totalAndIds.v2(),
                     request.getIncludes(),
                     request.isAllowNoResources(),
-                    ActionListener.wrap(configs -> listener.onResponse(responseBuilder.setModels(configs).build()), listener::onFailure)
+                    ActionListener.wrap(configs -> listener.onResponse(responseBuilder.setModels(configs).build()), listener)
                 );
             }
-        }, listener::onFailure);
+        }, listener);
         provider.expandIds(
             request.getResourceId(),
             request.isAllowNoResources(),

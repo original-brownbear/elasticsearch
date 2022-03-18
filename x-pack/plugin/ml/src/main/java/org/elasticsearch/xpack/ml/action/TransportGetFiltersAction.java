@@ -45,10 +45,7 @@ public class TransportGetFiltersAction extends AbstractTransportGetResourcesActi
     @Override
     protected void doExecute(Task task, GetFiltersAction.Request request, ActionListener<GetFiltersAction.Response> listener) {
         request.setAllowNoResources(true);
-        searchResources(
-            request,
-            ActionListener.wrap(filters -> listener.onResponse(new GetFiltersAction.Response(filters)), listener::onFailure)
-        );
+        searchResources(request, ActionListener.wrap(filters -> listener.onResponse(new GetFiltersAction.Response(filters)), listener));
     }
 
     @Override

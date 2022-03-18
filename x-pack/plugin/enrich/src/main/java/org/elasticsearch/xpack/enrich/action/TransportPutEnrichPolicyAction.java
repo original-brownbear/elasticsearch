@@ -99,7 +99,7 @@ public class TransportPutEnrichPolicyAction extends AcknowledgedTransportMasterN
                         )
                     );
                 }
-            }, listener::onFailure);
+            }, listener);
             client.execute(HasPrivilegesAction.INSTANCE, privRequest, wrappedListener);
         } else {
             putPolicy(request, listener);

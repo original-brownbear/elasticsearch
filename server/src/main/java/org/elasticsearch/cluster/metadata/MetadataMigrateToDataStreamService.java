@@ -84,7 +84,7 @@ public class MetadataMigrateToDataStreamService {
     ) {
         metadataCreateIndexService.getSystemIndices().validateDataStreamAccess(request.aliasName, threadContext);
         AtomicReference<String> writeIndexRef = new AtomicReference<>();
-        ActionListener<AcknowledgedResponse> listener = ActionListener.wrap(response -> {
+        ActionListener<AcknowledgedResponse> listener = finalListener.wrap(response -> {
             if (response.isAcknowledged()) {
                 String writeIndexName = writeIndexRef.get();
                 assert writeIndexName != null;
@@ -98,7 +98,7 @@ public class MetadataMigrateToDataStreamService {
             } else {
                 finalListener.onResponse(AcknowledgedResponse.FALSE);
             }
-        }, finalListener::onFailure);
+        });
         clusterService.submitStateUpdateTask(
             "migrate-to-data-stream [" + request.aliasName + "]",
             new AckedClusterStateUpdateTask(Priority.HIGH, request, listener) {

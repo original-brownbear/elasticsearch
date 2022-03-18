@@ -69,6 +69,6 @@ public class SqlUsageTransportAction extends XPackUsageFeatureTransportAction {
             Counters mergedCounters = Counters.merge(countersPerNode);
             SqlFeatureSetUsage usage = new SqlFeatureSetUsage(mergedCounters.toNestedMap());
             listener.onResponse(new XPackUsageFeatureResponse(usage));
-        }, listener::onFailure));
+        }, listener));
     }
 }

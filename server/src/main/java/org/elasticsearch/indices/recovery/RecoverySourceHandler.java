@@ -568,7 +568,7 @@ public class RecoverySourceHandler {
                     translogOps.getAsInt(),
                     getRequest().targetNode().getVersion(),
                     canUseSnapshots,
-                    ActionListener.wrap(plan -> recoverFilesFromSourceAndSnapshot(plan, store, stopWatch, listener), listener::onFailure)
+                    ActionListener.wrap(plan -> recoverFilesFromSourceAndSnapshot(plan, store, stopWatch, listener), listener)
                 );
             } else {
                 logger.trace("skipping [phase1] since source and target have identical sync id [{}]", recoverySourceMetadata.getSyncId());
@@ -1254,7 +1254,7 @@ public class RecoverySourceHandler {
                     () -> shard.relocated(request.targetAllocationId(), recoveryTarget::handoffPrimaryContext, ActionListener.wrap(v -> {
                         cancellableThreads.checkForCancel();
                         completeFinalizationListener(listener, stopWatch);
-                    }, listener::onFailure))
+                    }, listener))
                 );
                 /*
                  * if the recovery process fails after disabling primary mode on the source shard, both relocation source and

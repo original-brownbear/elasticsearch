@@ -56,7 +56,7 @@ public class NativeRealm extends CachingUsernamePasswordRealm {
         super.usageStats(ActionListener.wrap(stats -> userStore.getUserCount(ActionListener.wrap(size -> {
             stats.put("size", size);
             listener.onResponse(stats);
-        }, listener::onFailure)), listener::onFailure));
+        }, listener)), listener));
     }
 
     // method is used for testing to verify cache expiration since expireAll is final

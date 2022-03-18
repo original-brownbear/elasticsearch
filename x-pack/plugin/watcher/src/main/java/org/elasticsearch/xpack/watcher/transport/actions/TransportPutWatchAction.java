@@ -142,7 +142,7 @@ public class TransportPutWatchAction extends WatcherTransportAction<PutWatchRequ
                                     created
                                 )
                             );
-                        }, listener::onFailure),
+                        }, listener),
                         client::update
                     );
                 } else {
@@ -164,7 +164,7 @@ public class TransportPutWatchAction extends WatcherTransportAction<PutWatchRequ
                                     created
                                 )
                             );
-                        }, listener::onFailure),
+                        }, listener),
                         client::index
                     );
                 }

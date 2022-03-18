@@ -76,7 +76,7 @@ public class TransportEvaluateDataFrameAction extends HandledTransportAction<
                 request.getEvaluation().getResults()
             );
             listener.onResponse(response);
-        }, listener::onFailure);
+        }, listener);
 
         // Create an immutable collection of parameters to be used by evaluation metrics.
         EvaluationParameters parameters = new EvaluationParameters(maxBuckets.get());
@@ -134,7 +134,7 @@ public class TransportEvaluateDataFrameAction extends HandledTransportAction<
                             add(nextTask());
                         }
                         listener.onResponse(null);
-                    }, listener::onFailure))
+                    }, listener))
                 );
             };
         }

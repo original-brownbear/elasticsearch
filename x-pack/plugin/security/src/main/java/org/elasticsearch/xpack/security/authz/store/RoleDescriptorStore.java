@@ -166,7 +166,7 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
                 finalResult.setFailure();
             }
             listener.onResponse(finalResult);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void roleDescriptors(Set<String> roleNames, ActionListener<RolesRetrievalResult> rolesResultListener) {
@@ -205,7 +205,7 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
             ActionListener.wrap(ignore -> {
                 rolesResult.setMissingRoles(roleNames);
                 listener.onResponse(rolesResult);
-            }, listener::onFailure),
+            }, listener),
             threadContext
         );
 
@@ -235,7 +235,7 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
                     rolesResult.setFailure();
                 }
                 providerListener.onResponse(result);
-            }, providerListener::onFailure));
+            }, providerListener));
         }, asyncRoleProviders, threadContext, Function.identity(), iterationPredicate).run();
     }
 

@@ -137,7 +137,7 @@ public abstract class ExportBulk {
                 } else {
                     listener.onFailure(exceptionRef.get());
                 }
-            }, listener::onFailure);
+            }, listener);
         }
     }
 

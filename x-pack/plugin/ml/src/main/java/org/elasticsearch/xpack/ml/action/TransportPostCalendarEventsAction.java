@@ -97,10 +97,7 @@ public class TransportPostCalendarEventsAction extends HandledTransportAction<
                     public void onResponse(BulkResponse response) {
                         jobManager.updateProcessOnCalendarChanged(
                             calendar.getJobIds(),
-                            ActionListener.wrap(
-                                r -> listener.onResponse(new PostCalendarEventsAction.Response(events)),
-                                listener::onFailure
-                            )
+                            ActionListener.wrap(r -> listener.onResponse(new PostCalendarEventsAction.Response(events)), listener)
                         );
                     }
 
@@ -110,7 +107,7 @@ public class TransportPostCalendarEventsAction extends HandledTransportAction<
                     }
                 }
             );
-        }, listener::onFailure);
+        }, listener);
 
         jobResultsProvider.calendar(request.getCalendarId(), calendarListener);
     }

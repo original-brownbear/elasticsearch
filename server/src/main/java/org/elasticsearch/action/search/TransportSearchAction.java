@@ -371,7 +371,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             relativeStartNanos,
             System::nanoTime
         );
-        ActionListener<SearchRequest> rewriteListener = ActionListener.wrap(rewritten -> {
+        ActionListener<SearchRequest> rewriteListener = listener.wrap(rewritten -> {
             final SearchContextId searchContext;
             final Map<String, OriginalIndices> remoteClusterIndices;
             if (ccsCheckCompatibility) {
@@ -431,7 +431,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         remoteClusterIndices,
                         remoteClusterService,
                         threadPool,
-                        ActionListener.wrap(searchShardsResponses -> {
+                        listener.wrap(searchShardsResponses -> {
                             final BiFunction<String, String, DiscoveryNode> clusterNodeLookup = getRemoteClusterNodeLookup(
                                 searchShardsResponses
                             );
@@ -470,11 +470,11 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                                 searchContext,
                                 searchAsyncActionProvider
                             );
-                        }, listener::onFailure)
+                        })
                     );
                 }
             }
-        }, listener::onFailure);
+        });
         Rewriteable.rewriteAndFetch(original, searchService.getRewriteContext(timeProvider::absoluteStartMillis), rewriteListener);
     }
 

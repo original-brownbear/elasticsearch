@@ -47,6 +47,6 @@ public class TransportGetRoleMappingsAction extends HandledTransportAction<GetRo
         this.roleMappingStore.getRoleMappings(names, ActionListener.wrap(mappings -> {
             ExpressionRoleMapping[] array = mappings.toArray(new ExpressionRoleMapping[mappings.size()]);
             listener.onResponse(new GetRoleMappingsResponse(array));
-        }, listener::onFailure));
+        }, listener));
     }
 }

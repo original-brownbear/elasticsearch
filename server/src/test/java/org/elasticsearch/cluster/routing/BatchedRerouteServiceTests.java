@@ -200,12 +200,7 @@ public class BatchedRerouteServiceTests extends ESTestCase {
                 if (rarely()) {
                     throw new ElasticsearchException("failure during notification");
                 }
-            }, e -> {
-                countDownLatch.countDown();
-                if (randomBoolean()) {
-                    throw new ElasticsearchException("failure during failure notification", e);
-                }
-            }));
+            }, e -> countDownLatch.countDown()));
             if (rarely()) {
                 clusterService.getMasterService()
                     .setClusterStatePublisher(

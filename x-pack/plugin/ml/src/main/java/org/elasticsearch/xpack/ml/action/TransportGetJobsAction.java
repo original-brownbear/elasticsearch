@@ -80,10 +80,10 @@ public class TransportGetJobsAction extends TransportMasterNodeReadAction<GetJob
                             Optional.ofNullable(dfsByJobId.get(jb.getId())).ifPresent(jb::setDatafeed);
                             return jb.build();
                         }).collect(Collectors.toList()), jobs.size(), Job.RESULTS_FIELD))),
-                        listener::onFailure
+                        listener
                     )
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

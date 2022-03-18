@@ -115,6 +115,6 @@ final class ServerTransportFilter {
             } else {
                 listener.onFailure(new IllegalStateException("no authentication present but auth is allowed"));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 }

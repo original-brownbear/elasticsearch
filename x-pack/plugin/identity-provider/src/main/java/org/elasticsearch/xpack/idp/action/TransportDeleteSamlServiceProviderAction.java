@@ -61,7 +61,7 @@ public class TransportDeleteSamlServiceProviderAction extends HandledTransportAc
                     request.getRefreshPolicy(),
                     ActionListener.wrap(
                         deleteResponse -> listener.onResponse(new DeleteSamlServiceProviderResponse(deleteResponse, entityId)),
-                        listener::onFailure
+                        listener
                     )
                 );
             } else {
@@ -73,6 +73,6 @@ public class TransportDeleteSamlServiceProviderAction extends HandledTransportAc
                 );
                 listener.onFailure(new IllegalStateException("Multiple service providers exist with entity id [" + entityId + "]"));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 }

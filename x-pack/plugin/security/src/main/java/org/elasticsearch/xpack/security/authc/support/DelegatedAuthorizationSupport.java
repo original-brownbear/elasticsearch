@@ -129,7 +129,7 @@ public class DelegatedAuthorizationSupport {
                     )
                 );
             }
-        }, resultListener::onFailure);
+        }, resultListener);
         lookup.lookup(username, userListener);
     }
 

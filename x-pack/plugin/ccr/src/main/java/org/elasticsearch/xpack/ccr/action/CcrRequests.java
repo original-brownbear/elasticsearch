@@ -97,7 +97,7 @@ public final class CcrRequests {
                     getIndexMetadata(client, index, mappingVersion, metadata.version() + 1, timeoutSupplier, listener);
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     public static final RequestValidators.RequestValidator<PutMappingRequest> CCR_PUT_MAPPING_REQUEST_VALIDATOR = (

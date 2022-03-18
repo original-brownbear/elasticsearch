@@ -153,7 +153,7 @@ public abstract class CachingUsernamePasswordRealm extends UsernamePasswordRealm
                                     );
                                 }
                                 listener.onResponse(authResult);
-                            }, listener::onFailure));
+                            }, listener));
                         } else {
                             logger.trace(
                                 "realm [{}], provided credentials for user [{}] do not match (known good) cached credentials,"
@@ -189,7 +189,7 @@ public abstract class CachingUsernamePasswordRealm extends UsernamePasswordRealm
                         cache.invalidate(token.principal(), listenableCacheEntry);
                         authenticateWithCache(token, listener);
                     }
-                }, listener::onFailure), threadPool.executor(ThreadPool.Names.GENERIC), threadPool.getThreadContext());
+                }, listener), threadPool.executor(ThreadPool.Names.GENERIC), threadPool.getThreadContext());
             } else {
                 logger.trace(
                     "realm [{}] does not have a cached result for user [{}]; attempting fresh authentication",
@@ -247,7 +247,7 @@ public abstract class CachingUsernamePasswordRealm extends UsernamePasswordRealm
         super.usageStats(ActionListener.wrap(stats -> {
             stats.put("cache", Collections.singletonMap("size", getCacheSize()));
             listener.onResponse(stats);
-        }, listener::onFailure));
+        }, listener));
     }
 
     protected int getCacheSize() {
@@ -303,7 +303,7 @@ public abstract class CachingUsernamePasswordRealm extends UsernamePasswordRealm
                 } else {
                     listener.onResponse(null);
                 }
-            }, listener::onFailure), threadPool.executor(ThreadPool.Names.GENERIC), threadPool.getThreadContext());
+            }, listener), threadPool.executor(ThreadPool.Names.GENERIC), threadPool.getThreadContext());
         } catch (final ExecutionException e) {
             listener.onFailure(e);
         }

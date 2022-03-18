@@ -141,7 +141,7 @@ public class ServiceAccountService {
                 logger.debug(e.getMessage());
                 listener.onFailure(e);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     public void createIndexToken(
@@ -205,7 +205,7 @@ public class ServiceAccountService {
     private void findIndexTokens(ServiceAccountId accountId, ActionListener<GetServiceAccountCredentialsResponse> listener) {
         indexServiceAccountTokenStore.findTokensFor(
             accountId,
-            ActionListener.wrap(indexTokenInfos -> { findFileTokens(indexTokenInfos, accountId, listener); }, listener::onFailure)
+            ActionListener.wrap(indexTokenInfos -> { findFileTokens(indexTokenInfos, accountId, listener); }, listener)
         );
     }
 
@@ -223,7 +223,7 @@ public class ServiceAccountService {
                 fileTokensResponse -> listener.onResponse(
                     new GetServiceAccountCredentialsResponse(accountId.asPrincipal(), indexTokenInfos, fileTokensResponse)
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

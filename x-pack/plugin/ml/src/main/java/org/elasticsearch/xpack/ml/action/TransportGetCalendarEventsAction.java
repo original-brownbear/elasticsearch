@@ -59,8 +59,8 @@ public class TransportGetCalendarEventsAction extends HandledTransportAction<
                 .calendarIds(calendarId);
 
             ActionListener<QueryPage<ScheduledEvent>> eventsListener = ActionListener.wrap(
-                events -> { listener.onResponse(new GetCalendarEventsAction.Response(events)); },
-                listener::onFailure
+                events -> listener.onResponse(new GetCalendarEventsAction.Response(events)),
+                listener
             );
 
             if (request.getJobId() != null) {
@@ -82,12 +82,12 @@ public class TransportGetCalendarEventsAction extends HandledTransportAction<
                         } else {
                             listener.onFailure(ExceptionsHelper.missingJobException(request.getJobId()));
                         }
-                    }, listener::onFailure));
+                    }, listener));
                 }));
             } else {
                 jobResultsProvider.scheduledEvents(query, eventsListener);
             }
-        }, listener::onFailure);
+        }, listener);
 
         checkCalendarExists(calendarId, calendarExistsListener);
     }
@@ -100,7 +100,7 @@ public class TransportGetCalendarEventsAction extends HandledTransportAction<
 
         jobResultsProvider.calendars(
             CalendarQueryBuilder.builder().calendarIdTokens(calendarId),
-            ActionListener.wrap(c -> listener.onResponse(true), listener::onFailure)
+            ActionListener.wrap(c -> listener.onResponse(true), listener)
         );
     }
 }

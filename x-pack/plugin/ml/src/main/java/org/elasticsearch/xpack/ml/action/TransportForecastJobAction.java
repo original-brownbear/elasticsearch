@@ -122,7 +122,7 @@ public class TransportForecastJobAction extends TransportJobTaskAction<ForecastJ
                     listener.onFailure(e);
                 }
             });
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void getForecastRequestStats(String jobId, String forecastId, ActionListener<ForecastJobAction.Response> listener) {

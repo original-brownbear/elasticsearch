@@ -162,7 +162,7 @@ public final class LdapRealm extends CachingUsernamePasswordRealm {
             // network threads stuck waiting for a socket to connect. After the bind, then all interaction with LDAP should be async
             final ActionListener<AuthenticationResult<User>> sessionListener = ActionListener.wrap(
                 result -> userActionListener.onResponse(result.getValue()),
-                userActionListener::onFailure
+                userActionListener
             );
             final CancellableLdapRunnable<User> cancellableLdapRunnable = new CancellableLdapRunnable<>(
                 userActionListener,
@@ -207,7 +207,7 @@ public final class LdapRealm extends CachingUsernamePasswordRealm {
             usage.put("ssl", sessionFactory.isSslUsed());
             usage.put("user_search", LdapUserSearchSessionFactory.hasUserSearchSettings(config));
             listener.onResponse(usage);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private static void buildUser(

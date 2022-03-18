@@ -188,7 +188,7 @@ public class PkiRealm extends Realm implements CachingRealm {
                             }
                         }
                         listener.onResponse(result);
-                    }, listener::onFailure);
+                    }, listener);
                     if (false == principal.equals(token.principal())) {
                         logger.debug(
                             (Supplier<?>) () -> new ParameterizedMessage(
@@ -229,7 +229,7 @@ public class PkiRealm extends Realm implements CachingRealm {
         roleMapper.resolveRoles(userData, ActionListener.wrap(roles -> {
             final User computedUser = new User(principal, roles.toArray(new String[roles.size()]), null, null, metadata, true);
             listener.onResponse(AuthenticationResult.success(computedUser));
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override
@@ -330,7 +330,7 @@ public class PkiRealm extends Realm implements CachingRealm {
             stats.put("has_default_username_pattern", PkiRealmSettings.DEFAULT_USERNAME_PATTERN.equals(principalPattern.pattern()));
             stats.put("is_authentication_delegated", delegationEnabled);
             listener.onResponse(stats);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void validateAuthenticationDelegationConfiguration(RealmConfig config) {

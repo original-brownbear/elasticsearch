@@ -103,14 +103,14 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
         ActionListener<Map<String, TrainedModelSizeStats>> modelSizeStatsListener = ActionListener.wrap(modelSizeStatsByModelId -> {
             responseBuilder.setModelSizeStatsByModelId(modelSizeStatsByModelId);
             listener.onResponse(responseBuilder.build());
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<GetDeploymentStatsAction.Response> deploymentStatsListener = ActionListener.wrap(deploymentStats -> {
             responseBuilder.setDeploymentStatsByModelId(
                 deploymentStats.getStats().results().stream().collect(Collectors.toMap(AllocationStats::getModelId, Function.identity()))
             );
             modelSizeStats(responseBuilder.getExpandedIdsWithAliases(), request.isAllowNoResources(), modelSizeStatsListener);
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<List<InferenceStats>> inferenceStatsListener = ActionListener.wrap(inferenceStats -> {
             responseBuilder.setInferenceStatsByModelId(
@@ -123,7 +123,7 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
                 new GetDeploymentStatsAction.Request(request.getResourceId()),
                 deploymentStatsListener
             );
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<NodesStatsResponse> nodesStatsListener = ActionListener.wrap(nodesStatsResponse -> {
             Set<String> allPossiblePipelineReferences = responseBuilder.getExpandedIdsWithAliases()
@@ -146,7 +146,7 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
                 responseBuilder.getExpandedIdsWithAliases().keySet().toArray(new String[0]),
                 inferenceStatsListener
             );
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<Tuple<Long, Map<String, Set<String>>>> idsListener = ActionListener.wrap(tuple -> {
             responseBuilder.setExpandedIdsWithAliases(tuple.v2()).setTotalModelCount(tuple.v1());
@@ -154,7 +154,7 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
             NodesStatsRequest nodesStatsRequest = new NodesStatsRequest(ingestNodes).clear()
                 .addMetric(NodesStatsRequest.Metric.INGEST.metricName());
             executeAsyncWithOrigin(client, ML_ORIGIN, NodesStatsAction.INSTANCE, nodesStatsRequest, nodesStatsListener);
-        }, listener::onFailure);
+        }, listener);
         trainedModelProvider.expandIds(
             request.getResourceId(),
             request.isAllowNoResources(),
@@ -194,8 +194,8 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
                     }
                 }
                 listener.onResponse(modelSizeStatsByModelId);
-            }, listener::onFailure));
-        }, listener::onFailure);
+            }, listener));
+        }, listener);
 
         trainedModelProvider.getTrainedModels(
             expandedIdsWithAliases,
@@ -233,7 +233,7 @@ public class TransportGetTrainedModelsStatsAction extends HandledTransportAction
                 }
             }
             listener.onResponse(totalDefinitionLengthByModelId);
-        }, listener::onFailure));
+        }, listener));
     }
 
     static Map<String, IngestStats> inferenceIngestStatsByModelId(

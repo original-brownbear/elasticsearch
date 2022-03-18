@@ -77,7 +77,7 @@ public class TransportGetDataFrameAnalyticsAction extends AbstractTransportGetRe
     ) {
         searchResources(
             request,
-            ActionListener.wrap(queryPage -> listener.onResponse(new GetDataFrameAnalyticsAction.Response(queryPage)), listener::onFailure)
+            ActionListener.wrap(queryPage -> listener.onResponse(new GetDataFrameAnalyticsAction.Response(queryPage)), listener)
         );
     }
 

@@ -65,10 +65,10 @@ public class TransportDeleteCalendarAction extends HandledTransportAction<Delete
 
                 jobManager.updateProcessOnCalendarChanged(
                     calendar.getJobIds(),
-                    ActionListener.wrap(r -> listener.onResponse(AcknowledgedResponse.TRUE), listener::onFailure)
+                    ActionListener.wrap(r -> listener.onResponse(AcknowledgedResponse.TRUE), listener)
                 );
-            }, listener::onFailure));
-        }, listener::onFailure);
+            }, listener));
+        }, listener);
 
         jobResultsProvider.calendar(calendarId, calendarListener);
     }

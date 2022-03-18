@@ -77,7 +77,7 @@ public class TransportGetRolesAction extends HandledTransportAction<GetRolesRequ
                 } else {
                     listener.onFailure(retrievalResult.getFailure());
                 }
-            }, listener::onFailure));
+            }, listener));
         }
     }
 }

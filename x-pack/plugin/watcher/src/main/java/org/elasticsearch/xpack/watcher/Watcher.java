@@ -804,8 +804,8 @@ public class Watcher extends Plugin implements SystemIndexPlugin, ScriptPlugin, 
                 WatcherServiceAction.INSTANCE,
                 serviceRequest,
                 ActionListener.wrap(
-                    (response) -> { listener.onResponse(Collections.singletonMap("manually_stopped", manuallyStopped)); },
-                    listener::onFailure
+                    (response) -> listener.onResponse(Collections.singletonMap("manually_stopped", manuallyStopped)),
+                    listener
                 )
             );
         } else {
@@ -829,7 +829,7 @@ public class Watcher extends Plugin implements SystemIndexPlugin, ScriptPlugin, 
             originClient.execute(
                 WatcherServiceAction.INSTANCE,
                 serviceRequest,
-                ActionListener.wrap((response) -> { listener.onResponse(response.isAcknowledged()); }, listener::onFailure)
+                ActionListener.wrap((response) -> listener.onResponse(response.isAcknowledged()), listener)
             );
         } else {
             // Watcher was manually stopped before we got there, don't start it.

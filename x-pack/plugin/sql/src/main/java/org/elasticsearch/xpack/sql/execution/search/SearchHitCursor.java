@@ -108,7 +108,7 @@ public class SearchHitCursor implements Cursor {
             request,
             ActionListener.wrap(
                 (SearchResponse response) -> handle(client, response, request.source(), makeRowSet(response), listener, includeFrozen),
-                listener::onFailure
+                listener
             )
         );
     }
@@ -135,11 +135,7 @@ public class SearchHitCursor implements Cursor {
         SearchHitRowSet rowSet = makeRowSet.get();
 
         if (rowSet.hasRemaining() == false) {
-            closePointInTime(
-                client,
-                response.pointInTimeId(),
-                ActionListener.wrap(r -> listener.onResponse(Page.last(rowSet)), listener::onFailure)
-            );
+            closePointInTime(client, response.pointInTimeId(), ActionListener.wrap(r -> listener.onResponse(Page.last(rowSet)), listener));
         } else {
             updateSearchAfter(hits, source);
 

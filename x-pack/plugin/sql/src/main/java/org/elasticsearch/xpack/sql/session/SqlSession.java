@@ -165,7 +165,7 @@ public class SqlSession implements Session {
                 indexPattern,
                 includeFrozen,
                 configuration.runtimeMappings(),
-                wrap(indexResult -> listener.onResponse(action.apply(indexResult)), listener::onFailure)
+                wrap(indexResult -> listener.onResponse(action.apply(indexResult)), listener)
             );
         } else {
             try {
@@ -178,15 +178,15 @@ public class SqlSession implements Session {
     }
 
     public void optimizedPlan(LogicalPlan verified, ActionListener<LogicalPlan> listener) {
-        analyzedPlan(verified, true, wrap(v -> listener.onResponse(optimizer.optimize(v)), listener::onFailure));
+        analyzedPlan(verified, true, wrap(v -> listener.onResponse(optimizer.optimize(v)), listener));
     }
 
     public void physicalPlan(LogicalPlan optimized, boolean verify, ActionListener<PhysicalPlan> listener) {
-        optimizedPlan(optimized, wrap(o -> listener.onResponse(planner.plan(o, verify)), listener::onFailure));
+        optimizedPlan(optimized, wrap(o -> listener.onResponse(planner.plan(o, verify)), listener));
     }
 
     public void sql(String sql, List<SqlTypedParamValue> params, ActionListener<Page> listener) {
-        sqlExecutable(sql, params, wrap(e -> e.execute(this, listener), listener::onFailure));
+        sqlExecutable(sql, params, wrap(e -> e.execute(this, listener), listener));
     }
 
     public void sqlExecutable(String sql, List<SqlTypedParamValue> params, ActionListener<PhysicalPlan> listener) {

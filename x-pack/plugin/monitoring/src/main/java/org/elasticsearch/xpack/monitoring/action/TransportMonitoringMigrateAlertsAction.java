@@ -115,7 +115,7 @@ public class TransportMonitoringMigrateAlertsAction extends TransportMasterNodeA
         return ActionListener.wrap(
             (response) -> threadPool.executor(ThreadPool.Names.MANAGEMENT)
                 .execute(ActionRunnable.wrap(delegate, (listener) -> afterSettingUpdate(listener, response))),
-            delegate::onFailure
+            delegate
         );
     }
 

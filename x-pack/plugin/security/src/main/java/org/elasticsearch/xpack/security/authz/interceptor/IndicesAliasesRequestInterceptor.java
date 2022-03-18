@@ -117,7 +117,7 @@ public final class IndicesAliasesRequestInterceptor implements RequestIntercepto
                             )
                         );
                     }
-                }, listener::onFailure), threadContext)
+                }, listener), threadContext)
             );
         } else {
             listener.onResponse(null);

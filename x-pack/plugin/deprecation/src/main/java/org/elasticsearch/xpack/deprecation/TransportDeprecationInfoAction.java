@@ -121,22 +121,26 @@ public class TransportDeprecationInfoAction extends TransportMasterNodeReadActio
                     settings,
                     new OriginSettingClient(client, ClientHelper.DEPRECATION_ORIGIN)
                 );
-                pluginSettingIssues(PLUGIN_CHECKERS, components, ActionListener.wrap(deprecationIssues -> {
-                    listener.onResponse(
-                        DeprecationInfoAction.Response.from(
-                            state,
-                            indexNameExpressionResolver,
-                            request,
-                            response,
-                            INDEX_SETTINGS_CHECKS,
-                            CLUSTER_SETTINGS_CHECKS,
-                            deprecationIssues,
-                            skipTheseDeprecations
-                        )
-                    );
-                }, listener::onFailure));
-
-            }, listener::onFailure)
+                pluginSettingIssues(
+                    PLUGIN_CHECKERS,
+                    components,
+                    ActionListener.wrap(
+                        deprecationIssues -> listener.onResponse(
+                            DeprecationInfoAction.Response.from(
+                                state,
+                                indexNameExpressionResolver,
+                                request,
+                                response,
+                                INDEX_SETTINGS_CHECKS,
+                                CLUSTER_SETTINGS_CHECKS,
+                                deprecationIssues,
+                                skipTheseDeprecations
+                            )
+                        ),
+                        listener
+                    )
+                );
+            }, listener)
         );
     }
 
@@ -160,7 +164,7 @@ public class TransportDeprecationInfoAction extends TransportMasterNodeReadActio
                             Collectors.toMap(DeprecationChecker.CheckResult::getCheckerName, DeprecationChecker.CheckResult::getIssues)
                         )
                 ),
-                listener::onFailure
+                listener
             ),
             enabledCheckers.size()
         );

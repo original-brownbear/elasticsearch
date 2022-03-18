@@ -45,7 +45,7 @@ public class RoleReferenceIntersection {
                 finalRole = finalRole.limitedBy(iterator.next());
             }
             roleActionListener.onResponse(finalRole);
-        }, roleActionListener::onFailure), roleReferences.size());
+        }, roleActionListener), roleReferences.size());
 
         roleReferences.forEach(roleReference -> singleRoleBuilder.accept(roleReference, roleGroupedActionListener));
     }

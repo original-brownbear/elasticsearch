@@ -106,7 +106,7 @@ public class TransportOpenIdConnectAuthenticateAction extends HandledTransportAc
                                 expiresIn
                             )
                         );
-                    }, listener::onFailure)
+                    }, listener)
                 );
             }, e -> {
                 logger.debug(() -> new ParameterizedMessage("OpenIDConnectToken [{}] could not be authenticated", token), e);

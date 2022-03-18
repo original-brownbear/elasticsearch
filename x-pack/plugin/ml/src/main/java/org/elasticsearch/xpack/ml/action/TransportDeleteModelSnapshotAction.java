@@ -105,7 +105,7 @@ public class TransportDeleteModelSnapshotAction extends HandledTransportAction<D
                     // We don't care about the bulk response, just that it succeeded
                     l.onResponse(AcknowledgedResponse.TRUE);
                 }));
-            }, listener::onFailure));
+            }, listener));
         }, listener::onFailure);
     }
 }

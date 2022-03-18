@@ -84,7 +84,7 @@ public final class TransportSamlInvalidateSessionAction extends HandledTransport
                     count -> listener.onResponse(
                         new SamlInvalidateSessionResponse(realm.name(), count, buildLogoutResponseUrl(realm, result))
                     ),
-                    listener::onFailure
+                    listener
                 )
             );
         } catch (ElasticsearchSecurityException e) {
@@ -113,12 +113,12 @@ public final class TransportSamlInvalidateSessionAction extends HandledTransport
                 listener.onResponse(0);
             } else {
                 GroupedActionListener<TokensInvalidationResult> groupedListener = new GroupedActionListener<>(
-                    ActionListener.wrap(collection -> listener.onResponse(collection.size()), listener::onFailure),
+                    ActionListener.wrap(collection -> listener.onResponse(collection.size()), listener),
                     tokens.size()
                 );
                 tokens.forEach(tuple -> invalidateTokenPair(tuple, groupedListener));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void invalidateTokenPair(Tuple<UserToken, String> tokenPair, ActionListener<TokensInvalidationResult> listener) {
@@ -126,7 +126,7 @@ public final class TransportSamlInvalidateSessionAction extends HandledTransport
         if (tokenPair.v2() != null) {
             tokenService.invalidateRefreshToken(
                 tokenPair.v2(),
-                ActionListener.wrap(ignore -> invalidateAccessToken(tokenPair.v1(), listener), listener::onFailure)
+                ActionListener.wrap(ignore -> invalidateAccessToken(tokenPair.v1(), listener), listener)
             );
         } else {
             invalidateAccessToken(tokenPair.v1(), listener);

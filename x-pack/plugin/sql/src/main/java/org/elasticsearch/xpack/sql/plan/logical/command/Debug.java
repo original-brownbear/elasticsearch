@@ -80,11 +80,11 @@ public class Debug extends Command {
     @Override
     public void execute(SqlSession session, ActionListener<Page> listener) {
         switch (type) {
-            case ANALYZED -> session.debugAnalyzedPlan(plan, wrap(i -> handleInfo(i, listener), listener::onFailure));
+            case ANALYZED -> session.debugAnalyzedPlan(plan, wrap(i -> handleInfo(i, listener), listener));
             case OPTIMIZED -> session.analyzedPlan(
                 plan,
                 true,
-                wrap(analyzedPlan -> handleInfo(session.optimizer().debugOptimize(analyzedPlan), listener), listener::onFailure)
+                wrap(analyzedPlan -> handleInfo(session.optimizer().debugOptimize(analyzedPlan), listener), listener)
             );
         }
     }

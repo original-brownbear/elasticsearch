@@ -105,7 +105,7 @@ public abstract class CachingServiceAccountTokenStore implements ServiceAccountT
                         cache.invalidate(token.getQualifiedName(), listenableCacheEntry);
                         authenticateWithCache(token, listener);
                     }
-                }, listener::onFailure), threadPool.generic(), threadPool.getThreadContext());
+                }, listener), threadPool.generic(), threadPool.getThreadContext());
             } else {
                 doAuthenticate(token, ActionListener.wrap(storeAuthenticationResult -> {
                     if (false == storeAuthenticationResult.isSuccess()) {

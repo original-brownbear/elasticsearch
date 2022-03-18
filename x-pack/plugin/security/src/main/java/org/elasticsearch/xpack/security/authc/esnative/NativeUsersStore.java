@@ -95,10 +95,7 @@ public class NativeUsersStore {
      * Blocking version of {@code getUser} that blocks until the User is returned
      */
     public void getUser(String username, ActionListener<User> listener) {
-        getUserAndPassword(
-            username,
-            ActionListener.wrap((uap) -> { listener.onResponse(uap == null ? null : uap.user()); }, listener::onFailure)
-        );
+        getUserAndPassword(username, ActionListener.wrap((uap) -> listener.onResponse(uap == null ? null : uap.user()), listener));
     }
 
     /**
@@ -615,7 +612,7 @@ public class NativeUsersStore {
                     listener.onResponse(AuthenticationResult.unsuccessful("Password authentication failed for " + username, null));
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     void getReservedUserInfo(String username, ActionListener<ReservedUserInfo> listener) {

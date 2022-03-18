@@ -433,6 +433,6 @@ public class JwtRealm extends Realm implements CachingRealm, Releasable {
     @Override
     public void usageStats(final ActionListener<Map<String, Object>> listener) {
         this.ensureInitialized();
-        super.usageStats(ActionListener.wrap(listener::onResponse, listener::onFailure));
+        super.usageStats(ActionListener.wrap(listener::onResponse, listener));
     }
 }

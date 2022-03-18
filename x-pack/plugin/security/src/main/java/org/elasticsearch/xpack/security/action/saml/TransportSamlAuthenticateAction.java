@@ -87,7 +87,7 @@ public final class TransportSamlAuthenticateAction extends HandledTransportActio
                                 expiresIn
                             )
                         );
-                    }, listener::onFailure)
+                    }, listener)
                 );
             }, e -> {
                 logger.debug(() -> new ParameterizedMessage("SamlToken [{}] could not be authenticated", saml), e);

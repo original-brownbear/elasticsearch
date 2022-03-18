@@ -525,7 +525,7 @@ public final class SamlRealm extends Realm implements Releasable {
                 auth = AuthenticationResult.success(auth.getValue(), metadata);
             }
             baseListener.onResponse(auth);
-        }, baseListener::onFailure);
+        }, baseListener);
 
         if (delegatedRealms.hasDelegation()) {
             delegatedRealms.resolve(principal, wrappedListener);
@@ -559,7 +559,7 @@ public final class SamlRealm extends Realm implements Releasable {
             final User user = new User(principal, roles.toArray(new String[roles.size()]), name, mail, userMeta, true);
             logger.debug("SAML user = [{}]", user);
             wrappedListener.onResponse(AuthenticationResult.success(user));
-        }, wrappedListener::onFailure));
+        }, wrappedListener));
     }
 
     public Map<String, Object> createTokenMetadata(SamlNameId nameId, String session) {

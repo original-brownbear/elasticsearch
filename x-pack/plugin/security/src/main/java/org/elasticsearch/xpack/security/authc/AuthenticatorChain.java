@@ -126,7 +126,7 @@ class AuthenticatorChain {
                         listener.onFailure(Exceptions.authenticationError("failed to authenticate", result.getException()));
                     }
                 }
-            }, listener::onFailure),
+            }, listener),
             getAuthenticatorConsumer(context, shouldExtractCredentials),
             allAuthenticators,
             context.getThreadContext(),
@@ -231,7 +231,7 @@ class AuthenticatorChain {
                 finalAuth = authentication.runAs(tuple.v1(), tuple.v2().realmRef());
             }
             finishAuthentication(context, finalAuth, listener);
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**

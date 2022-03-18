@@ -216,11 +216,11 @@ public class TransportCloseJobAction extends TransportTasksAction<
 
                                     normalCloseJob(state, task, request, response.openJobIds, response.closingJobIds, listener);
                                 }
-                            }, listener::onFailure)),
-                            listener::onFailure
+                            }, listener)),
+                            listener
                         )
                     ),
-                    listener::onFailure
+                    listener
                 )
             );
         }
@@ -309,14 +309,14 @@ public class TransportCloseJobAction extends TransportTasksAction<
                         ActionListener.wrap(
                             r -> stopDatafeeds(runningDatafeedIds, true, timeout, listener),
                             // As things stand this will never be called - see the comment in isolateDatafeeds() for why
-                            listener::onFailure
+                            listener
                         )
                     );
                 } else {
                     stopDatafeeds(runningDatafeedIds, false, timeout, listener);
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void stopDatafeeds(List<String> runningDatafeedIds, boolean isForce, TimeValue timeout, ActionListener<Boolean> listener) {
@@ -591,7 +591,7 @@ public class TransportCloseJobAction extends TransportTasksAction<
                 );
             }
             listener.onResponse(response);
-        }, listener::onFailure);
+        }, listener);
 
         boolean noOpenJobsToClose = openJobIds.isEmpty();
         if (noOpenJobsToClose) {
@@ -602,7 +602,7 @@ public class TransportCloseJobAction extends TransportTasksAction<
 
         ActionListener<CloseJobAction.Response> finalListener = ActionListener.wrap(
             r -> waitForJobClosed(request, waitForCloseRequest, r, intermediateListener, movedJobs),
-            listener::onFailure
+            listener
         );
         super.doExecute(task, request, finalListener);
     }

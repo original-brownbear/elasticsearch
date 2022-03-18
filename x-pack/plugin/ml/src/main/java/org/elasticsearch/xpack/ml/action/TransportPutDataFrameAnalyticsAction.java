@@ -134,7 +134,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
 
         ActionListener<Boolean> sourceDestValidationListener = ActionListener.wrap(
             aBoolean -> putValidatedConfig(config, request.masterNodeTimeout(), listener),
-            listener::onFailure
+            listener
         );
 
         sourceDestValidator.validate(

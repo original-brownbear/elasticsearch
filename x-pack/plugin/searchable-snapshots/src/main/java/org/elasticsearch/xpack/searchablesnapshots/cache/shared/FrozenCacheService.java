@@ -821,7 +821,7 @@ public class FrozenCacheService implements Releasable {
                         + ']';
                 readCount.increment();
                 listener.onResponse(read);
-            }, listener::onFailure);
+            }, listener);
         }
 
         private void releaseAndFail(ActionListener<Integer> listener, Releasable decrementRef, Exception e) {

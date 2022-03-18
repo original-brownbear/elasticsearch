@@ -111,7 +111,7 @@ public final class MlIndexAndAlias {
             } else {
                 loggingListener.onResponse(false);
             }
-        }, loggingListener::onFailure);
+        }, loggingListener);
 
         String legacyIndexWithoutSuffix = indexPatternPrefix;
         String indexPattern = indexPatternPrefix + "*";
@@ -146,7 +146,7 @@ public final class MlIndexAndAlias {
                     false,
                     ActionListener.wrap(
                         unused -> updateWriteAlias(client, alias, legacyIndexWithoutSuffix, firstConcreteIndex, indexCreatedListener),
-                        loggingListener::onFailure
+                        loggingListener
                     )
                 );
                 return;
@@ -210,10 +210,7 @@ public final class MlIndexAndAlias {
             client.threadPool().getThreadContext(),
             ML_ORIGIN,
             createIndexRequest,
-            ActionListener.<CreateIndexResponse>wrap(
-                r -> indexCreatedListener.onResponse(r.isAcknowledged()),
-                indexCreatedListener::onFailure
-            ),
+            ActionListener.<CreateIndexResponse>wrap(r -> indexCreatedListener.onResponse(r.isAcknowledged()), indexCreatedListener),
             client.admin().indices()::create
         );
     }
@@ -228,10 +225,7 @@ public final class MlIndexAndAlias {
             client.threadPool().getThreadContext(),
             ML_ORIGIN,
             healthRequest,
-            ActionListener.<ClusterHealthResponse>wrap(
-                response -> listener.onResponse(response.isTimedOut() == false),
-                listener::onFailure
-            ),
+            ActionListener.<ClusterHealthResponse>wrap(response -> listener.onResponse(response.isTimedOut() == false), listener),
             client.admin().cluster()::health
         );
     }
@@ -295,7 +289,7 @@ public final class MlIndexAndAlias {
             client.threadPool().getThreadContext(),
             ML_ORIGIN,
             request,
-            ActionListener.<AcknowledgedResponse>wrap(resp -> listener.onResponse(resp.isAcknowledged()), listener::onFailure),
+            ActionListener.<AcknowledgedResponse>wrap(resp -> listener.onResponse(resp.isAcknowledged()), listener),
             client.admin().indices()::aliases
         );
     }
@@ -369,7 +363,7 @@ public final class MlIndexAndAlias {
                 logger.warn("error adding template [{}], request was not acknowledged", templateRequest.name());
             }
             listener.onResponse(response.isAcknowledged());
-        }, listener::onFailure);
+        }, listener);
 
         executeAsyncWithOrigin(client, ML_ORIGIN, PutComposableIndexTemplateAction.INSTANCE, templateRequest, innerListener);
     }

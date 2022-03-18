@@ -141,7 +141,7 @@ public class ProfileService {
                 updateProfileForActivate(subject, versionedDocument, listener);
 
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     public void updateProfileData(UpdateProfileDataRequest request, ActionListener<AcknowledgedResponse> listener) {
@@ -232,7 +232,7 @@ public class ProfileService {
                         listener.onResponse(
                             new SearchProfilesResponse(profileHits, searchResponse.getTook().millis(), searchHits.getTotalHits())
                         );
-                    }, listener::onFailure)
+                    }, listener)
                 )
             );
         });
@@ -268,7 +268,7 @@ public class ProfileService {
                             response.getSeqNo()
                         )
                     );
-                }, listener::onFailure))
+                }, listener))
             );
         });
     }
@@ -352,7 +352,7 @@ public class ProfileService {
                             logger.error(errorMessage);
                             listener.onFailure(new ElasticsearchException(errorMessage.getFormattedMessage()));
                         }
-                    }, listener::onFailure)
+                    }, listener)
                 )
             );
         });
@@ -445,7 +445,7 @@ public class ProfileService {
                 // existing profile document by increase the differentiator number by 1.
                 incrementDifferentiatorAndCreateNewProfile(subject, profileDocument, listener);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     // Package private for tests
@@ -534,7 +534,7 @@ public class ProfileService {
                     assert updateResponse.getResult() == DocWriteResponse.Result.UPDATED
                         || updateResponse.getResult() == DocWriteResponse.Result.NOOP;
                     listener.onResponse(updateResponse);
-                }, listener::onFailure)
+                }, listener)
             )
         );
     }

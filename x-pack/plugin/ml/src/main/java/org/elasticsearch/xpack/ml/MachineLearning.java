@@ -1579,7 +1579,7 @@ public class MachineLearning extends Plugin
         originClient.execute(
             SetUpgradeModeAction.INSTANCE,
             new SetUpgradeModeAction.Request(true),
-            ActionListener.wrap(r -> listener.onResponse(Collections.singletonMap("already_in_upgrade_mode", false)), listener::onFailure)
+            ActionListener.wrap(r -> listener.onResponse(Collections.singletonMap("already_in_upgrade_mode", false)), listener)
         );
     }
 
@@ -1601,7 +1601,7 @@ public class MachineLearning extends Plugin
         originClient.execute(
             SetUpgradeModeAction.INSTANCE,
             new SetUpgradeModeAction.Request(false),
-            ActionListener.wrap(r -> listener.onResponse(r.isAcknowledged()), listener::onFailure)
+            ActionListener.wrap(r -> listener.onResponse(r.isAcknowledged()), listener)
         );
     }
 
@@ -1727,7 +1727,7 @@ public class MachineLearning extends Plugin
                     new RuntimeException("Some machine learning components failed to reset: " + failedComponents)
                 );
             }
-        }, unsetResetModeListener::onFailure);
+        }, unsetResetModeListener);
 
         ActionListener<StopDataFrameAnalyticsAction.Response> afterDataframesStopped = ActionListener.wrap(dataFrameStopResponse -> {
             // Handle the response
@@ -1749,7 +1749,7 @@ public class MachineLearning extends Plugin
                             .setWaitForCompletion(true)
                             .setDescriptions("*.ml-*")
                             .execute(afterWaitingForTasks);
-                    }, unsetResetModeListener::onFailure));
+                    }, unsetResetModeListener));
             } else {
                 final List<String> failedComponents = results.entrySet()
                     .stream()
@@ -1760,7 +1760,7 @@ public class MachineLearning extends Plugin
                     new RuntimeException("Some machine learning components failed to reset: " + failedComponents)
                 );
             }
-        }, unsetResetModeListener::onFailure);
+        }, unsetResetModeListener);
 
         ActionListener<CloseJobAction.Response> afterAnomalyDetectionClosed = ActionListener.wrap(closeJobResponse -> {
             // Handle the response
@@ -1779,7 +1779,7 @@ public class MachineLearning extends Plugin
                     client.execute(StopDataFrameAnalyticsAction.INSTANCE, stopDataFramesReq.setForce(true), afterDataframesStopped);
                 })
             );
-        }, unsetResetModeListener::onFailure);
+        }, unsetResetModeListener);
 
         // Close anomaly detection jobs
         ActionListener<StopDatafeedAction.Response> afterDataFeedsStopped = ActionListener.wrap(datafeedResponse -> {
@@ -1804,10 +1804,10 @@ public class MachineLearning extends Plugin
                             client.execute(CloseJobAction.INSTANCE, closeJobsRequest.setForce(true), afterAnomalyDetectionClosed);
                         })
                     ),
-                    unsetResetModeListener::onFailure
+                    unsetResetModeListener
                 )
             );
-        }, unsetResetModeListener::onFailure);
+        }, unsetResetModeListener);
 
         // Stop data feeds
         ActionListener<CancelJobModelSnapshotUpgradeAction.Response> cancelSnapshotUpgradesListener = ActionListener.wrap(
@@ -1822,7 +1822,7 @@ public class MachineLearning extends Plugin
                     })
                 );
             },
-            unsetResetModeListener::onFailure
+            unsetResetModeListener
         );
 
         // Cancel model snapshot upgrades
@@ -1832,7 +1832,7 @@ public class MachineLearning extends Plugin
                 "_all"
             );
             client.execute(CancelJobModelSnapshotUpgradeAction.INSTANCE, cancelSnapshotUpgradesReq, cancelSnapshotUpgradesListener);
-        }, unsetResetModeListener::onFailure);
+        }, unsetResetModeListener);
 
         // Stop all model deployments
         ActionListener<AcknowledgedResponse> pipelineValidation = ActionListener.wrap(acknowledgedResponse -> {
@@ -1841,7 +1841,7 @@ public class MachineLearning extends Plugin
                 return;
             }
             trainedModelAllocationClusterServiceSetOnce.get().removeAllModelAllocations(stopDeploymentsListener);
-        }, unsetResetModeListener::onFailure);
+        }, unsetResetModeListener);
 
         // validate no pipelines are using machine learning models
         ActionListener<AcknowledgedResponse> afterResetModeSet = ActionListener.wrap(acknowledgedResponse -> {
@@ -1856,7 +1856,7 @@ public class MachineLearning extends Plugin
                 return;
             }
             pipelineValidation.onResponse(AcknowledgedResponse.of(true));
-        }, finalListener::onFailure);
+        }, finalListener);
 
         // Indicate that a reset is now in progress
         client.execute(SetResetModeAction.INSTANCE, SetResetModeActionRequest.enabled(), afterResetModeSet);

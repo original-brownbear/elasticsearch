@@ -79,7 +79,7 @@ public class TransportCancelJobModelSnapshotUpgradeAction extends HandledTranspo
                 .filter(t -> matcher.idMatches(((SnapshotUpgradeTaskParams) t.getParams()).getSnapshotId()))
                 .collect(Collectors.toList());
             removePersistentTasks(request, upgradeTasksToCancel, listener);
-        }, listener::onFailure);
+        }, listener);
 
         // 1. Expand jobs - this will throw if a required job ID match isn't made. Jobs being deleted are included here.
         jobConfigProvider.expandJobs(request.getJobId(), request.allowNoMatch(), false, expandIdsListener);

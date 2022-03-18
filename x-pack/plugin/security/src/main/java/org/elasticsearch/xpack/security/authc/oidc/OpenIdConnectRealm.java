@@ -203,7 +203,7 @@ public class OpenIdConnectRealm extends Realm implements Releasable {
                 auth = AuthenticationResult.success(auth.getValue(), metadata);
             }
             authResultListener.onResponse(auth);
-        }, authResultListener::onFailure);
+        }, authResultListener);
 
         if (delegatedRealms.hasDelegation()) {
             delegatedRealms.resolve(principal, wrappedAuthResultListener);
@@ -228,7 +228,7 @@ public class OpenIdConnectRealm extends Realm implements Releasable {
         roleMapper.resolveRoles(userData, ActionListener.wrap(roles -> {
             final User user = new User(principal, roles.toArray(Strings.EMPTY_ARRAY), name, mail, userMetadata, true);
             wrappedAuthResultListener.onResponse(AuthenticationResult.success(user));
-        }, wrappedAuthResultListener::onFailure));
+        }, wrappedAuthResultListener));
 
     }
 

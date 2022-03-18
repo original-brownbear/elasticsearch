@@ -134,7 +134,7 @@ public class Explain extends Command {
                             Rows.singleton(output(), printPlans(format, plan, analyzedPlan, optimizedPlan, mappedPlan, executablePlan))
                         )
                     );
-                }, listener::onFailure));
+                }, listener));
             }
 
             // check errors manually to see how far the plans work out
@@ -181,7 +181,7 @@ public class Explain extends Command {
                         listener.onResponse(
                             Page.last(Rows.singleton(output(), printPlans(format, plan, analyzedPlan, optimizedPlan, mappedPlan, null)))
                         );
-                    }, listener::onFailure));
+                    }, listener));
                     // cannot continue
                 } else {
                     if (type != Type.ALL) {
@@ -191,7 +191,7 @@ public class Explain extends Command {
                     }
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private static String printPlans(

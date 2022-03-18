@@ -35,7 +35,7 @@ public class TransportPutRoleMappingAction extends HandledTransportAction<PutRol
     protected void doExecute(Task task, final PutRoleMappingRequest request, final ActionListener<PutRoleMappingResponse> listener) {
         roleMappingStore.putRoleMapping(
             request,
-            ActionListener.wrap(created -> listener.onResponse(new PutRoleMappingResponse(created)), listener::onFailure)
+            ActionListener.wrap(created -> listener.onResponse(new PutRoleMappingResponse(created)), listener)
         );
     }
 }

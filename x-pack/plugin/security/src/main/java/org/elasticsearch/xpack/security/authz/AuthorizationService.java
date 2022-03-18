@@ -259,7 +259,7 @@ public class AuthorizationService {
                 final ActionListener<AuthorizationInfo> authzInfoListener = wrapPreservingContext(ActionListener.wrap(authorizationInfo -> {
                     threadContext.putTransient(AUTHORIZATION_INFO_KEY, authorizationInfo);
                     maybeAuthorizeRunAs(requestInfo, auditId, authorizationInfo, listener);
-                }, listener::onFailure), threadContext);
+                }, listener), threadContext);
                 engine.resolveAuthorizationInfo(requestInfo, authzInfoListener);
             }
         }
@@ -408,7 +408,7 @@ public class AuthorizationService {
                     }
                 }
                 clusterAuthzListener.onResponse(result);
-            }, clusterAuthzListener::onFailure));
+            }, clusterAuthzListener));
         } else if (isIndexAction(action)) {
             final Metadata metadata = clusterService.state().metadata();
             final AsyncSupplier<ResolvedIndices> resolvedIndicesAsyncSupplier = new CachingAsyncSupplier<>(resolvedIndicesListener -> {
@@ -509,7 +509,7 @@ public class AuthorizationService {
                         }
                         ResolvedIndices withAliases = new ResolvedIndices(aliasesAndIndices, Collections.emptyList());
                         ril.onResponse(withAliases);
-                    }, ril::onFailure));
+                    }, ril));
                 },
                     metadata.getIndicesLookup(),
                     wrapPreservingContext(
@@ -541,10 +541,7 @@ public class AuthorizationService {
                 metadata,
                 requestId,
                 wrapPreservingContext(
-                    ActionListener.wrap(
-                        ignore -> runRequestInterceptors(requestInfo, authzInfo, authorizationEngine, listener),
-                        listener::onFailure
-                    ),
+                    ActionListener.wrap(ignore -> runRequestInterceptors(requestInfo, authzInfo, authorizationEngine, listener), listener),
                     threadContext
                 )
             );
@@ -799,7 +796,7 @@ public class AuthorizationService {
                     }
                     listener.onResponse(null);
                 },
-                listener::onFailure
+                listener
             );
             final ActionListener<Tuple<String, IndexAuthorizationResult>> groupedActionListener = wrapPreservingContext(
                 new GroupedActionListener<>(bulkAuthzListener, actionToIndicesMap.size()),
@@ -820,11 +817,11 @@ public class AuthorizationService {
                     metadata.getIndicesLookup(),
                     ActionListener.wrap(
                         indexAuthorizationResult -> groupedActionListener.onResponse(new Tuple<>(bulkItemAction, indexAuthorizationResult)),
-                        groupedActionListener::onFailure
+                        groupedActionListener
                     )
                 );
             });
-        }, listener::onFailure));
+        }, listener));
     }
 
     private static IllegalArgumentException illegalArgument(String message) {
