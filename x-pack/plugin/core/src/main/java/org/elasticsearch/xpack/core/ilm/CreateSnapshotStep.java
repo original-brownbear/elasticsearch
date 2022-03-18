@@ -19,7 +19,6 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.snapshots.SnapshotInfo;
 
-import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -97,12 +96,7 @@ public class CreateSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
         request.includeGlobalState(false);
         request.masterNodeTimeout(TimeValue.MAX_VALUE);
         getClient().admin().cluster().createSnapshot(request, ActionListener.wrap(response -> {
-            logger.debug(
-                "create snapshot response for policy [{}] and index [{}] is: {}",
-                policyName,
-                indexName,
-                Strings.toString(response)
-            );
+            logger.debug("create snapshot response for policy [{}] and index [{}] is: {}", policyName, indexName, response);
             final SnapshotInfo snapInfo = response.getSnapshotInfo();
 
             // Check that there are no failed shards, since the request may not entirely
@@ -110,15 +104,11 @@ public class CreateSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
             if (snapInfo.failedShards() == 0) {
                 listener.onResponse(true);
             } else {
-                int failures = snapInfo.failedShards();
-                int total = snapInfo.totalShards();
-                String message = String.format(
-                    Locale.ROOT,
-                    "failed to create snapshot successfully, %s failures out of %s total shards failed",
-                    failures,
-                    total
+                logger.warn(
+                    "failed to create snapshot successfully, [{}] failures out of [{}] total shards failed",
+                    snapInfo.failedShards(),
+                    snapInfo.totalShards()
                 );
-                logger.warn(message);
                 listener.onResponse(false);
             }
         }, listener::onFailure));
