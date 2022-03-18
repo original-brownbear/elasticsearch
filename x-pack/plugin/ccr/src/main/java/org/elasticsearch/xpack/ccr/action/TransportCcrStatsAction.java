@@ -17,14 +17,12 @@ import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.license.LicenseUtils;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.ccr.Ccr;
 import org.elasticsearch.xpack.ccr.CcrLicenseChecker;
-import org.elasticsearch.xpack.core.ccr.AutoFollowStats;
 import org.elasticsearch.xpack.core.ccr.action.CcrStatsAction;
 import org.elasticsearch.xpack.core.ccr.action.FollowStatsAction;
 
@@ -79,13 +77,13 @@ public class TransportCcrStatsAction extends TransportMasterNodeAction<CcrStatsA
         ClusterState state,
         ActionListener<CcrStatsAction.Response> listener
     ) throws Exception {
-        CheckedConsumer<FollowStatsAction.StatsResponses, Exception> handler = statsResponse -> {
-            AutoFollowStats stats = autoFollowCoordinator.getStats();
-            listener.onResponse(new CcrStatsAction.Response(stats, statsResponse));
-        };
         FollowStatsAction.StatsRequest statsRequest = new FollowStatsAction.StatsRequest();
         statsRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-        client.execute(FollowStatsAction.INSTANCE, statsRequest, listener.wrap(handler));
+        client.execute(
+            FollowStatsAction.INSTANCE,
+            statsRequest,
+            listener.wrap((statsResponse, l) -> l.onResponse(new CcrStatsAction.Response(autoFollowCoordinator.getStats(), statsResponse)))
+        );
     }
 
     @Override

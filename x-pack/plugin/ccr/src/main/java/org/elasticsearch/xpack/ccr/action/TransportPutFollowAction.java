@@ -291,12 +291,12 @@ public final class TransportPutFollowAction extends TransportMasterNodeAction<Pu
             ResumeFollowAction.INSTANCE,
             resumeFollowRequest,
             listener.wrap(
-                r -> activeShardsObserver.waitForActiveShards(
+                (r, l) -> activeShardsObserver.waitForActiveShards(
                     new String[] { request.getFollowerIndex() },
                     request.waitForActiveShards(),
                     request.timeout(),
-                    result -> listener.onResponse(new PutFollowAction.Response(true, result, r.isAcknowledged())),
-                    listener::onFailure
+                    result -> l.onResponse(new PutFollowAction.Response(true, result, r.isAcknowledged())),
+                    l::onFailure
                 )
             )
         );

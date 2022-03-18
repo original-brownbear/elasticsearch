@@ -9,6 +9,7 @@
 package org.elasticsearch.action;
 
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.CheckedFunction;
@@ -54,6 +55,10 @@ public interface ActionListener<Response> {
 
     default <T> ActionListener<T> wrap(CheckedConsumer<T, ? extends Exception> onResponse) {
         return new WrappedDelegatingActionListener<>(onResponse, this);
+    }
+
+    default <T> ActionListener<T> wrap(CheckedBiConsumer<T, ActionListener<Response>, ? extends Exception> onResponse) {
+        return new WrappedDelegatingActionListener<>(r -> onResponse.accept(r, this), this);
     }
 
     abstract class Delegating<Response, DelegateResponse> implements ActionListener<Response> {

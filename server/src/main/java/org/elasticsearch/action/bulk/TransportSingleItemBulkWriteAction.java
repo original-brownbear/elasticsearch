@@ -47,15 +47,15 @@ public abstract class TransportSingleItemBulkWriteAction<
     public static <Response extends ReplicationResponse & WriteResponse> ActionListener<BulkResponse> wrapBulkResponse(
         ActionListener<Response> listener
     ) {
-        return listener.wrap(bulkItemResponses -> {
+        return listener.wrap((bulkItemResponses, l) -> {
             assert bulkItemResponses.getItems().length == 1 : "expected only one item in bulk request";
             BulkItemResponse bulkItemResponse = bulkItemResponses.getItems()[0];
             if (bulkItemResponse.isFailed() == false) {
                 @SuppressWarnings("unchecked")
                 final Response response = (Response) bulkItemResponse.getResponse();
-                listener.onResponse(response);
+                l.onResponse(response);
             } else {
-                listener.onFailure(bulkItemResponse.getFailure().getCause());
+                l.onFailure(bulkItemResponse.getFailure().getCause());
             }
         });
     }
