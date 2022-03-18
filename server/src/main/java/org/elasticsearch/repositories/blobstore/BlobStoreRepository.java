@@ -933,7 +933,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     repositoryStateId,
                     repoMetaVersion,
                     Function.identity(),
-                    ActionListener.wrap(writeUpdatedRepoDataStep::onResponse, listener::onFailure)
+                    listener.wrap(writeUpdatedRepoDataStep::onResponse)
                 );
             }, listener::onFailure);
             // Once we have updated the repository, run the clean-ups
@@ -954,7 +954,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         } else {
             // Write the new repository data first (with the removed snapshot), using no shard generations
             final RepositoryData updatedRepoData = repositoryData.removeSnapshots(snapshotIds, ShardGenerations.EMPTY);
-            writeIndexGen(updatedRepoData, repositoryStateId, repoMetaVersion, Function.identity(), ActionListener.wrap(newRepoData -> {
+            writeIndexGen(updatedRepoData, repositoryStateId, repoMetaVersion, Function.identity(), listener.wrap(newRepoData -> {
                 // Run unreferenced blobs cleanup in parallel to shard-level snapshot deletion
                 final ActionListener<Void> afterCleanupsListener = new GroupedActionListener<>(
                     ActionListener.wrap(() -> listener.onResponse(newRepoData)),
@@ -967,7 +967,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     deleteResults -> asyncCleanupUnlinkedShardLevelBlobs(repositoryData, snapshotIds, deleteResults, afterCleanupsListener),
                     afterCleanupsListener::onFailure
                 );
-            }, listener::onFailure));
+            }));
         }
     }
 
@@ -1170,13 +1170,13 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         RepositoryData newRepoData,
         ActionListener<DeleteResult> listener
     ) {
-        final GroupedActionListener<DeleteResult> groupedListener = new GroupedActionListener<>(ActionListener.wrap(deleteResults -> {
+        final GroupedActionListener<DeleteResult> groupedListener = new GroupedActionListener<>(listener.wrap(deleteResults -> {
             DeleteResult deleteResult = DeleteResult.ZERO;
             for (DeleteResult result : deleteResults) {
                 deleteResult = deleteResult.add(result);
             }
             listener.onResponse(deleteResult);
-        }, listener::onFailure), 2);
+        }), 2);
 
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
         final List<String> staleRootBlobs = staleRootBlobs(newRepoData, rootBlobs.keySet());
@@ -1234,15 +1234,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     repositoryStateId,
                     repositoryMetaVersion,
                     Function.identity(),
-                    ActionListener.wrap(
+                    listener.wrap(
                         v -> cleanupStaleBlobs(
                             Collections.emptyList(),
                             foundIndices,
                             rootBlobs,
                             repositoryData,
                             listener.map(RepositoryCleanupResult::new)
-                        ),
-                        listener::onFailure
+                        )
                     )
                 );
             }
@@ -1955,11 +1954,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         e.addSuppressed(ex);
                     }
                     final Tuple<Long, String> finalLastInfo = previousWriterInformation;
-                    markRepoCorrupted(
-                        genToLoad,
-                        e,
-                        ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e, finalLastInfo)), listener::onFailure)
-                    );
+                    markRepoCorrupted(genToLoad, e, listener.wrap(v -> listener.onFailure(corruptedStateException(e, finalLastInfo))));
                 } else {
                     listener.onFailure(e);
                 }

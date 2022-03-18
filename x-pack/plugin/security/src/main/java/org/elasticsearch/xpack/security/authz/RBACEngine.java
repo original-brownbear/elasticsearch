@@ -132,13 +132,7 @@ public class RBACEngine implements AuthorizationEngine {
     @Override
     public void resolveAuthorizationInfo(RequestInfo requestInfo, ActionListener<AuthorizationInfo> listener) {
         final Authentication authentication = requestInfo.getAuthentication();
-        rolesStore.getRoles(
-            authentication,
-            ActionListener.wrap(
-                roleTuple -> listener.onResponse(new RBACAuthorizationInfo(roleTuple.v1(), roleTuple.v2())),
-                listener::onFailure
-            )
-        );
+        rolesStore.getRoles(authentication, listener.map(roleTuple -> new RBACAuthorizationInfo(roleTuple.v1(), roleTuple.v2())));
     }
 
     @Override

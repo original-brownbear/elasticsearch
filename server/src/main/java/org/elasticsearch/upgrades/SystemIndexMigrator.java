@@ -391,7 +391,7 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
                 markAsFailed(versionException);
                 return;
             }
-            createIndex(migrationInfo, ActionListener.wrap(shardsAcknowledgedResponse -> {
+            createIndex(migrationInfo, innerListener.wrap(shardsAcknowledgedResponse -> {
                 logger.debug(
                     "while migrating [{}] , got create index response: [{}]",
                     oldIndexName,
@@ -400,7 +400,7 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
                 setWriteBlock(
                     oldIndex,
                     true,
-                    ActionListener.wrap(setReadOnlyResponse -> reindex(migrationInfo, ActionListener.wrap(bulkByScrollResponse -> {
+                    innerListener.wrap(setReadOnlyResponse -> reindex(migrationInfo, ActionListener.wrap(bulkByScrollResponse -> {
                         logger.debug(
                             "while migrating [{}], got reindex response: [{}]",
                             oldIndexName,
@@ -419,10 +419,7 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
                             setWriteBlock(
                                 oldIndex,
                                 false,
-                                ActionListener.wrap(
-                                    setAliasAndRemoveOldIndex(migrationInfo, bulkByScrollResponse, innerListener),
-                                    innerListener::onFailure
-                                )
+                                innerListener.wrap(setAliasAndRemoveOldIndex(migrationInfo, bulkByScrollResponse, innerListener))
                             );
                         }
                     }, e -> {
@@ -436,9 +433,9 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
                             e
                         );
                         removeReadOnlyBlockOnReindexFailure(oldIndex, innerListener, e);
-                    })), innerListener::onFailure)
+                    })))
                 );
-            }, innerListener::onFailure));
+            }));
         } catch (Exception ex) {
             logger.error(
                 new ParameterizedMessage(
@@ -500,7 +497,7 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
         // Technically this callback might have a different cluster state, but it shouldn't matter - these indices shouldn't be changing
         // while we're trying to migrate them.
         return unsetReadOnlyResponse -> aliasesRequest.execute(
-            ActionListener.wrap(deleteIndexResponse -> listener.onResponse(bulkByScrollResponse), listener::onFailure)
+            listener.wrap(deleteIndexResponse -> listener.onResponse(bulkByScrollResponse))
         );
     }
 

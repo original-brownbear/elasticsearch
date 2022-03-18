@@ -435,7 +435,7 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
         final Map<String, Object> config = pipelineConfig == null
             ? XContentHelper.convertToMap(request.getSource(), false, request.getXContentType()).v2()
             : pipelineConfig;
-        nodeInfoListener.accept(ActionListener.wrap(nodeInfos -> {
+        nodeInfoListener.accept(listener.wrap(nodeInfos -> {
             Map<DiscoveryNode, IngestInfo> ingestInfos = new HashMap<>();
             for (NodeInfo nodeInfo : nodeInfos.getNodes()) {
                 ingestInfos.put(nodeInfo.getNode(), nodeInfo.getInfo(IngestInfo.class));
@@ -448,7 +448,7 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
                     return innerPut(request, currentState);
                 }
             }, newExecutor());
-        }, listener::onFailure));
+        }));
     }
 
     /**

@@ -278,7 +278,7 @@ public class ClusterConnectionManagerTests extends ESTestCase {
                         assertThat(threadContext.getHeader(contextHeader), equalTo(contextValue));
 
                         assertTrue(pendingCloses.tryAcquire());
-                        connectionManager.getConnection(node).addRemovedListener(ActionListener.wrap(pendingCloses::release));
+                        connectionManager.getConnection(node).addRemovedListener(ActionListener.wrap((Runnable) pendingCloses::release));
 
                         if (randomBoolean()) {
                             releasables[threadIndex] = c;

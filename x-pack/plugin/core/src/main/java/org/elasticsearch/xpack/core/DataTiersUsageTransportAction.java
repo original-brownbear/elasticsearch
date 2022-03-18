@@ -75,27 +75,22 @@ public class DataTiersUsageTransportAction extends XPackUsageFeatureTransportAct
         ClusterState state,
         ActionListener<XPackUsageFeatureResponse> listener
     ) {
-        client.admin()
-            .cluster()
-            .prepareNodesStats()
-            .all()
-            .setIndices(CommonStatsFlags.ALL)
-            .execute(ActionListener.wrap(nodesStatsResponse -> {
-                final RoutingNodes routingNodes = state.getRoutingNodes();
-                final ImmutableOpenMap<String, IndexMetadata> indices = state.getMetadata().getIndices();
+        client.admin().cluster().prepareNodesStats().all().setIndices(CommonStatsFlags.ALL).execute(listener.wrap(nodesStatsResponse -> {
+            final RoutingNodes routingNodes = state.getRoutingNodes();
+            final ImmutableOpenMap<String, IndexMetadata> indices = state.getMetadata().getIndices();
 
-                // Determine which tiers each index would prefer to be within
-                Map<String, String> indicesToTiers = tierIndices(indices);
+            // Determine which tiers each index would prefer to be within
+            Map<String, String> indicesToTiers = tierIndices(indices);
 
-                // Generate tier specific stats for the nodes and indices
-                Map<String, DataTiersFeatureSetUsage.TierSpecificStats> tierSpecificStats = calculateStats(
-                    nodesStatsResponse.getNodes(),
-                    indicesToTiers,
-                    routingNodes
-                );
+            // Generate tier specific stats for the nodes and indices
+            Map<String, DataTiersFeatureSetUsage.TierSpecificStats> tierSpecificStats = calculateStats(
+                nodesStatsResponse.getNodes(),
+                indicesToTiers,
+                routingNodes
+            );
 
-                listener.onResponse(new XPackUsageFeatureResponse(new DataTiersFeatureSetUsage(tierSpecificStats)));
-            }, listener::onFailure));
+            listener.onResponse(new XPackUsageFeatureResponse(new DataTiersFeatureSetUsage(tierSpecificStats)));
+        }));
     }
 
     // Visible for testing

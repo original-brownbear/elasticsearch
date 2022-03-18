@@ -52,6 +52,10 @@ public interface ActionListener<Response> {
         return new MappedActionListener<>(fn, this);
     }
 
+    default <T> ActionListener<T> wrap(CheckedConsumer<T, ? extends Exception> onResponse) {
+        return new WrappedDelegatingActionListener<>(onResponse, this);
+    }
+
     abstract class Delegating<Response, DelegateResponse> implements ActionListener<Response> {
 
         protected final ActionListener<DelegateResponse> delegate;
@@ -106,6 +110,11 @@ public interface ActionListener<Response> {
         }
 
         @Override
+        public <T> ActionListener<T> wrap(CheckedConsumer<T, ? extends Exception> onResponse) {
+            return delegate.wrap(onResponse);
+        }
+
+        @Override
         public String toString() {
             return super.toString() + "/" + fn;
         }
@@ -148,7 +157,40 @@ public interface ActionListener<Response> {
             public String toString() {
                 return "WrappedActionListener{" + onResponse + "}{" + onFailure + "}";
             }
+
+            @Override
+            public <T> ActionListener<T> wrap(CheckedConsumer<T, ? extends Exception> onResponse) {
+                return ActionListener.wrap(onResponse, onFailure);
+            }
         };
+    }
+
+    final class WrappedDelegatingActionListener<R, T> extends Delegating<R, T> {
+        private final CheckedConsumer<R, ? extends Exception> onResponse;
+
+        public WrappedDelegatingActionListener(CheckedConsumer<R, ? extends Exception> onResponse, ActionListener<T> delegate) {
+            super(delegate);
+            this.onResponse = onResponse;
+        }
+
+        @Override
+        public void onResponse(R response) {
+            try {
+                onResponse.accept(response);
+            } catch (Exception e) {
+                onFailure(e);
+            }
+        }
+
+        @Override
+        public <D> ActionListener<D> wrap(CheckedConsumer<D, ? extends Exception> onResponse) {
+            return delegate.wrap(onResponse);
+        }
+
+        @Override
+        public String toString() {
+            return "WrappedDelegatingActionListener{" + onResponse + "}{" + delegate + "}";
+        }
     }
 
     /**
@@ -217,6 +259,11 @@ public interface ActionListener<Response> {
         @Override
         public void onResponse(T t) {
             bc.accept(delegate, t);
+        }
+
+        @Override
+        public <D> ActionListener<D> wrap(CheckedConsumer<D, ? extends Exception> onResponse) {
+            return delegate.wrap(onResponse);
         }
 
         @Override

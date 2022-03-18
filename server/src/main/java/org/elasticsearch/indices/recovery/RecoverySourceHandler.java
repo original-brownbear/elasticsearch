@@ -568,7 +568,7 @@ public class RecoverySourceHandler {
                     translogOps.getAsInt(),
                     getRequest().targetNode().getVersion(),
                     canUseSnapshots,
-                    ActionListener.wrap(plan -> recoverFilesFromSourceAndSnapshot(plan, store, stopWatch, listener), listener::onFailure)
+                    listener.wrap(plan -> recoverFilesFromSourceAndSnapshot(plan, store, stopWatch, listener))
                 );
             } else {
                 logger.trace("skipping [phase1] since source and target have identical sync id [{}]", recoverySourceMetadata.getSyncId());
@@ -1251,10 +1251,10 @@ public class RecoverySourceHandler {
                 logger.trace("performing relocation hand-off");
                 // this acquires all IndexShard operation permits and will thus delay new recoveries until it is done
                 cancellableThreads.execute(
-                    () -> shard.relocated(request.targetAllocationId(), recoveryTarget::handoffPrimaryContext, ActionListener.wrap(v -> {
+                    () -> shard.relocated(request.targetAllocationId(), recoveryTarget::handoffPrimaryContext, listener.wrap(v -> {
                         cancellableThreads.checkForCancel();
                         completeFinalizationListener(listener, stopWatch);
-                    }, listener::onFailure))
+                    }))
                 );
                 /*
                  * if the recovery process fails after disabling primary mode on the source shard, both relocation source and

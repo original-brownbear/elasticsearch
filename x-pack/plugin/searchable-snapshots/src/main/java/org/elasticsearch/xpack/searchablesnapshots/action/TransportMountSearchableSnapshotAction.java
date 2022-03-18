@@ -181,7 +181,7 @@ public class TransportMountSearchableSnapshotAction extends TransportMasterNodeA
 
         final ListenableFuture<RepositoryData> repositoryDataListener = new ListenableFuture<>();
         repository.getRepositoryData(repositoryDataListener);
-        repositoryDataListener.addListener(ActionListener.wrap(repoData -> {
+        repositoryDataListener.addListener(listener.wrap(repoData -> {
             final Map<String, IndexId> indexIds = repoData.getIndices();
             if (indexIds.containsKey(indexName) == false) {
                 throw new IndexNotFoundException("index [" + indexName + "] not found in repository [" + repoName + "]");
@@ -275,6 +275,6 @@ public class TransportMountSearchableSnapshotAction extends TransportMasterNodeA
                         .snapshotUuid(snapshotId.getUUID()),
                     listener
                 );
-        }, listener::onFailure), threadPool.executor(ThreadPool.Names.SNAPSHOT_META), null);
+        }), threadPool.executor(ThreadPool.Names.SNAPSHOT_META), null);
     }
 }

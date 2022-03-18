@@ -256,10 +256,10 @@ public class AuthorizationService {
             } else {
                 final RequestInfo requestInfo = new RequestInfo(authentication, unwrappedRequest, action, enclosingContext);
                 final AuthorizationEngine engine = getAuthorizationEngine(authentication);
-                final ActionListener<AuthorizationInfo> authzInfoListener = wrapPreservingContext(ActionListener.wrap(authorizationInfo -> {
+                final ActionListener<AuthorizationInfo> authzInfoListener = wrapPreservingContext(listener.wrap(authorizationInfo -> {
                     threadContext.putTransient(AUTHORIZATION_INFO_KEY, authorizationInfo);
                     maybeAuthorizeRunAs(requestInfo, auditId, authorizationInfo, listener);
-                }, listener::onFailure), threadContext);
+                }), threadContext);
                 engine.resolveAuthorizationInfo(requestInfo, authzInfoListener);
             }
         }
@@ -397,7 +397,7 @@ public class AuthorizationService {
                 }, listener::onFailure, requestInfo, requestId, authzInfo),
                 threadContext
             );
-            authzEngine.authorizeClusterAction(requestInfo, authzInfo, ActionListener.wrap(result -> {
+            authzEngine.authorizeClusterAction(requestInfo, authzInfo, clusterAuthzListener.wrap(result -> {
                 if (false == result.isGranted() && QueryApiKeyAction.NAME.equals(action)) {
                     assert request instanceof QueryApiKeyRequest : "request does not match action";
                     final QueryApiKeyRequest queryApiKeyRequest = (QueryApiKeyRequest) request;
@@ -408,7 +408,7 @@ public class AuthorizationService {
                     }
                 }
                 clusterAuthzListener.onResponse(result);
-            }, clusterAuthzListener::onFailure));
+            }));
         } else if (isIndexAction(action)) {
             final Metadata metadata = clusterService.state().metadata();
             final AsyncSupplier<ResolvedIndices> resolvedIndicesAsyncSupplier = new CachingAsyncSupplier<>(resolvedIndicesListener -> {
@@ -501,16 +501,17 @@ public class AuthorizationService {
                     result.getIndicesAccessControl()
                 );
                 final RequestInfo aliasesRequestInfo = new RequestInfo(authentication, request, IndicesAliasesAction.NAME, parentContext);
-                authzEngine.authorizeIndexAction(aliasesRequestInfo, authzInfo, ril -> {
-                    resolvedIndicesAsyncSupplier.getAsync(ActionListener.wrap(resolvedIndices -> {
+                authzEngine.authorizeIndexAction(
+                    aliasesRequestInfo,
+                    authzInfo,
+                    ril -> resolvedIndicesAsyncSupplier.getAsync(ril.wrap(resolvedIndices -> {
                         List<String> aliasesAndIndices = new ArrayList<>(resolvedIndices.getLocal());
                         for (Alias alias : aliases) {
                             aliasesAndIndices.add(alias.name());
                         }
                         ResolvedIndices withAliases = new ResolvedIndices(aliasesAndIndices, Collections.emptyList());
                         ril.onResponse(withAliases);
-                    }, ril::onFailure));
-                },
+                    })),
                     metadata.getIndicesLookup(),
                     wrapPreservingContext(
                         new AuthorizationResultListener<>(
@@ -541,10 +542,7 @@ public class AuthorizationService {
                 metadata,
                 requestId,
                 wrapPreservingContext(
-                    ActionListener.wrap(
-                        ignore -> runRequestInterceptors(requestInfo, authzInfo, authorizationEngine, listener),
-                        listener::onFailure
-                    ),
+                    listener.wrap(ignore -> runRequestInterceptors(requestInfo, authzInfo, authorizationEngine, listener)),
                     threadContext
                 )
             );
@@ -699,7 +697,7 @@ public class AuthorizationService {
         final Map<String, Set<String>> actionToIndicesMap = new HashMap<>();
         final AuditTrail auditTrail = auditTrailService.get();
 
-        resolvedIndicesAsyncSupplier.getAsync(ActionListener.wrap(overallResolvedIndices -> {
+        resolvedIndicesAsyncSupplier.getAsync(listener.wrap(overallResolvedIndices -> {
             final Set<String> localIndices = new HashSet<>(overallResolvedIndices.getLocal());
             for (BulkItemRequest item : request.items()) {
                 final String itemAction = getAction(item);
@@ -736,7 +734,7 @@ public class AuthorizationService {
                 });
             }
 
-            final ActionListener<Collection<Tuple<String, IndexAuthorizationResult>>> bulkAuthzListener = ActionListener.wrap(
+            final ActionListener<Collection<Tuple<String, IndexAuthorizationResult>>> bulkAuthzListener = listener.wrap(
                 collection -> {
                     final Map<String, IndicesAccessControl> actionToIndicesAccessControl = new HashMap<>();
                     final AtomicBoolean audit = new AtomicBoolean(false);
@@ -798,8 +796,7 @@ public class AuthorizationService {
                         }
                     }
                     listener.onResponse(null);
-                },
-                listener::onFailure
+                }
             );
             final ActionListener<Tuple<String, IndexAuthorizationResult>> groupedActionListener = wrapPreservingContext(
                 new GroupedActionListener<>(bulkAuthzListener, actionToIndicesMap.size()),
@@ -818,13 +815,12 @@ public class AuthorizationService {
                     authzInfo,
                     ril -> ril.onResponse(new ResolvedIndices(new ArrayList<>(indices), Collections.emptyList())),
                     metadata.getIndicesLookup(),
-                    ActionListener.wrap(
-                        indexAuthorizationResult -> groupedActionListener.onResponse(new Tuple<>(bulkItemAction, indexAuthorizationResult)),
-                        groupedActionListener::onFailure
+                    groupedActionListener.wrap(
+                        indexAuthorizationResult -> groupedActionListener.onResponse(new Tuple<>(bulkItemAction, indexAuthorizationResult))
                     )
                 );
             });
-        }, listener::onFailure));
+        }));
     }
 
     private static IllegalArgumentException illegalArgument(String message) {

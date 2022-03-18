@@ -372,7 +372,7 @@ public class DestinationIndexTests extends ESTestCase {
 
         ElasticsearchStatusException e = expectThrows(
             ElasticsearchStatusException.class,
-            () -> DestinationIndex.updateMappingsToDestIndex(client, config, getIndexResponse, ActionListener.wrap(Assert::fail))
+            () -> DestinationIndex.updateMappingsToDestIndex(client, config, getIndexResponse, ActionListener.wrap((Runnable) Assert::fail))
         );
         assertThat(
             e.getMessage(),
