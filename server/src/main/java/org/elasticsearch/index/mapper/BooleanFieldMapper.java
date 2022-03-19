@@ -44,7 +44,6 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -110,8 +109,8 @@ public class BooleanFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return List.of(meta, docValues, indexed, nullValue, stored, script, onScriptError);
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] { meta, docValues, indexed, nullValue, stored, script, onScriptError };
         }
 
         @Override

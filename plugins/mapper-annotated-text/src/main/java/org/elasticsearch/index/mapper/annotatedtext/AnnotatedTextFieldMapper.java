@@ -39,7 +39,6 @@ import java.io.UncheckedIOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -96,8 +95,8 @@ public class AnnotatedTextFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return Arrays.asList(
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[]{
                 store,
                 indexOptions,
                 norms,
@@ -108,7 +107,7 @@ public class AnnotatedTextFieldMapper extends FieldMapper {
                 analyzers.searchQuoteAnalyzer,
                 analyzers.positionIncrementGap,
                 meta
-            );
+            };
         }
 
         private AnnotatedTextFieldType buildFieldType(FieldType fieldType, MapperBuilderContext context) {

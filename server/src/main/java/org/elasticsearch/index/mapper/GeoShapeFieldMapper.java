@@ -83,8 +83,8 @@ public class GeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<Geomet
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return Arrays.asList(indexed, ignoreMalformed, ignoreZValue, coerce, orientation, meta);
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] { indexed, ignoreMalformed, ignoreZValue, coerce, orientation, meta };
         }
 
         @Override

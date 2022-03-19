@@ -251,8 +251,8 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return Arrays.asList(
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] {
                 indexed,
                 ignoreMalformed,
                 ignoreZValue,
@@ -264,8 +264,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
                 precision,
                 distanceErrorPct,
                 pointsOnly,
-                meta
-            );
+                meta };
         }
 
         public Builder coerce(boolean coerce) {

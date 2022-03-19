@@ -70,7 +70,6 @@ import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -167,8 +166,8 @@ public final class FlattenedFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return Arrays.asList(
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] {
                 indexed,
                 hasDocValues,
                 depthLimit,
@@ -178,8 +177,7 @@ public final class FlattenedFieldMapper extends FieldMapper {
                 indexOptions,
                 similarity,
                 splitQueriesOnWhitespace,
-                meta
-            );
+                meta };
         }
 
         @Override

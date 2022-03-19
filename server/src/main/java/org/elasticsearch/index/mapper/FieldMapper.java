@@ -637,7 +637,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         private final TriFunction<String, MappingParserContext, Object, T> parser;
         private final Function<FieldMapper, T> initializer;
         private boolean acceptsNull = false;
-        private final List<Consumer<T>> validators = new ArrayList<>();
+        private Consumer<T> validator = v -> {};
         private final Serializer<T> serializer;
         private SerializerCheck<T> serializerCheck = (includeDefaults, isConfigured, value) -> includeDefaults || isConfigured;
         private final Function<T, String> conflictSerializer;
@@ -752,7 +752,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * validators can be added and all of them will be executed.
          */
         public Parameter<T> addValidator(Consumer<T> validator) {
-            this.validators.add(validator);
+            this.validator = this.validator.andThen(validator);
             return this;
         }
 
@@ -800,10 +800,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         }
 
         void validate() {
-            // Iterate over the list of validators and execute them one by one.
-            for (Consumer<T> v : validators) {
-                v.accept(getValue());
-            }
+            this.validator.accept(getValue());
             if (this.isConfigured()) {
                 for (Parameter<?> p : requires) {
                     if (p.isConfigured() == false) {
@@ -864,7 +861,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(
                 name,
                 updateable,
-                () -> defaultValue,
+                defaultValue ? () -> true : () -> false,
                 (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
                 initializer,
                 XContentBuilder::field,
@@ -962,7 +959,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Function<FieldMapper, List<String>> initializer,
             List<String> defaultValue
         ) {
-            return new Parameter<>(name, updateable, () -> defaultValue, (n, c, o) -> {
+            return new Parameter<>(name, updateable, defaultListSupplier(defaultValue), (n, c, o) -> {
                 List<Object> values = (List<Object>) o;
                 List<String> strValues = new ArrayList<>();
                 for (Object item : values) {
@@ -970,6 +967,10 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                 }
                 return strValues;
             }, initializer, XContentBuilder::stringListField, Objects::toString);
+        }
+
+        private static Supplier<List<String>> defaultListSupplier(List<String> defaultValue) {
+            return defaultValue.isEmpty() ? List::of : () -> defaultValue;
         }
 
         /**
@@ -1213,7 +1214,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         /**
          * @return the list of parameters defined for this mapper
          */
-        protected abstract List<Parameter<?>> getParameters();
+        protected abstract Parameter<?>[] getParameters();
 
         @Override
         public abstract FieldMapper build(MapperBuilderContext context);
