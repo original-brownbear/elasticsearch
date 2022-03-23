@@ -116,7 +116,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         }
 
         @Override
-        public List<Object> listOrderedMap() throws IOException {
+        public List<Object> listOrderedMap() {
             throw new UnsupportedOperationException();
         }
     }
@@ -265,9 +265,21 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
     }
 
     @Override
+    public String text() throws IOException {
+        if (state == State.EXPANDING_START_OBJECT) {
+            throwCantGetOnStartObject("text");
+        }
+        return super.text();
+    }
+
+    private void throwCantGetOnStartObject(String type) {
+        throw new IllegalStateException("Can't get " + type + " on a " + currentToken() + " at " + getTokenLocation());
+    }
+
+    @Override
     public String textOrNull() throws IOException {
         if (state == State.EXPANDING_START_OBJECT) {
-            throw new IllegalStateException("Can't get text on a " + currentToken() + " at " + getTokenLocation());
+            throwCantGetOnStartObject("text");
         }
         return super.textOrNull();
     }
@@ -275,7 +287,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
     @Override
     public Number numberValue() throws IOException {
         if (state == State.EXPANDING_START_OBJECT) {
-            throw new IllegalStateException("Can't get numeric value on a " + currentToken() + " at " + getTokenLocation());
+            throwCantGetOnStartObject("numeric value");
         }
         return super.numberValue();
     }
@@ -283,7 +295,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
     @Override
     public boolean booleanValue() throws IOException {
         if (state == State.EXPANDING_START_OBJECT) {
-            throw new IllegalStateException("Can't get boolean value on a " + currentToken() + " at " + getTokenLocation());
+            throwCantGetOnStartObject("boolean value");
         }
         return super.booleanValue();
     }

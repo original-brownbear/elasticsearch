@@ -241,6 +241,11 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
         }
 
         @Override
+        public String text() throws IOException {
+            return value;
+        }
+
+        @Override
         public String textOrNull() throws IOException {
             return value;
         }

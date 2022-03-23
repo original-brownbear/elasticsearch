@@ -650,6 +650,14 @@ public class CompletionFieldMapper extends FieldMapper {
         }
 
         @Override
+        public String text() throws IOException {
+            if (parsingObject == false) {
+                return textValue;
+            }
+            return super.text();
+        }
+
+        @Override
         public String textOrNull() throws IOException {
             if (parsingObject == false) {
                 return textValue;
