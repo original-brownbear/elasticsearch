@@ -7,10 +7,9 @@
  */
 package org.elasticsearch.transport.netty4;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-
+import io.netty5.buffer.ByteBuf;
+import io.netty5.channel.ChannelHandlerAdapter;
+import io.netty5.channel.ChannelHandlerContext;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
@@ -28,7 +27,7 @@ import org.elasticsearch.transport.Transports;
  * A handler (must be the last one!) that does size based frame decoding and forwards the actual message
  * to the relevant action.
  */
-public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
+public class Netty4MessageInboundHandler extends ChannelHandlerAdapter {
 
     private final Netty4Transport transport;
 

@@ -33,15 +33,17 @@ configurations {
   }
 }
 
+def netty5Version = '5.0.0.Alpha1'
+
 dependencies {
   // network stack
-  api "io.netty:netty-buffer:${versions.netty}"
-  api "io.netty:netty-codec:${versions.netty}"
-  api "io.netty:netty-codec-http:${versions.netty}"
-  api "io.netty:netty-common:${versions.netty}"
-  api "io.netty:netty-handler:${versions.netty}"
-  api "io.netty:netty-resolver:${versions.netty}"
-  api "io.netty:netty-transport:${versions.netty}"
+  api "io.netty:netty5-buffer:${netty5Version}"
+  api "io.netty:netty5-codec:${netty5Version}"
+  api "io.netty:netty5-codec-http:${netty5Version}"
+  api "io.netty:netty5-common:${netty5Version}"
+  api "io.netty:netty5-handler:${netty5Version}"
+  api "io.netty:netty5-resolver:${netty5Version}"
+  api "io.netty:netty5-transport:${netty5Version}"
 }
 
 restResources {
@@ -51,7 +53,7 @@ restResources {
 }
 
 tasks.named("dependencyLicenses").configure {
-  mapping from: /netty-.*/, to: 'netty'
+  mapping from: /netty5-.*/, to: 'netty'
 }
 
 TaskProvider<Test> pooledTest = tasks.register("pooledTest", Test) {

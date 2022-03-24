@@ -8,12 +8,12 @@
 
 package org.elasticsearch.transport.netty4;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
+import io.netty5.buffer.ByteBuf;
+import io.netty5.channel.Channel;
+import io.netty5.channel.ChannelHandlerAdapter;
+import io.netty5.channel.ChannelHandlerContext;
+import io.netty5.util.concurrent.Future;
+import io.netty5.util.concurrent.Promise;
 
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
@@ -24,7 +24,7 @@ import java.util.Queue;
  * This is helpful in reducing heap usage with handlers like {@link io.netty.handler.ssl.SslHandler} that might otherwise themselves
  * buffer a large amount of data when the channel is not able to physically execute writes immediately.
  */
-public final class Netty4WriteThrottlingHandler extends ChannelDuplexHandler {
+public final class Netty4WriteThrottlingHandler extends ChannelHandlerAdapter {
 
     private final Queue<WriteOperation> queuedWrites = new ArrayDeque<>();
 
@@ -33,10 +33,12 @@ public final class Netty4WriteThrottlingHandler extends ChannelDuplexHandler {
     public Netty4WriteThrottlingHandler() {}
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+    public Future<Void> write(ChannelHandlerContext ctx, Object msg) {
         assert msg instanceof ByteBuf;
+        final Promise<Void> promise = ctx.newPromise();
         final boolean queued = queuedWrites.offer(new WriteOperation((ByteBuf) msg, promise));
         assert queued;
+        return promise.asFuture();
     }
 
     @Override
@@ -87,14 +89,14 @@ public final class Netty4WriteThrottlingHandler extends ChannelDuplexHandler {
             } else {
                 writeBuffer = write.buf;
             }
-            final ChannelFuture writeFuture = ctx.write(writeBuffer);
+            final Future<Void> writeFuture = ctx.write(writeBuffer);
             needsFlush = true;
             if (sliced == false) {
                 currentWrite = null;
                 writeFuture.addListener(future -> {
                     assert ctx.executor().inEventLoop();
                     if (future.isSuccess()) {
-                        write.promise.trySuccess();
+                        write.promise.trySuccess(null);
                     } else {
                         write.promise.tryFailure(future.cause());
                     }
@@ -134,7 +136,7 @@ public final class Netty4WriteThrottlingHandler extends ChannelDuplexHandler {
         }
     }
 
-    private record WriteOperation(ByteBuf buf, ChannelPromise promise) {
+    private record WriteOperation(ByteBuf buf, Promise<Void> promise) {
 
         void failAsClosedChannel() {
             promise.tryFailure(new ClosedChannelException());

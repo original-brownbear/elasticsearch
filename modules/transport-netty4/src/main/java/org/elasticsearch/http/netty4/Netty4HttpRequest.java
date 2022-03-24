@@ -8,18 +8,12 @@
 
 package org.elasticsearch.http.netty4;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
-import io.netty.handler.codec.http.cookie.ServerCookieEncoder;
-
+import io.netty5.buffer.ByteBuf;
+import io.netty5.buffer.Unpooled;
+import io.netty5.handler.codec.http.DefaultFullHttpRequest;
+import io.netty5.handler.codec.http.FullHttpRequest;
+import io.netty5.handler.codec.http.HttpHeaders;
+import io.netty5.handler.codec.http.HttpMethod;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.http.HttpRequest;
 import org.elasticsearch.rest.RestRequest;
@@ -60,7 +54,7 @@ public class Netty4HttpRequest implements HttpRequest {
             new HttpHeadersMap(request.headers()),
             new AtomicBoolean(false),
             true,
-            Netty4Utils.toBytesReference(request.content()),
+            Netty4Utils.toBytesReference(request.payload()),
             inboundException
         );
     }

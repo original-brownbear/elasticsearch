@@ -8,31 +8,32 @@
 
 package org.elasticsearch.http.netty4;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.PoolArenaMetric;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocatorMetric;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.TooLongFrameException;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderValues;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.HttpVersion;
-
+import io.netty5.bootstrap.Bootstrap;
+import io.netty5.buffer.ByteBufAllocator;
+import io.netty5.buffer.PoolArenaMetric;
+import io.netty5.buffer.PooledByteBufAllocator;
+import io.netty5.buffer.PooledByteBufAllocatorMetric;
+import io.netty5.buffer.api.BufferAllocator;
+import io.netty5.channel.Channel;
+import io.netty5.channel.ChannelHandlerAdapter;
+import io.netty5.channel.ChannelInitializer;
+import io.netty5.channel.ChannelOption;
+import io.netty5.channel.EventLoopGroup;
+import io.netty5.channel.SingleThreadEventLoop;
+import io.netty5.channel.nio.NioHandler;
+import io.netty5.channel.socket.SocketChannel;
+import io.netty5.channel.socket.nio.NioSocketChannel;
+import io.netty5.handler.codec.TooLongFrameException;
+import io.netty5.handler.codec.http.DefaultFullHttpRequest;
+import io.netty5.handler.codec.http.FullHttpRequest;
+import io.netty5.handler.codec.http.FullHttpResponse;
+import io.netty5.handler.codec.http.HttpHeaderNames;
+import io.netty5.handler.codec.http.HttpHeaderValues;
+import io.netty5.handler.codec.http.HttpMethod;
+import io.netty5.handler.codec.http.HttpResponseStatus;
+import io.netty5.handler.codec.http.HttpUtil;
+import io.netty5.handler.codec.http.HttpVersion;
+import io.netty5.util.concurrent.Future;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -66,7 +67,6 @@ import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
@@ -180,7 +180,12 @@ public class Netty4HttpServerTransportTests extends AbstractHttpServerTransportT
             transport.start();
             final TransportAddress remoteAddress = randomFrom(transport.boundAddress().boundAddresses());
             try (Netty4HttpClient client = new Netty4HttpClient()) {
-                final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.POST, "/");
+                final FullHttpRequest request = new DefaultFullHttpRequest(
+                    HttpVersion.HTTP_1_1,
+                    HttpMethod.POST,
+                    "/",
+                    BufferAllocator.onHeapUnpooled().allocate(0)
+                );
                 request.headers().set(HttpHeaderNames.EXPECT, expectation);
                 HttpUtil.setContentLength(request, contentLength);
 
@@ -192,21 +197,21 @@ public class Netty4HttpServerTransportTests extends AbstractHttpServerTransportT
                             HttpVersion.HTTP_1_1,
                             HttpMethod.POST,
                             "/",
-                            Unpooled.EMPTY_BUFFER
+                            BufferAllocator.onHeapUnpooled().allocate(0)
                         );
                         final FullHttpResponse continuationResponse = client.send(remoteAddress.address(), continuationRequest);
                         try {
                             assertThat(continuationResponse.status(), is(HttpResponseStatus.OK));
                             assertThat(
-                                new String(ByteBufUtil.getBytes(continuationResponse.content()), StandardCharsets.UTF_8),
+                                continuationResponse.payload().toString(StandardCharsets.UTF_8),
                                 is("done")
                             );
                         } finally {
-                            continuationResponse.release();
+                            continuationResponse.close();
                         }
                     }
                 } finally {
-                    response.release();
+                    response.close();
                 }
             }
         }
@@ -300,18 +305,19 @@ public class Netty4HttpServerTransportTests extends AbstractHttpServerTransportT
             final TransportAddress remoteAddress = randomFrom(transport.boundAddress().boundAddresses());
 
             try (Netty4HttpClient client = new Netty4HttpClient()) {
-                final String url = "/" + new String(new byte[maxInitialLineLength], Charset.forName("UTF-8"));
-                final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url);
+                final String url = "/" + new String(new byte[maxInitialLineLength], StandardCharsets.UTF_8);
+                final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url,
+                        BufferAllocator.onHeapUnpooled().allocate(0));
 
                 final FullHttpResponse response = client.send(remoteAddress.address(), request);
                 try {
                     assertThat(response.status(), equalTo(HttpResponseStatus.BAD_REQUEST));
                     assertThat(
-                        new String(response.content().array(), Charset.forName("UTF-8")),
+                        response.payload().toString(StandardCharsets.UTF_8),
                         containsString("you sent a bad request and you should feel bad")
                     );
                 } finally {
-                    response.release();
+                    response.close();
                 }
             }
         }
@@ -362,18 +368,17 @@ public class Netty4HttpServerTransportTests extends AbstractHttpServerTransportT
             final TransportAddress remoteAddress = randomFrom(transport.boundAddress().boundAddresses());
 
             try (Netty4HttpClient client = new Netty4HttpClient()) {
-                DefaultFullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url);
+                DefaultFullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, url,
+                        BufferAllocator.onHeapUnpooled().allocate(0));
                 request.headers().add(HttpHeaderNames.ACCEPT_ENCODING, randomFrom("deflate", "gzip"));
                 long numOfHugeAllocations = getHugeAllocationCount();
                 final FullHttpResponse response = client.send(remoteAddress.address(), request);
                 try {
                     assertThat(getHugeAllocationCount(), equalTo(numOfHugeAllocations));
                     assertThat(response.status(), equalTo(HttpResponseStatus.OK));
-                    byte[] bytes = new byte[response.content().readableBytes()];
-                    response.content().readBytes(bytes);
-                    assertThat(new String(bytes, StandardCharsets.UTF_8), equalTo(responseString));
+                    assertThat(response.payload().toString(StandardCharsets.UTF_8), equalTo(responseString));
                 } finally {
-                    response.release();
+                    response.close();
                 }
             }
         }
@@ -432,7 +437,8 @@ public class Netty4HttpServerTransportTests extends AbstractHttpServerTransportT
 
             // Test pre-flight request
             try (Netty4HttpClient client = new Netty4HttpClient()) {
-                final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.OPTIONS, "/");
+                final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.OPTIONS, "/",
+                        BufferAllocator.onHeapUnpooled().allocate(0));
                 request.headers().add(CorsHandler.ORIGIN, "elastic.co");
                 request.headers().add(CorsHandler.ACCESS_CONTROL_REQUEST_METHOD, "POST");
 
@@ -443,20 +449,21 @@ public class Netty4HttpServerTransportTests extends AbstractHttpServerTransportT
                     assertThat(response.headers().get(CorsHandler.VARY), equalTo(CorsHandler.ORIGIN));
                     assertTrue(response.headers().contains(CorsHandler.DATE));
                 } finally {
-                    response.release();
+                    response.close();
                 }
             }
 
             // Test short-circuited request
             try (Netty4HttpClient client = new Netty4HttpClient()) {
-                final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/");
+                final FullHttpRequest request = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/",
+                        BufferAllocator.onHeapUnpooled().allocate(0));
                 request.headers().add(CorsHandler.ORIGIN, "elastic2.co");
 
                 final FullHttpResponse response = client.send(remoteAddress.address(), request);
                 try {
                     assertThat(response.status(), equalTo(HttpResponseStatus.FORBIDDEN));
                 } finally {
-                    response.release();
+                    response.close();
                 }
             }
         }
@@ -487,7 +494,7 @@ public class Netty4HttpServerTransportTests extends AbstractHttpServerTransportT
             new TimeValue(randomIntBetween(100, 300))
         ).build();
 
-        NioEventLoopGroup group = new NioEventLoopGroup();
+        EventLoopGroup group = new SingleThreadEventLoop(r -> { return new Thread(r); }, NioHandler.newFactory().newHandler());
         try (
             Netty4HttpServerTransport transport = new Netty4HttpServerTransport(
                 settings,
@@ -517,8 +524,8 @@ public class Netty4HttpServerTransportTests extends AbstractHttpServerTransportT
                     }
                 })
                 .group(group);
-            ChannelFuture connect = clientBootstrap.connect(remoteAddress.address());
-            connect.channel().closeFuture().addListener(future -> channelClosedLatch.countDown());
+            Future<Channel> connect = clientBootstrap.connect(remoteAddress.address());
+            connect.sync().getNow().closeFuture().addListener(future -> channelClosedLatch.countDown());
 
             assertTrue("Channel should be closed due to read timeout", channelClosedLatch.await(1, TimeUnit.MINUTES));
 

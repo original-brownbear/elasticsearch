@@ -8,27 +8,15 @@
 
 package org.elasticsearch.http.netty4;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.FixedRecvByteBufAllocator;
-import io.netty.channel.RecvByteBufAllocator;
-import io.netty.channel.socket.nio.NioChannelOption;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.netty.handler.timeout.ReadTimeoutException;
-import io.netty.handler.timeout.ReadTimeoutHandler;
-import io.netty.util.AttributeKey;
-
+import io.netty5.bootstrap.ServerBootstrap;
+import io.netty5.channel.*;
+import io.netty5.channel.socket.nio.NioChannelOption;
+import io.netty5.handler.codec.ByteToMessageDecoder;
+import io.netty5.handler.codec.http.*;
+import io.netty5.handler.timeout.ReadTimeoutException;
+import io.netty5.handler.timeout.ReadTimeoutHandler;
+import io.netty5.util.AttributeKey;
+import io.netty5.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
@@ -131,7 +119,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
     private final int pipeliningMaxEvents;
 
     private final SharedGroupFactory sharedGroupFactory;
-    private final RecvByteBufAllocator recvByteBufAllocator;
+    private final RecvBufferAllocator recvByteBufAllocator;
     private final int readTimeoutMillis;
 
     private final int maxCompositeBufferComponents;
@@ -161,7 +149,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
         this.readTimeoutMillis = Math.toIntExact(SETTING_HTTP_READ_TIMEOUT.get(settings).getMillis());
 
         ByteSizeValue receivePredictor = SETTING_HTTP_NETTY_RECEIVE_PREDICTOR_SIZE.get(settings);
-        recvByteBufAllocator = new FixedRecvByteBufAllocator(receivePredictor.bytesAsInt());
+        recvByteBufAllocator = new FixedRecvBufferAllocator(receivePredictor.bytesAsInt());
 
         logger.debug(
             "using max_chunk_size[{}], max_header_size[{}], max_initial_line_length[{}], max_content_length[{}], "
@@ -257,8 +245,8 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
 
     @Override
     protected HttpServerChannel bind(InetSocketAddress socketAddress) throws Exception {
-        ChannelFuture future = serverBootstrap.bind(socketAddress).sync();
-        Channel channel = future.channel();
+        Future<Channel> future = serverBootstrap.bind(socketAddress).sync();
+        Channel channel = future.get();
         Netty4HttpServerChannel httpServerChannel = new Netty4HttpServerChannel(channel);
         channel.attr(HTTP_SERVER_CHANNEL_KEY).set(httpServerChannel);
         return httpServerChannel;
@@ -309,8 +297,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
             ch.pipeline().addLast("read_timeout", new ReadTimeoutHandler(transport.readTimeoutMillis, TimeUnit.MILLISECONDS));
             final HttpRequestDecoder decoder = new HttpRequestDecoder(
                 handlingSettings.getMaxInitialLineLength(),
-                handlingSettings.getMaxHeaderSize(),
-                handlingSettings.getMaxChunkSize()
+                handlingSettings.getMaxHeaderSize()
             );
             decoder.setCumulator(ByteToMessageDecoder.COMPOSITE_CUMULATOR);
             ch.pipeline().addLast("decoder", decoder);
@@ -337,7 +324,7 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
     }
 
     @ChannelHandler.Sharable
-    private static class ServerChannelExceptionHandler extends ChannelInboundHandlerAdapter {
+    private static class ServerChannelExceptionHandler extends ChannelHandlerAdapter {
 
         private final Netty4HttpServerTransport transport;
 

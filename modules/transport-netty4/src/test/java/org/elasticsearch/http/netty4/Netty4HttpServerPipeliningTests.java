@@ -8,16 +8,14 @@
 
 package org.elasticsearch.http.netty4;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.util.ReferenceCounted;
-
+import io.netty5.buffer.ByteBuf;
+import io.netty5.buffer.Unpooled;
+import io.netty5.buffer.api.Resource;
+import io.netty5.channel.Channel;
+import io.netty5.channel.ChannelHandler;
+import io.netty5.channel.ChannelHandlerContext;
+import io.netty5.channel.SimpleChannelInboundHandler;
+import io.netty5.handler.codec.http.FullHttpResponse;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
@@ -92,7 +90,7 @@ public class Netty4HttpServerPipeliningTests extends ESTestCase {
                     Collection<String> responseBodies = Netty4HttpClient.returnHttpResponseBodies(responses);
                     assertThat(responseBodies, contains(requests.toArray()));
                 } finally {
-                    responses.forEach(ReferenceCounted::release);
+                    responses.forEach(Resource::close);
                 }
             }
         }
@@ -154,7 +152,7 @@ public class Netty4HttpServerPipeliningTests extends ESTestCase {
         }
 
         @Override
-        protected void channelRead0(ChannelHandlerContext ctx, HttpPipelinedRequest msg) throws Exception {
+        protected void messageReceived(ChannelHandlerContext ctx, HttpPipelinedRequest msg) throws Exception {
             executorService.submit(new PossiblySlowRunnable(ctx, msg));
         }
 
@@ -199,9 +197,7 @@ public class Netty4HttpServerPipeliningTests extends ESTestCase {
                 } else {
                     assert uri.matches("/\\d+");
                 }
-
-                final ChannelPromise promise = ctx.newPromise();
-                ctx.writeAndFlush(response, promise);
+                ctx.writeAndFlush(response);
             } finally {
                 pipelinedRequest.release();
             }

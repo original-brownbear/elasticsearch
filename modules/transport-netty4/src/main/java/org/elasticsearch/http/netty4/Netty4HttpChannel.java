@@ -8,8 +8,7 @@
 
 package org.elasticsearch.http.netty4;
 
-import io.netty.channel.Channel;
-
+import io.netty5.channel.Channel;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.core.CompletableContext;
 import org.elasticsearch.http.HttpChannel;
@@ -31,7 +30,7 @@ public class Netty4HttpChannel implements HttpChannel {
 
     @Override
     public void sendResponse(HttpResponse response, ActionListener<Void> listener) {
-        channel.writeAndFlush(response, Netty4TcpChannel.addPromise(listener, channel));
+        Netty4TcpChannel.addPromise(listener, channel.writeAndFlush(response));
     }
 
     @Override

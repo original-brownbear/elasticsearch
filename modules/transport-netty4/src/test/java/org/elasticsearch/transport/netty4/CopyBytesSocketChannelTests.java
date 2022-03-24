@@ -20,6 +20,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 
+import io.netty5.bootstrap.Bootstrap;
+import io.netty5.channel.*;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.test.ESTestCase;
 
@@ -98,7 +100,7 @@ public class CopyBytesSocketChannelTests extends ESTestCase {
             protected void initChannel(Channel ch) {
                 ch.pipeline().addLast(new SimpleChannelInboundHandler<>() {
                     @Override
-                    protected void channelRead0(ChannelHandlerContext ctx, Object msg) {
+                    protected void messageReceived(ChannelHandlerContext ctx, Object msg) {
                         ByteBuf buffer = (ByteBuf) msg;
                         clientBytesReceived.addAndGet(buffer.readableBytes());
                         clientReceived.add(buffer.retain());

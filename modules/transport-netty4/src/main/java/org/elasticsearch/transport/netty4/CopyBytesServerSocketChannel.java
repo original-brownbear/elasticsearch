@@ -23,9 +23,10 @@
  */
 package org.elasticsearch.transport.netty4;
 
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.util.internal.SocketUtils;
-
+import io.netty5.channel.EventLoop;
+import io.netty5.channel.EventLoopGroup;
+import io.netty5.channel.socket.nio.NioServerSocketChannel;
+import io.netty5.util.internal.SocketUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,6 +40,10 @@ import java.util.List;
 public class CopyBytesServerSocketChannel extends NioServerSocketChannel {
 
     private static final Logger logger = LogManager.getLogger(CopyBytesServerSocketChannel.class);
+
+    public CopyBytesServerSocketChannel(EventLoop eventLoop, EventLoopGroup childEventLoopGroup) {
+        super(eventLoop, childEventLoopGroup);
+    }
 
     @Override
     protected int doReadMessages(List<Object> buf) throws Exception {

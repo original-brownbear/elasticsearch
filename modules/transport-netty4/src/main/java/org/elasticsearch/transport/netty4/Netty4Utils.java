@@ -8,11 +8,12 @@
 
 package org.elasticsearch.transport.netty4;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.CompositeByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.util.NettyRuntime;
-
+import io.netty5.buffer.ByteBuf;
+import io.netty5.buffer.CompositeByteBuf;
+import io.netty5.buffer.Unpooled;
+import io.netty5.buffer.api.Buffer;
+import io.netty5.buffer.api.adaptor.ByteBufAdaptor;
+import io.netty5.util.NettyRuntime;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -91,6 +92,10 @@ public class Netty4Utils {
         } catch (IOException ex) {
             throw new AssertionError("no IO happens here", ex);
         }
+    }
+
+    public static BytesReference toBytesReference(final Buffer buffer) {
+        return toBytesReference(ByteBufAdaptor.intoByteBuf(buffer));
     }
 
     /**

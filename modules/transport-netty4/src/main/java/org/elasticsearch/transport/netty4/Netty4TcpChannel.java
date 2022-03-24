@@ -8,11 +8,9 @@
 
 package org.elasticsearch.transport.netty4;
 
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPromise;
-
+import io.netty5.channel.Channel;
+import io.netty5.util.concurrent.Future;
+import io.netty5.util.concurrent.Promise;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -35,7 +33,7 @@ public class Netty4TcpChannel implements TcpChannel {
     private final ChannelStats stats = new ChannelStats();
     private final boolean rstOnClose;
 
-    Netty4TcpChannel(Channel channel, boolean isServer, String profile, boolean rstOnClose, @Nullable ChannelFuture connectFuture) {
+    Netty4TcpChannel(Channel channel, boolean isServer, String profile, boolean rstOnClose, @Nullable Future<Channel> connectFuture) {
         this.channel = channel;
         this.isServer = isServer;
         this.profile = profile;
@@ -46,11 +44,11 @@ public class Netty4TcpChannel implements TcpChannel {
     }
 
     /**
-     * Adds a listener that completes the given {@link CompletableContext} to the given {@link ChannelFuture}.
+     * Adds a listener that completes the given {@link CompletableContext} to the given {@link Future}.
      * @param channelFuture Channel future
      * @param context Context to complete
      */
-    public static void addListener(ChannelFuture channelFuture, CompletableContext<Void> context) {
+    public static <T> void addListener(Future<T> channelFuture, CompletableContext<Void> context) {
         channelFuture.addListener(f -> {
             if (f.isSuccess()) {
                 context.complete(null);
@@ -67,15 +65,14 @@ public class Netty4TcpChannel implements TcpChannel {
     }
 
     /**
-     * Creates a {@link ChannelPromise} for the given {@link Channel} and adds a listener that invokes the given {@link ActionListener}
+     * Creates a {@link Promise} for the given {@link Channel} and adds a listener that invokes the given {@link ActionListener}
      * on its completion.
      * @param listener lister to invoke
-     * @param channel channel
+     * @param future fujture
      * @return write promise
      */
-    public static ChannelPromise addPromise(ActionListener<Void> listener, Channel channel) {
-        ChannelPromise writePromise = channel.newPromise();
-        writePromise.addListener(f -> {
+    public static <T> void addPromise(ActionListener<Void> listener, Future<T> future) {
+        future.addListener(f -> {
             if (f.isSuccess()) {
                 listener.onResponse(null);
             } else {
@@ -88,7 +85,6 @@ public class Netty4TcpChannel implements TcpChannel {
                 }
             }
         });
-        return writePromise;
     }
 
     @Override
@@ -163,7 +159,7 @@ public class Netty4TcpChannel implements TcpChannel {
 
     @Override
     public void sendMessage(BytesReference reference, ActionListener<Void> listener) {
-        channel.writeAndFlush(Netty4Utils.toByteBuf(reference), addPromise(listener, channel));
+        channel.writeAndFlush(Netty4Utils.toByteBuf(reference));
 
         if (channel.eventLoop().isShutdown()) {
             listener.onFailure(new TransportException("Cannot send message, event loop is shutting down."));

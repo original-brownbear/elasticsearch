@@ -8,30 +8,20 @@
 
 package org.elasticsearch.http.netty4;
 
-import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.http.DefaultFullHttpRequest;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpContentDecompressor;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpObject;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpRequestEncoder;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseDecoder;
-import io.netty.handler.codec.http.HttpVersion;
-
+import io.netty5.bootstrap.Bootstrap;
+import io.netty5.buffer.ByteBuf;
+import io.netty5.buffer.Unpooled;
+import io.netty5.buffer.api.BufferAllocator;
+import io.netty5.channel.Channel;
+import io.netty5.channel.ChannelHandlerContext;
+import io.netty5.channel.ChannelInitializer;
+import io.netty5.channel.ChannelOption;
+import io.netty5.channel.SimpleChannelInboundHandler;
+import io.netty5.channel.SingleThreadEventLoop;
+import io.netty5.channel.nio.NioHandler;
+import io.netty5.channel.socket.SocketChannel;
+import io.netty5.handler.codec.http.*;
+import io.netty5.util.concurrent.Future;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Tuple;
@@ -40,6 +30,7 @@ import org.elasticsearch.transport.netty4.NettyAllocator;
 
 import java.io.Closeable;
 import java.net.SocketAddress;
+import java.nio.Buffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,8 +39,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
-import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+import static org.elasticsearch.http.CorsHandler.HOST;
 import static org.junit.Assert.fail;
 
 /**
@@ -60,7 +50,7 @@ class Netty4HttpClient implements Closeable {
     static Collection<String> returnHttpResponseBodies(Collection<FullHttpResponse> responses) {
         List<String> list = new ArrayList<>(responses.size());
         for (FullHttpResponse response : responses) {
-            list.add(response.content().toString(StandardCharsets.UTF_8));
+            list.add(response.payload().toString(StandardCharsets.UTF_8));
         }
         return list;
     }
@@ -78,13 +68,14 @@ class Netty4HttpClient implements Closeable {
     Netty4HttpClient() {
         clientBootstrap = new Bootstrap().channel(NettyAllocator.getChannelType())
             .option(ChannelOption.ALLOCATOR, NettyAllocator.getAllocator())
-            .group(new NioEventLoopGroup(1));
+            .group(new SingleThreadEventLoop(r -> { return new Thread(r); }, NioHandler.newFactory().newHandler()));
     }
 
     public List<FullHttpResponse> get(SocketAddress remoteAddress, String... uris) throws InterruptedException {
         List<HttpRequest> requests = new ArrayList<>(uris.length);
         for (int i = 0; i < uris.length; i++) {
-            final HttpRequest httpRequest = new DefaultFullHttpRequest(HTTP_1_1, HttpMethod.GET, uris[i]);
+            final HttpRequest httpRequest = new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, uris[i],
+                    BufferAllocator.onHeapUnpooled().allocate(0));
             httpRequest.headers().add(HOST, "localhost");
             httpRequest.headers().add("X-Opaque-ID", String.valueOf(i));
             httpRequest.headers().add("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01");
@@ -133,13 +124,13 @@ class Netty4HttpClient implements Closeable {
 
         clientBootstrap.handler(new CountDownLatchHandler(latch, content));
 
-        ChannelFuture channelFuture = null;
+        Future<Channel> channelFuture = null;
         try {
             channelFuture = clientBootstrap.connect(remoteAddress);
             channelFuture.sync();
 
             for (HttpRequest request : requests) {
-                channelFuture.channel().writeAndFlush(request);
+                channelFuture.getNow().writeAndFlush(request);
             }
             if (latch.await(30L, TimeUnit.SECONDS) == false) {
                 fail("Failed to get all expected responses.");
@@ -147,7 +138,7 @@ class Netty4HttpClient implements Closeable {
 
         } finally {
             if (channelFuture != null) {
-                channelFuture.channel().close().sync();
+                channelFuture.awaitUninterruptibly().getNow().close().sync();
             }
         }
 
@@ -181,12 +172,8 @@ class Netty4HttpClient implements Closeable {
             ch.pipeline().addLast(new HttpObjectAggregator(maxContentLength));
             ch.pipeline().addLast(new SimpleChannelInboundHandler<HttpObject>() {
                 @Override
-                protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) {
-                    final FullHttpResponse response = (FullHttpResponse) msg;
-                    // We copy the buffer manually to avoid a huge allocation on a pooled allocator. We have
-                    // a test that tracks huge allocations, so we want to avoid them in this test code.
-                    ByteBuf newContent = Unpooled.copiedBuffer(((FullHttpResponse) msg).content());
-                    content.add(response.replace(newContent));
+                protected void messageReceived(ChannelHandlerContext ctx, HttpObject msg) {
+                    content.add((FullHttpResponse) msg);
                     latch.countDown();
                 }
 

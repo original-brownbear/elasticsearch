@@ -8,8 +8,8 @@
 
 package org.elasticsearch.transport.netty4;
 
-import io.netty.channel.Channel;
-import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty5.channel.Channel;
+import io.netty5.channel.socket.nio.NioSocketChannel;
 
 import java.nio.channels.SocketChannel;
 

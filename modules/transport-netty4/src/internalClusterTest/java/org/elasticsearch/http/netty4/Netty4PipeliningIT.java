@@ -8,9 +8,8 @@
 
 package org.elasticsearch.http.netty4;
 
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.util.ReferenceCounted;
-
+import io.netty5.buffer.api.Resource;
+import io.netty5.handler.codec.http.FullHttpResponse;
 import org.elasticsearch.ESNetty4IntegTestCase;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.http.HttpServerTransport;
@@ -46,7 +45,7 @@ public class Netty4PipeliningIT extends ESNetty4IntegTestCase {
                 Collection<String> opaqueIds = Netty4HttpClient.returnOpaqueIds(responses);
                 assertOpaqueIdsInOrder(opaqueIds);
             } finally {
-                responses.forEach(ReferenceCounted::release);
+                responses.forEach(Resource::close);
             }
         }
     }

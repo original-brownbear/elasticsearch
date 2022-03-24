@@ -8,10 +8,9 @@
 
 package org.elasticsearch.transport.netty4;
 
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.util.concurrent.Future;
-
+import io.netty5.channel.MultithreadEventLoopGroup;
+import io.netty5.channel.nio.NioHandler;
+import io.netty5.util.concurrent.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.settings.Settings;
@@ -27,9 +26,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.elasticsearch.common.util.concurrent.EsExecutors.daemonThreadFactory;
 
 /**
- * Creates and returns {@link io.netty.channel.EventLoopGroup} instances. It will return a shared group for
+ * Creates and returns {@link SharedGroup} instances. It will return a shared group for
  * both {@link #getHttpGroup()} and {@link #getTransportGroup()} if
- * {@link org.elasticsearch.http.netty4.Netty4HttpServerTransport#SETTING_HTTP_WORKER_COUNT} is configured to be 0.
+ * {@link Netty4HttpServerTransport#SETTING_HTTP_WORKER_COUNT} is configured to be 0.
  * If that setting is not 0, then it will return a different group in the {@link #getHttpGroup()} call.
  */
 public final class SharedGroupFactory {
@@ -66,9 +65,10 @@ public final class SharedGroupFactory {
             return getGenericGroup();
         } else {
             if (dedicatedHttpGroup == null) {
-                NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup(
-                    httpWorkerCount,
-                    daemonThreadFactory(settings, HttpServerTransport.HTTP_SERVER_WORKER_THREAD_NAME_PREFIX)
+                MultithreadEventLoopGroup eventLoopGroup = new MultithreadEventLoopGroup(
+                        httpWorkerCount,
+                        daemonThreadFactory(settings, HttpServerTransport.HTTP_SERVER_WORKER_THREAD_NAME_PREFIX),
+                        NioHandler.newFactory()
                 );
                 dedicatedHttpGroup = new SharedGroup(new RefCountedGroup(eventLoopGroup));
             }
@@ -78,9 +78,10 @@ public final class SharedGroupFactory {
 
     private SharedGroup getGenericGroup() {
         if (genericGroup == null) {
-            EventLoopGroup eventLoopGroup = new NioEventLoopGroup(
-                workerCount,
-                EsExecutors.daemonThreadFactory(settings, TcpTransport.TRANSPORT_WORKER_THREAD_NAME_PREFIX)
+            MultithreadEventLoopGroup eventLoopGroup = new MultithreadEventLoopGroup(
+                    workerCount,
+                    EsExecutors.daemonThreadFactory(settings, TcpTransport.TRANSPORT_WORKER_THREAD_NAME_PREFIX),
+                    NioHandler.newFactory()
             );
             this.genericGroup = new RefCountedGroup(eventLoopGroup);
         } else {
@@ -91,9 +92,9 @@ public final class SharedGroupFactory {
 
     private static class RefCountedGroup extends AbstractRefCounted {
 
-        private final EventLoopGroup eventLoopGroup;
+        private final MultithreadEventLoopGroup eventLoopGroup;
 
-        private RefCountedGroup(EventLoopGroup eventLoopGroup) {
+        private RefCountedGroup(MultithreadEventLoopGroup eventLoopGroup) {
             this.eventLoopGroup = eventLoopGroup;
         }
 
@@ -121,7 +122,7 @@ public final class SharedGroupFactory {
             this.refCountedGroup = refCountedGroup;
         }
 
-        public EventLoopGroup getLowLevelGroup() {
+        public MultithreadEventLoopGroup getLowLevelGroup() {
             return refCountedGroup.eventLoopGroup;
         }
 
