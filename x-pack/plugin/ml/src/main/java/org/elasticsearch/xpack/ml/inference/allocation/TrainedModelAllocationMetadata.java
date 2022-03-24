@@ -66,7 +66,7 @@ public class TrainedModelAllocationMetadata implements Metadata.Custom {
     }
 
     public TrainedModelAllocationMetadata(StreamInput in) throws IOException {
-        this.modelRoutingEntries = in.readOrderedMap(StreamInput::readString, TrainedModelAllocation::new);
+        this.modelRoutingEntries = in.readOrderedMap(TrainedModelAllocation::new);
     }
 
     public TrainedModelAllocation getModelAllocation(String modelId) {

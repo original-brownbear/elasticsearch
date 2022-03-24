@@ -65,7 +65,7 @@ public class FeatureMigrationResults implements Metadata.Custom {
     }
 
     public FeatureMigrationResults(StreamInput in) throws IOException {
-        this.featureStatuses = in.readMap(StreamInput::readString, SingleFeatureMigrationResult::new);
+        this.featureStatuses = in.readStringKeyMap(SingleFeatureMigrationResult::new);
     }
 
     @Override

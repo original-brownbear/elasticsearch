@@ -46,11 +46,10 @@ public final class SearchProfileResults implements Writeable, ToXContentFragment
 
     public SearchProfileResults(StreamInput in) throws IOException {
         if (in.getVersion().onOrAfter(Version.V_7_16_0)) {
-            shardResults = in.readMap(StreamInput::readString, SearchProfileShardResult::new);
+            shardResults = in.readStringKeyMap(SearchProfileShardResult::new);
         } else {
             // Before 8.0.0 we only send the query phase result
-            shardResults = in.readMap(
-                StreamInput::readString,
+            shardResults = in.readStringKeyMap(
                 i -> new SearchProfileShardResult(new SearchProfileQueryPhaseResult(i), null)
             );
         }

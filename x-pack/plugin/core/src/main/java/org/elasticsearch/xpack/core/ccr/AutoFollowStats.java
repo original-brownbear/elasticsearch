@@ -125,9 +125,9 @@ public class AutoFollowStats implements Writeable, ToXContentObject {
         numberOfFailedRemoteClusterStateRequests = in.readVLong();
         numberOfSuccessfulFollowIndices = in.readVLong();
         recentAutoFollowErrors = new TreeMap<>(
-            in.readMap(StreamInput::readString, in1 -> new Tuple<>(in1.readZLong(), in1.readException()))
+            in.readStringKeyMap(in1 -> new Tuple<>(in1.readZLong(), in1.readException()))
         );
-        autoFollowedClusters = new TreeMap<>(in.readMap(StreamInput::readString, AutoFollowedCluster::new));
+        autoFollowedClusters = new TreeMap<>(in.readStringKeyMap(AutoFollowedCluster::new));
     }
 
     @Override

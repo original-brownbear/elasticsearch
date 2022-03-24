@@ -602,6 +602,14 @@ public abstract class StreamInput extends InputStream {
         return null;
     }
 
+    public Map<String, String> readStringStringMap() throws IOException {
+        return readStringKeyMap(StreamInput::readString);
+    }
+
+    public <V> Map<String, V> readStringKeyMap(Writeable.Reader<V> valueReader) throws IOException {
+        return readMap(StreamInput::readString, valueReader);
+    }
+
     /**
      * If the returned map contains any entries it will be mutable. If it is empty it might be immutable.
      */
@@ -609,8 +617,8 @@ public abstract class StreamInput extends InputStream {
         return readMap(keyReader, valueReader, Maps::newHashMapWithExpectedSize);
     }
 
-    public <K, V> Map<K, V> readOrderedMap(Writeable.Reader<K> keyReader, Writeable.Reader<V> valueReader) throws IOException {
-        return readMap(keyReader, valueReader, Maps::newLinkedHashMapWithExpectedSize);
+    public <V> Map<String, V> readOrderedMap(Writeable.Reader<V> valueReader) throws IOException {
+        return readMap(StreamInput::readString, valueReader, Maps::newLinkedHashMapWithExpectedSize);
     }
 
     private <K, V> Map<K, V> readMap(Writeable.Reader<K> keyReader, Writeable.Reader<V> valueReader, IntFunction<Map<K, V>> constructor)
@@ -636,19 +644,18 @@ public abstract class StreamInput extends InputStream {
      * If the map or a list in it contains any elements it will be mutable, otherwise either the empty map or empty lists it contains
      * might be immutable.
      *
-     * @param keyReader The key reader
      * @param valueReader The value reader
      * @return Never {@code null}.
      */
-    public <K, V> Map<K, List<V>> readMapOfLists(final Writeable.Reader<K> keyReader, final Writeable.Reader<V> valueReader)
+    public <V> Map<String, List<V>> readMapOfLists(final Writeable.Reader<V> valueReader)
         throws IOException {
         final int size = readArraySize();
         if (size == 0) {
             return Collections.emptyMap();
         }
-        final Map<K, List<V>> map = Maps.newMapWithExpectedSize(size);
+        final Map<String, List<V>> map = Maps.newMapWithExpectedSize(size);
         for (int i = 0; i < size; ++i) {
-            map.put(keyReader.read(this), readList(valueReader));
+            map.put(this.readString(), readList(valueReader));
         }
         return map;
     }
@@ -680,6 +687,11 @@ public abstract class StreamInput extends InputStream {
     @SuppressWarnings("unchecked")
     public Map<String, Object> readMap() throws IOException {
         return (Map<String, Object>) readGenericValue();
+    }
+
+    public <V> ImmutableOpenMap<String, V> readImmutableStringKeyedMap(Writeable.Reader<V> valueReader)
+            throws IOException {
+        return readImmutableMap(StreamInput::readString, valueReader);
     }
 
     /**
@@ -1151,6 +1163,10 @@ public abstract class StreamInput extends InputStream {
         } else {
             return null;
         }
+    }
+
+    public Set<String> readStringSet() throws IOException {
+        return readSet(StreamInput::readString);
     }
 
     /**

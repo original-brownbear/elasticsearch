@@ -32,8 +32,8 @@ public class GetAliasesResponse extends ActionResponse {
 
     public GetAliasesResponse(StreamInput in) throws IOException {
         super(in);
-        aliases = in.readImmutableMap(StreamInput::readString, i -> i.readList(AliasMetadata::new));
-        dataStreamAliases = in.readMap(StreamInput::readString, in1 -> in1.readList(DataStreamAlias::new));
+        aliases = in.readImmutableStringKeyedMap(i -> i.readList(AliasMetadata::new));
+        dataStreamAliases = in.readStringKeyMap(in1 -> in1.readList(DataStreamAlias::new));
     }
 
     public ImmutableOpenMap<String, List<AliasMetadata>> getAliases() {

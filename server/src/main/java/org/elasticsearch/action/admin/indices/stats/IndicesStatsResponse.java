@@ -47,8 +47,8 @@ public class IndicesStatsResponse extends BroadcastResponse {
         super(in);
         shards = in.readArray(ShardStats::new, ShardStats[]::new);
         if (in.getVersion().onOrAfter(Version.V_8_1_0)) {
-            indexHealthMap = in.readMap(StreamInput::readString, ClusterHealthStatus::readFrom);
-            indexStateMap = in.readMap(StreamInput::readString, IndexMetadata.State::readFrom);
+            indexHealthMap = in.readStringKeyMap(ClusterHealthStatus::readFrom);
+            indexStateMap = in.readStringKeyMap(IndexMetadata.State::readFrom);
         } else {
             indexHealthMap = Map.of();
             indexStateMap = Map.of();

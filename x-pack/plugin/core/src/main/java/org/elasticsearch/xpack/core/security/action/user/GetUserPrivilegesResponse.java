@@ -41,11 +41,11 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
     public GetUserPrivilegesResponse(StreamInput in) throws IOException {
         super(in);
-        cluster = Collections.unmodifiableSet(in.readSet(StreamInput::readString));
+        cluster = Collections.unmodifiableSet(in.readStringSet());
         configurableClusterPrivileges = Collections.unmodifiableSet(in.readSet(ConfigurableClusterPrivileges.READER));
         index = Collections.unmodifiableSet(in.readSet(Indices::new));
         application = Collections.unmodifiableSet(in.readSet(RoleDescriptor.ApplicationResourcePrivileges::new));
-        runAs = Collections.unmodifiableSet(in.readSet(StreamInput::readString));
+        runAs = Collections.unmodifiableSet(in.readStringSet());
     }
 
     public GetUserPrivilegesResponse(
@@ -140,8 +140,8 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
         public Indices(StreamInput in) throws IOException {
             // The use of TreeSet is to provide a consistent order that can be relied upon in tests
-            indices = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString)));
-            privileges = Collections.unmodifiableSet(new TreeSet<>(in.readSet(StreamInput::readString)));
+            indices = Collections.unmodifiableSet(new TreeSet<>(in.readStringSet()));
+            privileges = Collections.unmodifiableSet(new TreeSet<>(in.readStringSet()));
             fieldSecurity = Collections.unmodifiableSet(in.readSet(input -> {
                 final String[] grant = input.readOptionalStringArray();
                 final String[] exclude = input.readOptionalStringArray();

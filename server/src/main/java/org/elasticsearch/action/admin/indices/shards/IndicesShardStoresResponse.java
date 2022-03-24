@@ -249,7 +249,7 @@ public class IndicesShardStoresResponse extends ActionResponse implements ToXCon
 
     public IndicesShardStoresResponse(StreamInput in) throws IOException {
         super(in);
-        storeStatuses = in.readImmutableMap(StreamInput::readString, i -> {
+        storeStatuses = in.readImmutableStringKeyedMap(i -> {
             int indexEntries = i.readVInt();
             ImmutableOpenIntMap.Builder<List<StoreStatus>> shardEntries = ImmutableOpenIntMap.builder();
             for (int shardCount = 0; shardCount < indexEntries; shardCount++) {

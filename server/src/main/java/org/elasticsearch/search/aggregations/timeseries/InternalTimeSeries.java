@@ -62,7 +62,7 @@ public class InternalTimeSeries extends InternalMultiBucketAggregation<InternalT
          */
         public InternalBucket(StreamInput in, boolean keyed) throws IOException {
             this.keyed = keyed;
-            key = in.readOrderedMap(StreamInput::readString, StreamInput::readGenericValue);
+            key = in.readOrderedMap(StreamInput::readGenericValue);
             docCount = in.readVLong();
             aggregations = InternalAggregations.readFrom(in);
         }
