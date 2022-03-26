@@ -1021,7 +1021,12 @@ public class ScopedSettingsTests extends ESTestCase {
 
         e = expectThrows(
             IllegalArgumentException.class,
-            () -> settings.validate("index.number_of_replicas", Settings.builder().put("index.number_of_replicas", "true").build(), true)
+            () -> settings.validate(
+                "index.number_of_replicas",
+                Settings.builder().put("index.number_of_replicas", "true").build(),
+                true,
+                false
+            )
         );
         assertEquals("Failed to parse value [true] for setting [index.number_of_replicas]", e.getMessage());
 
@@ -1030,7 +1035,8 @@ public class ScopedSettingsTests extends ESTestCase {
             () -> settings.validate(
                 "index.similarity.boolean.type",
                 Settings.builder().put("index.similarity.boolean.type", "mine").build(),
-                true
+                true,
+                false
             )
         );
         assertEquals("illegal value for [index.similarity.boolean] cannot redefine built-in similarity", e.getMessage());

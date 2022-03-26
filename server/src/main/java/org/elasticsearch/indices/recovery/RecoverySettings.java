@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 import static org.elasticsearch.common.settings.Setting.parseInt;
 import static org.elasticsearch.node.NodeRoleSettings.NODE_ROLES_SETTING;
@@ -97,9 +98,13 @@ public class RecoverySettings {
     /**
      * Default factor as defined by the operator.
      */
-    public static final Setting<Double> NODE_BANDWIDTH_RECOVERY_OPERATOR_FACTOR_SETTING = operatorFactorSetting(
+    public static final Setting<Double> NODE_BANDWIDTH_RECOVERY_OPERATOR_FACTOR_SETTING = new Setting<>(
         "node.bandwidth.recovery.operator.factor",
-        DEFAULT_FACTOR_VALUE
+        Double.toString(DEFAULT_FACTOR_VALUE),
+        zeroToOneParser("node.bandwidth.recovery.operator.factor"),
+        largerThanZeroValidator("node.bandwidth.recovery.operator.factor"),
+        Property.NodeScope,
+        Property.OperatorDynamic
     );
 
     public static final Setting<Double> NODE_BANDWIDTH_RECOVERY_OPERATOR_FACTOR_WRITE_SETTING = operatorFactorSetting(
@@ -114,7 +119,6 @@ public class RecoverySettings {
         "node.bandwidth.recovery.operator.factor.max_overcommit",
         100d, // high default overcommit
         1d,
-        Double.MAX_VALUE,
         Property.NodeScope,
         Property.OperatorDynamic
     );
@@ -139,7 +143,7 @@ public class RecoverySettings {
      * Bandwidth settings have a default value of -1 (meaning that they are undefined) or a value in (0, Long.MAX_VALUE).
      */
     private static Setting<ByteSizeValue> bandwidthSetting(String key) {
-        return new Setting<>(key, s -> ByteSizeValue.MINUS_ONE.getStringRep(), s -> {
+        return new Setting<>(key, ByteSizeValue.MINUS_ONE.getStringRep(), s -> {
             final ByteSizeValue value = ByteSizeValue.parseBytesSizeValue(s, key);
             if (ByteSizeValue.MINUS_ONE.equals(value)) {
                 return value;
@@ -170,34 +174,41 @@ public class RecoverySettings {
         }, Property.NodeScope);
     }
 
-    /**
-     * Operator-defined factors have a value in (0.0, 1.0]
-     */
-    private static Setting<Double> operatorFactorSetting(String key, double defaultValue) {
-        return new Setting<>(key, Double.toString(defaultValue), s -> Setting.parseDouble(s, 0d, 1d, key), v -> {
-            if (v == 0d) {
-                throw new IllegalArgumentException("Failed to validate value [" + v + "] for factor setting [" + key + "] must be > [0]");
-            }
-        }, Property.NodeScope, Property.OperatorDynamic);
+    private static Function<String, Double> zeroToOneParser(String key) {
+        return s -> Setting.parseDouble(s, 0d, 1d, key, false);
     }
 
     private static Setting<Double> operatorFactorSetting(String key) {
-        return new Setting<>(key, NODE_BANDWIDTH_RECOVERY_OPERATOR_FACTOR_SETTING, s -> Setting.parseDouble(s, 0d, 1d, key), v -> {
+        return new Setting<>(
+            key,
+            NODE_BANDWIDTH_RECOVERY_OPERATOR_FACTOR_SETTING,
+            zeroToOneParser(key),
+            largerThanZeroValidator(key),
+            Property.NodeScope,
+            Property.OperatorDynamic
+        );
+    }
+
+    private static Setting.Validator<Double> largerThanZeroValidator(String key) {
+        return v -> {
             if (v == 0d) {
                 throw new IllegalArgumentException("Failed to validate value [" + v + "] for factor setting [" + key + "] must be > [0]");
             }
-        }, Property.NodeScope, Property.OperatorDynamic);
+        };
     }
 
     /**
      * User-defined factors have a value in (0.0, 1.0] and fall back to a corresponding operator factor setting.
      */
     private static Setting<Double> factorSetting(String key, Setting<Double> operatorFallback) {
-        return new Setting<>(key, operatorFallback, s -> Setting.parseDouble(s, 0d, 1d, key), v -> {
-            if (v == 0d) {
-                throw new IllegalArgumentException("Failed to validate value [" + v + "] for factor setting [" + key + "] must be > [0]");
-            }
-        }, Property.NodeScope, Property.Dynamic);
+        return new Setting<>(
+            key,
+            operatorFallback,
+            zeroToOneParser(key),
+            largerThanZeroValidator(key),
+            Property.NodeScope,
+            Property.Dynamic
+        );
     }
 
     static final ByteSizeValue DEFAULT_MAX_BYTES_PER_SEC = new ByteSizeValue(40L, ByteSizeUnit.MB);

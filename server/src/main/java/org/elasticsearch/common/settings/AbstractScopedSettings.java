@@ -135,10 +135,6 @@ public abstract class AbstractScopedSettings {
         return AFFIX_KEY_PATTERN.matcher(key).matches();
     }
 
-    public Setting.Property getScope() {
-        return this.scope;
-    }
-
     /**
      * Validates the given settings by running it through all update listeners without applying it. This
      * method will not change any settings but will fail if any of the settings can't be applied.
@@ -170,7 +166,7 @@ public abstract class AbstractScopedSettings {
      * @return the unmerged applied settings
     */
     public synchronized Settings applySettings(Settings newSettings) {
-        if (lastSettingsApplied != null && newSettings.equals(lastSettingsApplied)) {
+        if (newSettings.equals(lastSettingsApplied)) {
             // nothing changed in the settings, ignore
             return newSettings;
         }
@@ -517,18 +513,6 @@ public abstract class AbstractScopedSettings {
     /**
      * Validates that the settings is valid.
      *
-     * @param key the key of the setting to validate
-     * @param settings the settings
-     * @param validateValue true if value should be validated, otherwise only keys are validated
-     * @throws IllegalArgumentException if the setting is invalid
-     */
-    void validate(final String key, final Settings settings, final boolean validateValue) {
-        validate(key, settings, validateValue, false);
-    }
-
-    /**
-     * Validates that the settings is valid.
-     *
      * @param key                            the key of the setting to validate
      * @param settings                       the settings
      * @param validateValue                  true if value should be validated, otherwise only keys are validated
@@ -648,7 +632,7 @@ public abstract class AbstractScopedSettings {
         default Runnable updater(Settings current, Settings previous) {
             if (hasChanged(current, previous)) {
                 T value = getValue(current, previous);
-                return () -> { apply(value, current, previous); };
+                return () -> apply(value, current, previous);
             }
             return () -> {};
         }
@@ -676,7 +660,7 @@ public abstract class AbstractScopedSettings {
         }
         for (Map.Entry<String, Setting<?>> entry : complexMatchers.entrySet()) {
             if (entry.getValue().match(key)) {
-                assert assertMatcher(key, 1);
+                assert assertMatcher(key);
                 assert entry.getValue().hasComplexMatcher();
                 return entry.getValue();
             }
@@ -684,15 +668,14 @@ public abstract class AbstractScopedSettings {
         return null;
     }
 
-    private boolean assertMatcher(String key, int numComplexMatchers) {
+    private boolean assertMatcher(String key) {
         List<Setting<?>> list = new ArrayList<>();
         for (Map.Entry<String, Setting<?>> entry : complexMatchers.entrySet()) {
             if (entry.getValue().match(key)) {
                 list.add(entry.getValue().getConcreteSetting(key));
             }
         }
-        assert list.size() == numComplexMatchers
-            : "Expected " + numComplexMatchers + " complex matchers to match key [" + key + "] but got: " + list.toString();
+        assert list.size() == 1 : "Expected " + 1 + " complex matchers to match key [" + key + "] but got: " + list.toString();
         return true;
     }
 

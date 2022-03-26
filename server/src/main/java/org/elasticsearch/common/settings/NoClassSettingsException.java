@@ -20,10 +20,6 @@ import java.io.IOException;
  */
 public class NoClassSettingsException extends SettingsException {
 
-    public NoClassSettingsException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
     public NoClassSettingsException(StreamInput in) throws IOException {
         super(in);
     }

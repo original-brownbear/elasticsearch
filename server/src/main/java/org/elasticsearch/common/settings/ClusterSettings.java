@@ -110,7 +110,6 @@ import org.elasticsearch.transport.TransportSettings;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -179,7 +178,7 @@ public final class ClusterSettings extends AbstractScopedSettings {
         }
     }
 
-    public static Set<Setting<?>> BUILT_IN_CLUSTER_SETTINGS = Set.of(
+    public static final Set<Setting<?>> BUILT_IN_CLUSTER_SETTINGS = Set.of(
         AwarenessAllocationDecider.CLUSTER_ROUTING_ALLOCATION_AWARENESS_ATTRIBUTE_SETTING,
         AwarenessAllocationDecider.CLUSTER_ROUTING_ALLOCATION_AWARENESS_FORCE_GROUP_SETTING,
         BalancedShardsAllocator.INDEX_BALANCE_FACTOR_SETTING,
@@ -512,7 +511,5 @@ public final class ClusterSettings extends AbstractScopedSettings {
         DataTier.ENFORCE_DEFAULT_TIER_PREFERENCE_SETTING,
         StatsRequestLimiter.MAX_CONCURRENT_STATS_REQUESTS_PER_NODE
     );
-
-    static List<SettingUpgrader<?>> BUILT_IN_SETTING_UPGRADERS = Collections.emptyList();
 
 }

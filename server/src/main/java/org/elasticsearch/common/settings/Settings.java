@@ -358,7 +358,7 @@ public final class Settings implements ToXContentFragment {
      * {@link Setting} object constructed in, for example, {@link org.elasticsearch.env.Environment}.
      */
     static class DeprecationLoggerHolder {
-        static DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(Settings.class);
+        static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(Settings.class);
     }
 
     /**
@@ -1099,7 +1099,7 @@ public final class Settings implements ToXContentFragment {
         }
 
         private void processLegacyLists(Map<String, Object> map) {
-            String[] array = map.keySet().toArray(new String[map.size()]);
+            String[] array = map.keySet().toArray(Strings.EMPTY_ARRAY);
             for (String key : array) {
                 if (key.endsWith(".0")) { // let's only look at the head of the list and convert in order starting there.
                     int counter = 0;
@@ -1315,13 +1315,13 @@ public final class Settings implements ToXContentFragment {
         @Override
         public Set<Entry<String, Object>> entrySet() {
             Set<Entry<String, Object>> delegateSet = delegate.entrySet();
-            AbstractSet<Entry<String, Object>> filterSet = new AbstractSet<Entry<String, Object>>() {
+            return new AbstractSet<>() {
 
                 @Override
                 public Iterator<Entry<String, Object>> iterator() {
                     Iterator<Entry<String, Object>> iter = delegateSet.iterator();
 
-                    return new Iterator<Entry<String, Object>>() {
+                    return new Iterator<>() {
                         private int numIterated;
                         private Entry<String, Object> currentElement;
 
@@ -1349,7 +1349,6 @@ public final class Settings implements ToXContentFragment {
                         @Override
                         public Entry<String, Object> next() {
                             if (currentElement == null && hasNext() == false) { // protect against no #hasNext call or not respecting it
-
                                 throw new NoSuchElementException("make sure to call hasNext first");
                             }
                             final Entry<String, Object> current = this.currentElement;
@@ -1357,7 +1356,7 @@ public final class Settings implements ToXContentFragment {
                             if (prefix == null) {
                                 return current;
                             }
-                            return new Entry<String, Object>() {
+                            return new Entry<>() {
                                 @Override
                                 public String getKey() {
                                     return current.getKey().substring(prefix.length());
@@ -1382,7 +1381,6 @@ public final class Settings implements ToXContentFragment {
                     return FilteredMap.this.size();
                 }
             };
-            return filterSet;
         }
 
         private FilteredMap(Map<String, Object> delegate, Predicate<String> filter, String prefix) {
