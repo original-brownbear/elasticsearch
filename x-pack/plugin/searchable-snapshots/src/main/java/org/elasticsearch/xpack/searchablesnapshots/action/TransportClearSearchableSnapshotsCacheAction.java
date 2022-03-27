@@ -54,7 +54,7 @@ public class TransportClearSearchableSnapshotsCacheAction extends AbstractTransp
 
     @Override
     protected EmptyResult readShardResult(StreamInput in) {
-        return EmptyResult.readEmptyResultFrom(in);
+        return EmptyResult.INSTANCE;
     }
 
     @Override

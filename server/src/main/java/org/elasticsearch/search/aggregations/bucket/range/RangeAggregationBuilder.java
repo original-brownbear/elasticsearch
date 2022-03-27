@@ -196,13 +196,6 @@ public class RangeAggregationBuilder extends AbstractRangeBuilder<RangeAggregati
         return REGISTRY_KEY;
     }
 
-    private static String generateKey(double from, double to, DocValueFormat format) {
-        StringBuilder builder = new StringBuilder().append(Double.isInfinite(from) ? "*" : format.format(from))
-            .append("-")
-            .append(Double.isInfinite(to) ? "*" : format.format(to));
-        return builder.toString();
-    }
-
     @Override
     public Version getMinimalSupportedVersion() {
         return Version.V_EMPTY;

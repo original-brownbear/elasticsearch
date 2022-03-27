@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  */
 public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
 
-    private Set<String> requestedMetrics = Metric.allMetrics();
+    private final Set<String> requestedMetrics = Metric.allMetrics();
 
     /**
      * Create a new NodeInfoRequest from a {@link StreamInput} object.
@@ -104,19 +104,6 @@ public class NodesInfoRequest extends BaseNodesRequest<NodesInfoRequest> {
         }
         requestedMetrics.remove(metric);
         return this;
-    }
-
-    /**
-     * Helper method for adding and removing metrics. Used when deserializing
-     * a NodesInfoRequest from an ordered list of booleans.
-     *
-     * @param addMetric Whether or not to include a metric.
-     * @param metricName Name of the metric to include or remove.
-     */
-    private void optionallyAddMetric(boolean addMetric, String metricName) {
-        if (addMetric) {
-            requestedMetrics.add(metricName);
-        }
     }
 
     @Override

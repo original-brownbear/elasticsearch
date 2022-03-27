@@ -151,10 +151,6 @@ public final class NodeMetadata {
             this.nodeVersion = Version.fromId(nodeVersionId);
         }
 
-        public void setPreviousNodeVersionId(int previousNodeVersionId) {
-            this.previousNodeVersion = Version.fromId(previousNodeVersionId);
-        }
-
         public void setOldestIndexVersion(int oldestIndexVersion) {
             this.oldestIndexVersion = Version.fromId(oldestIndexVersion);
         }

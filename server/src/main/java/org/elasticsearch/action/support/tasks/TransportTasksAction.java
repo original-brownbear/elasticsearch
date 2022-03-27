@@ -383,14 +383,6 @@ public abstract class TransportTasksAction<
             this.exceptions = exceptions;
         }
 
-        public String getNodeId() {
-            return nodeId;
-        }
-
-        public List<TaskOperationFailure> getExceptions() {
-            return exceptions;
-        }
-
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeString(nodeId);

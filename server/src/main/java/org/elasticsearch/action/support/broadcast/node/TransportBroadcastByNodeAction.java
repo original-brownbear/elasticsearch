@@ -691,13 +691,8 @@ public abstract class TransportBroadcastByNodeAction<
 
         private EmptyResult() {}
 
-        private EmptyResult(StreamInput in) {}
-
         @Override
         public void writeTo(StreamOutput out) {}
 
-        public static EmptyResult readEmptyResultFrom(StreamInput in) {
-            return INSTANCE;
-        }
     }
 }

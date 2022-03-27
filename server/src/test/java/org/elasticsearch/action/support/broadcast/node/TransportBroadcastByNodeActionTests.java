@@ -139,7 +139,7 @@ public class TransportBroadcastByNodeActionTests extends ESTestCase {
 
         @Override
         protected EmptyResult readShardResult(StreamInput in) throws IOException {
-            return EmptyResult.readEmptyResultFrom(in);
+            return EmptyResult.INSTANCE;
         }
 
         @Override
