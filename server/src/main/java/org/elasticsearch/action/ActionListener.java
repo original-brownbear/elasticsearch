@@ -9,6 +9,7 @@
 package org.elasticsearch.action;
 
 import org.elasticsearch.ExceptionsHelper;
+import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.CheckedFunction;
@@ -114,6 +115,13 @@ public interface ActionListener<Response> {
         public <T> ActionListener<T> map(CheckedFunction<T, Response, Exception> fn) {
             return new MappedActionListener<>(t -> this.fn.apply(fn.apply(t)), this.delegate);
         }
+    }
+
+    static <Response, Mapped> ActionListener<Mapped> wrap(
+        CheckedBiConsumer<Mapped, ActionListener<Response>, ? extends Exception> onResponse,
+        ActionListener<Response> wrapper
+    ) {
+        return wrap(r -> onResponse.accept(r, wrapper), wrapper::onFailure);
     }
 
     static <Response> ActionListener<Response> wrap(
