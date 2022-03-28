@@ -64,7 +64,7 @@ public final class IOUtils {
      * @param objects objects to close
      */
     public static void close(final Closeable... objects) throws IOException {
-        close(null, Arrays.asList(objects));
+        close(null, objects);
     }
 
     /**
@@ -84,8 +84,36 @@ public final class IOUtils {
      *
      * @param objects objects to close
      */
-    public static void close(final Exception e, final Closeable... objects) throws IOException {
-        close(e, Arrays.asList(objects));
+    public static void close(final Exception ex, final Closeable... objects) throws IOException {
+        Exception firstException = ex;
+        for (final Closeable object : objects) {
+            try {
+                close(object);
+            } catch (final IOException | RuntimeException e) {
+                firstException = useOrSuppress(firstException, e);
+            }
+        }
+        maybeRethrow(firstException);
+    }
+
+    private static Exception useOrSuppress(Exception firstException, Exception e) {
+        if (firstException == null) {
+            firstException = e;
+        } else {
+            firstException.addSuppressed(e);
+        }
+        return firstException;
+    }
+
+    private static void maybeRethrow(Exception ex) throws IOException {
+        if (ex != null) {
+            if (ex instanceof IOException) {
+                throw (IOException) ex;
+            } else {
+                // since we only assigned an IOException or a RuntimeException to ex above, in this case ex must be a RuntimeException
+                throw (RuntimeException) ex;
+            }
+        }
     }
 
     /**
@@ -116,22 +144,11 @@ public final class IOUtils {
             try {
                 close(object);
             } catch (final IOException | RuntimeException e) {
-                if (firstException == null) {
-                    firstException = e;
-                } else {
-                    firstException.addSuppressed(e);
-                }
+                firstException = useOrSuppress(firstException, e);
             }
         }
 
-        if (firstException != null) {
-            if (firstException instanceof IOException) {
-                throw (IOException) firstException;
-            } else {
-                // since we only assigned an IOException or a RuntimeException to ex above, in this case ex must be a RuntimeException
-                throw (RuntimeException) firstException;
-            }
-        }
+        maybeRethrow(firstException);
     }
 
     /**
@@ -140,7 +157,9 @@ public final class IOUtils {
      * @param objects objects to close
      */
     public static void closeWhileHandlingException(final Closeable... objects) {
-        closeWhileHandlingException(Arrays.asList(objects));
+        for (final Closeable object : objects) {
+            closeWhileHandlingException(object);
+        }
     }
 
     /**
