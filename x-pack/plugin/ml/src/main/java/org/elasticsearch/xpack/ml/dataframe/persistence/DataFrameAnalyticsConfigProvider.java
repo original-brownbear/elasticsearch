@@ -106,7 +106,7 @@ public class DataFrameAnalyticsConfigProvider {
 
         ActionListener<AcknowledgedResponse> deleteLeftOverDocsListener = ActionListener.wrap(
             r -> index(prepareConfigForIndex(config, headers), null, listener),
-            listener::onFailure
+            listener
         );
 
         ActionListener<Boolean> existsListener = ActionListener.wrap(exists -> {
@@ -115,7 +115,7 @@ public class DataFrameAnalyticsConfigProvider {
             } else {
                 deleteLeftOverDocs(config, timeout, deleteLeftOverDocsListener);
             }
-        }, listener::onFailure);
+        }, listener);
 
         exists(config.getId(), existsListener);
     }
@@ -203,8 +203,8 @@ public class DataFrameAnalyticsConfigProvider {
             index(updatedConfig, getResponse, ActionListener.wrap(indexedConfig -> {
                 auditor.info(id, Messages.getMessage(Messages.DATA_FRAME_ANALYTICS_AUDIT_UPDATED, update.getUpdatedFields()));
                 listener.onResponse(indexedConfig);
-            }, listener::onFailure));
-        }, listener::onFailure));
+            }, listener));
+        }, listener));
     }
 
     private static void checkUpdateCanBeApplied(
@@ -288,7 +288,7 @@ public class DataFrameAnalyticsConfigProvider {
             } else {
                 listener.onResponse(analytics.get(0));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**
@@ -304,7 +304,7 @@ public class DataFrameAnalyticsConfigProvider {
             ML_ORIGIN,
             GetDataFrameAnalyticsAction.INSTANCE,
             request,
-            ActionListener.wrap(response -> listener.onResponse(response.getResources().results()), listener::onFailure)
+            ActionListener.wrap(response -> listener.onResponse(response.getResources().results()), listener)
         );
     }
 

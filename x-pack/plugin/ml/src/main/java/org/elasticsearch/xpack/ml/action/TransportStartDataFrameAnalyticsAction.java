@@ -211,12 +211,12 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
                 taskParams,
                 waitForAnalyticsToStart
             );
-        }, listener::onFailure);
+        }, listener);
 
         // Perform memory usage estimation for this config
         ActionListener<StartContext> startContextListener = ActionListener.wrap(
             startContext -> estimateMemoryUsageAndUpdateMemoryTracker(startContext, memoryUsageHandledListener),
-            listener::onFailure
+            listener
         );
 
         // Get start context
@@ -246,9 +246,9 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
             memoryTracker.addDataFrameAnalyticsJobMemoryAndRefreshAllOthers(
                 jobId,
                 startContext.config.getModelMemoryLimit().getBytes(),
-                ActionListener.wrap(aVoid -> listener.onResponse(startContext), listener::onFailure)
+                ActionListener.wrap(aVoid -> listener.onResponse(startContext), listener)
             );
-        }, listener::onFailure);
+        }, listener);
 
         PutDataFrameAnalyticsAction.Request explainRequest = new PutDataFrameAnalyticsAction.Request(startContext.config);
         ClientHelper.executeAsyncWithOrigin(
@@ -267,7 +267,7 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
         // Step 7. Validate that there are analyzable data in the source index
         ActionListener<StartContext> validateMappingsMergeListener = ActionListener.wrap(
             startContext -> validateSourceIndexHasAnalyzableData(startContext, finalListener),
-            finalListener::onFailure
+            finalListener
         );
 
         // Step 6. Validate mappings can be merged
@@ -276,9 +276,9 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
                 parentTaskClient,
                 startContext.config.getHeaders(),
                 startContext.config.getSource(),
-                ActionListener.wrap(mappings -> validateMappingsMergeListener.onResponse(startContext), finalListener::onFailure)
+                ActionListener.wrap(mappings -> validateMappingsMergeListener.onResponse(startContext), finalListener)
             ),
-            finalListener::onFailure
+            finalListener
         );
 
         // Step 5. Validate dest index is empty if task is starting for first time
@@ -294,18 +294,19 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
                     ExceptionsHelper.serverError("Unexpected starting state {}", startContext.startingState)
                 );
             }
-        }, finalListener::onFailure);
+        }, finalListener);
 
         // Step 4. Check data extraction is possible
-        ActionListener<StartContext> toValidateExtractionPossibleListener = ActionListener.wrap(startContext -> {
-            new ExtractedFieldsDetectorFactory(parentTaskClient).createFromSource(
+        ActionListener<StartContext> toValidateExtractionPossibleListener = ActionListener.wrap(
+            startContext -> new ExtractedFieldsDetectorFactory(parentTaskClient).createFromSource(
                 startContext.config,
                 ActionListener.wrap(extractedFieldsDetector -> {
                     startContext.extractedFields = extractedFieldsDetector.detect().v1();
                     toValidateDestEmptyListener.onResponse(startContext);
-                }, finalListener::onFailure)
-            );
-        }, finalListener::onFailure);
+                }, finalListener)
+            ),
+            finalListener
+        );
 
         // Step 3. Validate source and dest
         ActionListener<StartContext> startContextListener = ActionListener.wrap(startContext -> {
@@ -319,20 +320,17 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
                 startContext.config.getDest().getIndex(),
                 null,
                 SourceDestValidations.ALL_VALIDATIONS,
-                ActionListener.wrap(aBoolean -> toValidateExtractionPossibleListener.onResponse(startContext), finalListener::onFailure)
+                ActionListener.wrap(aBoolean -> toValidateExtractionPossibleListener.onResponse(startContext), finalListener)
             );
-        }, finalListener::onFailure);
+        }, finalListener);
 
         // Step 2. Get stats to recover progress
         ActionListener<DataFrameAnalyticsConfig> getConfigListener = ActionListener.wrap(
             config -> getProgress(
                 config,
-                ActionListener.wrap(
-                    progress -> startContextListener.onResponse(new StartContext(config, progress)),
-                    finalListener::onFailure
-                )
+                ActionListener.wrap(progress -> startContextListener.onResponse(new StartContext(config, progress)), finalListener)
             ),
-            finalListener::onFailure
+            finalListener
         );
 
         // Step 1. Get the config
@@ -342,7 +340,7 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
     private void validateSourceIndexHasAnalyzableData(StartContext startContext, ActionListener<StartContext> listener) {
         ActionListener<Void> validateAtLeastOneAnalyzedFieldListener = ActionListener.wrap(
             aVoid -> validateSourceIndexRowsCount(startContext, listener),
-            listener::onFailure
+            listener
         );
 
         validateSourceIndexHasAtLeastOneAnalyzedField(startContext, validateAtLeastOneAnalyzedFieldListener);
@@ -401,7 +399,7 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
             } else {
                 listener.onResponse(startContext);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void getProgress(DataFrameAnalyticsConfig config, ActionListener<List<PhaseProgress>> listener) {
@@ -419,7 +417,7 @@ public class TransportStartDataFrameAnalyticsAction extends TransportMasterNodeA
                 } else {
                     listener.onResponse(stats.get(0).getProgress());
                 }
-            }, listener::onFailure)
+            }, listener)
         );
     }
 

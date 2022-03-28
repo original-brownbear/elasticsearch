@@ -240,7 +240,7 @@ public class SecondaryAuthenticatorTests extends ESTestCase {
         consumer.accept(ActionListener.wrap(result -> {
             listenerContext.set(securityContext.getThreadContext().newStoredContext(false));
             future.onResponse(result);
-        }, e -> future.onFailure(e)));
+        }, future));
 
         final SecondaryAuthentication secondaryAuthentication = future.get(0, TimeUnit.MILLISECONDS);
         assertThat(secondaryAuthentication, Matchers.notNullValue());

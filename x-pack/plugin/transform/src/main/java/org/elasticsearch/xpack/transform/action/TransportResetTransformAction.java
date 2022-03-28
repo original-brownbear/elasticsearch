@@ -110,8 +110,8 @@ public class TransportResetTransformAction extends AcknowledgedTransportMasterNo
                 logger.debug("[{}] reset transform", request.getId());
                 auditor.info(request.getId(), "Reset transform.");
                 listener.onResponse(AcknowledgedResponse.of(resetResponse));
-            }, listener::onFailure)),
-            listener::onFailure
+            }, listener)),
+            listener
         );
 
         // <5> Upgrade transform to the latest version
@@ -133,7 +133,7 @@ public class TransportResetTransformAction extends AcknowledgedTransportMasterNo
                 request.timeout(),
                 updateTransformListener
             );
-        }, listener::onFailure);
+        }, listener);
 
         // <4> Delete destination index if it was created by transform.
         ActionListener<Boolean> isDestinationIndexCreatedByTransformListener = ActionListener.wrap(isDestinationIndexCreatedByTransform -> {
@@ -145,7 +145,7 @@ public class TransportResetTransformAction extends AcknowledgedTransportMasterNo
             String destIndex = transformConfigAndVersionHolder.get().v1().getDestination().getIndex();
             DeleteIndexRequest deleteDestIndexRequest = new DeleteIndexRequest(destIndex);
             executeAsyncWithOrigin(client, TRANSFORM_ORIGIN, DeleteIndexAction.INSTANCE, deleteDestIndexRequest, deleteDestIndexListener);
-        }, listener::onFailure);
+        }, listener);
 
         // <3> Check if the destination index was created by transform
         ActionListener<Tuple<TransformConfig, SeqNoPrimaryTermAndIndex>> getTransformConfigurationListener = ActionListener.wrap(
@@ -154,7 +154,7 @@ public class TransportResetTransformAction extends AcknowledgedTransportMasterNo
                 String destIndex = transformConfigAndVersion.v1().getDestination().getIndex();
                 TransformIndex.isDestinationIndexCreatedByTransform(client, destIndex, isDestinationIndexCreatedByTransformListener);
             },
-            listener::onFailure
+            listener
         );
 
         // <2> Fetch transform configuration
@@ -163,7 +163,7 @@ public class TransportResetTransformAction extends AcknowledgedTransportMasterNo
                 request.getId(),
                 getTransformConfigurationListener
             ),
-            listener::onFailure
+            listener
         );
 
         // <1> Stop transform if it's currently running

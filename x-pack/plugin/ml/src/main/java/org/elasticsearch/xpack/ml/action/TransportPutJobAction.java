@@ -120,7 +120,7 @@ public class TransportPutJobAction extends TransportMasterNodeAction<PutJobActio
                     )
                 )
             );
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

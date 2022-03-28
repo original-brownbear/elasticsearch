@@ -94,15 +94,15 @@ public class TransportPreviewDatafeedAction extends HandledTransportAction<Previ
             }
             jobConfigProvider.getJob(
                 datafeedConfig.getJobId(),
-                ActionListener.wrap(jobBuilder -> previewDatafeed(task, datafeedConfig, jobBuilder.build(), listener), listener::onFailure)
+                ActionListener.wrap(jobBuilder -> previewDatafeed(task, datafeedConfig, jobBuilder.build(), listener), listener)
             );
-        }, listener::onFailure);
+        }, listener);
         if (request.getDatafeedConfig() != null) {
             datafeedConfigActionListener.onResponse(request.getDatafeedConfig());
         } else {
             datafeedConfigProvider.getDatafeedConfig(
                 request.getDatafeedId(),
-                ActionListener.wrap(builder -> datafeedConfigActionListener.onResponse(builder.build()), listener::onFailure)
+                ActionListener.wrap(builder -> datafeedConfigActionListener.onResponse(builder.build()), listener)
             );
         }
     }
@@ -176,7 +176,7 @@ public class TransportPreviewDatafeedAction extends HandledTransportAction<Previ
             ActionListener.wrap(fieldCapsResponse -> {
                 Map<String, FieldCapabilities> timeFieldCaps = fieldCapsResponse.getField(timeField);
                 listener.onResponse(timeFieldCaps.keySet().contains(DateFieldMapper.DATE_NANOS_CONTENT_TYPE));
-            }, listener::onFailure)
+            }, listener)
         );
     }
 

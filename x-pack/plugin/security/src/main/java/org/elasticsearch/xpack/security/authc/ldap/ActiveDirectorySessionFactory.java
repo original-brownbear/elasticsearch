@@ -176,7 +176,7 @@ class ActiveDirectorySessionFactory extends PoolingSessionFactory {
                 final String dn = entry.getDN();
                 listener.onResponse(new LdapSession(logger, config, connectionPool, dn, groupResolver, metadataResolver, timeout, null));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override
@@ -554,7 +554,7 @@ class ActiveDirectorySessionFactory extends PoolingSessionFactory {
                         attributesToSearchFor(groupsResolver.attributes())
                     );
                 }
-            }, listener::onFailure));
+            }, listener));
         }
 
         void netBiosDomainNameToDn(
@@ -581,7 +581,7 @@ class ActiveDirectorySessionFactory extends PoolingSessionFactory {
                         ignoreReferralErrors,
                         ActionListener.wrap(
                             (results) -> handleSearchResults(results, netBiosDomainName, domainNameCache, listener),
-                            listener::onFailure
+                            listener
                         ),
                         "ncname"
                     );

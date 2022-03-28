@@ -194,7 +194,7 @@ public class SamlServiceProviderIndexTests extends ESSingleNodeTestCase {
             assertListenerIsOnlyCalledOnce(
                 ActionListener.wrap(
                     set -> future.onResponse(set.stream().map(doc -> doc.document.get()).collect(Collectors.toUnmodifiableSet())),
-                    future::onFailure
+                    future
                 )
             )
         );
@@ -226,7 +226,7 @@ public class SamlServiceProviderIndexTests extends ESSingleNodeTestCase {
             assertListenerIsOnlyCalledOnce(
                 ActionListener.wrap(
                     info -> serviceProviderIndex.deleteDocument(info.version, WriteRequest.RefreshPolicy.IMMEDIATE, future),
-                    future::onFailure
+                    future
                 )
             )
         );
@@ -246,7 +246,7 @@ public class SamlServiceProviderIndexTests extends ESSingleNodeTestCase {
             assertListenerIsOnlyCalledOnce(
                 ActionListener.wrap(
                     set -> future.onResponse(set.stream().map(doc -> doc.document.get()).collect(Collectors.toUnmodifiableSet())),
-                    future::onFailure
+                    future
                 )
             )
         );

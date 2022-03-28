@@ -62,12 +62,12 @@ public class FinalStep extends AbstractDataFrameAnalyticsStep {
 
         ActionListener<RefreshResponse> refreshListener = ActionListener.wrap(
             refreshResponse -> listener.onResponse(new StepResponse(false)),
-            listener::onFailure
+            listener
         );
 
         ActionListener<IndexResponse> dataCountsIndexedListener = ActionListener.wrap(
             indexResponse -> refreshIndices(refreshListener),
-            listener::onFailure
+            listener
         );
 
         indexDataCounts(dataCountsIndexedListener);

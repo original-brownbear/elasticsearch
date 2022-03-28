@@ -105,7 +105,7 @@ public class TransportPutSamlServiceProviderAction extends HandledTransportActio
                     new IllegalStateException("Multiple service providers already exist with entity id [" + document.entityId + "]")
                 );
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void writeDocument(
@@ -141,7 +141,7 @@ public class TransportPutSamlServiceProviderAction extends HandledTransportActio
                         document.enabled
                     )
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

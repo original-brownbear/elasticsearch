@@ -147,7 +147,7 @@ public class DeploymentManager {
         ActionListener<Boolean> modelLoadedListener = ActionListener.wrap(success -> {
             executorServiceForProcess.execute(() -> processContext.getResultProcessor().process(processContext.process.get()));
             listener.onResponse(task);
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<GetTrainedModelsAction.Response> getModelListener = ActionListener.wrap(getModelResponse -> {
             assert getModelResponse.getResources().results().size() == 1;
@@ -181,8 +181,8 @@ public class DeploymentManager {
                 // `startAndLoad` creates named pipes, blocking the calling thread, better to execute that in our utility
                 // executor.
                 executorServiceForDeployment.execute(() -> startAndLoad(processContext, modelConfig.getLocation(), modelLoadedListener));
-            }, listener::onFailure));
-        }, listener::onFailure);
+            }, listener));
+        }, listener);
 
         executeAsyncWithOrigin(
             client,
@@ -397,7 +397,7 @@ public class DeploymentManager {
                                 processor.getResultProcessor((NlpConfig) config),
                                 this
                             ),
-                            this::onFailure
+                            this
                         )
                     );
                 processContext.process.get().writeInferenceRequest(request.processInput());

@@ -97,7 +97,7 @@ class TransformClusterStateListener implements ClusterStateListener {
             client.threadPool().getThreadContext(),
             TRANSFORM_ORIGIN,
             request,
-            ActionListener.<AcknowledgedResponse>wrap(r -> finalListener.onResponse(r.isAcknowledged()), finalListener::onFailure),
+            ActionListener.<AcknowledgedResponse>wrap(r -> finalListener.onResponse(r.isAcknowledged()), finalListener),
             client.admin().indices()::aliases
         );
     }

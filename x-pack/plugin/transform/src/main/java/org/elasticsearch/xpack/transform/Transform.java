@@ -352,7 +352,7 @@ public class Transform extends Plugin implements SystemIndexPlugin, PersistentTa
         ActionListener<ListTasksResponse> afterWaitingForTasks = ActionListener.wrap(listTasksResponse -> {
             listTasksResponse.rethrowFailures("Waiting for transform indexing tasks");
             SystemIndexPlugin.super.cleanUpFeature(clusterService, client, unsetResetModeListener);
-        }, unsetResetModeListener::onFailure);
+        }, unsetResetModeListener);
 
         ActionListener<StopTransformAction.Response> afterStoppingTransforms = ActionListener.wrap(stopTransformsResponse -> {
             if (stopTransformsResponse.isAcknowledged()
@@ -373,7 +373,7 @@ public class Transform extends Plugin implements SystemIndexPlugin, PersistentTa
                             .setWaitForCompletion(true)
                             .setDescriptions("*" + TRANSFORM_PREFIX + "*", "*" + TRANSFORM_PREFIX_DEPRECATED + "*")
                             .execute(afterWaitingForTasks);
-                    }, unsetResetModeListener::onFailure));
+                    }, unsetResetModeListener));
             } else {
                 String errMsg = "Failed to reset Transform: "
                     + (stopTransformsResponse.isAcknowledged() ? "" : "not acknowledged ")
@@ -387,7 +387,7 @@ public class Transform extends Plugin implements SystemIndexPlugin, PersistentTa
                     ResetFeatureStateResponse.ResetFeatureStateStatus.failure(this.getFeatureName(), new ElasticsearchException(errMsg))
                 );
             }
-        }, unsetResetModeListener::onFailure);
+        }, unsetResetModeListener);
 
         ActionListener<AcknowledgedResponse> afterResetModeSet = ActionListener.wrap(response -> {
             StopTransformAction.Request stopTransformsRequest = new StopTransformAction.Request(
@@ -399,7 +399,7 @@ public class Transform extends Plugin implements SystemIndexPlugin, PersistentTa
                 false
             );
             client.execute(StopTransformAction.INSTANCE, stopTransformsRequest, afterStoppingTransforms);
-        }, finalListener::onFailure);
+        }, finalListener);
 
         client.execute(SetResetModeAction.INSTANCE, SetResetModeActionRequest.enabled(), afterResetModeSet);
     }

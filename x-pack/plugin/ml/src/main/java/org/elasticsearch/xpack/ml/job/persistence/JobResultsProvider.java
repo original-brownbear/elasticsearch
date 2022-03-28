@@ -339,10 +339,10 @@ public class JobResultsProvider {
                 client.threadPool().getThreadContext(),
                 ML_ORIGIN,
                 request,
-                ActionListener.<AcknowledgedResponse>wrap(r -> finalListener.onResponse(true), finalListener::onFailure),
+                ActionListener.<AcknowledgedResponse>wrap(r -> finalListener.onResponse(true), finalListener),
                 client.admin().indices()::aliases
             );
-        }, finalListener::onFailure);
+        }, finalListener);
 
         // Indices can be shared, so only create if it doesn't exist already. Saves us a roundtrip if
         // already in the CS
@@ -1707,7 +1707,7 @@ public class JobResultsProvider {
                 );
             }
             listener.onResponse(true);
-        }, listener::onFailure));
+        }, listener));
     }
 
     public void getForecastRequestStats(

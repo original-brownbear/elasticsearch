@@ -73,7 +73,7 @@ public class TransportGetDatafeedsStatsAction extends HandledTransportAction<Req
         ActionListener<GetDatafeedRunningStateAction.Response> runtimeStateListener = ActionListener.wrap(runtimeStateResponse -> {
             responseBuilder.setDatafeedRuntimeState(runtimeStateResponse);
             listener.onResponse(responseBuilder.build(tasksInProgress, state));
-        }, listener::onFailure);
+        }, listener);
 
         // 4. Grab runtime state
         ActionListener<Map<String, DatafeedTimingStats>> datafeedTimingStatsListener = ActionListener.wrap(timingStatsByJobId -> {
@@ -83,7 +83,7 @@ public class TransportGetDatafeedsStatsAction extends HandledTransportAction<Req
                 new GetDatafeedRunningStateAction.Request(responseBuilder.getDatafeedIds()),
                 runtimeStateListener
             );
-        }, listener::onFailure);
+        }, listener);
 
         // 3. Grab timing stats
         ActionListener<List<DatafeedConfig.Builder>> expandedConfigsListener = ActionListener.wrap(datafeedBuilders -> {
@@ -91,7 +91,7 @@ public class TransportGetDatafeedsStatsAction extends HandledTransportAction<Req
                 .collect(Collectors.toMap(DatafeedConfig.Builder::getId, DatafeedConfig.Builder::getJobId));
             responseBuilder.setDatafeedToJobId(datafeedIdsToJobIds);
             jobResultsProvider.datafeedTimingStats(new ArrayList<>(datafeedIdsToJobIds.values()), datafeedTimingStatsListener);
-        }, listener::onFailure);
+        }, listener);
 
         // 2. Now that we have the ids, grab the datafeed configs
         ActionListener<SortedSet<String>> expandIdsListener = ActionListener.wrap(expandedIds -> {
@@ -103,7 +103,7 @@ public class TransportGetDatafeedsStatsAction extends HandledTransportAction<Req
                 true,
                 expandedConfigsListener
             );
-        }, listener::onFailure);
+        }, listener);
 
         // 1. This might also include datafeed tasks that exist but no longer have a config
         datafeedConfigProvider.expandDatafeedIds(request.getDatafeedId(), request.allowNoMatch(), tasksInProgress, true, expandIdsListener);

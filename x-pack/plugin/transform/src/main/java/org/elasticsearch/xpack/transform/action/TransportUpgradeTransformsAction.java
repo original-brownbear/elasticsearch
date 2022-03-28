@@ -116,12 +116,12 @@ public class TransportUpgradeTransformsAction extends TransportMasterNodeAction<
                     logger.info("Successfully upgraded all transforms, (updated: [{}], no action [{}])", updated, noAction);
 
                     listener.onResponse(new UpgradeTransformsAction.Response(updated, noAction, needsUpdate));
-                }, listener::onFailure));
+                }, listener));
             } else {
                 // else: dry run
                 listener.onResponse(new UpgradeTransformsAction.Response(updated, noAction, needsUpdate));
             }
-        }, listener::onFailure));
+        }, listener));
 
     }
 
@@ -229,8 +229,8 @@ public class TransportUpgradeTransformsAction extends TransportMasterNodeAction<
                 updatesByStatus,
                 dryRun,
                 timeout,
-                ActionListener.wrap(r -> listener.onResponse(updatesByStatus), listener::onFailure)
+                ActionListener.wrap(r -> listener.onResponse(updatesByStatus), listener)
             );
-        }, listener::onFailure));
+        }, listener));
     }
 }

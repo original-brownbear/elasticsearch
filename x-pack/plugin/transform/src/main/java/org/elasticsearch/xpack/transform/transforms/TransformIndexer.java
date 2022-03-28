@@ -358,7 +358,7 @@ public abstract class TransformIndexer extends AsyncTwoPhaseIndexer<TransformInd
             } else {
                 reLoadFieldMappingsListener.onResponse(null);
             }
-        }, listener::onFailure);
+        }, listener);
 
         Instant instantOfTrigger = Instant.ofEpochMilli(now);
         // If we are not on the initial batch checkpoint and its the first pass of whatever continuous checkpoint we are on,
@@ -435,7 +435,7 @@ public abstract class TransformIndexer extends AsyncTwoPhaseIndexer<TransformInd
                 } else {
                     finalizeCheckpoint(failureHandlingListener);
                 }
-            }, failureHandlingListener::onFailure));
+            }, failureHandlingListener));
         } catch (Exception e) {
             failureHandlingListener.onFailure(e);
         }
@@ -495,7 +495,7 @@ public abstract class TransformIndexer extends AsyncTwoPhaseIndexer<TransformInd
             }
 
             finalizeCheckpoint(listener);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void finalizeCheckpoint(ActionListener<Void> listener) {

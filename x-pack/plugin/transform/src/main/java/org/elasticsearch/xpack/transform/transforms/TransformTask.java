@@ -187,7 +187,7 @@ public class TransformTask extends AllocatedPersistentTask implements SchedulerE
                 infoBuilder.setLastSearchTime(context.getLastSearchTime());
             }
             listener.onResponse(infoBuilder.build());
-        }, listener::onFailure);
+        }, listener);
 
         ClientTransformIndexer transformIndexer = getIndexer();
         if (transformIndexer == null) {

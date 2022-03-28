@@ -117,7 +117,7 @@ public final class DatafeedManager {
 
                 ActionListener<HasPrivilegesResponse> privResponseListener = ActionListener.wrap(
                     r -> handlePrivsResponse(username, request, r, state, threadPool, listener),
-                    listener::onFailure
+                    listener
                 );
 
                 ActionListener<GetRollupIndexCapsAction.Response> getRollupIndexCapsActionHandler = ActionListener.wrap(response -> {
@@ -168,7 +168,7 @@ public final class DatafeedManager {
                     datafeedBuilders.size(),
                     DatafeedConfig.RESULTS_FIELD
                 )
-            ), listener::onFailure)
+            ), listener)
         );
     }
 
@@ -204,10 +204,7 @@ public final class DatafeedManager {
                 request.getUpdate(),
                 headers,
                 jobConfigProvider::validateDatafeedJob,
-                ActionListener.wrap(
-                    updatedConfig -> listener.onResponse(new PutDatafeedAction.Response(updatedConfig)),
-                    listener::onFailure
-                )
+                ActionListener.wrap(updatedConfig -> listener.onResponse(new PutDatafeedAction.Response(updatedConfig)), listener)
             );
         });
 
@@ -219,7 +216,7 @@ public final class DatafeedManager {
             client,
             state,
             request.masterNodeTimeout(),
-            ActionListener.wrap(bool -> doUpdate.run(), listener::onFailure)
+            ActionListener.wrap(bool -> doUpdate.run(), listener)
         );
     }
 
@@ -242,12 +239,12 @@ public final class DatafeedManager {
                 ActionListener.wrap(
                     unused1 -> datafeedConfigProvider.deleteDatafeedConfig(
                         datafeedId,
-                        ActionListener.wrap(unused2 -> listener.onResponse(AcknowledgedResponse.TRUE), listener::onFailure)
+                        ActionListener.wrap(unused2 -> listener.onResponse(AcknowledgedResponse.TRUE), listener)
                     ),
-                    listener::onFailure
+                    listener
                 )
             );
-        }, listener::onFailure));
+        }, listener));
 
     }
 
@@ -297,10 +294,7 @@ public final class DatafeedManager {
         CheckedConsumer<Boolean, Exception> mappingsUpdated = ok -> datafeedConfigProvider.putDatafeedConfig(
             request.getDatafeed(),
             headers,
-            ActionListener.wrap(
-                indexResponse -> listener.onResponse(new PutDatafeedAction.Response(request.getDatafeed())),
-                listener::onFailure
-            )
+            ActionListener.wrap(indexResponse -> listener.onResponse(new PutDatafeedAction.Response(request.getDatafeed())), listener)
         );
 
         CheckedConsumer<Boolean, Exception> validationOk = ok -> {
@@ -315,16 +309,16 @@ public final class DatafeedManager {
                 client,
                 clusterState,
                 request.masterNodeTimeout(),
-                ActionListener.wrap(mappingsUpdated, listener::onFailure)
+                ActionListener.wrap(mappingsUpdated, listener)
             );
         };
 
         CheckedConsumer<Boolean, Exception> jobOk = ok -> jobConfigProvider.validateDatafeedJob(
             request.getDatafeed(),
-            ActionListener.wrap(validationOk, listener::onFailure)
+            ActionListener.wrap(validationOk, listener)
         );
 
-        checkJobDoesNotHaveADatafeed(request.getDatafeed().getJobId(), ActionListener.wrap(jobOk, listener::onFailure));
+        checkJobDoesNotHaveADatafeed(request.getDatafeed().getJobId(), ActionListener.wrap(jobOk, listener));
     }
 
     private void checkJobDoesNotHaveADatafeed(String jobId, ActionListener<Boolean> listener) {
@@ -338,6 +332,6 @@ public final class DatafeedManager {
                     )
                 );
             }
-        }, listener::onFailure));
+        }, listener));
     }
 }

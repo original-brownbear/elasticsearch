@@ -289,7 +289,7 @@ public class TransportStopTransformAction extends TransportTasksAction<Transform
                 }
                 listener.onResponse(waitResponse);
             })),
-            listener::onFailure
+            listener
         );
         return ActionListener.wrap(response -> {
             // If there were failures attempting to stop the tasks, we don't know if they will actually stop.
@@ -303,7 +303,7 @@ public class TransportStopTransformAction extends TransportTasksAction<Transform
             // Switch over to Generic threadpool so we don't block the network thread
             threadPool.generic()
                 .execute(() -> waitForTransformStopped(request.getExpandedIds(), request.getTimeout(), request.isForce(), onStopListener));
-        }, listener::onFailure);
+        }, listener);
     }
 
     static ElasticsearchStatusException buildException(
@@ -471,9 +471,9 @@ public class TransportStopTransformAction extends TransportTasksAction<Transform
         final ActionListener<Response> finalListener,
         final TransformNodeAssignments transformNodeAssignments
     ) {
-        final ActionListener<Response> doExecuteListener = ActionListener.wrap(response -> {
+        return ActionListener.wrap(response -> {
             GroupedActionListener<PersistentTask<?>> groupedListener = new GroupedActionListener<>(
-                ActionListener.wrap(r -> { finalListener.onResponse(response); }, finalListener::onFailure),
+                ActionListener.wrap(r -> finalListener.onResponse(response), finalListener),
                 transformNodeAssignments.getWaitingForAssignment().size()
             );
 
@@ -483,7 +483,7 @@ public class TransportStopTransformAction extends TransportTasksAction<Transform
 
         }, e -> {
             GroupedActionListener<PersistentTask<?>> groupedListener = new GroupedActionListener<>(
-                ActionListener.wrap(r -> { finalListener.onFailure(e); }, finalListener::onFailure),
+                ActionListener.wrap(r -> finalListener.onFailure(e), finalListener),
                 transformNodeAssignments.getWaitingForAssignment().size()
             );
 
@@ -491,6 +491,5 @@ public class TransportStopTransformAction extends TransportTasksAction<Transform
                 persistentTasksService.sendRemoveRequest(unassignedTaskId, groupedListener);
             }
         });
-        return doExecuteListener;
     }
 }

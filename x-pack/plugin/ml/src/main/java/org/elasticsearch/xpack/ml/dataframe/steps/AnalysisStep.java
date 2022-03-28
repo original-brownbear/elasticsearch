@@ -60,7 +60,7 @@ public class AnalysisStep extends AbstractDataFrameAnalyticsStep {
         // Update state to ANALYZING and start process
         ActionListener<DataFrameDataExtractorFactory> dataExtractorFactoryListener = ActionListener.wrap(
             dataExtractorFactory -> processManager.runJob(task, config, dataExtractorFactory, listener),
-            listener::onFailure
+            listener
         );
 
         ActionListener<RefreshResponse> refreshListener = ActionListener.wrap(refreshResponse -> {
@@ -68,7 +68,7 @@ public class AnalysisStep extends AbstractDataFrameAnalyticsStep {
             // We could delete the index in case of failure or we could try building the factory before reindexing
             // to catch the error early on.
             DataFrameDataExtractorFactory.createForDestinationIndex(parentTaskClient, config, dataExtractorFactoryListener);
-        }, dataExtractorFactoryListener::onFailure);
+        }, dataExtractorFactoryListener);
 
         // First we need to refresh the dest index to ensure data is searchable in case the job
         // was stopped after reindexing was complete but before the index was refreshed.

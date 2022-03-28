@@ -80,7 +80,7 @@ public class MetadataCreateDataStreamService {
             } else {
                 finalListener.onResponse(AcknowledgedResponse.FALSE);
             }
-        }, finalListener::onFailure);
+        }, finalListener);
         clusterService.submitStateUpdateTask(
             "create-data-stream [" + request.name + "]",
             new AckedClusterStateUpdateTask(Priority.HIGH, request, listener) {

@@ -144,7 +144,7 @@ public class TransportGetDataFrameAnalyticsStatsAction extends TransportTasksAct
                 statsHolder.getAnalysisStats()
             );
             listener.onResponse(new QueryPage<>(Collections.singletonList(stats), 1, GetDataFrameAnalyticsAction.Response.RESULTS_FIELD));
-        }, listener::onFailure);
+        }, listener);
 
         // We must update the progress of the reindexing task as it might be stale
         task.updateTaskProgress(updateProgressListener);
@@ -179,12 +179,12 @@ public class TransportGetDataFrameAnalyticsStatsAction extends TransportTasksAct
                             GetDataFrameAnalyticsAction.Response.RESULTS_FIELD
                         );
                         listener.onResponse(new GetDataFrameAnalyticsStatsAction.Response(finalStats));
-                    }, listener::onFailure)
+                    }, listener)
                 ),
-                listener::onFailure
+                listener
             );
             super.doExecute(task, request, runningTasksStatsListener);
-        }, listener::onFailure);
+        }, listener);
 
         GetDataFrameAnalyticsAction.Request getRequest = new GetDataFrameAnalyticsAction.Request();
         getRequest.setResourceId(request.getId());

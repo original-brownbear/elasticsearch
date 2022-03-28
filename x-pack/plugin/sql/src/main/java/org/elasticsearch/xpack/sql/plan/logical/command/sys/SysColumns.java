@@ -166,7 +166,7 @@ public class SysColumns extends Command {
                         fillInRows(tableCat, esIndex.name(), esIndex.mapping(), null, rows, columnMatcher, mode);
                     }
                     listener.onResponse(ListCursor.of(Rows.schema(output), rows, session.configuration().pageSize()));
-                }, listener::onFailure));
+                }, listener));
         }
         // otherwise use a merged mapping
         else {
@@ -185,7 +185,7 @@ public class SysColumns extends Command {
                     );
                 }
                 listener.onResponse(ListCursor.of(Rows.schema(output), rows, session.configuration().pageSize()));
-            }, listener::onFailure));
+            }, listener));
         }
     }
 

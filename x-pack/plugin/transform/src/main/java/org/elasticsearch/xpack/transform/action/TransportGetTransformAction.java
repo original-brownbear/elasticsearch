@@ -89,7 +89,7 @@ public class TransportGetTransformAction extends AbstractTransportGetResourcesAc
                 )
                 .collect(toList());
             listener.onResponse(new Response(r.results(), r.count(), errors.isEmpty() ? null : errors));
-        }, listener::onFailure);
+        }, listener);
 
         // Step 1: Search for all the transform configs matching the request.
         searchResources(request, searchTransformConfigsListener);

@@ -86,8 +86,8 @@ public class TransportDeleteTransformAction extends AcknowledgedTransportMasterN
                 logger.debug("[{}] deleted transform", request.getId());
                 auditor.info(request.getId(), "Deleted transform.");
                 listener.onResponse(AcknowledgedResponse.of(r));
-            }, listener::onFailure)),
-            listener::onFailure
+            }, listener)),
+            listener
         );
 
         if (transformIsRunning == false) {

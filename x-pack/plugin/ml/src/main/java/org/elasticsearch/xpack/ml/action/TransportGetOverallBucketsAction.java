@@ -107,7 +107,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
                     listener.onFailure(e);
                 }
             });
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void getOverallBuckets(
@@ -121,7 +121,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
             listener.onResponse(
                 new GetOverallBucketsAction.Response(new QueryPage<>(overallBuckets, overallBuckets.size(), OverallBucket.RESULTS_FIELD))
             );
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<ChunkedBucketSearcher> chunkedBucketSearcherListener = ActionListener.wrap(searcher -> {
             if (searcher == null) {
@@ -131,7 +131,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
                 return;
             }
             searcher.searchAndComputeOverallBuckets(overallBucketsListener);
-        }, listener::onFailure);
+        }, listener);
 
         OverallBucketsProvider overallBucketsProvider = new OverallBucketsProvider(
             jobsContext.maxBucketSpan,
@@ -200,7 +200,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
                 } else {
                     listener.onResponse(null);
                 }
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
     }
@@ -295,7 +295,7 @@ public class TransportGetOverallBucketsAction extends HandledTransportAction<
                         return;
                     }
                     searchAndComputeOverallBuckets(listener);
-                }, listener::onFailure),
+                }, listener),
                 client::search
             );
         }

@@ -127,7 +127,7 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
             } else {
                 normalStop(task, request, listener, tasks, analyticsByTaskState);
             }
-        }, listener::onFailure);
+        }, listener);
 
         findIdsToStop(state, request, expandedIdsListener);
     }
@@ -142,7 +142,7 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
         ActionListener<Set<String>> matchingIdsListener = ActionListener.wrap(matchingIds -> {
             startedIds.retainAll(matchingIds);
             expandedIdsListener.onResponse(startedIds);
-        }, expandedIdsListener::onFailure);
+        }, expandedIdsListener);
 
         if (request.isForce()) {
             matchAllStartedIds(request, startedIds, matchingIdsListener);
@@ -154,7 +154,7 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
                     configs -> matchingIdsListener.onResponse(
                         configs.stream().map(DataFrameAnalyticsConfig::getId).collect(Collectors.toSet())
                     ),
-                    matchingIdsListener::onFailure
+                    matchingIdsListener
                 )
             );
         }
@@ -188,7 +188,7 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
                 request.allowNoMatch(),
                 ActionListener.wrap(
                     configs -> matchingIdsListener.onResponse(MlStrings.findMatching(tokens, startedIds)),
-                    matchingIdsListener::onFailure
+                    matchingIdsListener
                 )
             );
         } else {
@@ -416,7 +416,7 @@ public class TransportStopDataFrameAnalyticsAction extends TransportTasksAction<
             ActionListener.wrap(booleanResponse -> {
                 auditor.info(request.getId(), Messages.DATA_FRAME_ANALYTICS_AUDIT_STOPPED);
                 listener.onResponse(response);
-            }, listener::onFailure)
+            }, listener)
         );
     }
 

@@ -156,7 +156,7 @@ public class TransportClusterRerouteAction extends TransportMasterNodeAction<Clu
                 } else {
                     listener.onFailure(e);
                 }
-            }, listener::onFailure), IndicesShardStoresResponse::new)
+            }, listener), IndicesShardStoresResponse::new)
         );
     }
 

@@ -448,7 +448,7 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
                     return innerPut(request, currentState);
                 }
             }, newExecutor());
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**

@@ -203,8 +203,8 @@ public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Re
             r -> trainedModelProvider.storeTrainedModel(trainedModelConfig.build(), ActionListener.wrap(bool -> {
                 TrainedModelConfig configToReturn = trainedModelConfig.clearDefinition().build();
                 listener.onResponse(new PutTrainedModelAction.Response(configToReturn));
-            }, listener::onFailure)),
-            listener::onFailure
+            }, listener)),
+            listener
         );
 
         ActionListener<Void> tagsModelIdCheckListener = ActionListener.wrap(r -> {
@@ -249,11 +249,11 @@ public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Re
                 return;
             }
             checkStorageIndexSizeListener.onResponse(null);
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<Void> modelIdTagCheckListener = ActionListener.wrap(
             r -> checkTagsAgainstModelIds(request.getTrainedModelConfig().getTags(), tagsModelIdCheckListener),
-            listener::onFailure
+            listener
         );
 
         checkModelIdAgainstTags(config.getModelId(), modelIdTagCheckListener);
@@ -277,7 +277,7 @@ public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Re
                     return;
                 }
                 listener.onResponse(null);
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
     }
@@ -305,7 +305,7 @@ public class TransportPutTrainedModelAction extends TransportMasterNodeAction<Re
                     return;
                 }
                 listener.onResponse(null);
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
     }

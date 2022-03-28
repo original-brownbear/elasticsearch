@@ -144,7 +144,7 @@ public class SamlIdentityProvider {
                 logger.debug("Service provider for [{}] is [{}]", spEntityId, sp);
                 listener.onResponse(sp);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void resolveWildcardService(String spEntityId, String acs, ActionListener<SamlServiceProvider> listener) {

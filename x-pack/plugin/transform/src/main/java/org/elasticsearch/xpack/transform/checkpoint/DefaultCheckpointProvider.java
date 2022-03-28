@@ -100,7 +100,7 @@ class DefaultCheckpointProvider implements CheckpointProvider {
             );
 
             listener.onResponse(new TransformCheckpoint(transformConfig.getId(), timestamp, checkpoint, checkpointsByIndex, 0L));
-        }, listener::onFailure));
+        }, listener));
     }
 
     protected void getIndexCheckpoints(ActionListener<Map<String, long[]>> listener) {
@@ -109,13 +109,14 @@ class DefaultCheckpointProvider implements CheckpointProvider {
             ActionListener<Map<String, long[]>> groupedListener = listener;
 
             if (resolvedIndexes.numClusters() > 1) {
-                ActionListener<Collection<Map<String, long[]>>> mergeMapsListener = ActionListener.wrap(indexCheckpoints -> {
-                    listener.onResponse(
+                ActionListener<Collection<Map<String, long[]>>> mergeMapsListener = ActionListener.wrap(
+                    indexCheckpoints -> listener.onResponse(
                         indexCheckpoints.stream()
                             .flatMap(m -> m.entrySet().stream())
-                            .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()))
-                    );
-                }, listener::onFailure);
+                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
+                    ),
+                    listener
+                );
 
                 groupedListener = new GroupedActionListener<>(mergeMapsListener, resolvedIndexes.numClusters());
             }
@@ -196,7 +197,7 @@ class DefaultCheckpointProvider implements CheckpointProvider {
             client,
             GetCheckpointAction.INSTANCE,
             getCheckpointRequest,
-            ActionListener.wrap(checkpointResponse -> listener.onResponse(checkpointResponse.getCheckpoints()), listener::onFailure)
+            ActionListener.wrap(checkpointResponse -> listener.onResponse(checkpointResponse.getCheckpoints()), listener)
         );
     }
 
@@ -339,7 +340,7 @@ class DefaultCheckpointProvider implements CheckpointProvider {
             checkpointingInfoBuilder.setSourceCheckpoint(sourceCheckpoint);
             checkpointingInfoBuilder.setOperationsBehind(TransformCheckpoint.getBehind(lastCheckpoint, sourceCheckpoint));
             listener.onResponse(checkpointingInfoBuilder);
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

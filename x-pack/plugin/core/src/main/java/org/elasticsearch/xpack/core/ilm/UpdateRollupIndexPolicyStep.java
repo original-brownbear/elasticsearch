@@ -70,7 +70,7 @@ public class UpdateRollupIndexPolicyStep extends AsyncActionStep {
             } else {
                 listener.onFailure(new ElasticsearchException("settings update not acknowledged in step [" + getKey().toString() + "]"));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

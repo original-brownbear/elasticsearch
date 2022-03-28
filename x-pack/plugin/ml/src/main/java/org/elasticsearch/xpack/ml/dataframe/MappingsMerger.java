@@ -41,7 +41,7 @@ public final class MappingsMerger {
     ) {
         ActionListener<GetMappingsResponse> mappingsListener = ActionListener.wrap(
             getMappingsResponse -> listener.onResponse(MappingsMerger.mergeMappings(source, getMappingsResponse)),
-            listener::onFailure
+            listener
         );
 
         GetMappingsRequest getMappingsRequest = new GetMappingsRequest();

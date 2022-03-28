@@ -89,7 +89,7 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
                     } else {
                         listener.onFailure(LicenseUtils.newComplianceException(XPackField.MACHINE_LEARNING));
                     }
-                }, listener::onFailure)
+                }, listener)
             );
         }
     }
@@ -130,7 +130,7 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
                 model.release();
                 listener.onFailure(e);
             }));
-        }, listener::onFailure);
+        }, listener);
 
         modelLoadingService.getModelForPipeline(request.getModelId(), getModelListener);
     }
@@ -166,7 +166,7 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
                 inferenceResults -> listener.onResponse(
                     responseBuilder.setInferenceResults(inferenceResults).setModelId(request.getModelId()).build()
                 ),
-                listener::onFailure
+                listener
             )
         );
     }
@@ -191,7 +191,7 @@ public class TransportInternalInferModelAction extends HandledTransportAction<Re
             ML_ORIGIN,
             InferTrainedModelDeploymentAction.INSTANCE,
             request,
-            ActionListener.wrap(r -> listener.onResponse(r.getResults()), listener::onFailure)
+            ActionListener.wrap(r -> listener.onResponse(r.getResults()), listener)
         );
     }
 }

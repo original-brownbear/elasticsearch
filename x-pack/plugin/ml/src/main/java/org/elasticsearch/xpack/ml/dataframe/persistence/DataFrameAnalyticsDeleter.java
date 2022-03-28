@@ -98,7 +98,7 @@ public class DataFrameAnalyticsDeleter {
                 }
             }
             deleteStats(id, timeout, deleteStatsHandler);
-        }, listener::onFailure);
+        }, listener);
 
         // Step 1. Delete state
         deleteState(config, timeout, deleteStateHandler);
@@ -134,7 +134,7 @@ public class DataFrameAnalyticsDeleter {
                 timeout,
                 listener
             ),
-            listener::onFailure
+            listener
         );
 
         deleteModelState(config, timeout, 1, deleteModelStateListener);
@@ -153,7 +153,7 @@ public class DataFrameAnalyticsDeleter {
                 return;
             }
             listener.onResponse(true);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void deleteStats(String jobId, TimeValue timeout, ActionListener<BulkByScrollResponse> listener) {

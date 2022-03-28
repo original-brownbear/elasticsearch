@@ -100,10 +100,10 @@ public class TransportGetJobsStatsAction extends TransportTasksAction<
             request.setExpandedJobsIds(new ArrayList<>(expandedIds));
             ActionListener<GetJobsStatsAction.Response> jobStatsListener = ActionListener.wrap(
                 response -> gatherStatsForClosedJobs(request, response, finalListener),
-                finalListener::onFailure
+                finalListener
             );
             super.doExecute(task, request, jobStatsListener);
-        }, finalListener::onFailure));
+        }, finalListener));
     }
 
     @Override

@@ -186,10 +186,10 @@ public class TransportGetTransformStatsAction extends TransportTasksAction<Trans
                                     finalResponse.getNodeFailures()
                                 )
                             ),
-                            finalListener::onFailure
+                            finalListener
                         )
                     );
-                }, finalListener::onFailure);
+                }, finalListener);
 
                 if (transformNodeAssignments.getExecutorNodes().size() > 0) {
                     request.setNodes(transformNodeAssignments.getExecutorNodes().toArray(new String[0]));
@@ -286,7 +286,7 @@ public class TransportGetTransformStatsAction extends TransportTasksAction<Trans
                     listener.onResponse(
                         new Response(allStateAndStats, allStateAndStats.size(), response.getTaskFailures(), response.getNodeFailures())
                     );
-                }, listener::onFailure)
+                }, listener)
             );
         }, e -> {
             if (e instanceof IndexNotFoundException) {

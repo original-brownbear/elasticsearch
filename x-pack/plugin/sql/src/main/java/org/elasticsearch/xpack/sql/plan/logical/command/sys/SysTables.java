@@ -159,7 +159,7 @@ public class SysTables extends Command {
                                 .collect(toList())
                         )
                     ),
-                    listener::onFailure
+                    listener
                 )
             );
     }

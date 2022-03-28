@@ -343,7 +343,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
                     fieldPermissionsCache,
                     null,
                     RESTRICTED_INDICES,
-                    ActionListener.wrap(r -> callback.onResponse(r), callback::onFailure)
+                    ActionListener.wrap(callback::onResponse, callback)
                 );
             }
             return Void.TYPE;

@@ -182,7 +182,7 @@ public class JobDataDeleter {
             ML_ORIGIN,
             DeleteByQueryAction.INSTANCE,
             dbqRequest,
-            ActionListener.wrap(r -> listener.onResponse(true), listener::onFailure)
+            ActionListener.wrap(r -> listener.onResponse(true), listener)
         );
     }
 
@@ -221,7 +221,7 @@ public class JobDataDeleter {
             ML_ORIGIN,
             DeleteByQueryAction.INSTANCE,
             dbqRequest,
-            ActionListener.wrap(r -> listener.onResponse(true), listener::onFailure)
+            ActionListener.wrap(r -> listener.onResponse(true), listener)
         );
     }
 
@@ -451,7 +451,7 @@ public class JobDataDeleter {
                 .setRefresh(true);
 
             executeAsyncWithOrigin(client, ML_ORIGIN, DeleteByQueryAction.INSTANCE, request, listener);
-        }, listener::onFailure);
+        }, listener);
 
         // First, we refresh the indices to ensure any in-flight docs become visible
         RefreshRequest refreshRequest = new RefreshRequest(indices);
@@ -486,7 +486,7 @@ public class JobDataDeleter {
                     finishedHandler,
                     client.admin().indices()::aliases
                 );
-            }, finishedHandler::onFailure),
+            }, finishedHandler),
             client.admin().indices()::getAliases
         );
     }
@@ -534,7 +534,7 @@ public class JobDataDeleter {
         executeAsyncWithOrigin(client, ML_ORIGIN, GetModelSnapshotsAction.INSTANCE, request, ActionListener.wrap(response -> {
             List<ModelSnapshot> deleteCandidates = response.getPage().results();
             deleteModelSnapshots(deleteCandidates, listener);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void deleteCategorizerState(

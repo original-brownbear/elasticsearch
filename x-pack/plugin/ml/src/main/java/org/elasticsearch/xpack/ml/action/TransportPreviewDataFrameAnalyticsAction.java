@@ -114,8 +114,8 @@ public class TransportPreviewDataFrameAnalyticsAction extends HandledTransportAc
             extractor.preview(ActionListener.wrap(rows -> {
                 List<String> fieldNames = extractor.getFieldNames();
                 listener.onResponse(new Response(rows.stream().map((r) -> mergeRow(r, fieldNames)).collect(Collectors.toList())));
-            }, listener::onFailure));
-        }, listener::onFailure));
+            }, listener));
+        }, listener));
     }
 
 }

@@ -177,7 +177,7 @@ public class TransportIndicesShardStoresAction extends TransportMasterNodeReadAc
             client.executeLocally(
                 TransportNodesListGatewayStartedShards.TYPE,
                 request,
-                ActionListener.wrap(listener::onResponse, listener::onFailure)
+                ActionListener.wrap(listener::onResponse, listener)
             );
         }
 

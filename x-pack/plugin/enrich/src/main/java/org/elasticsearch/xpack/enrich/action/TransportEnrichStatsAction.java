@@ -100,7 +100,7 @@ public class TransportEnrichStatsAction extends TransportMasterNodeAction<Enrich
                 .sorted(Comparator.comparing(EnrichStatsAction.Response.CacheStats::getNodeId))
                 .collect(Collectors.toList());
             listener.onResponse(new EnrichStatsAction.Response(policyExecutionTasks, coordinatorStats, cacheStats));
-        }, listener::onFailure);
+        }, listener);
         client.execute(EnrichCoordinatorStatsAction.INSTANCE, statsRequest, statsListener);
     }
 

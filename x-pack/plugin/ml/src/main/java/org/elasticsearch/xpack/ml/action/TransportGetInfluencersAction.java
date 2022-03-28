@@ -59,6 +59,6 @@ public class TransportGetInfluencersAction extends HandledTransportAction<GetInf
                 listener::onFailure,
                 client
             );
-        }, listener::onFailure));
+        }, listener));
     }
 }

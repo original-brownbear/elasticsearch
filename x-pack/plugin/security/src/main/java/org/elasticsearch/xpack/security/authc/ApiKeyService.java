@@ -345,7 +345,7 @@ public class ApiKeyService {
                             listenableFuture.onResponse(new CachedApiKeyHashResult(true, apiKey));
                             apiKeyAuthCache.put(request.getId(), listenableFuture);
                             listener.onResponse(new CreateApiKeyResponse(request.getName(), request.getId(), apiKey, expiration));
-                        }, listener::onFailure))
+                        }, listener))
                     )
                 );
             } catch (IOException e) {
@@ -661,7 +661,7 @@ public class ApiKeyService {
                             apiKeyAuthCache.invalidate(credentials.getId(), listenableCacheEntry);
                             validateApiKeyCredentials(docId, apiKeyDoc, credentials, clock, listener);
                         }
-                    }, listener::onFailure), threadPool.generic(), threadPool.getThreadContext());
+                    }, listener), threadPool.generic(), threadPool.getThreadContext());
                 } else {
                     verifyKeyAgainstHash(apiKeyDoc.hash, credentials, ActionListener.wrap(verified -> {
                         listenableCacheEntry.onResponse(new CachedApiKeyHashResult(verified, credentials.getKey()));
@@ -671,7 +671,7 @@ public class ApiKeyService {
                         } else {
                             listener.onResponse(AuthenticationResult.unsuccessful("invalid credentials", null));
                         }
-                    }, listener::onFailure));
+                    }, listener));
                 }
             } else {
                 verifyKeyAgainstHash(apiKeyDoc.hash, credentials, ActionListener.wrap(verified -> {
@@ -681,7 +681,7 @@ public class ApiKeyService {
                     } else {
                         listener.onResponse(AuthenticationResult.unsuccessful("invalid credentials", null));
                     }
-                }, listener::onFailure));
+                }, listener));
             }
         }
     }
@@ -948,7 +948,7 @@ public class ApiKeyService {
                             invalidateListener
                         );
                     }
-                }, invalidateListener::onFailure)
+                }, invalidateListener)
             );
         }
     }
@@ -1230,7 +1230,7 @@ public class ApiKeyService {
                 } else {
                     listener.onResponse(new GetApiKeyResponse(apiKeyInfos));
                 }
-            }, listener::onFailure)
+            }, listener)
         );
     }
 
@@ -1262,7 +1262,7 @@ public class ApiKeyService {
                             .map(ApiKeyService::convertSearchHitToQueryItem)
                             .toList();
                         listener.onResponse(new QueryApiKeyResponse(total, apiKeyItem));
-                    }, listener::onFailure)
+                    }, listener)
                 )
             );
         }

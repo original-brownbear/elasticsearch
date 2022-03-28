@@ -143,7 +143,7 @@ public class JobManager {
             jobId,
             ActionListener.wrap(
                 r -> jobListener.onResponse(r.build()), // TODO JIndex we shouldn't be building the job here
-                jobListener::onFailure
+                jobListener
             )
         );
     }
@@ -180,7 +180,7 @@ public class JobManager {
                         Job.RESULTS_FIELD
                     )
                 ),
-                jobsListener::onFailure
+                jobsListener
             )
         );
     }
@@ -245,7 +245,7 @@ public class JobManager {
                 jobConfigProvider.putJob(job, ActionListener.wrap(response -> {
                     auditor.info(job.getId(), Messages.getMessage(Messages.JOB_AUDIT_CREATED));
                     actionListener.onResponse(new PutJobAction.Response(job));
-                }, actionListener::onFailure));
+                }, actionListener));
             }
 
             @Override
@@ -273,7 +273,7 @@ public class JobManager {
                 request.masterNodeTimeout(),
                 putJobListener
             ),
-            putJobListener::onFailure
+            putJobListener
         );
 
         ActionListener<List<String>> checkForLeftOverDocs = ActionListener.wrap(matchedIds -> {
@@ -294,7 +294,7 @@ public class JobManager {
                     new ResourceAlreadyExistsException(Messages.getMessage(Messages.JOB_AND_GROUP_NAMES_MUST_BE_UNIQUE, matchedIds.get(0)))
                 );
             }
-        }, actionListener::onFailure);
+        }, actionListener);
 
         ActionListener<Boolean> checkNoJobsWithGroupId = ActionListener.wrap(groupExists -> {
             if (groupExists) {
@@ -308,11 +308,11 @@ public class JobManager {
             } else {
                 jobConfigProvider.jobIdMatches(job.getGroups(), checkForLeftOverDocs);
             }
-        }, actionListener::onFailure);
+        }, actionListener);
 
         ActionListener<Boolean> checkNoGroupWithTheJobId = ActionListener.wrap(
             ok -> jobConfigProvider.groupExists(job.getId(), checkNoJobsWithGroupId),
-            actionListener::onFailure
+            actionListener
         );
 
         jobConfigProvider.jobExists(job.getId(), false, ActionListener.wrap(jobExists -> {
@@ -321,7 +321,7 @@ public class JobManager {
             } else {
                 jobResultsProvider.checkForLeftOverDocuments(job, checkNoGroupWithTheJobId);
             }
-        }, actionListener::onFailure));
+        }, actionListener));
     }
 
     public void updateJob(UpdateJobAction.Request request, ActionListener<PutJobAction.Response> actionListener) {
@@ -331,7 +331,7 @@ public class JobManager {
             request.getJobUpdate(),
             maxModelMemoryLimitSupplier.get(),
             this::validate,
-            ActionListener.wrap(updatedJob -> postJobUpdate(request, updatedJob, actionListener), actionListener::onFailure)
+            ActionListener.wrap(updatedJob -> postJobUpdate(request, updatedJob, actionListener), actionListener)
         );
 
         // Obviously if we're updating a job it's impossible that the config index has no mappings at
@@ -342,7 +342,7 @@ public class JobManager {
             client,
             clusterService.state(),
             request.masterNodeTimeout(),
-            ActionListener.wrap(bool -> doUpdate.run(), actionListener::onFailure)
+            ActionListener.wrap(bool -> doUpdate.run(), actionListener)
         );
 
         if (request.getJobUpdate().getGroups() != null && request.getJobUpdate().getGroups().isEmpty() == false) {
@@ -358,7 +358,7 @@ public class JobManager {
                         )
                     );
                 }
-            }, actionListener::onFailure));
+            }, actionListener));
         } else {
             checkMappingsAreUpToDate.run();
         }
@@ -394,13 +394,13 @@ public class JobManager {
         CheckedConsumer<Boolean, Exception> removeFromCalendarsHandler = response -> jobConfigProvider.deleteJob(
             jobId,
             false,
-            ActionListener.wrap(deleteResponse -> configResponseHandler.accept(Boolean.TRUE), listener::onFailure)
+            ActionListener.wrap(deleteResponse -> configResponseHandler.accept(Boolean.TRUE), listener)
         );
 
         // Step 3. Remove the job from any calendars
         CheckedConsumer<Boolean, Exception> deleteJobStateHandler = response -> jobResultsProvider.removeJobFromCalendars(
             jobId,
-            ActionListener.wrap(removeFromCalendarsHandler, listener::onFailure)
+            ActionListener.wrap(removeFromCalendarsHandler, listener)
         );
 
         // Step 2. Delete the physical storage
@@ -412,7 +412,7 @@ public class JobManager {
                 deleteJobStateHandler,
                 listener::onFailure
             ),
-            listener::onFailure
+            listener
         );
 
         // Step 1. Cancel any model snapshot upgrades that might be in progress
@@ -460,7 +460,7 @@ public class JobManager {
         );
         validateModelSnapshotIdUpdate(job, jobUpdate.getModelSnapshotId(), voidChainTaskExecutor);
         validateAnalysisLimitsUpdate(job, jobUpdate.getAnalysisLimits(), voidChainTaskExecutor);
-        voidChainTaskExecutor.execute(ActionListener.wrap(aVoids -> handler.onResponse(null), handler::onFailure));
+        voidChainTaskExecutor.execute(ActionListener.wrap(aVoids -> handler.onResponse(null), handler));
     }
 
     private void validateModelSnapshotIdUpdate(Job job, String modelSnapshotId, VoidChainTaskExecutor voidChainTaskExecutor) {
@@ -570,7 +570,7 @@ public class JobManager {
                 }
 
                 updatedListener.onResponse(Boolean.TRUE);
-            }), updatedListener::onFailure)
+            }), updatedListener)
         );
     }
 
@@ -625,7 +625,7 @@ public class JobManager {
 
                 openJobIds.retainAll(expandedIds);
                 submitJobEventUpdate(openJobIds, updateListener);
-            }), updateListener::onFailure)
+            }), updateListener)
         );
     }
 
@@ -667,7 +667,7 @@ public class JobManager {
                     // it's clearer to remove them as they are not necessary for the revert op
                     ModelSnapshot snapshotWithoutQuantiles = new ModelSnapshot.Builder(modelSnapshot).setQuantiles(null).build();
                     actionListener.onResponse(new RevertModelSnapshotAction.Response(snapshotWithoutQuantiles));
-                }, actionListener::onFailure)
+                }, actionListener)
             );
         };
 
@@ -680,7 +680,7 @@ public class JobManager {
                 jobResultsPersister.persistModelSizeStats(
                     revertedModelSizeStats,
                     WriteRequest.RefreshPolicy.IMMEDIATE,
-                    ActionListener.wrap(modelSizeStatsResponseHandler, actionListener::onFailure)
+                    ActionListener.wrap(modelSizeStatsResponseHandler, actionListener)
                 );
             }
         };
@@ -692,7 +692,7 @@ public class JobManager {
         jobConfigProvider.updateJob(request.getJobId(), update, maxModelMemoryLimitSupplier.get(), ActionListener.wrap(job -> {
             auditor.info(request.getJobId(), Messages.getMessage(Messages.JOB_AUDIT_REVERTED, modelSnapshot.getDescription()));
             updateHandler.accept(Boolean.TRUE);
-        }, actionListener::onFailure));
+        }, actionListener));
     }
 
     public void updateJobBlockReason(String jobId, Blocked blocked, ActionListener<PutJobAction.Response> listener) {

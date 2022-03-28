@@ -470,11 +470,11 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                                 searchContext,
                                 searchAsyncActionProvider
                             );
-                        }, listener::onFailure)
+                        }, listener)
                     );
                 }
             }
-        }, listener::onFailure);
+        }, listener);
         Rewriteable.rewriteAndFetch(original, searchService.getRewriteContext(timeProvider::absoluteStartMillis), rewriteListener);
     }
 

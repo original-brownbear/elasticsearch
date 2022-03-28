@@ -111,7 +111,7 @@ public class SamlAuthnRequestValidator {
                 } catch (Exception e) {
                     logAndRespond("Could not validate AuthnRequest", e, listener);
                 }
-            }, listener::onFailure));
+            }, listener));
         } catch (ElasticsearchSecurityException e) {
             logger.debug("Could not process AuthnRequest", e);
             listener.onFailure(e);
@@ -295,7 +295,7 @@ public class SamlAuthnRequestValidator {
                 );
             }
             listener.onResponse(serviceProvider);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void checkDestination(AuthnRequest request) {

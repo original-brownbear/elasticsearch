@@ -231,7 +231,7 @@ public abstract class AbstractSqlBlockingIntegTestCase extends ESIntegTestCase {
                             task,
                             action,
                             request,
-                            ActionListener.wrap(resp -> executorService.execute(() -> actionWrapper.accept(resp)), listener::onFailure)
+                            ActionListener.wrap(resp -> executorService.execute(() -> actionWrapper.accept(resp)), listener)
                         );
                     } else {
                         chain.proceed(task, action, request, listener);

@@ -372,7 +372,7 @@ public final class TransformInternalIndex {
         ClusterHealthRequest request = new ClusterHealthRequest(TransformInternalIndexConstants.LATEST_INDEX_VERSIONED_NAME)
             // cluster health does not wait for active shards per default
             .waitForActiveShards(ActiveShardCount.ONE);
-        ActionListener<ClusterHealthResponse> innerListener = ActionListener.wrap(r -> listener.onResponse(null), listener::onFailure);
+        ActionListener<ClusterHealthResponse> innerListener = ActionListener.wrap(r -> listener.onResponse(null), listener);
         executeAsyncWithOrigin(
             client.threadPool().getThreadContext(),
             TRANSFORM_ORIGIN,

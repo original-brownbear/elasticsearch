@@ -170,14 +170,14 @@ public class TransportSetUpgradeModeAction extends AcknowledgedTransportMasterNo
                         logger.info("Caught node failures waiting for tasks to be unassigned", ex);
                         wrappedListener.onFailure(ex);
                     }
-                }, wrappedListener::onFailure));
-        }, wrappedListener::onFailure);
+                }, wrappedListener));
+        }, wrappedListener);
 
         // <3> After isolating the datafeeds, unassign the tasks
         ActionListener<List<IsolateDatafeedAction.Response>> isolateDatafeedListener = ActionListener.wrap(isolatedDatafeeds -> {
             logger.info("Isolated the datafeeds");
             unassignPersistentTasks(tasksCustomMetadata, unassignPersistentTasksListener);
-        }, wrappedListener::onFailure);
+        }, wrappedListener);
 
         /*
           <2> Handle the cluster response and act accordingly
@@ -233,10 +233,10 @@ public class TransportSetUpgradeModeAction extends AcknowledgedTransportMasterNo
                     ActionListener.wrap(r -> {
                         logger.info("Done waiting for tasks to be out of AWAITING_UPGRADE");
                         wrappedListener.onResponse(AcknowledgedResponse.TRUE);
-                    }, wrappedListener::onFailure)
+                    }, wrappedListener)
                 );
             }
-        }, wrappedListener::onFailure);
+        }, wrappedListener);
 
         // <1> Change MlMetadata to indicate that upgrade_mode is now enabled
         clusterService.submitStateUpdateTask("ml-set-upgrade-mode", new AckedClusterStateUpdateTask(request, clusterStateUpdateListener) {

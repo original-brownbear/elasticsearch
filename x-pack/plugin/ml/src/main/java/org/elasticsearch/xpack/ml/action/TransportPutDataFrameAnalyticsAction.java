@@ -134,7 +134,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
 
         ActionListener<Boolean> sourceDestValidationListener = ActionListener.wrap(
             aBoolean -> putValidatedConfig(config, request.masterNodeTimeout(), listener),
-            listener::onFailure
+            listener
         );
 
         sourceDestValidator.validate(
@@ -177,7 +177,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
 
                 ActionListener<HasPrivilegesResponse> privResponseListener = ActionListener.wrap(
                     r -> handlePrivsResponse(username, preparedForPutConfig, r, masterNodeTimeout, listener),
-                    listener::onFailure
+                    listener
                 );
 
                 client.execute(HasPrivilegesAction.INSTANCE, privRequest, privResponseListener);
@@ -187,10 +187,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
                 preparedForPutConfig,
                 threadPool.getThreadContext().getHeaders(),
                 masterNodeTimeout,
-                ActionListener.wrap(
-                    unused -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(preparedForPutConfig)),
-                    listener::onFailure
-                )
+                ActionListener.wrap(unused -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(preparedForPutConfig)), listener)
             );
         }
     }
@@ -207,10 +204,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
                 memoryCappedConfig,
                 threadPool.getThreadContext().getHeaders(),
                 masterNodeTimeout,
-                ActionListener.wrap(
-                    unused -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(memoryCappedConfig)),
-                    listener::onFailure
-                )
+                ActionListener.wrap(unused -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(memoryCappedConfig)), listener)
             );
         } else {
             XContentBuilder builder = JsonXContent.contentBuilder();
@@ -256,7 +250,7 @@ public class TransportPutDataFrameAnalyticsAction extends TransportMasterNodeAct
                     Messages.getMessage(Messages.DATA_FRAME_ANALYTICS_AUDIT_CREATED, config.getAnalysis().getWriteableName())
                 );
                 listener.onResponse(config);
-            }, listener::onFailure)), listener::onFailure)
+            }, listener)), listener)
         );
     }
 

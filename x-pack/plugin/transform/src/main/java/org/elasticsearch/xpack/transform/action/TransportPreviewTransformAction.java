@@ -140,8 +140,8 @@ public class TransportPreviewTransformAction extends HandledTransportAction<Requ
         final Function function = FunctionFactory.create(config);
 
         // <4> Validate transform query
-        ActionListener<Boolean> validateConfigListener = ActionListener.wrap(validateConfigResponse -> {
-            getPreview(
+        ActionListener<Boolean> validateConfigListener = ActionListener.wrap(
+            validateConfigResponse -> getPreview(
                 config.getId(), // note: @link{PreviewTransformAction} sets an id, so this is never null
                 function,
                 config.getSource(),
@@ -149,13 +149,14 @@ public class TransportPreviewTransformAction extends HandledTransportAction<Requ
                 config.getDestination().getIndex(),
                 config.getSyncConfig(),
                 listener
-            );
-        }, listener::onFailure);
+            ),
+            listener
+        );
 
         // <3> Validate transform function config
         ActionListener<Boolean> validateSourceDestListener = ActionListener.wrap(
-            validateSourceDestResponse -> { function.validateConfig(validateConfigListener); },
-            listener::onFailure
+            validateSourceDestResponse -> function.validateConfig(validateConfigListener),
+            listener
         );
 
         // <2> Validate source and destination indices
@@ -168,7 +169,7 @@ public class TransportPreviewTransformAction extends HandledTransportAction<Requ
                 SourceDestValidations.getValidationsForPreview(config.getAdditionalSourceDestValidations()),
                 validateSourceDestListener
             );
-        }, listener::onFailure);
+        }, listener);
 
         // <1> Early check to verify that the user can create the destination index and can read from the source
         if (XPackSettings.SECURITY_ENABLED.get(nodeSettings)) {
@@ -230,7 +231,7 @@ public class TransportPreviewTransformAction extends HandledTransportAction<Requ
             List<String> warnings = TransformConfigLinter.getWarnings(function, source, syncConfig);
             warnings.forEach(warning -> HeaderWarning.addWarning(warning));
             listener.onResponse(new Response(docs, generatedDestIndexSettings));
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<List<Map<String, Object>>> previewListener = ActionListener.wrap(docs -> {
             if (pipeline == null) {
@@ -261,7 +262,7 @@ public class TransportPreviewTransformAction extends HandledTransportAction<Requ
                     client.execute(SimulatePipelineAction.INSTANCE, pipelineRequest, pipelineResponseActionListener);
                 }
             }
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<Map<String, String>> deduceMappingsListener = ActionListener.wrap(deducedMappings -> {
             mappings.set(deducedMappings);
@@ -273,7 +274,7 @@ public class TransportPreviewTransformAction extends HandledTransportAction<Requ
                 NUMBER_OF_PREVIEW_BUCKETS,
                 previewListener
             );
-        }, listener::onFailure);
+        }, listener);
 
         function.deduceMappings(client, source, deduceMappingsListener);
     }

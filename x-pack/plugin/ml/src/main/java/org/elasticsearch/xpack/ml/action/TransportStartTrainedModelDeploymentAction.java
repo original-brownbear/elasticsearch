@@ -223,13 +223,13 @@ public class TransportStartTrainedModelDeploymentAction extends TransportMasterN
                         persistentTasks,
                         ActionListener.wrap(
                             aVoid -> trainedModelAllocationService.createNewModelAllocation(taskParams, waitForDeploymentToStart),
-                            listener::onFailure
+                            listener
                         )
                     );
-                }, listener::onFailure)), listener::onFailure)
+                }, listener)), listener)
             );
 
-        }, listener::onFailure);
+        }, listener);
 
         GetTrainedModelsAction.Request getModelRequest = new GetTrainedModelsAction.Request(request.getModelId());
         client.execute(GetTrainedModelsAction.INSTANCE, getModelRequest, getModelListener);

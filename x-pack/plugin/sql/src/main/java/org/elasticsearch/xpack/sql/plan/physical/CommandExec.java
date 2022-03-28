@@ -39,7 +39,7 @@ public class CommandExec extends LeafExec {
 
     @Override
     public void execute(SqlSession session, ActionListener<Page> listener) {
-        command.execute(session, wrap(listener::onResponse, listener::onFailure));
+        command.execute(session, wrap(listener::onResponse, listener));
     }
 
     @Override

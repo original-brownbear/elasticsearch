@@ -129,17 +129,14 @@ public class TransformUpdater {
                 config.getId(),
                 lastCheckpoint,
                 transformConfigManager,
-                ActionListener.wrap(
-                    r -> listener.onResponse(new UpdateResult(updatedConfig, UpdateResult.Status.UPDATED)),
-                    listener::onFailure
-                )
+                ActionListener.wrap(r -> listener.onResponse(new UpdateResult(updatedConfig, UpdateResult.Status.UPDATED)), listener)
             );
-        }, listener::onFailure);
+        }, listener);
 
         // <4> Update State document
         ActionListener<Void> updateTransformListener = ActionListener.wrap(
             r -> updateTransformStateAndGetLastCheckpoint(config.getId(), transformConfigManager, updateStateListener),
-            listener::onFailure
+            listener
         );
 
         // <3> Update the transform
@@ -169,14 +166,14 @@ public class TransformUpdater {
                 destIndexMappings,
                 seqNoPrimaryTermAndIndex,
                 clusterState,
-                ActionListener.wrap(r -> updateTransformListener.onResponse(null), listener::onFailure)
+                ActionListener.wrap(r -> updateTransformListener.onResponse(null), listener)
             );
-        }, listener::onFailure);
+        }, listener);
 
         // <2> Validate source and destination indices
         ActionListener<Void> checkPrivilegesListener = ActionListener.wrap(
-            aVoid -> { validateTransform(updatedConfig, client, deferValidation, timeout, validateTransformListener); },
-            listener::onFailure
+            aVoid -> validateTransform(updatedConfig, client, deferValidation, timeout, validateTransformListener),
+            listener
         );
 
         // <1> Early check to verify that the user can create the destination index and can read from the source
@@ -206,7 +203,7 @@ public class TransformUpdater {
         client.execute(
             ValidateTransformAction.INSTANCE,
             new ValidateTransformAction.Request(config, deferValidation, timeout),
-            ActionListener.wrap(response -> listener.onResponse(response.getDestIndexMappings()), listener::onFailure)
+            ActionListener.wrap(response -> listener.onResponse(response.getDestIndexMappings()), listener)
         );
     }
 
@@ -246,7 +243,7 @@ public class TransformUpdater {
                     }
                 })
             );
-        }, listener::onFailure));
+        }, listener));
     }
 
     private static void updateTransformCheckpoint(
@@ -263,7 +260,7 @@ public class TransformUpdater {
             }
 
             transformConfigManager.putTransformCheckpoint(checkpointAndVersion.v1(), listener);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private static void updateTransformConfiguration(
@@ -288,7 +285,7 @@ public class TransformUpdater {
         },
             // If we failed to INDEX AND we created the destination index, the destination index will still be around
             // This is a similar behavior to _start
-            listener::onFailure
+            listener
         );
 
         // <2> Update our transform
@@ -298,7 +295,7 @@ public class TransformUpdater {
                 seqNoPrimaryTermAndIndex,
                 putTransformConfigurationListener
             ),
-            listener::onFailure
+            listener
         );
 
         // <1> Create destination index if necessary

@@ -83,7 +83,7 @@ class TimeBasedCheckpointProvider extends DefaultCheckpointProvider {
             client,
             SearchAction.INSTANCE,
             searchRequest,
-            ActionListener.wrap(r -> listener.onResponse(r.getHits().getTotalHits().value > 0L), listener::onFailure)
+            ActionListener.wrap(r -> listener.onResponse(r.getHits().getTotalHits().value > 0L), listener)
         );
     }
 
@@ -97,12 +97,10 @@ class TimeBasedCheckpointProvider extends DefaultCheckpointProvider {
 
         getIndexCheckpoints(
             ActionListener.wrap(
-                checkpointsByIndex -> {
-                    listener.onResponse(
-                        new TransformCheckpoint(transformConfig.getId(), timestamp, checkpoint, checkpointsByIndex, timeUpperBound)
-                    );
-                },
-                listener::onFailure
+                checkpointsByIndex -> listener.onResponse(
+                    new TransformCheckpoint(transformConfig.getId(), timestamp, checkpoint, checkpointsByIndex, timeUpperBound)
+                ),
+                listener
             )
         );
     }

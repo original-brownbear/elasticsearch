@@ -461,7 +461,7 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
                 }
                 docSupplier.set(getResponse.getSourceAsBytesRef());
                 listener.onResponse(null);
-            }, listener::onFailure));
+            }, listener));
         });
 
         PercolateQueryBuilder rewritten = new PercolateQueryBuilder(field, docSupplier::get);

@@ -49,7 +49,7 @@ public interface DataExtractorFactory {
                     ? new ChunkedDataExtractorFactory(client, datafeed, job, xContentRegistry, factory, timingStatsReporter)
                     : factory
             ),
-            listener::onFailure
+            listener
         );
 
         ActionListener<GetRollupIndexCapsAction.Response> getRollupIndexCapsActionHandler = ActionListener.wrap(response -> {

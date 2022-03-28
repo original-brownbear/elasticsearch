@@ -278,7 +278,7 @@ public class TransportStartDatafeedAction extends TransportMasterNodeAction<Star
             } catch (Exception e) {
                 listener.onFailure(e);
             }
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<DatafeedConfig.Builder> datafeedListener = ActionListener.wrap(datafeedBuilder -> {
             try {
@@ -308,7 +308,7 @@ public class TransportStartDatafeedAction extends TransportMasterNodeAction<Star
             } catch (Exception e) {
                 listener.onFailure(e);
             }
-        }, listener::onFailure);
+        }, listener);
 
         datafeedConfigProvider.getDatafeedConfig(params.getDatafeedId(), datafeedListener);
     }
@@ -364,7 +364,7 @@ public class TransportStartDatafeedAction extends TransportMasterNodeAction<Star
                     params,
                     listener
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

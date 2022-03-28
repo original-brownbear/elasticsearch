@@ -139,7 +139,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 TRANSFORM_ORIGIN,
                 IndexAction.INSTANCE,
                 indexRequest,
-                ActionListener.wrap(r -> { listener.onResponse(true); }, listener::onFailure)
+                ActionListener.wrap(r -> listener.onResponse(true), listener)
             );
         } catch (IOException e) {
             // not expected to happen but for the sake of completeness
@@ -197,7 +197,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     return;
                 }
                 listener.onResponse(true);
-            }, listener::onFailure)
+            }, listener)
         );
     }
 
@@ -229,7 +229,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     return;
                 }
                 listener.onResponse(response.getDeleted());
-            }, listener::onFailure)
+            }, listener)
         );
     }
 
@@ -264,7 +264,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     return;
                 }
                 listener.onResponse(response.getDeleted());
-            }, listener::onFailure)
+            }, listener)
         );
     }
 
@@ -313,7 +313,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 return;
             }
             listener.onResponse(true);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void putTransformConfiguration(
@@ -389,7 +389,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 }
                 BytesReference source = searchResponse.getHits().getHits()[0].getSourceRef();
                 parseCheckpointsLenientlyFromSource(source, transformId, resultListener);
-            }, resultListener::onFailure)
+            }, resultListener)
         );
     }
 
@@ -435,10 +435,10 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                                 new SeqNoPrimaryTermAndIndex(hit.getSeqNo(), hit.getPrimaryTerm(), hit.getIndex())
                             )
                         ),
-                        checkpointAndVersionListener::onFailure
+                        checkpointAndVersionListener
                     )
                 );
-            }, checkpointAndVersionListener::onFailure)
+            }, checkpointAndVersionListener)
         );
     }
 
@@ -470,7 +470,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 }
                 BytesReference source = searchResponse.getHits().getHits()[0].getSourceRef();
                 parseTransformLenientlyFromSource(source, transformId, resultListener);
-            }, resultListener::onFailure)
+            }, resultListener)
         );
     }
 
@@ -508,10 +508,10 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     config -> configAndVersionListener.onResponse(
                         Tuple.tuple(config, new SeqNoPrimaryTermAndIndex(hit.getSeqNo(), hit.getPrimaryTerm(), hit.getIndex()))
                     ),
-                    configAndVersionListener::onFailure
+                    configAndVersionListener
                 )
             );
-        }, configAndVersionListener::onFailure));
+        }, configAndVersionListener));
     }
 
     @Override
@@ -582,14 +582,14 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 } else {
                     foundConfigsListener.onResponse(new Tuple<>(totalHits, Tuple.tuple(new ArrayList<>(ids), new ArrayList<>(configs))));
                 }
-            }, foundConfigsListener::onFailure),
+            }, foundConfigsListener),
             client::search
         );
     }
 
     @Override
     public void getAllTransformIds(ActionListener<Set<String>> listener) {
-        expandAllTransformIds(false, MAX_RESULTS_WINDOW, ActionListener.wrap(r -> listener.onResponse(r.v2()), listener::onFailure));
+        expandAllTransformIds(false, MAX_RESULTS_WINDOW, ActionListener.wrap(r -> listener.onResponse(r.v2()), listener));
     }
 
     @Override
@@ -639,7 +639,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 TransformInternalIndexConstants.INDEX_NAME_PATTERN_DEPRECATED
             ).setQuery(dbqQuery).setRefresh(true);
             executeAsyncWithOrigin(client, TRANSFORM_ORIGIN, DeleteByQueryAction.INSTANCE, dbqRequest, deleteListener);
-        }, deleteListener::onFailure));
+        }, deleteListener));
     }
 
     @Override
@@ -776,7 +776,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                     );
                     resultListener.onFailure(e);
                 }
-            }, resultListener::onFailure)
+            }, resultListener)
         );
     }
 
@@ -825,7 +825,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 }
 
                 listener.onResponse(stats);
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
     }
@@ -979,7 +979,7 @@ public class IndexBasedTransformConfigManager implements TransformConfigManager 
                 }
 
                 listener.onResponse(new Tuple<>(totalHits, collectedIds));
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
     }

@@ -203,7 +203,7 @@ public class TransportStopDatafeedAction extends TransportTasksAction<
                     } else {
                         normalStopDatafeed(task, request, listener, tasks, nodes, startedDatafeeds, stoppingDatafeeds, attempt);
                     }
-                }, listener::onFailure)
+                }, listener)
             );
         }
     }
@@ -296,7 +296,7 @@ public class TransportStopDatafeedAction extends TransportTasksAction<
                         );
                         listener.onResponse(finished);
                     }));
-            }, listener::onFailure), movedDatafeeds),
+            }, listener), movedDatafeeds),
             e -> {
                 Throwable unwrapped = ExceptionsHelper.unwrapCause(e);
                 if (unwrapped instanceof FailedNodeException) {

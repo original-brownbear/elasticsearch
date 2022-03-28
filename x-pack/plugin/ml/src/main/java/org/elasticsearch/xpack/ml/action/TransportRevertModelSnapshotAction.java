@@ -141,14 +141,14 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
                         jobManager.updateJobBlockReason(
                             jobId,
                             new Blocked(Blocked.Reason.REVERT, taskId),
-                            ActionListener.wrap(aBoolean -> revertSnapshot(jobId, request, listener), listener::onFailure)
+                            ActionListener.wrap(aBoolean -> revertSnapshot(jobId, request, listener), listener)
                         );
                     }
-                }, listener::onFailure));
-            }, listener::onFailure);
+                }, listener));
+            }, listener);
 
             jobManager.getJob(jobId, jobListener);
-        }, listener::onFailure);
+        }, listener);
 
         // 4. Ensure the annotations index mappings are up to date
         ActionListener<Boolean> configMappingUpdateListener = ActionListener.wrap(
@@ -158,7 +158,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
                 request.masterNodeTimeout(),
                 annotationsIndexUpdateListener
             ),
-            listener::onFailure
+            listener
         );
 
         // 3. Ensure the config index mappings are up to date
@@ -171,13 +171,13 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
                 request.masterNodeTimeout(),
                 configMappingUpdateListener
             ),
-            listener::onFailure
+            listener
         );
 
         // 2. Verify the job exists
         ActionListener<Boolean> createStateIndexListener = ActionListener.wrap(
             r -> jobManager.jobExists(jobId, jobExistsListener),
-            listener::onFailure
+            listener
         );
 
         // 1. Verify/Create the state index and its alias exists
@@ -234,16 +234,8 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
         ActionListener<RevertModelSnapshotAction.Response> listener
     ) {
         ActionListener<RevertModelSnapshotAction.Response> finalListener = ActionListener.wrap(
-            r -> jobManager.updateJobBlockReason(
-                jobId,
-                Blocked.none(),
-                ActionListener.wrap(aBoolean -> listener.onResponse(r), listener::onFailure)
-            ),
-            e -> jobManager.updateJobBlockReason(
-                jobId,
-                Blocked.none(),
-                ActionListener.wrap(aBoolean -> listener.onFailure(e), listener::onFailure)
-            )
+            r -> jobManager.updateJobBlockReason(jobId, Blocked.none(), ActionListener.wrap(aBoolean -> listener.onResponse(r), listener)),
+            e -> jobManager.updateJobBlockReason(jobId, Blocked.none(), ActionListener.wrap(aBoolean -> listener.onFailure(e), listener))
         );
 
         getModelSnapshot(request, jobResultsProvider, modelSnapshot -> {
@@ -308,7 +300,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
                 eventsToDelete,
                 listener.delegateFailure((l, r) -> l.onResponse(response))
             );
-        }, listener::onFailure);
+        }, listener);
     }
 
     private ActionListener<RevertModelSnapshotAction.Response> wrapDeleteOldDataListener(
@@ -326,7 +318,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
 
             JobDataDeleter dataDeleter = new JobDataDeleter(client, jobId);
             dataDeleter.deleteResultsFromTime(deleteAfter.getTime() + 1, listener.delegateFailure((l, r) -> l.onResponse(response)));
-        }, listener::onFailure);
+        }, listener);
     }
 
     private ActionListener<RevertModelSnapshotAction.Response> wrapRevertDataCountsListener(
@@ -338,7 +330,7 @@ public class TransportRevertModelSnapshotAction extends TransportMasterNodeActio
         return ActionListener.wrap(response -> jobResultsProvider.dataCounts(jobId, counts -> {
             counts.setLatestRecordTimeStamp(modelSnapshot.getLatestRecordTimeStamp());
             jobDataCountsPersister.persistDataCountsAsync(jobId, counts, listener.delegateFailure((l, r) -> l.onResponse(response)));
-        }, listener::onFailure), listener::onFailure);
+        }, listener::onFailure), listener);
     }
 
     @Override

@@ -146,9 +146,9 @@ public class TransportStartTransformAction extends TransportMasterNodeAction<Sta
                     task.getId(),
                     transformTask,
                     request.timeout(),
-                    ActionListener.wrap(taskStarted -> listener.onResponse(new StartTransformAction.Response(true)), listener::onFailure)
+                    ActionListener.wrap(taskStarted -> listener.onResponse(new StartTransformAction.Response(true)), listener)
                 );
-            }, listener::onFailure);
+            }, listener);
 
         // <4> Create the task in cluster state so that it will start executing on the node
         ActionListener<Boolean> createOrGetIndexListener = ActionListener.wrap(unused -> {
@@ -184,7 +184,7 @@ public class TransportStartTransformAction extends TransportMasterNodeAction<Sta
                     );
                 }
             }
-        }, listener::onFailure);
+        }, listener);
 
         // <2> If the destination index exists, start the task, otherwise deduce our mappings for the destination index and create it
         ActionListener<ValidateTransformAction.Response> validationListener = ActionListener.wrap(validationResponse -> {
@@ -198,7 +198,7 @@ public class TransportStartTransformAction extends TransportMasterNodeAction<Sta
                         : "Created destination index [" + destinationIndex + "] with deduced mappings.";
                     auditor.info(request.getId(), message);
                     createOrGetIndexListener.onResponse(r);
-                }, createOrGetIndexListener::onFailure));
+                }, createOrGetIndexListener));
             } else {
                 auditor.info(request.getId(), "Using existing destination index [" + destinationIndex + "].");
                 ClientHelper.executeAsyncWithOrigin(
@@ -223,7 +223,7 @@ public class TransportStartTransformAction extends TransportMasterNodeAction<Sta
                     client.admin().indices()::stats
                 );
             }
-        }, listener::onFailure);
+        }, listener);
 
         // <2> run transform validations
         ActionListener<TransformConfig> getTransformListener = ActionListener.wrap(config -> {
@@ -255,7 +255,7 @@ public class TransportStartTransformAction extends TransportMasterNodeAction<Sta
                 new ValidateTransformAction.Request(config, false, request.timeout()),
                 validationListener
             );
-        }, listener::onFailure);
+        }, listener);
 
         // <1> Get the config to verify it exists and is valid
         transformConfigManager.getTransformConfiguration(request.getId(), getTransformListener);

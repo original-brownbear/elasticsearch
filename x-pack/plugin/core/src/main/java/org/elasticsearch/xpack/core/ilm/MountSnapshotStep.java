@@ -152,7 +152,7 @@ public class MountSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
                 throw new ElasticsearchException("mount snapshot response failed to complete, got response " + response.status());
             }
             listener.onResponse(null);
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**

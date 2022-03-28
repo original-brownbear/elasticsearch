@@ -119,21 +119,21 @@ public class RestIndicesAction extends AbstractCatAction {
                         subRequestIndicesOptions,
                         includeUnloadedSegments,
                         client,
-                        ActionListener.wrap(groupedListener::onResponse, groupedListener::onFailure)
+                        ActionListener.wrap(groupedListener::onResponse, groupedListener)
                     );
                     sendClusterStateRequest(
                         indices,
                         subRequestIndicesOptions,
                         masterNodeTimeout,
                         client,
-                        ActionListener.wrap(groupedListener::onResponse, groupedListener::onFailure)
+                        ActionListener.wrap(groupedListener::onResponse, groupedListener)
                     );
                     sendClusterHealthRequest(
                         indices,
                         subRequestIndicesOptions,
                         masterNodeTimeout,
                         client,
-                        ActionListener.wrap(groupedListener::onResponse, groupedListener::onFailure)
+                        ActionListener.wrap(groupedListener::onResponse, groupedListener)
                     );
                 }
             });

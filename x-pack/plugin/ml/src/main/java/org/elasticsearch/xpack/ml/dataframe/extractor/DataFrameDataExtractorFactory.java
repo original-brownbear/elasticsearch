@@ -163,6 +163,6 @@ public class DataFrameDataExtractorFactory {
                 Collections.emptyMap()
             );
             listener.onResponse(extractorFactory);
-        }, listener::onFailure));
+        }, listener));
     }
 }

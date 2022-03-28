@@ -110,7 +110,7 @@ public final class DestinationIndex {
                 createIndexRequest,
                 listener
             ),
-            listener::onFailure
+            listener
         );
 
         prepareCreateIndexRequest(client, clock, analyticsConfig, createIndexRequestListener);
@@ -126,27 +126,25 @@ public final class DestinationIndex {
         AtomicReference<MappingMetadata> mappingsHolder = new AtomicReference<>();
 
         ActionListener<FieldCapabilitiesResponse> fieldCapabilitiesListener = ActionListener.wrap(
-            fieldCapabilitiesResponse -> {
-                listener.onResponse(
-                    createIndexRequest(clock, config, settingsHolder.get(), mappingsHolder.get(), fieldCapabilitiesResponse)
-                );
-            },
-            listener::onFailure
+            fieldCapabilitiesResponse -> listener.onResponse(
+                createIndexRequest(clock, config, settingsHolder.get(), mappingsHolder.get(), fieldCapabilitiesResponse)
+            ),
+            listener
         );
 
         ActionListener<MappingMetadata> mappingsListener = ActionListener.wrap(mappings -> {
             mappingsHolder.set(mappings);
             getFieldCapsForRequiredFields(client, config, fieldCapabilitiesListener);
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<Settings> settingsListener = ActionListener.wrap(settings -> {
             settingsHolder.set(settings);
             MappingsMerger.mergeMappings(client, config.getHeaders(), config.getSource(), mappingsListener);
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<GetSettingsResponse> getSettingsResponseListener = ActionListener.wrap(
             settingsResponse -> settingsListener.onResponse(settings(settingsResponse)),
-            listener::onFailure
+            listener
         );
 
         GetSettingsRequest getSettingsRequest = new GetSettingsRequest().indices(config.getSource().getIndex())
@@ -300,7 +298,7 @@ public final class DestinationIndex {
                 putMappingRequest,
                 listener
             );
-        }, listener::onFailure);
+        }, listener);
 
         getFieldCapsForRequiredFields(client, config, fieldCapabilitiesListener);
     }

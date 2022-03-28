@@ -121,7 +121,7 @@ public final class ClearScrollController implements Runnable {
                     }
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void onFreedContext(boolean freed) {

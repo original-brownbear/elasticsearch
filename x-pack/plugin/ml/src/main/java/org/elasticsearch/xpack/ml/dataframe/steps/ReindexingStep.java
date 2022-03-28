@@ -190,7 +190,7 @@ public class ReindexingStep extends AbstractDataFrameAnalyticsStep {
                     Messages.getMessage(Messages.DATA_FRAME_ANALYTICS_AUDIT_STARTED_REINDEXING, config.getDest().getIndex())
                 );
             }
-        }, reindexCompletedListener::onFailure);
+        }, reindexCompletedListener);
 
         // Create destination index if it does not exist
         ActionListener<GetIndexResponse> destIndexListener = ActionListener.wrap(indexResponse -> {
@@ -203,7 +203,7 @@ public class ReindexingStep extends AbstractDataFrameAnalyticsStep {
                 parentTaskClient,
                 config,
                 indexResponse,
-                ActionListener.wrap(acknowledgedResponse -> copyIndexCreatedListener.onResponse(null), copyIndexCreatedListener::onFailure)
+                ActionListener.wrap(acknowledgedResponse -> copyIndexCreatedListener.onResponse(null), copyIndexCreatedListener)
             );
         }, e -> {
             if (ExceptionsHelper.unwrapCause(e) instanceof IndexNotFoundException) {
@@ -308,7 +308,7 @@ public class ReindexingStep extends AbstractDataFrameAnalyticsStep {
                     task.getStatsHolder().getProgressTracker().updateReindexingProgress(Math.max(1, reindexTaskProgress));
                     listener.onResponse(null);
                 },
-                listener::onFailure
+                listener
             )
         );
     }

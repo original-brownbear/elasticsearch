@@ -54,8 +54,8 @@ public class EmptyStateIndexRemover implements MlDataRemover {
                         return;
                     }
                     executeDeleteEmptyStateIndices(stateIndicesToRemove, listener);
-                }, listener::onFailure));
-            }, listener::onFailure));
+                }, listener));
+            }, listener));
         } catch (Exception e) {
             listener.onFailure(e);
         }
@@ -72,7 +72,7 @@ public class EmptyStateIndexRemover implements MlDataRemover {
                 .map(IndexStats::getIndex)
                 .collect(toSet());
             listener.onResponse(emptyStateIndices);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void getCurrentStateIndices(ActionListener<Set<String>> listener) {
@@ -82,7 +82,7 @@ public class EmptyStateIndexRemover implements MlDataRemover {
             .indices()
             .getIndex(
                 getIndexRequest,
-                ActionListener.wrap(getIndexResponse -> listener.onResponse(Set.of(getIndexResponse.getIndices())), listener::onFailure)
+                ActionListener.wrap(getIndexResponse -> listener.onResponse(Set.of(getIndexResponse.getIndices())), listener)
             );
     }
 
@@ -93,7 +93,7 @@ public class EmptyStateIndexRemover implements MlDataRemover {
             .indices()
             .delete(
                 deleteIndexRequest,
-                ActionListener.wrap(deleteResponse -> listener.onResponse(deleteResponse.isAcknowledged()), listener::onFailure)
+                ActionListener.wrap(deleteResponse -> listener.onResponse(deleteResponse.isAcknowledged()), listener)
             );
     }
 }

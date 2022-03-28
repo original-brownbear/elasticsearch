@@ -185,7 +185,7 @@ public class TransportPutTrainedModelAliasAction extends AcknowledgedTransportMa
                 }
             }, newExecutor());
 
-        }, listener::onFailure));
+        }, listener));
     }
 
     @SuppressForbidden(reason = "legacy usage of unbatched task") // TODO add support for batching here

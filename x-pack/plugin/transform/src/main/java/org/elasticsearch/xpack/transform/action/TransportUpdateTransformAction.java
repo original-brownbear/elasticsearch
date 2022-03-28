@@ -129,54 +129,58 @@ public class TransportUpdateTransformAction extends TransportTasksAction<Transfo
 
         // GET transform and attempt to update
         // We don't want the update to complete if the config changed between GET and INDEX
-        transformConfigManager.getTransformConfigurationForUpdate(request.getId(), ActionListener.wrap(configAndVersion -> {
-            TransformUpdater.updateTransform(
-                securityContext,
-                indexNameExpressionResolver,
-                clusterState,
-                settings,
-                client,
-                transformConfigManager,
-                configAndVersion.v1(),
-                update,
-                configAndVersion.v2(),
-                request.isDeferValidation(),
-                false, // dryRun
-                true, // checkAccess
-                request.getTimeout(),
-                ActionListener.wrap(updateResponse -> {
-                    TransformConfig updatedConfig = updateResponse.getConfig();
-                    auditor.info(updatedConfig.getId(), "Updated transform.");
-                    logger.debug("[{}] Updated transform [{}]", updatedConfig.getId(), updateResponse.getStatus());
+        transformConfigManager.getTransformConfigurationForUpdate(
+            request.getId(),
+            ActionListener.wrap(
+                configAndVersion -> TransformUpdater.updateTransform(
+                    securityContext,
+                    indexNameExpressionResolver,
+                    clusterState,
+                    settings,
+                    client,
+                    transformConfigManager,
+                    configAndVersion.v1(),
+                    update,
+                    configAndVersion.v2(),
+                    request.isDeferValidation(),
+                    false, // dryRun
+                    true, // checkAccess
+                    request.getTimeout(),
+                    ActionListener.wrap(updateResponse -> {
+                        TransformConfig updatedConfig = updateResponse.getConfig();
+                        auditor.info(updatedConfig.getId(), "Updated transform.");
+                        logger.debug("[{}] Updated transform [{}]", updatedConfig.getId(), updateResponse.getStatus());
 
-                    checkTransformConfigAndLogWarnings(updatedConfig);
+                        checkTransformConfigAndLogWarnings(updatedConfig);
 
-                    if (update.changesSettings(configAndVersion.v1())) {
-                        PersistentTasksCustomMetadata.PersistentTask<?> transformTask = TransformTask.getTransformTask(
-                            request.getId(),
-                            clusterState
-                        );
+                        if (update.changesSettings(configAndVersion.v1())) {
+                            PersistentTasksCustomMetadata.PersistentTask<?> transformTask = TransformTask.getTransformTask(
+                                request.getId(),
+                                clusterState
+                            );
 
-                        // to send a request to apply new settings at runtime, several requirements must be met:
-                        // - transform must be running, meaning a task exists
-                        // - transform is not failed (stopped transforms do not have a task)
-                        // - the node where transform is executed on is at least 7.8.0 in order to understand the request
-                        if (transformTask != null
-                            && transformTask.isAssigned()
-                            && transformTask.getState() instanceof TransformState
-                            && ((TransformState) transformTask.getState()).getTaskState() != TransformTaskState.FAILED
-                            && clusterState.nodes().get(transformTask.getExecutorNode()).getVersion().onOrAfter(Version.V_7_8_0)) {
+                            // to send a request to apply new settings at runtime, several requirements must be met:
+                            // - transform must be running, meaning a task exists
+                            // - transform is not failed (stopped transforms do not have a task)
+                            // - the node where transform is executed on is at least 7.8.0 in order to understand the request
+                            if (transformTask != null
+                                && transformTask.isAssigned()
+                                && transformTask.getState() instanceof TransformState
+                                && ((TransformState) transformTask.getState()).getTaskState() != TransformTaskState.FAILED
+                                && clusterState.nodes().get(transformTask.getExecutorNode()).getVersion().onOrAfter(Version.V_7_8_0)) {
 
-                            request.setNodes(transformTask.getExecutorNode());
-                            request.setConfig(updatedConfig);
-                            super.doExecute(task, request, listener);
-                            return;
+                                request.setNodes(transformTask.getExecutorNode());
+                                request.setConfig(updatedConfig);
+                                super.doExecute(task, request, listener);
+                                return;
+                            }
                         }
-                    }
-                    listener.onResponse(new Response(updatedConfig));
-                }, listener::onFailure)
-            );
-        }, listener::onFailure));
+                        listener.onResponse(new Response(updatedConfig));
+                    }, listener)
+                ),
+                listener
+            )
+        );
     }
 
     private void checkTransformConfigAndLogWarnings(TransformConfig config) {

@@ -181,7 +181,7 @@ public class TransportSqlQueryAction extends HandledTransportAction<SqlQueryRequ
             planExecutor.nextPage(
                 cfg,
                 decoded.v1(),
-                wrap(p -> listener.onResponse(createResponse(request, decoded.v2(), null, p, task)), listener::onFailure)
+                wrap(p -> listener.onResponse(createResponse(request, decoded.v2(), null, p, task)), listener)
             );
         }
     }

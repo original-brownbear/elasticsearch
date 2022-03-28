@@ -160,7 +160,7 @@ public class TransportStopTrainedModelDeploymentAction extends TransportTasksAct
                     }
                 )
             );
-        }, listener::onFailure);
+        }, listener);
 
         GetTrainedModelsAction.Request getModelRequest = new GetTrainedModelsAction.Request(request.getId(), null, Collections.emptySet());
         getModelRequest.setAllowNoResources(request.isAllowNoMatch());
@@ -251,7 +251,7 @@ public class TransportStopTrainedModelDeploymentAction extends TransportTasksAct
     ) {
         task.stop(
             "undeploy_trained_model (api)",
-            ActionListener.wrap(r -> listener.onResponse(new StopTrainedModelDeploymentAction.Response(true)), listener::onFailure)
+            ActionListener.wrap(r -> listener.onResponse(new StopTrainedModelDeploymentAction.Response(true)), listener)
         );
     }
 }

@@ -155,7 +155,7 @@ public final class SchemaUtil {
                         sourceMappings
                     )
                 ),
-                listener::onFailure
+                listener
             )
         );
     }
@@ -181,7 +181,7 @@ public final class SchemaUtil {
             ClientHelper.TRANSFORM_ORIGIN,
             FieldCapabilitiesAction.INSTANCE,
             fieldCapabilitiesRequest,
-            ActionListener.wrap(r -> listener.onResponse(extractFieldMappings(r)), listener::onFailure)
+            ActionListener.wrap(r -> listener.onResponse(extractFieldMappings(r)), listener)
         );
     }
 
@@ -269,7 +269,7 @@ public final class SchemaUtil {
         client.execute(
             FieldCapabilitiesAction.INSTANCE,
             fieldCapabilitiesRequest,
-            ActionListener.wrap(response -> listener.onResponse(extractFieldMappings(response)), listener::onFailure)
+            ActionListener.wrap(response -> listener.onResponse(extractFieldMappings(response)), listener)
         );
     }
 

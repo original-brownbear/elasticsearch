@@ -96,7 +96,7 @@ public class WatcherUsageTransportAction extends XPackUsageFeatureTransportActio
                         mergedCounters.toNestedMap()
                     );
                     preservingListener.onResponse(new XPackUsageFeatureResponse(usage));
-                }, preservingListener::onFailure));
+                }, preservingListener));
             }
         } else {
             WatcherFeatureSetUsage usage = new WatcherFeatureSetUsage(

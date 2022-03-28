@@ -123,17 +123,17 @@ public class TransportResetJobAction extends AcknowledgedTransportMasterNodeActi
                 waitExistingResetTaskToComplete(
                     job.getBlocked().getTaskId(),
                     request,
-                    ActionListener.wrap(r -> resetIfJobIsStillBlockedOnReset(task, request, listener), listener::onFailure)
+                    ActionListener.wrap(r -> resetIfJobIsStillBlockedOnReset(task, request, listener), listener)
                 );
             } else {
                 ParentTaskAssigningClient taskClient = new ParentTaskAssigningClient(client, taskId);
                 jobConfigProvider.updateJobBlockReason(
                     job.getId(),
                     new Blocked(Blocked.Reason.RESET, taskId),
-                    ActionListener.wrap(r -> resetJob(taskClient, (CancellableTask) task, request, listener), listener::onFailure)
+                    ActionListener.wrap(r -> resetJob(taskClient, (CancellableTask) task, request, listener), listener)
                 );
             }
-        }, listener::onFailure);
+        }, listener);
 
         jobConfigProvider.getJob(request.getJobId(), jobListener);
     }
@@ -160,7 +160,7 @@ public class TransportResetJobAction extends AcknowledgedTransportMasterNodeActi
                     listener.onFailure(ExceptionsHelper.serverError("reset failed to complete"));
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void resetIfJobIsStillBlockedOnReset(Task task, ResetJobAction.Request request, ActionListener<AcknowledgedResponse> listener) {
@@ -189,7 +189,7 @@ public class TransportResetJobAction extends AcknowledgedTransportMasterNodeActi
                     )
                 );
             }
-        }, listener::onFailure);
+        }, listener);
 
         // Get job again to check if it is still blocked
         jobConfigProvider.getJob(request.getJobId(), jobListener);
@@ -231,7 +231,7 @@ public class TransportResetJobAction extends AcknowledgedTransportMasterNodeActi
                 return;
             }
             finishSuccessfulReset(jobId, listener);
-        }, listener::onFailure);
+        }, listener);
 
         CheckedConsumer<Boolean, Exception> jobDocsDeletionListener = response -> {
             if (task.isCancelled()) {
@@ -244,7 +244,7 @@ public class TransportResetJobAction extends AcknowledgedTransportMasterNodeActi
                     return;
                 }
                 jobResultsProvider.createJobResultIndex(jobBuilder.build(), clusterService.state(), resultsIndexCreatedListener);
-            }, listener::onFailure));
+            }, listener));
         };
 
         JobDataDeleter jobDataDeleter = new JobDataDeleter(taskClient, jobId);
@@ -262,7 +262,7 @@ public class TransportResetJobAction extends AcknowledgedTransportMasterNodeActi
             logger.info("[{}] Reset has successfully completed", jobId);
             auditor.info(jobId, Messages.getMessage(Messages.JOB_AUDIT_RESET));
             listener.onResponse(AcknowledgedResponse.of(true));
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

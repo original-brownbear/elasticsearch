@@ -95,10 +95,7 @@ public class TransportUpdateDataFrameAnalyticsAction extends TransportMasterNode
                 request.getUpdate(),
                 headers,
                 state,
-                ActionListener.wrap(
-                    updatedConfig -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(updatedConfig)),
-                    listener::onFailure
-                )
+                ActionListener.wrap(updatedConfig -> listener.onResponse(new PutDataFrameAnalyticsAction.Response(updatedConfig)), listener)
             );
         });
 
@@ -110,7 +107,7 @@ public class TransportUpdateDataFrameAnalyticsAction extends TransportMasterNode
             client,
             state,
             request.masterNodeTimeout(),
-            ActionListener.wrap(bool -> doUpdate.run(), listener::onFailure)
+            ActionListener.wrap(bool -> doUpdate.run(), listener)
         );
     }
 

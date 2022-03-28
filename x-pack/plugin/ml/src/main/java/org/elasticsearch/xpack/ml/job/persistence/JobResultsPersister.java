@@ -324,7 +324,7 @@ public class JobResultsPersister {
             Persistable persistable = new Persistable(indexOrAlias, quantiles.getJobId(), quantiles, quantilesDocId);
             persistable.setRefreshPolicy(refreshPolicy);
             persistable.persist(listener, AnomalyDetectorsIndex.jobStateIndexWriteAlias().equals(indexOrAlias));
-        }, listener::onFailure);
+        }, listener);
 
         // Step 1: Search for existing quantiles document in .ml-state*
         SearchRequest searchRequest = buildQuantilesDocIdSearch(quantilesDocId);

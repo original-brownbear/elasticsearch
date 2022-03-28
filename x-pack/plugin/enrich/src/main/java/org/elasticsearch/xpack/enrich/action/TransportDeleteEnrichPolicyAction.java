@@ -160,7 +160,7 @@ public class TransportDeleteEnrichPolicyAction extends AcknowledgedTransportMast
             } else {
                 deletePolicy(name, listener);
             }
-        }, (error) -> listener.onFailure(error)));
+        }, listener));
     }
 
     private void deletePolicy(String name, ActionListener<AcknowledgedResponse> listener) {

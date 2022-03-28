@@ -142,7 +142,7 @@ class ClientTransformIndexer extends TransformIndexer {
 
         injectPointInTimeIfNeeded(
             buildSearchRequest(),
-            ActionListener.wrap(pitSearchRequest -> doSearch(pitSearchRequest, nextPhase), nextPhase::onFailure)
+            ActionListener.wrap(pitSearchRequest -> doSearch(pitSearchRequest, nextPhase), nextPhase)
         );
     }
 
@@ -159,7 +159,7 @@ class ClientTransformIndexer extends TransformIndexer {
             client,
             BulkAction.INSTANCE,
             request,
-            ActionListener.wrap(bulkResponse -> handleBulkResponse(bulkResponse, nextPhase), nextPhase::onFailure)
+            ActionListener.wrap(bulkResponse -> handleBulkResponse(bulkResponse, nextPhase), nextPhase)
         );
     }
 

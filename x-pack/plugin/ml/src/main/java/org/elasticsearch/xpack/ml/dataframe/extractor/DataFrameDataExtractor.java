@@ -159,7 +159,7 @@ public class DataFrameDataExtractor {
                     rows.add(extractedValues == null ? new Row(null, hit, true) : new Row(extractedValues, hit, false));
                 }
                 listener.onResponse(rows);
-            }, listener::onFailure)
+            }, listener)
         );
     }
 
@@ -395,7 +395,7 @@ public class DataFrameDataExtractor {
                 searchResponse -> dataSummaryActionListener.onResponse(
                     new DataSummary(searchResponse.getHits().getTotalHits().value, numberOfFields)
                 ),
-                dataSummaryActionListener::onFailure
+                dataSummaryActionListener
             )
         );
     }

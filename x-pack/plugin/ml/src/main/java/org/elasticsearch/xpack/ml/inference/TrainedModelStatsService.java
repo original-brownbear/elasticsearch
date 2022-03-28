@@ -263,7 +263,7 @@ public class TrainedModelStatsService {
                     MasterNodeRequest.DEFAULT_MASTER_NODE_TIMEOUT,
                     listener
                 ),
-                listener::onFailure
+                listener
             )
         );
         listener.actionGet();

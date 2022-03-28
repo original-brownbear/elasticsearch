@@ -101,7 +101,7 @@ public abstract class AbstractTransportQlAsyncGetResultsAction<Response extends 
                 } else {
                     listener.onResponse(r.getResponse());
                 }
-            }, listener::onFailure));
+            }, listener));
         } else {
             transportService.sendRequest(
                 node,

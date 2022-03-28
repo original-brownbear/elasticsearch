@@ -96,7 +96,7 @@ public abstract class AbstractCompositeAggFunction implements Function {
                 } catch (AggregationResultUtils.AggregationExtractionException extractionException) {
                     listener.onFailure(new ElasticsearchStatusException(extractionException.getMessage(), RestStatus.BAD_REQUEST));
                 }
-            }, listener::onFailure)
+            }, listener)
         );
     }
 

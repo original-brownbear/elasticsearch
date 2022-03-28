@@ -116,6 +116,13 @@ public interface ActionListener<Response> {
         }
     }
 
+    static <Response> ActionListener<Response> wrap(
+        CheckedConsumer<Response, ? extends Exception> onResponse,
+        ActionListener<?> onFailure
+    ) {
+        return wrap(onResponse, onFailure::onFailure);
+    }
+
     /**
      * Creates a listener that listens for a response (or failure) and executes the
      * corresponding consumer when the response (or failure) is received.

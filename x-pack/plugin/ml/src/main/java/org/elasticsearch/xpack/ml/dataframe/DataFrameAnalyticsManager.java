@@ -128,7 +128,7 @@ public class DataFrameAnalyticsManager {
         // Retrieve configuration
         ActionListener<Boolean> statsIndexListener = ActionListener.wrap(
             aBoolean -> configProvider.get(task.getParams().getId(), configListener),
-            configListener::onFailure
+            configListener
         );
 
         // Make sure the stats index and alias exist
@@ -139,7 +139,7 @@ public class DataFrameAnalyticsManager {
                 masterNodeTimeout,
                 statsIndexListener
             ),
-            configListener::onFailure
+            configListener
         );
 
         // Make sure the state index and alias exist
@@ -167,7 +167,7 @@ public class DataFrameAnalyticsManager {
                 masterNodeTimeout,
                 listener
             ),
-            listener::onFailure
+            listener
         );
 
         MlStatsIndex.createStatsIndexAndAliasIfNecessary(
@@ -264,7 +264,7 @@ public class DataFrameAnalyticsManager {
             );
             InferenceStep inferenceStep = new InferenceStep(client, task, auditor, config, threadPool, inferenceRunner);
             listener.onResponse(inferenceStep);
-        }, listener::onFailure);
+        }, listener);
 
         new ExtractedFieldsDetectorFactory(parentTaskClient).createFromDest(config, extractedFieldsDetectorListener);
     }

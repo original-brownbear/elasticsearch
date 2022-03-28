@@ -65,7 +65,7 @@ public class SamlServiceProviderResolver {
             } else {
                 populateCacheAndReturn(entityId, doc, listener);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void populateCacheAndReturn(String entityId, DocumentSupplier doc, ActionListener<SamlServiceProvider> listener) {

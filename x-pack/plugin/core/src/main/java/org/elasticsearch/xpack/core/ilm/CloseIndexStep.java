@@ -41,7 +41,7 @@ public class CloseIndexStep extends AsyncActionStep {
                     throw new ElasticsearchException("close index request failed to be acknowledged");
                 }
                 listener.onResponse(null);
-            }, listener::onFailure));
+            }, listener));
         } else {
             listener.onResponse(null);
         }

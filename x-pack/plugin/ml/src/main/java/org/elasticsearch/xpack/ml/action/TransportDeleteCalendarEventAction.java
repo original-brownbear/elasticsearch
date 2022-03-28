@@ -97,8 +97,8 @@ public class TransportDeleteCalendarEventAction extends HandledTransportAction<D
                 }
 
                 deleteEvent(eventId, calendar, listener);
-            }, listener::onFailure));
-        }, listener::onFailure);
+            }, listener));
+        }, listener);
 
         // Get the calendar first so we check the calendar exists before checking the event exists
         jobResultsProvider.calendar(request.getCalendarId(), calendarListener);
@@ -117,7 +117,7 @@ public class TransportDeleteCalendarEventAction extends HandledTransportAction<D
                 } else {
                     jobManager.updateProcessOnCalendarChanged(
                         calendar.getJobIds(),
-                        ActionListener.wrap(r -> listener.onResponse(AcknowledgedResponse.TRUE), listener::onFailure)
+                        ActionListener.wrap(r -> listener.onResponse(AcknowledgedResponse.TRUE), listener)
                     );
                 }
             }

@@ -109,7 +109,7 @@ public class TransportDeleteDataFrameAnalyticsAction extends AcknowledgedTranspo
 
         ActionListener<StopDataFrameAnalyticsAction.Response> stopListener = ActionListener.wrap(
             stopResponse -> normalDelete(parentTaskClient, clusterService.state(), request, listener),
-            listener::onFailure
+            listener
         );
 
         stopJob(parentTaskClient, request, stopListener);

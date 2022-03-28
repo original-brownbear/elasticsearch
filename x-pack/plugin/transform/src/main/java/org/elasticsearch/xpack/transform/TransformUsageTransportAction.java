@@ -113,7 +113,7 @@ public class TransformUsageTransportAction extends XPackUsageFeatureTransportAct
         ActionListener<TransformIndexerStats> totalStatsListener = ActionListener.wrap(statSummations -> {
             var usage = new TransformFeatureSetUsage(transformsCountByState, transformsCountByFeature.get(), statSummations);
             listener.onResponse(new XPackUsageFeatureResponse(usage));
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<SearchResponse> totalTransformCountListener = ActionListener.wrap(transformCountSuccess -> {
             if (transformCountSuccess.getShardFailures().length > 0) {

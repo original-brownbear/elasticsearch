@@ -115,7 +115,7 @@ public class TransportValidateTransformAction extends HandledTransportAction<Req
 
         // <5> Final listener
         ActionListener<Map<String, String>> deduceMappingsListener = ActionListener.wrap(
-            deducedMappings -> { listener.onResponse(new Response(deducedMappings)); },
+            deducedMappings -> listener.onResponse(new Response(deducedMappings)),
             deduceTargetMappingsException -> listener.onFailure(
                 new RuntimeException(TransformMessages.REST_PUT_TRANSFORM_FAILED_TO_DEDUCE_DEST_MAPPINGS, deduceTargetMappingsException)
             )
@@ -128,7 +128,7 @@ public class TransportValidateTransformAction extends HandledTransportAction<Req
             } else {
                 function.deduceMappings(client, config.getSource(), deduceMappingsListener);
             }
-        }, listener::onFailure);
+        }, listener);
 
         // <3> Validate transform query
         ActionListener<Boolean> validateConfigListener = ActionListener.wrap(validateConfigResponse -> {
@@ -137,12 +137,12 @@ public class TransportValidateTransformAction extends HandledTransportAction<Req
             } else {
                 function.validateQuery(client, config.getSource(), validateQueryListener);
             }
-        }, listener::onFailure);
+        }, listener);
 
         // <2> Validate transform function config
         ActionListener<Boolean> validateSourceDestListener = ActionListener.wrap(
-            validateSourceDestResponse -> { function.validateConfig(validateConfigListener); },
-            listener::onFailure
+            validateSourceDestResponse -> function.validateConfig(validateConfigListener),
+            listener
         );
 
         // <1> Validate source and destination indices

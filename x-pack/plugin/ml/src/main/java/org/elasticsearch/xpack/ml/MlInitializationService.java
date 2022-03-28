@@ -198,7 +198,7 @@ public class MlInitializationService implements ClusterStateListener {
                 .collect(Collectors.joining("; "));
             logger.debug("The following ML internal aliases will now be made hidden: [{}]", indicesWithNonHiddenAliasesString);
             executeAsyncWithOrigin(client, ML_ORIGIN, IndicesAliasesAction.INSTANCE, indicesAliasesRequest, finalListener);
-        }, finalListener::onFailure);
+        }, finalListener);
 
         // Step 3: Once indices are hidden, fetch ML internal aliases to find out whether the aliases are hidden or not.
         ActionListener<AcknowledgedResponse> updateSettingsListener = ActionListener.wrap(updateSettingsResponse -> {
@@ -209,7 +209,7 @@ public class MlInitializationService implements ClusterStateListener {
             GetAliasesRequest getAliasesRequest = new GetAliasesRequest().indices(mlHiddenIndexPatterns)
                 .indicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN);
             executeAsyncWithOrigin(client, ML_ORIGIN, GetAliasesAction.INSTANCE, getAliasesRequest, getAliasesResponseListener);
-        }, finalListener::onFailure);
+        }, finalListener);
 
         // Step 2: Extract ML internal indices that are not hidden and make them hidden.
         ActionListener<GetSettingsResponse> getSettingsListener = ActionListener.wrap(getSettingsResponse -> {
@@ -230,7 +230,7 @@ public class MlInitializationService implements ClusterStateListener {
                 .indicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED_HIDDEN)
                 .settings(Collections.singletonMap(SETTING_INDEX_HIDDEN, true));
             executeAsyncWithOrigin(client, ML_ORIGIN, UpdateSettingsAction.INSTANCE, updateSettingsRequest, updateSettingsListener);
-        }, finalListener::onFailure);
+        }, finalListener);
 
         // Step 1: Fetch ML internal indices settings to find out whether they are already hidden or not.
         GetSettingsRequest getSettingsRequest = new GetSettingsRequest().indices(mlHiddenIndexPatterns)

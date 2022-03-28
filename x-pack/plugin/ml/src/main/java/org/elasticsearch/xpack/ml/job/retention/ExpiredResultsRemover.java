@@ -163,7 +163,7 @@ public class ExpiredResultsRemover extends AbstractExpiredJobDataRemover {
                 long cutoff = latestTime - new TimeValue(retentionDays, TimeUnit.DAYS).getMillis();
                 threadedActionListener.onResponse(new CutoffDetails(latestTime, cutoff));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     static void latestBucketTime(OriginSettingClient client, TaskId parentTaskId, String jobId, ActionListener<Long> listener) {
@@ -200,7 +200,7 @@ public class ExpiredResultsRemover extends AbstractExpiredJobDataRemover {
                     listener.onFailure(new ElasticsearchParseException("failed to parse bucket", e));
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void auditResultsWereDeleted(String jobId, long cutoffEpochMs) {

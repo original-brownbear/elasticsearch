@@ -98,7 +98,7 @@ public class MetadataMigrateToDataStreamService {
             } else {
                 finalListener.onResponse(AcknowledgedResponse.FALSE);
             }
-        }, finalListener::onFailure);
+        }, finalListener);
         clusterService.submitStateUpdateTask(
             "migrate-to-data-stream [" + request.aliasName + "]",
             new AckedClusterStateUpdateTask(Priority.HIGH, request, listener) {

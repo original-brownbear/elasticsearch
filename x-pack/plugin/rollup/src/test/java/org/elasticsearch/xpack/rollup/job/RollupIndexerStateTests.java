@@ -305,7 +305,7 @@ public class RollupIndexerStateTests extends ESTestCase {
             DelayedEmptyRollupIndexer indexer = new DelayedEmptyRollupIndexer(threadPool, job, state, null) {
                 @Override
                 protected void onFinish(ActionListener<Void> listener) {
-                    super.onFinish(ActionListener.wrap(r -> { listener.onResponse(r); }, listener::onFailure));
+                    super.onFinish(ActionListener.wrap(listener::onResponse, listener));
                 }
 
                 @Override

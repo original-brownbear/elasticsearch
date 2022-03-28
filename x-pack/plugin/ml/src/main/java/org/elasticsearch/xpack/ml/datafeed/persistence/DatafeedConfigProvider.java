@@ -210,7 +210,7 @@ public class DatafeedConfigProvider {
                 }
 
                 listener.onResponse(datafeedIds);
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
     }
@@ -235,7 +235,7 @@ public class DatafeedConfigProvider {
                     datafeedsByJobId.put(builder.getJobId(), builder);
                 }
                 listener.onResponse(datafeedsByJobId);
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
     }
@@ -313,8 +313,8 @@ public class DatafeedConfigProvider {
                     ok -> indexUpdatedConfig(updatedConfig, seqNo, primaryTerm, ActionListener.wrap(indexResponse -> {
                         assert indexResponse.getResult() == DocWriteResponse.Result.UPDATED;
                         delegate.onResponse(updatedConfig);
-                    }, delegate::onFailure)),
-                    delegate::onFailure
+                    }, delegate)),
+                    delegate
                 );
                 validator.accept(updatedConfig, validatedListener);
             }
@@ -410,7 +410,7 @@ public class DatafeedConfigProvider {
                 }
 
                 listener.onResponse(datafeedIds);
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
 
@@ -469,7 +469,7 @@ public class DatafeedConfigProvider {
                 }
 
                 listener.onResponse(datafeeds);
-            }, listener::onFailure),
+            }, listener),
             client::search
         );
 

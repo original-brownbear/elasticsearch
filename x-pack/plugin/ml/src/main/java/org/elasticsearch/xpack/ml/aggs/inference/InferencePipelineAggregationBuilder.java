@@ -298,7 +298,7 @@ public class InferencePipelineAggregationBuilder extends AbstractPipelineAggrega
                                 )
                             );
                         }
-                    }, listener::onFailure);
+                    }, listener);
 
                     client.execute(HasPrivilegesAction.INSTANCE, privRequest, privResponseListener);
                 });

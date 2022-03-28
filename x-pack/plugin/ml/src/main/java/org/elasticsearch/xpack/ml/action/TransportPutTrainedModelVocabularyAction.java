@@ -86,7 +86,7 @@ public class TransportPutTrainedModelVocabularyAction extends TransportMasterNod
                     request.getModelId(),
                     ((NlpConfig) inferenceConfig).getVocabularyConfig(),
                     new Vocabulary(request.getVocabulary(), request.getModelId(), request.getMerges()),
-                    ActionListener.wrap(stored -> listener.onResponse(AcknowledgedResponse.TRUE), listener::onFailure)
+                    ActionListener.wrap(stored -> listener.onResponse(AcknowledgedResponse.TRUE), listener)
                 );
                 return;
             }
@@ -97,7 +97,7 @@ public class TransportPutTrainedModelVocabularyAction extends TransportMasterNod
                     request.getModelId()
                 )
             );
-        }, listener::onFailure);
+        }, listener);
 
         trainedModelProvider.getTrainedModel(request.getModelId(), GetTrainedModelsAction.Includes.empty(), configActionListener);
     }

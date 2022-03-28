@@ -79,10 +79,10 @@ abstract class AbstractExpiredJobDataRemover implements MlDataRemover {
                     requestsPerSecond,
                     response.latestTimeMs,
                     response.cutoffEpochMs,
-                    ActionListener.wrap(r -> removeData(jobIterator, requestsPerSecond, listener, isTimedOutSupplier), listener::onFailure)
+                    ActionListener.wrap(r -> removeData(jobIterator, requestsPerSecond, listener, isTimedOutSupplier), listener)
                 );
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     abstract void calcCutoffEpochMs(String jobId, long retentionDays, ActionListener<CutoffDetails> listener);

@@ -933,7 +933,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     repositoryStateId,
                     repoMetaVersion,
                     Function.identity(),
-                    ActionListener.wrap(writeUpdatedRepoDataStep::onResponse, listener::onFailure)
+                    ActionListener.wrap(writeUpdatedRepoDataStep::onResponse, listener)
                 );
             }, listener::onFailure);
             // Once we have updated the repository, run the clean-ups
@@ -967,7 +967,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     deleteResults -> asyncCleanupUnlinkedShardLevelBlobs(repositoryData, snapshotIds, deleteResults, afterCleanupsListener),
                     afterCleanupsListener::onFailure
                 );
-            }, listener::onFailure));
+            }, listener));
         }
     }
 
@@ -1176,7 +1176,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 deleteResult = deleteResult.add(result);
             }
             listener.onResponse(deleteResult);
-        }, listener::onFailure), 2);
+        }, listener), 2);
 
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
         final List<String> staleRootBlobs = staleRootBlobs(newRepoData, rootBlobs.keySet());
@@ -1242,7 +1242,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             repositoryData,
                             listener.map(RepositoryCleanupResult::new)
                         ),
-                        listener::onFailure
+                        listener
                     )
                 );
             }
@@ -1958,7 +1958,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     markRepoCorrupted(
                         genToLoad,
                         e,
-                        ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e, finalLastInfo)), listener::onFailure)
+                        ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e, finalLastInfo)), listener)
                     );
                 } else {
                     listener.onFailure(e);

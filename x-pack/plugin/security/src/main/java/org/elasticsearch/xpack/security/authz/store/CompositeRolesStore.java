@@ -177,13 +177,13 @@ public class CompositeRolesStore {
                     authenticationContext.getAuthenticatingSubject(),
                     ActionListener.wrap(
                         authenticatingRole -> roleActionListener.onResponse(new Tuple<>(role, authenticatingRole)),
-                        roleActionListener::onFailure
+                        roleActionListener
                     )
                 );
             } else {
                 roleActionListener.onResponse(new Tuple<>(role, role));
             }
-        }, roleActionListener::onFailure));
+        }, roleActionListener));
     }
 
     public void getRole(Subject subject, ActionListener<Role> roleActionListener) {
@@ -337,7 +337,7 @@ public class CompositeRolesStore {
                 }
             }
             listener.onResponse(role);
-        }, listener::onFailure));
+        }, listener));
     }
 
     public void getRoleDescriptorsList(Subject subject, ActionListener<Collection<Set<RoleDescriptor>>> listener) {
@@ -350,15 +350,15 @@ public class CompositeRolesStore {
                     roleReferences.size()
                 );
 
-                roleReferences.forEach(roleReference -> {
-                    roleReference.resolve(roleReferenceResolver, ActionListener.wrap(rolesRetrievalResult -> {
+                roleReferences.forEach(
+                    roleReference -> roleReference.resolve(roleReferenceResolver, ActionListener.wrap(rolesRetrievalResult -> {
                         if (rolesRetrievalResult.isSuccess()) {
                             groupedActionListener.onResponse(rolesRetrievalResult.getRoleDescriptors());
                         } else {
                             groupedActionListener.onFailure(new ElasticsearchException("role retrieval had one or more failures"));
                         }
-                    }, groupedActionListener::onFailure));
-                });
+                    }, groupedActionListener))
+                );
             }
         );
     }
@@ -467,7 +467,7 @@ public class CompositeRolesStore {
                         .forEach(priv -> builder.addApplicationPrivilege(priv, key.v2()))
                 );
                 listener.onResponse(builder.build());
-            }, listener::onFailure));
+            }, listener));
         }
     }
 

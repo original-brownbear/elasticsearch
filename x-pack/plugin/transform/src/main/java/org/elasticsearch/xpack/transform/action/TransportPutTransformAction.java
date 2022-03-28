@@ -112,18 +112,19 @@ public class TransportPutTransformAction extends AcknowledgedTransportMasterNode
 
         // <3> Create the transform
         ActionListener<ValidateTransformAction.Response> validateTransformListener = ActionListener.wrap(
-            validationResponse -> { putTransform(request, listener); },
-            listener::onFailure
+            validationResponse -> putTransform(request, listener),
+            listener
         );
 
         // <2> Validate source and destination indices
-        ActionListener<Void> checkPrivilegesListener = ActionListener.wrap(aVoid -> {
-            client.execute(
+        ActionListener<Void> checkPrivilegesListener = ActionListener.wrap(
+            aVoid -> client.execute(
                 ValidateTransformAction.INSTANCE,
                 new ValidateTransformAction.Request(config, request.isDeferValidation(), request.timeout()),
                 validateTransformListener
-            );
-        }, listener::onFailure);
+            ),
+            listener
+        );
 
         // <1> Early check to verify that the user can create the destination index and can read from the source
         if (XPackSettings.SECURITY_ENABLED.get(settings) && request.isDeferValidation() == false) {
@@ -163,7 +164,7 @@ public class TransportPutTransformAction extends AcknowledgedTransportMasterNode
                 auditor.warning(config.getId(), warning);
             }
             listener.onResponse(AcknowledgedResponse.TRUE);
-        }, listener::onFailure);
+        }, listener);
 
         // <1> Put our transform
         transformConfigManager.putTransformConfiguration(config, putTransformConfigurationListener);

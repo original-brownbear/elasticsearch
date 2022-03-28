@@ -393,8 +393,8 @@ public class TransformCheckpointServiceNodeTests extends TransformSingleNodeTest
         ActionListener<TransformCheckpointingInfo> listener
     ) {
         ActionListener<TransformCheckpointingInfoBuilder> checkPointInfoListener = ActionListener.wrap(
-            infoBuilder -> { listener.onResponse(infoBuilder.build()); },
-            listener::onFailure
+            infoBuilder -> listener.onResponse(infoBuilder.build()),
+            listener
         );
         transformCheckpointService.getCheckpointingInfo(
             mockClientForCheckpointing,

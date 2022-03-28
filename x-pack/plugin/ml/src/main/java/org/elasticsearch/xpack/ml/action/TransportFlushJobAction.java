@@ -63,6 +63,6 @@ public class TransportFlushJobAction extends TransportJobTaskAction<FlushJobActi
             listener.onResponse(
                 new FlushJobAction.Response(true, flushAcknowledgement == null ? null : flushAcknowledgement.getLastFinalizedBucketEnd())
             );
-        }, listener::onFailure));
+        }, listener));
     }
 }

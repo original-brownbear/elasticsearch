@@ -165,7 +165,7 @@ public class TransportGetCheckpointAction extends HandledTransportAction<Request
                     }
 
                     listener.onResponse(new Response(checkpointsByIndexReduced));
-                }, listener::onFailure),
+                }, listener),
                 nodesAndShards.size()
             );
 

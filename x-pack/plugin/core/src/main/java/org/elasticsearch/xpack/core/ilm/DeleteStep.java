@@ -47,7 +47,7 @@ public class DeleteStep extends AsyncRetryDuringSnapshotActionStep {
                 getClient().execute(
                     DeleteDataStreamAction.INSTANCE,
                     deleteReq,
-                    ActionListener.wrap(response -> listener.onResponse(null), listener::onFailure)
+                    ActionListener.wrap(response -> listener.onResponse(null), listener)
                 );
                 return;
             } else if (dataStream.getWriteIndex().getName().equals(indexName)) {
@@ -69,7 +69,7 @@ public class DeleteStep extends AsyncRetryDuringSnapshotActionStep {
             .indices()
             .delete(
                 new DeleteIndexRequest(indexName).masterNodeTimeout(TimeValue.MAX_VALUE),
-                ActionListener.wrap(response -> listener.onResponse(null), listener::onFailure)
+                ActionListener.wrap(response -> listener.onResponse(null), listener)
             );
     }
 

@@ -949,7 +949,7 @@ public class TrainedModelProvider {
                 } else {
                     idsListener.onResponse(Tuple.tuple(totalHitCount, allFoundIds));
                 }
-            }, idsListener::onFailure),
+            }, idsListener),
             client::search
         );
     }

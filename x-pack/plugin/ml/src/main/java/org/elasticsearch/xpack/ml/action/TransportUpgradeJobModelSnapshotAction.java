@@ -163,7 +163,7 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
                 params,
                 waitForJobToStart
             );
-        }, listener::onFailure);
+        }, listener);
 
         // Update config index if necessary
         ActionListener<Long> memoryRequirementRefreshListener = ActionListener.wrap(
@@ -175,7 +175,7 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
                 request.masterNodeTimeout(),
                 configIndexMappingUpdaterListener
             ),
-            listener::onFailure
+            listener
         );
 
         // Check that model snapshot exists and should actually be upgraded
@@ -201,7 +201,7 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
                 return;
             }
             memoryTracker.refreshAnomalyDetectorJobMemoryAndAllOthers(params.getJobId(), memoryRequirementRefreshListener);
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<Job> getJobHandler = ActionListener.wrap(job -> {
             if (request.getSnapshotId().equals(job.getModelSnapshotId())
@@ -222,13 +222,10 @@ public class TransportUpgradeJobModelSnapshotAction extends TransportMasterNodeA
                 getSnapshotHandler::onResponse,
                 getSnapshotHandler::onFailure
             );
-        }, listener::onFailure);
+        }, listener);
 
         // Get the job config to verify it exists
-        jobConfigProvider.getJob(
-            request.getJobId(),
-            ActionListener.wrap(builder -> getJobHandler.onResponse(builder.build()), listener::onFailure)
-        );
+        jobConfigProvider.getJob(request.getJobId(), ActionListener.wrap(builder -> getJobHandler.onResponse(builder.build()), listener));
     }
 
     private void waitForJobStarted(

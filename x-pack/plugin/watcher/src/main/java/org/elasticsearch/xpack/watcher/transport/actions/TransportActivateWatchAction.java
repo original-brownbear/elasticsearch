@@ -107,10 +107,10 @@ public class TransportActivateWatchAction extends WatcherTransportAction<Activat
                                     new ResourceNotFoundException("Watch with id [{}] does not exist", request.getWatchId())
                                 );
                             }
-                        }, listener::onFailure),
+                        }, listener),
                         client::get
                     );
-                }, listener::onFailure),
+                }, listener),
                 client::update
             );
         } catch (IOException e) {

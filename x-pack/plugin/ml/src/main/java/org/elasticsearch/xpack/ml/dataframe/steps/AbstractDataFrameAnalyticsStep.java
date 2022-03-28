@@ -71,7 +71,7 @@ abstract class AbstractDataFrameAnalyticsStep implements DataFrameAnalyticsStep 
             // We persist progress at the end of each step to ensure we do not have
             // to repeat the step in case the node goes down without getting a chance to persist progress.
             task.persistProgress(() -> listener.onResponse(stepResponse));
-        }, listener::onFailure));
+        }, listener));
     }
 
     protected abstract void doExecute(ActionListener<StepResponse> listener);

@@ -65,7 +65,7 @@ public class TransportDeleteFilterAction extends HandledTransportAction<DeleteFi
             } else {
                 deleteFilter(filterId, listener);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private static List<String> findJobsUsingFilter(List<Job> jobs, String filterId) {

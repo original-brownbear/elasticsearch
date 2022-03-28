@@ -132,8 +132,8 @@ public class MlDeprecationChecker implements DeprecationChecker {
                         .results()
                         .forEach(modelSnapshot -> checkModelSnapshot(modelSnapshot).ifPresent(issues::add));
                     deprecationIssueListener.onResponse(new CheckResult(getName(), issues));
-                }, deprecationIssueListener::onFailure)),
-            deprecationIssueListener::onFailure
+                }, deprecationIssueListener)),
+            deprecationIssueListener
         );
 
         components.client()
@@ -146,7 +146,7 @@ public class MlDeprecationChecker implements DeprecationChecker {
                         checkDataFeedQuery(df, components.xContentRegistry()).ifPresent(issues::add);
                     }
                     getModelSnaphots.onResponse(null);
-                }, deprecationIssueListener::onFailure)
+                }, deprecationIssueListener)
             );
     }
 

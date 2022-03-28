@@ -94,7 +94,7 @@ public class RestPreviewTransformAction extends BaseRestHandler {
                         PreviewTransformAction.Request previewRequest = new PreviewTransformAction.Request(transforms.get(0), timeout);
                         client.execute(PreviewTransformAction.INSTANCE, previewRequest, listener);
                     }
-                }, listener::onFailure));
+                }, listener));
             }
         };
     }

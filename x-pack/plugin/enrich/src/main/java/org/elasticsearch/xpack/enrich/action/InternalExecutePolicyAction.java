@@ -113,7 +113,7 @@ public class InternalExecutePolicyAction extends ActionType<Response> {
             try {
                 ActionListener<ExecuteEnrichPolicyStatus> listener;
                 if (request.isWaitForCompletion()) {
-                    listener = ActionListener.wrap(result -> actionListener.onResponse(new Response(result)), actionListener::onFailure);
+                    listener = ActionListener.wrap(result -> actionListener.onResponse(new Response(result)), actionListener);
                 } else {
                     listener = ActionListener.wrap(result -> LOGGER.debug("successfully executed policy [{}]", request.getName()), e -> {
                         if (e instanceof TaskCancelledException) {

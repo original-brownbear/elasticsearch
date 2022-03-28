@@ -45,7 +45,7 @@ public class ReadOnlyStep extends AsyncActionStep {
                         throw new ElasticsearchException("read only add block index request failed to be acknowledged");
                     }
                     listener.onResponse(null);
-                }, listener::onFailure)
+                }, listener)
             );
     }
 

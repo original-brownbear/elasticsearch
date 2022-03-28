@@ -75,7 +75,7 @@ public class InferenceStep extends AbstractDataFrameAnalyticsStep {
             return;
         }
 
-        ActionListener<String> modelIdListener = ActionListener.wrap(modelId -> runInference(modelId, listener), listener::onFailure);
+        ActionListener<String> modelIdListener = ActionListener.wrap(modelId -> runInference(modelId, listener), listener);
 
         ActionListener<Boolean> testDocsExistListener = ActionListener.wrap(testDocsExist -> {
             if (testDocsExist) {
@@ -90,11 +90,11 @@ public class InferenceStep extends AbstractDataFrameAnalyticsStep {
                 listener.onResponse(new StepResponse(isTaskStopping()));
                 return;
             }
-        }, listener::onFailure);
+        }, listener);
 
         ActionListener<RefreshResponse> refreshDestListener = ActionListener.wrap(
             refreshResponse -> searchIfTestDocsExist(testDocsExistListener),
-            listener::onFailure
+            listener
         );
 
         refreshDestAsync(refreshDestListener);
@@ -131,10 +131,7 @@ public class InferenceStep extends AbstractDataFrameAnalyticsStep {
             ML_ORIGIN,
             SearchAction.INSTANCE,
             searchRequest,
-            ActionListener.wrap(
-                searchResponse -> listener.onResponse(searchResponse.getHits().getTotalHits().value > 0),
-                listener::onFailure
-            )
+            ActionListener.wrap(searchResponse -> listener.onResponse(searchResponse.getHits().getTotalHits().value > 0), listener)
         );
     }
 
@@ -156,7 +153,7 @@ public class InferenceStep extends AbstractDataFrameAnalyticsStep {
             } else {
                 listener.onResponse(hits[0].getId());
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

@@ -938,7 +938,7 @@ public class HttpExporter extends Exporter {
                     // we're not ready yet, so keep waiting
                     listener.onResponse(null);
                 }
-            }, listener::onFailure));
+            }, listener));
         } else {
             // we're migrating right now, so keep waiting
             listener.onResponse(null);

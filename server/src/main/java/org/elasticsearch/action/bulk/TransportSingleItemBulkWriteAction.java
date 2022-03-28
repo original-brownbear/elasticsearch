@@ -57,7 +57,7 @@ public abstract class TransportSingleItemBulkWriteAction<
             } else {
                 listener.onFailure(bulkItemResponse.getFailure().getCause());
             }
-        }, listener::onFailure);
+        }, listener);
     }
 
     public static BulkRequest toSingleItemBulkRequest(ReplicatedWriteRequest<?> request) {

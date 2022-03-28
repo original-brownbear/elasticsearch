@@ -46,7 +46,7 @@ final class TransformPrivilegeChecker {
 
         ActionListener<HasPrivilegesResponse> hasPrivilegesResponseListener = ActionListener.wrap(
             response -> handlePrivilegesResponse(operationName, username, config.getId(), response, listener),
-            listener::onFailure
+            listener
         );
 
         HasPrivilegesRequest hasPrivilegesRequest = buildPrivilegesRequest(

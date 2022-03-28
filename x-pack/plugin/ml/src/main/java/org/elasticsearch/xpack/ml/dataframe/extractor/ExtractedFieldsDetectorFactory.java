@@ -82,20 +82,20 @@ public class ExtractedFieldsDetectorFactory {
                 fieldCardinalities
             );
             listener.onResponse(detector);
-        }, listener::onFailure);
+        }, listener);
 
         // Step 3. Get cardinalities for fields with constraints
         ActionListener<FieldCapabilitiesResponse> fieldCapabilitiesHandler = ActionListener.wrap(fieldCapabilitiesResponse -> {
             LOGGER.debug(() -> new ParameterizedMessage("[{}] Field capabilities response: {}", config.getId(), fieldCapabilitiesResponse));
             fieldCapsResponseHolder.set(fieldCapabilitiesResponse);
             getCardinalitiesForFieldsWithConstraints(index, config, fieldCapabilitiesResponse, fieldCardinalitiesHandler);
-        }, listener::onFailure);
+        }, listener);
 
         // Step 2. Get field capabilities necessary to build the information of how to extract fields
         ActionListener<Integer> docValueFieldsLimitListener = ActionListener.wrap(docValueFieldsLimit -> {
             docValueFieldsLimitHolder.set(docValueFieldsLimit);
             getFieldCaps(index, config, fieldCapabilitiesHandler);
-        }, listener::onFailure);
+        }, listener);
 
         // Step 1. Get doc value fields limit
         getDocValueFieldsLimit(index, docValueFieldsLimitListener);
@@ -115,7 +115,7 @@ public class ExtractedFieldsDetectorFactory {
 
         ActionListener<SearchResponse> searchListener = ActionListener.wrap(
             searchResponse -> buildFieldCardinalitiesMap(config, searchResponse, listener),
-            listener::onFailure
+            listener
         );
 
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().size(0)
