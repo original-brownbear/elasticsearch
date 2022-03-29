@@ -142,15 +142,15 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                 new TransportNodesSnapshotsStatus.Request(nodesIds.toArray(Strings.EMPTY_ARRAY)).snapshots(snapshots)
                     .timeout(request.masterNodeTimeout()),
                 ActionListener.wrap(
-                    nodeSnapshotStatuses -> buildResponse(
+                    listener,
+                    (wrapper, nodeSnapshotStatuses) -> buildResponse(
                         snapshotsInProgress,
                         request,
                         currentSnapshots,
                         nodeSnapshotStatuses,
                         cancellableTask,
-                        listener
-                    ),
-                    listener::onFailure
+                        wrapper
+                    )
                 )
             );
         } else {

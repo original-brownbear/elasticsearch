@@ -371,7 +371,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
             relativeStartNanos,
             System::nanoTime
         );
-        ActionListener<SearchRequest> rewriteListener = ActionListener.wrap(rewritten -> {
+        ActionListener<SearchRequest> rewriteListener = ActionListener.wrap(listener, (outer, rewritten) -> {
             final SearchContextId searchContext;
             final Map<String, OriginalIndices> remoteClusterIndices;
             if (ccsCheckCompatibility) {
@@ -393,7 +393,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     rewritten,
                     localIndices,
                     clusterState,
-                    listener,
+                    outer,
                     searchContext,
                     searchAsyncActionProvider
                 );
@@ -409,7 +409,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         searchService.aggReduceContextBuilder(task::isCancelled, rewritten),
                         remoteClusterService,
                         threadPool,
-                        listener,
+                        outer,
                         (r, l) -> executeLocalSearch(
                             task,
                             timeProvider,
@@ -431,7 +431,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                         remoteClusterIndices,
                         remoteClusterService,
                         threadPool,
-                        ActionListener.wrap(searchShardsResponses -> {
+                        ActionListener.wrap(outer, (wrapped, searchShardsResponses) -> {
                             final BiFunction<String, String, DiscoveryNode> clusterNodeLookup = getRemoteClusterNodeLookup(
                                 searchShardsResponses
                             );
@@ -465,16 +465,16 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                                 clusterNodeLookup,
                                 clusterState,
                                 remoteAliasFilters,
-                                listener,
+                                wrapped,
                                 new SearchResponse.Clusters(totalClusters, successfulClusters, skippedClusters.get()),
                                 searchContext,
                                 searchAsyncActionProvider
                             );
-                        }, listener::onFailure)
+                        })
                     );
                 }
             }
-        }, listener::onFailure);
+        });
         Rewriteable.rewriteAndFetch(original, searchService.getRewriteContext(timeProvider::absoluteStartMillis), rewriteListener);
     }
 

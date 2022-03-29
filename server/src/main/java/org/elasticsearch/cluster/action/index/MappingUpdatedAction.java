@@ -113,7 +113,7 @@ public class MappingUpdatedAction {
         client.execute(
             AutoPutMappingAction.INSTANCE,
             putMappingRequest,
-            ActionListener.wrap(r -> listener.onResponse(null), listener::onFailure)
+            ActionListener.wrap(listener, (wrapper, r) -> wrapper.onResponse(null))
         );
     }
 }

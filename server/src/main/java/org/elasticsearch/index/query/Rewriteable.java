@@ -102,8 +102,8 @@ public interface Rewriteable<T> {
                     final int currentIterationNumber = iteration;
                     context.executeAsyncActions(
                         ActionListener.wrap(
-                            n -> rewriteAndFetch(finalBuilder, context, rewriteResponse, currentIterationNumber),
-                            rewriteResponse::onFailure
+                            rewriteResponse,
+                            (wrapper, n) -> rewriteAndFetch(finalBuilder, context, wrapper, currentIterationNumber)
                         )
                     );
                     return;

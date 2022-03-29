@@ -281,7 +281,7 @@ public class GatewayAllocator implements ExistingShardsAllocator {
             client.executeLocally(
                 TransportNodesListGatewayStartedShards.TYPE,
                 request,
-                ActionListener.wrap(listener::onResponse, listener::onFailure)
+                ActionListener.wrap(listener, (l, r) -> l.onResponse(r))
             );
         }
     }
@@ -328,7 +328,7 @@ public class GatewayAllocator implements ExistingShardsAllocator {
             client.executeLocally(
                 TransportNodesListShardStoreMetadata.TYPE,
                 request,
-                ActionListener.wrap(listener::onResponse, listener::onFailure)
+                ActionListener.wrap(listener, (l, r) -> l.onResponse(r))
             );
         }
 

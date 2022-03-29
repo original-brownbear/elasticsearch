@@ -66,7 +66,7 @@ public class MetadataCreateDataStreamService {
 
     public void createDataStream(CreateDataStreamClusterStateUpdateRequest request, ActionListener<AcknowledgedResponse> finalListener) {
         AtomicReference<String> firstBackingIndexRef = new AtomicReference<>();
-        ActionListener<AcknowledgedResponse> listener = ActionListener.wrap(response -> {
+        ActionListener<AcknowledgedResponse> listener = ActionListener.wrap(finalListener, (wrapper, response) -> {
             if (response.isAcknowledged()) {
                 String firstBackingIndexName = firstBackingIndexRef.get();
                 assert firstBackingIndexName != null;
@@ -74,13 +74,13 @@ public class MetadataCreateDataStreamService {
                     new String[] { firstBackingIndexName },
                     ActiveShardCount.DEFAULT,
                     request.masterNodeTimeout(),
-                    shardsAcked -> finalListener.onResponse(AcknowledgedResponse.TRUE),
-                    finalListener::onFailure
+                    shardsAcked -> wrapper.onResponse(AcknowledgedResponse.TRUE),
+                    wrapper::onFailure
                 );
             } else {
-                finalListener.onResponse(AcknowledgedResponse.FALSE);
+                wrapper.onResponse(AcknowledgedResponse.FALSE);
             }
-        }, finalListener::onFailure);
+        });
         clusterService.submitStateUpdateTask(
             "create-data-stream [" + request.name + "]",
             new AckedClusterStateUpdateTask(Priority.HIGH, request, listener) {

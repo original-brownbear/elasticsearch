@@ -75,11 +75,11 @@ public abstract class AbstractCompositeAggFunction implements Function {
             client,
             SearchAction.INSTANCE,
             buildSearchRequest(sourceConfig, null, numberOfBuckets),
-            ActionListener.wrap(r -> {
+            ActionListener.wrap(listener, (wrapper, r) -> {
                 try {
                     final Aggregations aggregations = r.getAggregations();
                     if (aggregations == null) {
-                        listener.onFailure(
+                        wrapper.onFailure(
                             new ElasticsearchStatusException("Source indices have been deleted or closed.", RestStatus.BAD_REQUEST)
                         );
                         return;
@@ -92,11 +92,11 @@ public abstract class AbstractCompositeAggFunction implements Function {
                         this::documentTransformationFunction
                     ).collect(Collectors.toList());
 
-                    listener.onResponse(docs);
+                    wrapper.onResponse(docs);
                 } catch (AggregationResultUtils.AggregationExtractionException extractionException) {
-                    listener.onFailure(new ElasticsearchStatusException(extractionException.getMessage(), RestStatus.BAD_REQUEST));
+                    wrapper.onFailure(new ElasticsearchStatusException(extractionException.getMessage(), RestStatus.BAD_REQUEST));
                 }
-            }, listener::onFailure)
+            })
         );
     }
 

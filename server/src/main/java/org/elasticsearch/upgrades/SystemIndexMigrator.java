@@ -500,7 +500,7 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
         // Technically this callback might have a different cluster state, but it shouldn't matter - these indices shouldn't be changing
         // while we're trying to migrate them.
         return unsetReadOnlyResponse -> aliasesRequest.execute(
-            ActionListener.wrap(deleteIndexResponse -> listener.onResponse(bulkByScrollResponse), listener::onFailure)
+            ActionListener.wrap(listener, (wrapper, deleteIndexResponse) -> wrapper.onResponse(bulkByScrollResponse))
         );
     }
 

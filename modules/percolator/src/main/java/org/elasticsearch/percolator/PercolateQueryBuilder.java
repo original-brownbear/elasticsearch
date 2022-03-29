@@ -445,8 +445,8 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
             getRequest.version(indexedDocumentVersion);
         }
         SetOnce<BytesReference> docSupplier = new SetOnce<>();
-        queryRewriteContext.registerAsyncAction((client, listener) -> {
-            client.get(getRequest, ActionListener.wrap(getResponse -> {
+        queryRewriteContext.registerAsyncAction(
+            (client, listener) -> client.get(getRequest, ActionListener.wrap(listener, (wrapper, getResponse) -> {
                 if (getResponse.isExists() == false) {
                     throw new ResourceNotFoundException(
                         "indexed document [{}/{}] couldn't be found",
@@ -460,9 +460,9 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
                     );
                 }
                 docSupplier.set(getResponse.getSourceAsBytesRef());
-                listener.onResponse(null);
-            }, listener::onFailure));
-        });
+                wrapper.onResponse(null);
+            }))
+        );
 
         PercolateQueryBuilder rewritten = new PercolateQueryBuilder(field, docSupplier::get);
         if (name != null) {
