@@ -27,7 +27,6 @@ import org.elasticsearch.transport.RemoteClusterAware;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -88,12 +87,12 @@ public final class SearchContextId {
         try (StreamInput in = new NamedWriteableAwareStreamInput(new ByteBufferStreamInput(byteBuffer), namedWriteableRegistry)) {
             final Version version = Version.readVersion(in);
             in.setVersion(version);
-            final Map<ShardId, SearchContextIdForNode> shards = in.readMap(ShardId::new, SearchContextIdForNode::new);
-            final Map<String, AliasFilter> aliasFilters = in.readMap(StreamInput::readString, AliasFilter::new);
+            final Map<ShardId, SearchContextIdForNode> shards = in.readImmutableMapWithoutNulls(ShardId::new, SearchContextIdForNode::new);
+            final Map<String, AliasFilter> aliasFilters = in.readImmutableMapWithoutNulls(StreamInput::readString, AliasFilter::new);
             if (in.available() > 0) {
                 throw new IllegalArgumentException("Not all bytes were read");
             }
-            return new SearchContextId(Collections.unmodifiableMap(shards), Collections.unmodifiableMap(aliasFilters));
+            return new SearchContextId(shards, aliasFilters);
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }

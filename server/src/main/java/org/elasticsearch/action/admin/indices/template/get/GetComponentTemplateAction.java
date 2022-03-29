@@ -91,7 +91,7 @@ public class GetComponentTemplateAction extends ActionType<GetComponentTemplateA
 
         public Response(StreamInput in) throws IOException {
             super(in);
-            componentTemplates = in.readMap(StreamInput::readString, ComponentTemplate::new);
+            componentTemplates = in.readImmutableMapWithoutNulls(StreamInput::readString, ComponentTemplate::new);
         }
 
         public Response(Map<String, ComponentTemplate> componentTemplates) {

@@ -603,6 +603,29 @@ public abstract class StreamInput extends InputStream {
     }
 
     /**
+     * Same as {@link #readMap(Writeable.Reader, Writeable.Reader)} but always returns an immutable map and does not allow for {@code null}
+     * keys or values. This method is generally faster than {@link #readMap(Writeable.Reader, Writeable.Reader)}.
+     */
+    @SuppressWarnings("unchecked")
+    public <K, V> Map<K, V> readImmutableMapWithoutNulls(Writeable.Reader<K> keyReader, Writeable.Reader<V> valueReader)
+        throws IOException {
+        int size = readArraySize();
+        switch (size) {
+            case 0:
+                return Map.of();
+            case 1:
+                return Map.of(keyReader.read(this), valueReader.read(this));
+            default:
+                @SuppressWarnings("rawtypes")
+                final Map.Entry<K, V>[] entries = new Map.Entry[size];
+                for (int i = 0; i < size; i++) {
+                    entries[i] = Map.entry(keyReader.read(this), valueReader.read(this));
+                }
+                return Map.ofEntries(entries);
+        }
+    }
+
+    /**
      * If the returned map contains any entries it will be mutable. If it is empty it might be immutable.
      */
     public <K, V> Map<K, V> readMap(Writeable.Reader<K> keyReader, Writeable.Reader<V> valueReader) throws IOException {
@@ -1115,8 +1138,9 @@ public abstract class StreamInput extends InputStream {
     }
 
     /**
-     * Reads a list of objects. The list is expected to have been written using {@link StreamOutput#writeList(List)}.
-     * If the returned list contains any entries it will be mutable. If it is empty it might be immutable.
+     * Reads a list of objects. The list is expected to have been written using {@link StreamOutput#writeList(List)} and must not contain
+     * any {@code null} values. The returned list will be immutable. This method is generally faster than
+     * {@link #readList(Writeable.Reader)}.
      *
      * @return the list of objects
      * @throws IOException if an I/O exception occurs reading the list

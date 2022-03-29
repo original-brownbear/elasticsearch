@@ -101,7 +101,7 @@ public class GetComposableIndexTemplateAction extends ActionType<GetComposableIn
 
         public Response(StreamInput in) throws IOException {
             super(in);
-            indexTemplates = in.readMap(StreamInput::readString, ComposableIndexTemplate::new);
+            indexTemplates = in.readImmutableMapWithoutNulls(StreamInput::readString, ComposableIndexTemplate::new);
         }
 
         public Response(Map<String, ComposableIndexTemplate> indexTemplates) {

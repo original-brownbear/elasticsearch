@@ -266,7 +266,7 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
         this.hostName = readStringLiteral.read(in);
         this.hostAddress = readStringLiteral.read(in);
         this.address = new TransportAddress(in);
-        this.attributes = Collections.unmodifiableMap(in.readMap(readStringLiteral, readStringLiteral));
+        this.attributes = in.readImmutableMapWithoutNulls(readStringLiteral, readStringLiteral);
         int rolesSize = in.readVInt();
         final SortedSet<DiscoveryNodeRole> roles = new TreeSet<>();
         for (int i = 0; i < rolesSize; i++) {
