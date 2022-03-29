@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -111,7 +110,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
         IndexMode indexMode
     ) {
         this.name = name;
-        this.indices = Collections.unmodifiableList(indices);
+        this.indices = List.copyOf(indices);
         this.generation = generation;
         this.metadata = metadata;
         assert system == false || hidden; // system indices must be hidden
@@ -519,7 +518,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
 
     static List<Index> readIndices(StreamInput in) throws IOException {
         in.readString(); // timestamp field, which is always @timestamp
-        return in.readList(Index::new);
+        return in.readImmutableListWithoutNulls(Index::new);
     }
 
     public static Diff<DataStream> readDiffFrom(StreamInput in) throws IOException {

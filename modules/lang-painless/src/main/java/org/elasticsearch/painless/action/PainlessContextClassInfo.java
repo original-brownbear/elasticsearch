@@ -124,11 +124,11 @@ public class PainlessContextClassInfo implements Writeable, ToXContentObject {
     public PainlessContextClassInfo(StreamInput in) throws IOException {
         name = in.readString();
         imported = in.readBoolean();
-        constructors = Collections.unmodifiableList(in.readList(PainlessContextConstructorInfo::new));
-        staticMethods = Collections.unmodifiableList(in.readList(PainlessContextMethodInfo::new));
-        methods = Collections.unmodifiableList(in.readList(PainlessContextMethodInfo::new));
-        staticFields = Collections.unmodifiableList(in.readList(PainlessContextFieldInfo::new));
-        fields = Collections.unmodifiableList(in.readList(PainlessContextFieldInfo::new));
+        constructors = in.readImmutableListWithoutNulls(PainlessContextConstructorInfo::new);
+        staticMethods = in.readImmutableListWithoutNulls(PainlessContextMethodInfo::new);
+        methods = in.readImmutableListWithoutNulls(PainlessContextMethodInfo::new);
+        staticFields = in.readImmutableListWithoutNulls(PainlessContextFieldInfo::new);
+        fields = in.readImmutableListWithoutNulls(PainlessContextFieldInfo::new);
     }
 
     @Override

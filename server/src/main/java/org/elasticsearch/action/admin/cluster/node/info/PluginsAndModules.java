@@ -33,8 +33,8 @@ public class PluginsAndModules implements ReportingService.Info {
     }
 
     public PluginsAndModules(StreamInput in) throws IOException {
-        this.plugins = Collections.unmodifiableList(in.readList(PluginInfo::new));
-        this.modules = Collections.unmodifiableList(in.readList(PluginInfo::new));
+        this.plugins = in.readImmutableListWithoutNulls(PluginInfo::new);
+        this.modules = in.readImmutableListWithoutNulls(PluginInfo::new);
     }
 
     @Override

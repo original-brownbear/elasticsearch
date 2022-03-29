@@ -91,7 +91,7 @@ public class GetSnapshotsResponse extends ActionResponse implements ToXContentOb
     }
 
     public GetSnapshotsResponse(StreamInput in) throws IOException {
-        this.snapshots = in.readList(SnapshotInfo::readFrom);
+        this.snapshots = in.readImmutableListWithoutNulls(SnapshotInfo::readFrom);
         if (in.getVersion().onOrAfter(GetSnapshotsRequest.MULTIPLE_REPOSITORIES_SUPPORT_ADDED)) {
             final Map<String, ElasticsearchException> failedResponses = in.readMap(StreamInput::readString, StreamInput::readException);
             this.failures = Collections.unmodifiableMap(failedResponses);

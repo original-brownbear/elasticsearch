@@ -239,7 +239,7 @@ public class TransportNodesListGatewayStartedShards extends TransportNodesAction
 
         @Override
         protected List<NodeGatewayStartedShards> readNodesFrom(StreamInput in) throws IOException {
-            return in.readList(NodeGatewayStartedShards::new);
+            return in.readImmutableListWithoutNulls(NodeGatewayStartedShards::new);
         }
 
         @Override

@@ -37,7 +37,7 @@ public class NodesUsageResponse extends BaseNodesResponse<NodeUsage> implements 
 
     @Override
     protected List<NodeUsage> readNodesFrom(StreamInput in) throws IOException {
-        return in.readList(NodeUsage::new);
+        return in.readImmutableListWithoutNulls(NodeUsage::new);
     }
 
     @Override

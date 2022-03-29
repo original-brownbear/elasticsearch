@@ -33,7 +33,7 @@ public class SnapshotsStatusResponse extends ActionResponse implements ToXConten
 
     public SnapshotsStatusResponse(StreamInput in) throws IOException {
         super(in);
-        snapshots = Collections.unmodifiableList(in.readList(SnapshotStatus::new));
+        snapshots = in.readImmutableListWithoutNulls(SnapshotStatus::new);
     }
 
     SnapshotsStatusResponse(List<SnapshotStatus> snapshots) {

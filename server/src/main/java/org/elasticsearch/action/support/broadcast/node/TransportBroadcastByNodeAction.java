@@ -570,16 +570,16 @@ public abstract class TransportBroadcastByNodeAction<
     }
 
     public class NodeRequest extends TransportRequest implements IndicesRequest {
-        private String nodeId;
+        private final String nodeId;
 
-        private List<ShardRouting> shards;
+        private final List<ShardRouting> shards;
 
         protected Request indicesLevelRequest;
 
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
             indicesLevelRequest = readRequestFrom(in);
-            shards = in.readList(ShardRouting::new);
+            shards = in.readImmutableListWithoutNulls(ShardRouting::new);
             nodeId = in.readString();
         }
 

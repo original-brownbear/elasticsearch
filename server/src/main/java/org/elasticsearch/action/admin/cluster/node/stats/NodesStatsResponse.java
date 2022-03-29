@@ -33,7 +33,7 @@ public class NodesStatsResponse extends BaseNodesResponse<NodeStats> implements 
 
     @Override
     protected List<NodeStats> readNodesFrom(StreamInput in) throws IOException {
-        return in.readList(NodeStats::new);
+        return in.readImmutableListWithoutNulls(NodeStats::new);
     }
 
     @Override

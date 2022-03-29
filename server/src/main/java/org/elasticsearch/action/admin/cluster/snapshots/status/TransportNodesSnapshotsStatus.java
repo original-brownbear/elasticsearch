@@ -160,7 +160,7 @@ public class TransportNodesSnapshotsStatus extends TransportNodesAction<
 
         @Override
         protected List<NodeSnapshotStatus> readNodesFrom(StreamInput in) throws IOException {
-            return in.readList(NodeSnapshotStatus::new);
+            return in.readImmutableListWithoutNulls(NodeSnapshotStatus::new);
         }
 
         @Override
@@ -175,7 +175,7 @@ public class TransportNodesSnapshotsStatus extends TransportNodesAction<
 
         public NodeRequest(StreamInput in) throws IOException {
             super(in);
-            snapshots = in.readList(Snapshot::new);
+            snapshots = in.readImmutableListWithoutNulls(Snapshot::new);
         }
 
         NodeRequest(TransportNodesSnapshotsStatus.Request request) {
