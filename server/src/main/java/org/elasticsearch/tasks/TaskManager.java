@@ -719,7 +719,7 @@ public class TaskManager implements ClusterStateApplier {
                 @Override
                 protected void doRun() {
                     for (CancellableTask task : tasks) {
-                        cancelTaskAndDescendants(task, "channel was closed", false, ActionListener.wrap(() -> {}));
+                        cancelTaskAndDescendants(task, "channel was closed", false, ActionListener.noop());
                     }
                 }
             });
