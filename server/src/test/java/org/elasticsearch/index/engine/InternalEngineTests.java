@@ -3585,25 +3585,22 @@ public class InternalEngineTests extends EngineTestCase {
     public void testShardNotAvailableExceptionWhenEngineClosedConcurrently() throws IOException, InterruptedException {
         AtomicReference<Exception> exception = new AtomicReference<>();
         String operation = randomFrom("optimize", "refresh", "flush");
-        Thread mergeThread = new Thread() {
-            @Override
-            public void run() {
-                boolean stop = false;
-                logger.info("try with {}", operation);
-                while (stop == false) {
-                    try {
-                        switch (operation) {
-                            case "optimize" -> engine.forceMerge(true, 1, false, UUIDs.randomBase64UUID());
-                            case "refresh" -> engine.refresh("test refresh");
-                            case "flush" -> engine.flush(true, true);
-                        }
-                    } catch (Exception e) {
-                        exception.set(e);
-                        stop = true;
+        Thread mergeThread = new Thread(() -> {
+            boolean stop = false;
+            logger.info("try with {}", operation);
+            while (stop == false) {
+                try {
+                    switch (operation) {
+                        case "optimize" -> engine.forceMerge(true, 1, false, UUIDs.randomBase64UUID());
+                        case "refresh" -> engine.refresh("test refresh");
+                        case "flush" -> engine.flush(true, true);
                     }
+                } catch (Exception e) {
+                    exception.set(e);
+                    stop = true;
                 }
             }
-        };
+        });
         mergeThread.start();
         engine.close();
         mergeThread.join();
@@ -4449,26 +4446,23 @@ public class InternalEngineTests extends EngineTestCase {
 
         AtomicInteger offset = new AtomicInteger(-1);
         for (int i = 0; i < thread.length; i++) {
-            thread[i] = new Thread() {
-                @Override
-                public void run() {
-                    startGun.countDown();
+            thread[i] = new Thread(() -> {
+                startGun.countDown();
+                try {
+                    startGun.await();
+                } catch (InterruptedException e) {
+                    throw new AssertionError(e);
+                }
+                assertThat(engine.getVersionMap().values(), empty());
+                int docOffset;
+                while ((docOffset = offset.incrementAndGet()) < docs.size()) {
                     try {
-                        startGun.await();
-                    } catch (InterruptedException e) {
+                        engine.index(docs.get(docOffset));
+                    } catch (IOException e) {
                         throw new AssertionError(e);
                     }
-                    assertThat(engine.getVersionMap().values(), empty());
-                    int docOffset;
-                    while ((docOffset = offset.incrementAndGet()) < docs.size()) {
-                        try {
-                            engine.index(docs.get(docOffset));
-                        } catch (IOException e) {
-                            throw new AssertionError(e);
-                        }
-                    }
                 }
-            };
+            });
             thread[i].start();
         }
         try (Engine.Searcher searcher = engine.acquireSearcher("test", Engine.SearcherScope.INTERNAL)) {

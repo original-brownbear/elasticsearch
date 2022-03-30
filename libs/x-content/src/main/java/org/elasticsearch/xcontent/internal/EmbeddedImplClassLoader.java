@@ -99,22 +99,19 @@ public final class EmbeddedImplClassLoader extends SecureClassLoader {
 
     /** Searches for the named resource. Iterates over all prefixes. */
     private Resource privilegedGetResourceOrNull(String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<Resource>() {
-            @Override
-            public Resource run() {
-                for (String prefix : prefixes) {
-                    URL url = parent.getResource(prefix + "/" + name);
-                    if (url != null) {
-                        try {
-                            InputStream is = url.openStream();
-                            return new Resource(is, prefixToCodeBase.get(prefix));
-                        } catch (IOException e) {
-                            // silently ignore, same as ClassLoader
-                        }
+        return AccessController.doPrivileged((PrivilegedAction<Resource>) () -> {
+            for (String prefix : prefixes) {
+                URL url = parent.getResource(prefix + "/" + name);
+                if (url != null) {
+                    try {
+                        InputStream is = url.openStream();
+                        return new Resource(is, prefixToCodeBase.get(prefix));
+                    } catch (IOException e) {
+                        // silently ignore, same as ClassLoader
                     }
                 }
-                return null;
             }
+            return null;
         });
     }
 

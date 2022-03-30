@@ -1954,17 +1954,14 @@ public class IndexShardTests extends IndexShardTestCase {
         CountDownLatch allPrimaryOperationLocksAcquired = new CountDownLatch(numThreads);
         CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
         for (int i = 0; i < indexThreads.length; i++) {
-            indexThreads[i] = new Thread() {
-                @Override
-                public void run() {
-                    try (Releasable operationLock = acquirePrimaryOperationPermitBlockingly(shard)) {
-                        allPrimaryOperationLocksAcquired.countDown();
-                        barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException | ExecutionException e) {
-                        throw new RuntimeException(e);
-                    }
+            indexThreads[i] = new Thread(() -> {
+                try (Releasable operationLock = acquirePrimaryOperationPermitBlockingly(shard)) {
+                    allPrimaryOperationLocksAcquired.countDown();
+                    barrier.await();
+                } catch (InterruptedException | BrokenBarrierException | ExecutionException e) {
+                    throw new RuntimeException(e);
                 }
-            };
+            });
             indexThreads[i].start();
         }
         AtomicBoolean relocated = new AtomicBoolean();

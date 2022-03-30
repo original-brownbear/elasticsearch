@@ -12,8 +12,6 @@ import org.elasticsearch.common.settings.SecureString;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsException;
-import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.watcher.common.http.HttpClient;
 import org.elasticsearch.xpack.watcher.common.http.HttpMethod;
 import org.elasticsearch.xpack.watcher.common.http.HttpProxy;
@@ -24,7 +22,6 @@ import org.elasticsearch.xpack.watcher.notification.slack.message.Attachment;
 import org.elasticsearch.xpack.watcher.notification.slack.message.SlackMessage;
 import org.elasticsearch.xpack.watcher.notification.slack.message.SlackMessageDefaults;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -76,37 +73,34 @@ public class SlackAccount {
             .method(HttpMethod.POST)
             .proxy(proxy)
             .scheme(Scheme.parse(url.getScheme()))
-            .jsonBody(new ToXContent() {
-                @Override
-                public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-                    if (to != null) {
-                        builder.field("channel", to);
-                    }
-                    if (message.getFrom() != null) {
-                        builder.field("username", message.getFrom());
-                    }
-                    String icon = message.getIcon();
-                    if (icon != null) {
-                        if (icon.startsWith("http")) {
-                            builder.field("icon_url", icon);
-                        } else {
-                            builder.field("icon_emoji", icon);
-                        }
-                    }
-                    if (message.getText() != null) {
-                        builder.field("text", message.getText());
-                    }
-                    Attachment[] attachments = message.getAttachments();
-                    if (attachments != null && attachments.length > 0) {
-                        builder.startArray("attachments");
-                        for (Attachment attachment : attachments) {
-                            attachment.toXContent(builder, params);
-                        }
-                        builder.endArray();
-
-                    }
-                    return builder;
+            .jsonBody((builder, params) -> {
+                if (to != null) {
+                    builder.field("channel", to);
                 }
+                if (message.getFrom() != null) {
+                    builder.field("username", message.getFrom());
+                }
+                String icon = message.getIcon();
+                if (icon != null) {
+                    if (icon.startsWith("http")) {
+                        builder.field("icon_url", icon);
+                    } else {
+                        builder.field("icon_emoji", icon);
+                    }
+                }
+                if (message.getText() != null) {
+                    builder.field("text", message.getText());
+                }
+                Attachment[] attachments = message.getAttachments();
+                if (attachments != null && attachments.length > 0) {
+                    builder.startArray("attachments");
+                    for (Attachment attachment : attachments) {
+                        attachment.toXContent(builder, params);
+                    }
+                    builder.endArray();
+
+                }
+                return builder;
             })
             .build();
 

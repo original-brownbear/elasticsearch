@@ -195,19 +195,16 @@ public class RemoteClusterConnectionTests extends ESTestCase {
             );
             CountDownLatch acceptedLatch = new CountDownLatch(1);
             CountDownLatch closeRemote = new CountDownLatch(1);
-            Thread t = new Thread() {
-                @Override
-                public void run() {
-                    try (Socket accept = socket.accept()) {
-                        acceptedLatch.countDown();
-                        closeRemote.await();
-                    } catch (IOException e) {
-                        // that's fine we might close
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
+            Thread t = new Thread(() -> {
+                try (Socket accept = socket.accept()) {
+                    acceptedLatch.countDown();
+                    closeRemote.await();
+                } catch (IOException e) {
+                    // that's fine we might close
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-            };
+            });
             t.start();
 
             try (MockTransportService service = MockTransportService.createNewService(Settings.EMPTY, Version.CURRENT, threadPool, null)) {

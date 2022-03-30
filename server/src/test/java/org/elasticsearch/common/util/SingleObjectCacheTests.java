@@ -67,13 +67,10 @@ public class SingleObjectCacheTests extends ESTestCase {
         };
         assertEquals(1, cache.getOrRefresh().intValue());
         needsRefresh.set(true);
-        Thread t = new Thread() {
-            @Override
-            public void run() {
-                Integer value = cache.getOrRefresh();
-                assertEquals(2, value.intValue());
-            }
-        };
+        Thread t = new Thread(() -> {
+            Integer value = cache.getOrRefresh();
+            assertEquals(2, value.intValue());
+        });
         t.start();
         waiting.await();
         assertEquals(1, cache.getOrRefresh().intValue());

@@ -2354,18 +2354,15 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
                 emptySet(),
                 version0
             );
-            Thread t = new Thread() {
-                @Override
-                public void run() {
-                    try (Socket accept = socket.accept()) {
-                        if (randomBoolean()) { // sometimes wait until the other side sends the message
-                            accept.getInputStream().read();
-                        }
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
+            Thread t = new Thread(() -> {
+                try (Socket accept = socket.accept()) {
+                    if (randomBoolean()) { // sometimes wait until the other side sends the message
+                        accept.getInputStream().read();
                     }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
-            };
+            });
             t.start();
             ConnectionProfile.Builder builder = new ConnectionProfile.Builder();
             builder.addConnections(

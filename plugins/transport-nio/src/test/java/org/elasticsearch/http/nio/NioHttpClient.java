@@ -165,7 +165,7 @@ class NioHttpClient implements Closeable {
 
     @Override
     public void close() {
-        IOUtils.closeWhileHandlingException(nioGroup::close);
+        IOUtils.closeWhileHandlingException(nioGroup);
     }
 
     private class ClientChannelFactory extends ChannelFactory<NioServerSocketChannel, NioSocketChannel> {

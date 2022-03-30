@@ -60,12 +60,11 @@ public class LeafDocLookup implements Map<String, ScriptDocValues<?>> {
 
             // Load the field data on behalf of the script. Otherwise, it would require
             // additional permissions to deal with pagedbytes/ramusagestimator/etc.
-            factory = AccessController.doPrivileged(new PrivilegedAction<DocValuesScriptFieldFactory>() {
-                @Override
-                public DocValuesScriptFieldFactory run() {
-                    return fieldDataLookup.apply(fieldType).load(reader).getScriptFieldFactory(fieldName);
-                }
-            });
+            factory = AccessController.doPrivileged(
+                (PrivilegedAction<DocValuesScriptFieldFactory>) () -> fieldDataLookup.apply(fieldType)
+                    .load(reader)
+                    .getScriptFieldFactory(fieldName)
+            );
 
             localCacheScriptFieldData.put(fieldName, factory);
         }
