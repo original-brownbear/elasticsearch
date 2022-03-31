@@ -16,7 +16,6 @@ import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BitUtil;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.CharsRef;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Strings;
@@ -409,72 +408,95 @@ public abstract class StreamInput extends InputStream {
     private static final ThreadLocal<byte[]> stringReadBuffer = ThreadLocal.withInitial(() -> new byte[1024]);
 
     // Thread-local buffer for smaller strings
-    private static final ThreadLocal<CharsRef> smallSpare = ThreadLocal.withInitial(() -> new CharsRef(SMALL_STRING_LIMIT));
+    private static final ThreadLocal<char[]> smallSpare = ThreadLocal.withInitial(() -> new char[SMALL_STRING_LIMIT]);
 
     // Larger buffer used for long strings that can't fit into the thread-local buffer
     // We don't use a CharsRefBuilder since we exactly know the size of the character array up front
     // this prevents calling grow for every character since we don't need this
-    private CharsRef largeSpare;
+    private char[] largeSpare;
 
     public String readString() throws IOException {
         final int charCount = readArraySize();
-        final CharsRef charsRef;
-        if (charCount > SMALL_STRING_LIMIT) {
-            if (largeSpare == null) {
-                largeSpare = new CharsRef(ArrayUtil.oversize(charCount, Character.BYTES));
-            } else if (largeSpare.chars.length < charCount) {
-                // we don't use ArrayUtils.grow since there is no need to copy the array
-                largeSpare.chars = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
-            }
-            charsRef = largeSpare;
-        } else {
-            charsRef = smallSpare.get();
+        if (charCount == 0) {
+            return "";
         }
-        charsRef.length = charCount;
-        int charsOffset = 0;
-        int offsetByteArray = 0;
-        int sizeByteArray = 0;
-        int missingFromPartial = 0;
+        final char[] charBuffer;
+        boolean fastPath = true;
         final byte[] byteBuffer = stringReadBuffer.get();
-        final char[] charBuffer = charsRef.chars;
-        for (; charsOffset < charCount;) {
+        int sizeByteArray = 0;
+        int charsOffset = 0;
+        if (charCount > SMALL_STRING_LIMIT) {
+            charBuffer = ensureLargeSpare(charCount);
+            fastPath = false;
+        } else {
+            charBuffer = smallSpare.get();
+            sizeByteArray = charCount;
+            readBytes(byteBuffer, 0, sizeByteArray);
+            for (charsOffset = 0; fastPath && charsOffset < charCount; charsOffset++) {
+                final int c = byteBuffer[charsOffset] & 0xff;
+                switch (c >> 4) {
+                    case 0, 1, 2, 3, 4, 5, 6, 7 -> charBuffer[charsOffset] = (char) c;
+                    default -> fastPath = false;
+                }
+            }
+            if (fastPath == false && charsOffset != 0) {
+                charsOffset--;
+                System.arraycopy(byteBuffer, charsOffset, byteBuffer, 0, sizeByteArray - charsOffset);
+                sizeByteArray = sizeByteArray - charsOffset;
+            }
+        }
+        if (fastPath == false) {
+            readStringSlow(charCount, charBuffer, byteBuffer, sizeByteArray, charsOffset);
+        }
+        return new String(charBuffer, 0, charCount);
+    }
+
+    private void readStringSlow(int charCount, char[] charBuffer, byte[] byteBuffer, int sizeByteArray, int charsOffset)
+        throws IOException {
+        boolean skipFill = true;
+        int offsetByteArray = 0;
+        int missingFromPartial = 0;
+        for (; charsOffset < charCount; ) {
             final int charsLeft = charCount - charsOffset;
             int bufferFree = byteBuffer.length - sizeByteArray;
-            // Determine the minimum amount of bytes that are left in the string
-            final int minRemainingBytes;
-            if (missingFromPartial > 0) {
-                // One byte for each remaining char except for the already partially read char
-                minRemainingBytes = missingFromPartial + charsLeft - 1;
-                missingFromPartial = 0;
-            } else {
-                // Each char has at least a single byte
-                minRemainingBytes = charsLeft;
-            }
-            final int toRead;
-            if (bufferFree < minRemainingBytes) {
-                // We don't have enough space left in the byte array to read as much as we'd like to so we free up as many bytes in the
-                // buffer by moving unused bytes that didn't make up a full char in the last iteration to the beginning of the buffer,
-                // if there are any
-                if (offsetByteArray > 0) {
-                    sizeByteArray = sizeByteArray - offsetByteArray;
-                    switch (sizeByteArray) { // We only have 0, 1 or 2 => no need to bother with a native call to System#arrayCopy
-                        case 1 -> byteBuffer[0] = byteBuffer[offsetByteArray];
-                        case 2 -> {
-                            byteBuffer[0] = byteBuffer[offsetByteArray];
-                            byteBuffer[1] = byteBuffer[offsetByteArray + 1];
-                        }
-                    }
-                    assert sizeByteArray <= 2 : "We never copy more than 2 bytes here since a char is 3 bytes max";
-                    toRead = Math.min(bufferFree + offsetByteArray, minRemainingBytes);
-                    offsetByteArray = 0;
+            if (skipFill == false) {
+                // Determine the minimum amount of bytes that are left in the string
+                final int minRemainingBytes;
+                if (missingFromPartial > 0) {
+                    // One byte for each remaining char except for the already partially read char
+                    minRemainingBytes = missingFromPartial + charsLeft - 1;
+                    missingFromPartial = 0;
                 } else {
-                    toRead = bufferFree;
+                    // Each char has at least a single byte
+                    minRemainingBytes = charsLeft;
                 }
-            } else {
-                toRead = minRemainingBytes;
+                final int toRead;
+                if (bufferFree < minRemainingBytes) {
+                    // We don't have enough space left in the byte array to read as much as we'd like to so we free up as many bytes in the
+                    // buffer by moving unused bytes that didn't make up a full char in the last iteration to the beginning of the buffer,
+                    // if there are any
+                    if (offsetByteArray > 0) {
+                        sizeByteArray = sizeByteArray - offsetByteArray;
+                        switch (sizeByteArray) { // We only have 0, 1 or 2 => no need to bother with a native call to System#arrayCopy
+                            case 1 -> byteBuffer[0] = byteBuffer[offsetByteArray];
+                            case 2 -> {
+                                byteBuffer[0] = byteBuffer[offsetByteArray];
+                                byteBuffer[1] = byteBuffer[offsetByteArray + 1];
+                            }
+                        }
+                        assert sizeByteArray <= 2 : "We never copy more than 2 bytes here since a char is 3 bytes max";
+                        toRead = Math.min(bufferFree + offsetByteArray, minRemainingBytes);
+                        offsetByteArray = 0;
+                    } else {
+                        toRead = bufferFree;
+                    }
+                } else {
+                    toRead = minRemainingBytes;
+                }
+                readBytes(byteBuffer, sizeByteArray, toRead);
+                sizeByteArray += toRead;
             }
-            readBytes(byteBuffer, sizeByteArray, toRead);
-            sizeByteArray += toRead;
+            skipFill = false;
             // As long as we at least have three bytes buffered we don't need to do any bounds checking when getting the next char since we
             // read 3 bytes per char/iteration at most
             for (; offsetByteArray < sizeByteArray - 2; offsetByteArray++) {
@@ -483,7 +505,7 @@ public abstract class StreamInput extends InputStream {
                     case 0, 1, 2, 3, 4, 5, 6, 7 -> charBuffer[charsOffset++] = (char) c;
                     case 12, 13 -> charBuffer[charsOffset++] = (char) ((c & 0x1F) << 6 | byteBuffer[++offsetByteArray] & 0x3F);
                     case 14 -> charBuffer[charsOffset++] = (char) ((c & 0x0F) << 12 | (byteBuffer[++offsetByteArray] & 0x3F) << 6
-                        | (byteBuffer[++offsetByteArray] & 0x3F));
+                            | (byteBuffer[++offsetByteArray] & 0x3F));
                     default -> throwOnBrokenChar(c);
                 }
             }
@@ -512,7 +534,19 @@ public abstract class StreamInput extends InputStream {
                 }
             }
         }
-        return charsRef.toString();
+    }
+
+    private char[] ensureLargeSpare(int charCount) {
+        char[] largeSpare = this.largeSpare;
+        if (largeSpare == null) {
+            largeSpare = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
+            this.largeSpare = largeSpare;
+        } else if (largeSpare.length < charCount) {
+            // we don't use ArrayUtils.grow since there is no need to copy the array
+            largeSpare = new char[ArrayUtil.oversize(charCount, Character.BYTES)];
+            this.largeSpare = largeSpare;
+        }
+        return largeSpare;
     }
 
     private static void throwOnBrokenChar(int c) throws IOException {
@@ -1250,16 +1284,24 @@ public abstract class StreamInput extends InputStream {
     protected int readArraySize() throws IOException {
         final int arraySize = readVInt();
         if (arraySize > ArrayUtil.MAX_ARRAY_LENGTH) {
-            throw new IllegalStateException("array length must be <= to " + ArrayUtil.MAX_ARRAY_LENGTH + " but was: " + arraySize);
+            throwArraySizeTooLarge(arraySize);
         }
         if (arraySize < 0) {
-            throw new NegativeArraySizeException("array size must be positive but was: " + arraySize);
+            throwOnNegativeArraySize(arraySize);
         }
         // lets do a sanity check that if we are reading an array size that is bigger that the remaining bytes we can safely
         // throw an exception instead of allocating the array based on the size. A simple corrutpted byte can make a node go OOM
         // if the size is large and for perf reasons we allocate arrays ahead of time
         ensureCanReadBytes(arraySize);
         return arraySize;
+    }
+
+    private static void throwOnNegativeArraySize(int arraySize) {
+        throw new NegativeArraySizeException("array size must be positive but was: " + arraySize);
+    }
+
+    private static void throwArraySizeTooLarge(int arraySize) {
+        throw new IllegalStateException("array length must be <= to " + ArrayUtil.MAX_ARRAY_LENGTH + " but was: " + arraySize);
     }
 
     /**
