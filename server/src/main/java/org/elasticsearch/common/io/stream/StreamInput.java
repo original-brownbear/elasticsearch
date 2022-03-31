@@ -415,7 +415,7 @@ public abstract class StreamInput extends InputStream {
     // this prevents calling grow for every character since we don't need this
     private char[] largeSpare;
 
-    public String readString() throws IOException {
+    public final String readString() throws IOException {
         final int charCount = readArraySize();
         if (charCount == 0) {
             return "";
@@ -439,11 +439,6 @@ public abstract class StreamInput extends InputStream {
                     default -> fastPath = false;
                 }
             }
-            if (fastPath == false && charsOffset != 0) {
-                charsOffset--;
-                System.arraycopy(byteBuffer, charsOffset, byteBuffer, 0, sizeByteArray - charsOffset);
-                sizeByteArray = sizeByteArray - charsOffset;
-            }
         }
         if (fastPath == false) {
             readStringSlow(charCount, charBuffer, byteBuffer, sizeByteArray, charsOffset);
@@ -453,6 +448,11 @@ public abstract class StreamInput extends InputStream {
 
     private void readStringSlow(int charCount, char[] charBuffer, byte[] byteBuffer, int sizeByteArray, int charsOffset)
         throws IOException {
+        if (charsOffset != 0) {
+            charsOffset--;
+            System.arraycopy(byteBuffer, charsOffset, byteBuffer, 0, sizeByteArray - charsOffset);
+            sizeByteArray = sizeByteArray - charsOffset;
+        }
         boolean skipFill = true;
         int offsetByteArray = 0;
         int missingFromPartial = 0;
