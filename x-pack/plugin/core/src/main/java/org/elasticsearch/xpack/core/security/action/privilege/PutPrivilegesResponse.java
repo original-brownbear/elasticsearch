@@ -27,7 +27,7 @@ public final class PutPrivilegesResponse extends ActionResponse implements ToXCo
 
     public PutPrivilegesResponse(StreamInput in) throws IOException {
         super(in);
-        this.created = Collections.unmodifiableMap(in.readMap(StreamInput::readString, StreamInput::readStringList));
+        this.created = Collections.unmodifiableMap(in.readStringKeyMap(StreamInput::readStringList));
     }
 
     public PutPrivilegesResponse(Map<String, List<String>> created) {

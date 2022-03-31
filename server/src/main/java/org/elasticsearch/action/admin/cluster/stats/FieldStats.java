@@ -34,7 +34,7 @@ public final class FieldStats extends IndexFeatureStats {
     FieldStats(StreamInput in) throws IOException {
         super(in);
         scriptCount = in.readVInt();
-        scriptLangs = in.readSet(StreamInput::readString);
+        scriptLangs = in.readStringSet();
         fieldScriptStats = new FieldScriptStats(in);
     }
 

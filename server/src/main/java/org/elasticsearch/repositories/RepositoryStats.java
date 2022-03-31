@@ -29,7 +29,7 @@ public class RepositoryStats implements Writeable {
     }
 
     public RepositoryStats(StreamInput in) throws IOException {
-        this.requestCounts = in.readMap(StreamInput::readString, StreamInput::readLong);
+        this.requestCounts = in.readStringKeyMap(StreamInput::readLong);
     }
 
     public RepositoryStats merge(RepositoryStats otherStats) {

@@ -155,8 +155,8 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
             explanation = readExplanation(in);
         }
         if (in.getVersion().onOrAfter(Version.V_7_8_0)) {
-            documentFields = in.readMap(StreamInput::readString, DocumentField::new);
-            metaFields = in.readMap(StreamInput::readString, DocumentField::new);
+            documentFields = in.readStringKeyMap(DocumentField::new);
+            metaFields = in.readStringKeyMap(DocumentField::new);
         } else {
             Map<String, DocumentField> fields = readFields(in);
             documentFields = new HashMap<>();

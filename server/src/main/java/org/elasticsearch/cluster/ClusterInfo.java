@@ -83,9 +83,9 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
     }
 
     public ClusterInfo(StreamInput in) throws IOException {
-        Map<String, DiskUsage> leastMap = in.readMap(StreamInput::readString, DiskUsage::new);
-        Map<String, DiskUsage> mostMap = in.readMap(StreamInput::readString, DiskUsage::new);
-        Map<String, Long> sizeMap = in.readMap(StreamInput::readString, StreamInput::readLong);
+        Map<String, DiskUsage> leastMap = in.readStringKeyMap(DiskUsage::new);
+        Map<String, DiskUsage> mostMap = in.readStringKeyMap(DiskUsage::new);
+        Map<String, Long> sizeMap = in.readStringKeyMap(StreamInput::readLong);
         Map<ShardId, Long> dataSetSizeMap;
         if (in.getVersion().onOrAfter(DATA_SET_SIZE_SIZE_VERSION)) {
             dataSetSizeMap = in.readMap(ShardId::new, StreamInput::readLong);

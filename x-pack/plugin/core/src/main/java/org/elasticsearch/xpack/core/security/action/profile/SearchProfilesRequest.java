@@ -35,7 +35,7 @@ public class SearchProfilesRequest extends ActionRequest {
 
     public SearchProfilesRequest(StreamInput in) throws IOException {
         super(in);
-        this.dataKeys = in.readSet(StreamInput::readString);
+        this.dataKeys = in.readStringSet();
         this.name = in.readOptionalString();
         this.size = in.readVInt();
     }

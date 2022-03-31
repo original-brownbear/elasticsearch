@@ -506,7 +506,7 @@ public class BytesStreamsTests extends ESTestCase {
         final BytesStreamOutput out = new BytesStreamOutput();
         out.writeMap(expected, StreamOutput::writeString, StreamOutput::writeString);
         final StreamInput in = StreamInput.wrap(BytesReference.toBytes(out.bytes()));
-        final Map<String, String> loaded = in.readMap(StreamInput::readString, StreamInput::readString);
+        final Map<String, String> loaded = in.readStringStringMap();
 
         assertThat(loaded.size(), equalTo(expected.size()));
         assertThat(expected, equalTo(loaded));
@@ -564,7 +564,7 @@ public class BytesStreamsTests extends ESTestCase {
 
         final StreamInput in = StreamInput.wrap(BytesReference.toBytes(out.bytes()));
 
-        final Map<String, List<String>> loaded = in.readMapOfLists(StreamInput::readString, StreamInput::readString);
+        final Map<String, List<String>> loaded = in.readMapOfLists(StreamInput::readString);
 
         assertThat(loaded.size(), equalTo(expected.size()));
 

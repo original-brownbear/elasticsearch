@@ -103,7 +103,7 @@ public class TrainedModelAllocation implements SimpleDiffable<TrainedModelAlloca
 
     public TrainedModelAllocation(StreamInput in) throws IOException {
         this.taskParams = new StartTrainedModelDeploymentAction.TaskParams(in);
-        this.nodeRoutingTable = in.readOrderedMap(StreamInput::readString, RoutingStateAndReason::new);
+        this.nodeRoutingTable = in.readOrderedMap(RoutingStateAndReason::new);
         this.allocationState = in.readEnum(AllocationState.class);
         this.reason = in.readOptionalString();
         this.startTime = in.readInstant();

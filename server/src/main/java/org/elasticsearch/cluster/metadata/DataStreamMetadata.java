@@ -72,7 +72,7 @@ public class DataStreamMetadata implements Metadata.Custom {
     }
 
     public DataStreamMetadata(StreamInput in) throws IOException {
-        this(in.readMap(StreamInput::readString, DataStream::new), in.readMap(StreamInput::readString, DataStreamAlias::new));
+        this(in.readStringKeyMap(DataStream::new), in.readStringKeyMap(DataStreamAlias::new));
     }
 
     public Map<String, DataStream> dataStreams() {
