@@ -1214,9 +1214,13 @@ public abstract class StreamInput extends InputStream {
     private <E extends Enum<E>> E readEnum(Class<E> enumClass, E[] values) throws IOException {
         int ordinal = readVInt();
         if (ordinal < 0 || ordinal >= values.length) {
-            throw new IOException("Unknown " + enumClass.getSimpleName() + " ordinal [" + ordinal + "]");
+            throwOnUnknownEnumOrdinal(enumClass, ordinal);
         }
         return values[ordinal];
+    }
+
+    private static <E extends Enum<E>> void throwOnUnknownEnumOrdinal(Class<E> enumClass, int ordinal) throws IOException {
+        throw new IOException("Unknown " + enumClass.getSimpleName() + " ordinal [" + ordinal + "]");
     }
 
     /**
@@ -1250,10 +1254,10 @@ public abstract class StreamInput extends InputStream {
     protected int readArraySize() throws IOException {
         final int arraySize = readVInt();
         if (arraySize > ArrayUtil.MAX_ARRAY_LENGTH) {
-            throw new IllegalStateException("array length must be <= to " + ArrayUtil.MAX_ARRAY_LENGTH + " but was: " + arraySize);
+            throwArraySizeTooLarge(arraySize);
         }
         if (arraySize < 0) {
-            throw new NegativeArraySizeException("array size must be positive but was: " + arraySize);
+            throwOnNegativeArraySize(arraySize);
         }
         // lets do a sanity check that if we are reading an array size that is bigger that the remaining bytes we can safely
         // throw an exception instead of allocating the array based on the size. A simple corrutpted byte can make a node go OOM
@@ -1262,11 +1266,23 @@ public abstract class StreamInput extends InputStream {
         return arraySize;
     }
 
+    private static void throwOnNegativeArraySize(int arraySize) {
+        throw new NegativeArraySizeException("array size must be positive but was: " + arraySize);
+    }
+
+    private static void throwArraySizeTooLarge(int arraySize) {
+        throw new IllegalStateException("array length must be <= to " + ArrayUtil.MAX_ARRAY_LENGTH + " but was: " + arraySize);
+    }
+
     /**
      * This method throws an {@link EOFException} if the given number of bytes can not be read from the this stream. This method might
      * be a no-op depending on the underlying implementation if the information of the remaining bytes is not present.
      */
     protected abstract void ensureCanReadBytes(int length) throws EOFException;
+
+    protected static void throwOnUnderflow(int bytesToRead, int bytesAvailable) throws EOFException {
+        throw new EOFException("tried to read: " + bytesToRead + " bytes but only " + bytesAvailable + " remaining");
+    }
 
     private static final TimeUnit[] TIME_UNITS = TimeUnit.values();
 

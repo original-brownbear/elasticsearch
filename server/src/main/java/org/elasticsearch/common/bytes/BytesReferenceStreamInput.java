@@ -254,7 +254,7 @@ class BytesReferenceStreamInput extends StreamInput {
     protected void ensureCanReadBytes(int bytesToRead) throws EOFException {
         int bytesAvailable = bytesReference.length() - offset();
         if (bytesAvailable < bytesToRead) {
-            throw new EOFException("tried to read: " + bytesToRead + " bytes but only " + bytesAvailable + " remaining");
+            throwOnUnderflow(bytesToRead, bytesAvailable);
         }
     }
 
