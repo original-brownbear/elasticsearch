@@ -308,8 +308,8 @@ public class TextFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return Arrays.asList(
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] {
                 index,
                 store,
                 indexOptions,
@@ -325,8 +325,7 @@ public class TextFieldMapper extends FieldMapper {
                 eagerGlobalOrdinals,
                 indexPhrases,
                 indexPrefixes,
-                meta
-            );
+                meta };
         }
 
         private TextFieldType buildFieldType(FieldType fieldType, MapperBuilderContext context) {

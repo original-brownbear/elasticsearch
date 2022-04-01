@@ -76,8 +76,8 @@ public class SourceFieldMapper extends MetadataFieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return List.of(enabled, includes, excludes);
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] { enabled, includes, excludes };
         }
 
         @Override

@@ -15,7 +15,6 @@ import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.index.query.SearchExecutionContext;
 
 import java.util.Collections;
-import java.util.List;
 
 public class RoutingFieldMapper extends MetadataFieldMapper {
 
@@ -54,8 +53,8 @@ public class RoutingFieldMapper extends MetadataFieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return List.of(required);
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] { required };
         }
 
         @Override

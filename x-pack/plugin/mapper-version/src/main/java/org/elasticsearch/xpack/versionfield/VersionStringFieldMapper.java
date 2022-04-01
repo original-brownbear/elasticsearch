@@ -113,8 +113,8 @@ public class VersionStringFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return List.of(meta);
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] { meta };
         }
     }
 

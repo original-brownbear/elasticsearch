@@ -28,8 +28,6 @@ import org.elasticsearch.search.lookup.SearchLookup;
 import org.elasticsearch.xcontent.XContentParser.Token;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -70,8 +68,8 @@ public class RankFeatureFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return Arrays.asList(positiveScoreImpact, meta);
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] { positiveScoreImpact, meta };
         }
 
         @Override

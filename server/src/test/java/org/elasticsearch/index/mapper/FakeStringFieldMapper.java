@@ -16,7 +16,6 @@ import org.elasticsearch.index.query.SearchExecutionContext;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 // Like a String mapper but with very few options. We just use it to test if highlighting on a custom string mapped field works as expected.
 public class FakeStringFieldMapper extends FieldMapper {
@@ -37,8 +36,8 @@ public class FakeStringFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return Collections.emptyList();
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[0];
         }
 
         @Override

@@ -210,8 +210,8 @@ public class NumberFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected List<Parameter<?>> getParameters() {
-            return List.of(
+        protected Parameter<?>[] getParameters() {
+            return new Parameter<?>[] {
                 indexed,
                 hasDocValues,
                 stored,
@@ -222,8 +222,7 @@ public class NumberFieldMapper extends FieldMapper {
                 onScriptError,
                 meta,
                 dimension,
-                metric
-            );
+                metric };
         }
 
         @Override
