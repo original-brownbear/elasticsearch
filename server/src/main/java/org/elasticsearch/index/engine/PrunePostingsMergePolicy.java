@@ -111,7 +111,7 @@ final class PrunePostingsMergePolicy extends OneMergeWrappingMergePolicy {
                                         }
 
                                         @Override
-                                        public ImpactsEnum impacts(int flags) throws IOException {
+                                        public ImpactsEnum impacts(int flags) {
                                             throw new UnsupportedOperationException();
                                         }
                                     };

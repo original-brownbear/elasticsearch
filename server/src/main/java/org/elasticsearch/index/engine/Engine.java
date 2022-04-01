@@ -71,7 +71,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -301,7 +300,7 @@ public abstract class Engine implements Closeable {
         public void lock() {}
 
         @Override
-        public void lockInterruptibly() throws InterruptedException {}
+        public void lockInterruptibly() {}
 
         @Override
         public boolean tryLock() {
@@ -309,7 +308,7 @@ public abstract class Engine implements Closeable {
         }
 
         @Override
-        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        public boolean tryLock(long time, TimeUnit unit) {
             return true;
         }
 
@@ -384,8 +383,8 @@ public abstract class Engine implements Closeable {
             this.id = id;
         }
 
-        protected Result(Operation.TYPE operationType, Mapping requiredMappingUpdate, String id) {
-            this.operationType = operationType;
+        protected Result(Mapping requiredMappingUpdate, String id) {
+            this.operationType = Operation.TYPE.INDEX;
             this.version = Versions.NOT_FOUND;
             this.seqNo = UNASSIGNED_SEQ_NO;
             this.term = UNASSIGNED_PRIMARY_TERM;
@@ -498,7 +497,7 @@ public abstract class Engine implements Closeable {
         }
 
         public IndexResult(Mapping requiredMappingUpdate, String id) {
-            super(Operation.TYPE.INDEX, requiredMappingUpdate, id);
+            super(requiredMappingUpdate, id);
             this.created = false;
         }
 
@@ -528,11 +527,6 @@ public abstract class Engine implements Closeable {
             this.found = found;
         }
 
-        public DeleteResult(Mapping requiredMappingUpdate, String id) {
-            super(Operation.TYPE.DELETE, requiredMappingUpdate, id);
-            this.found = false;
-        }
-
         public boolean isFound() {
             return found;
         }
@@ -545,8 +539,8 @@ public abstract class Engine implements Closeable {
             super(Operation.TYPE.NO_OP, 0, term, seqNo, null);
         }
 
-        NoOpResult(long term, long seqNo, Exception failure) {
-            super(Operation.TYPE.NO_OP, failure, 0, term, seqNo, null);
+        NoOpResult(Exception failure) {
+            super(Operation.TYPE.NO_OP, failure, 0, SequenceNumbers.UNASSIGNED_PRIMARY_TERM, SequenceNumbers.UNASSIGNED_SEQ_NO, null);
         }
 
     }
@@ -749,7 +743,7 @@ public abstract class Engine implements Closeable {
     /**
      * Checks if this engine has every operations since  {@code startingSeqNo}(inclusive) in its history (either Lucene or translog)
      */
-    public abstract boolean hasCompleteOperationHistory(String reason, long startingSeqNo);
+    public abstract boolean hasCompleteOperationHistory(long startingSeqNo);
 
     /**
      * Gets the minimum retained sequence number for this engine.
@@ -1280,17 +1274,7 @@ public abstract class Engine implements Closeable {
         public enum TYPE {
             INDEX,
             DELETE,
-            NO_OP;
-
-            private final String lowercase;
-
-            TYPE() {
-                this.lowercase = this.toString().toLowerCase(Locale.ROOT);
-            }
-
-            public String getLowercase() {
-                return lowercase;
-            }
+            NO_OP
         }
 
         private final Term uid;
@@ -1517,21 +1501,6 @@ public abstract class Engine implements Closeable {
                 VersionType.INTERNAL,
                 Origin.PRIMARY,
                 System.nanoTime(),
-                UNASSIGNED_SEQ_NO,
-                0
-            );
-        }
-
-        public Delete(Delete template, VersionType versionType) {
-            this(
-                template.id(),
-                template.uid(),
-                template.seqNo(),
-                template.primaryTerm(),
-                template.version(),
-                versionType,
-                template.origin(),
-                template.startTime(),
                 UNASSIGNED_SEQ_NO,
                 0
             );

@@ -113,7 +113,7 @@ public final class NoOpEngine extends ReadOnlyEngine {
             }
             return stats;
         } else {
-            return super.segmentsStats(includeSegmentFileSizes, includeUnloadedSegments);
+            return super.segmentsStats(includeSegmentFileSizes, false);
         }
     }
 

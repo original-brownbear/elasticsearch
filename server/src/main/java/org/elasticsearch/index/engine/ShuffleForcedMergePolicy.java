@@ -19,7 +19,6 @@ import org.elasticsearch.common.lucene.Lucene;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +87,7 @@ public class ShuffleForcedMergePolicy extends FilterMergePolicy {
     // and then interleave them to colocate oldest and most recent segments together.
     private static List<SegmentCommitInfo> interleaveList(List<SegmentCommitInfo> infos) throws IOException {
         List<SegmentCommitInfo> newInfos = new ArrayList<>(infos.size());
-        Collections.sort(infos, Comparator.comparing(a -> a.info.name));
+        infos.sort(Comparator.comparing(a -> a.info.name));
         int left = 0;
         int right = infos.size() - 1;
         while (left <= right) {

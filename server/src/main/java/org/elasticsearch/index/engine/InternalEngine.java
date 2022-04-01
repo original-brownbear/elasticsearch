@@ -1083,7 +1083,7 @@ public class InternalEngine extends Engine {
             versionMap.enforceSafeAccess();
             final OpVsLuceneDocStatus opVsLucene = compareOpToLuceneDocBasedOnSeqNo(index);
             if (opVsLucene == OpVsLuceneDocStatus.OP_STALE_OR_EQUAL) {
-                plan = IndexingStrategy.processAsStaleOp(index.version(), 0);
+                plan = IndexingStrategy.processAsStaleOp(index.version());
             } else {
                 plan = IndexingStrategy.processNormally(opVsLucene == OpVsLuceneDocStatus.LUCENE_DOC_NOT_FOUND, index.version(), 0);
             }
@@ -1337,8 +1337,8 @@ public class InternalEngine extends Engine {
             return new IndexingStrategy(currentNotFoundOrDeleted, false, false, false, versionForIndexing, 0, null);
         }
 
-        static IndexingStrategy processAsStaleOp(long versionForIndexing, int reservedDocs) {
-            return new IndexingStrategy(false, false, false, true, versionForIndexing, reservedDocs, null);
+        static IndexingStrategy processAsStaleOp(long versionForIndexing) {
+            return new IndexingStrategy(false, false, false, true, versionForIndexing, 0, null);
         }
 
         static IndexingStrategy failAsTooManyDocs(Exception e, String id) {
@@ -1737,11 +1737,7 @@ public class InternalEngine extends Engine {
             final NoOpResult noOpResult;
             final Optional<Exception> preFlightError = preFlightCheckForNoOp(noOp);
             if (preFlightError.isPresent()) {
-                noOpResult = new NoOpResult(
-                    SequenceNumbers.UNASSIGNED_PRIMARY_TERM,
-                    SequenceNumbers.UNASSIGNED_SEQ_NO,
-                    preFlightError.get()
-                );
+                noOpResult = new NoOpResult(preFlightError.get());
             } else {
                 markSeqNoAsSeen(noOp.seqNo());
                 if (hasBeenProcessedBefore(noOp) == false) {
@@ -1909,7 +1905,7 @@ public class InternalEngine extends Engine {
     public void flush(boolean force, boolean waitIfOngoing) throws EngineException {
         ensureOpen();
         if (force && waitIfOngoing == false) {
-            assert false : "wait_if_ongoing must be true for a force flush: force=" + force + " wait_if_ongoing=" + waitIfOngoing;
+            assert false : "wait_if_ongoing must be true for a force flush: force=" + true + " wait_if_ongoing=" + false;
             throw new IllegalArgumentException(
                 "wait_if_ongoing must be true for a force flush: force=" + force + " wait_if_ongoing=" + waitIfOngoing
             );
@@ -2509,7 +2505,7 @@ public class InternalEngine extends Engine {
         }
 
         @Override
-        public synchronized void beforeMerge(OnGoingMerge merge) {
+        public synchronized void beforeMerge() {
             int maxNumMerges = mergeScheduler.getMaxMergeCount();
             if (numMergesInFlight.incrementAndGet() > maxNumMerges) {
                 if (isThrottling.getAndSet(true) == false) {
@@ -2564,7 +2560,7 @@ public class InternalEngine extends Engine {
                 }
 
                 @Override
-                protected void doRun() throws Exception {
+                protected void doRun() {
                     /*
                      * We do this on another thread rather than the merge thread that we are initially called on so that we have complete
                      * confidence that the call stack does not contain catch statements that would cause the error that might be thrown
@@ -2820,7 +2816,7 @@ public class InternalEngine extends Engine {
     }
 
     @Override
-    public boolean hasCompleteOperationHistory(String reason, long startingSeqNo) {
+    public boolean hasCompleteOperationHistory(long startingSeqNo) {
         return getMinRetainedSeqNo() <= startingSeqNo;
     }
 

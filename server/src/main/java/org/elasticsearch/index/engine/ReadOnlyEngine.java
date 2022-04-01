@@ -362,7 +362,7 @@ public class ReadOnlyEngine extends Engine {
     }
 
     @Override
-    public boolean hasCompleteOperationHistory(String reason, long startingSeqNo) {
+    public boolean hasCompleteOperationHistory(long startingSeqNo) {
         // we can do operation-based recovery if we don't have to replay any operation.
         return startingSeqNo > seqNoStats.getMaxSeqNo();
     }

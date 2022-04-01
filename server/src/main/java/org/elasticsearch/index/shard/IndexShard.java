@@ -2306,7 +2306,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      * This method should be called after acquiring the retention lock; See {@link #acquireHistoryRetentionLock()}
      */
     public boolean hasCompleteHistoryOperations(String reason, long startingSeqNo) {
-        return getEngine().hasCompleteOperationHistory(reason, startingSeqNo);
+        return getEngine().hasCompleteOperationHistory(startingSeqNo);
     }
 
     /**

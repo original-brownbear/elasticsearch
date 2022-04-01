@@ -95,10 +95,6 @@ final class TranslogDirectoryReader extends DirectoryReader {
         return new UnsupportedOperationException();
     }
 
-    public TranslogLeafReader getLeafReader() {
-        return leafReader;
-    }
-
     @Override
     protected DirectoryReader doOpenIfChanged() {
         throw unsupported();
@@ -366,7 +362,7 @@ final class TranslogDirectoryReader extends DirectoryReader {
         }
 
         @Override
-        public void checkIntegrity() throws IOException {}
+        public void checkIntegrity() {}
 
         @Override
         public LeafMetaData getMetaData() {
@@ -447,27 +443,27 @@ final class TranslogDirectoryReader extends DirectoryReader {
         }
 
         @Override
-        public TermsEnum iterator() throws IOException {
+        public TermsEnum iterator() {
             return new FakeTermsEnum(uid);
         }
 
         @Override
-        public long size() throws IOException {
+        public long size() {
             return 1;
         }
 
         @Override
-        public long getSumTotalTermFreq() throws IOException {
+        public long getSumTotalTermFreq() {
             return 1;
         }
 
         @Override
-        public long getSumDocFreq() throws IOException {
+        public long getSumDocFreq() {
             return 1;
         }
 
         @Override
-        public int getDocCount() throws IOException {
+        public int getDocCount() {
             return 1;
         }
 
@@ -501,7 +497,7 @@ final class TranslogDirectoryReader extends DirectoryReader {
         }
 
         @Override
-        public SeekStatus seekCeil(BytesRef text) throws IOException {
+        public SeekStatus seekCeil(BytesRef text) {
             int cmp = text.compareTo(term);
             if (cmp == 0) {
                 position = 0;
@@ -515,43 +511,43 @@ final class TranslogDirectoryReader extends DirectoryReader {
         }
 
         @Override
-        public void seekExact(long ord) throws IOException {
+        public void seekExact(long ord) {
             position = ord;
         }
 
         @Override
-        public BytesRef term() throws IOException {
+        public BytesRef term() {
             assert position == 0;
             return term;
         }
 
         @Override
-        public long ord() throws IOException {
+        public long ord() {
             return position;
         }
 
         @Override
-        public int docFreq() throws IOException {
+        public int docFreq() {
             return 1;
         }
 
         @Override
-        public long totalTermFreq() throws IOException {
+        public long totalTermFreq() {
             return 1;
         }
 
         @Override
-        public PostingsEnum postings(PostingsEnum reuse, int flags) throws IOException {
+        public PostingsEnum postings(PostingsEnum reuse, int flags) {
             return new FakePostingsEnum(term);
         }
 
         @Override
-        public ImpactsEnum impacts(int flags) throws IOException {
+        public ImpactsEnum impacts(int flags) {
             throw unsupported();
         }
 
         @Override
-        public BytesRef next() throws IOException {
+        public BytesRef next() {
             return ++position == 0 ? term : null;
         }
     }

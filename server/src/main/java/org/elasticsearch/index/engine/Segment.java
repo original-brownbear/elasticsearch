@@ -28,8 +28,8 @@ import java.util.Objects;
 
 public class Segment implements Writeable {
 
-    private String name;
-    private long generation;
+    private final String name;
+    private final long generation;
     public boolean committed;
     public boolean search;
     public long sizeInBytes = -1;
@@ -122,14 +122,6 @@ public class Segment implements Writeable {
      */
     public Sort getSegmentSort() {
         return segmentSort;
-    }
-
-    /**
-     * Return segment attributes.
-     * @see org.apache.lucene.index.SegmentInfo#getAttributes()
-     */
-    public Map<String, String> getAttributes() {
-        return attributes;
     }
 
     @Override

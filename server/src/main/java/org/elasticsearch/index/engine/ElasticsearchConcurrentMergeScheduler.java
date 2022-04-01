@@ -114,7 +114,7 @@ class ElasticsearchConcurrentMergeScheduler extends ConcurrentMergeScheduler {
             );
         }
         try {
-            beforeMerge(onGoingMerge);
+            beforeMerge();
             super.doMerge(mergeSource, merge);
         } finally {
             long tookMS = TimeValue.nsecToMSec(System.nanoTime() - timeNS);
@@ -160,7 +160,7 @@ class ElasticsearchConcurrentMergeScheduler extends ConcurrentMergeScheduler {
     /**
      * A callback allowing for custom logic before an actual merge starts.
      */
-    protected void beforeMerge(OnGoingMerge merge) {}
+    protected void beforeMerge() {}
 
     /**
      * A callback allowing for custom logic before an actual merge starts.
