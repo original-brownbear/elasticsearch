@@ -8,6 +8,7 @@
 
 package org.elasticsearch.index.mapper;
 
+import org.apache.lucene.document.FieldType;
 import org.apache.lucene.index.LeafReaderContext;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Explicit;
@@ -222,39 +223,48 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
     public void parse(DocumentParserContext context) throws IOException {
         try {
             if (hasScript) {
-                throw new IllegalArgumentException("Cannot index data directly into a field with a [script] parameter");
+                throwOnIllegalScript();
             }
             parseCreateField(context);
         } catch (Exception e) {
-            String valuePreview = "";
-            try {
-                XContentParser parser = context.parser();
-                Object complexValue = AbstractXContentParser.readValue(parser, HashMap::new);
-                if (complexValue == null) {
-                    valuePreview = "null";
-                } else {
-                    valuePreview = complexValue.toString();
-                }
-            } catch (Exception innerException) {
-                throw new MapperParsingException(
-                    "failed to parse field [{}] of type [{}] in {}. Could not parse field value preview,",
-                    e,
-                    fieldType().name(),
-                    fieldType().typeName(),
-                    context.documentDescription()
-                );
-            }
-
-            throw new MapperParsingException(
-                "failed to parse field [{}] of type [{}] in {}. Preview of field's value: '{}'",
-                e,
-                fieldType().name(),
-                fieldType().typeName(),
-                context.documentDescription(),
-                valuePreview
-            );
+            handleMapperParsingException(context, e);
         }
         multiFields.parse(this, context, () -> context);
+    }
+
+    private static void throwOnIllegalScript() {
+        throw new IllegalArgumentException("Cannot index data directly into a field with a [script] parameter");
+    }
+
+    private void handleMapperParsingException(DocumentParserContext context, Exception e) {
+        final MappedFieldType fieldType = fieldType();
+        String valuePreview;
+        try {
+            XContentParser parser = context.parser();
+            Object complexValue = AbstractXContentParser.readValue(parser, HashMap::new);
+            if (complexValue == null) {
+                valuePreview = "null";
+            } else {
+                valuePreview = complexValue.toString();
+            }
+        } catch (Exception innerException) {
+            throw new MapperParsingException(
+                "failed to parse field [{}] of type [{}] in {}. Could not parse field value preview,",
+                e,
+                fieldType.name(),
+                fieldType.typeName(),
+                context.documentDescription()
+            );
+        }
+
+        throw new MapperParsingException(
+            "failed to parse field [{}] of type [{}] in {}. Preview of field's value: '{}'",
+            e,
+            fieldType.name(),
+            fieldType.typeName(),
+            context.documentDescription(),
+            valuePreview
+        );
     }
 
     /**
