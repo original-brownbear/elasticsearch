@@ -61,10 +61,11 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         }
 
         private void expandDots() throws IOException {
-            String field = delegate().currentName();
+            final XContentParser delegate = delegate();
+            String field = delegate.currentName();
             String[] subpaths = splitAndValidatePath(field);
             if (subpaths.length == 0) {
-                throw new IllegalArgumentException("field name cannot contain only dots: [" + field + "]");
+                throwOnOnlyDots(field);
             }
             // Corner case: if the input has a single trailing '.', eg 'field.', then we will get a single
             // subpath due to the way String.split() works. We can only return fast here if this is not
@@ -73,15 +74,16 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             if (subpaths.length == 1 && field.endsWith(".") == false) {
                 return;
             }
-            XContentLocation location = delegate().getTokenLocation();
-            Token token = delegate().nextToken();
-            if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
-                parsers.push(new DotExpandingXContentParser(new XContentSubParser(delegate()), delegate(), subpaths, location));
-            } else if (token == Token.END_OBJECT || token == Token.END_ARRAY) {
-                throw new IllegalStateException("Expecting START_OBJECT or START_ARRAY or VALUE but got [" + token + "]");
-            } else {
-                parsers.push(new DotExpandingXContentParser(new SingletonValueXContentParser(delegate()), delegate(), subpaths, location));
+            XContentLocation location = delegate.getTokenLocation();
+            Token token = delegate.nextToken();
+            if (token == Token.END_OBJECT || token == Token.END_ARRAY) {
+                throwOnExpectedStart(token);
             }
+            final XContentParser nested = switch (token) {
+                case START_OBJECT, START_ARRAY -> new XContentSubParser(delegate);
+                default -> new SingletonValueXContentParser(delegate);
+            };
+            parsers.push(new DotExpandingXContentParser(nested, delegate, subpaths, location));
         }
 
         @Override
@@ -119,6 +121,14 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         public List<Object> listOrderedMap() throws IOException {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private static void throwOnExpectedStart(Token token) {
+        throw new IllegalStateException("Expecting START_OBJECT or START_ARRAY or VALUE but got [" + token + "]");
+    }
+
+    private static void throwOnOnlyDots(String field) {
+        throw new IllegalArgumentException("field name cannot contain only dots: [" + field + "]");
     }
 
     private static String[] splitAndValidatePath(String fullFieldPath) {

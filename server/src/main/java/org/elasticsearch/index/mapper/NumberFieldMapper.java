@@ -476,7 +476,7 @@ public class NumberFieldMapper extends FieldMapper {
 
             @Override
             public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                List<Field> fields = new ArrayList<>();
+                List<Field> fields = new ArrayList<>(3);
                 if (indexed) {
                     fields.add(new FloatPoint(name, value.floatValue()));
                 }
@@ -862,7 +862,7 @@ public class NumberFieldMapper extends FieldMapper {
 
             @Override
             public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                List<Field> fields = new ArrayList<>();
+                List<Field> fields = new ArrayList<>(3);
                 if (indexed) {
                     fields.add(new IntPoint(name, value.intValue()));
                 }
@@ -968,7 +968,7 @@ public class NumberFieldMapper extends FieldMapper {
 
             @Override
             public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                List<Field> fields = new ArrayList<>();
+                List<Field> fields = new ArrayList<>(3);
                 if (indexed) {
                     fields.add(new LongPoint(name, value.longValue()));
                 }
@@ -1449,15 +1449,19 @@ public class NumberFieldMapper extends FieldMapper {
         try {
             value = value(context.parser(), type, nullValue, coerce());
         } catch (IllegalArgumentException e) {
-            if (ignoreMalformed.value() && context.parser().currentToken().isValue()) {
-                context.addIgnoredField(mappedFieldType.name());
-                return;
-            } else {
-                throw e;
-            }
+            handleIllegalArgumentException(context, e);
+            return;
         }
         if (value != null) {
             indexValue(context, value);
+        }
+    }
+
+    private void handleIllegalArgumentException(DocumentParserContext context, IllegalArgumentException e) {
+        if (ignoreMalformed.value() && context.parser().currentToken().isValue()) {
+            context.addIgnoredField(mappedFieldType.name());
+        } else {
+            throw e;
         }
     }
 
@@ -1469,13 +1473,11 @@ public class NumberFieldMapper extends FieldMapper {
     private static Number value(XContentParser parser, NumberType numberType, Number nullValue, boolean coerce)
         throws IllegalArgumentException, IOException {
 
-        if (parser.currentToken() == Token.VALUE_NULL) {
+        final Token currentToken = parser.currentToken();
+        if (currentToken == Token.VALUE_NULL || coerce && currentToken == Token.VALUE_STRING && parser.textLength() == 0) {
             return nullValue;
         }
-        if (coerce && parser.currentToken() == Token.VALUE_STRING && parser.textLength() == 0) {
-            return nullValue;
-        }
-        if (parser.currentToken() == Token.START_OBJECT) {
+        if (currentToken == Token.START_OBJECT) {
             throw new IllegalArgumentException("Cannot parse object as number");
         }
         return numberType.parse(parser, coerce);
