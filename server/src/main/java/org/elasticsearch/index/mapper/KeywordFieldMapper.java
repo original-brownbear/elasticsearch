@@ -8,6 +8,7 @@
 
 package org.elasticsearch.index.mapper;
 
+import org.apache.logging.log4j.util.TriConsumer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Field;
@@ -69,6 +70,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import static org.apache.lucene.index.IndexWriter.MAX_TERM_LENGTH;
@@ -79,6 +81,29 @@ import static org.apache.lucene.index.IndexWriter.MAX_TERM_LENGTH;
 public final class KeywordFieldMapper extends FieldMapper {
 
     public static final String CONTENT_TYPE = "keyword";
+
+    @FunctionalInterface
+    private interface FinalConsumer {
+        void consume(DocumentParserContext context, FieldType fieldType, String name, String value);
+
+        FinalConsumer NOOP_FINAL_CONSUMER = (context, ft, name, value) -> {};
+        FinalConsumer STORE_OMIT_NORMS = KeywordFieldMapper::addKeywordField;
+        FinalConsumer STORE_WITH_NORMS = (context, ft, name, value) -> {
+            addKeywordField(context, ft, name, value);
+            context.addToFieldNames(name);
+        };
+        FinalConsumer STORE_WITH_DOC_VALUES = (context, ft, name, value) -> {
+            final BytesRef binaryValue = convertKeywordToBytesRef(value, name);
+            context.doc().add(new KeywordField(name, binaryValue, ft));
+            context.doc().add(new SortedSetDocValuesField(name, binaryValue));
+        };
+        FinalConsumer NO_STORE_ONLY_DOC_VALUES = (context, ft, name, value) -> context.doc()
+            .add(new SortedSetDocValuesField(name, convertKeywordToBytesRef(value, name)));
+    }
+
+    private static void addKeywordField(DocumentParserContext context, FieldType ft, String name, String value) {
+        context.doc().add(new KeywordField(name, convertKeywordToBytesRef(value, name), ft));
+    }
 
     public static class Defaults {
         public static final FieldType FIELD_TYPE = new FieldType();
@@ -283,6 +308,7 @@ public final class KeywordFieldMapper extends FieldMapper {
         private final int ignoreAbove;
         private final String nullValue;
         private final NamedAnalyzer normalizer;
+        private final BiFunction<String, String, String> normalizerFunction;
         private final boolean eagerGlobalOrdinals;
         private final FieldValues<String> scriptValues;
         private final boolean isDimension;
@@ -305,6 +331,7 @@ public final class KeywordFieldMapper extends FieldMapper {
             );
             this.eagerGlobalOrdinals = builder.eagerGlobalOrdinals.getValue();
             this.normalizer = normalizer;
+            this.normalizerFunction = buildKeywordNormalizer(normalizer);
             this.ignoreAbove = builder.ignoreAbove.getValue();
             this.nullValue = builder.nullValue.getValue();
             this.scriptValues = builder.scriptValues();
@@ -314,6 +341,7 @@ public final class KeywordFieldMapper extends FieldMapper {
         public KeywordFieldType(String name, boolean isIndexed, boolean hasDocValues, Map<String, String> meta) {
             super(name, isIndexed, false, hasDocValues, TextSearchInfo.SIMPLE_MATCH_ONLY, meta);
             this.normalizer = Lucene.KEYWORD_ANALYZER;
+            this.normalizerFunction = buildKeywordNormalizer(normalizer);
             this.ignoreAbove = Integer.MAX_VALUE;
             this.nullValue = null;
             this.eagerGlobalOrdinals = false;
@@ -335,6 +363,7 @@ public final class KeywordFieldMapper extends FieldMapper {
                 Collections.emptyMap()
             );
             this.normalizer = Lucene.KEYWORD_ANALYZER;
+            this.normalizerFunction = buildKeywordNormalizer(normalizer);
             this.ignoreAbove = Integer.MAX_VALUE;
             this.nullValue = null;
             this.eagerGlobalOrdinals = false;
@@ -345,6 +374,7 @@ public final class KeywordFieldMapper extends FieldMapper {
         public KeywordFieldType(String name, NamedAnalyzer analyzer) {
             super(name, true, false, true, new TextSearchInfo(Defaults.FIELD_TYPE, null, analyzer, analyzer), Collections.emptyMap());
             this.normalizer = Lucene.KEYWORD_ANALYZER;
+            this.normalizerFunction = buildKeywordNormalizer(normalizer);
             this.ignoreAbove = Integer.MAX_VALUE;
             this.nullValue = null;
             this.eagerGlobalOrdinals = false;
@@ -628,10 +658,6 @@ public final class KeywordFieldMapper extends FieldMapper {
             return eagerGlobalOrdinals;
         }
 
-        NamedAnalyzer normalizer() {
-            return normalizer;
-        }
-
         @Override
         public IndexFieldData.Builder fielddataBuilder(String fullyQualifiedIndexName, Supplier<SearchLookup> searchLookup) {
             failIfNoDocValues();
@@ -658,7 +684,7 @@ public final class KeywordFieldMapper extends FieldMapper {
                         return null;
                     }
 
-                    return normalizeValue(normalizer(), name(), keywordValue);
+                    return normalizerFunction.apply(name(), keywordValue);
                 }
             };
         }
@@ -828,6 +854,10 @@ public final class KeywordFieldMapper extends FieldMapper {
 
     private final IndexAnalyzers indexAnalyzers;
 
+    private final BiFunction<String, String, String> normalizer;
+    private final TriConsumer<DocumentParserContext, String, String> handleDimension;
+    private final FinalConsumer finalConsumer;
+
     private KeywordFieldMapper(
         String simpleName,
         FieldType fieldType,
@@ -862,6 +892,95 @@ public final class KeywordFieldMapper extends FieldMapper {
         this.scriptCompiler = builder.scriptCompiler;
         this.dimension = builder.dimension.getValue();
         this.indexCreatedVersion = builder.indexCreatedVersion;
+        // new stuff
+        this.normalizer = fieldType().normalizerFunction;
+        if (dimension) {
+            handleDimension = (context, name, value) -> context.getDimensions().addString(name, value);
+        } else {
+            handleDimension = (context, name, value) -> {};
+        }
+        final boolean hasDocValues = fieldType().hasDocValues();
+        final boolean indexedOrStored = fieldType.indexOptions() != IndexOptions.NONE || fieldType.stored();
+        if (hasDocValues) {
+            if (indexedOrStored) {
+                finalConsumer = FinalConsumer.STORE_WITH_DOC_VALUES;
+            } else {
+                finalConsumer = FinalConsumer.NO_STORE_ONLY_DOC_VALUES;
+            }
+        } else {
+            if (indexedOrStored) {
+                if (fieldType.omitNorms()) {
+                    finalConsumer = FinalConsumer.STORE_WITH_NORMS;
+                } else {
+                    finalConsumer = FinalConsumer.STORE_OMIT_NORMS;
+                }
+            } else {
+                finalConsumer = FinalConsumer.NOOP_FINAL_CONSUMER;
+            }
+        }
+    }
+
+    private static BytesRef convertKeywordToBytesRef(String value, String name) {
+        // convert to utf8 only once before feeding postings/dv/stored fields
+        final BytesRef binaryValue = new BytesRef(value);
+
+        // If the UTF8 encoding of the field value is bigger than the max length 32766, Lucene fill fail the indexing request
+        // and, to
+        // roll
+        // back the changes, will mark the (possibly partially indexed) document as deleted. This results in deletes, even in an
+        // append-only
+        // workload, which in turn leads to slower merges, as these will potentially have to fall back to MergeStrategy.DOC
+        // instead of
+        // MergeStrategy.BULK. To avoid this, we do a preflight check here before indexing the document into Lucene.
+        if (binaryValue.length > MAX_TERM_LENGTH) {
+            throwOnMaxTermLength(name, binaryValue);
+        }
+        return binaryValue;
+    }
+
+    private static void throwOnMaxTermLength(String name, BytesRef binaryValue) {
+        byte[] prefix = new byte[30];
+        System.arraycopy(binaryValue.bytes, binaryValue.offset, prefix, 0, 30);
+        String msg = "Document contains at least one immense term in field=\""
+            + name
+            + "\" (whose "
+            + "UTF8 encoding is longer than the max length "
+            + MAX_TERM_LENGTH
+            + "), all of which were "
+            + "skipped. Please correct the analyzer to not produce such terms. The prefix of the first immense "
+            + "term is: '"
+            + Arrays.toString(prefix)
+            + "...'";
+        throw new IllegalArgumentException(msg);
+    }
+
+    private static BiFunction<String, String, String> buildKeywordNormalizer(NamedAnalyzer n) {
+        if (n == Lucene.KEYWORD_ANALYZER) {
+            return (name, value) -> value;
+        }
+        return (name, value) -> {
+            try (TokenStream ts = n.tokenStream(name, value)) {
+                final CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
+                ts.reset();
+                if (ts.incrementToken() == false) {
+                    throw new IllegalStateException(String.format(Locale.ROOT, """
+                        The normalization token stream is expected to produce exactly 1 token, \
+                        but got 0 for analyzer %s and input "%s"
+                        """, n, value));
+                }
+                final String newValue = termAtt.toString();
+                if (ts.incrementToken()) {
+                    throw new IllegalStateException(String.format(Locale.ROOT, """
+                        The normalization token stream is expected to produce exactly 1 token, \
+                        but got 2+ for analyzer %s and input "%s"
+                        """, n, value));
+                }
+                ts.end();
+                return newValue;
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        };
     }
 
     @Override
@@ -902,73 +1021,10 @@ public final class KeywordFieldMapper extends FieldMapper {
             return;
         }
 
-        value = normalizeValue(fieldType().normalizer(), name(), value);
-        if (dimension) {
-            context.getDimensions().addString(fieldType().name(), value);
-        }
-
-        // convert to utf8 only once before feeding postings/dv/stored fields
-        final BytesRef binaryValue = new BytesRef(value);
-
-        // If the UTF8 encoding of the field value is bigger than the max length 32766, Lucene fill fail the indexing request and, to roll
-        // back the changes, will mark the (possibly partially indexed) document as deleted. This results in deletes, even in an append-only
-        // workload, which in turn leads to slower merges, as these will potentially have to fall back to MergeStrategy.DOC instead of
-        // MergeStrategy.BULK. To avoid this, we do a preflight check here before indexing the document into Lucene.
-        if (binaryValue.length > MAX_TERM_LENGTH) {
-            byte[] prefix = new byte[30];
-            System.arraycopy(binaryValue.bytes, binaryValue.offset, prefix, 0, 30);
-            String msg = "Document contains at least one immense term in field=\""
-                + fieldType().name()
-                + "\" (whose "
-                + "UTF8 encoding is longer than the max length "
-                + MAX_TERM_LENGTH
-                + "), all of which were "
-                + "skipped. Please correct the analyzer to not produce such terms. The prefix of the first immense "
-                + "term is: '"
-                + Arrays.toString(prefix)
-                + "...'";
-            throw new IllegalArgumentException(msg);
-        }
-
-        if (fieldType.indexOptions() != IndexOptions.NONE || fieldType.stored()) {
-            Field field = new KeywordField(fieldType().name(), binaryValue, fieldType);
-            context.doc().add(field);
-
-            if (fieldType().hasDocValues() == false && fieldType.omitNorms()) {
-                context.addToFieldNames(fieldType().name());
-            }
-        }
-
-        if (fieldType().hasDocValues()) {
-            context.doc().add(new SortedSetDocValuesField(fieldType().name(), binaryValue));
-        }
-    }
-
-    private static String normalizeValue(NamedAnalyzer normalizer, String field, String value) {
-        if (normalizer == Lucene.KEYWORD_ANALYZER) {
-            return value;
-        }
-        try (TokenStream ts = normalizer.tokenStream(field, value)) {
-            final CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
-            ts.reset();
-            if (ts.incrementToken() == false) {
-                throw new IllegalStateException(String.format(Locale.ROOT, """
-                    The normalization token stream is expected to produce exactly 1 token, \
-                    but got 0 for analyzer %s and input "%s"
-                    """, normalizer, value));
-            }
-            final String newValue = termAtt.toString();
-            if (ts.incrementToken()) {
-                throw new IllegalStateException(String.format(Locale.ROOT, """
-                    The normalization token stream is expected to produce exactly 1 token, \
-                    but got 2+ for analyzer %s and input "%s"
-                    """, normalizer, value));
-            }
-            ts.end();
-            return newValue;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        final String name = name();
+        value = normalizer.apply(name, value);
+        handleDimension.accept(context, name, value);
+        finalConsumer.consume(context, fieldType, name, value);
     }
 
     @Override
