@@ -39,7 +39,7 @@ class FieldCapabilitiesNodeRequest extends ActionRequest implements IndicesReque
 
     FieldCapabilitiesNodeRequest(StreamInput in) throws IOException {
         super(in);
-        shardIds = in.readList(ShardId::new);
+        shardIds = in.readImmutableListOfNonNull(ShardId::new);
         fields = in.readStringArray();
         if (in.getVersion().onOrAfter(Version.V_8_2_0)) {
             filters = in.readStringArray();

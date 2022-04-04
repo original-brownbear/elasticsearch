@@ -117,7 +117,7 @@ public final class VersionStats implements ToXContentFragment, Writeable {
     }
 
     VersionStats(StreamInput in) throws IOException {
-        this.versionStats = Collections.unmodifiableSet(new TreeSet<>(in.readList(SingleVersionStats::new)));
+        this.versionStats = Collections.unmodifiableSet(new TreeSet<>(in.readImmutableListOfNonNull(SingleVersionStats::new)));
     }
 
     public Set<SingleVersionStats> versionStats() {

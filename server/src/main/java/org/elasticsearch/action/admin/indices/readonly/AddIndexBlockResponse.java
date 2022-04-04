@@ -33,7 +33,7 @@ public class AddIndexBlockResponse extends ShardsAcknowledgedResponse {
 
     AddIndexBlockResponse(StreamInput in) throws IOException {
         super(in, true);
-        indices = List.copyOf(in.readList(AddBlockResult::new));
+        indices = in.readImmutableListOfNonNull(AddBlockResult::new);
     }
 
     public AddIndexBlockResponse(final boolean acknowledged, final boolean shardsAcknowledged, final List<AddBlockResult> indices) {

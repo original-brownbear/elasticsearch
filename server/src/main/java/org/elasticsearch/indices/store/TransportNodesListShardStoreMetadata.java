@@ -205,7 +205,7 @@ public class TransportNodesListShardStoreMetadata extends TransportNodesAction<
                 new ShardId(in);
             }
             final var metadataSnapshot = Store.MetadataSnapshot.readFrom(in);
-            final var peerRecoveryRetentionLeases = in.readList(RetentionLease::new);
+            final var peerRecoveryRetentionLeases = in.readImmutableListOfNonNull(RetentionLease::new);
             if (metadataSnapshot == Store.MetadataSnapshot.EMPTY && peerRecoveryRetentionLeases.isEmpty()) {
                 return EMPTY;
             } else {

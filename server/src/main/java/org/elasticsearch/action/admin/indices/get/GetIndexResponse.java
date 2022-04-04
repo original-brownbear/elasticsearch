@@ -85,7 +85,7 @@ public class GetIndexResponse extends ActionResponse implements ToXContentObject
             }
         } : i -> i.readBoolean() ? new MappingMetadata(i) : MappingMetadata.EMPTY_MAPPINGS);
 
-        aliases = in.readImmutableMap(StreamInput::readString, i -> i.readList(AliasMetadata::new));
+        aliases = in.readImmutableMap(StreamInput::readString, i -> i.readImmutableListOfNonNull(AliasMetadata::new));
         settings = in.readImmutableMap(StreamInput::readString, Settings::readSettingsFromStream);
         defaultSettings = in.readImmutableMap(StreamInput::readString, Settings::readSettingsFromStream);
         dataStreams = in.readImmutableMap(StreamInput::readString, StreamInput::readOptionalString);

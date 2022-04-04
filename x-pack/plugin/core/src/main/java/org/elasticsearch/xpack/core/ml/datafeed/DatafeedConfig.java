@@ -278,7 +278,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
         this.queryDelay = in.readOptionalTimeValue();
         this.frequency = in.readOptionalTimeValue();
         if (in.readBoolean()) {
-            this.indices = Collections.unmodifiableList(in.readStringList());
+            this.indices = in.readStringList();
         } else {
             this.indices = null;
         }
@@ -288,7 +288,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
         this.aggProvider = in.readOptionalWriteable(AggProvider::fromStream);
 
         if (in.readBoolean()) {
-            this.scriptFields = Collections.unmodifiableList(in.readList(SearchSourceBuilder.ScriptField::new));
+            this.scriptFields = in.readImmutableListOfNonNull(SearchSourceBuilder.ScriptField::new);
         } else {
             this.scriptFields = null;
         }
@@ -796,7 +796,7 @@ public class DatafeedConfig implements SimpleDiffable<DatafeedConfig>, ToXConten
             this.aggProvider = in.readOptionalWriteable(AggProvider::fromStream);
 
             if (in.readBoolean()) {
-                this.scriptFields = Collections.unmodifiableList(in.readList(SearchSourceBuilder.ScriptField::new));
+                this.scriptFields = in.readImmutableListOfNonNull(SearchSourceBuilder.ScriptField::new);
             } else {
                 this.scriptFields = null;
             }

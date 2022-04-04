@@ -239,7 +239,7 @@ public class Accuracy implements EvaluationMetric {
         }
 
         public Result(StreamInput in) throws IOException {
-            this.classes = Collections.unmodifiableList(in.readList(PerClassSingleValue::new));
+            this.classes = in.readImmutableListOfNonNull(PerClassSingleValue::new);
             this.overallAccuracy = in.readDouble();
         }
 

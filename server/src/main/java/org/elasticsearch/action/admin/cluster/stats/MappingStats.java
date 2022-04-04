@@ -154,8 +154,8 @@ public final class MappingStats implements ToXContentFragment, Writeable {
     }
 
     MappingStats(StreamInput in) throws IOException {
-        fieldTypeStats = Collections.unmodifiableList(in.readList(FieldStats::new));
-        runtimeFieldStats = Collections.unmodifiableList(in.readList(RuntimeFieldStats::new));
+        fieldTypeStats = in.readImmutableListOfNonNull(FieldStats::new);
+        runtimeFieldStats = in.readImmutableListOfNonNull(RuntimeFieldStats::new);
     }
 
     @Override

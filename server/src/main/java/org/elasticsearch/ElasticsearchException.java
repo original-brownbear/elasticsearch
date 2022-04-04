@@ -125,8 +125,8 @@ public class ElasticsearchException extends RuntimeException implements ToXConte
     public ElasticsearchException(StreamInput in) throws IOException {
         super(in.readOptionalString(), in.readException());
         readStackTrace(this, in);
-        headers.putAll(in.readMapOfLists(StreamInput::readString, StreamInput::readString));
-        metadata.putAll(in.readMapOfLists(StreamInput::readString, StreamInput::readString));
+        headers.putAll(in.readMap(StreamInput::readString, StreamInput::readStringList));
+        metadata.putAll(in.readMap(StreamInput::readString, StreamInput::readStringList));
     }
 
     /**

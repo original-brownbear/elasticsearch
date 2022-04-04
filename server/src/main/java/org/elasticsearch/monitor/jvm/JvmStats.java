@@ -496,7 +496,7 @@ public class JvmStats implements Writeable, ToXContentFragment {
             nonHeapCommitted = in.readVLong();
             nonHeapUsed = in.readVLong();
             heapMax = in.readVLong();
-            pools = in.readList(MemoryPool::new);
+            pools = in.readImmutableListOfNonNull(MemoryPool::new);
         }
 
         @Override

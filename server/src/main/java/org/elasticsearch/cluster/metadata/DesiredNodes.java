@@ -52,7 +52,7 @@ public record DesiredNodes(String historyID, long version, List<DesiredNode> nod
     }
 
     public DesiredNodes(StreamInput in) throws IOException {
-        this(in.readString(), in.readLong(), in.readList(DesiredNode::new));
+        this(in.readString(), in.readLong(), in.readImmutableListOfNonNull(DesiredNode::new));
     }
 
     @Override

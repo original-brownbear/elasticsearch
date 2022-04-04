@@ -257,7 +257,7 @@ public class IndicesShardStoresResponse extends ActionResponse implements ToXCon
             }
             return shardEntries.build();
         });
-        failures = Collections.unmodifiableList(in.readList(Failure::readFailure));
+        failures = in.readImmutableListOfNonNull(Failure::readFailure);
     }
 
     /**

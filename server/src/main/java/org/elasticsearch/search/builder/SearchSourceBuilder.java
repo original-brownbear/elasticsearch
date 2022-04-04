@@ -209,7 +209,7 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
         storedFieldsContext = in.readOptionalWriteable(StoredFieldsContext::new);
         from = in.readVInt();
         highlightBuilder = in.readOptionalWriteable(HighlightBuilder::new);
-        indexBoosts = in.readList(IndexBoost::new);
+        indexBoosts.addAll(in.readImmutableListOfNonNull(IndexBoost::new));
         minScore = in.readOptionalFloat();
         postQueryBuilder = in.readOptionalNamedWriteable(QueryBuilder.class);
         queryBuilder = in.readOptionalNamedWriteable(QueryBuilder.class);

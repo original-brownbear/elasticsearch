@@ -31,7 +31,7 @@ public final class RepositoryCleanupInProgress extends AbstractNamedDiffable<Clu
     }
 
     RepositoryCleanupInProgress(StreamInput in) throws IOException {
-        this.entries = in.readList(Entry::new);
+        this.entries = in.readImmutableListOfNonNull(Entry::new);
     }
 
     public static NamedDiff<ClusterState.Custom> readDiffFrom(StreamInput in) throws IOException {
@@ -48,7 +48,7 @@ public final class RepositoryCleanupInProgress extends AbstractNamedDiffable<Clu
     }
 
     public List<Entry> entries() {
-        return List.copyOf(entries);
+        return entries;
     }
 
     @Override

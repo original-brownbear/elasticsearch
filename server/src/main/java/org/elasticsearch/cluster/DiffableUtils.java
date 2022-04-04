@@ -431,7 +431,7 @@ public final class DiffableUtils {
         protected MapDiff(StreamInput in, KeySerializer<K> keySerializer, ValueSerializer<K, T> valueSerializer) throws IOException {
             this.keySerializer = keySerializer;
             this.valueSerializer = valueSerializer;
-            deletes = in.readList(keySerializer::readKey);
+            deletes = in.readImmutableListOfNonNull(keySerializer::readKey);
             int diffsCount = in.readVInt();
             diffs = diffsCount == 0 ? Collections.emptyMap() : Maps.newMapWithExpectedSize(diffsCount);
             for (int i = 0; i < diffsCount; i++) {

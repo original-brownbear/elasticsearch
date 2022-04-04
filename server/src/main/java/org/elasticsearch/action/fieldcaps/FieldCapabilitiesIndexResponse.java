@@ -88,10 +88,10 @@ final class FieldCapabilitiesIndexResponse implements Writeable {
 
     static List<FieldCapabilitiesIndexResponse> readList(StreamInput input) throws IOException {
         if (input.getVersion().before(MAPPING_HASH_VERSION)) {
-            return input.readList(FieldCapabilitiesIndexResponse::new);
+            return input.readImmutableListOfNonNull(FieldCapabilitiesIndexResponse::new);
         }
-        final List<FieldCapabilitiesIndexResponse> ungroupedList = input.readList(FieldCapabilitiesIndexResponse::new);
-        final List<GroupByMappingHash> groups = input.readList(GroupByMappingHash::new);
+        final List<FieldCapabilitiesIndexResponse> ungroupedList = input.readImmutableListOfNonNull(FieldCapabilitiesIndexResponse::new);
+        final List<GroupByMappingHash> groups = input.readImmutableListOfNonNull(GroupByMappingHash::new);
         return Stream.concat(ungroupedList.stream(), groups.stream().flatMap(g -> g.getResponses().stream())).toList();
     }
 
