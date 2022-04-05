@@ -53,9 +53,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@Fork(value = 1) // jvmArgs = { "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining" })
+@Fork(value = 1, jvmArgs = { "-XX:+PrintCompilation", "-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintInlining" })
 @Warmup(iterations = 5)
-@Measurement(iterations = 15)
+@Measurement(iterations = 150)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Benchmark)

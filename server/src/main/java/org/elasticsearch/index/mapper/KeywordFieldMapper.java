@@ -58,10 +58,12 @@ import org.elasticsearch.search.runtime.StringScriptFieldPrefixQuery;
 import org.elasticsearch.search.runtime.StringScriptFieldRegexpQuery;
 import org.elasticsearch.search.runtime.StringScriptFieldTermQuery;
 import org.elasticsearch.search.runtime.StringScriptFieldWildcardQuery;
-import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,7 +72,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static org.apache.lucene.index.IndexWriter.MAX_TERM_LENGTH;
@@ -88,17 +92,23 @@ public final class KeywordFieldMapper extends FieldMapper {
 
         FinalConsumer NOOP_FINAL_CONSUMER = (context, ft, name, value) -> {};
         FinalConsumer STORE_OMIT_NORMS = KeywordFieldMapper::addKeywordField;
-        FinalConsumer STORE_WITH_NORMS = (context, ft, name, value) -> {
-            addKeywordField(context, ft, name, value);
-            context.addToFieldNames(name);
-        };
-        FinalConsumer STORE_WITH_DOC_VALUES = (context, ft, name, value) -> {
-            final BytesRef binaryValue = convertKeywordToBytesRef(value, name);
-            context.doc().add(new KeywordField(name, binaryValue, ft));
-            context.doc().add(new SortedSetDocValuesField(name, binaryValue));
-        };
-        FinalConsumer NO_STORE_ONLY_DOC_VALUES = (context, ft, name, value) -> context.doc()
-            .add(new SortedSetDocValuesField(name, convertKeywordToBytesRef(value, name)));
+        FinalConsumer STORE_WITH_NORMS = KeywordFieldMapper::storeWithNorms;
+        FinalConsumer STORE_WITH_DOC_VALUES = KeywordFieldMapper::storeWithDocValues;
+    }
+
+    private static void noStoreOnlyDocValues(DocumentParserContext context, String name, String value) {
+        context.doc().add(new SortedSetDocValuesField(name, convertKeywordToBytesRef(value, name)));
+    }
+
+    private static void storeWithDocValues(DocumentParserContext context, FieldType ft, String name, String value) {
+        final BytesRef binaryValue = convertKeywordToBytesRef(value, name);
+        context.doc().add(new KeywordField(name, binaryValue, ft));
+        context.doc().add(new SortedSetDocValuesField(name, binaryValue));
+    }
+
+    private static void storeWithNorms(DocumentParserContext context, FieldType ft, String name, String value) {
+        addKeywordField(context, ft, name, value);
+        context.addToFieldNames(name);
     }
 
     private static void addKeywordField(DocumentParserContext context, FieldType ft, String name, String value) {
@@ -308,7 +318,6 @@ public final class KeywordFieldMapper extends FieldMapper {
         private final int ignoreAbove;
         private final String nullValue;
         private final NamedAnalyzer normalizer;
-        private final BiFunction<String, String, String> normalizerFunction;
         private final boolean eagerGlobalOrdinals;
         private final FieldValues<String> scriptValues;
         private final boolean isDimension;
@@ -331,7 +340,6 @@ public final class KeywordFieldMapper extends FieldMapper {
             );
             this.eagerGlobalOrdinals = builder.eagerGlobalOrdinals.getValue();
             this.normalizer = normalizer;
-            this.normalizerFunction = buildKeywordNormalizer(normalizer);
             this.ignoreAbove = builder.ignoreAbove.getValue();
             this.nullValue = builder.nullValue.getValue();
             this.scriptValues = builder.scriptValues();
@@ -341,7 +349,6 @@ public final class KeywordFieldMapper extends FieldMapper {
         public KeywordFieldType(String name, boolean isIndexed, boolean hasDocValues, Map<String, String> meta) {
             super(name, isIndexed, false, hasDocValues, TextSearchInfo.SIMPLE_MATCH_ONLY, meta);
             this.normalizer = Lucene.KEYWORD_ANALYZER;
-            this.normalizerFunction = buildKeywordNormalizer(normalizer);
             this.ignoreAbove = Integer.MAX_VALUE;
             this.nullValue = null;
             this.eagerGlobalOrdinals = false;
@@ -363,7 +370,6 @@ public final class KeywordFieldMapper extends FieldMapper {
                 Collections.emptyMap()
             );
             this.normalizer = Lucene.KEYWORD_ANALYZER;
-            this.normalizerFunction = buildKeywordNormalizer(normalizer);
             this.ignoreAbove = Integer.MAX_VALUE;
             this.nullValue = null;
             this.eagerGlobalOrdinals = false;
@@ -374,7 +380,6 @@ public final class KeywordFieldMapper extends FieldMapper {
         public KeywordFieldType(String name, NamedAnalyzer analyzer) {
             super(name, true, false, true, new TextSearchInfo(Defaults.FIELD_TYPE, null, analyzer, analyzer), Collections.emptyMap());
             this.normalizer = Lucene.KEYWORD_ANALYZER;
-            this.normalizerFunction = buildKeywordNormalizer(normalizer);
             this.ignoreAbove = Integer.MAX_VALUE;
             this.nullValue = null;
             this.eagerGlobalOrdinals = false;
@@ -684,7 +689,7 @@ public final class KeywordFieldMapper extends FieldMapper {
                         return null;
                     }
 
-                    return normalizerFunction.apply(name(), keywordValue);
+                    return invokeNormalizer(normalizer, name(), keywordValue);
                 }
             };
         }
@@ -854,9 +859,198 @@ public final class KeywordFieldMapper extends FieldMapper {
 
     private final IndexAnalyzers indexAnalyzers;
 
-    private final BiFunction<String, String, String> normalizer;
     private final TriConsumer<DocumentParserContext, String, String> handleDimension;
-    private final FinalConsumer finalConsumer;
+    private final Predicate<String> ignoreAbovePredicate;
+
+    private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+    private record KeyWordMapperStrategyParams(
+        boolean dimension,
+        boolean hasDocValues,
+        boolean indexedOrStored,
+        boolean ommitNorms,
+        int ignoreAbove,
+        String nullValue,
+        NamedAnalyzer normalizer
+    ) {
+
+        MethodHandle compile() {
+            try {
+                final MethodHandle finalConsumer;
+                if (hasDocValues) {
+                    if (indexedOrStored) {
+                        finalConsumer = lookup.findStatic(
+                            KeywordFieldMapper.class,
+                            "storeWithDocValues",
+                            MethodType.methodType(void.class, DocumentParserContext.class, FieldType.class, String.class, String.class)
+                        );
+                    } else {
+                        finalConsumer = MethodHandles.dropArguments(
+                            lookup.findStatic(
+                                KeywordFieldMapper.class,
+                                "noStoreOnlyDocValues",
+                                MethodType.methodType(void.class, DocumentParserContext.class, String.class, String.class)
+                            ),
+                            1,
+                            FieldType.class
+                        )
+                            .asType(
+                                MethodType.methodType(void.class, DocumentParserContext.class, FieldType.class, String.class, String.class)
+                            );
+                    }
+                } else {
+                    if (indexedOrStored) {
+                        if (ommitNorms) {
+                            finalConsumer = lookup.findStatic(
+                                KeywordFieldMapper.class,
+                                "storeWithNorms",
+                                MethodType.methodType(void.class, DocumentParserContext.class, FieldType.class, String.class, String.class)
+                            );
+                        } else {
+                            finalConsumer = lookup.findStatic(
+                                KeywordFieldMapper.class,
+                                "addKeywordField",
+                                MethodType.methodType(void.class, DocumentParserContext.class, FieldType.class, String.class, String.class)
+                            );
+                        }
+                    } else {
+                        finalConsumer = MethodHandles.empty(MethodType.methodType(void.class, DocumentParserContext.class));
+                    }
+                }
+
+                MethodHandle base = finalConsumer;
+                if (dimension) {
+                    base = MethodHandles.foldArguments(
+                        base,
+                        MethodHandles.dropArguments(
+                            lookup.findStatic(
+                                KeywordFieldMapper.class,
+                                "addDimension",
+                                MethodType.methodType(void.class, DocumentParserContext.class, String.class, String.class)
+                            ),
+                            1,
+                            FieldType.class
+                        )
+                    );
+                }
+                if (normalizer != Lucene.KEYWORD_ANALYZER) {
+                    base = MethodHandles.permuteArguments(
+                        base,
+                        MethodType.methodType(
+                            void.class,
+                            DocumentParserContext.class,
+                            FieldType.class,
+                            String.class,
+                            String.class,
+                            String.class
+                        ),
+                        0,
+                        1,
+                        3,
+                        2
+                    );
+                    base = MethodHandles.foldArguments(
+                        base,
+                        2,
+                        MethodHandles.insertArguments(
+                            lookup.findStatic(
+                                KeywordFieldMapper.class,
+                                "invokeNormalizer",
+                                MethodType.methodType(String.class, NamedAnalyzer.class, String.class, String.class)
+                            ),
+                            0,
+                            normalizer
+                        )
+                    );
+                }
+                if (ignoreAbove != Integer.MAX_VALUE) {
+                    base = MethodHandles.guardWithTest(
+                        MethodHandles.dropArguments(
+                            MethodHandles.insertArguments(
+                                lookup.findStatic(
+                                    KeywordFieldMapper.class,
+                                    "notGreaterThan",
+                                    MethodType.methodType(boolean.class, int.class, String.class)
+                                ),
+                                0,
+                                ignoreAbove
+                            ),
+                            0,
+                            DocumentParserContext.class,
+                            FieldType.class,
+                            String.class
+                        ),
+                        base,
+                        MethodHandles.dropArguments(
+                            MethodHandles.dropArguments(
+                                lookup.findStatic(
+                                    KeywordFieldMapper.class,
+                                    "addIgnored",
+                                    MethodType.methodType(void.class, DocumentParserContext.class, String.class)
+                                ),
+                                1,
+                                FieldType.class
+                            ),
+                            3,
+                            String.class
+                        )
+                    );
+                }
+                base = MethodHandles.guardWithTest(
+                    MethodHandles.dropArguments(
+                        lookup.findStatic(Objects.class, "nonNull", MethodType.methodType(boolean.class, Object.class))
+                            .asType(MethodType.methodType(boolean.class, String.class)),
+                        0,
+                        DocumentParserContext.class,
+                        FieldType.class,
+                        String.class
+                    ),
+                    base,
+                    MethodHandles.empty(base.type())
+                );
+                if (nullValue != null) {
+                    base = MethodHandles.filterArguments(
+                        base,
+                        3,
+                        MethodHandles.insertArguments(
+                            lookup.findStatic(
+                                Objects.class,
+                                "requireNonNullElse",
+                                MethodType.methodType(Object.class, Object.class, Object.class)
+                            ).asType(MethodType.methodType(String.class, String.class, String.class)),
+                            1,
+                            nullValue
+                        )
+                    );
+                }
+
+                // final String name = name();
+                // if (ignoreAbovePredicate.test(value)) {
+                // value = normalizer.apply(name, value);
+                // handleDimension.accept(context, name, value);
+                // finalConsumer.consume(context, fieldType, name, value);
+                // } else {
+                // context.addIgnoredField(name);
+                // }
+                return base;
+            } catch (Throwable t) {
+                throw new AssertionError(t);
+            }
+        }
+    }
+
+    private static void addIgnored(DocumentParserContext context, String name) {
+        context.addIgnoredField(name);
+    }
+
+    private static boolean notGreaterThan(int len, String string) {
+        return string.length() <= len;
+    }
+
+    private static final Map<KeyWordMapperStrategyParams, KeyWordMapperStrategyParams> paramsDedup = new ConcurrentHashMap<>();
+    private static final Map<KeyWordMapperStrategyParams, MethodHandle> compiled = new ConcurrentHashMap<>();
+
+    private final MethodHandle mapper;
 
     private KeywordFieldMapper(
         String simpleName,
@@ -893,31 +1087,35 @@ public final class KeywordFieldMapper extends FieldMapper {
         this.dimension = builder.dimension.getValue();
         this.indexCreatedVersion = builder.indexCreatedVersion;
         // new stuff
-        this.normalizer = fieldType().normalizerFunction;
         if (dimension) {
-            handleDimension = (context, name, value) -> context.getDimensions().addString(name, value);
+            handleDimension = (context, name, value) -> addDimension(context, name, value);
         } else {
             handleDimension = (context, name, value) -> {};
         }
         final boolean hasDocValues = fieldType().hasDocValues();
         final boolean indexedOrStored = fieldType.indexOptions() != IndexOptions.NONE || fieldType.stored();
-        if (hasDocValues) {
-            if (indexedOrStored) {
-                finalConsumer = FinalConsumer.STORE_WITH_DOC_VALUES;
-            } else {
-                finalConsumer = FinalConsumer.NO_STORE_ONLY_DOC_VALUES;
-            }
+        if (ignoreAbove == Integer.MAX_VALUE) {
+            ignoreAbovePredicate = v -> true;
         } else {
-            if (indexedOrStored) {
-                if (fieldType.omitNorms()) {
-                    finalConsumer = FinalConsumer.STORE_WITH_NORMS;
-                } else {
-                    finalConsumer = FinalConsumer.STORE_OMIT_NORMS;
-                }
-            } else {
-                finalConsumer = FinalConsumer.NOOP_FINAL_CONSUMER;
-            }
+            ignoreAbovePredicate = v -> v.length() <= ignoreAbove;
         }
+        final KeyWordMapperStrategyParams strategyParams = paramsDedup.computeIfAbsent(
+            new KeyWordMapperStrategyParams(
+                dimension,
+                hasDocValues,
+                indexedOrStored,
+                fieldType.omitNorms(),
+                ignoreAbove,
+                nullValue,
+                fieldType().normalizer
+            ),
+            Function.identity()
+        );
+        mapper = compiled.computeIfAbsent(strategyParams, KeyWordMapperStrategyParams::compile);
+    }
+
+    private static void addDimension(DocumentParserContext context, String name, String value) {
+        context.getDimensions().addString(name, value);
     }
 
     private static BytesRef convertKeywordToBytesRef(String value, String name) {
@@ -954,33 +1152,36 @@ public final class KeywordFieldMapper extends FieldMapper {
         throw new IllegalArgumentException(msg);
     }
 
-    private static BiFunction<String, String, String> buildKeywordNormalizer(NamedAnalyzer n) {
-        if (n == Lucene.KEYWORD_ANALYZER) {
-            return (name, value) -> value;
-        }
-        return (name, value) -> {
-            try (TokenStream ts = n.tokenStream(name, value)) {
-                final CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
-                ts.reset();
-                if (ts.incrementToken() == false) {
-                    throw new IllegalStateException(String.format(Locale.ROOT, """
-                        The normalization token stream is expected to produce exactly 1 token, \
-                        but got 0 for analyzer %s and input "%s"
-                        """, n, value));
-                }
-                final String newValue = termAtt.toString();
-                if (ts.incrementToken()) {
-                    throw new IllegalStateException(String.format(Locale.ROOT, """
-                        The normalization token stream is expected to produce exactly 1 token, \
-                        but got 2+ for analyzer %s and input "%s"
-                        """, n, value));
-                }
-                ts.end();
-                return newValue;
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+    private static String invokeNormalizer(NamedAnalyzer n,  String name, String value) {
+        try (TokenStream ts = n.tokenStream(name, value)) {
+            final CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
+            ts.reset();
+            if (ts.incrementToken() == false) {
+                throwOnProduceNoToken(n, value);
             }
-        };
+            final String newValue = termAtt.toString();
+            if (ts.incrementToken()) {
+                throwOnProduceMultipleTokens(n, value);
+            }
+            ts.end();
+            return newValue;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static void throwOnProduceNoToken(NamedAnalyzer n, String value) {
+        throw new IllegalStateException(String.format(Locale.ROOT, """
+            The normalization token stream is expected to produce exactly 1 token, \
+            but got 0 for analyzer %s and input "%s"
+            """, n, value));
+    }
+
+    private static void throwOnProduceMultipleTokens(NamedAnalyzer n, String value) {
+        throw new IllegalStateException(String.format(Locale.ROOT, """
+            The normalization token stream is expected to produce exactly 1 token, \
+            but got 2+ for analyzer %s and input "%s"
+            """, n, value));
     }
 
     @Override
@@ -990,15 +1191,13 @@ public final class KeywordFieldMapper extends FieldMapper {
 
     @Override
     protected void parseCreateField(DocumentParserContext context) throws IOException {
-        String value;
-        XContentParser parser = context.parser();
-        if (parser.currentToken() == XContentParser.Token.VALUE_NULL) {
-            value = nullValue;
-        } else {
-            value = parser.textOrNull();
+        try {
+            mapper.invokeExact(context, fieldType, name(), context.parser().textOrNull());
+        } catch (IOException | RuntimeException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new AssertionError(t);
         }
-
-        indexValue(context, value);
     }
 
     @Override
@@ -1016,15 +1215,14 @@ public final class KeywordFieldMapper extends FieldMapper {
             return;
         }
 
-        if (value.length() > ignoreAbove) {
-            context.addIgnoredField(name());
-            return;
-        }
-
         final String name = name();
-        value = normalizer.apply(name, value);
-        handleDimension.accept(context, name, value);
-        finalConsumer.consume(context, fieldType, name, value);
+        if (ignoreAbovePredicate.test(value)) {
+            value = invokeNormalizer(fieldType().normalizer, name, value);
+            handleDimension.accept(context, name, value);
+            //finalConsumer.consume(context, fieldType, name, value);
+        } else {
+            context.addIgnoredField(name);
+        }
     }
 
     @Override
