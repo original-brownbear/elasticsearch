@@ -897,14 +897,15 @@ public final class KeywordFieldMapper extends FieldMapper {
             return;
         }
 
+        final String name = name();
         if (value.length() > ignoreAbove) {
-            context.addIgnoredField(name());
+            context.addIgnoredField(name);
             return;
         }
 
-        value = normalizeValue(fieldType().normalizer(), name(), value);
+        value = normalizeValue(fieldType().normalizer(), name, value);
         if (dimension) {
-            context.getDimensions().addString(fieldType().name(), value);
+            context.getDimensions().addString(name, value);
         }
 
         // convert to utf8 only once before feeding postings/dv/stored fields
@@ -915,39 +916,45 @@ public final class KeywordFieldMapper extends FieldMapper {
         // workload, which in turn leads to slower merges, as these will potentially have to fall back to MergeStrategy.DOC instead of
         // MergeStrategy.BULK. To avoid this, we do a preflight check here before indexing the document into Lucene.
         if (binaryValue.length > MAX_TERM_LENGTH) {
-            byte[] prefix = new byte[30];
-            System.arraycopy(binaryValue.bytes, binaryValue.offset, prefix, 0, 30);
-            String msg = "Document contains at least one immense term in field=\""
-                + fieldType().name()
-                + "\" (whose "
-                + "UTF8 encoding is longer than the max length "
-                + MAX_TERM_LENGTH
-                + "), all of which were "
-                + "skipped. Please correct the analyzer to not produce such terms. The prefix of the first immense "
-                + "term is: '"
-                + Arrays.toString(prefix)
-                + "...'";
-            throw new IllegalArgumentException(msg);
+            throwOnMaxTermLengthExceeded(name, binaryValue);
         }
 
+        final boolean hasDocValues = fieldType().hasDocValues();
         if (fieldType.indexOptions() != IndexOptions.NONE || fieldType.stored()) {
-            Field field = new KeywordField(fieldType().name(), binaryValue, fieldType);
+            Field field = new KeywordField(name, binaryValue, fieldType);
             context.doc().add(field);
 
-            if (fieldType().hasDocValues() == false && fieldType.omitNorms()) {
-                context.addToFieldNames(fieldType().name());
+            if (hasDocValues == false && fieldType.omitNorms()) {
+                context.addToFieldNames(name);
             }
         }
 
-        if (fieldType().hasDocValues()) {
-            context.doc().add(new SortedSetDocValuesField(fieldType().name(), binaryValue));
+        if (hasDocValues) {
+            context.doc().add(new SortedSetDocValuesField(name, binaryValue));
         }
     }
 
+    private static void throwOnMaxTermLengthExceeded(String name, BytesRef binaryValue) {
+        byte[] prefix = new byte[30];
+        System.arraycopy(binaryValue.bytes, binaryValue.offset, prefix, 0, 30);
+        String msg = "Document contains at least one immense term in field=\""
+            + name
+            + "\" (whose "
+            + "UTF8 encoding is longer than the max length "
+            + MAX_TERM_LENGTH
+            + "), all of which were "
+            + "skipped. Please correct the analyzer to not produce such terms. The prefix of the first immense "
+            + "term is: '"
+            + Arrays.toString(prefix)
+            + "...'";
+        throw new IllegalArgumentException(msg);
+    }
+
     private static String normalizeValue(NamedAnalyzer normalizer, String field, String value) {
-        if (normalizer == Lucene.KEYWORD_ANALYZER) {
-            return value;
-        }
+        return normalizer == Lucene.KEYWORD_ANALYZER ? value : doNormalizeValue(normalizer, field, value);
+    }
+
+    private static String doNormalizeValue(NamedAnalyzer normalizer, String field, String value) {
         try (TokenStream ts = normalizer.tokenStream(field, value)) {
             final CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
             ts.reset();
