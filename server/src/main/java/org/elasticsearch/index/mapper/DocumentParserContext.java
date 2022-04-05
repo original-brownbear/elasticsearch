@@ -92,6 +92,7 @@ public abstract class DocumentParserContext {
     private String id;
     private Field version;
     private SeqNoFieldMapper.SequenceIDFields seqID;
+    private final FieldNamesFieldMapper fieldNamesFieldMapper;
 
     private DocumentParserContext(DocumentParserContext in) {
         this.mappingLookup = in.mappingLookup;
@@ -108,6 +109,7 @@ public abstract class DocumentParserContext {
         this.version = in.version;
         this.seqID = in.seqID;
         this.dimensions = in.dimensions;
+        this.fieldNamesFieldMapper = (FieldNamesFieldMapper) getMetadataMapper(FieldNamesFieldMapper.NAME);
     }
 
     protected DocumentParserContext(
@@ -128,6 +130,7 @@ public abstract class DocumentParserContext {
         this.dynamicObjectMappers = new HashMap<>();
         this.dynamicRuntimeFields = new ArrayList<>();
         this.dimensions = indexSettings.getMode().buildDocumentDimensions();
+        this.fieldNamesFieldMapper = (FieldNamesFieldMapper) getMetadataMapper(FieldNamesFieldMapper.NAME);
     }
 
     public final IndexSettings indexSettings() {
@@ -179,7 +182,6 @@ public abstract class DocumentParserContext {
      * or norms.
      */
     public final void addToFieldNames(String field) {
-        FieldNamesFieldMapper fieldNamesFieldMapper = (FieldNamesFieldMapper) getMetadataMapper(FieldNamesFieldMapper.NAME);
         if (fieldNamesFieldMapper != null) {
             fieldNamesFieldMapper.addFieldNames(this, field);
         }

@@ -38,6 +38,7 @@ import org.elasticsearch.common.lucene.BytesRefs;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.lucene.search.AutomatonQueries;
 import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.index.fielddata.FieldData;
@@ -86,24 +87,15 @@ public final class KeywordFieldMapper extends FieldMapper {
 
     public static final String CONTENT_TYPE = "keyword";
 
-    @FunctionalInterface
-    private interface FinalConsumer {
-        void consume(DocumentParserContext context, FieldType fieldType, String name, String value);
-
-        FinalConsumer NOOP_FINAL_CONSUMER = (context, ft, name, value) -> {};
-        FinalConsumer STORE_OMIT_NORMS = KeywordFieldMapper::addKeywordField;
-        FinalConsumer STORE_WITH_NORMS = KeywordFieldMapper::storeWithNorms;
-        FinalConsumer STORE_WITH_DOC_VALUES = KeywordFieldMapper::storeWithDocValues;
-    }
-
     private static void noStoreOnlyDocValues(DocumentParserContext context, String name, String value) {
         context.doc().add(new SortedSetDocValuesField(name, convertKeywordToBytesRef(value, name)));
     }
 
     private static void storeWithDocValues(DocumentParserContext context, FieldType ft, String name, String value) {
         final BytesRef binaryValue = convertKeywordToBytesRef(value, name);
-        context.doc().add(new KeywordField(name, binaryValue, ft));
-        context.doc().add(new SortedSetDocValuesField(name, binaryValue));
+        final LuceneDocument document = context.doc();
+        document.add(new KeywordField(name, binaryValue, ft));
+        document.add(new SortedSetDocValuesField(name, binaryValue));
     }
 
     private static void storeWithNorms(DocumentParserContext context, FieldType ft, String name, String value) {
@@ -874,16 +866,20 @@ public final class KeywordFieldMapper extends FieldMapper {
         NamedAnalyzer normalizer
     ) {
 
+        private static final MethodType MAPPER_SIGNATURE = MethodType.methodType(
+            void.class,
+            DocumentParserContext.class,
+            FieldType.class,
+            String.class,
+            String.class
+        );
+
         MethodHandle compile() {
             try {
                 final MethodHandle finalConsumer;
                 if (hasDocValues) {
                     if (indexedOrStored) {
-                        finalConsumer = lookup.findStatic(
-                            KeywordFieldMapper.class,
-                            "storeWithDocValues",
-                            MethodType.methodType(void.class, DocumentParserContext.class, FieldType.class, String.class, String.class)
-                        );
+                        finalConsumer = lookup.findStatic(KeywordFieldMapper.class, "storeWithDocValues", MAPPER_SIGNATURE);
                     } else {
                         finalConsumer = MethodHandles.dropArguments(
                             lookup.findStatic(
@@ -893,25 +889,14 @@ public final class KeywordFieldMapper extends FieldMapper {
                             ),
                             1,
                             FieldType.class
-                        )
-                            .asType(
-                                MethodType.methodType(void.class, DocumentParserContext.class, FieldType.class, String.class, String.class)
-                            );
+                        ).asType(MAPPER_SIGNATURE);
                     }
                 } else {
                     if (indexedOrStored) {
                         if (ommitNorms) {
-                            finalConsumer = lookup.findStatic(
-                                KeywordFieldMapper.class,
-                                "storeWithNorms",
-                                MethodType.methodType(void.class, DocumentParserContext.class, FieldType.class, String.class, String.class)
-                            );
+                            finalConsumer = lookup.findStatic(KeywordFieldMapper.class, "storeWithNorms", MAPPER_SIGNATURE);
                         } else {
-                            finalConsumer = lookup.findStatic(
-                                KeywordFieldMapper.class,
-                                "addKeywordField",
-                                MethodType.methodType(void.class, DocumentParserContext.class, FieldType.class, String.class, String.class)
-                            );
+                            finalConsumer = lookup.findStatic(KeywordFieldMapper.class, "addKeywordField", MAPPER_SIGNATURE);
                         }
                     } else {
                         finalConsumer = MethodHandles.empty(MethodType.methodType(void.class, DocumentParserContext.class));
@@ -1014,29 +999,24 @@ public final class KeywordFieldMapper extends FieldMapper {
                         3,
                         MethodHandles.insertArguments(
                             lookup.findStatic(
-                                Objects.class,
-                                "requireNonNullElse",
-                                MethodType.methodType(Object.class, Object.class, Object.class)
-                            ).asType(MethodType.methodType(String.class, String.class, String.class)),
+                                KeywordFieldMapper.class,
+                                "defaultIfNull",
+                                MethodType.methodType(String.class, String.class, String.class)
+                            ),
                             1,
                             nullValue
                         )
                     );
                 }
-
-                // final String name = name();
-                // if (ignoreAbovePredicate.test(value)) {
-                // value = normalizer.apply(name, value);
-                // handleDimension.accept(context, name, value);
-                // finalConsumer.consume(context, fieldType, name, value);
-                // } else {
-                // context.addIgnoredField(name);
-                // }
                 return base;
             } catch (Throwable t) {
                 throw new AssertionError(t);
             }
         }
+    }
+
+    private static String defaultIfNull(@Nullable String value, String onNull) {
+        return value == null ? onNull : value;
     }
 
     private static void addIgnored(DocumentParserContext context, String name) {
@@ -1088,7 +1068,7 @@ public final class KeywordFieldMapper extends FieldMapper {
         this.indexCreatedVersion = builder.indexCreatedVersion;
         // new stuff
         if (dimension) {
-            handleDimension = (context, name, value) -> addDimension(context, name, value);
+            handleDimension = KeywordFieldMapper::addDimension;
         } else {
             handleDimension = (context, name, value) -> {};
         }
