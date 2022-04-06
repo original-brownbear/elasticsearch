@@ -30,6 +30,9 @@ import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.support.AbstractXContentParser;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -151,6 +154,33 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         );
     }
 
+    private final MethodHandle multiFieldsMethod;
+
+    private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+    private static final MethodType MULTI_FIELD_TYPE = MethodType.methodType(void.class, DocumentParserContext.class);
+
+    private static final MethodHandle NO_MULTI_FIELDS = MethodHandles.empty(MULTI_FIELD_TYPE);
+
+    private static MethodHandle compileMultiFieldsMethod(MultiFields multiFields, String name) {
+        if (multiFields.mappers.length == 0) {
+            return NO_MULTI_FIELDS;
+        }
+        try {
+            MethodHandle handle = lookup.findStatic(FieldMapper.class, "removeFromContextPath", MULTI_FIELD_TYPE);
+            for (int i = multiFields.mappers.length - 1; i >= 0; i--) {
+                final FieldMapper mapper = multiFields.mappers[i];
+                MethodHandle parseHandle = lookup.findVirtual(FieldMapper.class, "parse", MULTI_FIELD_TYPE);
+                handle = MethodHandles.foldArguments(handle, MethodHandles.insertArguments(parseHandle, 0, mapper));
+            }
+            MethodHandle addName = lookup.findStatic(FieldMapper.class, "addToContextPath",
+                MethodType.methodType(void.class, DocumentParserContext.class, String.class));
+            return MethodHandles.foldArguments(handle, MethodHandles.insertArguments(addName, 1, name));
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
     /**
      * Create a FieldMapper that indexes into multiple analyzed fields
      * @param simpleName        the leaf name of the mapper
@@ -181,6 +211,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         this.copyTo = Objects.requireNonNull(copyTo);
         this.hasScript = hasScript;
         this.onScriptError = onScriptError;
+        this.multiFieldsMethod = compileMultiFieldsMethod(multiFields, simpleName);
     }
 
     @Override
@@ -230,19 +261,29 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         } catch (Exception e) {
             rethrowAsMapperParsingException(context, e);
         }
-        // TODO: multi fields are really just copy fields, we just need to expose "sub fields" or something that can be part
-        // of the mappings
-        if (multiFields.mappers.length != 0) {
-            doParseMultiFields(context);
+        try {
+            multiFieldsMethod.invokeExact(context);
+        } catch (IOException | RuntimeException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new AssertionError(t);
         }
     }
 
-    private void doParseMultiFields(DocumentParserContext context) throws IOException {
-        context.path().add(simpleName());
-        for (FieldMapper mapper : multiFields.mappers) {
+    private static void addToContextPath(DocumentParserContext context, String name) {
+        context.path().add(name);
+    }
+
+    private static void removeFromContextPath(DocumentParserContext context) {
+        context.path().remove();
+    }
+
+    private static void doParseMultiFields(String name, FieldMapper[] mappers, DocumentParserContext context) throws IOException {
+        addToContextPath(context, name);
+        for (FieldMapper mapper :mappers) {
             mapper.parse(context);
         }
-        context.path().remove();
+        removeFromContextPath(context);
     }
 
     private static void throwIndexingWithScriptParam() {
