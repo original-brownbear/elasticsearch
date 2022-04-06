@@ -1534,13 +1534,11 @@ public class NumberFieldMapper extends FieldMapper {
     private static Number value(XContentParser parser, NumberType numberType, Number nullValue, boolean coerce)
         throws IllegalArgumentException, IOException {
 
-        if (parser.currentToken() == Token.VALUE_NULL) {
+        final Token token = parser.currentToken();
+        if (token == Token.VALUE_NULL || coerce && token == Token.VALUE_STRING && parser.textLength() == 0) {
             return nullValue;
         }
-        if (coerce && parser.currentToken() == Token.VALUE_STRING && parser.textLength() == 0) {
-            return nullValue;
-        }
-        if (parser.currentToken() == Token.START_OBJECT) {
+        if (token == Token.START_OBJECT) {
             throw new IllegalArgumentException("Cannot parse object as number");
         }
         return numberType.parse(parser, coerce);
