@@ -9,7 +9,6 @@
 package org.elasticsearch.index.mapper;
 
 import org.apache.lucene.document.DoublePoint;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FloatPoint;
 import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.LongPoint;
@@ -56,7 +55,6 @@ import org.elasticsearch.xcontent.XContentParser.Token;
 
 import java.io.IOException;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -349,18 +347,24 @@ public class NumberFieldMapper extends FieldMapper {
             }
 
             @Override
-            public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                List<Field> fields = new ArrayList<>();
+            public void createFields(
+                LuceneDocument document,
+                String name,
+                Number value,
+                boolean indexed,
+                boolean docValued,
+                boolean stored
+            ) {
+                final float f = value.floatValue();
                 if (indexed) {
-                    fields.add(new HalfFloatPoint(name, value.floatValue()));
+                    document.add(new HalfFloatPoint(name, f));
                 }
                 if (docValued) {
-                    fields.add(new SortedNumericDocValuesField(name, HalfFloatPoint.halfFloatToSortableShort(value.floatValue())));
+                    document.add(new SortedNumericDocValuesField(name, HalfFloatPoint.halfFloatToSortableShort(f)));
                 }
                 if (stored) {
-                    fields.add(new StoredField(name, value.floatValue()));
+                    document.add(new StoredField(name, f));
                 }
-                return fields;
             }
 
             @Override
@@ -370,8 +374,12 @@ public class NumberFieldMapper extends FieldMapper {
 
             private static void validateParsed(float value) {
                 if (Float.isFinite(HalfFloatPoint.sortableShortToHalfFloat(HalfFloatPoint.halfFloatToSortableShort(value))) == false) {
-                    throw new IllegalArgumentException("[half_float] supports only finite values, but got [" + value + "]");
+                    throwOnInfiniteHalfFloat(value);
                 }
+            }
+
+            private static void throwOnInfiniteHalfFloat(float value) {
+                throw new IllegalArgumentException("[half_float] supports only finite values, but got [" + value + "]");
             }
         },
         FLOAT("float", NumericType.FLOAT) {
@@ -475,18 +483,24 @@ public class NumberFieldMapper extends FieldMapper {
             }
 
             @Override
-            public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                List<Field> fields = new ArrayList<>();
+            public void createFields(
+                LuceneDocument document,
+                String name,
+                Number value,
+                boolean indexed,
+                boolean docValued,
+                boolean stored
+            ) {
+                final float f = value.floatValue();
                 if (indexed) {
-                    fields.add(new FloatPoint(name, value.floatValue()));
+                    document.add(new FloatPoint(name, f));
                 }
                 if (docValued) {
-                    fields.add(new SortedNumericDocValuesField(name, NumericUtils.floatToSortableInt(value.floatValue())));
+                    document.add(new SortedNumericDocValuesField(name, NumericUtils.floatToSortableInt(f)));
                 }
                 if (stored) {
-                    fields.add(new StoredField(name, value.floatValue()));
+                    document.add(new StoredField(name, f));
                 }
-                return fields;
             }
 
             @Override
@@ -496,8 +510,12 @@ public class NumberFieldMapper extends FieldMapper {
 
             private static void validateParsed(float value) {
                 if (Float.isFinite(value) == false) {
-                    throw new IllegalArgumentException("[float] supports only finite values, but got [" + value + "]");
+                    throwOnInfiniteFloat(value);
                 }
+            }
+
+            private static void throwOnInfiniteFloat(float value) {
+                throw new IllegalArgumentException("[float] supports only finite values, but got [" + value + "]");
             }
         },
         DOUBLE("double", NumericType.DOUBLE) {
@@ -579,18 +597,24 @@ public class NumberFieldMapper extends FieldMapper {
             }
 
             @Override
-            public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                List<Field> fields = new ArrayList<>();
+            public void createFields(
+                LuceneDocument document,
+                String name,
+                Number value,
+                boolean indexed,
+                boolean docValued,
+                boolean stored
+            ) {
+                final double d = value.doubleValue();
                 if (indexed) {
-                    fields.add(new DoublePoint(name, value.doubleValue()));
+                    document.add(new DoublePoint(name, d));
                 }
                 if (docValued) {
-                    fields.add(new SortedNumericDocValuesField(name, NumericUtils.doubleToSortableLong(value.doubleValue())));
+                    document.add(new SortedNumericDocValuesField(name, NumericUtils.doubleToSortableLong(d)));
                 }
                 if (stored) {
-                    fields.add(new StoredField(name, value.doubleValue()));
+                    document.add(new StoredField(name, d));
                 }
-                return fields;
             }
 
             @Override
@@ -600,8 +624,12 @@ public class NumberFieldMapper extends FieldMapper {
 
             private static void validateParsed(double value) {
                 if (Double.isFinite(value) == false) {
-                    throw new IllegalArgumentException("[double] supports only finite values, but got [" + value + "]");
+                    throwOnInfiniteDouble(value);
                 }
+            }
+
+            private static void throwOnInfiniteDouble(double value) {
+                throw new IllegalArgumentException("[double] supports only finite values, but got [" + value + "]");
             }
         },
         BYTE("byte", NumericType.BYTE) {
@@ -662,8 +690,15 @@ public class NumberFieldMapper extends FieldMapper {
             }
 
             @Override
-            public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                return INTEGER.createFields(name, value, indexed, docValued, stored);
+            public void createFields(
+                LuceneDocument document,
+                String name,
+                Number value,
+                boolean indexed,
+                boolean docValued,
+                boolean stored
+            ) {
+                INTEGER.createFields(document, name, value, indexed, docValued, stored);
             }
 
             @Override
@@ -730,8 +765,15 @@ public class NumberFieldMapper extends FieldMapper {
             }
 
             @Override
-            public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                return INTEGER.createFields(name, value, indexed, docValued, stored);
+            public void createFields(
+                LuceneDocument document,
+                String name,
+                Number value,
+                boolean indexed,
+                boolean docValued,
+                boolean stored
+            ) {
+                INTEGER.createFields(document, name, value, indexed, docValued, stored);
             }
 
             @Override
@@ -861,18 +903,24 @@ public class NumberFieldMapper extends FieldMapper {
             }
 
             @Override
-            public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                List<Field> fields = new ArrayList<>();
+            public void createFields(
+                LuceneDocument document,
+                String name,
+                Number value,
+                boolean indexed,
+                boolean docValued,
+                boolean stored
+            ) {
+                final int i = value.intValue();
                 if (indexed) {
-                    fields.add(new IntPoint(name, value.intValue()));
+                    document.add(new IntPoint(name, i));
                 }
                 if (docValued) {
-                    fields.add(new SortedNumericDocValuesField(name, value.intValue()));
+                    document.add(new SortedNumericDocValuesField(name, i));
                 }
                 if (stored) {
-                    fields.add(new StoredField(name, value.intValue()));
+                    document.add(new StoredField(name, i));
                 }
-                return fields;
             }
 
             @Override
@@ -967,18 +1015,24 @@ public class NumberFieldMapper extends FieldMapper {
             }
 
             @Override
-            public List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored) {
-                List<Field> fields = new ArrayList<>();
+            public void createFields(
+                LuceneDocument document,
+                String name,
+                Number value,
+                boolean indexed,
+                boolean docValued,
+                boolean stored
+            ) {
+                final long l = value.longValue();
                 if (indexed) {
-                    fields.add(new LongPoint(name, value.longValue()));
+                    document.add(new LongPoint(name, l));
                 }
                 if (docValued) {
-                    fields.add(new SortedNumericDocValuesField(name, value.longValue()));
+                    document.add(new SortedNumericDocValuesField(name, l));
                 }
                 if (stored) {
-                    fields.add(new StoredField(name, value.longValue()));
+                    document.add(new StoredField(name, l));
                 }
-                return fields;
             }
 
             @Override
@@ -1032,7 +1086,14 @@ public class NumberFieldMapper extends FieldMapper {
 
         public abstract Number parsePoint(byte[] value);
 
-        public abstract List<Field> createFields(String name, Number value, boolean indexed, boolean docValued, boolean stored);
+        public abstract void createFields(
+            LuceneDocument document,
+            String name,
+            Number value,
+            boolean indexed,
+            boolean docValued,
+            boolean stored
+        );
 
         public FieldValues<Number> compile(String fieldName, Script script, ScriptCompiler compiler) {
             // only implemented for long and double fields
@@ -1449,15 +1510,19 @@ public class NumberFieldMapper extends FieldMapper {
         try {
             value = value(context.parser(), type, nullValue, coerce());
         } catch (IllegalArgumentException e) {
-            if (ignoreMalformed.value() && context.parser().currentToken().isValue()) {
-                context.addIgnoredField(mappedFieldType.name());
-                return;
-            } else {
-                throw e;
-            }
+            handleIllegalArgumentException(context, e);
+            return;
         }
         if (value != null) {
             indexValue(context, value);
+        }
+    }
+
+    private void handleIllegalArgumentException(DocumentParserContext context, IllegalArgumentException e) {
+        if (ignoreMalformed.value() == false || context.parser().currentToken().isValue() == false) {
+            throw e;
+        } else {
+            context.addIgnoredField(mappedFieldType.name());
         }
     }
 
@@ -1485,8 +1550,7 @@ public class NumberFieldMapper extends FieldMapper {
         if (dimension && numericValue != null) {
             context.getDimensions().addLong(fieldType().name(), numericValue.longValue());
         }
-        List<Field> fields = fieldType().type.createFields(fieldType().name(), numericValue, indexed, hasDocValues, stored);
-        context.doc().addAll(fields);
+        fieldType().type.createFields(context.doc(), fieldType().name(), numericValue, indexed, hasDocValues, stored);
 
         if (hasDocValues == false && (stored || indexed)) {
             context.addToFieldNames(fieldType().name());
