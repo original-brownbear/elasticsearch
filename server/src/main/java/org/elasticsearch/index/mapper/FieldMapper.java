@@ -162,20 +162,47 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
     private static final MethodHandle NO_MULTI_FIELDS = MethodHandles.empty(MULTI_FIELD_TYPE);
 
-    private static MethodHandle compileMultiFieldsMethod(MultiFields multiFields, String name) {
-        if (multiFields.mappers.length == 0) {
-            return NO_MULTI_FIELDS;
-        }
+    private static final MethodHandle WITH_SCRIPT;
+
+    static {
         try {
-            MethodHandle handle = lookup.findStatic(FieldMapper.class, "removeFromContextPath", MULTI_FIELD_TYPE);
-            for (int i = multiFields.mappers.length - 1; i >= 0; i--) {
-                final FieldMapper mapper = multiFields.mappers[i];
-                MethodHandle parseHandle = lookup.findVirtual(FieldMapper.class, "parse", MULTI_FIELD_TYPE);
-                handle = MethodHandles.foldArguments(handle, MethodHandles.insertArguments(parseHandle, 0, mapper));
+            WITH_SCRIPT = MethodHandles.filterReturnValue(
+                MethodHandles.empty(MULTI_FIELD_TYPE),
+                lookup.findStatic(FieldMapper.class, "throwIndexingWithScriptParam", MethodType.methodType(void.class))
+            );
+        } catch (Throwable t) {
+            throw new AssertionError(t);
+        }
+    }
+
+    private static MethodHandle compileMultiFieldsMethod(String name, FieldMapper mapper) {
+        try {
+            if (mapper.hasScript) {
+                return WITH_SCRIPT;
             }
-            MethodHandle addName = lookup.findStatic(FieldMapper.class, "addToContextPath",
-                MethodType.methodType(void.class, DocumentParserContext.class, String.class));
-            return MethodHandles.foldArguments(handle, MethodHandles.insertArguments(addName, 1, name));
+            final MethodHandle doParsing = MethodHandles.insertArguments(
+                    lookup.findSpecial(FieldMapper.class, "doParsing", MULTI_FIELD_TYPE, FieldMapper.class),
+                    0,
+                    mapper
+            );
+            if (mapper.multiFields.mappers.length == 0) {
+                return doParsing;
+            }
+            MethodHandle handle = lookup.findStatic(FieldMapper.class, "removeFromContextPath", MULTI_FIELD_TYPE);
+            for (int i = mapper.multiFields.mappers.length - 1; i >= 0; i--) {
+                final FieldMapper m = mapper.multiFields.mappers[i];
+                MethodHandle parseHandle = lookup.findVirtual(m.getClass(), "parse", MULTI_FIELD_TYPE);
+                handle = MethodHandles.foldArguments(handle, MethodHandles.insertArguments(parseHandle, 0, m));
+            }
+            MethodHandle addName = lookup.findStatic(
+                FieldMapper.class,
+                "addToContextPath",
+                MethodType.methodType(void.class, DocumentParserContext.class, String.class)
+            );
+            return MethodHandles.foldArguments(
+                MethodHandles.foldArguments(handle, MethodHandles.insertArguments(addName, 1, name)),
+                doParsing
+            );
         } catch (Exception e) {
             throw new AssertionError(e);
         }
@@ -211,7 +238,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         this.copyTo = Objects.requireNonNull(copyTo);
         this.hasScript = hasScript;
         this.onScriptError = onScriptError;
-        this.multiFieldsMethod = compileMultiFieldsMethod(multiFields, simpleName);
+        this.multiFieldsMethod = compileMultiFieldsMethod(simpleName, this);
     }
 
     @Override
@@ -254,19 +281,19 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
      */
     public void parse(DocumentParserContext context) throws IOException {
         try {
-            if (hasScript) {
-                throwIndexingWithScriptParam();
-            }
-            parseCreateField(context);
-        } catch (Exception e) {
-            rethrowAsMapperParsingException(context, e);
-        }
-        try {
             multiFieldsMethod.invokeExact(context);
         } catch (IOException | RuntimeException e) {
             throw e;
         } catch (Throwable t) {
             throw new AssertionError(t);
+        }
+    }
+
+    private void doParsing(DocumentParserContext context) {
+        try {
+            parseCreateField(context);
+        } catch (Exception e) {
+            rethrowAsMapperParsingException(context, e);
         }
     }
 
@@ -276,14 +303,6 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
     private static void removeFromContextPath(DocumentParserContext context) {
         context.path().remove();
-    }
-
-    private static void doParseMultiFields(String name, FieldMapper[] mappers, DocumentParserContext context) throws IOException {
-        addToContextPath(context, name);
-        for (FieldMapper mapper :mappers) {
-            mapper.parse(context);
-        }
-        removeFromContextPath(context);
     }
 
     private static void throwIndexingWithScriptParam() {
