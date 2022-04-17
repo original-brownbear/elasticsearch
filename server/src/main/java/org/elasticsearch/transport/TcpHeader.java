@@ -39,7 +39,7 @@ public class TcpHeader {
 
     public static final int BYTES_REQUIRED_FOR_VERSION = PRE_76_HEADER_SIZE;
 
-    private static final int HEADER_SIZE = PRE_76_HEADER_SIZE + VARIABLE_HEADER_SIZE;
+    public static final int HEADER_SIZE = PRE_76_HEADER_SIZE + VARIABLE_HEADER_SIZE;
 
     public static int headerSize(Version version) {
         if (version.onOrAfter(VERSION_WITH_HEADER_SIZE)) {

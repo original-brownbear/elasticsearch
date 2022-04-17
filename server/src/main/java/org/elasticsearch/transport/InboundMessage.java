@@ -8,9 +8,13 @@
 
 package org.elasticsearch.transport;
 
+import net.jpountz.lz4.LZ4BlockInputStream;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.compress.DeflateCompressor;
+import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.internal.io.IOUtils;
 
@@ -80,10 +84,23 @@ public class InboundMessage implements Releasable {
         return Objects.requireNonNullElse(toReturn, () -> {});
     }
 
-    public StreamInput openOrGetStreamInput() throws IOException {
+    public StreamInput openOrGetStreamInput(@Nullable Compression.Scheme fallbackScheme) throws IOException {
         assert isPing == false && content != null;
         if (streamInput == null) {
-            streamInput = content.streamInput();
+            final StreamInput uncompressed;
+            if (header.isCompressed()) {
+                final Compression.Scheme scheme = header.getCompressionScheme() == null ? header.getCompressionScheme() : fallbackScheme;
+                if (scheme == Compression.Scheme.DEFLATE) {
+                    uncompressed = new InputStreamStreamInput(DeflateCompressor.inputStream(content.streamInput(), false));
+                } else if (scheme == Compression.Scheme.LZ4) {
+                    uncompressed = new InputStreamStreamInput(new LZ4BlockInputStream(content.streamInput()));
+                } else {
+                    throw new AssertionError("wtf?");
+                }
+            } else {
+                uncompressed = content.streamInput();
+            }
+            streamInput = uncompressed;
             streamInput.setVersion(header.getVersion());
         }
         return streamInput;

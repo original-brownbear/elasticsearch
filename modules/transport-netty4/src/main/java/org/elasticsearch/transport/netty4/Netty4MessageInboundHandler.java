@@ -16,6 +16,7 @@ import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.RefCounted;
+import org.elasticsearch.transport.Header;
 import org.elasticsearch.transport.InboundDecoder;
 import org.elasticsearch.transport.InboundMessage;
 import org.elasticsearch.transport.InboundPipeline;
@@ -61,19 +62,23 @@ public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
             }
         }
         if (wrapped.length() == totalNetworkSize) {
+            final Header header = InboundDecoder.readHeader(
+                transport.getVersion(),
+                totalNetworkSize - TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE,
+                wrapped
+            );
             totalNetworkSize = -1;
-            transport.inboundMessage(
-                channel,
-                new InboundMessage(
-                    InboundDecoder.readHeader(
-                        transport.getVersion(),
-                        totalNetworkSize - TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE,
-                        wrapped
-                    ),
-                    new ReleasableBytesReference(wrapped, new ByteBufRefCounted(buffer)),
+            final int headerBytes = InboundDecoder.headerBytesToRead(wrapped);
+            final ByteBuf trimmedBuffer = buffer.skipBytes(headerBytes).discardSomeReadBytes();
+            try (
+                InboundMessage inboundMessage = new InboundMessage(
+                    header,
+                    new ReleasableBytesReference(Netty4Utils.toBytesReference(trimmedBuffer), new ByteBufRefCounted(trimmedBuffer)),
                     () -> {}
                 )
-            );
+            ) {
+                transport.inboundMessage(channel, inboundMessage);
+            }
         }
     }
 

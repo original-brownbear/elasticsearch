@@ -110,7 +110,7 @@ public class InboundAggregator implements Releasable {
         boolean success = false;
         try {
             if (aggregated.getHeader().needsToReadVariableHeader()) {
-                aggregated.getHeader().finishParsingHeader(aggregated.openOrGetStreamInput());
+                aggregated.getHeader().finishParsingHeader(aggregated.openOrGetStreamInput(null));
                 if (aggregated.getHeader().isRequest()) {
                     initializeRequestState();
                 }
