@@ -6,16 +6,27 @@
  * Side Public License, v 1.
  */
 
-package org.elasticsearch.transport;
+package org.elasticsearch.transport.netty4;
 
+import io.netty.buffer.ByteBuf;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.recycler.Recycler;
+import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
+import org.elasticsearch.transport.Compression;
+import org.elasticsearch.transport.Header;
+import org.elasticsearch.transport.InboundAggregator;
+import org.elasticsearch.transport.InboundDecoder;
+import org.elasticsearch.transport.InboundMessage;
+import org.elasticsearch.transport.RequestHandlerRegistry;
+import org.elasticsearch.transport.StatsTracker;
+import org.elasticsearch.transport.TcpChannel;
+import org.elasticsearch.transport.TransportRequest;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -78,11 +89,16 @@ public class InboundPipeline implements Releasable {
         Releasables.closeExpectNoException(decoder, aggregator, () -> Releasables.close(pending), pending::clear);
     }
 
-    public void handleBytes(TcpChannel channel, ReleasableBytesReference reference) throws IOException {
+    public void handleBytes(TcpChannel channel, ByteBuf byteBuf) throws IOException {
         if (uncaughtException != null) {
             throw new IllegalStateException("Pipeline state corrupted by uncaught exception", uncaughtException);
         }
-        try {
+        try (
+            ReleasableBytesReference reference = new ReleasableBytesReference(
+                Netty4Utils.toBytesReference(byteBuf),
+                new ByteBufRefCounted(byteBuf)
+            )
+        ) {
             doHandleBytes(channel, reference);
         } catch (Exception e) {
             uncaughtException = e;
@@ -187,6 +203,38 @@ public class InboundPipeline implements Releasable {
                     bytesToRelease -= reference.length();
                 }
             }
+        }
+    }
+
+    private record ByteBufRefCounted(ByteBuf buffer) implements RefCounted {
+
+        @Override
+        public void incRef() {
+            buffer.retain();
+        }
+
+        @Override
+        public boolean tryIncRef() {
+            if (hasReferences() == false) {
+                return false;
+            }
+            try {
+                buffer.retain();
+            } catch (RuntimeException e) {
+                assert hasReferences() == false;
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean decRef() {
+            return buffer.release();
+        }
+
+        @Override
+        public boolean hasReferences() {
+            return buffer.refCnt() > 0;
         }
     }
 }

@@ -41,11 +41,11 @@ public class Header {
         return networkMessageSize;
     }
 
-    Version getVersion() {
+    public Version getVersion() {
         return version;
     }
 
-    long getRequestId() {
+    public long getRequestId() {
         return requestId;
     }
 
@@ -53,7 +53,7 @@ public class Header {
         return status;
     }
 
-    boolean isRequest() {
+    public boolean isRequest() {
         return TransportStatus.isRequest(status);
     }
 
@@ -69,7 +69,7 @@ public class Header {
         return TransportStatus.isHandshake(status);
     }
 
-    boolean isCompressed() {
+    public boolean isCompressed() {
         return TransportStatus.isCompress(status);
     }
 

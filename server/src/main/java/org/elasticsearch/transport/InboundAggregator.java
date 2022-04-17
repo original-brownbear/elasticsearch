@@ -52,7 +52,7 @@ public class InboundAggregator implements Releasable {
     }
 
     // Visible for testing
-    InboundAggregator(Supplier<CircuitBreaker> circuitBreaker, Predicate<String> requestCanTripBreaker) {
+    public InboundAggregator(Supplier<CircuitBreaker> circuitBreaker, Predicate<String> requestCanTripBreaker) {
         this.circuitBreaker = circuitBreaker;
         this.requestCanTripBreaker = requestCanTripBreaker;
     }

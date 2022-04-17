@@ -20,7 +20,6 @@ import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.InboundPipeline;
 import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.Transports;
 
@@ -58,10 +57,7 @@ public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
 
         final ByteBuf buffer = (ByteBuf) msg;
         Netty4TcpChannel channel = ctx.channel().attr(Netty4Transport.CHANNEL_KEY).get();
-        final BytesReference wrapped = Netty4Utils.toBytesReference(buffer);
-        try (ReleasableBytesReference reference = new ReleasableBytesReference(wrapped, new ByteBufRefCounted(buffer))) {
-            pipeline.handleBytes(channel, reference);
-        }
+        pipeline.handleBytes(channel, buffer);
     }
 
     @Override
@@ -82,37 +78,5 @@ public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         Releasables.closeExpectNoException(pipeline);
         super.channelInactive(ctx);
-    }
-
-    private record ByteBufRefCounted(ByteBuf buffer) implements RefCounted {
-
-        @Override
-        public void incRef() {
-            buffer.retain();
-        }
-
-        @Override
-        public boolean tryIncRef() {
-            if (hasReferences() == false) {
-                return false;
-            }
-            try {
-                buffer.retain();
-            } catch (RuntimeException e) {
-                assert hasReferences() == false;
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public boolean decRef() {
-            return buffer.release();
-        }
-
-        @Override
-        public boolean hasReferences() {
-            return buffer.refCnt() > 0;
-        }
     }
 }
