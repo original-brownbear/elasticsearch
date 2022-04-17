@@ -20,7 +20,6 @@ import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.HandlingTimeTracker;
@@ -35,6 +34,8 @@ import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.test.MockLogAppender;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.netty4.InboundPipeline;
+import org.elasticsearch.transport.netty4.Netty4Utils;
 import org.junit.After;
 import org.junit.Before;
 
@@ -168,7 +169,7 @@ public class OutboundHandlerTests extends ESTestCase {
         assertEquals(action, actionRef.get());
         assertEquals(request, requestRef.get());
 
-        pipeline.handleBytes(channel, new ReleasableBytesReference(reference, () -> {}));
+        pipeline.handleBytes(channel, Netty4Utils.toByteBuf(reference));
         final Tuple<Header, BytesReference> tuple = message.get();
         final Header header = tuple.v1();
         final TestRequest message = new TestRequest(tuple.v2().streamInput());
@@ -233,7 +234,7 @@ public class OutboundHandlerTests extends ESTestCase {
         assertEquals(action, actionRef.get());
         assertEquals(response, responseRef.get());
 
-        pipeline.handleBytes(channel, new ReleasableBytesReference(reference, () -> {}));
+        pipeline.handleBytes(channel, Netty4Utils.toByteBuf(reference));
         final Tuple<Header, BytesReference> tuple = message.get();
         final Header header = tuple.v1();
         final TestResponse message = new TestResponse(tuple.v2().streamInput());
@@ -290,7 +291,7 @@ public class OutboundHandlerTests extends ESTestCase {
         assertEquals(action, actionRef.get());
         assertEquals(error, responseRef.get());
 
-        pipeline.handleBytes(channel, new ReleasableBytesReference(reference, () -> {}));
+        pipeline.handleBytes(channel, Netty4Utils.toByteBuf(reference));
         final Tuple<Header, BytesReference> tuple = message.get();
         final Header header = tuple.v1();
         assertEquals(version, header.getVersion());

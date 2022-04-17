@@ -14,7 +14,7 @@ import java.io.IOException;
 
 public class TestResponse extends TransportResponse {
 
-    String value;
+    public String value;
 
     public TestResponse(String value) {
         this.value = value;
