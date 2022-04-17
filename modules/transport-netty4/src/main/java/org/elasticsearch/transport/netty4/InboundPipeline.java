@@ -9,10 +9,12 @@
 package org.elasticsearch.transport.netty4;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.ByteToMessageDecoder;
+
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.breaker.CircuitBreaker;
-import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.core.RefCounted;
@@ -29,7 +31,6 @@ import org.elasticsearch.transport.TcpChannel;
 import org.elasticsearch.transport.TransportRequest;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -47,7 +48,7 @@ public class InboundPipeline implements Releasable {
     private final InboundAggregator aggregator;
     private final BiConsumer<TcpChannel, InboundMessage> messageHandler;
     private Exception uncaughtException;
-    private final ArrayDeque<ReleasableBytesReference> pending = new ArrayDeque<>(2);
+    private ByteBuf pending = null;
     private boolean isClosed = false;
 
     public InboundPipeline(
@@ -86,47 +87,54 @@ public class InboundPipeline implements Releasable {
     @Override
     public void close() {
         isClosed = true;
-        Releasables.closeExpectNoException(decoder, aggregator, () -> Releasables.close(pending), pending::clear);
+        Releasables.closeExpectNoException(decoder, aggregator, () -> {
+            final ByteBuf p = pending;
+            if (p != null) {
+                p.release();
+            }
+            pending = null;
+        });
     }
 
     public void handleBytes(TcpChannel channel, ByteBuf byteBuf) throws IOException {
         if (uncaughtException != null) {
             throw new IllegalStateException("Pipeline state corrupted by uncaught exception", uncaughtException);
         }
-        try (
-            ReleasableBytesReference reference = new ReleasableBytesReference(
-                Netty4Utils.toBytesReference(byteBuf),
-                new ByteBufRefCounted(byteBuf)
-            )
-        ) {
-            doHandleBytes(channel, reference);
+        try {
+            doHandleBytes(channel, byteBuf);
         } catch (Exception e) {
             uncaughtException = e;
             throw e;
         }
     }
 
-    public void doHandleBytes(TcpChannel channel, ReleasableBytesReference reference) throws IOException {
+    private void doHandleBytes(TcpChannel channel, ByteBuf reference) throws IOException {
         channel.getChannelStats().markAccessed(relativeTimeInMillis.getAsLong());
-        statsTracker.markBytesRead(reference.length());
-        pending.add(reference.retain());
+        statsTracker.markBytesRead(reference.readableBytes());
+        pending = ByteToMessageDecoder.COMPOSITE_CUMULATOR.cumulate(
+            reference.alloc(),
+            pending == null ? Unpooled.EMPTY_BUFFER : pending,
+            reference
+        );
 
         final ArrayList<Object> fragments = fragmentList.get();
         boolean continueHandling = true;
 
         while (continueHandling && isClosed == false) {
             boolean continueDecoding = true;
-            while (continueDecoding && pending.isEmpty() == false) {
-                try (ReleasableBytesReference toDecode = getPendingBytes()) {
-                    final int bytesDecoded = decoder.decode(toDecode, fragments::add);
-                    if (bytesDecoded != 0) {
-                        releasePendingBytes(bytesDecoded);
-                        if (fragments.isEmpty() == false && endOfMessage(fragments.get(fragments.size() - 1))) {
-                            continueDecoding = false;
-                        }
-                    } else {
+            while (continueDecoding && pending != null) {
+                final ByteBuf slice = pending.slice();
+                final int bytesDecoded = decoder.decode(
+                    new ReleasableBytesReference(Netty4Utils.toBytesReference(slice), new ByteBufRefCounted(slice)),
+                    fragments::add
+                );
+                if (bytesDecoded != 0) {
+                    releasePendingBytes(bytesDecoded);
+                    if (fragments.isEmpty() == false && endOfMessage(fragments.get(fragments.size() - 1))) {
                         continueDecoding = false;
                     }
+                } else {
+                    continueDecoding = false;
                 }
             }
 
@@ -176,33 +184,13 @@ public class InboundPipeline implements Releasable {
         return fragment == InboundDecoder.PING || fragment == InboundDecoder.END_CONTENT || fragment instanceof Exception;
     }
 
-    private ReleasableBytesReference getPendingBytes() {
-        if (pending.size() == 1) {
-            return pending.peekFirst().retain();
-        } else {
-            final ReleasableBytesReference[] bytesReferences = new ReleasableBytesReference[pending.size()];
-            int index = 0;
-            for (ReleasableBytesReference pendingReference : pending) {
-                bytesReferences[index] = pendingReference.retain();
-                ++index;
-            }
-            final Releasable releasable = () -> Releasables.closeExpectNoException(bytesReferences);
-            return new ReleasableBytesReference(CompositeBytesReference.of(bytesReferences), releasable);
-        }
-    }
-
     private void releasePendingBytes(int bytesConsumed) {
-        int bytesToRelease = bytesConsumed;
-        while (bytesToRelease != 0) {
-            try (ReleasableBytesReference reference = pending.pollFirst()) {
-                assert reference != null;
-                if (bytesToRelease < reference.length()) {
-                    pending.addFirst(reference.retainedSlice(bytesToRelease, reference.length() - bytesToRelease));
-                    bytesToRelease -= bytesToRelease;
-                } else {
-                    bytesToRelease -= reference.length();
-                }
-            }
+        final int readable = pending.readableBytes();
+        if (readable == bytesConsumed) {
+            pending.release();
+            pending = null;
+        } else {
+            pending = pending.skipBytes(bytesConsumed);
         }
     }
 
@@ -237,4 +225,5 @@ public class InboundPipeline implements Releasable {
             return buffer.refCnt() > 0;
         }
     }
+
 }

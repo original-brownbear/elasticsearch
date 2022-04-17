@@ -10,6 +10,7 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+
 import org.elasticsearch.Version;
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
@@ -299,7 +300,6 @@ public class InboundPipelineTests extends ESTestCase {
             final BytesReference partHeaderPartBody = reference.slice(from, reference.length() - from - 1);
             ByteBuf buf = Netty4Utils.toByteBuf(partHeaderPartBody);
             pipeline.handleBytes(new FakeTcpChannel(), buf);
-            assertThat(buf.refCnt(), equalTo(1));
             final ByteBuf singleByteSlice = Netty4Utils.toByteBuf(reference.slice(reference.length() - 1, 1));
             assertThat(singleByteSlice.refCnt(), equalTo(1));
             pipeline.handleBytes(new FakeTcpChannel(), singleByteSlice);
