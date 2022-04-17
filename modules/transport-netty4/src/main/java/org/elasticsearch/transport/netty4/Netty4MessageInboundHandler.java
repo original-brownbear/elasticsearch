@@ -16,6 +16,11 @@ import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.RefCounted;
+import org.elasticsearch.transport.InboundDecoder;
+import org.elasticsearch.transport.InboundMessage;
+import org.elasticsearch.transport.InboundPipeline;
+import org.elasticsearch.transport.TcpHeader;
+import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.transport.Transports;
 
 /**
@@ -25,6 +30,8 @@ import org.elasticsearch.transport.Transports;
 public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
 
     private final Netty4Transport transport;
+
+    private int totalNetworkSize = -1;
 
     public Netty4MessageInboundHandler(Netty4Transport transport) {
         this.transport = transport;
@@ -39,9 +46,39 @@ public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
         final ByteBuf buffer = (ByteBuf) msg;
         Netty4TcpChannel channel = ctx.channel().attr(Netty4Transport.CHANNEL_KEY).get();
         final BytesReference wrapped = Netty4Utils.toBytesReference(buffer);
-        try (ReleasableBytesReference reference = new ReleasableBytesReference(wrapped, new ByteBufRefCounted(buffer))) {
-            pipeline.handleBytes(channel, reference);
+        if (isOnHeader()) {
+            int messageLength = TcpTransport.readMessageLength(wrapped);
+            switch (messageLength) {
+                case -1:
+                    break;
+                case 0:
+                    transport.inboundMessage(channel, InboundPipeline.PING_MESSAGE);
+                    buffer.release();
+                    break;
+                default:
+                    totalNetworkSize = messageLength + TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE;
+                    break;
+            }
         }
+        if (wrapped.length() == totalNetworkSize) {
+            totalNetworkSize = -1;
+            transport.inboundMessage(
+                channel,
+                new InboundMessage(
+                    InboundDecoder.readHeader(
+                        transport.getVersion(),
+                        totalNetworkSize - TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE,
+                        wrapped
+                    ),
+                    new ReleasableBytesReference(wrapped, new ByteBufRefCounted(buffer)),
+                    () -> {}
+                )
+            );
+        }
+    }
+
+    private boolean isOnHeader() {
+        return totalNetworkSize == -1;
     }
 
     @Override

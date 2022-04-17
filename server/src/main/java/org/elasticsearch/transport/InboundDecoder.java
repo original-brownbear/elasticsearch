@@ -149,7 +149,7 @@ public class InboundDecoder implements Releasable {
         return bytesConsumed == totalNetworkSize;
     }
 
-    private static int headerBytesToRead(BytesReference reference) {
+    public static int headerBytesToRead(BytesReference reference) {
         if (reference.length() < TcpHeader.BYTES_REQUIRED_FOR_VERSION) {
             return 0;
         }
@@ -172,7 +172,7 @@ public class InboundDecoder implements Releasable {
     }
 
     // exposed for use in tests
-    static Header readHeader(Version version, int networkMessageSize, BytesReference bytesReference) throws IOException {
+    public static Header readHeader(Version version, int networkMessageSize, BytesReference bytesReference) throws IOException {
         try (StreamInput streamInput = bytesReference.streamInput()) {
             streamInput.skip(TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE);
             long requestId = streamInput.readLong();

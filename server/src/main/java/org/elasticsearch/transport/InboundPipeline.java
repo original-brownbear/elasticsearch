@@ -28,7 +28,7 @@ import java.util.function.Supplier;
 public class InboundPipeline implements Releasable {
 
     private static final ThreadLocal<ArrayList<Object>> fragmentList = ThreadLocal.withInitial(ArrayList::new);
-    private static final InboundMessage PING_MESSAGE = new InboundMessage(null, true);
+    public static final InboundMessage PING_MESSAGE = new InboundMessage(null, true);
 
     private final LongSupplier relativeTimeInMillis;
     private final StatsTracker statsTracker;

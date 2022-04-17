@@ -375,7 +375,7 @@ public class Netty4Transport extends TcpTransport {
             .addLast("byte_buf_sizer", NettyByteBufSizer.INSTANCE)
             .addLast("logging", ESLoggingHandler.INSTANCE)
             .addLast("chunked_writer", new Netty4WriteThrottlingHandler(getThreadPool().getThreadContext()))
-            .addLast("dispatcher", new Netty4MessageInboundHandler(this, recycler));
+            .addLast("dispatcher", new Netty4MessageInboundHandler(this));
     }
 
     private static void addClosedExceptionLogger(Channel channel) {

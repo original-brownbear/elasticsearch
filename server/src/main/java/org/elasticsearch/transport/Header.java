@@ -69,7 +69,7 @@ public class Header {
         return TransportStatus.isHandshake(status);
     }
 
-    boolean isCompressed() {
+    public boolean isCompressed() {
         return TransportStatus.isCompress(status);
     }
 
