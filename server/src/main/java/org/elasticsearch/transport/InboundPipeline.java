@@ -161,18 +161,22 @@ public class InboundPipeline implements Releasable {
     }
 
     private ReleasableBytesReference getPendingBytes() {
-        if (pending.size() == 1) {
-            return pending.peekFirst().retain();
-        } else {
-            final ReleasableBytesReference[] bytesReferences = new ReleasableBytesReference[pending.size()];
-            int index = 0;
-            for (ReleasableBytesReference pendingReference : pending) {
-                bytesReferences[index] = pendingReference.retain();
-                ++index;
-            }
-            final Releasable releasable = () -> Releasables.closeExpectNoException(bytesReferences);
-            return new ReleasableBytesReference(CompositeBytesReference.of(bytesReferences), releasable);
+        final ArrayDeque<ReleasableBytesReference> p = pending;
+        if (p.size() == 1) {
+            return p.peekFirst().retain();
         }
+        return pendingFromMultipleComponents(p);
+    }
+
+    private static ReleasableBytesReference pendingFromMultipleComponents(ArrayDeque<ReleasableBytesReference> pending) {
+        final ReleasableBytesReference[] bytesReferences = new ReleasableBytesReference[pending.size()];
+        int index = 0;
+        for (ReleasableBytesReference pendingReference : pending) {
+            bytesReferences[index] = pendingReference.retain();
+            ++index;
+        }
+        final Releasable releasable = () -> Releasables.closeExpectNoException(bytesReferences);
+        return new ReleasableBytesReference(CompositeBytesReference.of(bytesReferences), releasable);
     }
 
     private void releasePendingBytes(int bytesConsumed) {

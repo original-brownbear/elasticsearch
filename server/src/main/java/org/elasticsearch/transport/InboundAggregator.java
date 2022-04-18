@@ -10,7 +10,6 @@ package org.elasticsearch.transport;
 
 import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.Releasable;
@@ -40,7 +39,7 @@ public class InboundAggregator implements Releasable {
         Function<String, RequestHandlerRegistry<TransportRequest>> registryFunction,
         boolean ignoreDeserializationErrors
     ) {
-        this(circuitBreaker, (Predicate<String>) actionName -> {
+        this(circuitBreaker, actionName -> {
             final RequestHandlerRegistry<TransportRequest> reg = registryFunction.apply(actionName);
             if (reg == null) {
                 assert ignoreDeserializationErrors : actionName;
@@ -101,8 +100,7 @@ public class InboundAggregator implements Releasable {
             releasableContent = firstContent;
         } else {
             final ReleasableBytesReference[] references = contentAggregation.toArray(new ReleasableBytesReference[0]);
-            final BytesReference content = CompositeBytesReference.of(references);
-            releasableContent = new ReleasableBytesReference(content, () -> Releasables.close(references));
+            releasableContent = new ReleasableBytesReference(CompositeBytesReference.of(references), Releasables.wrap(references));
         }
 
         final BreakerControl breakerControl = new BreakerControl(circuitBreaker);
@@ -122,11 +120,10 @@ public class InboundAggregator implements Releasable {
                 aggregated.close();
                 success = true;
                 return new InboundMessage(aggregated.getHeader(), aggregationException);
-            } else {
-                assert uncompressedOrSchemeDefined(aggregated.getHeader());
-                success = true;
-                return aggregated;
             }
+            assert uncompressedOrSchemeDefined(aggregated.getHeader());
+            success = true;
+            return aggregated;
         } finally {
             resetCurrentAggregation();
             if (success == false) {

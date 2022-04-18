@@ -21,6 +21,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 abstract class OutboundMessage extends NetworkMessage {
 
@@ -93,13 +94,19 @@ abstract class OutboundMessage extends NetworkMessage {
     // compressed stream wrapped bytes must be no-close wrapped since we need to close the compressed wrapper below to release
     // resources and write EOS marker bytes but must not yet release the bytes themselves
     private StreamOutput wrapCompressed(RecyclerBytesStreamOutput bytesStream) throws IOException {
+        OutputStream wrapped = Streams.noCloseStream(bytesStream);
         if (compressionScheme == Compression.Scheme.DEFLATE) {
-            return new OutputStreamStreamOutput(CompressorFactory.COMPRESSOR.threadLocalOutputStream(Streams.noCloseStream(bytesStream)));
+            wrapped = CompressorFactory.COMPRESSOR.threadLocalOutputStream(wrapped);
         } else if (compressionScheme == Compression.Scheme.LZ4) {
-            return new OutputStreamStreamOutput(Compression.Scheme.lz4OutputStream(Streams.noCloseStream(bytesStream)));
+            wrapped = Compression.Scheme.lz4OutputStream(wrapped);
         } else {
-            throw new IllegalArgumentException("Invalid compression scheme: " + compressionScheme);
+            throwOnInvalidCompressionScheme(compressionScheme);
         }
+        return new OutputStreamStreamOutput(wrapped);
+    }
+
+    private static void throwOnInvalidCompressionScheme(Compression.Scheme compressionScheme) {
+        throw new IllegalArgumentException("Invalid compression scheme: " + compressionScheme);
     }
 
     protected void writeVariableHeader(StreamOutput stream) throws IOException {

@@ -53,68 +53,67 @@ public class InboundDecoder implements Releasable {
             int messageLength = TcpTransport.readMessageLength(reference);
             if (messageLength == -1) {
                 return 0;
-            } else if (messageLength == 0) {
+            }
+            if (messageLength == 0) {
                 fragmentConsumer.accept(PING);
                 return 6;
-            } else {
-                int headerBytesToRead = headerBytesToRead(reference);
-                if (headerBytesToRead == 0) {
-                    return 0;
-                } else {
-                    totalNetworkSize = messageLength + TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE;
-
-                    Header header = readHeader(version, messageLength, reference);
-                    bytesConsumed += headerBytesToRead;
-                    if (header.isCompressed()) {
-                        isCompressed = true;
-                    }
-                    fragmentConsumer.accept(header);
-
-                    if (isDone()) {
-                        finishMessage(fragmentConsumer);
-                    }
-                    return headerBytesToRead;
-                }
             }
-        } else {
-            if (isCompressed && decompressor == null) {
-                // Attempt to initialize decompressor
-                TransportDecompressor decompressor = TransportDecompressor.getDecompressor(recycler, reference);
-                if (decompressor == null) {
-                    return 0;
-                } else {
-                    this.decompressor = decompressor;
-                    fragmentConsumer.accept(this.decompressor.getScheme());
-                }
-            }
-            int remainingToConsume = totalNetworkSize - bytesConsumed;
-            int maxBytesToConsume = Math.min(reference.length(), remainingToConsume);
-            ReleasableBytesReference retainedContent;
-            if (maxBytesToConsume == remainingToConsume) {
-                retainedContent = reference.retainedSlice(0, maxBytesToConsume);
-            } else {
-                retainedContent = reference.retain();
+            int headerBytesToRead = headerBytesToRead(reference);
+            if (headerBytesToRead == 0) {
+                return 0;
             }
 
-            int bytesConsumedThisDecode = 0;
-            if (decompressor != null) {
-                bytesConsumedThisDecode += decompress(retainedContent);
-                bytesConsumed += bytesConsumedThisDecode;
-                ReleasableBytesReference decompressed;
-                while ((decompressed = decompressor.pollDecompressedPage(isDone())) != null) {
-                    fragmentConsumer.accept(decompressed);
-                }
-            } else {
-                bytesConsumedThisDecode += maxBytesToConsume;
-                bytesConsumed += maxBytesToConsume;
-                fragmentConsumer.accept(retainedContent);
+            totalNetworkSize = messageLength + TcpHeader.BYTES_REQUIRED_FOR_MESSAGE_SIZE;
+
+            Header header = readHeader(version, messageLength, reference);
+            bytesConsumed += headerBytesToRead;
+            if (header.isCompressed()) {
+                isCompressed = true;
             }
+            fragmentConsumer.accept(header);
+
             if (isDone()) {
                 finishMessage(fragmentConsumer);
             }
-
-            return bytesConsumedThisDecode;
+            return headerBytesToRead;
         }
+
+        if (isCompressed && decompressor == null) {
+            // Attempt to initialize decompressor
+            TransportDecompressor decompressor = TransportDecompressor.getDecompressor(recycler, reference);
+            if (decompressor == null) {
+                return 0;
+            }
+            this.decompressor = decompressor;
+            fragmentConsumer.accept(this.decompressor.getScheme());
+        }
+        int remainingToConsume = totalNetworkSize - bytesConsumed;
+        int maxBytesToConsume = Math.min(reference.length(), remainingToConsume);
+        final ReleasableBytesReference retainedContent;
+        if (maxBytesToConsume == remainingToConsume) {
+            retainedContent = reference.retainedSlice(0, maxBytesToConsume);
+        } else {
+            retainedContent = reference.retain();
+        }
+
+        int bytesConsumedThisDecode = 0;
+        if (decompressor != null) {
+            bytesConsumedThisDecode += decompress(retainedContent);
+            bytesConsumed += bytesConsumedThisDecode;
+            ReleasableBytesReference decompressed;
+            while ((decompressed = decompressor.pollDecompressedPage(isDone())) != null) {
+                fragmentConsumer.accept(decompressed);
+            }
+        } else {
+            bytesConsumedThisDecode += maxBytesToConsume;
+            bytesConsumed += maxBytesToConsume;
+            fragmentConsumer.accept(retainedContent);
+        }
+        if (isDone()) {
+            finishMessage(fragmentConsumer);
+        }
+
+        return bytesConsumedThisDecode;
     }
 
     @Override
@@ -158,17 +157,13 @@ public class InboundDecoder implements Releasable {
         int fixedHeaderSize = TcpHeader.headerSize(remoteVersion);
         if (fixedHeaderSize > reference.length()) {
             return 0;
-        } else if (remoteVersion.before(TcpHeader.VERSION_WITH_HEADER_SIZE)) {
-            return fixedHeaderSize;
-        } else {
-            int variableHeaderSize = reference.getInt(TcpHeader.VARIABLE_HEADER_SIZE_POSITION);
-            int totalHeaderSize = fixedHeaderSize + variableHeaderSize;
-            if (totalHeaderSize > reference.length()) {
-                return 0;
-            } else {
-                return totalHeaderSize;
-            }
         }
+        if (remoteVersion.before(TcpHeader.VERSION_WITH_HEADER_SIZE)) {
+            return fixedHeaderSize;
+        }
+        int variableHeaderSize = reference.getInt(TcpHeader.VARIABLE_HEADER_SIZE_POSITION);
+        int totalHeaderSize = fixedHeaderSize + variableHeaderSize;
+        return totalHeaderSize > reference.length() ? 0 : totalHeaderSize;
     }
 
     // exposed for use in tests
@@ -182,12 +177,11 @@ public class InboundDecoder implements Releasable {
             final IllegalStateException invalidVersion = ensureVersionCompatibility(remoteVersion, version, header.isHandshake());
             if (invalidVersion != null) {
                 throw invalidVersion;
-            } else {
-                if (remoteVersion.onOrAfter(TcpHeader.VERSION_WITH_HEADER_SIZE)) {
-                    // Skip since we already have ensured enough data available
-                    streamInput.readInt();
-                    header.finishParsingHeader(streamInput);
-                }
+            }
+            if (remoteVersion.onOrAfter(TcpHeader.VERSION_WITH_HEADER_SIZE)) {
+                // Skip since we already have ensured enough data available
+                streamInput.readInt();
+                header.finishParsingHeader(streamInput);
             }
             return header;
         }
@@ -210,10 +204,18 @@ public class InboundDecoder implements Releasable {
         // once the connection is established
         final Version compatibilityVersion = isHandshake ? currentVersion.minimumCompatibilityVersion() : currentVersion;
         if (remoteVersion.isCompatible(compatibilityVersion) == false) {
-            final Version minCompatibilityVersion = isHandshake ? compatibilityVersion : compatibilityVersion.minimumCompatibilityVersion();
-            String msg = "Received " + (isHandshake ? "handshake " : "") + "message from unsupported version: [";
-            return new IllegalStateException(msg + remoteVersion + "] minimal compatible version is: [" + minCompatibilityVersion + "]");
+            return throwOnIncompatibleRemoteVersion(remoteVersion, isHandshake, compatibilityVersion);
         }
         return null;
+    }
+
+    private static IllegalStateException throwOnIncompatibleRemoteVersion(
+        Version remoteVersion,
+        boolean isHandshake,
+        Version compatibilityVersion
+    ) {
+        final Version minCompatibilityVersion = isHandshake ? compatibilityVersion : compatibilityVersion.minimumCompatibilityVersion();
+        String msg = "Received " + (isHandshake ? "handshake " : "") + "message from unsupported version: [";
+        return new IllegalStateException(msg + remoteVersion + "] minimal compatible version is: [" + minCompatibilityVersion + "]");
     }
 }
