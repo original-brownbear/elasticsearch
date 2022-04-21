@@ -80,8 +80,7 @@ public final class CommitStats implements Writeable, ToXContentFragment {
     public void writeTo(StreamOutput out) throws IOException {
         out.writeVInt(userData.size());
         for (Map.Entry<String, String> entry : userData.entrySet()) {
-            out.writeString(entry.getKey());
-            out.writeString(entry.getValue());
+            out.writeStrings(entry.getKey(), entry.getValue());
         }
         out.writeLong(generation);
         out.writeOptionalString(id);

@@ -687,8 +687,7 @@ public final class ThreadContext implements Writeable {
 
             out.writeVInt(requestHeaders.size());
             for (Map.Entry<String, String> entry : requestHeaders.entrySet()) {
-                out.writeString(entry.getKey());
-                out.writeString(entry.getValue());
+                out.writeStrings(entry.getKey(), entry.getValue());
             }
 
             out.writeMap(responseHeaders, StreamOutput::writeString, StreamOutput::writeStringCollection);

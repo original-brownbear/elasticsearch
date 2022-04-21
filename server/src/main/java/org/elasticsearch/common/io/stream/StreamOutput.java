@@ -229,13 +229,26 @@ public abstract class StreamOutput extends OutputStream {
             return;
         }
         byte[] buffer = scratch.get();
-        int index = 0;
+        int index = putMultiByteVInt(buffer, i, 0);
+        writeBytes(buffer, 0, index);
+    }
+
+    private static int putVInt(byte[] buffer, int i, int off) {
+        if (Integer.numberOfLeadingZeros(i) >= 25) {
+            buffer[off] = (byte) i;
+            return 1;
+        }
+        return putMultiByteVInt(buffer, i, off);
+    }
+
+    private static int putMultiByteVInt(byte[] buffer, int i, int off) {
+        int index = off;
         do {
             buffer[index++] = ((byte) ((i & 0x7f) | 0x80));
             i >>>= 7;
         } while ((i & ~0x7F) != 0);
-        buffer[index++] = ((byte) i);
-        writeBytes(buffer, 0, index);
+        buffer[index++] = (byte) i;
+        return index - off;
     }
 
     /**
@@ -316,8 +329,9 @@ public abstract class StreamOutput extends OutputStream {
         if (str == null) {
             writeBoolean(false);
         } else {
-            writeBoolean(true);
-            writeString(str);
+            byte[] buffer = scratch.get();
+            buffer[0] = ONE;
+            writeString(str, buffer, 1);
         }
     }
 
@@ -388,10 +402,27 @@ public abstract class StreamOutput extends OutputStream {
     }
 
     public void writeString(String str) throws IOException {
+        writeString(str, scratch.get(), 0);
+    }
+
+    public void writeStrings(String s1, String s2) throws IOException {
+        final byte[] buf = scratch.get();
+        int offset = writeStringNoFlushBuffer(s1, buf, 0);
+        if (offset >= 1024 - 5) {
+            writeBytes(buf, offset);
+            offset = 0;
+        }
+        writeString(s2, buf, offset);
+    }
+
+    private void writeString(String str, byte[] buffer, int off) throws IOException {
+        int offset = writeStringNoFlushBuffer(str, buffer, off);
+        writeBytes(buffer, offset);
+    }
+
+    private int writeStringNoFlushBuffer(String str, byte[] buffer, int off) throws IOException {
         final int charCount = str.length();
-        byte[] buffer = scratch.get();
-        int offset = 0;
-        writeVInt(charCount);
+        int offset = off + putVInt(buffer, charCount, off);
         for (int i = 0; i < charCount; i++) {
             final int c = str.charAt(i);
             if (c <= 0x007F) {
@@ -412,7 +443,7 @@ public abstract class StreamOutput extends OutputStream {
                 offset = 0;
             }
         }
-        writeBytes(buffer, offset);
+        return offset;
     }
 
     public void writeSecureString(SecureString secureStr) throws IOException {
@@ -441,9 +472,9 @@ public abstract class StreamOutput extends OutputStream {
         }
     }
 
-    private static byte ZERO = 0;
-    private static byte ONE = 1;
-    private static byte TWO = 2;
+    private static final byte ZERO = 0;
+    private static final byte ONE = 1;
+    private static final byte TWO = 2;
 
     /**
      * Writes a boolean.

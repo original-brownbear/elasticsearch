@@ -92,8 +92,7 @@ public class Index implements Writeable, ToXContentObject {
 
     @Override
     public void writeTo(final StreamOutput out) throws IOException {
-        out.writeString(name);
-        out.writeString(uuid);
+        out.writeStrings(name, uuid);
     }
 
     @Override

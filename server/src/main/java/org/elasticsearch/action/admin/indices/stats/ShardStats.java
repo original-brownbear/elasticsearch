@@ -114,8 +114,7 @@ public class ShardStats implements Writeable, ToXContentFragment {
         shardRouting.writeTo(out);
         commonStats.writeTo(out);
         out.writeOptionalWriteable(commitStats);
-        out.writeString(statePath);
-        out.writeString(dataPath);
+        out.writeStrings(statePath, dataPath);
         out.writeBoolean(isCustomDataPath);
         out.writeOptionalWriteable(seqNoStats);
         out.writeOptionalWriteable(retentionLeaseStats);
