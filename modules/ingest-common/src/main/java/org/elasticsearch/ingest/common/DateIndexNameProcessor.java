@@ -8,8 +8,8 @@
 
 package org.elasticsearch.ingest.common;
 
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.time.DateFormatter;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.IngestDocument;
@@ -75,7 +75,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
                 dateTime = dateParser.apply(date);
             } catch (Exception e) {
                 // try the next parser and keep track of the exceptions
-                lastException = ExceptionsHelper.useOrSuppress(lastException, e);
+                lastException = ExceptionsUtil.useOrSuppress(lastException, e);
             }
         }
 

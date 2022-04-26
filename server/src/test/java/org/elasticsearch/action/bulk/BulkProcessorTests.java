@@ -22,6 +22,7 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.test.ESTestCase;
@@ -212,7 +213,7 @@ public class BulkProcessorTests extends ESTestCase {
                 // should never happen
                 Thread.currentThread().interrupt();
                 failureCount.getAndIncrement();
-                exceptionRef.set(ExceptionsHelper.useOrSuppress(exceptionRef.get(), e));
+                exceptionRef.set(ExceptionsUtil.useOrSuppress(exceptionRef.get(), e));
             }
         };
         try (
@@ -267,7 +268,7 @@ public class BulkProcessorTests extends ESTestCase {
                     f.get();
                 } catch (Exception e) {
                     failureCount.incrementAndGet();
-                    exceptionRef.set(ExceptionsHelper.useOrSuppress(exceptionRef.get(), e));
+                    exceptionRef.set(ExceptionsUtil.useOrSuppress(exceptionRef.get(), e));
                 }
             }
             executorService.shutdown();
@@ -329,7 +330,7 @@ public class BulkProcessorTests extends ESTestCase {
                 // should never happen
                 Thread.currentThread().interrupt();
                 failureCount.getAndIncrement();
-                exceptionRef.set(ExceptionsHelper.useOrSuppress(exceptionRef.get(), e));
+                exceptionRef.set(ExceptionsUtil.useOrSuppress(exceptionRef.get(), e));
             }
         };
         ScheduledExecutorService flushExecutor = Executors.newScheduledThreadPool(1);
@@ -396,7 +397,7 @@ public class BulkProcessorTests extends ESTestCase {
                     f.get();
                 } catch (Exception e) {
                     failureCount.incrementAndGet();
-                    exceptionRef.set(ExceptionsHelper.useOrSuppress(exceptionRef.get(), e));
+                    exceptionRef.set(ExceptionsUtil.useOrSuppress(exceptionRef.get(), e));
                 }
             }
             executorService.shutdown();
@@ -533,7 +534,7 @@ public class BulkProcessorTests extends ESTestCase {
             public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
                 if (failure != null) {
                     failureCount.incrementAndGet();
-                    exceptionRef.set(ExceptionsHelper.useOrSuppress(exceptionRef.get(), failure));
+                    exceptionRef.set(ExceptionsUtil.useOrSuppress(exceptionRef.get(), failure));
 
                 }
             }

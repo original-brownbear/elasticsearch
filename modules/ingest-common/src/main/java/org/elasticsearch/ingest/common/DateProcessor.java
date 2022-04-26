@@ -8,9 +8,9 @@
 
 package org.elasticsearch.ingest.common;
 
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.util.LocaleUtils;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
@@ -105,7 +105,7 @@ public final class DateProcessor extends AbstractProcessor {
                 break;
             } catch (Exception e) {
                 // try the next parser and keep track of the exceptions
-                lastException = ExceptionsHelper.useOrSuppress(lastException, e);
+                lastException = ExceptionsUtil.useOrSuppress(lastException, e);
             }
         }
 

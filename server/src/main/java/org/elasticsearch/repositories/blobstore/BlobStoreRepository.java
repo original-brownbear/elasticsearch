@@ -71,6 +71,7 @@ import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.SuppressForbidden;
@@ -2076,7 +2077,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         new RepositoryException(
                             metadata.name(),
                             "Failed marking repository state as corrupted",
-                            ExceptionsHelper.useOrSuppress(e, originalException)
+                            ExceptionsUtil.useOrSuppress(e, originalException)
                         )
                     );
                 }

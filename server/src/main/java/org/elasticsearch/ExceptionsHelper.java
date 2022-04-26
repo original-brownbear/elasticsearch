@@ -15,6 +15,7 @@ import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.elasticsearch.action.ShardOperationFailedException;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.rest.RestStatus;
@@ -109,7 +110,7 @@ public final class ExceptionsHelper {
     public static <T extends Throwable> void rethrowAndSuppress(List<T> exceptions) throws T {
         T main = null;
         for (T ex : exceptions) {
-            main = useOrSuppress(main, ex);
+            main = ExceptionsUtil.useOrSuppress(main, ex);
         }
         if (main != null) {
             throw main;
@@ -123,20 +124,11 @@ public final class ExceptionsHelper {
     public static <T extends Throwable> void maybeThrowRuntimeAndSuppress(List<T> exceptions) {
         T main = null;
         for (T ex : exceptions) {
-            main = useOrSuppress(main, ex);
+            main = ExceptionsUtil.useOrSuppress(main, ex);
         }
         if (main != null) {
             throw new ElasticsearchException(main);
         }
-    }
-
-    public static <T extends Throwable> T useOrSuppress(T first, T second) {
-        if (first == null) {
-            return second;
-        } else {
-            first.addSuppressed(second);
-        }
-        return first;
     }
 
     private static final List<Class<? extends IOException>> CORRUPTION_EXCEPTIONS = List.of(

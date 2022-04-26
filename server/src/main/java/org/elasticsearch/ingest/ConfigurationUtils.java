@@ -14,6 +14,7 @@ import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.ScriptType;
@@ -467,7 +468,7 @@ public final class ConfigurationUtils {
                             processors.add(readProcessor(processorFactories, scriptService, entry.getKey(), entry.getValue()));
                         }
                     } catch (Exception e) {
-                        exception = ExceptionsHelper.useOrSuppress(exception, e);
+                        exception = ExceptionsUtil.useOrSuppress(exception, e);
                     }
                 }
             }

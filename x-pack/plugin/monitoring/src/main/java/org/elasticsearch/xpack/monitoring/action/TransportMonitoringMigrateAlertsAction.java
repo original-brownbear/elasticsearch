@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.monitoring.action;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
@@ -25,6 +24,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -236,7 +236,7 @@ public class TransportMonitoringMigrateAlertsAction extends TransportMasterNodeA
                     // Set first exception as the cause, and the rest as suppressed under it.
                     Exception head = new ElasticsearchException("multiple errors occurred during migration", exceptions.get(0));
                     List<Exception> tail = exceptions.subList(1, exceptions.size());
-                    return tail.stream().reduce(head, ExceptionsHelper::useOrSuppress);
+                    return tail.stream().reduce(head, ExceptionsUtil::useOrSuppress);
                 }
             }
         };

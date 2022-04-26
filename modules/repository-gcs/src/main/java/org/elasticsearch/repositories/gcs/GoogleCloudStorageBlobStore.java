@@ -22,7 +22,6 @@ import com.google.cloud.storage.StorageException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobMetadata;
 import org.elasticsearch.common.blobstore.BlobPath;
@@ -38,6 +37,7 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.core.CheckedConsumer;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.SuppressForbidden;
 
 import java.io.ByteArrayInputStream;
@@ -375,7 +375,7 @@ class GoogleCloudStorageBlobStore implements BlobStore {
                 final int errorCode = se.getCode();
                 if (errorCode == HTTP_GONE) {
                     logger.warn(() -> new ParameterizedMessage("Retrying broken resumable upload session for blob {}", blobInfo), se);
-                    storageException = ExceptionsHelper.useOrSuppress(storageException, se);
+                    storageException = ExceptionsUtil.useOrSuppress(storageException, se);
                     continue;
                 } else if (failIfAlreadyExists && errorCode == HTTP_PRECON_FAILED) {
                     throw new FileAlreadyExistsException(blobInfo.getBlobId().getName(), null, se.getMessage());
@@ -433,7 +433,7 @@ class GoogleCloudStorageBlobStore implements BlobStore {
                 final int errorCode = se.getCode();
                 if (errorCode == HTTP_GONE) {
                     logger.warn(() -> new ParameterizedMessage("Retrying broken resumable upload session for blob {}", blobInfo), se);
-                    storageException = ExceptionsHelper.useOrSuppress(storageException, se);
+                    storageException = ExceptionsUtil.useOrSuppress(storageException, se);
                     inputStream.reset();
                     continue;
                 } else if (failIfAlreadyExists && errorCode == HTTP_PRECON_FAILED) {

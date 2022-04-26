@@ -12,7 +12,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
-import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.common.Strings;
@@ -31,6 +30,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.AbstractRefCounted;
+import org.elasticsearch.core.ExceptionsUtil;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestRequest;
@@ -409,10 +409,10 @@ public abstract class AbstractHttpServerTransport extends AbstractLifecycleCompo
             try {
                 innerRestRequest = RestRequest.request(parserConfig, httpRequest, httpChannel);
             } catch (final RestRequest.MediaTypeHeaderException e) {
-                badRequestCause = ExceptionsHelper.useOrSuppress(badRequestCause, e);
+                badRequestCause = ExceptionsUtil.useOrSuppress(badRequestCause, e);
                 innerRestRequest = requestWithoutFailedHeader(httpRequest, httpChannel, badRequestCause, e.getFailedHeaderNames());
             } catch (final RestRequest.BadParameterException e) {
-                badRequestCause = ExceptionsHelper.useOrSuppress(badRequestCause, e);
+                badRequestCause = ExceptionsUtil.useOrSuppress(badRequestCause, e);
                 innerRestRequest = RestRequest.requestWithoutParameters(parserConfig, httpRequest, httpChannel);
             }
             restRequest = innerRestRequest;
@@ -442,7 +442,7 @@ public abstract class AbstractHttpServerTransport extends AbstractLifecycleCompo
                     trace
                 );
             } catch (final IllegalArgumentException e) {
-                badRequestCause = ExceptionsHelper.useOrSuppress(badRequestCause, e);
+                badRequestCause = ExceptionsUtil.useOrSuppress(badRequestCause, e);
                 final RestRequest innerRequest = RestRequest.requestWithoutParameters(parserConfig, httpRequest, httpChannel);
                 innerChannel = new DefaultRestChannel(
                     httpChannel,
@@ -475,7 +475,7 @@ public abstract class AbstractHttpServerTransport extends AbstractLifecycleCompo
         try {
             return RestRequest.request(parserConfig, httpRequestWithoutContentType, httpChannel);
         } catch (final RestRequest.MediaTypeHeaderException e) {
-            badRequestCause = ExceptionsHelper.useOrSuppress(badRequestCause, e);
+            badRequestCause = ExceptionsUtil.useOrSuppress(badRequestCause, e);
             return requestWithoutFailedHeader(httpRequest, httpChannel, badRequestCause, e.getFailedHeaderNames());
         } catch (final RestRequest.BadParameterException e) {
             badRequestCause.addSuppressed(e);
