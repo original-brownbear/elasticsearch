@@ -211,37 +211,46 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
      * @return the location the bytes were written to
      * @throws IOException if writing to the translog resulted in an I/O exception
      */
-    public Translog.Location add(final BytesReference data, final long seqNo) throws IOException {
+    public Translog.Location add(final ReleasableBytesStreamOutput data, final long seqNo) throws IOException {
         long bufferedBytesBeforeAdd = this.bufferedBytes;
         if (bufferedBytesBeforeAdd >= forceWriteThreshold) {
             writeBufferedOps(Long.MAX_VALUE, bufferedBytesBeforeAdd >= forceWriteThreshold * 4);
         }
 
         final Translog.Location location;
-        synchronized (this) {
-            ensureOpen();
-            if (buffer == null) {
-                buffer = new ReleasableBytesStreamOutput(bigArrays);
+        boolean retained = false;
+        try {
+            synchronized (this) {
+                ensureOpen();
+                if (buffer == null) {
+                    buffer = data;
+                    retained = true;
+                } else {
+                    assert bufferedBytes == buffer.size();
+                    data.bytes().writeTo(buffer);
+                }
+                final long offset = totalOffset;
+                totalOffset += data.size();
+
+                assert minSeqNo != SequenceNumbers.NO_OPS_PERFORMED || operationCounter == 0;
+                assert maxSeqNo != SequenceNumbers.NO_OPS_PERFORMED || operationCounter == 0;
+
+                minSeqNo = SequenceNumbers.min(minSeqNo, seqNo);
+                maxSeqNo = SequenceNumbers.max(maxSeqNo, seqNo);
+
+                nonFsyncedSequenceNumbers.add(seqNo);
+
+                operationCounter++;
+
+                assert assertNoSeqNumberConflict(seqNo, data.bytes());
+
+                location = new Translog.Location(generation, offset, data.size());
+                bufferedBytes = buffer.size();
             }
-            assert bufferedBytes == buffer.size();
-            final long offset = totalOffset;
-            totalOffset += data.length();
-            data.writeTo(buffer);
-
-            assert minSeqNo != SequenceNumbers.NO_OPS_PERFORMED || operationCounter == 0;
-            assert maxSeqNo != SequenceNumbers.NO_OPS_PERFORMED || operationCounter == 0;
-
-            minSeqNo = SequenceNumbers.min(minSeqNo, seqNo);
-            maxSeqNo = SequenceNumbers.max(maxSeqNo, seqNo);
-
-            nonFsyncedSequenceNumbers.add(seqNo);
-
-            operationCounter++;
-
-            assert assertNoSeqNumberConflict(seqNo, data);
-
-            location = new Translog.Location(generation, offset, data.length());
-            bufferedBytes = buffer.size();
+        } finally {
+            if (retained == false) {
+                data.close();
+            }
         }
 
         return location;

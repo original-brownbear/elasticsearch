@@ -34,14 +34,15 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.DiskIoBufferPool;
 import org.elasticsearch.common.io.FileSystemUtils;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.ReleasableBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.ReleasableLock;
@@ -1337,7 +1338,9 @@ public class TranslogTests extends ESTestCase {
             if (seqNo != SequenceNumbers.UNASSIGNED_SEQ_NO) {
                 seenSeqNos.add(seqNo);
             }
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), seqNo);
+            final ReleasableBytesStreamOutput tmp = new ReleasableBytesStreamOutput(BigArrays.NON_RECYCLING_INSTANCE);
+            tmp.write(bytes);
+            writer.add(tmp, seqNo);
         }
         assertThat(persistedSeqNos, empty());
         writer.sync();
@@ -1362,7 +1365,9 @@ public class TranslogTests extends ESTestCase {
         byte[] bytes = new byte[4];
         DataOutput out = EndiannessReverserUtil.wrapDataOutput(new ByteArrayDataOutput(bytes));
         out.writeInt(2048);
-        writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), randomNonNegativeLong());
+        final ReleasableBytesStreamOutput tmp = new ReleasableBytesStreamOutput(BigArrays.NON_RECYCLING_INSTANCE);
+        tmp.write(bytes);
+        writer.add(tmp, randomNonNegativeLong());
 
         if (reader instanceof TranslogReader) {
             ByteBuffer buffer = ByteBuffer.allocate(4);
@@ -1455,16 +1460,19 @@ public class TranslogTests extends ESTestCase {
             TranslogWriter writer = translog.getCurrent();
             int initialWriteCalls = writeCalls.get();
             byte[] bytes = new byte[256];
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 1);
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 2);
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 3);
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 4);
+            for (int i = 1; i < 5; i++) {
+                final ReleasableBytesStreamOutput tmp = new ReleasableBytesStreamOutput(BigArrays.NON_RECYCLING_INSTANCE);
+                tmp.write(bytes);
+                writer.add(tmp, i);
+            }
             assertThat(persistedSeqNos, empty());
             assertEquals(initialWriteCalls, writeCalls.get());
 
             if (randomBoolean()) {
                 // Since the buffer is full, this will flush before performing the add.
-                writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 5);
+                final ReleasableBytesStreamOutput tmp = new ReleasableBytesStreamOutput(BigArrays.NON_RECYCLING_INSTANCE);
+                tmp.write(bytes);
+                writer.add(tmp, 5);
                 assertThat(persistedSeqNos, empty());
                 assertThat(writeCalls.get(), greaterThan(initialWriteCalls));
             } else {
@@ -1474,7 +1482,9 @@ public class TranslogTests extends ESTestCase {
                 assertThat(writeCalls.get(), greaterThan(initialWriteCalls));
 
                 // Add after we the read flushed the buffer
-                writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 5);
+                final ReleasableBytesStreamOutput tmp = new ReleasableBytesStreamOutput(BigArrays.NON_RECYCLING_INSTANCE);
+                tmp.write(bytes);
+                writer.add(tmp, 5);
             }
 
             writer.sync();
@@ -1572,7 +1582,9 @@ public class TranslogTests extends ESTestCase {
             byte[] bytes = new byte[4];
             DataOutput out = EndiannessReverserUtil.wrapDataOutput(new ByteArrayDataOutput(new byte[4]));
             out.writeInt(1);
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 1);
+            final ReleasableBytesStreamOutput tmp = new ReleasableBytesStreamOutput(BigArrays.NON_RECYCLING_INSTANCE);
+            tmp.write(bytes);
+            writer.add(tmp, 1);
             assertThat(persistedSeqNos, empty());
             startBlocking.set(true);
             Thread thread = new Thread(() -> {
@@ -1586,7 +1598,9 @@ public class TranslogTests extends ESTestCase {
             writeStarted.await();
 
             // Add will not block even though we are currently writing/syncing
-            writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), 2);
+            final ReleasableBytesStreamOutput tmp2 = new ReleasableBytesStreamOutput(BigArrays.NON_RECYCLING_INSTANCE);
+            tmp2.write(bytes);
+            writer.add(tmp2, 2);
 
             blocker.countDown();
             // Sync against so that both operations are written
@@ -1604,7 +1618,9 @@ public class TranslogTests extends ESTestCase {
                 final byte[] bytes = new byte[4];
                 final DataOutput out = EndiannessReverserUtil.wrapDataOutput(new ByteArrayDataOutput(bytes));
                 out.writeInt(i);
-                writer.add(ReleasableBytesReference.wrap(new BytesArray(bytes)), randomNonNegativeLong());
+                final ReleasableBytesStreamOutput tmp = new ReleasableBytesStreamOutput(BigArrays.NON_RECYCLING_INSTANCE);
+                tmp.write(bytes);
+                writer.add(tmp, randomNonNegativeLong());
             }
             writer.sync();
             final Checkpoint writerCheckpoint = writer.getCheckpoint();
