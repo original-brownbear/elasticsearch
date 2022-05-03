@@ -46,6 +46,8 @@ dependencies {
   api "org.apache.lucene:lucene-sandbox:${versions.lucene}"
   api "org.apache.lucene:lucene-spatial3d:${versions.lucene}"
   api "org.apache.lucene:lucene-suggest:${versions.lucene}"
+  api 'org.apache.derby:derby:10.15.2.0'
+  api 'org.apache.derby:derbyshared:10.15.2.0'
 
   // utilities
   api project(":libs:elasticsearch-cli")
