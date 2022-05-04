@@ -534,6 +534,8 @@ public class ReplicationTracker extends AbstractIndexShardComponent implements L
         removeRetentionLease(getPeerRecoveryRetentionLeaseId(nodeId), listener);
     }
 
+    public static final String CCR_RETENTION_LEASE_SOURCE = "ccr";
+
     /**
      * Source for peer recovery retention leases; see {@link ReplicationTracker#addPeerRecoveryRetentionLease}.
      */

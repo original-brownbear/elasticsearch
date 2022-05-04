@@ -99,7 +99,7 @@ public final class RetentionLease implements ToXContentObject, Writeable {
         this.id = id;
         this.retainingSequenceNumber = retainingSequenceNumber;
         this.timestamp = timestamp;
-        this.source = source;
+        this.source = deduplicateSourceString(source);
     }
 
     /**
@@ -112,7 +112,18 @@ public final class RetentionLease implements ToXContentObject, Writeable {
         id = in.readString();
         retainingSequenceNumber = in.readZLong();
         timestamp = in.readVLong();
-        source = in.readString();
+        source = deduplicateSourceString(in.readString());
+    }
+
+    /**
+     * Deduplicates the most common sources to save some heap.
+     */
+    private static String deduplicateSourceString(String source) {
+        return switch (source) {
+            case ReplicationTracker.PEER_RECOVERY_RETENTION_LEASE_SOURCE -> ReplicationTracker.PEER_RECOVERY_RETENTION_LEASE_SOURCE;
+            case ReplicationTracker.CCR_RETENTION_LEASE_SOURCE -> ReplicationTracker.CCR_RETENTION_LEASE_SOURCE;
+            default -> source;
+        };
     }
 
     /**

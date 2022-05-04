@@ -14,6 +14,7 @@ import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.Index;
+import org.elasticsearch.index.seqno.ReplicationTracker;
 import org.elasticsearch.index.seqno.RetentionLeaseActions;
 import org.elasticsearch.index.seqno.RetentionLeaseAlreadyExistsException;
 import org.elasticsearch.index.seqno.RetentionLeaseNotFoundException;
@@ -110,7 +111,7 @@ public class CcrRetentionLeases {
             leaderShardId,
             retentionLeaseId,
             retainingSequenceNumber,
-            "ccr"
+            ReplicationTracker.CCR_RETENTION_LEASE_SOURCE
         );
         remoteClient.execute(RetentionLeaseActions.Add.INSTANCE, request, listener);
     }
