@@ -72,9 +72,9 @@ public final class BlobstoreMetaStore implements Closeable {
             final SnapshotState state = SnapshotState.valueOf(resultSet.getString(2));
             final List<String> indices = new ArrayList<>();
             try (
-                    PreparedStatement indicesStatement = connection.prepareStatement(
-                            "SELECT name FROM snapshot_indices WHERE repository=? AND uuid=?"
-                    )
+                PreparedStatement indicesStatement = connection.prepareStatement(
+                    "SELECT name FROM snapshot_indices WHERE repository=? AND uuid=?"
+                )
             ) {
                 indicesStatement.setString(1, repository);
                 indicesStatement.setString(2, uuid);
@@ -85,13 +85,7 @@ public final class BlobstoreMetaStore implements Closeable {
                     }
                 }
             }
-            return new SnapshotInfo(
-                new Snapshot(repository, new SnapshotId(name, uuid)),
-                indices,
-                List.of(),
-                List.of(),
-                state
-            );
+            return new SnapshotInfo(new Snapshot(repository, new SnapshotId(name, uuid)), indices, List.of(), List.of(), state);
         } catch (SQLException e) {
             throw new AssertionError(e);
         }
