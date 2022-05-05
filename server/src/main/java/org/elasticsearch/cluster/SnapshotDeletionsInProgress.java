@@ -22,7 +22,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -41,7 +40,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
     private final List<Entry> entries;
 
     private SnapshotDeletionsInProgress(List<Entry> entries) {
-        this.entries = entries;
+        this.entries = List.copyOf(entries);
         assert entries.size() == entries.stream().map(Entry::uuid).distinct().count() : "Found duplicate UUIDs in entries " + entries;
         assert assertNoConcurrentDeletionsForSameRepository(entries);
     }
@@ -50,11 +49,11 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
         if (entries.isEmpty()) {
             return EMPTY;
         }
-        return new SnapshotDeletionsInProgress(Collections.unmodifiableList(entries));
+        return new SnapshotDeletionsInProgress(entries);
     }
 
     public SnapshotDeletionsInProgress(StreamInput in) throws IOException {
-        this(in.readList(Entry::new));
+        this(in.readImmutableList(Entry::new));
     }
 
     private static boolean assertNoConcurrentDeletionsForSameRepository(List<Entry> entries) {
@@ -220,7 +219,7 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
 
         public Entry(StreamInput in) throws IOException {
             this.repoName = in.readString();
-            this.snapshots = in.readList(SnapshotId::new);
+            this.snapshots = in.readImmutableList(SnapshotId::new);
             this.startTime = in.readVLong();
             this.repositoryStateId = in.readLong();
             this.state = State.readFrom(in);

@@ -815,7 +815,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 RepositoryShardId::new,
                 ShardSnapshotStatus::readFrom
             );
-            final List<SnapshotFeatureInfo> featureStates = Collections.unmodifiableList(in.readList(SnapshotFeatureInfo::new));
+            final List<SnapshotFeatureInfo> featureStates = in.readImmutableList(SnapshotFeatureInfo::new);
             return new SnapshotsInProgress.Entry(
                 snapshot,
                 includeGlobalState,

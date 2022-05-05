@@ -27,7 +27,7 @@ public class ThreadPoolInfo implements ReportingService.Info, Iterable<ThreadPoo
     }
 
     public ThreadPoolInfo(StreamInput in) throws IOException {
-        this.infos = Collections.unmodifiableList(in.readList(ThreadPool.Info::new));
+        this.infos = in.readImmutableList(ThreadPool.Info::new);
     }
 
     @Override

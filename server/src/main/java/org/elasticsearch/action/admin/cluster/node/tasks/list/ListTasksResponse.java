@@ -59,7 +59,7 @@ public class ListTasksResponse extends BaseTasksResponse implements ToXContentOb
 
     public ListTasksResponse(StreamInput in) throws IOException {
         super(in);
-        tasks = Collections.unmodifiableList(in.readList(TaskInfo::from));
+        tasks = in.readImmutableList(TaskInfo::from);
     }
 
     @Override

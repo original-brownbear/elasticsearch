@@ -68,7 +68,7 @@ public class InternalInferModelAction extends ActionType<InternalInferModelActio
         public Request(StreamInput in) throws IOException {
             super(in);
             this.modelId = in.readString();
-            this.objectsToInfer = Collections.unmodifiableList(in.readList(StreamInput::readMap));
+            this.objectsToInfer = in.readImmutableList(StreamInput::readMap);
             this.update = in.readNamedWriteable(InferenceConfigUpdate.class);
             this.previouslyLicensed = in.readBoolean();
         }

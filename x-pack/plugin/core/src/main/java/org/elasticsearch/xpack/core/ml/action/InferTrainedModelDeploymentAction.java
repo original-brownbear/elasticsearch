@@ -98,7 +98,7 @@ public class InferTrainedModelDeploymentAction extends ActionType<InferTrainedMo
         public Request(StreamInput in) throws IOException {
             super(in);
             deploymentId = in.readString();
-            docs = Collections.unmodifiableList(in.readList(StreamInput::readMap));
+            docs = in.readImmutableList(StreamInput::readMap);
             update = in.readOptionalNamedWriteable(InferenceConfigUpdate.class);
             inferenceTimeout = in.readOptionalTimeValue();
         }
