@@ -174,6 +174,20 @@ index                                 prirep shard store
 // TESTRESPONSE[s/50gb/.*/]
 
 [discrete]
+[[shard-count-recommendation]]
+==== Aim for 3000 shards per Gb of heap on master nodes
+
+For each node in the cluster that has the master role, 3000 shards per GB of heap is a good starting point to sizing.
+For example a cluster containing 12000 shards should have at least 4Gb of heap available on each node with the master role
+enabled. If a node has other roles besides the master role assigned to it, then this number must be added to the heap requirements
+of its other assigned roles. It should be noted that it is generally advisable to use dedicated master nodes in clusters of more than
+a 3000 shards.
+
+A good starting point to sizing data nodes is calculating the number of fields across all indices stored on that data node
+and multiplying it by 500b and adding 512Mb to the result.
+An example of storing 500 indices using a mapping of 4000 fields thus works out to `500 x 4000 x 500b + 512Mb ≈ 1.5Gb`.
+
+[discrete]
 [[avoid-node-hotspots]]
 ==== Avoid node hotspots
 
