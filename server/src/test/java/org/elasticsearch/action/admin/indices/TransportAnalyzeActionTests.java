@@ -17,7 +17,6 @@ import org.elasticsearch.action.admin.indices.analyze.AnalyzeAction;
 import org.elasticsearch.action.admin.indices.analyze.TransportAnalyzeAction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.UUIDs;
-import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
@@ -85,7 +84,7 @@ public class TransportAnalyzeActionTests extends ESTestCase {
                 final CharacterRunAutomaton stopset;
 
                 MockFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-                    super(indexSettings, name, settings);
+                    super(name, settings);
                     if (settings.hasValue("stopword")) {
                         this.stopset = new CharacterRunAutomaton(Automata.makeString(settings.get("stopword")));
                     } else {
@@ -102,26 +101,16 @@ public class TransportAnalyzeActionTests extends ESTestCase {
             class DeprecatedTokenFilterFactory extends AbstractTokenFilterFactory implements NormalizingTokenFilterFactory {
 
                 DeprecatedTokenFilterFactory(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-                    super(indexSettings, name, settings);
+                    super(name, settings);
                 }
 
                 @Override
                 public TokenStream create(TokenStream tokenStream) {
-                    deprecationLogger.warn(
-                        DeprecationCategory.ANALYSIS,
-                        "deprecated_token_filter_create",
-                        "Using deprecated token filter [deprecated]"
-                    );
                     return tokenStream;
                 }
 
                 @Override
                 public TokenStream normalize(TokenStream tokenStream) {
-                    deprecationLogger.warn(
-                        DeprecationCategory.ANALYSIS,
-                        "deprecated_token_filter_normalize",
-                        "Using deprecated token filter [deprecated]"
-                    );
                     return tokenStream;
                 }
             }
@@ -545,27 +534,5 @@ public class TransportAnalyzeActionTests extends ESTestCase {
                 + "]."
                 + " This limit can be set by changing the [index.analyze.max_token_count] index level setting."
         );
-    }
-
-    public void testDeprecationWarnings() throws IOException {
-        AnalyzeAction.Request req = new AnalyzeAction.Request();
-        req.tokenizer("standard");
-        req.addTokenFilter("lowercase");
-        req.addTokenFilter("deprecated");
-        req.text("test text");
-
-        AnalyzeAction.Response analyze = TransportAnalyzeAction.analyze(req, registry, mockIndexService(), maxTokenCount);
-        assertEquals(2, analyze.getTokens().size());
-        assertWarnings("Using deprecated token filter [deprecated]");
-
-        // normalizer
-        req = new AnalyzeAction.Request();
-        req.addTokenFilter("lowercase");
-        req.addTokenFilter("deprecated");
-        req.text("text");
-
-        analyze = TransportAnalyzeAction.analyze(req, registry, mockIndexService(), maxTokenCount);
-        assertEquals(1, analyze.getTokens().size());
-        assertWarnings("Using deprecated token filter [deprecated]");
     }
 }

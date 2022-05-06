@@ -14,7 +14,6 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AbstractTokenFilterFactory;
 import org.elasticsearch.index.analysis.AnalysisMode;
 import org.elasticsearch.index.analysis.AnalyzerScope;
@@ -47,10 +46,9 @@ public class TextFieldAnalyzerModeTests extends ESTestCase {
         .numberOfShards(1)
         .numberOfReplicas(0)
         .build();
-    private static final IndexSettings indexSettings = new IndexSettings(EMPTY_INDEX_METADATA, Settings.EMPTY);
 
     private Analyzer createAnalyzerWithMode(AnalysisMode mode) {
-        TokenFilterFactory tokenFilter = new AbstractTokenFilterFactory(indexSettings, "my_analyzer", Settings.EMPTY) {
+        TokenFilterFactory tokenFilter = new AbstractTokenFilterFactory("my_analyzer", Settings.EMPTY) {
             @Override
             public AnalysisMode getAnalysisMode() {
                 return mode;
