@@ -65,6 +65,7 @@ import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -73,6 +74,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.WeakHashMap;
 import java.util.function.Supplier;
 
 import static org.apache.lucene.index.IndexWriter.MAX_TERM_LENGTH;
@@ -267,6 +269,10 @@ public final class KeywordFieldMapper extends FieldMapper {
             );
         }
 
+        private static final Map<KeywordFieldType, WeakReference<KeywordFieldType>> fieldsDeduplicator = Collections.synchronizedMap(
+            new WeakHashMap<>()
+        );
+
         private KeywordFieldType buildFieldType(MapperBuilderContext context, FieldType fieldType) {
             NamedAnalyzer normalizer = Lucene.KEYWORD_ANALYZER;
             NamedAnalyzer searchAnalyzer = Lucene.KEYWORD_ANALYZER;
@@ -295,7 +301,23 @@ public final class KeywordFieldMapper extends FieldMapper {
             } else if (splitQueriesOnWhitespace.getValue()) {
                 searchAnalyzer = Lucene.WHITESPACE_ANALYZER;
             }
-            return new KeywordFieldType(context.buildFullName(name), fieldType, normalizer, searchAnalyzer, quoteAnalyzer, this);
+            final KeywordFieldType type = new KeywordFieldType(
+                context.buildFullName(name),
+                fieldType,
+                normalizer,
+                searchAnalyzer,
+                quoteAnalyzer,
+                this
+            );
+            final WeakReference<KeywordFieldType> cachedRef = fieldsDeduplicator.get(type);
+            if (cachedRef != null) {
+                final KeywordFieldType found = cachedRef.get();
+                if (found != null) {
+                    return found;
+                }
+            }
+            fieldsDeduplicator.put(type, new WeakReference<>(type));
+            return type;
         }
 
         @Override
@@ -398,6 +420,25 @@ public final class KeywordFieldMapper extends FieldMapper {
             this.eagerGlobalOrdinals = false;
             this.scriptValues = null;
             this.isDimension = false;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (super.equals(o) == false) return false;
+            KeywordFieldType that = (KeywordFieldType) o;
+            return ignoreAbove == that.ignoreAbove
+                    && eagerGlobalOrdinals == that.eagerGlobalOrdinals
+                    && isDimension == that.isDimension
+                    && Objects.equals(nullValue, that.nullValue)
+                    && Objects.equals(normalizer, that.normalizer)
+                    && Objects.equals(scriptValues, that.scriptValues);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), ignoreAbove, nullValue, normalizer, eagerGlobalOrdinals, scriptValues, isDimension);
         }
 
         @Override

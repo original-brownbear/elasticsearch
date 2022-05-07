@@ -604,4 +604,22 @@ public abstract class MappedFieldType {
                 + "]."
         );
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        MappedFieldType that = (MappedFieldType) o;
+        return docValues == that.docValues
+            && isIndexed == that.isIndexed
+            && isStored == that.isStored
+            && name.equals(that.name)
+            && textSearchInfo.equals(that.textSearchInfo)
+            && meta.equals(that.meta);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, docValues, isIndexed, isStored, textSearchInfo, meta);
+    }
 }

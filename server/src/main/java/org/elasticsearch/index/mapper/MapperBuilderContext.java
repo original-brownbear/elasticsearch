@@ -10,6 +10,8 @@ package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.common.Strings;
 
+import java.util.Objects;
+
 /**
  * Holds context for building Mapper objects from their Builders
  */
@@ -52,5 +54,21 @@ public class MapperBuilderContext {
             return name;
         }
         return path + "." + name;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(path);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof MapperBuilderContext == false) {
+            return false;
+        }
+        return Objects.equals(path, ((MapperBuilderContext) obj).path);
     }
 }
