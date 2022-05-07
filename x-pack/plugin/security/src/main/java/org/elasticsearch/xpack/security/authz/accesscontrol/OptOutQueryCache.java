@@ -7,11 +7,12 @@
 
 package org.elasticsearch.xpack.security.authz.accesscontrol;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.index.AbstractIndexComponent;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.cache.query.QueryCache;
 import org.elasticsearch.indices.IndicesQueryCache;
@@ -25,14 +26,15 @@ import java.util.Set;
 /**
  * Opts out of the query cache if field level security is active for the current request, and it is unsafe to cache.
  */
-public final class OptOutQueryCache extends AbstractIndexComponent implements QueryCache {
+public final class OptOutQueryCache implements QueryCache {
+
+    private static final Logger logger = LogManager.getLogger(OptOutQueryCache.class);
 
     private final IndicesQueryCache indicesQueryCache;
     private final ThreadContext context;
     private final String indexName;
 
     public OptOutQueryCache(final IndexSettings indexSettings, final IndicesQueryCache indicesQueryCache, final ThreadContext context) {
-        super(indexSettings);
         this.indicesQueryCache = indicesQueryCache;
         this.context = Objects.requireNonNull(context, "threadContext must not be null");
         this.indexName = indexSettings.getIndex().getName();
@@ -45,15 +47,15 @@ public final class OptOutQueryCache extends AbstractIndexComponent implements Qu
 
     @Override
     public void clear(final String reason) {
-        logger.debug("full cache clear, reason [{}]", reason);
-        indicesQueryCache.clearIndex(index().getName());
+        logger.debug("full cache clear for index [{}], reason [{}]", indexName, reason);
+        indicesQueryCache.clearIndex(indexName);
     }
 
     @Override
     public Weight doCache(Weight weight, QueryCachingPolicy policy) {
         IndicesAccessControl indicesAccessControl = context.getTransient(AuthorizationServiceField.INDICES_PERMISSIONS_KEY);
         if (indicesAccessControl == null) {
-            logger.debug("opting out of the query cache. current request doesn't hold indices permissions");
+            logger.debug("opting out of the query cache for index [{}]. current request doesn't hold indices permissions", indexName);
             return weight;
         }
 
@@ -96,5 +98,4 @@ public final class OptOutQueryCache extends AbstractIndexComponent implements Qu
         // we can cache, all fields are ok
         return true;
     }
-
 }
