@@ -203,10 +203,11 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             if (indexSettings.getIndexSortConfig().hasIndexSort()) {
                 // we delay the actual creation of the sort order for this index because the mapping has not been merged yet.
                 // The sort order is validated right after the merge of the mapping later in the process.
+                final String indexName = indexSettings.getIndex().getName();
                 this.indexSortSupplier = () -> indexSettings.getIndexSortConfig()
                     .buildIndexSort(
                         mapperService::fieldType,
-                        (fieldType, searchLookup) -> indexFieldData.getForField(fieldType, indexFieldData.index().getName(), searchLookup)
+                        (fieldType, searchLookup) -> indexFieldData.getForField(fieldType, indexName, searchLookup)
                     );
             } else {
                 this.indexSortSupplier = () -> null;

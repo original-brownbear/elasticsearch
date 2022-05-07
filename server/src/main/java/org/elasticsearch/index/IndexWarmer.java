@@ -119,7 +119,7 @@ public final class IndexWarmer {
                         final long start = System.nanoTime();
                         IndexFieldData.Global<?> ifd = indexFieldDataService.getForField(
                             fieldType,
-                            indexFieldDataService.index().getName(),
+                            indexShard.indexSettings().getIndex().getName(),
                             () -> { throw new UnsupportedOperationException("search lookup not available when warming an index"); }
                         );
                         IndexFieldData<?> global = ifd.loadGlobal(reader);

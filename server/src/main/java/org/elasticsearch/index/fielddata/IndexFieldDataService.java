@@ -12,7 +12,6 @@ import org.apache.lucene.util.Accountable;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
-import org.elasticsearch.index.AbstractIndexComponent;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.shard.ShardId;
@@ -29,7 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class IndexFieldDataService extends AbstractIndexComponent implements Closeable {
+public class IndexFieldDataService implements Closeable {
     public static final String FIELDDATA_CACHE_VALUE_NODE = "node";
     public static final String FIELDDATA_CACHE_KEY = "index.fielddata.cache";
     public static final Setting<String> INDEX_FIELDDATA_CACHE_KEY = new Setting<>(
@@ -56,6 +55,9 @@ public class IndexFieldDataService extends AbstractIndexComponent implements Clo
         @Override
         public void onRemoval(ShardId shardId, String fieldName, boolean wasEvicted, long sizeInBytes) {}
     };
+
+    private final IndexSettings indexSettings;
+
     private volatile IndexFieldDataCache.Listener listener = DEFAULT_NOOP_LISTENER;
 
     public IndexFieldDataService(
@@ -63,9 +65,9 @@ public class IndexFieldDataService extends AbstractIndexComponent implements Clo
         IndicesFieldDataCache indicesFieldDataCache,
         CircuitBreakerService circuitBreakerService
     ) {
-        super(indexSettings);
         this.indicesFieldDataCache = indicesFieldDataCache;
         this.circuitBreakerService = circuitBreakerService;
+        this.indexSettings = indexSettings;
     }
 
     public synchronized void clear() {
@@ -114,7 +116,7 @@ public class IndexFieldDataService extends AbstractIndexComponent implements Clo
             if (cache == null) {
                 String cacheType = indexSettings.getValue(INDEX_FIELDDATA_CACHE_KEY);
                 if (FIELDDATA_CACHE_VALUE_NODE.equals(cacheType)) {
-                    cache = indicesFieldDataCache.buildIndexFieldDataCache(listener, index(), fieldName);
+                    cache = indicesFieldDataCache.buildIndexFieldDataCache(listener, indexSettings.getIndex(), fieldName);
                 } else if ("none".equals(cacheType)) {
                     cache = new IndexFieldDataCache.None();
                 } else {
