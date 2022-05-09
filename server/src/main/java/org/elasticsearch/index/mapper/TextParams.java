@@ -40,7 +40,8 @@ public final class TextParams {
             Function<FieldMapper, NamedAnalyzer> analyzerInitFunction,
             Function<FieldMapper, Integer> positionGapInitFunction
         ) {
-            this.indexAnalyzer = Parameter.analyzerParam("analyzer", false, analyzerInitFunction, indexAnalyzers::getDefaultIndexAnalyzer)
+            final NamedAnalyzer defaultIndexAnalyzer = indexAnalyzers.getDefaultIndexAnalyzer();
+            this.indexAnalyzer = Parameter.analyzerParam("analyzer", false, analyzerInitFunction, () -> defaultIndexAnalyzer)
                 .setSerializerCheck(
                     (id, ic, a) -> id
                         || ic

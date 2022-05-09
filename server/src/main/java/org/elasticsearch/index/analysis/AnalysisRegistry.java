@@ -595,59 +595,48 @@ public final class AnalysisRegistry implements Closeable {
         Map<String, NamedAnalyzer> analyzers = new HashMap<>();
         Map<String, NamedAnalyzer> normalizers = new HashMap<>();
         Map<String, NamedAnalyzer> whitespaceNormalizers = new HashMap<>();
-        for (Map.Entry<String, AnalyzerProvider<?>> entry : analyzerProviders.entrySet()) {
-            analyzers.merge(
-                entry.getKey(),
-                produceAnalyzer(
-                    entry.getKey(),
-                    entry.getValue(),
-                    tokenFilterFactoryFactories,
-                    charFilterFactoryFactories,
-                    tokenizerFactoryFactories
-                ),
-                (k, v) -> { throw new IllegalStateException("already registered analyzer with name: " + entry.getKey()); }
-            );
-        }
-        for (Map.Entry<String, AnalyzerProvider<?>> entry : normalizerProviders.entrySet()) {
-            processNormalizerFactory(
-                entry.getKey(),
-                entry.getValue(),
-                normalizers,
+        analyzerProviders.forEach(
+            (key, value) -> {
+                if (key.startsWith("_")) {
+                    throw new IllegalArgumentException("analyzer name must not start with '_'. got \"" + key + "\"");
+                }
+                analyzers.put(
+                        key,
+                        produceAnalyzer(key, value, tokenFilterFactoryFactories, charFilterFactoryFactories, tokenizerFactoryFactories)
+                );
+            }
+        );
+        normalizerProviders.forEach((key, value) -> {
+            final NamedAnalyzer normalizer = produceNormalizer(
+                key,
+                value,
                 TokenizerFactory.newFactory("keyword", KeywordTokenizer::new),
                 tokenFilterFactoryFactories,
                 charFilterFactoryFactories
             );
-            processNormalizerFactory(
-                entry.getKey(),
-                entry.getValue(),
-                whitespaceNormalizers,
-                TokenizerFactory.newFactory("whitespace", WhitespaceTokenizer::new),
-                tokenFilterFactoryFactories,
-                charFilterFactoryFactories
-            );
-        }
-
-        for (Analyzer analyzer : normalizers.values()) {
-            analyzer.normalize("", ""); // check for deprecations
-        }
-
-        if (analyzers.containsKey(DEFAULT_ANALYZER_NAME) == false) {
-            analyzers.put(
-                DEFAULT_ANALYZER_NAME,
-                produceAnalyzer(
-                    DEFAULT_ANALYZER_NAME,
-                    new StandardAnalyzerProvider(indexSettings, null, DEFAULT_ANALYZER_NAME, Settings.EMPTY),
+            normalizers.put(key, normalizer);
+            normalizer.normalize("", ""); // check for deprecations
+            whitespaceNormalizers.put(
+                key,
+                produceNormalizer(
+                    key,
+                    value,
+                    TokenizerFactory.newFactory("whitespace", WhitespaceTokenizer::new),
                     tokenFilterFactoryFactories,
-                    charFilterFactoryFactories,
-                    tokenizerFactoryFactories
+                    charFilterFactoryFactories
                 )
             );
-        }
-        NamedAnalyzer defaultAnalyzer = analyzers.get(DEFAULT_ANALYZER_NAME);
-        if (defaultAnalyzer == null) {
-            throw new IllegalArgumentException("no default analyzer configured");
-        }
-        defaultAnalyzer.checkAllowedInMode(AnalysisMode.ALL);
+        });
+        analyzers.computeIfAbsent(
+            DEFAULT_ANALYZER_NAME,
+            k -> produceAnalyzer(
+                DEFAULT_ANALYZER_NAME,
+                new StandardAnalyzerProvider(indexSettings, null, DEFAULT_ANALYZER_NAME, Settings.EMPTY),
+                tokenFilterFactoryFactories,
+                charFilterFactoryFactories,
+                tokenizerFactoryFactories
+            )
+        ).checkAllowedInMode(AnalysisMode.ALL);
 
         if (analyzers.containsKey("default_index")) {
             throw new IllegalArgumentException(
@@ -657,13 +646,8 @@ public final class AnalysisRegistry implements Closeable {
                     + "]"
             );
         }
-
-        for (Map.Entry<String, NamedAnalyzer> analyzer : analyzers.entrySet()) {
-            if (analyzer.getKey().startsWith("_")) {
-                throw new IllegalArgumentException("analyzer name must not start with '_'. got \"" + analyzer.getKey() + "\"");
-            }
-        }
-        return new IndexAnalyzers(analyzers, normalizers, whitespaceNormalizers);
+        // use immutable maps to have compact and fast maps
+        return new IndexAnalyzers(Map.copyOf(analyzers), Map.copyOf(normalizers), Map.copyOf(whitespaceNormalizers));
     }
 
     private static NamedAnalyzer produceAnalyzer(
@@ -710,10 +694,9 @@ public final class AnalysisRegistry implements Closeable {
         return analyzer;
     }
 
-    private static void processNormalizerFactory(
+    private static NamedAnalyzer produceNormalizer(
         String name,
         AnalyzerProvider<?> normalizerFactory,
-        Map<String, NamedAnalyzer> normalizers,
         TokenizerFactory tokenizerFactory,
         Map<String, TokenFilterFactory> tokenFilters,
         Map<String, CharFilterFactory> charFilters
@@ -725,15 +708,11 @@ public final class AnalysisRegistry implements Closeable {
         if (normalizerFactory instanceof CustomNormalizerProvider) {
             ((CustomNormalizerProvider) normalizerFactory).build(tokenizerFactory, charFilters, tokenFilters);
         }
-        if (normalizers.containsKey(name)) {
-            throw new IllegalStateException("already registered analyzer with name: " + name);
-        }
         Analyzer normalizerF = normalizerFactory.get();
         if (normalizerF == null) {
             throw new IllegalArgumentException("normalizer [" + normalizerFactory.name() + "] created null normalizer");
         }
-        NamedAnalyzer normalizer = new NamedAnalyzer(name, normalizerFactory.scope(), normalizerF);
-        normalizers.put(name, normalizer);
+        return new NamedAnalyzer(name, normalizerFactory.scope(), normalizerF);
     }
 
     // Some analysis components emit deprecation warnings or throw exceptions when used

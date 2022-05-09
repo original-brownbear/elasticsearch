@@ -13,9 +13,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import static java.util.Collections.unmodifiableMap;
 import static org.elasticsearch.index.analysis.AnalysisRegistry.DEFAULT_ANALYZER_NAME;
 import static org.elasticsearch.index.analysis.AnalysisRegistry.DEFAULT_SEARCH_ANALYZER_NAME;
 import static org.elasticsearch.index.analysis.AnalysisRegistry.DEFAULT_SEARCH_QUOTED_ANALYZER_NAME;
@@ -43,9 +43,9 @@ public final class IndexAnalyzers implements Closeable {
                 "default analyzer must have the name [default] but was: [" + analyzers.get(DEFAULT_ANALYZER_NAME).name() + "]"
             );
         }
-        this.analyzers = unmodifiableMap(analyzers);
-        this.normalizers = unmodifiableMap(normalizers);
-        this.whitespaceNormalizers = unmodifiableMap(whitespaceNormalizers);
+        this.analyzers = analyzers;
+        this.normalizers = normalizers;
+        this.whitespaceNormalizers = whitespaceNormalizers;
     }
 
     /**
@@ -56,10 +56,12 @@ public final class IndexAnalyzers implements Closeable {
     }
 
     /**
-     * Returns an (unmodifiable) map of containing the index analyzers
+     * Executes the given consumer for each analyzer
+     *
+     * @param forEach consumer to execute for each analyzer
      */
-    public Map<String, NamedAnalyzer> getAnalyzers() {
-        return analyzers;
+    public void forEachAnalyzer(Consumer<NamedAnalyzer> forEach) {
+        analyzers.values().forEach(forEach);
     }
 
     /**

@@ -520,14 +520,14 @@ public class MapperService extends AbstractIndexComponent implements Closeable {
         final Map<String, TokenFilterFactory> tokenFilterFactories = registry.buildTokenFilterFactories(indexSettings);
         final Map<String, Settings> settings = indexSettings.getSettings().getGroups("index.analysis.analyzer");
         final List<String> reloadedAnalyzers = new ArrayList<>();
-        for (NamedAnalyzer namedAnalyzer : indexAnalyzers.getAnalyzers().values()) {
+        indexAnalyzers.forEachAnalyzer(namedAnalyzer -> {
             if (namedAnalyzer.analyzer()instanceof ReloadableCustomAnalyzer analyzer) {
                 String analyzerName = namedAnalyzer.name();
                 Settings analyzerSettings = settings.get(analyzerName);
                 analyzer.reload(analyzerName, analyzerSettings, tokenizerFactories, charFilterFactories, tokenFilterFactories);
                 reloadedAnalyzers.add(analyzerName);
             }
-        }
+        });
         // TODO this should bust the cache somehow. Tracked in https://github.com/elastic/elasticsearch/issues/66722
         return reloadedAnalyzers;
     }
