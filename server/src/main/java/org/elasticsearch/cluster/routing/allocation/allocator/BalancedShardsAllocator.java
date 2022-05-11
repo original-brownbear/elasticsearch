@@ -40,7 +40,6 @@ import org.elasticsearch.core.Tuple;
 import org.elasticsearch.gateway.PriorityComparator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -259,6 +258,7 @@ public class BalancedShardsAllocator implements ShardsAllocator {
         private final float avgShardsPerNode;
         private final NodeSorter sorter;
 
+        @SuppressWarnings({ "unchecked", "rawtypes" })
         public Balancer(Logger logger, RoutingAllocation allocation, WeightFunction weight, float threshold) {
             this.logger = logger;
             this.allocation = allocation;
@@ -266,16 +266,28 @@ public class BalancedShardsAllocator implements ShardsAllocator {
             this.threshold = threshold;
             this.routingNodes = allocation.routingNodes();
             this.metadata = allocation.metadata();
-            avgShardsPerNode = ((float) metadata.getTotalNumberOfShards()) / routingNodes.size();
-            nodes = Collections.unmodifiableMap(buildModelFromAssigned());
-            sorter = newNodeSorter();
-        }
-
-        /**
-         * Returns an array view on the nodes in the balancer. Nodes should not be removed from this list.
-         */
-        private ModelNode[] nodesArray() {
-            return nodes.values().toArray(new ModelNode[nodes.size()]);
+            final int nodeCount = routingNodes.size();
+            avgShardsPerNode = ((float) metadata.getTotalNumberOfShards()) / nodeCount;
+            Map.Entry<String, ModelNode>[] nodesArray = new Map.Entry[nodeCount];
+            ModelNode[] modelNodesArray = new ModelNode[nodeCount];
+            int i = 0;
+            for (RoutingNode rn : routingNodes) {
+                ModelNode node = new ModelNode(rn);
+                nodesArray[i] = Map.entry(rn.nodeId(), node);
+                modelNodesArray[i++] = node;
+                for (ShardRouting shard : rn) {
+                    assert rn.nodeId().equals(shard.currentNodeId());
+                    /* we skip relocating shards here since we expect an initializing shard with the same id coming in */
+                    if (shard.state() != RELOCATING) {
+                        node.addShard(shard);
+                        if (this.logger.isTraceEnabled()) {
+                            this.logger.trace("Assigned shard [{}] to node [{}]", shard, node.getNodeId());
+                        }
+                    }
+                }
+            }
+            nodes = Map.ofEntries(nodesArray);
+            sorter = new NodeSorter(modelNodesArray, weight, this);
         }
 
         /**
@@ -290,16 +302,6 @@ public class BalancedShardsAllocator implements ShardsAllocator {
          */
         public float avgShardsPerNode() {
             return avgShardsPerNode;
-        }
-
-        /**
-         * Returns a new {@link NodeSorter} that sorts the nodes based on their
-         * current weight with respect to the index passed to the sorter. The
-         * returned sorter is not sorted. Use {@link NodeSorter#reset(String)}
-         * to sort based on an index.
-         */
-        private NodeSorter newNodeSorter() {
-            return new NodeSorter(nodesArray(), weight, this);
         }
 
         /**
@@ -789,34 +791,6 @@ public class BalancedShardsAllocator implements ShardsAllocator {
 
         private Decision decideCanForceAllocateForVacate(ShardRouting shardRouting, RoutingNode target) {
             return allocation.deciders().canForceAllocateDuringReplace(shardRouting, target, allocation);
-        }
-
-        /**
-         * Builds the internal model from all shards in the given
-         * {@link Iterable}. All shards in the {@link Iterable} must be assigned
-         * to a node. This method will skip shards in the state
-         * {@link ShardRoutingState#RELOCATING} since each relocating shard has
-         * a shadow shard in the state {@link ShardRoutingState#INITIALIZING}
-         * on the target node which we respect during the allocation / balancing
-         * process. In short, this method recreates the status-quo in the cluster.
-         */
-        private Map<String, ModelNode> buildModelFromAssigned() {
-            Map<String, ModelNode> nodes = new HashMap<>();
-            for (RoutingNode rn : routingNodes) {
-                ModelNode node = new ModelNode(rn);
-                nodes.put(rn.nodeId(), node);
-                for (ShardRouting shard : rn) {
-                    assert rn.nodeId().equals(shard.currentNodeId());
-                    /* we skip relocating shards here since we expect an initializing shard with the same id coming in */
-                    if (shard.state() != RELOCATING) {
-                        node.addShard(shard);
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Assigned shard [{}] to node [{}]", shard, node.getNodeId());
-                        }
-                    }
-                }
-            }
-            return nodes;
         }
 
         /**
