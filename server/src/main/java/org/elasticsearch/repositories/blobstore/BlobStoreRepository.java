@@ -45,6 +45,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Numbers;
+import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.blobstore.BlobContainer;
@@ -2169,7 +2170,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         // Step 1: Set repository generation state to the next possible pending generation
         final StepListener<Long> setPendingStep = new StepListener<>();
         final String setPendingGenerationSource = "set pending repository generation [" + metadata.name() + "][" + expectedGen + "]";
-        submitUnbatchedTask(setPendingGenerationSource, new ClusterStateUpdateTask() {
+        submitUnbatchedTask(setPendingGenerationSource, new ClusterStateUpdateTask(Priority.URGENT) {
 
             private long newGen;
 
@@ -2312,7 +2313,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
 
             // Step 3: Update CS to reflect new repository generation.
             final String setSafeGenerationSource = "set safe repository generation [" + metadata.name() + "][" + newGen + "]";
-            submitUnbatchedTask(setSafeGenerationSource, new ClusterStateUpdateTask() {
+            submitUnbatchedTask(setSafeGenerationSource, new ClusterStateUpdateTask(Priority.URGENT) {
                 @Override
                 public ClusterState execute(ClusterState currentState) {
                     final RepositoryMetadata meta = getRepoMetadata(currentState);

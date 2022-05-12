@@ -291,7 +291,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         }
 
         final Map<String, Object> userMeta = repository.adaptUserMetadata(request.userMetadata());
-        repository.executeConsistentStateUpdate(repositoryData -> new ClusterStateUpdateTask(request.masterNodeTimeout()) {
+        repository.executeConsistentStateUpdate(repositoryData -> new ClusterStateUpdateTask(Priority.URGENT, request.masterNodeTimeout()) {
 
             private SnapshotsInProgress.Entry newEntry;
 
@@ -3432,7 +3432,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         clusterService.submitStateUpdateTask(
             "update snapshot state",
             update,
-            ClusterStateTaskConfig.build(Priority.NORMAL),
+            ClusterStateTaskConfig.build(Priority.URGENT),
             SHARD_STATE_EXECUTOR
         );
     }
