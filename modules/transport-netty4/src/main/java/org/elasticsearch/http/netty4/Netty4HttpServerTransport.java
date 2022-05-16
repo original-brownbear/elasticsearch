@@ -20,6 +20,7 @@ import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.RecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioChannelOption;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.compression.StandardCompressionOptions;
 import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
@@ -318,7 +319,15 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
             aggregator.setMaxCumulationBufferComponents(transport.maxCompositeBufferComponents);
             ch.pipeline().addLast("aggregator", aggregator);
             if (handlingSettings.isCompression()) {
-                ch.pipeline().addLast("encoder_compress", new HttpContentCompressor(handlingSettings.getCompressionLevel()));
+                final int compressionLevel = handlingSettings.getCompressionLevel();
+                ch.pipeline()
+                    .addLast(
+                        "encoder_compress",
+                        new HttpContentCompressor(
+                            StandardCompressionOptions.gzip(compressionLevel, 15, 8),
+                            StandardCompressionOptions.deflate(compressionLevel, 15, 8)
+                        )
+                    );
             }
             ch.pipeline().addLast("pipelining", new Netty4HttpPipeliningHandler(logger, transport.pipeliningMaxEvents, transport));
             transport.serverAcceptedChannel(nettyHttpChannel);
