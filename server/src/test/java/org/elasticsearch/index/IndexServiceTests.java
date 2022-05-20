@@ -62,7 +62,7 @@ public class IndexServiceTests extends ESSingleNodeTestCase {
         AtomicReference<CountDownLatch> latch = new AtomicReference<>(new CountDownLatch(1));
         AtomicReference<CountDownLatch> latch2 = new AtomicReference<>(new CountDownLatch(1));
         final AtomicInteger count = new AtomicInteger();
-        IndexService.BaseAsyncTask task = new IndexService.BaseAsyncTask(indexService, TimeValue.timeValueMillis(1)) {
+        IndexService.BaseAsyncTask task = indexService.new BaseAsyncTask(TimeValue.timeValueMillis(1)) {
             @Override
             protected void runInternal() {
                 final CountDownLatch l1 = latch.get();
@@ -102,7 +102,7 @@ public class IndexServiceTests extends ESSingleNodeTestCase {
         latch2.get().countDown();
         assertEquals(2, count.get());
 
-        task = new IndexService.BaseAsyncTask(indexService, TimeValue.timeValueMillis(1000000)) {
+        task = indexService.new BaseAsyncTask(TimeValue.timeValueMillis(1000000)) {
             @Override
             protected void runInternal() {
 
@@ -127,7 +127,7 @@ public class IndexServiceTests extends ESSingleNodeTestCase {
         indexService = getInstanceFromNode(IndicesService.class).indexServiceSafe(index);
         assertNotSame(closedIndexService, indexService);
 
-        task = new IndexService.BaseAsyncTask(indexService, TimeValue.timeValueMillis(100000)) {
+        task = indexService.new BaseAsyncTask(TimeValue.timeValueMillis(100000)) {
             @Override
             protected void runInternal() {
 

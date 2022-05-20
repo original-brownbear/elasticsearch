@@ -121,7 +121,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     private volatile Map<Integer, IndexShard> shards = emptyMap();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicBoolean deleted = new AtomicBoolean(false);
-    private final IndexSettings indexSettings;
     private final List<SearchOperationListener> searchOperationListeners;
     private final List<IndexingOperationListener> indexingOperationListeners;
     private final BooleanSupplier allowExpensiveQueries;
@@ -178,7 +177,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     ) {
         super(indexSettings);
         this.allowExpensiveQueries = allowExpensiveQueries;
-        this.indexSettings = indexSettings;
         this.parserConfiguration = parserConfiguration;
         this.similarityService = similarityService;
         this.namedWriteableRegistry = namedWriteableRegistry;
@@ -211,8 +209,8 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
             } else {
                 this.indexSortSupplier = () -> null;
             }
-            indexFieldData.setListener(new FieldDataCacheListener(this));
-            this.bitsetFilterCache = new BitsetFilterCache(indexSettings, new BitsetCacheListener(this));
+            indexFieldData.setListener(new FieldDataCacheListener());
+            this.bitsetFilterCache = new BitsetFilterCache(indexSettings, new BitsetCacheListener());
             this.warmer = new IndexWarmer(threadPool, indexFieldData, bitsetFilterCache.createListener(threadPool));
             this.indexCache = new IndexCache(indexSettings, queryCache, bitsetFilterCache);
         } else {
@@ -242,10 +240,10 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         this.searchOperationListeners = Collections.unmodifiableList(searchOperationListeners);
         this.indexingOperationListeners = Collections.unmodifiableList(indexingOperationListeners);
         // kick off async ops for the first shard in this index
-        this.refreshTask = new AsyncRefreshTask(this);
-        this.trimTranslogTask = new AsyncTrimTranslogTask(this);
-        this.globalCheckpointTask = new AsyncGlobalCheckpointTask(this);
-        this.retentionLeaseSyncTask = new AsyncRetentionLeaseSyncTask(this);
+        this.refreshTask = new AsyncRefreshTask();
+        this.trimTranslogTask = new AsyncTrimTranslogTask();
+        this.globalCheckpointTask = new AsyncGlobalCheckpointTask();
+        this.retentionLeaseSyncTask = new AsyncRetentionLeaseSyncTask();
         updateFsyncTaskIfNecessary();
     }
 
@@ -705,17 +703,12 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
     }
 
-    private static final class BitsetCacheListener implements BitsetFilterCache.Listener {
-        final IndexService indexService;
-
-        private BitsetCacheListener(IndexService indexService) {
-            this.indexService = indexService;
-        }
+    private final class BitsetCacheListener implements BitsetFilterCache.Listener {
 
         @Override
         public void onCache(ShardId shardId, Accountable accountable) {
             if (shardId != null) {
-                final IndexShard shard = indexService.getShardOrNull(shardId.id());
+                final IndexShard shard = getShardOrNull(shardId.id());
                 if (shard != null) {
                     long ramBytesUsed = accountable != null ? accountable.ramBytesUsed() : 0L;
                     shard.shardBitsetFilterCache().onCached(ramBytesUsed);
@@ -726,7 +719,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         @Override
         public void onRemoval(ShardId shardId, Accountable accountable) {
             if (shardId != null) {
-                final IndexShard shard = indexService.getShardOrNull(shardId.id());
+                final IndexShard shard = getShardOrNull(shardId.id());
                 if (shard != null) {
                     long ramBytesUsed = accountable != null ? accountable.ramBytesUsed() : 0L;
                     shard.shardBitsetFilterCache().onRemoval(ramBytesUsed);
@@ -735,17 +728,12 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
     }
 
-    private static final class FieldDataCacheListener implements IndexFieldDataCache.Listener {
-        final IndexService indexService;
-
-        FieldDataCacheListener(IndexService indexService) {
-            this.indexService = indexService;
-        }
+    private final class FieldDataCacheListener implements IndexFieldDataCache.Listener {
 
         @Override
         public void onCache(ShardId shardId, String fieldName, Accountable ramUsage) {
             if (shardId != null) {
-                final IndexShard shard = indexService.getShardOrNull(shardId.id());
+                final IndexShard shard = getShardOrNull(shardId.id());
                 if (shard != null) {
                     shard.fieldData().onCache(shardId, fieldName, ramUsage);
                 }
@@ -755,7 +743,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         @Override
         public void onRemoval(ShardId shardId, String fieldName, boolean wasEvicted, long sizeInBytes) {
             if (shardId != null) {
-                final IndexShard shard = indexService.getShardOrNull(shardId.id());
+                final IndexShard shard = getShardOrNull(shardId.id());
                 if (shard != null) {
                     shard.fieldData().onRemoval(shardId, fieldName, wasEvicted, sizeInBytes);
                 }
@@ -842,7 +830,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                 fsyncTask = null;
             }
         } else if (fsyncTask == null) {
-            fsyncTask = new AsyncTranslogFSync(this);
+            fsyncTask = new AsyncTranslogFSync();
         } else {
             fsyncTask.updateIfNeeded();
         }
@@ -852,7 +840,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         try {
             refreshTask.close();
         } finally {
-            refreshTask = new AsyncRefreshTask(this);
+            refreshTask = new AsyncRefreshTask();
         }
     }
 
@@ -970,31 +958,27 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
     }
 
-    abstract static class BaseAsyncTask extends AbstractAsyncTask {
+    abstract class BaseAsyncTask extends AbstractAsyncTask {
 
-        protected final IndexService indexService;
-
-        BaseAsyncTask(final IndexService indexService, final TimeValue interval) {
-            super(indexService.logger, indexService.threadPool, interval, true);
-            this.indexService = indexService;
+        BaseAsyncTask(final TimeValue interval) {
+            super(logger, threadPool, interval, true);
             rescheduleIfNecessary();
         }
 
         @Override
         protected boolean mustReschedule() {
             // don't re-schedule if the IndexService instance is closed or if the index is closed
-            return indexService.closed.get() == false
-                && indexService.indexSettings.getIndexMetadata().getState() == IndexMetadata.State.OPEN;
+            return closed.get() == false && indexSettings.getIndexMetadata().getState() == IndexMetadata.State.OPEN;
         }
     }
 
     /**
      * FSyncs the translog for all shards of this index in a defined interval.
      */
-    static final class AsyncTranslogFSync extends BaseAsyncTask {
+    final class AsyncTranslogFSync extends BaseAsyncTask {
 
-        AsyncTranslogFSync(IndexService indexService) {
-            super(indexService, indexService.getIndexSettings().getTranslogSyncInterval());
+        AsyncTranslogFSync() {
+            super(indexSettings.getTranslogSyncInterval());
         }
 
         @Override
@@ -1004,11 +988,11 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
 
         @Override
         protected void runInternal() {
-            indexService.maybeFSyncTranslogs();
+            maybeFSyncTranslogs();
         }
 
         void updateIfNeeded() {
-            final TimeValue newInterval = indexService.getIndexSettings().getTranslogSyncInterval();
+            final TimeValue newInterval = getIndexSettings().getTranslogSyncInterval();
             if (newInterval.equals(getInterval()) == false) {
                 setInterval(newInterval);
             }
@@ -1020,15 +1004,15 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
     }
 
-    static final class AsyncRefreshTask extends BaseAsyncTask {
+    final class AsyncRefreshTask extends BaseAsyncTask {
 
-        AsyncRefreshTask(IndexService indexService) {
-            super(indexService, indexService.getIndexSettings().getRefreshInterval());
+        AsyncRefreshTask() {
+            super(indexSettings.getRefreshInterval());
         }
 
         @Override
         protected void runInternal() {
-            indexService.maybeRefreshEngine(false);
+            maybeRefreshEngine(false);
         }
 
         @Override
@@ -1044,23 +1028,18 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
 
     final class AsyncTrimTranslogTask extends BaseAsyncTask {
 
-        AsyncTrimTranslogTask(IndexService indexService) {
-            super(
-                indexService,
-                indexService.getIndexSettings()
-                    .getSettings()
-                    .getAsTime(INDEX_TRANSLOG_RETENTION_CHECK_INTERVAL_SETTING, TimeValue.timeValueMinutes(10))
-            );
+        AsyncTrimTranslogTask() {
+            super(indexSettings.getSettings().getAsTime(INDEX_TRANSLOG_RETENTION_CHECK_INTERVAL_SETTING, TimeValue.timeValueMinutes(10)));
         }
 
         @Override
         protected boolean mustReschedule() {
-            return indexService.closed.get() == false;
+            return closed.get() == false;
         }
 
         @Override
         protected void runInternal() {
-            indexService.maybeTrimTranslog();
+            maybeTrimTranslog();
         }
 
         @Override
@@ -1095,16 +1074,16 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     /**
      * Background task that syncs the global checkpoint to replicas.
      */
-    private static final class AsyncGlobalCheckpointTask extends BaseAsyncTask {
+    private final class AsyncGlobalCheckpointTask extends BaseAsyncTask {
 
-        AsyncGlobalCheckpointTask(final IndexService indexService) {
+        AsyncGlobalCheckpointTask() {
             // index.global_checkpoint_sync_interval is not a real setting, it is only registered in tests
-            super(indexService, GLOBAL_CHECKPOINT_SYNC_INTERVAL_SETTING.get(indexService.getIndexSettings().getSettings()));
+            super(GLOBAL_CHECKPOINT_SYNC_INTERVAL_SETTING.get(indexSettings.getSettings()));
         }
 
         @Override
         protected void runInternal() {
-            indexService.maybeSyncGlobalCheckpoints();
+            maybeSyncGlobalCheckpoints();
         }
 
         @Override
@@ -1118,15 +1097,15 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         }
     }
 
-    private static final class AsyncRetentionLeaseSyncTask extends BaseAsyncTask {
+    private final class AsyncRetentionLeaseSyncTask extends BaseAsyncTask {
 
-        AsyncRetentionLeaseSyncTask(final IndexService indexService) {
-            super(indexService, RETENTION_LEASE_SYNC_INTERVAL_SETTING.get(indexService.getIndexSettings().getSettings()));
+        AsyncRetentionLeaseSyncTask() {
+            super(RETENTION_LEASE_SYNC_INTERVAL_SETTING.get(indexSettings.getSettings()));
         }
 
         @Override
         protected void runInternal() {
-            indexService.syncRetentionLeases();
+            syncRetentionLeases();
         }
 
         @Override
