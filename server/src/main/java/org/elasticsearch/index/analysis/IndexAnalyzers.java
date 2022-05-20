@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static java.util.Collections.unmodifiableMap;
 import static org.elasticsearch.index.analysis.AnalysisRegistry.DEFAULT_ANALYZER_NAME;
 import static org.elasticsearch.index.analysis.AnalysisRegistry.DEFAULT_SEARCH_ANALYZER_NAME;
 import static org.elasticsearch.index.analysis.AnalysisRegistry.DEFAULT_SEARCH_QUOTED_ANALYZER_NAME;
@@ -43,9 +42,9 @@ public final class IndexAnalyzers implements Closeable {
                 "default analyzer must have the name [default] but was: [" + analyzers.get(DEFAULT_ANALYZER_NAME).name() + "]"
             );
         }
-        this.analyzers = unmodifiableMap(analyzers);
-        this.normalizers = unmodifiableMap(normalizers);
-        this.whitespaceNormalizers = unmodifiableMap(whitespaceNormalizers);
+        this.analyzers = analyzers;
+        this.normalizers = normalizers;
+        this.whitespaceNormalizers = whitespaceNormalizers;
     }
 
     /**

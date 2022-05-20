@@ -121,7 +121,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     private volatile Map<Integer, IndexShard> shards = emptyMap();
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final AtomicBoolean deleted = new AtomicBoolean(false);
-    private final IndexSettings indexSettings;
     private final List<SearchOperationListener> searchOperationListeners;
     private final List<IndexingOperationListener> indexingOperationListeners;
     private final BooleanSupplier allowExpensiveQueries;
@@ -178,7 +177,6 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
     ) {
         super(indexSettings);
         this.allowExpensiveQueries = allowExpensiveQueries;
-        this.indexSettings = indexSettings;
         this.parserConfiguration = parserConfiguration;
         this.similarityService = similarityService;
         this.namedWriteableRegistry = namedWriteableRegistry;
