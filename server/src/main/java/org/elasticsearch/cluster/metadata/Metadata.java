@@ -1399,6 +1399,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             previousIndicesLookup = null;
             checkForUnusedMappings = true;
 
+            customs.put(DataStreamMetadata.TYPE, DataStreamMetadata.EMPTY);
             indices.clear();
             mappingsByHash.clear();
             aliasedIndices.clear();
@@ -2100,6 +2101,9 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             for (var dataStream : dsMetadata.dataStreams().values()) {
                 for (var index : dataStream.getIndices()) {
                     IndexMetadata im = indices.get(index.getName());
+                    assert im != null;
+                    assert index.equals(im.getIndex())
+                        : "index in data stream [" + index + "] differs from found index [" + im.getIndex() + "]";
                     if (im != null && im.getAliases().isEmpty() == false) {
                         for (var alias : im.getAliases().values()) {
                             if (conflictingAliases == null) {
