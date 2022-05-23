@@ -419,7 +419,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     version,
                     List.copyOf(featureStates)
                 );
-                return ClusterState.builder(currentState).putCustom(SnapshotsInProgress.TYPE, snapshots.withAddedEntry(newEntry)).build();
+                return currentState.withCustom(SnapshotsInProgress.TYPE, snapshots.withAddedEntry(newEntry));
             }
 
             @Override
@@ -523,7 +523,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     repositoryData.getGenId(),
                     minCompatibleVersion(currentState.nodes().getMinNodeVersion(), repositoryData, null)
                 );
-                return ClusterState.builder(currentState).putCustom(SnapshotsInProgress.TYPE, snapshots.withAddedEntry(newEntry)).build();
+                return currentState.withCustom(SnapshotsInProgress.TYPE, snapshots.withAddedEntry(newEntry));
             }
 
             @Override
@@ -1213,9 +1213,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     }
                 }
                 final ClusterState res = readyDeletions(
-                    updated != snapshots
-                        ? ClusterState.builder(currentState).putCustom(SnapshotsInProgress.TYPE, updated).build()
-                        : currentState
+                    updated != snapshots ? currentState.withCustom(SnapshotsInProgress.TYPE, updated) : currentState
                 ).v1();
                 for (SnapshotDeletionsInProgress.Entry delete : res.custom(
                     SnapshotDeletionsInProgress.TYPE,
@@ -1778,11 +1776,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             }
         }
         return Tuple.tuple(
-            changed
-                ? ClusterState.builder(currentState)
-                    .putCustom(SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress.of(newDeletes))
-                    .build()
-                : currentState,
+            changed ? currentState.withCustom(SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress.of(newDeletes)) : currentState,
             readyDeletions
         );
     }
@@ -1890,9 +1884,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             for (int i = indexOfEntry + 1; i < entryList.size(); i++) {
                 entries.add(entryList.get(i));
             }
-            result = ClusterState.builder(state)
-                .putCustom(SnapshotsInProgress.TYPE, snapshots.withUpdatedEntriesForRepo(snapshot.getRepository(), entries))
-                .build();
+            result = state.withCustom(SnapshotsInProgress.TYPE, snapshots.withUpdatedEntriesForRepo(snapshot.getRepository(), entries));
         }
         return readyDeletions(result).v1();
     }
@@ -2767,17 +2759,14 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         @Nullable SnapshotsInProgress snapshotsInProgress,
         @Nullable SnapshotDeletionsInProgress snapshotDeletionsInProgress
     ) {
-        if (snapshotsInProgress == null && snapshotDeletionsInProgress == null) {
-            return state;
-        }
-        ClusterState.Builder builder = ClusterState.builder(state);
+        ClusterState updated = state;
         if (snapshotsInProgress != null) {
-            builder.putCustom(SnapshotsInProgress.TYPE, snapshotsInProgress);
+            updated = updated.withCustom(SnapshotsInProgress.TYPE, snapshotsInProgress);
         }
         if (snapshotDeletionsInProgress != null) {
-            builder.putCustom(SnapshotDeletionsInProgress.TYPE, snapshotDeletionsInProgress);
+            updated = updated.withCustom(SnapshotDeletionsInProgress.TYPE, snapshotDeletionsInProgress);
         }
-        return builder.build();
+        return updated;
     }
 
     private static <T> void failListenersIgnoringException(@Nullable List<ActionListener<T>> listeners, Exception failure) {
@@ -3086,7 +3075,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     changedCount,
                     startedCount
                 );
-                return ClusterState.builder(currentState).putCustom(SnapshotsInProgress.TYPE, updated).build();
+                return currentState.withCustom(SnapshotsInProgress.TYPE, updated);
             }
             assert existing == updated;
             return currentState;

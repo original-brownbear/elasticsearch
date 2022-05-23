@@ -1218,7 +1218,7 @@ public class CoordinatorTests extends AbstractCoordinatorTestCase {
             final TimeAdvancer contextAdvancer = new TimeAdvancer(cluster.deterministicTaskQueue);
             leader.submitUpdateTask("update", cs -> {
                 computeAdvancer.advanceTime();
-                return ClusterState.builder(cs).putCustom(customName, new DelayedCustom(contextAdvancer)).build();
+                return cs.withCustom(customName, new DelayedCustom(contextAdvancer));
             }, new ClusterStateTaskListener() {
                 @Override
                 public void clusterStateProcessed(ClusterState oldState, ClusterState newState) {

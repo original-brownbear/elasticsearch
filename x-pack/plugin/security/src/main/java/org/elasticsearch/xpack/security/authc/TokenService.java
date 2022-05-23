@@ -2499,7 +2499,7 @@ public final class TokenService {
             if (tokenMetadata.equals(currentState.custom(TokenMetadata.TYPE))) {
                 return currentState;
             }
-            return ClusterState.builder(currentState).putCustom(TokenMetadata.TYPE, tokenMetadata).build();
+            return currentState.withCustom(TokenMetadata.TYPE, tokenMetadata);
         }
     }
 
@@ -2546,7 +2546,7 @@ public final class TokenService {
                         XPackPlugin.checkReadyForXPackCustomMetadata(currentState);
 
                         if (currentState.custom(TokenMetadata.TYPE) == null) {
-                            return ClusterState.builder(currentState).putCustom(TokenMetadata.TYPE, getTokenMetadata()).build();
+                            return currentState.withCustom(TokenMetadata.TYPE, getTokenMetadata());
                         } else {
                             return currentState;
                         }

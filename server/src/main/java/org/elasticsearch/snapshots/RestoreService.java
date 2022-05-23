@@ -1057,9 +1057,7 @@ public class RestoreService implements ClusterStateApplier {
                         restoreInProgressBuilder.add(entry);
                     }
                 }
-                return changed == false
-                    ? currentState
-                    : ClusterState.builder(currentState).putCustom(RestoreInProgress.TYPE, restoreInProgressBuilder.build()).build();
+                return changed == false ? currentState : currentState.withCustom(RestoreInProgress.TYPE, restoreInProgressBuilder.build());
             }
 
             @Override

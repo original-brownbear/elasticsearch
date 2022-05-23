@@ -200,6 +200,21 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         assert assertConsistentRoutingNodes(routingTable, nodes, routingNodes);
     }
 
+    public <T extends Custom> ClusterState withCustom(String type, T updatedValue) {
+        return new ClusterState(
+            clusterName,
+            version,
+            stateUUID,
+            metadata,
+            routingTable,
+            nodes,
+            blocks,
+            ImmutableOpenMap.builder(customs).fPut(type, Objects.requireNonNull(updatedValue, type)).build(),
+            false,
+            routingNodes
+        );
+    }
+
     private static boolean assertConsistentRoutingNodes(
         RoutingTable routingTable,
         DiscoveryNodes nodes,

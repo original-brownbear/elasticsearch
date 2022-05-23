@@ -121,7 +121,7 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
 
     private static ClusterState removeInProgressCleanup(final ClusterState currentState) {
         return currentState.custom(RepositoryCleanupInProgress.TYPE, RepositoryCleanupInProgress.EMPTY).hasCleanupInProgress()
-            ? ClusterState.builder(currentState).putCustom(RepositoryCleanupInProgress.TYPE, RepositoryCleanupInProgress.EMPTY).build()
+            ? currentState.withCustom(RepositoryCleanupInProgress.TYPE, RepositoryCleanupInProgress.EMPTY)
             : currentState;
     }
 
@@ -200,14 +200,12 @@ public final class TransportCleanupRepositoryAction extends TransportMasterNodeA
                                 "Cannot cleanup [" + repositoryName + "] - a snapshot is currently running in [" + snapshots + "]"
                             );
                         }
-                        return ClusterState.builder(currentState)
-                            .putCustom(
-                                RepositoryCleanupInProgress.TYPE,
-                                new RepositoryCleanupInProgress(
-                                    List.of(RepositoryCleanupInProgress.startedEntry(repositoryName, repositoryStateId))
-                                )
+                        return currentState.withCustom(
+                            RepositoryCleanupInProgress.TYPE,
+                            new RepositoryCleanupInProgress(
+                                List.of(RepositoryCleanupInProgress.startedEntry(repositoryName, repositoryStateId))
                             )
-                            .build();
+                        );
                     }
 
                     @Override
