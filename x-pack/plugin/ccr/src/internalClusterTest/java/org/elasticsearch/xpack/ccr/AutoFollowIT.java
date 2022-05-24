@@ -10,9 +10,19 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.rollover.RolloverResponse;
+import org.elasticsearch.action.admin.indices.template.put.PutComposableIndexTemplateAction;
+import org.elasticsearch.action.datastreams.CreateDataStreamAction;
+import org.elasticsearch.action.datastreams.ModifyDataStreamsAction;
 import org.elasticsearch.client.internal.Client;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
+import org.elasticsearch.cluster.metadata.DataStreamAction;
+import org.elasticsearch.cluster.metadata.DataStreamMetadata;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.cluster.metadata.MetadataIndexTemplateService;
+import org.elasticsearch.cluster.metadata.Template;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
@@ -20,6 +30,8 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.CheckedRunnable;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.datastreams.DataStreamsPlugin;
+import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.plugins.Plugin;
@@ -40,9 +52,11 @@ import org.elasticsearch.xpack.core.ccr.action.PutAutoFollowPatternAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,7 +81,7 @@ public class AutoFollowIT extends CcrIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Stream.concat(super.nodePlugins().stream(), Stream.of(FakeSystemIndex.class)).collect(Collectors.toList());
+        return Stream.concat(super.nodePlugins().stream(), Stream.of(FakeSystemIndex.class, DataStreamsPlugin.class)).toList();
     }
 
     public static class FakeSystemIndex extends Plugin implements SystemIndexPlugin {
@@ -619,6 +633,84 @@ public class AutoFollowIT extends CcrIntegTestCase {
         });
         assertTrue(ESIntegTestCase.indexExists("copy-logs-201701", followerClient()));
         assertFalse(ESIntegTestCase.indexExists("copy-logs-201801", followerClient()));
+    }
+
+    public void testAutoFollowDatastreamWithClosingFollowerIndex() throws Exception {
+        PutComposableIndexTemplateAction.Request request = new PutComposableIndexTemplateAction.Request("template-id");
+        request.indexTemplate(
+            new ComposableIndexTemplate(
+                List.of("logs-*"),
+                new Template(
+                    Settings.builder()
+                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
+                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+                        .build(),
+                    null,
+                    null
+                ),
+                null,
+                null,
+                null,
+                null,
+                new ComposableIndexTemplate.DataStreamTemplate(),
+                null
+            )
+        );
+        assertAcked(leaderClient().execute(PutComposableIndexTemplateAction.INSTANCE, request).get());
+        CreateDataStreamAction.Request createDataStreamRequest = new CreateDataStreamAction.Request("logs-1");
+        leaderClient().execute(CreateDataStreamAction.INSTANCE, createDataStreamRequest).get();
+        leaderClient().prepareIndex("logs-1").setCreate(true).setSource("foo", "bar", "@timestamp", randomNonNegativeLong()).get();
+
+        PutAutoFollowPatternAction.Request followRequest = new PutAutoFollowPatternAction.Request();
+        followRequest.setName("pattern-1");
+        followRequest.setRemoteCluster("leader_cluster");
+        followRequest.setLeaderIndexPatterns(List.of("logs-*"));
+
+        followRequest.setFollowIndexNamePattern("{{leader_index}}");
+
+        assertTrue(followerClient().execute(PutAutoFollowPatternAction.INSTANCE, followRequest).get().isAcknowledged());
+
+        leaderClient().admin().indices().prepareRolloverIndex("logs-1").get();
+        assertLongBusy(() -> {
+            AutoFollowStats autoFollowStats = getAutoFollowStats();
+            assertThat(autoFollowStats.getNumberOfSuccessfulFollowIndices(), equalTo(1L));
+        });
+
+        ensureFollowerGreen("*");
+
+        final RolloverResponse rolloverResponse = leaderClient().admin().indices().prepareRolloverIndex("logs-1").get();
+        final String newWriteIndex = rolloverResponse.getOldIndex();
+        assertAcked(followerClient().admin().indices().prepareClose(newWriteIndex).setMasterNodeTimeout(TimeValue.MAX_VALUE).get());
+
+        assertAcked(leaderClient().admin().indices().prepareDelete(newWriteIndex).get());
+        assertAcked(
+            leaderClient().admin()
+                .indices()
+                .prepareCreate(newWriteIndex)
+                .setMapping(MetadataIndexTemplateService.DEFAULT_TIMESTAMP_MAPPING.toString())
+                .get()
+        );
+        leaderClient().prepareIndex(newWriteIndex).setCreate(true).setSource("foo", "bar", "@timestamp", randomNonNegativeLong()).get();
+        leaderClient().execute(
+            ModifyDataStreamsAction.INSTANCE,
+            new ModifyDataStreamsAction.Request(List.of(DataStreamAction.addBackingIndex("logs-1", newWriteIndex)))
+        ).get();
+
+        assertLongBusy(() -> {
+            AutoFollowStats autoFollowStats = getAutoFollowStats();
+            assertThat(autoFollowStats.getNumberOfSuccessfulFollowIndices(), equalTo(3L));
+        });
+
+        final ClusterState state = followerClient().admin().cluster().prepareState().get().getState();
+        final List<Index> backingIndices = state.metadata()
+            .custom(DataStreamMetadata.TYPE, DataStreamMetadata.EMPTY)
+            .dataStreams()
+            .get("logs-1")
+            .getIndices();
+        final Set<String> namesSeen = new HashSet<>();
+        for (Index backingIndex : backingIndices) {
+            assertTrue(namesSeen.add(backingIndex.getName()));
+        }
     }
 
     private void putAutoFollowPatterns(String name, String[] patterns) {
