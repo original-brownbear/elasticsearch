@@ -18,8 +18,8 @@ import java.util.List;
 
 public class RecoveryFilesInfoRequest extends RecoveryTransportRequest {
 
-    private long recoveryId;
-    private ShardId shardId;
+    private final long recoveryId;
+    private final ShardId shardId;
 
     List<String> phase1FileNames;
     List<Long> phase1FileSizes;
@@ -32,23 +32,15 @@ public class RecoveryFilesInfoRequest extends RecoveryTransportRequest {
         super(in);
         recoveryId = in.readLong();
         shardId = new ShardId(in);
-        int size = in.readVInt();
-        phase1FileNames = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            phase1FileNames.add(in.readString());
-        }
+        phase1FileNames = in.readStringList();
 
-        size = in.readVInt();
+        int size = in.readVInt();
         phase1FileSizes = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             phase1FileSizes.add(in.readVLong());
         }
 
-        size = in.readVInt();
-        phase1ExistingFileNames = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            phase1ExistingFileNames.add(in.readString());
-        }
+        phase1ExistingFileNames = in.readStringList();
 
         size = in.readVInt();
         phase1ExistingFileSizes = new ArrayList<>(size);

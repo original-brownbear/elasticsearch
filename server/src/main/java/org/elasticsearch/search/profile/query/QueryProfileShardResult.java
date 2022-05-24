@@ -52,12 +52,7 @@ public final class QueryProfileShardResult implements Writeable, ToXContentObjec
      * Read from a stream.
      */
     public QueryProfileShardResult(StreamInput in) throws IOException {
-        int profileSize = in.readVInt();
-        queryProfileResults = new ArrayList<>(profileSize);
-        for (int j = 0; j < profileSize; j++) {
-            queryProfileResults.add(new ProfileResult(in));
-        }
-
+        queryProfileResults = in.readImmutableList(ProfileResult::new);
         profileCollector = new CollectorResult(in);
         rewriteTime = in.readLong();
     }

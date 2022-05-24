@@ -37,7 +37,6 @@ import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,18 +52,7 @@ public class NodeIndicesStats implements Writeable, ToXContentFragment {
 
     public NodeIndicesStats(StreamInput in) throws IOException {
         stats = new CommonStats(in);
-
-        statsByShard = new HashMap<>();
-        int entries = in.readVInt();
-        for (int i = 0; i < entries; i++) {
-            Index index = new Index(in);
-            int indexShardListSize = in.readVInt();
-            List<IndexShardStats> indexShardStats = new ArrayList<>(indexShardListSize);
-            for (int j = 0; j < indexShardListSize; j++) {
-                indexShardStats.add(new IndexShardStats(in));
-            }
-            statsByShard.put(index, indexShardStats);
-        }
+        statsByShard = in.readMapOfLists(Index::new, IndexShardStats::new);
     }
 
     public NodeIndicesStats(CommonStats oldStats, Map<Index, List<IndexShardStats>> statsByShard) {

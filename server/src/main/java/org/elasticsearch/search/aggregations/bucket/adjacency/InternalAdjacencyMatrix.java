@@ -130,12 +130,7 @@ public class InternalAdjacencyMatrix extends InternalMultiBucketAggregation<Inte
      */
     public InternalAdjacencyMatrix(StreamInput in) throws IOException {
         super(in);
-        int size = in.readVInt();
-        List<InternalBucket> buckets = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            buckets.add(new InternalBucket(in));
-        }
-        this.buckets = buckets;
+        this.buckets = in.readList(InternalBucket::new);
         this.bucketMap = null;
     }
 

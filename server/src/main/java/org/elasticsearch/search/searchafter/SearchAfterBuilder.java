@@ -49,11 +49,7 @@ public class SearchAfterBuilder implements ToXContentObject, Writeable {
      * Read from a stream.
      */
     public SearchAfterBuilder(StreamInput in) throws IOException {
-        int size = in.readVInt();
-        sortValues = new Object[size];
-        for (int i = 0; i < size; i++) {
-            sortValues[i] = in.readGenericValue();
-        }
+        sortValues = in.readArray(StreamInput::readGenericValue, Object[]::new);
     }
 
     @Override

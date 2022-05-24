@@ -48,11 +48,7 @@ public class ShardFetchRequest extends TransportRequest {
     public ShardFetchRequest(StreamInput in) throws IOException {
         super(in);
         contextId = new ShardSearchContextId(in);
-        int size = in.readVInt();
-        docIds = new int[size];
-        for (int i = 0; i < size; i++) {
-            docIds[i] = in.readVInt();
-        }
+        docIds = in.readVIntArray();
         byte flag = in.readByte();
         if (flag == 1) {
             lastEmittedDoc = Lucene.readFieldDoc(in);

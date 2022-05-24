@@ -22,7 +22,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
@@ -484,12 +483,7 @@ public abstract class InternalOrder extends BucketOrder {
                     String key = in.readString();
                     return new Aggregation(key, asc);
                 case CompoundOrder.ID:
-                    int size = in.readVInt();
-                    List<BucketOrder> compoundOrder = new ArrayList<>(size);
-                    for (int i = 0; i < size; i++) {
-                        compoundOrder.add(Streams.readOrder(in));
-                    }
-                    return new CompoundOrder(compoundOrder, false);
+                    return new CompoundOrder(in.readList(Streams::readOrder), false);
                 default:
                     throw new RuntimeException("unknown order id [" + id + "]");
             }

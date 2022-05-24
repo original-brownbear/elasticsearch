@@ -15,7 +15,6 @@ import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.node.ReportingService;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -57,12 +56,7 @@ public class TransportInfo implements ReportingService.Info {
         address = new BoundTransportAddress(in);
         int size = in.readVInt();
         if (size > 0) {
-            profileAddresses = Maps.newMapWithExpectedSize(size);
-            for (int i = 0; i < size; i++) {
-                String key = in.readString();
-                BoundTransportAddress value = new BoundTransportAddress(in);
-                profileAddresses.put(key, value);
-            }
+            profileAddresses = in.readMap(StreamInput::readString, BoundTransportAddress::new);
         }
         this.cnameInPublishAddressProperty = CNAME_IN_PUBLISH_ADDRESS;
     }

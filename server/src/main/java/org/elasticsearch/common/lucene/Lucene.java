@@ -294,10 +294,7 @@ public class Lucene {
             TotalHits totalHits = readTotalHits(in);
             float maxScore = in.readFloat();
             SortField[] fields = in.readArray(Lucene::readSortField, SortField[]::new);
-            FieldDoc[] fieldDocs = new FieldDoc[in.readVInt()];
-            for (int i = 0; i < fieldDocs.length; i++) {
-                fieldDocs[i] = readFieldDoc(in);
-            }
+            FieldDoc[] fieldDocs = in.readArray(Lucene::readFieldDoc, FieldDoc[]::new);
             return new TopDocsAndMaxScore(new TopFieldDocs(totalHits, fieldDocs, fields), maxScore);
         } else if (type == 2) {
             TotalHits totalHits = readTotalHits(in);
@@ -588,10 +585,7 @@ public class Lucene {
     public static Explanation readExplanation(StreamInput in) throws IOException {
         boolean match = in.readBoolean();
         String description = in.readString();
-        final Explanation[] subExplanations = new Explanation[in.readVInt()];
-        for (int i = 0; i < subExplanations.length; ++i) {
-            subExplanations[i] = readExplanation(in);
-        }
+        final Explanation[] subExplanations = in.readArray(Lucene::readExplanation, Explanation[]::new);
         if (match) {
             return Explanation.match(readExplanationValue(in), description, subExplanations);
         } else {

@@ -41,11 +41,7 @@ public final class AggregationProfileShardResult implements Writeable, ToXConten
      * Read from a stream.
      */
     public AggregationProfileShardResult(StreamInput in) throws IOException {
-        int profileSize = in.readVInt();
-        aggProfileResults = new ArrayList<>(profileSize);
-        for (int j = 0; j < profileSize; j++) {
-            aggProfileResults.add(new ProfileResult(in));
-        }
+        aggProfileResults = in.readImmutableList(ProfileResult::new);
     }
 
     @Override

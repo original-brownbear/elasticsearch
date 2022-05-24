@@ -86,17 +86,7 @@ public class SimulatePipelineResponse extends ActionResponse implements ToXConte
         super(in);
         this.pipelineId = in.readOptionalString();
         boolean verbose = in.readBoolean();
-        int responsesLength = in.readVInt();
-        results = new ArrayList<>();
-        for (int i = 0; i < responsesLength; i++) {
-            SimulateDocumentResult simulateDocumentResult;
-            if (verbose) {
-                simulateDocumentResult = new SimulateDocumentVerboseResult(in);
-            } else {
-                simulateDocumentResult = new SimulateDocumentBaseResult(in);
-            }
-            results.add(simulateDocumentResult);
-        }
+        results = in.readList(verbose ? SimulateDocumentVerboseResult::new : SimulateDocumentBaseResult::new);
     }
 
     public SimulatePipelineResponse(String pipelineId, boolean verbose, List<SimulateDocumentResult> responses) {

@@ -15,7 +15,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
@@ -46,11 +45,7 @@ public final class SimulateDocumentVerboseResult implements SimulateDocumentResu
      * Read from a stream.
      */
     public SimulateDocumentVerboseResult(StreamInput in) throws IOException {
-        int size = in.readVInt();
-        processorResults = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            processorResults.add(new SimulateProcessorResult(in));
-        }
+        processorResults = in.readList(SimulateProcessorResult::new);
     }
 
     @Override

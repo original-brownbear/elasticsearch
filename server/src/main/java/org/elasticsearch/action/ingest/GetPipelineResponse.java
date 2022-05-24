@@ -31,16 +31,12 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpect
 
 public class GetPipelineResponse extends ActionResponse implements StatusToXContentObject {
 
-    private List<PipelineConfiguration> pipelines;
+    private final List<PipelineConfiguration> pipelines;
     private final boolean summary;
 
     public GetPipelineResponse(StreamInput in) throws IOException {
         super(in);
-        int size = in.readVInt();
-        pipelines = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            pipelines.add(PipelineConfiguration.readFrom(in));
-        }
+        pipelines = in.readList(PipelineConfiguration::readFrom);
         summary = in.readBoolean();
     }
 

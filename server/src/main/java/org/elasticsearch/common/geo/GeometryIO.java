@@ -152,12 +152,7 @@ public final class GeometryIO {
     }
 
     private static GeometryCollection<Geometry> readGeometryCollection(StreamInput in) throws IOException {
-        int size = in.readVInt();
-        List<Geometry> shapes = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            shapes.add(readGeometry(in));
-        }
-        return new GeometryCollection<>(shapes);
+        return new GeometryCollection<>(in.readList(GeometryIO::readGeometry));
     }
 
     private static Polygon readPolygon(StreamInput in) throws IOException {
@@ -236,34 +231,21 @@ public final class GeometryIO {
     }
 
     private static MultiLine readMultiLine(StreamInput in) throws IOException {
-        int size = in.readVInt();
-        List<Line> lines = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            lines.add(readLine(in));
-        }
-        return new MultiLine(lines);
+        return new MultiLine(in.readList(GeometryIO::readLine));
     }
 
     private static MultiPoint readMultiPoint(StreamInput in) throws IOException {
-        int size = in.readVInt();
-        List<Point> points = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            double lon = in.readDouble();
-            double lat = in.readDouble();
-            double alt = readAlt(in);
-            points.add(new Point(lon, lat, alt));
-        }
-        return new MultiPoint(points);
+        return new MultiPoint(in.readList(i -> {
+            double lon = i.readDouble();
+            double lat = i.readDouble();
+            double alt = readAlt(i);
+            return new Point(lon, lat, alt);
+        }));
     }
 
     private static MultiPolygon readMultiPolygon(StreamInput in) throws IOException {
         in.readBoolean(); // orientation for BWC
-        int size = in.readVInt();
-        List<Polygon> polygons = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            polygons.add(readPolygon(in));
-        }
-        return new MultiPolygon(polygons);
+        return new MultiPolygon(in.readList(GeometryIO::readPolygon));
     }
 
     private static Rectangle readRectangle(StreamInput in) throws IOException {

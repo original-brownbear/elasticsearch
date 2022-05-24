@@ -67,7 +67,7 @@ public class CollectorResult implements ToXContentObject, Writeable {
     /**
      * A list of children collectors "embedded" inside this collector
      */
-    private List<CollectorResult> children;
+    private final List<CollectorResult> children;
 
     public CollectorResult(String collectorName, String reason, long time, List<CollectorResult> children) {
         this.collectorName = collectorName;
@@ -83,12 +83,7 @@ public class CollectorResult implements ToXContentObject, Writeable {
         this.collectorName = in.readString();
         this.reason = in.readString();
         this.time = in.readLong();
-        int size = in.readVInt();
-        this.children = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            CollectorResult child = new CollectorResult(in);
-            this.children.add(child);
-        }
+        this.children = in.readImmutableList(CollectorResult::new);
     }
 
     @Override

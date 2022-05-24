@@ -256,7 +256,7 @@ public final class IndexGraveyard implements Metadata.Custom {
         private final int removedCount;
 
         IndexGraveyardDiff(final StreamInput in) throws IOException {
-            added = Collections.unmodifiableList(in.readList((streamInput) -> new Tombstone(streamInput)));
+            added = in.readImmutableList(Tombstone::new);
             removedCount = in.readVInt();
         }
 

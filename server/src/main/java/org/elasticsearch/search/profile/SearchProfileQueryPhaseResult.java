@@ -15,7 +15,6 @@ import org.elasticsearch.search.profile.aggregation.AggregationProfileShardResul
 import org.elasticsearch.search.profile.query.QueryProfileShardResult;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -38,13 +37,7 @@ public class SearchProfileQueryPhaseResult implements Writeable {
     }
 
     public SearchProfileQueryPhaseResult(StreamInput in) throws IOException {
-        int profileSize = in.readVInt();
-        List<QueryProfileShardResult> queryProfileResults = new ArrayList<>(profileSize);
-        for (int i = 0; i < profileSize; i++) {
-            QueryProfileShardResult result = new QueryProfileShardResult(in);
-            queryProfileResults.add(result);
-        }
-        this.queryProfileResults = Collections.unmodifiableList(queryProfileResults);
+        this.queryProfileResults = in.readImmutableList(QueryProfileShardResult::new);
         this.aggProfileShardResult = new AggregationProfileShardResult(in);
     }
 

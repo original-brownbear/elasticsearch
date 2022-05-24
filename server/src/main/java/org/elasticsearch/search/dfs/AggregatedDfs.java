@@ -16,23 +16,19 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 public class AggregatedDfs implements Writeable {
 
-    private Map<Term, TermStatistics> termStatistics;
-    private Map<String, CollectionStatistics> fieldStatistics;
-    private long maxDoc;
+    private final Map<Term, TermStatistics> termStatistics;
+    private final Map<String, CollectionStatistics> fieldStatistics;
+    private final long maxDoc;
 
     public AggregatedDfs(StreamInput in) throws IOException {
-        int size = in.readVInt();
-        termStatistics = new HashMap<>(size);
-        for (int i = 0; i < size; i++) {
-            Term term = new Term(in.readString(), in.readBytesRef());
-            TermStatistics stats = new TermStatistics(in.readBytesRef(), in.readVLong(), DfsSearchResult.subOne(in.readVLong()));
-            termStatistics.put(term, stats);
-        }
+        termStatistics = in.readMap(
+            i -> new Term(i.readString(), i.readBytesRef()),
+            i -> new TermStatistics(i.readBytesRef(), i.readVLong(), DfsSearchResult.subOne(i.readVLong()))
+        );
         fieldStatistics = DfsSearchResult.readFieldStats(in);
         maxDoc = in.readVLong();
     }
