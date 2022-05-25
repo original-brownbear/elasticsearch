@@ -190,6 +190,9 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
     }
 
     private static List<PluginRuntimeInfo> getRuntimeInfos(List<PluginDescriptor> pluginDescriptors, Map<String, LoadedPlugin> plugins) {
+        if (pluginDescriptors.isEmpty()) {
+            return List.of();
+        }
         var plugInspector = PluginIntrospector.getInstance();
         var officialPlugins = getOfficialPlugins();
         List<PluginRuntimeInfo> runtimeInfos = new ArrayList<>();
@@ -264,6 +267,9 @@ public class PluginsService implements ReportingService<PluginsAndModules> {
     }
 
     private Map<String, LoadedPlugin> loadBundles(Set<PluginBundle> bundles) {
+        if (bundles.isEmpty()) {
+            return Map.of();
+        }
         Map<String, LoadedPlugin> loaded = new HashMap<>();
         Map<String, Set<URL>> transitiveUrls = new HashMap<>();
         List<PluginBundle> sortedBundles = PluginsUtils.sortBundles(bundles);
