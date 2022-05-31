@@ -146,7 +146,12 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
 
     public static class Builder extends FieldMapper.Builder {
 
-        Parameter<Boolean> indexed = Parameter.indexParam(m -> builder(m).indexed.get(), true);
+        private static final ParameterDescription<Boolean> INDEXED_PARAMETER_DESCRIPTION = Parameter.indexParamDescription(
+            m -> builder(m).indexed.get(),
+            true
+        );
+
+        Parameter<Boolean> indexed = new Parameter<>(INDEXED_PARAMETER_DESCRIPTION, false);
 
         final Parameter<Explicit<Boolean>> ignoreMalformed;
         final Parameter<Explicit<Boolean>> ignoreZValue = ignoreZValueParam(m -> builder(m).ignoreZValue.get());

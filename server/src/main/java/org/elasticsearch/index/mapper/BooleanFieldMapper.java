@@ -79,7 +79,12 @@ public class BooleanFieldMapper extends FieldMapper {
     public static class Builder extends FieldMapper.Builder {
 
         private final Parameter<Boolean> docValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
-        private final Parameter<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
+
+        private static final ParameterDescription<Boolean> INDEXED_PARAMETER_DESCRIPTION = Parameter.indexParamDescription(
+            m -> toType(m).indexed,
+            true
+        );
+        private final Parameter<Boolean> indexed = new Parameter<>(INDEXED_PARAMETER_DESCRIPTION, false);
         private final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).stored, false);
 
         private final Parameter<Boolean> nullValue = new Parameter<>(

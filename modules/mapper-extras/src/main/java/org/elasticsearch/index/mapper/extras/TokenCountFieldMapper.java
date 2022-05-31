@@ -43,7 +43,12 @@ public class TokenCountFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Boolean> index = Parameter.indexParam(m -> toType(m).index, true);
+        private static final ParameterDescription<Boolean> INDEXED_PARAMETER_DESCRIPTION = Parameter.indexParamDescription(
+            m -> toType(m).index,
+            true
+        );
+
+        private final Parameter<Boolean> index = new Parameter<>(INDEXED_PARAMETER_DESCRIPTION, false);
         private final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
         private final Parameter<Boolean> store = Parameter.storeParam(m -> toType(m).store, false);
 

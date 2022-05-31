@@ -101,7 +101,11 @@ public class SearchAsYouTypeFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Boolean> index = Parameter.indexParam(m -> builder(m).index.get(), true);
+        private static final ParameterDescription<Boolean> INDEXED_PARAMETER_DESCRIPTION = Parameter.indexParamDescription(
+                m -> builder(m).index.get(), true
+        );
+
+        private final Parameter<Boolean> index = new Parameter<>(INDEXED_PARAMETER_DESCRIPTION, false);
         private final Parameter<Boolean> store = Parameter.storeParam(m -> builder(m).store.get(), false);
 
         // This is only here because for some reason the initial impl of this always serialized

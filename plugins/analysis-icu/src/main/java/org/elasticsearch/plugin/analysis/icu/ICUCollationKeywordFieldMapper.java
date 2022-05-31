@@ -220,7 +220,11 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        final Parameter<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
+        private static final ParameterDescription<Boolean> INDEXED_PARAMETER_DESCRIPTION = Parameter.indexParamDescription(
+            m -> toType(m).indexed,
+            true
+        );
+        final Parameter<Boolean> indexed = new Parameter<>(INDEXED_PARAMETER_DESCRIPTION, false);
         final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
         final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).fieldType.stored(), false);
 

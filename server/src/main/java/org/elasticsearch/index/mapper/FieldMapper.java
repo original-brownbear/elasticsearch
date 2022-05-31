@@ -558,22 +558,28 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         boolean check(boolean includeDefaults, boolean isConfigured, T value);
     }
 
+    public record ParameterDescription<T> (
+        String name,
+        Supplier<T> defaultValue,
+        Function<T, String> conflictSerializer,
+        Function<FieldMapper, T> initializer,
+        TriFunction<String, MappingParserContext, Object, T> parser,
+        Serializer<T> serializer
+    ) {}
+
     /**
      * A configurable parameter for a field mapper
      * @param <T> the type of the value the parameter holds
      */
     public static final class Parameter<T> implements Supplier<T> {
 
-        public final String name;
         private List<String> deprecatedNames = List.of();
-        private final Supplier<T> defaultValue;
-        private final TriFunction<String, MappingParserContext, Object, T> parser;
-        private final Function<FieldMapper, T> initializer;
         private boolean acceptsNull = false;
         private Consumer<T> validator;
-        private final Serializer<T> serializer;
+
+        private final ParameterDescription<T> parameterDescription;
+
         private SerializerCheck<T> serializerCheck = (includeDefaults, isConfigured, value) -> includeDefaults || isConfigured;
-        private final Function<T, String> conflictSerializer;
         private boolean deprecated;
         private MergeValidator<T> mergeValidator;
         private T value;
@@ -603,16 +609,19 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Serializer<T> serializer,
             Function<T, String> conflictSerializer
         ) {
-            this.name = name;
-            this.defaultValue = Objects.requireNonNull(defaultValue);
+            this(new ParameterDescription<>(name, defaultValue, conflictSerializer, initializer, parser, serializer), updateable);
+        }
+
+        public Parameter(ParameterDescription<T> parameterDescription, boolean updateable) {
+            this.parameterDescription = parameterDescription;
             this.value = null;
-            this.parser = parser;
-            this.initializer = initializer;
             this.mergeValidator = updateable
                 ? (previous, toMerge, conflicts) -> true
                 : (previous, toMerge, conflicts) -> Objects.equals(previous, toMerge);
-            this.serializer = serializer;
-            this.conflictSerializer = conflictSerializer;
+        }
+
+        public String name() {
+            return parameterDescription.name;
         }
 
         /**
@@ -631,7 +640,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * Returns the default value of the parameter
          */
         public T getDefaultValue() {
-            return defaultValue.get();
+            return parameterDescription.defaultValue.get();
         }
 
         /**
@@ -740,19 +749,31 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             if (this.isConfigured()) {
                 for (Parameter<?> p : requires) {
                     if (p.isConfigured() == false) {
-                        throw new IllegalArgumentException("Field [" + name + "] requires field [" + p.name + "] to be configured");
+                        throw new IllegalArgumentException(
+                            "Field ["
+                                + parameterDescription.name
+                                + "] requires field ["
+                                + p.parameterDescription.name
+                                + "] to be configured"
+                        );
                     }
                 }
                 for (Parameter<?> p : precludes) {
                     if (p.isConfigured()) {
-                        throw new IllegalArgumentException("Field [" + p.name + "] cannot be set in conjunction with field [" + name + "]");
+                        throw new IllegalArgumentException(
+                            "Field ["
+                                + p.parameterDescription.name
+                                + "] cannot be set in conjunction with field ["
+                                + parameterDescription.name
+                                + "]"
+                        );
                     }
                 }
             }
         }
 
         private void init(FieldMapper toInit) {
-            setValue(initializer.apply(toInit));
+            setValue(parameterDescription.initializer.apply(toInit));
         }
 
         /**
@@ -762,23 +783,27 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * @param in        the object
          */
         public void parse(String field, MappingParserContext context, Object in) {
-            setValue(parser.apply(field, context, in));
+            setValue(parameterDescription.parser.apply(field, context, in));
         }
 
         private void merge(FieldMapper toMerge, Conflicts conflicts) {
-            T value = initializer.apply(toMerge);
+            T value = parameterDescription.initializer.apply(toMerge);
             T current = getValue();
             if (mergeValidator.canMerge(current, value, conflicts)) {
                 setValue(value);
             } else {
-                conflicts.addConflict(name, conflictSerializer.apply(current), conflictSerializer.apply(value));
+                conflicts.addConflict(
+                    parameterDescription.name,
+                    parameterDescription.conflictSerializer.apply(current),
+                    parameterDescription.conflictSerializer.apply(value)
+                );
             }
         }
 
         protected void toXContent(XContentBuilder builder, boolean includeDefaults) throws IOException {
             T value = getValue();
             if (serializerCheck.check(includeDefaults, isConfigured(), value)) {
-                serializer.serialize(builder, name, value);
+                parameterDescription.serializer.serialize(builder, parameterDescription.name, value);
             }
         }
 
@@ -1023,6 +1048,20 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             );
         }
 
+        public static ParameterDescription<Boolean> indexParamDescription(
+            Function<FieldMapper, Boolean> initializer,
+            boolean defaultValue
+        ) {
+            return new ParameterDescription<>(
+                "index",
+                defaultValue ? () -> true : () -> false,
+                Objects::toString,
+                initializer,
+                (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
+                XContentBuilder::field
+            );
+        }
+
         public static Parameter<Boolean> indexParam(Function<FieldMapper, Boolean> initializer, boolean defaultValue) {
             return Parameter.boolParam("index", false, initializer, defaultValue);
         }
@@ -1206,7 +1245,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Map<String, Parameter<?>> paramsMap = new HashMap<>();
             Map<String, Parameter<?>> deprecatedParamsMap = new HashMap<>();
             for (Parameter<?> param : getParameters()) {
-                paramsMap.put(param.name, param);
+                paramsMap.put(param.parameterDescription.name, param);
                 for (String deprecatedName : param.deprecatedNames) {
                     deprecatedParamsMap.put(deprecatedName, param);
                 }
@@ -1248,7 +1287,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                         "Parameter [{}] on mapper [{}] is deprecated, use [{}]",
                         propName,
                         name,
-                        parameter.name
+                        parameter.parameterDescription.name
                     );
                 } else {
                     parameter = paramsMap.get(propName);

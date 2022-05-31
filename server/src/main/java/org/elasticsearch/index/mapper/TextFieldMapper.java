@@ -232,7 +232,12 @@ public class TextFieldMapper extends FieldMapper {
 
         private final Version indexCreatedVersion;
 
-        private final Parameter<Boolean> index = Parameter.indexParam(m -> ((TextFieldMapper) m).index, true);
+        private static final ParameterDescription<Boolean> INDEXED_PARAMETER_DESCRIPTION = Parameter.indexParamDescription(
+            m -> ((TextFieldMapper) m).index,
+            true
+        );
+
+        private final Parameter<Boolean> index = new Parameter<>(INDEXED_PARAMETER_DESCRIPTION, false);
         private final Parameter<Boolean> store = Parameter.storeParam(m -> ((TextFieldMapper) m).store, false);
 
         final Parameter<SimilarityProvider> similarity = TextParams.similarity(m -> ((TextFieldMapper) m).similarity);
