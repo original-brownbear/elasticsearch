@@ -437,7 +437,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     listener.onResponse(snapshot);
                 } finally {
                     if (newEntry.state().completed()) {
-                        endSnapshot(newEntry, newState.metadata(), repositoryData);
+                        endSnapshots(newEntry, newState.metadata(), repositoryData);
                     }
                 }
             }
@@ -1255,7 +1255,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         .collect(Collectors.toSet());
                     for (SnapshotsInProgress.Entry entry : finishedSnapshots) {
                         if (reposWithRunningDeletes.contains(entry.repository()) == false) {
-                            endSnapshot(entry, newState.metadata(), null);
+                            endSnapshots(entry, newState.metadata(), null);
                         }
                     }
                 }
@@ -1419,7 +1419,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
      *
      * @param entry snapshot
      */
-    private void endSnapshot(SnapshotsInProgress.Entry entry, Metadata metadata, @Nullable RepositoryData repositoryData) {
+    private void endSnapshots(List<SnapshotsInProgress.Entry> entry, Metadata metadata, @Nullable RepositoryData repositoryData) {
         final Snapshot snapshot = entry.snapshot();
         final boolean newFinalization = endingSnapshots.add(snapshot);
         if (entry.isClone() && entry.state() == State.FAILED) {
@@ -1435,7 +1435,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 repositoriesService.repository(repoName).getRepositoryData(new ActionListener<>() {
                     @Override
                     public void onResponse(RepositoryData repositoryData) {
-                        finalizeSnapshotEntry(snapshot, metadata, repositoryData);
+                        finalizeSnapshotEntries(snapshot, metadata, repositoryData);
                     }
 
                     @Override
@@ -1444,7 +1444,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     }
                 });
             } else {
-                finalizeSnapshotEntry(snapshot, metadata, repositoryData);
+                finalizeSnapshotEntries(snapshot, metadata, repositoryData);
             }
         } else {
             if (newFinalization) {
@@ -1474,7 +1474,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
         assert removed;
     }
 
-    private void finalizeSnapshotEntry(Snapshot snapshot, Metadata metadata, RepositoryData repositoryData) {
+    private void finalizeSnapshotEntries(Snapshot snapshot, Metadata metadata, RepositoryData repositoryData) {
         assert currentlyFinalizing.contains(snapshot.getRepository());
         try {
             SnapshotsInProgress.Entry entry = clusterService.state()
@@ -1589,13 +1589,17 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         shardGenerations,
                         repositoryData.getGenId(),
                         metaForSnapshot,
-                        snapshotInfo,
+                        List.of(snapshotInfo),
                         entry.version(),
                         ActionListener.wrap(result -> {
-                            final SnapshotInfo writtenSnapshotInfo = result.v2();
-                            completeListenersIgnoringException(endAndGetListenersToResolve(writtenSnapshotInfo.snapshot()), result);
-                            logger.info("snapshot [{}] completed with state [{}]", snapshot, writtenSnapshotInfo.state());
-                            runNextQueuedOperation(result.v1(), repository, true);
+                            for (SnapshotInfo writtenSnapshotInfo : result.v2()) {
+                                completeListenersIgnoringException(
+                                    endAndGetListenersToResolve(writtenSnapshotInfo.snapshot()),
+                                    Tuple.tuple(repositoryData, writtenSnapshotInfo)
+                                );
+                                logger.info("snapshot [{}] completed with state [{}]", snapshot, writtenSnapshotInfo.state());
+                                runNextQueuedOperation(result.v1(), repository, true);
+                            }
                         }, e -> handleFinalizationFailure(e, snapshot, repositoryData))
                     )
                 );
@@ -1689,7 +1693,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
             }
         } else {
             logger.trace("Moving on to finalizing next snapshot [{}]", nextFinalization);
-            finalizeSnapshotEntry(nextFinalization.v1(), nextFinalization.v2(), repositoryData);
+            finalizeSnapshotEntries(nextFinalization.v1(), nextFinalization.v2(), repositoryData);
         }
     }
 
@@ -2249,7 +2253,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         }
                     } else {
                         for (SnapshotsInProgress.Entry completedSnapshot : completedWithCleanup) {
-                            endSnapshot(completedSnapshot, newState.metadata(), repositoryData);
+                            endSnapshots(completedSnapshot, newState.metadata(), repositoryData);
                         }
                     }
                 }
@@ -2576,7 +2580,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                 assert readyDeletions.stream().noneMatch(entry -> entry.repository().equals(deleteEntry.repository()))
                     : "New finalizations " + newFinalizations + " added even though deletes " + readyDeletions + " are ready";
                 for (SnapshotsInProgress.Entry entry : newFinalizations) {
-                    endSnapshot(entry, newState.metadata(), repositoryData);
+                    endSnapshots(entry, newState.metadata(), repositoryData);
                 }
             }
             // TODO: be more efficient here, we could collect newly ready shard clones as we compute them and then directly start them
@@ -3414,7 +3418,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                     final SnapshotsInProgress.Entry updatedEntry = snapshotsInProgress.snapshot(snapshot);
                     // If the entry is still in the cluster state and is completed, try finalizing the snapshot in the repo
                     if (updatedEntry != null && updatedEntry.state().completed()) {
-                        endSnapshot(updatedEntry, result.metadata(), null);
+                        endSnapshots(updatedEntry, result.metadata(), null);
                     }
                 }
                 startExecutableClones(snapshotsInProgress, snapshot.getRepository());

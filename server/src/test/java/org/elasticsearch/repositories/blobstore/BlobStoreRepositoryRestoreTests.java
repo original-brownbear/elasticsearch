@@ -172,25 +172,27 @@ public class BlobStoreRepositoryRestoreTests extends IndexShardTestCase {
                 new SnapshotId(snapshot.getSnapshotId().getName(), "_uuid2")
             );
             final ShardGenerations shardGenerations = ShardGenerations.builder().put(indexId, 0, shardGen).build();
-            PlainActionFuture.<Tuple<RepositoryData, SnapshotInfo>, Exception>get(
+            PlainActionFuture.<Tuple<RepositoryData, List<SnapshotInfo>>, Exception>get(
                 f -> repository.finalizeSnapshot(
                     new FinalizeSnapshotContext(
                         shardGenerations,
                         RepositoryData.EMPTY_REPO_GEN,
                         Metadata.builder().put(shard.indexSettings().getIndexMetadata(), false).build(),
-                        new SnapshotInfo(
-                            snapshot,
-                            shardGenerations.indices().stream().map(IndexId::getName).toList(),
-                            Collections.emptyList(),
-                            Collections.emptyList(),
-                            null,
-                            1L,
-                            6,
-                            Collections.emptyList(),
-                            true,
-                            Collections.emptyMap(),
-                            0L,
-                            Collections.emptyMap()
+                        List.of(
+                            new SnapshotInfo(
+                                snapshot,
+                                shardGenerations.indices().stream().map(IndexId::getName).toList(),
+                                Collections.emptyList(),
+                                Collections.emptyList(),
+                                null,
+                                1L,
+                                6,
+                                Collections.emptyList(),
+                                true,
+                                Collections.emptyMap(),
+                                0L,
+                                Collections.emptyMap()
+                            )
                         ),
                         Version.CURRENT,
                         f

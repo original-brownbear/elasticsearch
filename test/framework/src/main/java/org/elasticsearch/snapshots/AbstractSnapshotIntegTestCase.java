@@ -528,13 +528,13 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
             SnapshotState.FAILED,
             Collections.emptyMap()
         );
-        PlainActionFuture.<Tuple<RepositoryData, SnapshotInfo>, Exception>get(
+        PlainActionFuture.<Tuple<RepositoryData, List<SnapshotInfo>>, Exception>get(
             f -> repo.finalizeSnapshot(
                 new FinalizeSnapshotContext(
                     ShardGenerations.EMPTY,
                     getRepositoryData(repoName).getGenId(),
                     state.metadata(),
-                    snapshotInfo,
+                    List.of(snapshotInfo),
                     SnapshotsService.OLD_SNAPSHOT_FORMAT,
                     f
                 )

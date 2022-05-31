@@ -18,6 +18,7 @@ import org.elasticsearch.core.Tuple;
 import org.elasticsearch.snapshots.SnapshotInfo;
 import org.elasticsearch.snapshots.SnapshotsService;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,8 +26,8 @@ import java.util.Set;
  * Context for finalizing a snapshot.
  */
 public final class FinalizeSnapshotContext extends ActionListener.Delegating<
-    Tuple<RepositoryData, SnapshotInfo>,
-    Tuple<RepositoryData, SnapshotInfo>> {
+    Tuple<RepositoryData, List<SnapshotInfo>>,
+    Tuple<RepositoryData, List<SnapshotInfo>>> {
 
     private final ShardGenerations updatedShardGenerations;
 
@@ -40,7 +41,7 @@ public final class FinalizeSnapshotContext extends ActionListener.Delegating<
 
     private final Metadata clusterMetadata;
 
-    private final SnapshotInfo snapshotInfo;
+    private final List<SnapshotInfo> snapshotInfo;
 
     private final Version repositoryMetaVersion;
 
@@ -57,9 +58,9 @@ public final class FinalizeSnapshotContext extends ActionListener.Delegating<
         ShardGenerations updatedShardGenerations,
         long repositoryStateId,
         Metadata clusterMetadata,
-        SnapshotInfo snapshotInfo,
+        List<SnapshotInfo> snapshotInfo,
         Version repositoryMetaVersion,
-        ActionListener<Tuple<RepositoryData, SnapshotInfo>> listener
+        ActionListener<Tuple<RepositoryData, List<SnapshotInfo>>> listener
     ) {
         super(listener);
         this.updatedShardGenerations = updatedShardGenerations;
@@ -77,7 +78,7 @@ public final class FinalizeSnapshotContext extends ActionListener.Delegating<
         return updatedShardGenerations;
     }
 
-    public SnapshotInfo snapshotInfo() {
+    public List<SnapshotInfo> snapshotInfo() {
         return snapshotInfo;
     }
 
@@ -95,16 +96,19 @@ public final class FinalizeSnapshotContext extends ActionListener.Delegating<
     }
 
     public ClusterState updatedClusterState(ClusterState state) {
-        final ClusterState updatedState = SnapshotsService.stateWithoutSnapshot(state, snapshotInfo.snapshot());
+        ClusterState updatedState = state;
+        for (SnapshotInfo info : snapshotInfo) {
+            updatedState = SnapshotsService.stateWithoutSnapshot(state, info.snapshot());
+        }
         obsoleteGenerations.set(
             updatedState.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY)
-                .obsoleteGenerations(snapshotInfo.repository(), state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY))
+                .obsoleteGenerations(snapshotInfo.get(0).repository(), state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY))
         );
         return updatedState;
     }
 
     @Override
-    public void onResponse(Tuple<RepositoryData, SnapshotInfo> repositoryData) {
+    public void onResponse(Tuple<RepositoryData, List<SnapshotInfo>> repositoryData) {
         delegate.onResponse(repositoryData);
     }
 }

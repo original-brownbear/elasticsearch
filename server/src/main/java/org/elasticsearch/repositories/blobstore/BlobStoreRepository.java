@@ -1343,11 +1343,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
     public void finalizeSnapshot(final FinalizeSnapshotContext finalizeSnapshotContext) {
         final long repositoryStateId = finalizeSnapshotContext.repositoryStateId();
         final ShardGenerations shardGenerations = finalizeSnapshotContext.updatedShardGenerations();
-        final SnapshotInfo snapshotInfo = finalizeSnapshotContext.snapshotInfo();
+        final List<SnapshotInfo> snapshotInfos = finalizeSnapshotContext.snapshotInfo();
         assert repositoryStateId > RepositoryData.UNKNOWN_REPO_GEN
             : "Must finalize based on a valid repository generation but received [" + repositoryStateId + "]";
         final Collection<IndexId> indices = shardGenerations.indices();
-        final SnapshotId snapshotId = snapshotInfo.snapshotId();
         // Once we are done writing the updated index-N blob we remove the now unreferenced index-${uuid} blobs in each shard
         // directory if all nodes are at least at version SnapshotsService#SHARD_GEN_IN_REPO_DATA_VERSION
         // If there are older version nodes in the cluster, we don't need to run this cleanup as it will have already happened
@@ -1355,7 +1354,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
         final Version repositoryMetaVersion = finalizeSnapshotContext.repositoryMetaVersion();
         final boolean writeShardGens = SnapshotsService.useShardGenerations(repositoryMetaVersion);
         final Consumer<Exception> onUpdateFailure = e -> finalizeSnapshotContext.onFailure(
-            new SnapshotException(metadata.name(), snapshotId, "failed to update snapshot in repository", e)
+            new SnapshotException(metadata.name(), snapshotInfos.get(0).snapshotId(), "failed to update snapshot in repository", e)
         );
 
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
@@ -1392,16 +1391,20 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             }
 
             final ActionListener<Void> allMetaListener = new GroupedActionListener<>(ActionListener.wrap(v -> {
-                final String slmPolicy = slmPolicy(snapshotInfo);
-                final SnapshotDetails snapshotDetails = new SnapshotDetails(
-                    snapshotInfo.state(),
-                    Version.CURRENT,
-                    snapshotInfo.startTime(),
-                    snapshotInfo.endTime(),
-                    slmPolicy
-                );
+                RepositoryData updated = existingRepositoryData;
+                for (SnapshotInfo info : snapshotInfos) {
+                    final String slmPolicy = slmPolicy(info);
+                    final SnapshotDetails snapshotDetails = new SnapshotDetails(
+                        info.state(),
+                        Version.CURRENT,
+                        info.startTime(),
+                        info.endTime(),
+                        slmPolicy
+                    );
+                    updated = updated.addSnapshot(info.snapshotId(), snapshotDetails, shardGenerations, indexMetas, indexMetaIdentifiers);
+                }
                 writeIndexGen(
-                    existingRepositoryData.addSnapshot(snapshotId, snapshotDetails, shardGenerations, indexMetas, indexMetaIdentifiers),
+                    updated,
                     repositoryStateId,
                     repositoryMetaVersion,
                     finalizeSnapshotContext::updatedClusterState,
@@ -1409,10 +1412,10 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         if (writeShardGens) {
                             cleanupOldShardGens(existingRepositoryData, newRepoData, finalizeSnapshotContext);
                         }
-                        finalizeSnapshotContext.onResponse(Tuple.tuple(newRepoData, snapshotInfo));
+                        finalizeSnapshotContext.onResponse(Tuple.tuple(newRepoData, snapshotInfos));
                     }, onUpdateFailure)
                 );
-            }, onUpdateFailure), 2 + indices.size());
+            }, onUpdateFailure), 2 * snapshotInfos.size() + indices.size());
 
             // We ignore all FileAlreadyExistsException when writing metadata since otherwise a master failover while in this method will
             // mean that no snap-${uuid}.dat blob is ever written for this snapshot. This is safe because any updated version of the
@@ -1421,12 +1424,14 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
             // that decrements the generation it points at
             final Metadata clusterMetadata = finalizeSnapshotContext.clusterMetadata();
             // Write Global MetaData
-            executor.execute(
-                ActionRunnable.run(
-                    allMetaListener,
-                    () -> GLOBAL_METADATA_FORMAT.write(clusterMetadata, blobContainer(), snapshotId.getUUID(), compress)
-                )
-            );
+            for (SnapshotInfo info : snapshotInfos) {
+                executor.execute(
+                    ActionRunnable.run(
+                        allMetaListener,
+                        () -> GLOBAL_METADATA_FORMAT.write(clusterMetadata, blobContainer(), info.snapshotId().getUUID(), compress)
+                    )
+                );
+            }
 
             // write the index metadata for each index in the snapshot
             for (IndexId index : indices) {
@@ -1443,21 +1448,28 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                         }
                         indexMetas.put(index, identifiers);
                     } else {
-                        INDEX_METADATA_FORMAT.write(
-                            clusterMetadata.index(index.getName()),
-                            indexContainer(index),
-                            snapshotId.getUUID(),
-                            compress
-                        );
+                        for (SnapshotInfo snapshotInfo : snapshotInfos) {
+                            // TODO: this is quite inefficient even though it's only the BwC pre-index-generations path
+                            if (snapshotInfo.indices().contains(index.getName())) {
+                                INDEX_METADATA_FORMAT.write(
+                                        clusterMetadata.index(index.getName()),
+                                        indexContainer(index),
+                                        snapshotInfo.snapshotId().getUUID(),
+                                        compress
+                                );
+                            }
+                        }
                     }
                 }));
             }
-            executor.execute(
-                ActionRunnable.run(
-                    allMetaListener,
-                    () -> SNAPSHOT_FORMAT.write(snapshotInfo, blobContainer(), snapshotId.getUUID(), compress)
-                )
-            );
+            for (SnapshotInfo snapshotInfo : snapshotInfos) {
+                executor.execute(
+                    ActionRunnable.run(
+                        allMetaListener,
+                        () -> SNAPSHOT_FORMAT.write(snapshotInfo, blobContainer(), snapshotInfo.snapshotId().getUUID(), compress)
+                    )
+                );
+            }
         }, onUpdateFailure);
     }
 
