@@ -127,16 +127,15 @@ public final class TextParams {
         return Parameter.boolParam("norms", true, initializer, defaultValue).setMergeValidator((o, n, c) -> o == n || (o && n == false));
     }
 
-    public static Parameter<SimilarityProvider> similarity(Function<FieldMapper, SimilarityProvider> init) {
-        return new Parameter<>(
-            "similarity",
-            false,
-            () -> null,
-            (n, c, o) -> TypeParsers.resolveSimilarity(c, n, o),
-            init,
+    private static final FieldMapper.ParameterSerialization<SimilarityProvider> SIMILARITY_PROVIDER_PARAMETER_SERIALIZATION =
+        new FieldMapper.ParameterSerialization<>(
             (b, f, v) -> b.field(f, v == null ? null : v.name()),
-            v -> v == null ? null : v.name()
-        ).acceptsNull();
+            v -> v == null ? null : v.name(),
+            (n, c, o) -> TypeParsers.resolveSimilarity(c, n, o)
+        );
+
+    public static Parameter<SimilarityProvider> similarity(Function<FieldMapper, SimilarityProvider> init) {
+        return new Parameter<>("similarity", false, () -> null, init, SIMILARITY_PROVIDER_PARAMETER_SERIALIZATION).acceptsNull();
     }
 
     public static Parameter<String> keywordIndexOptions(Function<FieldMapper, String> initializer) {

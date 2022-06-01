@@ -34,6 +34,12 @@ public abstract class MetadataFieldMapper extends FieldMapper {
         MetadataFieldMapper getDefault(MappingParserContext parserContext);
     }
 
+    private static final ParameterSerialization<Explicit<Boolean>> UPDATABLE_BOOL_PARAM_SERIALIZATION = new ParameterSerialization<>(
+        (b, n, v) -> b.field(n, v.value()),
+        v -> Boolean.toString(v.value()),
+        (n, c, o) -> Explicit.explicitBoolean(XContentMapValues.nodeBooleanValue(o))
+    );
+
     /**
      * Declares an updateable boolean parameter for a metadata field
      *
@@ -54,10 +60,8 @@ public abstract class MetadataFieldMapper extends FieldMapper {
             name,
             true,
             defaultValue ? () -> Explicit.IMPLICIT_TRUE : () -> Explicit.IMPLICIT_FALSE,
-            (n, c, o) -> Explicit.explicitBoolean(XContentMapValues.nodeBooleanValue(o)),
             initializer,
-            (b, n, v) -> b.field(n, v.value()),
-            v -> Boolean.toString(v.value())
+            UPDATABLE_BOOL_PARAM_SERIALIZATION
         );
     }
 

@@ -242,14 +242,15 @@ public class TextFieldMapper extends FieldMapper {
         final Parameter<String> termVectors = TextParams.termVectors(m -> ((TextFieldMapper) m).termVectors);
 
         final Parameter<Boolean> fieldData = Parameter.boolParam("fielddata", true, m -> ((TextFieldMapper) m).fieldData, false);
+
+        private static final ParameterSerialization<FielddataFrequencyFilter> FIELDDATA_FREQUENCY_FILTER_PARAMETER_SERIALIZATION =
+            new ParameterSerialization<>(XContentBuilder::field, Objects::toString, TextFieldMapper::parseFrequencyFilter);
         final Parameter<FielddataFrequencyFilter> freqFilter = new Parameter<>(
             "fielddata_frequency_filter",
             true,
             () -> DEFAULT_FILTER,
-            TextFieldMapper::parseFrequencyFilter,
             m -> ((TextFieldMapper) m).freqFilter,
-            XContentBuilder::field,
-            Objects::toString
+            FIELDDATA_FREQUENCY_FILTER_PARAMETER_SERIALIZATION
         );
         final Parameter<Boolean> eagerGlobalOrdinals = Parameter.boolParam(
             "eager_global_ordinals",
@@ -259,14 +260,19 @@ public class TextFieldMapper extends FieldMapper {
         );
 
         final Parameter<Boolean> indexPhrases = Parameter.boolParam("index_phrases", false, m -> ((TextFieldMapper) m).indexPhrases, false);
+
+        private static final ParameterSerialization<PrefixConfig> PREFIX_CONFIG_PARAMETER_SERIALIZATION = new ParameterSerialization<>(
+            XContentBuilder::field,
+            Objects::toString,
+            TextFieldMapper::parsePrefixConfig
+        );
+
         final Parameter<PrefixConfig> indexPrefixes = new Parameter<>(
             "index_prefixes",
             false,
             () -> null,
-            TextFieldMapper::parsePrefixConfig,
             m -> ((TextFieldMapper) m).indexPrefixes,
-            XContentBuilder::field,
-            Objects::toString
+            PREFIX_CONFIG_PARAMETER_SERIALIZATION
         ).acceptsNull();
 
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();

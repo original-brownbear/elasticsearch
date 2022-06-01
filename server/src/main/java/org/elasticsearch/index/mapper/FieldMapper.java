@@ -558,6 +558,12 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         boolean check(boolean includeDefaults, boolean isConfigured, T value);
     }
 
+    public record ParameterSerialization<T> (
+        Serializer<T> serializer,
+        Function<T, String> conflictSerializer,
+        TriFunction<String, MappingParserContext, Object, T> parser
+    ) {}
+
     /**
      * A configurable parameter for a field mapper
      * @param <T> the type of the value the parameter holds
@@ -567,19 +573,18 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         public final String name;
         private List<String> deprecatedNames = List.of();
         private final Supplier<T> defaultValue;
-        private final TriFunction<String, MappingParserContext, Object, T> parser;
         private final Function<FieldMapper, T> initializer;
         private boolean acceptsNull = false;
         private Consumer<T> validator;
-        private final Serializer<T> serializer;
         private SerializerCheck<T> serializerCheck = (includeDefaults, isConfigured, value) -> includeDefaults || isConfigured;
-        private final Function<T, String> conflictSerializer;
         private boolean deprecated;
         private MergeValidator<T> mergeValidator;
         private T value;
         private boolean isSet;
         private List<Parameter<?>> requires = List.of();
         private List<Parameter<?>> precludes = List.of();
+
+        private final ParameterSerialization<T> parameterSerialization;
 
         /**
          * Creates a new Parameter
@@ -603,16 +608,24 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Serializer<T> serializer,
             Function<T, String> conflictSerializer
         ) {
+            this(name, updateable, defaultValue, initializer, new ParameterSerialization<>(serializer, conflictSerializer, parser));
+        }
+
+        public Parameter(
+            String name,
+            boolean updateable,
+            Supplier<T> defaultValue,
+            Function<FieldMapper, T> initializer,
+            ParameterSerialization<T> parameterSerialization
+        ) {
             this.name = name;
             this.defaultValue = Objects.requireNonNull(defaultValue);
             this.value = null;
-            this.parser = parser;
             this.initializer = initializer;
             this.mergeValidator = updateable
                 ? (previous, toMerge, conflicts) -> true
                 : (previous, toMerge, conflicts) -> Objects.equals(previous, toMerge);
-            this.serializer = serializer;
-            this.conflictSerializer = conflictSerializer;
+            this.parameterSerialization = parameterSerialization;
         }
 
         /**
@@ -762,7 +775,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * @param in        the object
          */
         public void parse(String field, MappingParserContext context, Object in) {
-            setValue(parser.apply(field, context, in));
+            setValue(parameterSerialization.parser.apply(field, context, in));
         }
 
         private void merge(FieldMapper toMerge, Conflicts conflicts) {
@@ -771,16 +784,26 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             if (mergeValidator.canMerge(current, value, conflicts)) {
                 setValue(value);
             } else {
-                conflicts.addConflict(name, conflictSerializer.apply(current), conflictSerializer.apply(value));
+                conflicts.addConflict(
+                    name,
+                    parameterSerialization.conflictSerializer.apply(current),
+                    parameterSerialization.conflictSerializer.apply(value)
+                );
             }
         }
 
         protected void toXContent(XContentBuilder builder, boolean includeDefaults) throws IOException {
             T value = getValue();
             if (serializerCheck.check(includeDefaults, isConfigured(), value)) {
-                serializer.serialize(builder, name, value);
+                parameterSerialization.serializer.serialize(builder, name, value);
             }
         }
+
+        private static final ParameterSerialization<Boolean> BOOLEAN_PARAMETER_SERIALIZATION = new ParameterSerialization<>(
+            XContentBuilder::field,
+            Objects::toString,
+            (n, c, o) -> XContentMapValues.nodeBooleanValue(o)
+        );
 
         /**
          * Defines a parameter that takes the values {@code true} or {@code false}
@@ -795,15 +818,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Function<FieldMapper, Boolean> initializer,
             boolean defaultValue
         ) {
-            return new Parameter<>(
-                name,
-                updateable,
-                defaultValue ? () -> true : () -> false,
-                (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
-                initializer,
-                XContentBuilder::field,
-                Objects::toString
-            );
+            return new Parameter<>(name, updateable, defaultValue ? () -> true : () -> false, initializer, BOOLEAN_PARAMETER_SERIALIZATION);
         }
 
         /**
@@ -831,6 +846,12 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             );
         }
 
+        private static final ParameterSerialization<Integer> INTEGER_PARAMETER_SERIALIZATION = new ParameterSerialization<>(
+            XContentBuilder::field,
+            Objects::toString,
+            (n, c, o) -> XContentMapValues.nodeIntegerValue(o)
+        );
+
         /**
          * Defines a parameter that takes an integer value
          * @param name          the parameter name
@@ -848,12 +869,17 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                 name,
                 updateable,
                 () -> defaultValue,
-                (n, c, o) -> XContentMapValues.nodeIntegerValue(o),
                 initializer,
-                XContentBuilder::field,
-                Objects::toString
+                INTEGER_PARAMETER_SERIALIZATION
             );
         }
+
+        private static final ParameterSerialization<String> STRING_PARAMETER_SERIALIZATION = new ParameterSerialization<>(
+            XContentBuilder::field,
+            Function.identity(),
+            (n, c, o) -> XContentMapValues.nodeStringValue(o)
+        );
+
 
         /**
          * Defines a parameter that takes a string value
@@ -868,7 +894,13 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             Function<FieldMapper, String> initializer,
             String defaultValue
         ) {
-            return stringParam(name, updateable, initializer, defaultValue, XContentBuilder::field);
+            return new Parameter<>(
+                name,
+                updateable,
+                defaultValue == null ? () -> null : () -> defaultValue,
+                initializer,
+                STRING_PARAMETER_SERIALIZATION
+            );
         }
 
         public static Parameter<String> stringParam(
@@ -890,19 +922,25 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         }
 
         @SuppressWarnings("unchecked")
-        public static Parameter<List<String>> stringArrayParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, List<String>> initializer
-        ) {
-            return new Parameter<>(name, updateable, List::of, (n, c, o) -> {
+        private static final ParameterSerialization<List<String>> STRING_LIST_PARAMETER_SERIALIZATION = new ParameterSerialization<>(
+            XContentBuilder::stringListField,
+            Objects::toString,
+            (n, c, o) -> {
                 List<Object> values = (List<Object>) o;
                 List<String> strValues = new ArrayList<>();
                 for (Object item : values) {
                     strValues.add(item.toString());
                 }
                 return strValues;
-            }, initializer, XContentBuilder::stringListField, Objects::toString);
+            }
+        );
+
+        public static Parameter<List<String>> stringArrayParam(
+            String name,
+            boolean updateable,
+            Function<FieldMapper, List<String>> initializer
+        ) {
+            return new Parameter<>(name, updateable, List::of, initializer, STRING_LIST_PARAMETER_SERIALIZATION);
         }
 
         /**
@@ -1008,19 +1046,17 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return analyzerParam(name, updateable, initializer, defaultAnalyzer, Version.CURRENT);
         }
 
+        private static final ParameterSerialization<Map<String, String>> META_PARAMETER_SERIALIZATION = new ParameterSerialization<>(
+            XContentBuilder::stringStringMap,
+            Objects::toString,
+            (n, c, o) -> TypeParsers.parseMeta(n, o)
+        );
+
         /**
          * Declares a metadata parameter
          */
         public static Parameter<Map<String, String>> metaParam() {
-            return new Parameter<>(
-                "meta",
-                true,
-                Collections::emptyMap,
-                (n, c, o) -> TypeParsers.parseMeta(n, o),
-                m -> m.fieldType().meta(),
-                XContentBuilder::stringStringMap,
-                Objects::toString
-            );
+            return new Parameter<>("meta", true, Collections::emptyMap, m -> m.fieldType().meta(), META_PARAMETER_SERIALIZATION);
         }
 
         public static Parameter<Boolean> indexParam(Function<FieldMapper, Boolean> initializer, boolean defaultValue) {
@@ -1035,13 +1071,10 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return Parameter.boolParam("doc_values", false, initializer, defaultValue);
         }
 
-        /**
-         * Defines a script parameter
-         * @param initializer   retrieves the equivalent parameter from an existing FieldMapper for use in merges
-         * @return a script parameter
-         */
-        public static Parameter<Script> scriptParam(Function<FieldMapper, Script> initializer) {
-            return new FieldMapper.Parameter<>("script", false, () -> null, (n, c, o) -> {
+        private static final ParameterSerialization<Script> SCRIPT_PARAMETER_SERIALIZATION = new ParameterSerialization<>(
+            XContentBuilder::field,
+            Objects::toString,
+            (n, c, o) -> {
                 if (o == null) {
                     return null;
                 }
@@ -1050,7 +1083,16 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                     throw new IllegalArgumentException("stored scripts are not supported on field [" + n + "]");
                 }
                 return script;
-            }, initializer, XContentBuilder::field, Objects::toString).acceptsNull();
+            }
+        );
+
+        /**
+         * Defines a script parameter
+         * @param initializer   retrieves the equivalent parameter from an existing FieldMapper for use in merges
+         * @return a script parameter
+         */
+        public static Parameter<Script> scriptParam(Function<FieldMapper, Script> initializer) {
+            return new FieldMapper.Parameter<>("script", false, () -> null, initializer, SCRIPT_PARAMETER_SERIALIZATION).acceptsNull();
         }
 
         /**
@@ -1067,10 +1109,8 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                 "on_script_error",
                 true,
                 () -> "fail",
-                (n, c, o) -> XContentMapValues.nodeStringValue(o),
                 initializer,
-                XContentBuilder::field,
-                Function.identity()
+                STRING_PARAMETER_SERIALIZATION
             ).addValidator(v -> {
                 switch (v) {
                     case "fail":
