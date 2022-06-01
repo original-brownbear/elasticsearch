@@ -122,24 +122,48 @@ public final class TextParams {
         }
     }
 
+    private static final FieldMapper.ParameterDescription<Boolean> NORMS_PARAMETER_TRUE = new FieldMapper.ParameterDescription<>(
+        "norms",
+        () -> true,
+        Parameter.BOOLEAN_PARAMETER_SERIALIZATION
+    );
+
+    private static final FieldMapper.ParameterDescription<Boolean> NORMS_PARAMETER_FALSE = new FieldMapper.ParameterDescription<>(
+        "norms",
+        () -> false,
+        Parameter.BOOLEAN_PARAMETER_SERIALIZATION
+    );
+
     public static Parameter<Boolean> norms(boolean defaultValue, Function<FieldMapper, Boolean> initializer) {
         // norms can be updated from 'true' to 'false' but not vv
-        return Parameter.boolParam("norms", true, initializer, defaultValue).setMergeValidator((o, n, c) -> o == n || (o && n == false));
+        return new Parameter<>(true, initializer, defaultValue ? NORMS_PARAMETER_TRUE : NORMS_PARAMETER_FALSE).setMergeValidator(
+            (o, n, c) -> o == n || (o && n == false)
+        );
     }
 
-    private static final FieldMapper.ParameterSerialization<SimilarityProvider> SIMILARITY_PROVIDER_PARAMETER_SERIALIZATION =
-        new FieldMapper.ParameterSerialization<>(
-            (b, f, v) -> b.field(f, v == null ? null : v.name()),
-            v -> v == null ? null : v.name(),
-            (n, c, o) -> TypeParsers.resolveSimilarity(c, n, o)
+    private static final FieldMapper.ParameterDescription<SimilarityProvider> SIMILARITY_PROVIDER_PARAMETER =
+        new FieldMapper.ParameterDescription<>(
+            "similarity",
+            () -> null,
+            new FieldMapper.ParameterSerialization<>(
+                (b, f, v) -> b.field(f, v == null ? null : v.name()),
+                v -> v == null ? null : v.name(),
+                (n, c, o) -> TypeParsers.resolveSimilarity(c, n, o)
+            )
         );
 
     public static Parameter<SimilarityProvider> similarity(Function<FieldMapper, SimilarityProvider> init) {
-        return new Parameter<>("similarity", false, () -> null, init, SIMILARITY_PROVIDER_PARAMETER_SERIALIZATION).acceptsNull();
+        return new Parameter<>(false, init, SIMILARITY_PROVIDER_PARAMETER).acceptsNull();
     }
 
+    private static final FieldMapper.ParameterDescription<String> KEYWORD_INDEX_OPTIONS = new FieldMapper.ParameterDescription<>(
+        "index_options",
+        () -> "docs",
+        Parameter.STRING_PARAMETER_SERIALIZATION
+    );
+
     public static Parameter<String> keywordIndexOptions(Function<FieldMapper, String> initializer) {
-        return Parameter.stringParam("index_options", false, initializer, "docs").addValidator(v -> {
+        return new Parameter<>(false, initializer, KEYWORD_INDEX_OPTIONS).addValidator(v -> {
             switch (v) {
                 case "docs":
                 case "freqs":

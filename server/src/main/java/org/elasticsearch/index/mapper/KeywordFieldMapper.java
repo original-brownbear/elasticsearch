@@ -140,20 +140,36 @@ public final class KeywordFieldMapper extends FieldMapper {
         private final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
         private final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).fieldType.stored(), false);
 
-        private final Parameter<String> nullValue = Parameter.stringParam("null_value", false, m -> toType(m).fieldType().nullValue, null)
+        private static final ParameterDescription<String> NULL_VALUE_PARAMETER = new ParameterDescription<>(
+            "null_value",
+            () -> null,
+            Parameter.STRING_PARAMETER_SERIALIZATION
+        );
+        private final Parameter<String> nullValue = new Parameter<>(false, m -> toType(m).fieldType().nullValue, NULL_VALUE_PARAMETER)
             .acceptsNull();
 
-        private final Parameter<Boolean> eagerGlobalOrdinals = Parameter.boolParam(
+        private static final ParameterDescription<Boolean> EAGER_ORDINALS_PARAMETER = new ParameterDescription<>(
             "eager_global_ordinals",
+            () -> false,
+            Parameter.BOOLEAN_PARAMETER_SERIALIZATION
+        );
+
+        private final Parameter<Boolean> eagerGlobalOrdinals = new Parameter<>(
             true,
             m -> toType(m).fieldType().eagerGlobalOrdinals(),
-            false
+            EAGER_ORDINALS_PARAMETER
         );
-        private final Parameter<Integer> ignoreAbove = Parameter.intParam(
+
+        private static final ParameterDescription<Integer> IGNORE_ABOVE_PARAMETER = new ParameterDescription<>(
             "ignore_above",
+            () -> Defaults.IGNORE_ABOVE,
+            Parameter.INTEGER_PARAMETER_SERIALIZATION
+        );
+
+        private final Parameter<Integer> ignoreAbove = new Parameter<>(
             true,
             m -> toType(m).fieldType().ignoreAbove(),
-            Defaults.IGNORE_ABOVE
+            IGNORE_ABOVE_PARAMETER
         );
 
         private final Parameter<String> indexOptions = TextParams.keywordIndexOptions(m -> toType(m).indexOptions);
@@ -162,11 +178,16 @@ public final class KeywordFieldMapper extends FieldMapper {
 
         private final Parameter<String> normalizer;
 
-        private final Parameter<Boolean> splitQueriesOnWhitespace = Parameter.boolParam(
+        private static final ParameterDescription<Boolean> SPLIT_QUERIES_ON_WHITESPACE = new ParameterDescription<>(
             "split_queries_on_whitespace",
+            () -> false,
+            Parameter.BOOLEAN_PARAMETER_SERIALIZATION
+        );
+
+        private final Parameter<Boolean> splitQueriesOnWhitespace = new Parameter<>(
             true,
             m -> toType(m).splitQueriesOnWhitespace,
-            false
+            SPLIT_QUERIES_ON_WHITESPACE
         );
 
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
@@ -179,16 +200,21 @@ public final class KeywordFieldMapper extends FieldMapper {
         private final ScriptCompiler scriptCompiler;
         private final Version indexCreatedVersion;
 
+        private static final ParameterDescription<String> NORMALIZER_PARAMETER = new ParameterDescription<>(
+            "normalizer",
+            () -> null,
+            Parameter.STRING_PARAMETER_SERIALIZATION
+        );
+
         public Builder(String name, IndexAnalyzers indexAnalyzers, ScriptCompiler scriptCompiler, Version indexCreatedVersion) {
             super(name);
             this.indexAnalyzers = indexAnalyzers;
             this.scriptCompiler = Objects.requireNonNull(scriptCompiler);
             this.indexCreatedVersion = Objects.requireNonNull(indexCreatedVersion);
-            this.normalizer = Parameter.stringParam(
-                "normalizer",
+            this.normalizer = new Parameter<>(
                 indexCreatedVersion.isLegacyIndexVersion(),
                 m -> toType(m).normalizerName,
-                null
+                NORMALIZER_PARAMETER
             ).acceptsNull();
             this.script.precludesParameters(nullValue);
             addScriptValidation(script, indexed, hasDocValues);
@@ -199,9 +225,9 @@ public final class KeywordFieldMapper extends FieldMapper {
                         "Field ["
                             + TimeSeriesParams.TIME_SERIES_DIMENSION_PARAM
                             + "] requires that ["
-                            + indexed.name
+                            + indexed.name()
                             + "] and ["
-                            + hasDocValues.name
+                            + hasDocValues.name()
                             + "] are true"
                     );
                 }

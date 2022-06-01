@@ -82,19 +82,17 @@ public class BooleanFieldMapper extends FieldMapper {
         private final Parameter<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
         private final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).stored, false);
 
-        private static final ParameterSerialization<Boolean> NULL_VALUE_PARAMETER_SERIALIZATION = new ParameterSerialization<>(
-            XContentBuilder::field,
-            Objects::toString,
-            (n, c, o) -> o == null ? null : XContentMapValues.nodeBooleanValue(o)
+        private static final ParameterDescription<Boolean> NULL_VALUE_PARAMETER = new ParameterDescription<>(
+            "null_value",
+            () -> null,
+            new ParameterSerialization<>(
+                XContentBuilder::field,
+                Objects::toString,
+                (n, c, o) -> o == null ? null : XContentMapValues.nodeBooleanValue(o)
+            )
         );
 
-        private final Parameter<Boolean> nullValue = new Parameter<>(
-            "null_value",
-            false,
-            () -> null,
-            m -> toType(m).nullValue,
-            NULL_VALUE_PARAMETER_SERIALIZATION
-        ).acceptsNull();
+        private final Parameter<Boolean> nullValue = new Parameter<>(false, m -> toType(m).nullValue, NULL_VALUE_PARAMETER).acceptsNull();
 
         private final Parameter<Script> script = Parameter.scriptParam(m -> toType(m).script);
         private final Parameter<String> onScriptError = Parameter.onScriptErrorParam(m -> toType(m).onScriptError, script);
