@@ -840,7 +840,7 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
             if (itemResponses.isEmpty()) {
                 return bulkRequest;
             } else {
-                BulkRequest modifiedBulkRequest = new BulkRequest();
+                BulkRequest modifiedBulkRequest = new BulkRequest(bulkRequest.requests().size());
                 modifiedBulkRequest.setRefreshPolicy(bulkRequest.getRefreshPolicy());
                 modifiedBulkRequest.waitForActiveShards(bulkRequest.waitForActiveShards());
                 modifiedBulkRequest.timeout(bulkRequest.timeout());

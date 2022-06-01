@@ -65,7 +65,7 @@ public class BulkRequest extends ActionRequest
      * {@link WriteRequest}s to this but java doesn't support syntax to declare that everything in the array has both types so we declare
      * the one with the least casts.
      */
-    final List<DocWriteRequest<?>> requests = new ArrayList<>();
+    final List<DocWriteRequest<?>> requests;
     private final Set<String> indices = new HashSet<>();
 
     protected TimeValue timeout = BulkShardRequest.DEFAULT_TIMEOUT;
@@ -78,18 +78,25 @@ public class BulkRequest extends ActionRequest
 
     private long sizeInBytes = 0;
 
-    public BulkRequest() {}
+    public BulkRequest(int expectedRequests) {
+        this.requests = new ArrayList<>(expectedRequests);
+    }
+
+    public BulkRequest() {
+        this.requests = new ArrayList<>();
+    }
 
     public BulkRequest(StreamInput in) throws IOException {
         super(in);
         waitForActiveShards = ActiveShardCount.readFrom(in);
-        requests.addAll(in.readList(i -> DocWriteRequest.readDocumentRequest(null, i)));
+        requests = in.readList(i -> DocWriteRequest.readDocumentRequest(null, i));
         refreshPolicy = RefreshPolicy.readFrom(in);
         timeout = in.readTimeValue();
     }
 
     public BulkRequest(@Nullable String globalIndex) {
         this.globalIndex = globalIndex;
+        this.requests = new ArrayList<>();
     }
 
     /**
@@ -366,10 +373,6 @@ public class BulkRequest extends ActionRequest
 
     public String routing() {
         return globalRouting;
-    }
-
-    public Boolean requireAlias() {
-        return globalRequireAlias;
     }
 
     /**
