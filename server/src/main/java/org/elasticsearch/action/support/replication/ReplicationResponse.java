@@ -43,7 +43,7 @@ public class ReplicationResponse extends ActionResponse {
 
     public ReplicationResponse(StreamInput in) throws IOException {
         super(in);
-        shardInfo = new ReplicationResponse.ShardInfo(in);
+        shardInfo = ShardInfo.readFrom(in);
     }
 
     @Override
@@ -61,27 +61,34 @@ public class ReplicationResponse extends ActionResponse {
 
     public static class ShardInfo implements Writeable, ToXContentObject {
 
+        public static final ShardInfo ZERO = new ShardInfo(0, 0);
+
         private static final String TOTAL = "total";
         private static final String SUCCESSFUL = "successful";
         private static final String FAILED = "failed";
         private static final String FAILURES = "failures";
 
-        private int total;
-        private int successful;
-        private Failure[] failures = EMPTY;
+        private final int total;
+        private final int successful;
+        private final Failure[] failures;
 
-        public ShardInfo() {}
-
-        public ShardInfo(StreamInput in) throws IOException {
-            total = in.readVInt();
-            successful = in.readVInt();
+        static ShardInfo readFrom(StreamInput in) throws IOException {
+            int total = in.readVInt();
+            int successful = in.readVInt();
             int size = in.readVInt();
-            if (size > 0) {
-                failures = new Failure[size];
-                for (int i = 0; i < size; i++) {
-                    failures[i] = new Failure(in);
-                }
+            if (size == 0) {
+                return total == 0 && successful == 0 ? ZERO : new ShardInfo(total, successful);
             }
+            Failure[] failures;
+            failures = new Failure[size];
+            for (int i = 0; i < size; i++) {
+                failures[i] = new Failure(in);
+            }
+            return new ShardInfo(total, successful, failures);
+        }
+
+        public ShardInfo(int total, int successful) {
+            this(total ,successful, EMPTY);
         }
 
         public ShardInfo(int total, int successful, Failure... failures) {
@@ -188,7 +195,7 @@ public class ReplicationResponse extends ActionResponse {
             }
             Failure[] failures = EMPTY;
             if (failuresList != null) {
-                failures = failuresList.toArray(new Failure[failuresList.size()]);
+                failures = failuresList.toArray(failures);
             }
             return new ShardInfo(total, successful, failures);
         }

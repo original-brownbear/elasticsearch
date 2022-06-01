@@ -1461,7 +1461,7 @@ public class TransportReplicationActionTests extends ESTestCase {
         }
 
         TestResponse() {
-            setShardInfo(new ShardInfo());
+            setShardInfo(ShardInfo.ZERO);
         }
     }
 
