@@ -98,15 +98,18 @@ public final class ParentJoinFieldMapper extends FieldMapper {
             m -> toType(m).eagerGlobalOrdinals,
             true
         );
-        final Parameter<List<Relations>> relations = new Parameter<List<Relations>>(
-            "relations",
-            true,
-            Collections::emptyList,
-            (n, c, o) -> Relations.parse(o),
+
+        private static final ParameterSpec<List<Relations>> RELATIONS_PARAMETER = new ParameterSpec<>(
+            ParentJoinFieldMapper::checkRelationsConflicts,
             m -> toType(m).relations,
-            XContentBuilder::field,
-            Objects::toString
-        ).setMergeValidator(ParentJoinFieldMapper::checkRelationsConflicts);
+            new ParameterDescription<>(
+                "relations",
+                List::of,
+                new ParameterSerialization<>(XContentBuilder::field, Objects::toString, (n, c, o) -> Relations.parse(o))
+            )
+        );
+
+        final Parameter<List<Relations>> relations = new Parameter<>(RELATIONS_PARAMETER);
 
         final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
