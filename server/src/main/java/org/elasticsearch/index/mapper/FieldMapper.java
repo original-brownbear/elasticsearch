@@ -585,6 +585,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         public static <T> MergeValidator<T> updatable() {
             return (previous, toMerge, conflicts) -> true;
         }
+
         private List<String> deprecatedNames = List.of();
         private final ParameterSpec<T> parameterSpec;
         private boolean acceptsNull = false;

@@ -136,10 +136,13 @@ public final class TextParams {
 
     public static Parameter<Boolean> norms(boolean defaultValue, Function<FieldMapper, Boolean> initializer) {
         // norms can be updated from 'true' to 'false' but not vv
-        return new Parameter<>(new FieldMapper.ParameterSpec<>(
-            (o, n, c) -> o == n || (o && n == false),
-            initializer,
-            defaultValue ? NORMS_PARAMETER_TRUE : NORMS_PARAMETER_FALSE));
+        return new Parameter<>(
+            new FieldMapper.ParameterSpec<>(
+                (o, n, c) -> o == n || (o && n == false),
+                initializer,
+                defaultValue ? NORMS_PARAMETER_TRUE : NORMS_PARAMETER_FALSE
+            )
+        );
     }
 
     public static final FieldMapper.ParameterDescription<SimilarityProvider> SIMILARITY_PROVIDER_PARAMETER =
