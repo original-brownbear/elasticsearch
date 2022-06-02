@@ -136,43 +136,69 @@ public final class KeywordFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
-        private final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
-        private final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).fieldType.stored(), false);
-
-        private static final ParameterDescription<String> NULL_VALUE_PARAMETER = new ParameterDescription<>(
-            "null_value",
-            () -> null,
-            Parameter.STRING_PARAMETER_SERIALIZATION
-        );
-        private final Parameter<String> nullValue = new Parameter<>(false, m -> toType(m).fieldType().nullValue, NULL_VALUE_PARAMETER)
-            .acceptsNull();
-
-        private static final ParameterDescription<Boolean> EAGER_ORDINALS_PARAMETER = new ParameterDescription<>(
-            "eager_global_ordinals",
-            () -> false,
-            Parameter.BOOLEAN_PARAMETER_SERIALIZATION
+        private static final ParameterSpec<Boolean> INDEX_PARAMETER = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).indexed,
+            Parameter.INDEX_PARAMETER_DESCRIPTION_TRUE
         );
 
-        private final Parameter<Boolean> eagerGlobalOrdinals = new Parameter<>(
-            true,
+        private final Parameter<Boolean> indexed = new Parameter<>(INDEX_PARAMETER);
+
+        private static final ParameterSpec<Boolean> HAS_DOC_VALUES_PARAMETER = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).hasDocValues,
+            Parameter.DOC_VALUES_PARAMETER_DESCRIPTION_TRUE
+        );
+        private final Parameter<Boolean> hasDocValues = new Parameter<>(HAS_DOC_VALUES_PARAMETER);
+
+        private static final ParameterSpec<Boolean> STORED_PARAMETER_SPEC = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).fieldType.stored(),
+            Parameter.STORE_PARAMETER_DESCRIPTION_FALSE
+        );
+
+        private final Parameter<Boolean> stored = new Parameter<>(STORED_PARAMETER_SPEC);
+
+        private static final ParameterSpec<String> NULL_VALUE_PARAMETER = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).fieldType().nullValue,
+            new ParameterDescription<>("null_value", () -> null, Parameter.STRING_PARAMETER_SERIALIZATION)
+        );
+        private final Parameter<String> nullValue = new Parameter<>(NULL_VALUE_PARAMETER).acceptsNull();
+
+        private static final ParameterSpec<Boolean> EAGER_ORDINALS_PARAMETER = new ParameterSpec<>(
+            Parameter.updatable(),
             m -> toType(m).fieldType().eagerGlobalOrdinals(),
-            EAGER_ORDINALS_PARAMETER
+            new ParameterDescription<>("eager_global_ordinals", () -> false, Parameter.BOOLEAN_PARAMETER_SERIALIZATION)
         );
 
-        private static final ParameterDescription<Integer> IGNORE_ABOVE_PARAMETER = new ParameterDescription<>(
-            "ignore_above",
-            () -> Defaults.IGNORE_ABOVE,
-            Parameter.INTEGER_PARAMETER_SERIALIZATION
-        );
+        private final Parameter<Boolean> eagerGlobalOrdinals = new Parameter<>(EAGER_ORDINALS_PARAMETER);
 
-        private final Parameter<Integer> ignoreAbove = new Parameter<>(
-            true,
+        private static final ParameterSpec<Integer> IGNORE_ABOVE_PARAMETER = new ParameterSpec<>(
+            Parameter.updatable(),
             m -> toType(m).fieldType().ignoreAbove(),
-            IGNORE_ABOVE_PARAMETER
+            new ParameterDescription<>("ignore_above", () -> Defaults.IGNORE_ABOVE, Parameter.INTEGER_PARAMETER_SERIALIZATION)
         );
 
-        private final Parameter<String> indexOptions = TextParams.keywordIndexOptions(m -> toType(m).indexOptions);
+        private final Parameter<Integer> ignoreAbove = new Parameter<>(IGNORE_ABOVE_PARAMETER);
+
+        private static final ParameterSpec<String> INDEX_OPTIONS_PARAMETER = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).indexOptions,
+            TextParams.KEYWORD_INDEX_OPTIONS
+        );
+
+        private final Parameter<String> indexOptions = new Parameter<>(INDEX_OPTIONS_PARAMETER).addValidator(v -> {
+            switch (v) {
+                case "docs":
+                case "freqs":
+                    return;
+                default:
+                    throw new MapperParsingException(
+                        "Unknown value [" + v + "] for field [index_options] - accepted values are [docs, freqs]"
+                    );
+            }
+        });
 
         private static final ParameterSpec<Boolean> HAS_NORMS_PARAMETER = new ParameterSpec<>(
             (o, n, c) -> o == n || (o && n == false),
@@ -180,36 +206,77 @@ public final class KeywordFieldMapper extends FieldMapper {
             TextParams.NORMS_PARAMETER_FALSE
         );
         private final Parameter<Boolean> hasNorms = new Parameter<>(HAS_NORMS_PARAMETER);
-        private final Parameter<SimilarityProvider> similarity = TextParams.similarity(m -> toType(m).similarity);
+
+        private static final ParameterSpec<SimilarityProvider> SIMILARITY_PROVIDER_PARAMETER = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).similarity,
+            TextParams.SIMILARITY_PROVIDER_PARAMETER
+        );
+        private final Parameter<SimilarityProvider> similarity = new Parameter<>(SIMILARITY_PROVIDER_PARAMETER).acceptsNull();
 
         private final Parameter<String> normalizer;
 
-        private static final ParameterDescription<Boolean> SPLIT_QUERIES_ON_WHITESPACE = new ParameterDescription<>(
-            "split_queries_on_whitespace",
-            () -> false,
-            Parameter.BOOLEAN_PARAMETER_SERIALIZATION
+        private static final ParameterSpec<Boolean> SPLIT_QUERIES_ON_WHITESPACE = new ParameterSpec<>(
+            Parameter.updatable(),
+            m -> toType(m).splitQueriesOnWhitespace,
+            new ParameterDescription<>("split_queries_on_whitespace", () -> false, Parameter.BOOLEAN_PARAMETER_SERIALIZATION)
         );
 
-        private final Parameter<Boolean> splitQueriesOnWhitespace = new Parameter<>(
-            true,
-            m -> toType(m).splitQueriesOnWhitespace,
-            SPLIT_QUERIES_ON_WHITESPACE
-        );
+        private final Parameter<Boolean> splitQueriesOnWhitespace = new Parameter<>(SPLIT_QUERIES_ON_WHITESPACE);
 
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
-        private final Parameter<Script> script = Parameter.scriptParam(m -> toType(m).script);
-        private final Parameter<String> onScriptError = Parameter.onScriptErrorParam(m -> toType(m).onScriptError, script);
+        private static final ParameterSpec<Script> SCRIPT_PARAMETER = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).script,
+            Parameter.SCRIPT_PARAMETER_DESCRIPTION
+        );
+
+        private final Parameter<Script> script = new Parameter<>(SCRIPT_PARAMETER).acceptsNull();
+
+        private static final ParameterSpec<String> ON_SCRIPT_ERROR_PARAMETER = new ParameterSpec<>(
+            Parameter.updatable(),
+            m -> toType(m).onScriptError,
+            Parameter.ON_SCRIPT_ERROR_PARAMETER_DESCRIPTION
+        );
+        private final Parameter<String> onScriptError = new Parameter<>(ON_SCRIPT_ERROR_PARAMETER).addValidator(v -> {
+            switch (v) {
+                case "fail":
+                case "continue":
+                    return;
+                default:
+                    throw new MapperParsingException(
+                        "Unknown value [" + v + "] for field [on_script_error] - accepted values are [fail, continue]"
+                    );
+            }
+        }).requiresParameter(script);
         private final Parameter<Boolean> dimension;
 
         private final IndexAnalyzers indexAnalyzers;
         private final ScriptCompiler scriptCompiler;
         private final Version indexCreatedVersion;
 
-        private static final ParameterDescription<String> NORMALIZER_PARAMETER = new ParameterDescription<>(
+        private static final ParameterSpec<Boolean> DIMENSION_PARAMETER = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).fieldType().isDimension(),
+            TimeSeriesParams.DIMENSION_PARAM
+        );
+
+        private static final ParameterDescription<String> NORMALIZER_PARAM_DESCRIPTION = new ParameterDescription<>(
             "normalizer",
             () -> null,
             Parameter.STRING_PARAMETER_SERIALIZATION
+        );
+        private static final ParameterSpec<String> NORMALIZER_PARAM = new ParameterSpec<>(
+            Parameter.notUpdatable(),
+            m -> toType(m).normalizerName,
+            NORMALIZER_PARAM_DESCRIPTION
+        );
+
+        private static final ParameterSpec<String> NORMALIZER_PARAM_LEGACY = new ParameterSpec<>(
+            Parameter.updatable(),
+            m -> toType(m).normalizerName,
+            NORMALIZER_PARAM_DESCRIPTION
         );
 
         public Builder(String name, IndexAnalyzers indexAnalyzers, ScriptCompiler scriptCompiler, Version indexCreatedVersion) {
@@ -217,15 +284,12 @@ public final class KeywordFieldMapper extends FieldMapper {
             this.indexAnalyzers = indexAnalyzers;
             this.scriptCompiler = Objects.requireNonNull(scriptCompiler);
             this.indexCreatedVersion = Objects.requireNonNull(indexCreatedVersion);
-            this.normalizer = new Parameter<>(
-                indexCreatedVersion.isLegacyIndexVersion(),
-                m -> toType(m).normalizerName,
-                NORMALIZER_PARAMETER
-            ).acceptsNull();
+            this.normalizer = new Parameter<>(indexCreatedVersion.isLegacyIndexVersion() ? NORMALIZER_PARAM_LEGACY : NORMALIZER_PARAM)
+                .acceptsNull();
             this.script.precludesParameters(nullValue);
             addScriptValidation(script, indexed, hasDocValues);
 
-            this.dimension = TimeSeriesParams.dimensionParam(m -> toType(m).fieldType().isDimension()).addValidator(v -> {
+            this.dimension = new Parameter<>(DIMENSION_PARAMETER).addValidator(v -> {
                 if (v && (indexed.getValue() == false || hasDocValues.getValue() == false)) {
                     throw new IllegalArgumentException(
                         "Field ["

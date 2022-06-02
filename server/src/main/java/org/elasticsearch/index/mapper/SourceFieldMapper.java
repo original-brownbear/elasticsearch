@@ -64,9 +64,14 @@ public class SourceFieldMapper extends MetadataFieldMapper {
 
     public static class Builder extends MetadataFieldMapper.Builder {
 
-        private final Parameter<Boolean> enabled = Parameter.boolParam("enabled", false, m -> toType(m).enabled, Defaults.ENABLED)
-            // this field mapper may be enabled but once enabled, may not be disabled
-            .setMergeValidator((previous, current, conflicts) -> (previous == current) || (previous && current == false));
+        // this field mapper may be enabled but once enabled, may not be disabled
+        private static final ParameterSpec<Boolean> ENABLED_PARAMETER = new ParameterSpec<>(
+            (previous, current, conflicts) -> (previous == current) || (previous && current == false),
+            m -> toType(m).enabled,
+            new ParameterDescription<>("enabled", Defaults.ENABLED ? () -> true : () -> false, Parameter.BOOLEAN_PARAMETER_SERIALIZATION)
+        );
+
+        private final Parameter<Boolean> enabled = new Parameter<>(ENABLED_PARAMETER);
         private final Parameter<Boolean> synthetic = Parameter.boolParam("synthetic", false, m -> toType(m).synthetic, false);
         private final Parameter<List<String>> includes = Parameter.stringArrayParam(
             "includes",

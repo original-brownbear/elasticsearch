@@ -578,6 +578,13 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
      */
     public static final class Parameter<T> implements Supplier<T> {
 
+        public static <T> MergeValidator<T> notUpdatable() {
+            return (previous, toMerge, conflicts) -> Objects.equals(previous, toMerge);
+        }
+
+        public static <T> MergeValidator<T> updatable() {
+            return (previous, toMerge, conflicts) -> true;
+        }
         private List<String> deprecatedNames = List.of();
         private final ParameterSpec<T> parameterSpec;
         private boolean acceptsNull = false;
@@ -626,11 +633,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
         public Parameter(boolean updateable, Function<FieldMapper, T> initializer, ParameterDescription<T> parameterDescription) {
             this.value = null;
-            this.parameterSpec = new ParameterSpec<>(
-                updateable ? (previous, toMerge, conflicts) -> true : (previous, toMerge, conflicts) -> Objects.equals(previous, toMerge),
-                initializer,
-                parameterDescription
-            );
+            this.parameterSpec = new ParameterSpec<>(updateable ? updatable() : notUpdatable(), initializer, parameterDescription);
         }
 
         public Parameter(ParameterSpec<T> parameterSpec) {
@@ -1045,26 +1048,30 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return analyzerParam(name, updateable, initializer, defaultAnalyzer, Version.CURRENT);
         }
 
-        private static final ParameterDescription<Map<String, String>> META_PARAMETER_DESCRIPTION = new ParameterDescription<>(
-            "meta",
-            Map::of,
-            new ParameterSerialization<>(XContentBuilder::stringStringMap, Objects::toString, (n, c, o) -> TypeParsers.parseMeta(n, o))
+        private static final ParameterSpec<Map<String, String>> META_PARAMETER_DESCRIPTION = new ParameterSpec<>(
+            Parameter.updatable(),
+            m -> m.fieldType().meta(),
+            new ParameterDescription<>(
+                "meta",
+                Map::of,
+                new ParameterSerialization<>(XContentBuilder::stringStringMap, Objects::toString, (n, c, o) -> TypeParsers.parseMeta(n, o))
+            )
         );
 
         /**
          * Declares a metadata parameter
          */
         public static Parameter<Map<String, String>> metaParam() {
-            return new Parameter<>(true, m -> m.fieldType().meta(), META_PARAMETER_DESCRIPTION);
+            return new Parameter<>(META_PARAMETER_DESCRIPTION);
         }
 
-        private static final ParameterDescription<Boolean> INDEX_PARAMETER_DESCRIPTION_TRUE = new ParameterDescription<>(
+        public static final ParameterDescription<Boolean> INDEX_PARAMETER_DESCRIPTION_TRUE = new ParameterDescription<>(
             "index",
             () -> true,
             BOOLEAN_PARAMETER_SERIALIZATION
         );
 
-        private static final ParameterDescription<Boolean> INDEX_PARAMETER_DESCRIPTION_FALSE = new ParameterDescription<>(
+        public static final ParameterDescription<Boolean> INDEX_PARAMETER_DESCRIPTION_FALSE = new ParameterDescription<>(
             "index",
             () -> false,
             BOOLEAN_PARAMETER_SERIALIZATION
@@ -1074,13 +1081,13 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(false, initializer, defaultValue ? INDEX_PARAMETER_DESCRIPTION_TRUE : INDEX_PARAMETER_DESCRIPTION_FALSE);
         }
 
-        private static final ParameterDescription<Boolean> STORE_PARAMETER_DESCRIPTION_TRUE = new ParameterDescription<>(
+        public static final ParameterDescription<Boolean> STORE_PARAMETER_DESCRIPTION_TRUE = new ParameterDescription<>(
             "store",
             () -> true,
             BOOLEAN_PARAMETER_SERIALIZATION
         );
 
-        private static final ParameterDescription<Boolean> STORE_PARAMETER_DESCRIPTION_FALSE = new ParameterDescription<>(
+        public static final ParameterDescription<Boolean> STORE_PARAMETER_DESCRIPTION_FALSE = new ParameterDescription<>(
             "store",
             () -> false,
             BOOLEAN_PARAMETER_SERIALIZATION
@@ -1090,13 +1097,13 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new Parameter<>(false, initializer, defaultValue ? STORE_PARAMETER_DESCRIPTION_TRUE : STORE_PARAMETER_DESCRIPTION_FALSE);
         }
 
-        private static final ParameterDescription<Boolean> DOC_VALUES_PARAMETER_DESCRIPTION_TRUE = new ParameterDescription<>(
+        public static final ParameterDescription<Boolean> DOC_VALUES_PARAMETER_DESCRIPTION_TRUE = new ParameterDescription<>(
             "doc_values",
             () -> true,
             BOOLEAN_PARAMETER_SERIALIZATION
         );
 
-        private static final ParameterDescription<Boolean> DOC_VALUES_PARAMETER_DESCRIPTION_FALSE = new ParameterDescription<>(
+        public static final ParameterDescription<Boolean> DOC_VALUES_PARAMETER_DESCRIPTION_FALSE = new ParameterDescription<>(
             "doc_values",
             () -> false,
             BOOLEAN_PARAMETER_SERIALIZATION
@@ -1110,7 +1117,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             );
         }
 
-        private static final ParameterDescription<Script> SCRIPT_PARAMETER_DESCRIPTION = new ParameterDescription<>(
+        public static final ParameterDescription<Script> SCRIPT_PARAMETER_DESCRIPTION = new ParameterDescription<>(
             "script",
             () -> null,
             new ParameterSerialization<>(XContentBuilder::field, Objects::toString, (n, c, o) -> {
@@ -1134,7 +1141,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             return new FieldMapper.Parameter<>(false, initializer, SCRIPT_PARAMETER_DESCRIPTION).acceptsNull();
         }
 
-        private static final ParameterDescription<String> ON_SCRIPT_ERROR_PARAMETER_DESCRIPTION = new ParameterDescription<>(
+        public static final ParameterDescription<String> ON_SCRIPT_ERROR_PARAMETER_DESCRIPTION = new ParameterDescription<>(
             "on_script_error",
             () -> "fail",
             STRING_PARAMETER_SERIALIZATION

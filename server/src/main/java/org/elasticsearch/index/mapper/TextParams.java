@@ -142,7 +142,7 @@ public final class TextParams {
             defaultValue ? NORMS_PARAMETER_TRUE : NORMS_PARAMETER_FALSE));
     }
 
-    private static final FieldMapper.ParameterDescription<SimilarityProvider> SIMILARITY_PROVIDER_PARAMETER =
+    public static final FieldMapper.ParameterDescription<SimilarityProvider> SIMILARITY_PROVIDER_PARAMETER =
         new FieldMapper.ParameterDescription<>(
             "similarity",
             () -> null,
@@ -157,7 +157,7 @@ public final class TextParams {
         return new Parameter<>(false, init, SIMILARITY_PROVIDER_PARAMETER).acceptsNull();
     }
 
-    private static final FieldMapper.ParameterDescription<String> KEYWORD_INDEX_OPTIONS = new FieldMapper.ParameterDescription<>(
+    public static final FieldMapper.ParameterDescription<String> KEYWORD_INDEX_OPTIONS = new FieldMapper.ParameterDescription<>(
         "index_options",
         () -> "docs",
         Parameter.STRING_PARAMETER_SERIALIZATION

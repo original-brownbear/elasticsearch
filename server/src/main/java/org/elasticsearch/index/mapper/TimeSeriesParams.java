@@ -53,7 +53,7 @@ public final class TimeSeriesParams {
         ).acceptsNull();
     }
 
-    private static final FieldMapper.ParameterDescription<Boolean> DIMENSION_PARAM = new FieldMapper.ParameterDescription<>(
+    public static final FieldMapper.ParameterDescription<Boolean> DIMENSION_PARAM = new FieldMapper.ParameterDescription<>(
         TIME_SERIES_DIMENSION_PARAM,
         () -> false,
         FieldMapper.Parameter.BOOLEAN_PARAMETER_SERIALIZATION

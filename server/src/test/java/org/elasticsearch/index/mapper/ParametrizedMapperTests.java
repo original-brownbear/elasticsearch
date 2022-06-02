@@ -96,7 +96,13 @@ public class ParametrizedMapperTests extends MapperServiceTestCase {
             if (o == null) return null;
             return new StringWrapper(o.toString());
         }, m -> toType(m).wrapper, (b, n, v) -> b.field(n, v.name), v -> "wrapper_" + v.name);
-        final Parameter<Integer> intValue = Parameter.intParam("int_value", true, m -> toType(m).intValue, 5).addValidator(n -> {
+        final Parameter<Integer> intValue = new Parameter<>(
+            new FieldMapper.ParameterSpec<>(
+                (o, n, c) -> n >= o,
+                m -> toType(m).intValue,
+                new FieldMapper.ParameterDescription<>("int_value", () -> 5, Parameter.INTEGER_PARAMETER_SERIALIZATION)
+            )
+        ).addValidator(n -> {
             if (n > 50) {
                 throw new IllegalArgumentException("Value of [n] cannot be greater than 50");
             }
@@ -104,7 +110,7 @@ public class ParametrizedMapperTests extends MapperServiceTestCase {
             if (n < 0) {
                 throw new IllegalArgumentException("Value of [n] cannot be less than 0");
             }
-        }).setMergeValidator((o, n, c) -> n >= o);
+        });
         final Parameter<NamedAnalyzer> analyzer = Parameter.analyzerParam(
             "analyzer",
             false,
