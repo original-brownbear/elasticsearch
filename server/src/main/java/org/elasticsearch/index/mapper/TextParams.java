@@ -122,13 +122,13 @@ public final class TextParams {
         }
     }
 
-    private static final FieldMapper.ParameterDescription<Boolean> NORMS_PARAMETER_TRUE = new FieldMapper.ParameterDescription<>(
+    public static final FieldMapper.ParameterDescription<Boolean> NORMS_PARAMETER_TRUE = new FieldMapper.ParameterDescription<>(
         "norms",
         () -> true,
         Parameter.BOOLEAN_PARAMETER_SERIALIZATION
     );
 
-    private static final FieldMapper.ParameterDescription<Boolean> NORMS_PARAMETER_FALSE = new FieldMapper.ParameterDescription<>(
+    public static final FieldMapper.ParameterDescription<Boolean> NORMS_PARAMETER_FALSE = new FieldMapper.ParameterDescription<>(
         "norms",
         () -> false,
         Parameter.BOOLEAN_PARAMETER_SERIALIZATION
@@ -136,9 +136,10 @@ public final class TextParams {
 
     public static Parameter<Boolean> norms(boolean defaultValue, Function<FieldMapper, Boolean> initializer) {
         // norms can be updated from 'true' to 'false' but not vv
-        return new Parameter<>(true, initializer, defaultValue ? NORMS_PARAMETER_TRUE : NORMS_PARAMETER_FALSE).setMergeValidator(
-            (o, n, c) -> o == n || (o && n == false)
-        );
+        return new Parameter<>(new FieldMapper.ParameterSpec<>(
+            (o, n, c) -> o == n || (o && n == false),
+            initializer,
+            defaultValue ? NORMS_PARAMETER_TRUE : NORMS_PARAMETER_FALSE));
     }
 
     private static final FieldMapper.ParameterDescription<SimilarityProvider> SIMILARITY_PROVIDER_PARAMETER =

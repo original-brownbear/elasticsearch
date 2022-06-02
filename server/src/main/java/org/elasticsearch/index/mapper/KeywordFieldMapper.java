@@ -173,7 +173,13 @@ public final class KeywordFieldMapper extends FieldMapper {
         );
 
         private final Parameter<String> indexOptions = TextParams.keywordIndexOptions(m -> toType(m).indexOptions);
-        private final Parameter<Boolean> hasNorms = TextParams.norms(false, m -> toType(m).fieldType.omitNorms() == false);
+
+        private static final ParameterSpec<Boolean> HAS_NORMS_PARAMETER = new ParameterSpec<>(
+            (o, n, c) -> o == n || (o && n == false),
+            m -> toType(m).fieldType.omitNorms() == false,
+            TextParams.NORMS_PARAMETER_FALSE
+        );
+        private final Parameter<Boolean> hasNorms = new Parameter<>(HAS_NORMS_PARAMETER);
         private final Parameter<SimilarityProvider> similarity = TextParams.similarity(m -> toType(m).similarity);
 
         private final Parameter<String> normalizer;

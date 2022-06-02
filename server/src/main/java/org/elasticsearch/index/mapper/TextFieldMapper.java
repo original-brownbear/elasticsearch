@@ -238,7 +238,14 @@ public class TextFieldMapper extends FieldMapper {
         final Parameter<SimilarityProvider> similarity = TextParams.similarity(m -> ((TextFieldMapper) m).similarity);
 
         final Parameter<String> indexOptions = TextParams.textIndexOptions(m -> ((TextFieldMapper) m).indexOptions);
-        final Parameter<Boolean> norms = TextParams.norms(true, m -> ((TextFieldMapper) m).norms);
+
+        private static final ParameterSpec<Boolean> HAS_NORMS_PARAMETER = new ParameterSpec<>(
+            (o, n, c) -> o == n || (o && n == false),
+            m -> ((TextFieldMapper) m).norms,
+            TextParams.NORMS_PARAMETER_TRUE
+        );
+
+        final Parameter<Boolean> norms = new Parameter<>(HAS_NORMS_PARAMETER);
         final Parameter<String> termVectors = TextParams.termVectors(m -> ((TextFieldMapper) m).termVectors);
 
         final Parameter<Boolean> fieldData = Parameter.boolParam("fielddata", true, m -> ((TextFieldMapper) m).fieldData, false);
