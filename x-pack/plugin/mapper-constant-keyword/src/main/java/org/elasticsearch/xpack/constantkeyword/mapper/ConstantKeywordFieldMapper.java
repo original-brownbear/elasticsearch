@@ -70,20 +70,31 @@ public class ConstantKeywordFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
+        private static final ParameterSpec<String> VALUE_PARAMETER = new ParameterSpec<>(
+            (previous, current, c) -> previous == null || Objects.equals(previous, current),
+            m -> toType(m).fieldType().value,
+            new ParameterDescription<>(
+                "value",
+                () -> null,
+                new ParameterSerialization<>(XContentBuilder::field, Objects::toString, (n, c, o) -> {
+                    if (o instanceof Number == false && o instanceof CharSequence == false) {
+                        throw new MapperParsingException(
+                            "Property [value] on field [" + n + "] must be a number or a string, but got [" + o + "]"
+                        );
+                    }
+                    return o.toString();
+                })
+            )
+        );
+
         // This is defined as updateable because it can be updated once, from [null] to any value,
         // by a dynamic mapping update. Once it has been set, however, the value cannot be changed.
-        private final Parameter<String> value = new Parameter<>("value", true, () -> null, (n, c, o) -> {
-            if (o instanceof Number == false && o instanceof CharSequence == false) {
-                throw new MapperParsingException("Property [value] on field [" + n + "] must be a number or a string, but got [" + o + "]");
-            }
-            return o.toString();
-        }, m -> toType(m).fieldType().value, XContentBuilder::field, Objects::toString);
+        private final Parameter<String> value = new Parameter<>(VALUE_PARAMETER);
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
         public Builder(String name) {
             super(name);
             value.setSerializerCheck((id, ic, v) -> v != null);
-            value.setMergeValidator((previous, current, c) -> previous == null || Objects.equals(previous, current));
         }
 
         @Override
