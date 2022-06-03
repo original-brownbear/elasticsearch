@@ -1,0 +1,5 @@
+pr: 86922
+summary: Implement write throttling in Netty4HttpPipeliningHandler
+area: Network
+type: enhancement
+issues: []
