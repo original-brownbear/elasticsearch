@@ -72,6 +72,9 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             }
             XContentParser delegate = delegate();
             String field = delegate.currentName();
+            if (field.isEmpty() == false && field.contains(".") == false) {
+                return;
+            }
             String[] subpaths = splitAndValidatePath(field);
             if (subpaths.length == 0) {
                 throw new IllegalArgumentException("field name cannot contain only dots: [" + field + "]");
@@ -87,12 +90,11 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             Token token = delegate.nextToken();
             if (token == Token.END_OBJECT || token == Token.END_ARRAY) {
                 throw new IllegalStateException("Expecting START_OBJECT or START_ARRAY or VALUE but got [" + token + "]");
-            } else {
-                XContentParser subParser = token == Token.START_OBJECT || token == Token.START_ARRAY
-                    ? new XContentSubParser(delegate)
-                    : new SingletonValueXContentParser(delegate);
-                parsers.push(new DotExpandingXContentParser(subParser, subpaths, location, isWithinLeafObject));
             }
+            XContentParser subParser = token == Token.START_OBJECT || token == Token.START_ARRAY
+                ? new XContentSubParser(delegate)
+                : new SingletonValueXContentParser(delegate);
+            parsers.push(new DotExpandingXContentParser(subParser, subpaths, location, isWithinLeafObject));
         }
 
         @Override
@@ -135,9 +137,6 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
     private static String[] splitAndValidatePath(String fieldName) {
         if (fieldName.isEmpty()) {
             throw new IllegalArgumentException("field name cannot be an empty string");
-        }
-        if (fieldName.contains(".") == false) {
-            return new String[] { fieldName };
         }
         String[] parts = fieldName.split("\\.");
         if (parts.length == 0) {
@@ -200,13 +199,11 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         }
         if (state == State.PARSING_ORIGINAL_CONTENT) {
             Token token = delegate().nextToken();
-            if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
-                innerLevel++;
-            }
-            if (token == Token.END_OBJECT || token == Token.END_ARRAY) {
-                innerLevel--;
-            }
             if (token != null) {
+                switch (token) {
+                    case START_OBJECT, START_ARRAY -> innerLevel++;
+                    case END_OBJECT, END_ARRAY -> innerLevel--;
+                }
                 return token;
             }
             currentLocation = getTokenLocation();
