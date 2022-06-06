@@ -196,40 +196,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
     @Override
     public Token nextToken() throws IOException {
         if (state == State.EXPANDING_START_OBJECT) {
-            expandedTokens++;
-            assert expandedTokens < subPaths.length * 2;
-            if (expandedTokens == subPaths.length * 2 - 1) {
-                state = State.PARSING_ORIGINAL_CONTENT;
-                Token token = delegate().currentToken();
-                if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
-                    innerLevel++;
-                }
-                return token;
-            }
-            // The expansion consists of adding pairs of START_OBJECT and FIELD_NAME tokens
-            if (expandedTokens % 2 == 0) {
-                int currentIndex = expandedTokens / 2;
-                // if there's more than one element left to expand and the parent can't hold subobjects, we replace the array
-                // e.g. metrics.service.time.max -> ["metrics", "service", "time.max"]
-                if (currentIndex < subPaths.length - 1 && isWithinLeafObject.getAsBoolean()) {
-                    String[] newSubPaths = new String[currentIndex + 1];
-                    StringBuilder collapsedPath = new StringBuilder();
-                    for (int i = 0; i < subPaths.length; i++) {
-                        if (i < currentIndex) {
-                            newSubPaths[i] = subPaths[i];
-                        } else {
-                            collapsedPath.append(subPaths[i]);
-                            if (i < subPaths.length - 1) {
-                                collapsedPath.append(".");
-                            }
-                        }
-                    }
-                    newSubPaths[currentIndex] = collapsedPath.toString();
-                    subPaths = newSubPaths;
-                }
-                return Token.FIELD_NAME;
-            }
-            return Token.START_OBJECT;
+            return nextTokenOnExpandingStartObject();
         }
         if (state == State.PARSING_ORIGINAL_CONTENT) {
             Token token = delegate().nextToken();
@@ -248,6 +215,43 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         assert expandedTokens % 2 == 1;
         expandedTokens -= 2;
         return expandedTokens < 0 ? null : Token.END_OBJECT;
+    }
+
+    private Token nextTokenOnExpandingStartObject() {
+        expandedTokens++;
+        assert expandedTokens < subPaths.length * 2;
+        if (expandedTokens == subPaths.length * 2 - 1) {
+            state = State.PARSING_ORIGINAL_CONTENT;
+            Token token = delegate().currentToken();
+            if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
+                innerLevel++;
+            }
+            return token;
+        }
+        // The expansion consists of adding pairs of START_OBJECT and FIELD_NAME tokens
+        if (expandedTokens % 2 == 0) {
+            int currentIndex = expandedTokens / 2;
+            // if there's more than one element left to expand and the parent can't hold subobjects, we replace the array
+            // e.g. metrics.service.time.max -> ["metrics", "service", "time.max"]
+            if (currentIndex < subPaths.length - 1 && isWithinLeafObject.getAsBoolean()) {
+                String[] newSubPaths = new String[currentIndex + 1];
+                StringBuilder collapsedPath = new StringBuilder();
+                for (int i = 0; i < subPaths.length; i++) {
+                    if (i < currentIndex) {
+                        newSubPaths[i] = subPaths[i];
+                    } else {
+                        collapsedPath.append(subPaths[i]);
+                        if (i < subPaths.length - 1) {
+                            collapsedPath.append(".");
+                        }
+                    }
+                }
+                newSubPaths[currentIndex] = collapsedPath.toString();
+                subPaths = newSubPaths;
+            }
+            return Token.FIELD_NAME;
+        }
+        return Token.START_OBJECT;
     }
 
     @Override

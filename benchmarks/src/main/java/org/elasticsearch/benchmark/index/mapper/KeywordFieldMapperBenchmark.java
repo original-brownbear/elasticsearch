@@ -28,7 +28,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Fork(value = 1)
+@Fork(value = 1, jvmArgsAppend = "-agentpath:/home/brownbear/asycp/async-profiler-2.8-linux-x64/build/libasyncProfiler.so=start,event=cpu,file=profile.html")
 @Warmup(iterations = 5)
 @Measurement(iterations = 5)
 @BenchmarkMode(Mode.AverageTime)
