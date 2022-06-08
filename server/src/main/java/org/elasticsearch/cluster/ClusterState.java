@@ -45,6 +45,7 @@ import org.elasticsearch.common.io.stream.VersionedNamedWriteable;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContent;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -735,7 +736,13 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
                 // routing table contents and nodes haven't changed so we can try to reuse the previous state's routing nodes which are
                 // expensive to compute
                 routingNodes = previous.routingNodes;
-                health = previous.health;
+                if (previous.blocks().hasGlobalBlockWithStatus(RestStatus.SERVICE_UNAVAILABLE) == blocks.hasGlobalBlockWithStatus(
+                    RestStatus.SERVICE_UNAVAILABLE
+                )) {
+                    health = previous.health;
+                } else {
+                    health = null;
+                }
             } else {
                 routingNodes = null;
                 health = null;
