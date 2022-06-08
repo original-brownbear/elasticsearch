@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.coordination.CoordinationMetadata;
 import org.elasticsearch.cluster.coordination.CoordinationMetadata.VotingConfigExclusion;
 import org.elasticsearch.cluster.coordination.CoordinationMetadata.VotingConfiguration;
 import org.elasticsearch.cluster.coordination.NoMasterBlockService;
+import org.elasticsearch.cluster.health.ClusterStateHealth;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -160,6 +161,9 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
     // built on demand
     private volatile RoutingNodes routingNodes;
 
+    // built on demand
+    private volatile ClusterStateHealth health;
+
     public ClusterState(long version, String stateUUID, ClusterState state) {
         this(
             state.clusterName,
@@ -171,11 +175,12 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             state.blocks(),
             state.customs(),
             false,
-            state.routingNodes
+            state.routingNodes,
+            state.health
         );
     }
 
-    public ClusterState(
+    private ClusterState(
         ClusterName clusterName,
         long version,
         String stateUUID,
@@ -185,7 +190,8 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         ClusterBlocks blocks,
         Map<String, Custom> customs,
         boolean wasReadFromDiff,
-        @Nullable RoutingNodes routingNodes
+        @Nullable RoutingNodes routingNodes,
+        @Nullable ClusterStateHealth health
     ) {
         this.version = version;
         this.stateUUID = stateUUID;
@@ -197,6 +203,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         this.customs = customs;
         this.wasReadFromDiff = wasReadFromDiff;
         this.routingNodes = routingNodes;
+        this.health = health;
         assert assertConsistentRoutingNodes(routingTable, nodes, routingNodes);
     }
 
@@ -338,6 +345,15 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         // we don't have any routing nodes for this state, likely because it's a temporary state in the reroute logic, don't compute an
         // immutable copy that will never be used and instead directly build a mutable copy
         return RoutingNodes.mutable(routingTable, this.nodes);
+    }
+
+
+    public ClusterStateHealth health() {
+        if (health != null) {
+            return health;
+        }
+        health = new ClusterStateHealth(this);
+        return health;
     }
 
     @Override
@@ -714,12 +730,15 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
                 uuid = UUIDs.randomBase64UUID();
             }
             final RoutingNodes routingNodes;
+            final ClusterStateHealth health;
             if (previous != null && routingTable.indicesRouting() == previous.routingTable.indicesRouting() && nodes == previous.nodes) {
                 // routing table contents and nodes haven't changed so we can try to reuse the previous state's routing nodes which are
                 // expensive to compute
                 routingNodes = previous.routingNodes;
+                health = previous.health;
             } else {
                 routingNodes = null;
+                health = null;
             }
             return new ClusterState(
                 clusterName,
@@ -731,7 +750,8 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
                 blocks,
                 customs.build(),
                 fromDiff,
-                routingNodes
+                routingNodes,
+                health
             );
         }
 

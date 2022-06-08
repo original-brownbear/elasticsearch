@@ -21,7 +21,6 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.nodes.TransportNodesAction;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.cluster.health.ClusterStateHealth;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -220,7 +219,7 @@ public class TransportClusterStatsAction extends TransportNodesAction<
 
         ClusterHealthStatus clusterStatus = null;
         if (clusterService.state().nodes().isLocalNodeElectedMaster()) {
-            clusterStatus = new ClusterStateHealth(clusterService.state()).getStatus();
+            clusterStatus = clusterService.state().health().getStatus();
         }
 
         return new ClusterStatsNodeResponse(
