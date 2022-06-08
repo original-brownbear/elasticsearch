@@ -348,7 +348,6 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         return RoutingNodes.mutable(routingTable, this.nodes);
     }
 
-
     public ClusterStateHealth health() {
         if (health != null) {
             return health;
