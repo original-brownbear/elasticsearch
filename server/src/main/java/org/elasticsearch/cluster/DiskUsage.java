@@ -12,6 +12,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -38,15 +39,12 @@ public class DiskUsage implements ToXContentFragment, Writeable {
         this.nodeName = nodeName;
         this.freeBytes = freeBytes;
         this.totalBytes = totalBytes;
-        this.path = path;
+        // intern so we get fast equality checks when this string is used in a hot loop in the disk threshold allocation decider
+        this.path = Settings.internKeyOrValue(path);
     }
 
     public DiskUsage(StreamInput in) throws IOException {
-        this.nodeId = in.readString();
-        this.nodeName = in.readString();
-        this.path = in.readString();
-        this.totalBytes = in.readVLong();
-        this.freeBytes = in.readVLong();
+        this(in.readString(), in.readString(), in.readString(), in.readVLong(), in.readVLong());
     }
 
     @Override

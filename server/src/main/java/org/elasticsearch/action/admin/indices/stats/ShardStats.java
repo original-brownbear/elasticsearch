@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.engine.CommitStats;
 import org.elasticsearch.index.seqno.RetentionLeaseStats;
@@ -24,15 +25,15 @@ import java.io.IOException;
 
 public class ShardStats implements Writeable, ToXContentFragment {
 
-    private ShardRouting shardRouting;
-    private CommonStats commonStats;
+    private final ShardRouting shardRouting;
+    private final CommonStats commonStats;
     @Nullable
-    private CommitStats commitStats;
+    private final CommitStats commitStats;
     @Nullable
-    private SeqNoStats seqNoStats;
+    private final SeqNoStats seqNoStats;
 
     @Nullable
-    private RetentionLeaseStats retentionLeaseStats;
+    private final RetentionLeaseStats retentionLeaseStats;
 
     /**
      * Gets the current retention lease stats.
@@ -43,16 +44,17 @@ public class ShardStats implements Writeable, ToXContentFragment {
         return retentionLeaseStats;
     }
 
-    private String dataPath;
-    private String statePath;
-    private boolean isCustomDataPath;
+    private final String dataPath;
+    private final String statePath;
+    private final boolean isCustomDataPath;
 
     public ShardStats(StreamInput in) throws IOException {
         shardRouting = new ShardRouting(in);
         commonStats = new CommonStats(in);
         commitStats = CommitStats.readOptionalCommitStatsFrom(in);
-        statePath = in.readString();
-        dataPath = in.readString();
+        // intern so we get fast equality checks when this string is used in a hot loop in the disk threshold allocation decider
+        statePath = Settings.internKeyOrValue(in.readString());
+        dataPath = Settings.internKeyOrValue(in.readString());
         isCustomDataPath = in.readBoolean();
         seqNoStats = in.readOptionalWriteable(SeqNoStats::new);
         retentionLeaseStats = in.readOptionalWriteable(RetentionLeaseStats::new);
@@ -67,8 +69,8 @@ public class ShardStats implements Writeable, ToXContentFragment {
         final RetentionLeaseStats retentionLeaseStats
     ) {
         this.shardRouting = routing;
-        this.dataPath = shardPath.getRootDataPath().toString();
-        this.statePath = shardPath.getRootStatePath().toString();
+        this.dataPath = Settings.internKeyOrValue(shardPath.getRootDataPath().toString());
+        this.statePath = Settings.internKeyOrValue(shardPath.getRootStatePath().toString());
         this.isCustomDataPath = shardPath.isCustomDataPath();
         this.commitStats = commitStats;
         this.commonStats = commonStats;
