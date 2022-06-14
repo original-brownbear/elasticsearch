@@ -97,7 +97,7 @@ public class RestThreadPoolAction extends AbstractCatAction {
     static {
         final Set<String> responseParams = new HashSet<>(AbstractCatAction.RESPONSE_PARAMS);
         responseParams.add("thread_pool_patterns");
-        RESPONSE_PARAMS = Collections.unmodifiableSet(responseParams);
+        RESPONSE_PARAMS = Set.copyOf(responseParams);
     }
 
     @Override

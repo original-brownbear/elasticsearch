@@ -21,8 +21,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.stream.Collectors.toSet;
-
 public final class QueryRescorer implements Rescorer {
 
     public static final Rescorer INSTANCE = new QueryRescorer();
@@ -57,9 +55,9 @@ public final class QueryRescorer implements Rescorer {
         TopDocs topNFirstPass = topN(topDocs, rescoreContext.getWindowSize());
 
         // Save doc IDs for which rescoring was applied to be used in score explanation
-        Set<Integer> topNDocIDs = Collections.unmodifiableSet(
-            Arrays.stream(topNFirstPass.scoreDocs).map(scoreDoc -> scoreDoc.doc).collect(toSet())
-        );
+        Set<Integer> topNDocIDs = Arrays.stream(topNFirstPass.scoreDocs)
+            .map(scoreDoc -> scoreDoc.doc)
+            .collect(java.util.stream.Collectors.toUnmodifiableSet());
         rescoreContext.setRescoredDocs(topNDocIDs);
 
         // Rescore them:

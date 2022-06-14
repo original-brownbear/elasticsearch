@@ -35,7 +35,7 @@ import static org.elasticsearch.rest.RestStatus.OK;
  * The REST handler for get template and head template APIs.
  */
 public class RestGetIndexTemplateAction extends BaseRestHandler {
-    private static final Set<String> COMPATIBLE_RESPONSE_PARAMS = Collections.unmodifiableSet(
+    private static final Set<String> COMPATIBLE_RESPONSE_PARAMS = Set.copyOf(
         Sets.union(Collections.singleton(INCLUDE_TYPE_NAME_PARAMETER), Settings.FORMAT_PARAMS)
     );
     private static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(RestGetIndexTemplateAction.class);

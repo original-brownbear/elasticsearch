@@ -27,7 +27,6 @@ import org.elasticsearch.tasks.TaskInfo;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -76,7 +75,7 @@ public class RestTasksAction extends AbstractCatAction {
         final Set<String> responseParams = new HashSet<>();
         responseParams.add("detailed");
         responseParams.addAll(AbstractCatAction.RESPONSE_PARAMS);
-        RESPONSE_PARAMS = Collections.unmodifiableSet(responseParams);
+        RESPONSE_PARAMS = Set.copyOf(responseParams);
     }
 
     @Override

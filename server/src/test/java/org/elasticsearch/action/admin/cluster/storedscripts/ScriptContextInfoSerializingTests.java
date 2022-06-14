@@ -67,7 +67,7 @@ public class ScriptContextInfoSerializingTests extends AbstractSerializingTestCa
 
     static Set<ScriptContextInfo> mutateOne(Collection<ScriptContextInfo> instances) {
         if (instances.size() == 0) {
-            return Collections.unmodifiableSet(Set.of(randomInstance()));
+            return Set.of(randomInstance());
         }
         ArrayList<ScriptContextInfo> mutated = new ArrayList<>(instances);
         int mutateIndex = randomIntBetween(0, instances.size() - 1);

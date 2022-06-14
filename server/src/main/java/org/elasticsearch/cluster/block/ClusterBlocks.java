@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
@@ -78,11 +79,11 @@ public class ClusterBlocks implements SimpleDiffable<ClusterBlocks> {
         EnumMap<ClusterBlockLevel, ImmutableLevelHolder> levelHolders = new EnumMap<>(ClusterBlockLevel.class);
         for (final ClusterBlockLevel level : ClusterBlockLevel.values()) {
             Predicate<ClusterBlock> containsLevel = block -> block.contains(level);
-            Set<ClusterBlock> newGlobal = unmodifiableSet(global.stream().filter(containsLevel).collect(toSet()));
+            Set<ClusterBlock> newGlobal = global.stream().filter(containsLevel).collect(java.util.stream.Collectors.toUnmodifiableSet());
 
             ImmutableOpenMap.Builder<String, Set<ClusterBlock>> indicesBuilder = ImmutableOpenMap.builder();
             for (Map.Entry<String, Set<ClusterBlock>> entry : indicesBlocks.entrySet()) {
-                indicesBuilder.put(entry.getKey(), unmodifiableSet(entry.getValue().stream().filter(containsLevel).collect(toSet())));
+                indicesBuilder.put(entry.getKey(), entry.getValue().stream().filter(containsLevel).collect(Collectors.toUnmodifiableSet()));
             }
             levelHolders.put(level, new ImmutableLevelHolder(newGlobal, indicesBuilder.build()));
         }

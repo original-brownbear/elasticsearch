@@ -30,9 +30,7 @@ import java.util.function.Function;
  */
 class FieldValueFetcher {
 
-    private static final Set<Class<?>> VALID_TYPES = Collections.unmodifiableSet(
-        new HashSet<>(Arrays.asList(Long.class, Double.class, BigInteger.class, String.class, BytesRef.class))
-    );
+    private static final Set<Class<?>> VALID_TYPES = Set.of(Long.class, Double.class, BigInteger.class, String.class, BytesRef.class);
 
     private final String name;
     private final MappedFieldType fieldType;

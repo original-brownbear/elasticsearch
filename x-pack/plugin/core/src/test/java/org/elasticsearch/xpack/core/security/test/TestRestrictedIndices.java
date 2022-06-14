@@ -12,7 +12,6 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.indices.ExecutorNames;
 import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.indices.SystemIndices;
@@ -25,7 +24,6 @@ import org.elasticsearch.xpack.core.security.authz.RestrictedIndices;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -46,14 +44,12 @@ public class TestRestrictedIndices {
     public static final String SECURITY_TOKENS_ALIAS = ".security-tokens";
     public static final String INTERNAL_SECURITY_TOKENS_INDEX_7 = ".security-tokens-7";
 
-    public static final Set<String> SAMPLE_RESTRICTED_NAMES = Collections.unmodifiableSet(
-        Sets.newHashSet(
-            SECURITY_MAIN_ALIAS,
-            INTERNAL_SECURITY_MAIN_INDEX_6,
-            INTERNAL_SECURITY_MAIN_INDEX_7,
-            INTERNAL_SECURITY_TOKENS_INDEX_7,
-            SECURITY_TOKENS_ALIAS
-        )
+    public static final Set<String> SAMPLE_RESTRICTED_NAMES = Set.of(
+        SECURITY_MAIN_ALIAS,
+        INTERNAL_SECURITY_MAIN_INDEX_6,
+        INTERNAL_SECURITY_MAIN_INDEX_7,
+        INTERNAL_SECURITY_TOKENS_INDEX_7,
+        SECURITY_TOKENS_ALIAS
     );
 
     static {

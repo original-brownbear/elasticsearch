@@ -41,8 +41,6 @@ import org.elasticsearch.xpack.core.ml.MlMetadata;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -58,20 +56,16 @@ public class ResultsPersisterService {
     /**
      * List of rest statuses that we consider irrecoverable
      */
-    public static final Set<RestStatus> IRRECOVERABLE_REST_STATUSES = Collections.unmodifiableSet(
-        new HashSet<>(
-            Arrays.asList(
-                RestStatus.GONE,
-                RestStatus.NOT_IMPLEMENTED,
-                // Not found is returned when we require an alias but the index is NOT an alias.
-                RestStatus.NOT_FOUND,
-                RestStatus.BAD_REQUEST,
-                RestStatus.UNAUTHORIZED,
-                RestStatus.FORBIDDEN,
-                RestStatus.METHOD_NOT_ALLOWED,
-                RestStatus.NOT_ACCEPTABLE
-            )
-        )
+    public static final Set<RestStatus> IRRECOVERABLE_REST_STATUSES = Set.of(
+        RestStatus.GONE,
+        RestStatus.NOT_IMPLEMENTED,
+        // Not found is returned when we require an alias but the index is NOT an alias.
+        RestStatus.NOT_FOUND,
+        RestStatus.BAD_REQUEST,
+        RestStatus.UNAUTHORIZED,
+        RestStatus.FORBIDDEN,
+        RestStatus.METHOD_NOT_ALLOWED,
+        RestStatus.NOT_ACCEPTABLE
     );
 
     private static final Logger LOGGER = LogManager.getLogger(ResultsPersisterService.class);

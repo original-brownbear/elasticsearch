@@ -412,7 +412,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.usage.UsageService;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -690,7 +689,7 @@ public class ActionModule extends AbstractModule {
 
     private static ActionFilters setupActionFilters(List<ActionPlugin> actionPlugins) {
         return new ActionFilters(
-            Collections.unmodifiableSet(actionPlugins.stream().flatMap(p -> p.getActionFilters().stream()).collect(Collectors.toSet()))
+            actionPlugins.stream().flatMap(p -> p.getActionFilters().stream()).collect(Collectors.toUnmodifiableSet())
         );
     }
 

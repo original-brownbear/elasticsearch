@@ -1455,12 +1455,9 @@ public final class Settings implements ToXContentFragment {
         public Set<String> getSettingNames() {
             synchronized (settingNames) {
                 if (settingNames.get() == null) {
-                    Set<String> names = delegate.getSettingNames()
-                        .stream()
-                        .filter(keyPredicate)
-                        .map(removePrefix)
-                        .collect(Collectors.toSet());
-                    settingNames.set(Collections.unmodifiableSet(names));
+                    settingNames.set(
+                        delegate.getSettingNames().stream().filter(keyPredicate).map(removePrefix).collect(Collectors.toUnmodifiableSet())
+                    );
                 }
             }
             return settingNames.get();

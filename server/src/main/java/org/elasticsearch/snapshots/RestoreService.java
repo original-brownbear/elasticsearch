@@ -95,7 +95,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.Collections.unmodifiableSet;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_CREATION_DATE;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_HISTORY_UUID;
@@ -159,7 +158,7 @@ public class RestoreService implements ClusterStateApplier {
         unremovable.addAll(UNMODIFIABLE_SETTINGS);
         unremovable.add(SETTING_NUMBER_OF_REPLICAS);
         unremovable.add(SETTING_AUTO_EXPAND_REPLICAS);
-        UNREMOVABLE_SETTINGS = unmodifiableSet(unremovable);
+        UNREMOVABLE_SETTINGS = Set.copyOf(unremovable);
     }
 
     private final ClusterService clusterService;
