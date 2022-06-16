@@ -165,8 +165,8 @@ public class IndicesStatsResponse extends BroadcastResponse {
         super.writeTo(out);
         out.writeArray(shards);
         if (out.getVersion().onOrAfter(Version.V_8_1_0)) {
-            out.writeMap(indexHealthMap, StreamOutput::writeString, (o, s) -> s.writeTo(o));
-            out.writeMap(indexStateMap, StreamOutput::writeString, (o, s) -> s.writeTo(o));
+            out.writeStringKeysMap(indexHealthMap);
+            out.writeStringKeysMap(indexStateMap);
         }
     }
 

@@ -631,6 +631,18 @@ public abstract class StreamOutput extends OutputStream {
         }
     }
 
+    public final <V> void writeMap(final Map<String, V> map, final Writer<V> valueWriter) throws IOException {
+        writeMap(map, StreamOutput::writeString, valueWriter);
+    }
+
+    public final void writeStringKeysMap(final Map<String, ? extends Writeable> map) throws IOException {
+        writeMap(map, StreamOutput::writeString, (o, v) -> v.writeTo(o));
+    }
+
+    public final void writeStringStringMap(final Map<String, String> map) throws IOException {
+        writeMap(map, StreamOutput::writeString);
+    }
+
     /**
      * Writes an {@link Instant} to the stream with nanosecond resolution
      */

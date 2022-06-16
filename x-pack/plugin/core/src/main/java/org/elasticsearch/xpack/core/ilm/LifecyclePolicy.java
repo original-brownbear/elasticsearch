@@ -138,7 +138,7 @@ public class LifecyclePolicy implements SimpleDiffable<LifecyclePolicy>, ToXCont
     public void writeTo(StreamOutput out) throws IOException {
         out.writeNamedWriteable(type);
         out.writeString(name);
-        out.writeMap(phases, StreamOutput::writeString, (o, val) -> val.writeTo(o));
+        out.writeStringKeysMap(phases);
         out.writeGenericMap(this.metadata);
     }
 

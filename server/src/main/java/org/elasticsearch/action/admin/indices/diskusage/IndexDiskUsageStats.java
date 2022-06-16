@@ -58,7 +58,7 @@ public final class IndexDiskUsageStats implements ToXContentFragment, Writeable 
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(fields, StreamOutput::writeString, (o, v) -> v.writeTo(o));
+        out.writeStringKeysMap(fields);
         out.writeVLong(indexSizeInBytes);
     }
 

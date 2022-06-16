@@ -259,13 +259,13 @@ public final class DocumentPermissions implements CacheKey {
         evaluateQueries(context);
         if (evaluatedQueries != null) {
             out.writeBoolean(true);
-            out.writeCollection(evaluatedQueries, StreamOutput::writeString);
+            out.writeStringCollection(evaluatedQueries);
         } else {
             out.writeBoolean(false);
         }
         if (evaluatedLimitedByQueries != null) {
             out.writeBoolean(true);
-            out.writeCollection(evaluatedLimitedByQueries, StreamOutput::writeString);
+            out.writeStringCollection(evaluatedLimitedByQueries);
         } else {
             out.writeBoolean(false);
         }

@@ -237,7 +237,7 @@ public class TextStructure implements ToXContentObject, Writeable {
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
-            out.writeCollection(columnNames, StreamOutput::writeString);
+            out.writeStringCollection(columnNames);
         }
         out.writeOptionalBoolean(hasHeaderRow);
         if (delimiter == null) {
@@ -258,13 +258,13 @@ public class TextStructure implements ToXContentObject, Writeable {
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
-            out.writeCollection(jodaTimestampFormats, StreamOutput::writeString);
+            out.writeStringCollection(jodaTimestampFormats);
         }
         if (javaTimestampFormats == null) {
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
-            out.writeCollection(javaTimestampFormats, StreamOutput::writeString);
+            out.writeStringCollection(javaTimestampFormats);
         }
         out.writeOptionalString(timestampField);
         out.writeBoolean(needClientTimezone);
@@ -275,8 +275,8 @@ public class TextStructure implements ToXContentObject, Writeable {
             out.writeBoolean(true);
             out.writeGenericMap(ingestPipeline);
         }
-        out.writeMap(fieldStats, StreamOutput::writeString, (out1, value) -> value.writeTo(out1));
-        out.writeCollection(explanation, StreamOutput::writeString);
+        out.writeStringKeysMap(fieldStats);
+        out.writeStringCollection(explanation);
     }
 
     public int getNumLinesAnalyzed() {

@@ -114,7 +114,7 @@ public class GetComposableIndexTemplateAction extends ActionType<GetComposableIn
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap(indexTemplates, StreamOutput::writeString, (o, v) -> v.writeTo(o));
+            out.writeStringKeysMap(indexTemplates);
         }
 
         @Override

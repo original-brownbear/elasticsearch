@@ -857,7 +857,7 @@ public class Store extends AbstractIndexShardComponent implements Closeable, Ref
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeMapValues(fileMetadataMap);
-            out.writeMap(commitUserData, StreamOutput::writeString, StreamOutput::writeString);
+            out.writeStringStringMap(commitUserData);
             out.writeLong(numDocs);
         }
 

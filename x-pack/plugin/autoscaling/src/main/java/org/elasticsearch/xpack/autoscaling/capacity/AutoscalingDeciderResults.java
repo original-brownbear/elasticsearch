@@ -72,7 +72,7 @@ public class AutoscalingDeciderResults implements ToXContent, Writeable {
     public void writeTo(final StreamOutput out) throws IOException {
         currentCapacity.writeTo(out);
         out.writeCollection(currentNodes);
-        out.writeMap(results, StreamOutput::writeString, (output, result) -> result.writeTo(output));
+        out.writeStringKeysMap(results);
     }
 
     @Override

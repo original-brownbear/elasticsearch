@@ -88,7 +88,7 @@ public record TaskInfo(
         out.writeBoolean(cancellable);
         out.writeBoolean(cancelled);
         parentTaskId.writeTo(out);
-        out.writeMap(headers, StreamOutput::writeString, StreamOutput::writeString);
+        out.writeStringStringMap(headers);
     }
 
     public long id() {

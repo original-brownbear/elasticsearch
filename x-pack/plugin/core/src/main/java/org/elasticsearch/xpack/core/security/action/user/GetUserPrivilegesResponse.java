@@ -84,11 +84,11 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeCollection(cluster, StreamOutput::writeString);
+        out.writeStringCollection(cluster);
         out.writeCollection(configurableClusterPrivileges, ConfigurableClusterPrivileges.WRITER);
         out.writeCollection(index);
         out.writeCollection(application);
-        out.writeCollection(runAs, StreamOutput::writeString);
+        out.writeStringCollection(runAs);
     }
 
     @Override
@@ -251,8 +251,8 @@ public final class GetUserPrivilegesResponse extends ActionResponse {
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeCollection(indices, StreamOutput::writeString);
-            out.writeCollection(privileges, StreamOutput::writeString);
+            out.writeStringCollection(indices);
+            out.writeStringCollection(privileges);
             out.writeCollection(fieldSecurity, (output, fields) -> {
                 output.writeOptionalStringArray(fields.getGrantedFields());
                 output.writeOptionalStringArray(fields.getExcludedFields());

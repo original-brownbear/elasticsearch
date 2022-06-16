@@ -143,7 +143,7 @@ public class OneHotEncoding implements LenientlyParsedPreProcessor, StrictlyPars
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(field);
-        out.writeMap(hotMap, StreamOutput::writeString, StreamOutput::writeString);
+        out.writeStringStringMap(hotMap);
         out.writeBoolean(custom);
     }
 

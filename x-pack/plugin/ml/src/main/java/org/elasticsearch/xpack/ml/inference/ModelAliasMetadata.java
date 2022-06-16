@@ -119,7 +119,7 @@ public class ModelAliasMetadata implements Metadata.Custom {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(this.modelAliases, StreamOutput::writeString, (stream, val) -> val.writeTo(stream));
+        out.writeStringKeysMap(this.modelAliases);
     }
 
     public String getModelId(String modelAlias) {

@@ -110,7 +110,7 @@ public class IndexLifecycleFeatureSetUsage extends XPackFeatureSet.Usage {
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap(phaseStats, StreamOutput::writeString, (o, p) -> p.writeTo(o));
+            out.writeStringKeysMap(phaseStats);
             out.writeVInt(indicesManaged);
         }
 

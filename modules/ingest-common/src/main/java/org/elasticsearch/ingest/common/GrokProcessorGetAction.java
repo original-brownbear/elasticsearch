@@ -112,7 +112,7 @@ public class GrokProcessorGetAction extends ActionType<GrokProcessorGetAction.Re
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap(grokPatterns, StreamOutput::writeString, StreamOutput::writeString);
+            out.writeStringStringMap(grokPatterns);
         }
     }
 

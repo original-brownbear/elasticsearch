@@ -195,7 +195,7 @@ public class TrainedModelAssignment implements SimpleDiffable<TrainedModelAssign
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         taskParams.writeTo(out);
-        out.writeMap(nodeRoutingTable, StreamOutput::writeString, (o, w) -> w.writeTo(o));
+        out.writeStringKeysMap(nodeRoutingTable);
         out.writeEnum(assignmentState);
         out.writeOptionalString(reason);
         out.writeInstant(startTime);

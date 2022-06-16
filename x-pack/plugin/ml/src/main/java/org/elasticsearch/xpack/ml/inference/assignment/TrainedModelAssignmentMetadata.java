@@ -128,7 +128,7 @@ public class TrainedModelAssignmentMetadata implements Metadata.Custom {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(modelRoutingEntries, StreamOutput::writeString, (o, w) -> w.writeTo(o));
+        out.writeStringKeysMap(modelRoutingEntries);
     }
 
     @Override

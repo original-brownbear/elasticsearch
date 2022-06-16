@@ -90,7 +90,7 @@ public class NodesShutdownMetadata implements Metadata.Custom {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(nodes, StreamOutput::writeString, (outStream, v) -> v.writeTo(outStream));
+        out.writeStringKeysMap(nodes);
     }
 
     /**

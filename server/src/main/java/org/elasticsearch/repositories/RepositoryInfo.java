@@ -76,7 +76,7 @@ public final class RepositoryInfo implements Writeable, ToXContentFragment {
         out.writeString(ephemeralId);
         out.writeString(name);
         out.writeString(type);
-        out.writeMap(location, StreamOutput::writeString, StreamOutput::writeString);
+        out.writeStringStringMap(location);
         out.writeLong(startedAt);
         out.writeOptionalLong(stoppedAt);
     }

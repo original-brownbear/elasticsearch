@@ -361,7 +361,7 @@ public class FindStructureAction extends ActionType<FindStructureAction.Response
                 out.writeBoolean(false);
             } else {
                 out.writeBoolean(true);
-                out.writeCollection(columnNames, StreamOutput::writeString);
+                out.writeStringCollection(columnNames);
             }
             out.writeOptionalBoolean(hasHeaderRow);
             if (delimiter == null) {

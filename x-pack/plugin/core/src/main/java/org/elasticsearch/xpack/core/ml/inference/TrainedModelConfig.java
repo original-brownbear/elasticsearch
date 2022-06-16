@@ -381,7 +381,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         out.writeOptionalString(description);
         out.writeInstant(createTime);
         out.writeOptionalWriteable(definition);
-        out.writeCollection(tags, StreamOutput::writeString);
+        out.writeStringCollection(tags);
         out.writeGenericMap(metadata);
         input.writeTo(out);
         out.writeVLong(modelSize);
@@ -389,7 +389,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         out.writeString(licenseLevel.description());
         if (defaultFieldMap != null) {
             out.writeBoolean(true);
-            out.writeMap(defaultFieldMap, StreamOutput::writeString, StreamOutput::writeString);
+            out.writeStringStringMap(defaultFieldMap);
         } else {
             out.writeBoolean(false);
         }

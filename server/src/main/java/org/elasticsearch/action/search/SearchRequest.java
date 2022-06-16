@@ -311,7 +311,7 @@ public class SearchRequest extends ActionRequest implements IndicesRequest.Repla
         }
         Version waitForCheckpointsVersion = Version.V_7_16_0;
         if (out.getVersion().onOrAfter(waitForCheckpointsVersion)) {
-            out.writeMap(waitForCheckpoints, StreamOutput::writeString, StreamOutput::writeLongArray);
+            out.writeMap(waitForCheckpoints, StreamOutput::writeLongArray);
             out.writeTimeValue(waitForCheckpointsTimeout);
         } else if (waitForCheckpoints.isEmpty() == false) {
             throw new IllegalArgumentException(

@@ -544,7 +544,7 @@ public final class PersistentTasksCustomMetadata extends AbstractNamedDiffable<M
             .stream()
             .filter(t -> VersionedNamedWriteable.shouldSerialize(out, t.getParams()))
             .collect(Collectors.toMap(PersistentTask::getId, Function.identity()));
-        out.writeMap(filteredTasks, StreamOutput::writeString, (stream, value) -> value.writeTo(stream));
+        out.writeStringKeysMap(filteredTasks);
     }
 
     public static NamedDiff<Metadata.Custom> readDiffFrom(StreamInput in) throws IOException {

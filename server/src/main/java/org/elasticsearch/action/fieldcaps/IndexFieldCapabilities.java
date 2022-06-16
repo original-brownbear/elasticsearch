@@ -90,7 +90,7 @@ public class IndexFieldCapabilities implements Writeable {
             out.writeBoolean(isDimension);
             out.writeOptionalEnum(metricType);
         }
-        out.writeMap(meta, StreamOutput::writeString, StreamOutput::writeString);
+        out.writeStringStringMap(meta);
     }
 
     public String getName() {

@@ -104,7 +104,7 @@ public class GetComponentTemplateAction extends ActionType<GetComponentTemplateA
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap(componentTemplates, StreamOutput::writeString, (o, v) -> v.writeTo(o));
+            out.writeStringKeysMap(componentTemplates);
         }
 
         @Override

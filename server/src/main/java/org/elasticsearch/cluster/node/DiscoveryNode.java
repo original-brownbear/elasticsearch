@@ -387,7 +387,7 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
         out.writeString(hostName);
         out.writeString(hostAddress);
         address.writeTo(out);
-        out.writeMap(attributes, StreamOutput::writeString, StreamOutput::writeString);
+        out.writeStringStringMap(attributes);
         out.writeCollection(roles, (o, role) -> {
             o.writeString(role.roleName());
             o.writeString(role.roleNameAbbreviation());

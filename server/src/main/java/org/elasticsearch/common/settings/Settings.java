@@ -600,7 +600,7 @@ public final class Settings implements ToXContentFragment {
 
     public static void writeSettingsToStream(Settings settings, StreamOutput out) throws IOException {
         // pull settings to exclude secure settings in size()
-        out.writeMap(settings.settings, StreamOutput::writeString, (streamOutput, value) -> {
+        out.writeMap(settings.settings, (streamOutput, value) -> {
             if (value instanceof String) {
                 streamOutput.writeGenericString((String) value);
             } else if (value instanceof List<?>) {

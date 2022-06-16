@@ -121,7 +121,7 @@ public class ReloadAnalyzersResponse extends BroadcastResponse {
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
-        out.writeMap(reloadDetails, StreamOutput::writeString, (stream, details) -> details.writeTo(stream));
+        out.writeStringKeysMap(reloadDetails);
     }
 
     @Override

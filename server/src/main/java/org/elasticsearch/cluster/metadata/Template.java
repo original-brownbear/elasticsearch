@@ -138,7 +138,7 @@ public class Template implements SimpleDiffable<Template>, ToXContentObject {
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
-            out.writeMap(this.aliases, StreamOutput::writeString, (stream, aliasMetadata) -> aliasMetadata.writeTo(stream));
+            out.writeStringKeysMap(this.aliases);
         }
     }
 

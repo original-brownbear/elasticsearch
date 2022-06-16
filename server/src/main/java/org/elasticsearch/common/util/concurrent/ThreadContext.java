@@ -685,8 +685,8 @@ public final class ThreadContext implements Writeable {
                 requestHeaders.putAll(this.requestHeaders);
             }
 
-            out.writeMap(requestHeaders, StreamOutput::writeString, StreamOutput::writeString);
-            out.writeMap(responseHeaders, StreamOutput::writeString, StreamOutput::writeStringCollection);
+            out.writeStringStringMap(requestHeaders);
+            out.writeMap(responseHeaders, StreamOutput::writeStringCollection);
         }
     }
 

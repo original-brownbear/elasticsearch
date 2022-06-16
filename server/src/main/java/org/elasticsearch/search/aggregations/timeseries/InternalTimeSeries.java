@@ -69,7 +69,7 @@ public class InternalTimeSeries extends InternalMultiBucketAggregation<InternalT
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap(key, StreamOutput::writeString, StreamOutput::writeGenericValue);
+            out.writeMap(key, StreamOutput::writeGenericValue);
             out.writeVLong(docCount);
             aggregations.writeTo(out);
         }

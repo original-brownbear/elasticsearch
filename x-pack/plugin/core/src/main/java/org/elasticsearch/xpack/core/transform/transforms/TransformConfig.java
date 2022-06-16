@@ -434,7 +434,7 @@ public class TransformConfig implements SimpleDiffable<TransformConfig>, Writeab
         if (out.getVersion().onOrAfter(Version.V_7_3_0)) {
             out.writeOptionalTimeValue(frequency);
         }
-        out.writeMap(headers, StreamOutput::writeString, StreamOutput::writeString);
+        out.writeStringStringMap(headers);
         out.writeOptionalWriteable(pivotConfig);
         out.writeOptionalWriteable(latestConfig);
         out.writeOptionalString(description);
