@@ -359,18 +359,9 @@ public abstract class TransportTasksAction<
         NodeTasksResponse(StreamInput in) throws IOException {
             super(in);
             nodeId = in.readString();
-            int resultsSize = in.readVInt();
-            results = new ArrayList<>(resultsSize);
-            for (; resultsSize > 0; resultsSize--) {
-                final TaskResponse result = in.readBoolean() ? responseReader.read(in) : null;
-                results.add(result);
-            }
+            results = in.readList(i -> i.readOptionalWriteable(responseReader));
             if (in.readBoolean()) {
-                int taskFailures = in.readVInt();
-                exceptions = new ArrayList<>(taskFailures);
-                for (int i = 0; i < taskFailures; i++) {
-                    exceptions.add(new TaskOperationFailure(in));
-                }
+                exceptions = in.readList(TaskOperationFailure::new);
             } else {
                 exceptions = null;
             }

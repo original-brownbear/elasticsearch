@@ -40,10 +40,7 @@ public class IngestInfo implements ReportingService.Info {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.write(processors.size());
-        for (ProcessorInfo info : processors) {
-            info.writeTo(out);
-        }
+        out.writeCollection(processors);
     }
 
     public Iterable<ProcessorInfo> getProcessors() {

@@ -93,11 +93,7 @@ public class GeoPolygonQueryBuilder extends AbstractQueryBuilder<GeoPolygonQuery
     public GeoPolygonQueryBuilder(StreamInput in) throws IOException {
         super(in);
         fieldName = in.readString();
-        int size = in.readVInt();
-        shell = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            shell.add(in.readGeoPoint());
-        }
+        shell = in.readList(StreamInput::readGeoPoint);
         validationMethod = GeoValidationMethod.readFromStream(in);
         ignoreUnmapped = in.readBoolean();
     }

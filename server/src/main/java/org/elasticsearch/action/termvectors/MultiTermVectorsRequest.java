@@ -44,10 +44,7 @@ public class MultiTermVectorsRequest extends ActionRequest
         super(in);
         preference = in.readOptionalString();
         int size = in.readVInt();
-        requests = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            requests.add(new TermVectorsRequest(in));
-        }
+        requests = in.readList(TermVectorsRequest::new);
     }
 
     public MultiTermVectorsRequest() {}

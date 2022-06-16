@@ -13,13 +13,12 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class RecoveryFilesInfoRequest extends RecoveryTransportRequest {
 
-    private long recoveryId;
-    private ShardId shardId;
+    private final long recoveryId;
+    private final ShardId shardId;
 
     List<String> phase1FileNames;
     List<Long> phase1FileSizes;
@@ -32,29 +31,10 @@ public class RecoveryFilesInfoRequest extends RecoveryTransportRequest {
         super(in);
         recoveryId = in.readLong();
         shardId = new ShardId(in);
-        int size = in.readVInt();
-        phase1FileNames = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            phase1FileNames.add(in.readString());
-        }
-
-        size = in.readVInt();
-        phase1FileSizes = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            phase1FileSizes.add(in.readVLong());
-        }
-
-        size = in.readVInt();
-        phase1ExistingFileNames = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            phase1ExistingFileNames.add(in.readString());
-        }
-
-        size = in.readVInt();
-        phase1ExistingFileSizes = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            phase1ExistingFileSizes.add(in.readVLong());
-        }
+        phase1FileNames = in.readImmutableList(StreamInput::readString);
+        phase1FileSizes = in.readImmutableList(StreamInput::readVLong);
+        phase1ExistingFileNames = in.readImmutableList(StreamInput::readString);
+        phase1ExistingFileSizes = in.readImmutableList(StreamInput::readVLong);
         totalTranslogOps = in.readVInt();
     }
 

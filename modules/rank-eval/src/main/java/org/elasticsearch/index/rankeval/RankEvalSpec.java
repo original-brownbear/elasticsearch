@@ -22,7 +22,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,7 +45,7 @@ public class RankEvalSpec implements Writeable, ToXContentObject {
     /** Default max number of requests. */
     private static final int MAX_CONCURRENT_SEARCHES = 10;
     /** optional: Templates to base test requests on */
-    private final Map<String, Script> templates = new HashMap<>();
+    private final Map<String, Script> templates;
 
     public RankEvalSpec(List<RatedRequest> ratedRequests, EvaluationMetric metric, Collection<ScriptWithId> templates) {
         this.metric = Objects.requireNonNull(metric, "Cannot evaluate ranking if no evaluation metric is provided.");
@@ -67,6 +66,7 @@ public class RankEvalSpec implements Writeable, ToXContentObject {
                 }
             }
         }
+        this.templates = new HashMap<>();
         if (templates != null) {
             for (ScriptWithId idScript : templates) {
                 this.templates.put(idScript.id, idScript.script);
@@ -79,18 +79,9 @@ public class RankEvalSpec implements Writeable, ToXContentObject {
     }
 
     public RankEvalSpec(StreamInput in) throws IOException {
-        int specSize = in.readVInt();
-        ratedRequests = new ArrayList<>(specSize);
-        for (int i = 0; i < specSize; i++) {
-            ratedRequests.add(new RatedRequest(in));
-        }
+        ratedRequests = in.readList(RatedRequest::new);
         metric = in.readNamedWriteable(EvaluationMetric.class);
-        int size = in.readVInt();
-        for (int i = 0; i < size; i++) {
-            String key = in.readString();
-            Script value = new Script(in);
-            this.templates.put(key, value);
-        }
+        templates = in.readMap(StreamInput::readString, Script::new);
         maxConcurrentSearches = in.readVInt();
     }
 

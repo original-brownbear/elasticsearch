@@ -19,7 +19,6 @@ import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -35,8 +34,8 @@ public class BaseTasksResponse extends ActionResponse {
     protected static final String TASK_FAILURES = "task_failures";
     protected static final String NODE_FAILURES = "node_failures";
 
-    private List<TaskOperationFailure> taskFailures;
-    private List<ElasticsearchException> nodeFailures;
+    private final List<TaskOperationFailure> taskFailures;
+    private final List<ElasticsearchException> nodeFailures;
 
     public BaseTasksResponse(List<TaskOperationFailure> taskFailures, List<? extends ElasticsearchException> nodeFailures) {
         this.taskFailures = taskFailures == null ? Collections.emptyList() : List.copyOf(taskFailures);
@@ -45,18 +44,8 @@ public class BaseTasksResponse extends ActionResponse {
 
     public BaseTasksResponse(StreamInput in) throws IOException {
         super(in);
-        int size = in.readVInt();
-        List<TaskOperationFailure> taskFailures = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            taskFailures.add(new TaskOperationFailure(in));
-        }
-        size = in.readVInt();
-        this.taskFailures = Collections.unmodifiableList(taskFailures);
-        List<FailedNodeException> nodeFailures = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            nodeFailures.add(new FailedNodeException(in));
-        }
-        this.nodeFailures = Collections.unmodifiableList(nodeFailures);
+        taskFailures = in.readImmutableList(TaskOperationFailure::new);
+        this.nodeFailures = in.readImmutableList(FailedNodeException::new);
     }
 
     @Override

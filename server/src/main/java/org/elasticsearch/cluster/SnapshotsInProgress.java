@@ -788,18 +788,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             final boolean includeGlobalState = in.readBoolean();
             final boolean partial = in.readBoolean();
             final State state = State.fromValue(in.readByte());
-            final int indexCount = in.readVInt();
-            final Map<String, IndexId> indices;
-            if (indexCount == 0) {
-                indices = Collections.emptyMap();
-            } else {
-                final Map<String, IndexId> idx = Maps.newMapWithExpectedSize(indexCount);
-                for (int i = 0; i < indexCount; i++) {
-                    final IndexId indexId = new IndexId(in);
-                    idx.put(indexId.getName(), indexId);
-                }
-                indices = Collections.unmodifiableMap(idx);
-            }
+            final Map<String, IndexId> indices = in.readMapValues(IndexId::new, IndexId::getName);
             final long startTime = in.readLong();
             final ImmutableOpenMap<ShardId, ShardSnapshotStatus> shards = in.readImmutableOpenMap(
                 ShardId::new,
@@ -815,7 +804,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 RepositoryShardId::new,
                 ShardSnapshotStatus::readFrom
             );
-            final List<SnapshotFeatureInfo> featureStates = Collections.unmodifiableList(in.readList(SnapshotFeatureInfo::new));
+            final List<SnapshotFeatureInfo> featureStates = in.readImmutableList(SnapshotFeatureInfo::new);
             return new SnapshotsInProgress.Entry(
                 snapshot,
                 includeGlobalState,

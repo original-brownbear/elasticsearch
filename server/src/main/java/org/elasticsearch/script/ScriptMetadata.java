@@ -242,17 +242,7 @@ public final class ScriptMetadata implements Metadata.Custom, Writeable, ToXCont
     }
 
     public ScriptMetadata(StreamInput in) throws IOException {
-        Map<String, StoredScriptSource> scripts = new HashMap<>();
-        StoredScriptSource source;
-        int size = in.readVInt();
-
-        for (int i = 0; i < size; i++) {
-            String id = in.readString();
-            source = new StoredScriptSource(in);
-            scripts.put(id, source);
-        }
-
-        this.scripts = Collections.unmodifiableMap(scripts);
+        this.scripts = in.readImmutableMap(StreamInput::readString, StoredScriptSource::new);
     }
 
     @Override

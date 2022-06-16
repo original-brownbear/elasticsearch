@@ -245,25 +245,17 @@ public final class GeometryIO {
     }
 
     private static MultiPoint readMultiPoint(StreamInput in) throws IOException {
-        int size = in.readVInt();
-        List<Point> points = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
+        return new MultiPoint(in.readList(i -> {
             double lon = in.readDouble();
             double lat = in.readDouble();
             double alt = readAlt(in);
-            points.add(new Point(lon, lat, alt));
-        }
-        return new MultiPoint(points);
+            return new Point(lon, lat, alt);
+        }));
     }
 
     private static MultiPolygon readMultiPolygon(StreamInput in) throws IOException {
         in.readBoolean(); // orientation for BWC
-        int size = in.readVInt();
-        List<Polygon> polygons = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            polygons.add(readPolygon(in));
-        }
-        return new MultiPolygon(polygons);
+        return new MultiPolygon(in.readList(GeometryIO::readPolygon));
     }
 
     private static Rectangle readRectangle(StreamInput in) throws IOException {
