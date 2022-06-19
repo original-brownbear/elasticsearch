@@ -394,12 +394,9 @@ public final class PainlessScriptEngine implements ScriptEngine {
 
         try {
             // Drop all permissions to actually compile the code itself.
-            return AccessController.doPrivileged(new PrivilegedAction<ScriptScope>() {
-                @Override
-                public ScriptScope run() {
-                    String name = scriptName == null ? source : scriptName;
-                    return compiler.compile(loader, name, source, compilerSettings);
-                }
+            return AccessController.doPrivileged((PrivilegedAction<ScriptScope>) () -> {
+                String name = scriptName == null ? source : scriptName;
+                return compiler.compile(loader, name, source, compilerSettings);
             }, COMPILATION_CONTEXT);
             // Note that it is safe to catch any of the following errors since Painless is stateless.
         } catch (SecurityException e) {

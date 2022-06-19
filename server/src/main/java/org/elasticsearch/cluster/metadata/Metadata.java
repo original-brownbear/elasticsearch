@@ -1625,7 +1625,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
         }
 
         public Builder removeCustomIf(BiPredicate<String, Custom> p) {
-            customs.removeAll(p::test);
+            customs.removeAll(p);
             return this;
         }
 

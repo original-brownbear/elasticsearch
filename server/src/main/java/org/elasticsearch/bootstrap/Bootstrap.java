@@ -59,14 +59,11 @@ final class Bootstrap {
 
     /** creates a new instance */
     Bootstrap() {
-        keepAliveThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    keepAliveLatch.await();
-                } catch (InterruptedException e) {
-                    // bail out
-                }
+        keepAliveThread = new Thread(() -> {
+            try {
+                keepAliveLatch.await();
+            } catch (InterruptedException e) {
+                // bail out
             }
         }, "elasticsearch[keepAlive/" + Version.CURRENT + "]");
         keepAliveThread.setDaemon(false);
@@ -115,18 +112,15 @@ final class Bootstrap {
 
         // listener for windows close event
         if (ctrlHandler) {
-            Natives.addConsoleCtrlHandler(new ConsoleCtrlHandler() {
-                @Override
-                public boolean handle(int code) {
-                    if (CTRL_CLOSE_EVENT == code) {
-                        logger.info("running graceful exit on windows");
-                        if (Bootstrap.INSTANCE != null) {
-                            Bootstrap.INSTANCE.shutdown();
-                        }
-                        return true;
+            Natives.addConsoleCtrlHandler(code -> {
+                if (ConsoleCtrlHandler.CTRL_CLOSE_EVENT == code) {
+                    logger.info("running graceful exit on windows");
+                    if (Bootstrap.INSTANCE != null) {
+                        Bootstrap.INSTANCE.shutdown();
                     }
-                    return false;
+                    return true;
                 }
+                return false;
             });
         }
 

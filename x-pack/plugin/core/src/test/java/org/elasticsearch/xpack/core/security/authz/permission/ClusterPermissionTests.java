@@ -33,12 +33,7 @@ import static org.mockito.Mockito.mock;
 public class ClusterPermissionTests extends ESTestCase {
     private TransportRequest mockTransportRequest;
     private Authentication mockAuthentication;
-    private ClusterPrivilege cpThatDoesNothing = new ClusterPrivilege() {
-        @Override
-        public ClusterPermission.Builder buildPermission(ClusterPermission.Builder builder) {
-            return builder;
-        }
-    };
+    private final ClusterPrivilege cpThatDoesNothing = builder -> builder;
 
     @Before
     public void setup() {

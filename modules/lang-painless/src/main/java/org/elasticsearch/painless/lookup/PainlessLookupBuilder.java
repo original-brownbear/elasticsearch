@@ -2335,12 +2335,9 @@ public final class PainlessLookupBuilder {
             bridgeClassWriter.visitEnd();
 
             try {
-                BridgeLoader bridgeLoader = AccessController.doPrivileged(new PrivilegedAction<BridgeLoader>() {
-                    @Override
-                    public BridgeLoader run() {
-                        return new BridgeLoader(javaMethod.getDeclaringClass().getClassLoader());
-                    }
-                });
+                BridgeLoader bridgeLoader = AccessController.doPrivileged(
+                    (PrivilegedAction<BridgeLoader>) () -> new BridgeLoader(javaMethod.getDeclaringClass().getClassLoader())
+                );
 
                 Class<?> bridgeClass = bridgeLoader.defineBridge(bridgeClassName.replace('/', '.'), bridgeClassWriter.toByteArray());
                 Method bridgeMethod = bridgeClass.getMethod(

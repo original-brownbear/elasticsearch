@@ -613,7 +613,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
     }
 
     private static <T> void runAsync(Executor executor, CheckedSupplier<T, Exception> executable, ActionListener<T> listener) {
-        executor.execute(ActionRunnable.supply(listener, executable::get));
+        executor.execute(ActionRunnable.supply(listener, executable));
     }
 
     private SearchPhaseResult executeQueryPhase(ShardSearchRequest request, SearchShardTask task) throws Exception {

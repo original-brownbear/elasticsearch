@@ -294,24 +294,23 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
         SinglePhaseSearchAction phaseSearchAction,
         ActionListener<SearchResponse> listener
     ) {
-        executeRequest(task, searchRequest, new SearchAsyncActionProvider() {
-            @Override
-            public AbstractSearchAsyncAction<? extends SearchPhaseResult> asyncSearchAction(
-                SearchTask task,
-                SearchRequest searchRequest,
-                Executor executor,
-                GroupShardsIterator<SearchShardIterator> shardsIts,
-                SearchTimeProvider timeProvider,
-                BiFunction<String, String, Transport.Connection> connectionLookup,
-                ClusterState clusterState,
-                Map<String, AliasFilter> aliasFilter,
-                Map<String, Float> concreteIndexBoosts,
-                ActionListener<SearchResponse> listener,
-                boolean preFilter,
-                ThreadPool threadPool,
-                SearchResponse.Clusters clusters
-            ) {
-                return new AbstractSearchAsyncAction<>(
+        executeRequest(
+            task,
+            searchRequest,
+            (
+                tsk,
+                request,
+                executor,
+                shardsIts,
+                timeProvider,
+                connectionLookup,
+                clusterState,
+                aliasFilter,
+                concreteIndexBoosts,
+                delegatedListener,
+                preFilter,
+                threadPool,
+                clusters) -> new AbstractSearchAsyncAction<>(
                     actionName,
                     logger,
                     searchTransportService,
@@ -319,12 +318,12 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     aliasFilter,
                     concreteIndexBoosts,
                     executor,
-                    searchRequest,
-                    listener,
+                    request,
+                    delegatedListener,
                     shardsIts,
                     timeProvider,
                     clusterState,
-                    task,
+                    tsk,
                     new ArraySearchPhaseResults<>(shardsIts.size()),
                     1,
                     clusters
@@ -333,10 +332,10 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     protected void executePhaseOnShard(
                         SearchShardIterator shardIt,
                         SearchShardTarget shard,
-                        SearchActionListener<SearchPhaseResult> listener
+                        SearchActionListener<SearchPhaseResult> listener1
                     ) {
                         final Transport.Connection connection = getConnection(shard.getClusterAlias(), shard.getNodeId());
-                        phaseSearchAction.executeOnShardTarget(task, shardIt, connection, listener);
+                        phaseSearchAction.executeOnShardTarget(tsk, shardIt, connection, listener1);
                     }
 
                     @Override
@@ -354,9 +353,9 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                     boolean buildPointInTimeFromSearchResults() {
                         return includeSearchContext;
                     }
-                };
-            }
-        }, listener);
+                },
+            listener
+        );
     }
 
     private void executeRequest(
