@@ -1955,27 +1955,20 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                     );
                     assert existing == null : "duplicate data stream alias for " + alias.getName();
                 }
-                for (DataStream dataStream : dataStreamMetadata.dataStreams().values()) {
+                dataStreamMetadata.dataStreams().forEach((name, dataStream) -> {
                     assert dataStream.getIndices().isEmpty() == false;
-
-                    List<String> aliases = dataStreamToAliasLookup.getOrDefault(dataStream.getName(), List.of());
+                    List<String> aliases = dataStreamToAliasLookup.getOrDefault(name, List.of());
                     final IndexAbstraction.DataStream dsAbstraction = new IndexAbstraction.DataStream(dataStream, aliases);
-                    IndexAbstraction existing = indicesLookup.put(
-                        dataStream.getName(),
-                        new IndexAbstraction.DataStream(dataStream, aliases)
-                    );
-                    assert existing == null : "duplicate data stream for " + dataStream.getName();
-
+                    IndexAbstraction existing = indicesLookup.put(name, new IndexAbstraction.DataStream(dataStream, aliases));
+                    assert existing == null : "duplicate data stream for " + name;
                     for (Index i : dataStream.getIndices()) {
                         indexToDataStreamLookup.put(i.getName(), dsAbstraction);
                     }
-                }
+                });
             }
 
             Map<String, List<IndexMetadata>> aliasToIndices = new HashMap<>();
-            for (var entry : indices.entrySet()) {
-                final String name = entry.getKey();
-                final IndexMetadata indexMetadata = entry.getValue();
+            indices.forEach((name, indexMetadata) -> {
                 final IndexAbstraction.DataStream parent = indexToDataStreamLookup.get(name);
                 assert parent == null || parent.getIndices().stream().anyMatch(index -> name.equals(index.getName()))
                     : "Expected data stream [" + parent.getName() + "] to contain index " + indexMetadata.getIndex();
@@ -1986,7 +1979,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                     List<IndexMetadata> aliasIndices = aliasToIndices.computeIfAbsent(aliasMetadata.getAlias(), k -> new ArrayList<>());
                     aliasIndices.add(indexMetadata);
                 }
-            }
+            });
 
             for (var entry : aliasToIndices.entrySet()) {
                 AliasMetadata alias = entry.getValue().get(0).getAliases().get(entry.getKey());
