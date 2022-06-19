@@ -75,8 +75,8 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
     }
 
     public ClusterInfo(StreamInput in) throws IOException {
-        this.leastAvailableSpaceUsage = in.readImmutableMap(StreamInput::readString, DiskUsage::new);
-        this.mostAvailableSpaceUsage = in.readImmutableMap(StreamInput::readString, DiskUsage::new);
+        this.leastAvailableSpaceUsage = in.readImmutableMap(StreamInput::readString, DiskUsage::readFrom);
+        this.mostAvailableSpaceUsage = in.readImmutableMap(StreamInput::readString, DiskUsage::readFrom);
         this.shardSizes = in.readImmutableMap(StreamInput::readString, StreamInput::readLong);
         if (in.getVersion().onOrAfter(DATA_SET_SIZE_SIZE_VERSION)) {
             this.shardDataSetSizes = in.readImmutableMap(ShardId::new, StreamInput::readLong);
@@ -111,7 +111,7 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
             for (Map.Entry<String, DiskUsage> c : this.leastAvailableSpaceUsage.entrySet()) {
                 builder.startObject(c.getKey());
                 { // node
-                    builder.field("node_name", c.getValue().getNodeName());
+                    builder.field("node_name", c.getValue().nodeName());
                     builder.startObject("least_available");
                     {
                         c.getValue().toShortXContent(builder);
