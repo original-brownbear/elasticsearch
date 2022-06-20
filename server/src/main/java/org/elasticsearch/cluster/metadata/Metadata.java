@@ -1239,6 +1239,8 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
         private CoordinationMetadata coordinationMetadata = CoordinationMetadata.EMPTY_METADATA;
         private Settings transientSettings = Settings.EMPTY;
         private Settings persistentSettings = Settings.EMPTY;
+
+        private Settings settings = null;
         private DiffableStringMap hashesOfConsistentSettings = DiffableStringMap.EMPTY;
 
         private final ImmutableOpenMap.Builder<String, IndexMetadata> indices;
@@ -1274,6 +1276,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             this.customs = ImmutableOpenMap.builder(metadata.customs);
             this.previousIndicesLookup = metadata.indicesLookup;
             this.mappingsByHash = new HashMap<>(metadata.mappingsByHash);
+            this.settings = metadata.settings;
             this.checkForUnusedMappings = false;
         }
 
@@ -1694,6 +1697,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
 
         public Builder transientSettings(Settings settings) {
             this.transientSettings = settings;
+            this.settings = null;
             return this;
         }
 
@@ -1703,6 +1707,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
 
         public Builder persistentSettings(Settings settings) {
             this.persistentSettings = settings;
+            this.settings = null;
             return this;
         }
 
@@ -1817,7 +1822,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 coordinationMetadata,
                 transientSettings,
                 persistentSettings,
-                Settings.builder().put(persistentSettings).put(transientSettings).build(),
+                buildCombinedSettings(),
                 hashesOfConsistentSettings,
                 totalNumberOfShards,
                 totalOpenIndexShards,
@@ -1835,6 +1840,14 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 Collections.unmodifiableMap(mappingsByHash),
                 Version.fromId(oldestIndexVersionId)
             );
+        }
+
+        private Settings buildCombinedSettings() {
+            if (settings != null) {
+                assert settings.equals(Settings.builder().put(persistentSettings).put(transientSettings).build());
+                return settings;
+            }
+            return Settings.builder().put(persistentSettings).put(transientSettings).build();
         }
 
         private static void ensureNoNameCollisions(
