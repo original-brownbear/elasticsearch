@@ -139,7 +139,7 @@ public class SystemIndexManager implements ClusterStateListener {
         return this.systemIndices.getSystemIndexDescriptors()
             .stream()
             .filter(SystemIndexDescriptor::isAutomaticallyManaged)
-            .filter(d -> metadata.hasIndexAbstraction(d.getPrimaryIndex()))
+            .filter(d -> metadata.index(d.getPrimaryIndex()) != null)
             .toList();
     }
 
