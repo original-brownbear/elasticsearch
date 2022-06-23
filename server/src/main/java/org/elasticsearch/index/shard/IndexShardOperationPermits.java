@@ -14,7 +14,6 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.support.ContextPreservingActionListener;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
-import org.elasticsearch.common.util.concurrent.ThreadContext.StoredContext;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
@@ -23,7 +22,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.Closeable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +29,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 /**
  * Tracks shard operation permits. Each operation on the shard obtains a permit. When we need to block operations (e.g., to transition
@@ -104,7 +101,7 @@ final class IndexShardOperationPermits implements Closeable {
             @Override
             protected void doRun() throws Exception {
                 final Releasable releasable = acquireAll(timeout, timeUnit);
-                onAcquired.onResponse(() -> Releasables.close(releasable, released));
+                onAcquired.onResponse(Releasables.wrap(releasable, released));
             }
         });
     }
@@ -127,14 +124,12 @@ final class IndexShardOperationPermits implements Closeable {
             }
         }
         if (semaphore.tryAcquire(TOTAL_PERMITS, timeout, timeUnit)) {
-            final Releasable release = Releasables.releaseOnce(() -> {
+            return Releasables.releaseOnce(() -> {
                 assert semaphore.availablePermits() == 0;
                 semaphore.release(TOTAL_PERMITS);
             });
-            return release;
-        } else {
-            throw new TimeoutException("timeout while blocking operations");
         }
+        throw new TimeoutException("timeout while blocking operations");
     }
 
     private void releaseDelayedOperations() {
@@ -142,29 +137,27 @@ final class IndexShardOperationPermits implements Closeable {
         synchronized (this) {
             assert queuedBlockOperations > 0;
             queuedBlockOperations--;
-            if (queuedBlockOperations == 0) {
+            if (queuedBlockOperations == 0 && delayedOperations.isEmpty() == false) {
                 queuedActions = new ArrayList<>(delayedOperations);
                 delayedOperations.clear();
             } else {
-                queuedActions = Collections.emptyList();
+                return;
             }
         }
-        if (queuedActions.isEmpty() == false) {
-            /*
-             * Try acquiring permits on fresh thread (for two reasons):
-             *   - blockOperations can be called on a recovery thread which can be expected to be interrupted when recovery is cancelled;
-             *     interruptions are bad here as permit acquisition will throw an interrupted exception which will be swallowed by
-             *     the threaded action listener if the queue of the thread pool on which it submits is full
-             *   - if a permit is acquired and the queue of the thread pool which the threaded action listener uses is full, the
-             *     onFailure handler is executed on the calling thread; this should not be the recovery thread as it would delay the
-             *     recovery
-             */
-            threadPool.executor(ThreadPool.Names.GENERIC).execute(() -> {
-                for (DelayedOperation queuedAction : queuedActions) {
-                    acquire(queuedAction.listener, null, false, queuedAction.debugInfo, queuedAction.stackTrace);
-                }
-            });
-        }
+        /*
+         * Try acquiring permits on fresh thread (for two reasons):
+         *   - blockOperations can be called on a recovery thread which can be expected to be interrupted when recovery is cancelled;
+         *     interruptions are bad here as permit acquisition will throw an interrupted exception which will be swallowed by
+         *     the threaded action listener if the queue of the thread pool on which it submits is full
+         *   - if a permit is acquired and the queue of the thread pool which the threaded action listener uses is full, the
+         *     onFailure handler is executed on the calling thread; this should not be the recovery thread as it would delay the
+         *     recovery
+         */
+        threadPool.executor(ThreadPool.Names.GENERIC).execute(() -> {
+            for (DelayedOperation queuedAction : queuedActions) {
+                acquire(queuedAction.listener, null, false, queuedAction.debugInfo, queuedAction.stackTrace);
+            }
+        });
     }
 
     /**
@@ -213,32 +206,7 @@ final class IndexShardOperationPermits implements Closeable {
         try {
             synchronized (this) {
                 if (queuedBlockOperations > 0) {
-                    final Supplier<StoredContext> contextSupplier = threadPool.getThreadContext().newRestorableContext(false);
-                    final ActionListener<Releasable> wrappedListener;
-                    if (executorOnDelay != null) {
-                        wrappedListener = new ContextPreservingActionListener<>(contextSupplier, onAcquired).delegateFailure(
-                            (l, r) -> threadPool.executor(executorOnDelay).execute(new ActionRunnable<>(l) {
-                                @Override
-                                public boolean isForceExecution() {
-                                    return forceExecution;
-                                }
-
-                                @Override
-                                protected void doRun() {
-                                    listener.onResponse(r);
-                                }
-
-                                @Override
-                                public void onRejection(Exception e) {
-                                    IOUtils.closeWhileHandlingException(r);
-                                    super.onRejection(e);
-                                }
-                            })
-                        );
-                    } else {
-                        wrappedListener = new ContextPreservingActionListener<>(contextSupplier, onAcquired);
-                    }
-                    delayedOperations.add(new DelayedOperation(wrappedListener, debugInfo, stackTrace));
+                    queueDelayedOperation(onAcquired, executorOnDelay, forceExecution, debugInfo, stackTrace);
                     return;
                 } else {
                     releasable = acquire(debugInfo, stackTrace);
@@ -250,6 +218,31 @@ final class IndexShardOperationPermits implements Closeable {
         }
         // execute this outside the synchronized block!
         onAcquired.onResponse(releasable);
+    }
+
+    private void queueDelayedOperation(
+        ActionListener<Releasable> onAcquired,
+        String executorOnDelay,
+        boolean forceExecution,
+        Object debugInfo,
+        StackTraceElement[] stackTrace
+    ) {
+        assert Thread.holdsLock(this);
+        final ActionListener<Releasable> wrappedListener = new ContextPreservingActionListener<>(
+            threadPool.getThreadContext().newRestorableContext(false),
+            onAcquired
+        );
+        delayedOperations.add(
+            new DelayedOperation(
+                executorOnDelay == null || ThreadPool.Names.SAME.equals(executorOnDelay)
+                    ? wrappedListener
+                    : wrappedListener.delegateFailure(
+                        (l, r) -> threadPool.executor(executorOnDelay).execute(new DelayedAcquireTask(l, forceExecution, r))
+                    ),
+                debugInfo,
+                stackTrace
+            )
+        );
     }
 
     private Releasable acquire(Object debugInfo, StackTraceElement[] stackTrace) throws InterruptedException {
@@ -315,6 +308,33 @@ final class IndexShardOperationPermits implements Closeable {
                 this.debugInfo = null;
                 this.stackTrace = null;
             }
+        }
+    }
+
+    private static final class DelayedAcquireTask extends ActionRunnable<Releasable> {
+        private final boolean forceExecution;
+        private final Releasable r;
+
+        DelayedAcquireTask(ActionListener<Releasable> listener, boolean forceExecution, Releasable r) {
+            super(listener);
+            this.forceExecution = forceExecution;
+            this.r = r;
+        }
+
+        @Override
+        public boolean isForceExecution() {
+            return forceExecution;
+        }
+
+        @Override
+        protected void doRun() {
+            listener.onResponse(r);
+        }
+
+        @Override
+        public void onRejection(Exception e) {
+            IOUtils.closeWhileHandlingException(r);
+            super.onRejection(e);
         }
     }
 }
