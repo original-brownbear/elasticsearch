@@ -651,7 +651,16 @@ public class ReplicationTracker extends AbstractIndexShardComponent implements L
          */
         boolean tracked;
 
-        public CheckpointState(long localCheckpoint, long globalCheckpoint, boolean inSync, boolean tracked) {
+        private static CheckpointState newUnassigned(boolean inSyncAndTracked) {
+            return new CheckpointState(
+                SequenceNumbers.UNASSIGNED_SEQ_NO,
+                SequenceNumbers.UNASSIGNED_SEQ_NO,
+                inSyncAndTracked,
+                inSyncAndTracked
+            );
+        }
+
+        private CheckpointState(long localCheckpoint, long globalCheckpoint, boolean inSync, boolean tracked) {
             this.localCheckpoint = localCheckpoint;
             this.globalCheckpoint = globalCheckpoint;
             this.inSync = inSync;
@@ -1194,24 +1203,17 @@ public class ReplicationTracker extends AbstractIndexShardComponent implements L
                 for (String initializingId : initializingAllocationIds) {
                     assert checkpoints.containsKey(initializingId) || inSyncAllocationIds.contains(initializingId) == false
                         : "update from master in primary mode has " + initializingId + " as in-sync but it does not exist locally";
-                    checkpoints.computeIfAbsent(
-                        initializingId,
-                        id -> new CheckpointState(SequenceNumbers.UNASSIGNED_SEQ_NO, SequenceNumbers.UNASSIGNED_SEQ_NO, false, false)
-                    );
+                    checkpoints.computeIfAbsent(initializingId, id -> CheckpointState.newUnassigned(false));
                 }
                 if (removedEntries) {
                     pendingInSync.retainAll(checkpointKeys);
                 }
             } else {
                 for (String initializingId : initializingAllocationIds) {
-                    final long localCheckpoint = SequenceNumbers.UNASSIGNED_SEQ_NO;
-                    final long globalCheckpoint = localCheckpoint;
-                    checkpoints.put(initializingId, new CheckpointState(localCheckpoint, globalCheckpoint, false, false));
+                    checkpoints.put(initializingId, CheckpointState.newUnassigned(false));
                 }
                 for (String inSyncId : inSyncAllocationIds) {
-                    final long localCheckpoint = SequenceNumbers.UNASSIGNED_SEQ_NO;
-                    final long globalCheckpoint = localCheckpoint;
-                    checkpoints.put(inSyncId, new CheckpointState(localCheckpoint, globalCheckpoint, true, true));
+                    checkpoints.put(inSyncId, CheckpointState.newUnassigned(true));
                 }
             }
             appliedClusterStateVersion = applyingClusterStateVersion;
