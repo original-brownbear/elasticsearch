@@ -1407,8 +1407,21 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
         }
 
         public Builder indices(Map<String, IndexMetadata> indices) {
-            for (var value : indices.values()) {
-                put(value, false);
+            if (this.indices.size() == 0) {
+                // fast path if we don't have to check against existing indices
+                this.indices.ensureCapacity(indices.size());
+                for (var value : indices.values()) {
+                    value = dedupeMapping(value);
+                    // if we put a new index metadata, increment its version
+                    IndexMetadata previous = this.indices.put(value.getIndex().getName(), value);
+                    assert previous == null;
+                    updateAliases(null, value);
+                }
+                previousIndicesLookup = null;
+            } else {
+                for (var value : indices.values()) {
+                    put(value, false);
+                }
             }
             return this;
         }

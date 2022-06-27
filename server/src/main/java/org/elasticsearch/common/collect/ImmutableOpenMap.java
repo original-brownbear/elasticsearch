@@ -423,6 +423,15 @@ public final class ImmutableOpenMap<KType, VType> extends AbstractMap<KType, VTy
         }
 
         /**
+         * Ensure builder has capacity for the given map size without rehashing on insertions.
+         */
+        public Builder<KType, VType> ensureCapacity(int size) {
+            maybeCloneMap();
+            this.mutableMap.ensureCapacity(size);
+            return this;
+        }
+
+        /**
          * Puts all the entries in the map to the builder.
          */
         public Builder<KType, VType> putAllFromMap(Map<KType, VType> map) {
