@@ -43,7 +43,7 @@ public class ReloadAnalyzersResponse extends BroadcastResponse {
 
     public ReloadAnalyzersResponse(StreamInput in) throws IOException {
         super(in);
-        this.reloadDetails = in.readMap(StreamInput::readString, ReloadDetails::new);
+        this.reloadDetails = in.readMap(ReloadDetails::new);
     }
 
     public ReloadAnalyzersResponse(
@@ -155,8 +155,8 @@ public class ReloadAnalyzersResponse extends BroadcastResponse {
 
         ReloadDetails(StreamInput in) throws IOException {
             this.indexName = in.readString();
-            this.reloadedIndicesNodes = new HashSet<>(in.readList(StreamInput::readString));
-            this.reloadedAnalyzers = new HashSet<>(in.readList(StreamInput::readString));
+            this.reloadedIndicesNodes = new HashSet<>(in.readStringList());
+            this.reloadedAnalyzers = new HashSet<>(in.readStringList());
         }
 
         @Override

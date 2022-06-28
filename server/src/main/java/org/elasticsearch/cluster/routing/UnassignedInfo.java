@@ -296,7 +296,7 @@ public final class UnassignedInfo implements ToXContentFragment, Writeable {
         this.failure = in.readException();
         this.failedAllocations = in.readVInt();
         this.lastAllocationStatus = AllocationStatus.readFrom(in);
-        this.failedNodeIds = Collections.unmodifiableSet(in.readSet(StreamInput::readString));
+        this.failedNodeIds = Collections.unmodifiableSet(in.readStringSet());
         if (in.getVersion().onOrAfter(VERSION_LAST_ALLOCATED_NODE_ADDED)) {
             this.lastAllocatedNodeId = in.readOptionalString();
         } else {

@@ -122,7 +122,7 @@ public class ShardFollowTask extends ImmutableFollowParameters implements Persis
         this.remoteCluster = remoteCluster;
         this.followShardId = followShardId;
         this.leaderShardId = leaderShardId;
-        this.headers = Collections.unmodifiableMap(in.readMap(StreamInput::readString, StreamInput::readString));
+        this.headers = Collections.unmodifiableMap(in.readStringStringMap());
     }
 
     public String getRemoteCluster() {

@@ -67,7 +67,7 @@ class GeoIpTaskState implements PersistentTaskState, VersionedNamedWriteable {
     }
 
     GeoIpTaskState(StreamInput input) throws IOException {
-        databases = Collections.unmodifiableMap(input.readMap(StreamInput::readString, in -> {
+        databases = Collections.unmodifiableMap(input.readMap(in -> {
             long lastUpdate = in.readLong();
             return new Metadata(lastUpdate, in.readVInt(), in.readVInt(), in.readString(), in.readLong());
         }));

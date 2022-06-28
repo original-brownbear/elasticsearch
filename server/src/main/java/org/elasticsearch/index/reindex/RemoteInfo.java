@@ -14,7 +14,6 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.SecureString;
-import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.DeprecationHandler;
@@ -104,12 +103,7 @@ public class RemoteInfo implements Writeable, ToXContentObject, Closeable {
         } else {
             password = in.readOptionalSecureString();
         }
-        int headersLength = in.readVInt();
-        Map<String, String> headers = Maps.newMapWithExpectedSize(headersLength);
-        for (int i = 0; i < headersLength; i++) {
-            headers.put(in.readString(), in.readString());
-        }
-        this.headers = unmodifiableMap(headers);
+        this.headers = in.readImmutableMap(StreamInput::readString);
         socketTimeout = in.readTimeValue();
         connectTimeout = in.readTimeValue();
         pathPrefix = in.readOptionalString();
