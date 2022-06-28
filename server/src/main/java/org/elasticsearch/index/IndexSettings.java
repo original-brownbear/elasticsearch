@@ -7,7 +7,6 @@
  */
 package org.elasticsearch.index;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.apache.lucene.index.MergePolicy;
 import org.elasticsearch.Build;
@@ -106,13 +105,11 @@ public final class IndexSettings {
         Property.Dynamic,
         Property.IndexScope
     );
-    public static final Setting<String> INDEX_CHECK_ON_STARTUP = new Setting<>("index.shard.check_on_startup", "false", (s) -> {
-        return switch (s) {
-            case "false", "true", "checksum" -> s;
-            default -> throw new IllegalArgumentException(
-                "unknown value for [index.shard.check_on_startup] must be one of " + "[true, false, checksum] but was: " + s
-            );
-        };
+    public static final Setting<String> INDEX_CHECK_ON_STARTUP = new Setting<>("index.shard.check_on_startup", "false", (s) -> switch (s) {
+        case "false", "true", "checksum" -> s;
+        default -> throw new IllegalArgumentException(
+            "unknown value for [index.shard.check_on_startup] must be one of " + "[true, false, checksum] but was: " + s
+        );
     }, Property.IndexScope);
 
     /**
@@ -540,7 +537,6 @@ public final class IndexSettings {
 
     private final Index index;
     private final Version version;
-    private final Logger logger;
     private final String nodeName;
     private final Settings nodeSettings;
     private final int numberOfShards;
@@ -603,8 +599,6 @@ public final class IndexSettings {
     private volatile TimeValue searchIdleAfter;
     private volatile int maxAnalyzedOffset;
     private volatile int maxTermsCount;
-    private volatile String defaultPipeline;
-    private volatile String requiredPipeline;
     private volatile boolean searchThrottled;
     private volatile long mappingNestedFieldsLimit;
     private volatile long mappingNestedDocsLimit;
@@ -692,7 +686,6 @@ public final class IndexSettings {
         this.settings = Settings.builder().put(nodeSettings).put(indexMetadata.getSettings()).build();
         this.index = indexMetadata.getIndex();
         version = IndexMetadata.SETTING_INDEX_VERSION_CREATED.get(settings);
-        logger = Loggers.getLogger(getClass(), index);
         nodeName = Node.NODE_NAME_SETTING.get(settings);
         this.indexMetadata = indexMetadata;
         numberOfShards = settings.getAsInt(IndexMetadata.SETTING_NUMBER_OF_SHARDS, null);
@@ -730,10 +723,9 @@ public final class IndexSettings {
         maxAnalyzedOffset = scopedSettings.get(MAX_ANALYZED_OFFSET_SETTING);
         maxTermsCount = scopedSettings.get(MAX_TERMS_COUNT_SETTING);
         maxRegexLength = scopedSettings.get(MAX_REGEX_LENGTH_SETTING);
-        this.mergePolicyConfig = new MergePolicyConfig(logger, this);
+        this.mergePolicyConfig = new MergePolicyConfig(Loggers.getLogger(IndexSettings.class, index), this);
         this.indexSortConfig = new IndexSortConfig(this);
         searchIdleAfter = scopedSettings.get(INDEX_SEARCH_IDLE_AFTER);
-        defaultPipeline = scopedSettings.get(DEFAULT_PIPELINE);
         mappingNestedFieldsLimit = scopedSettings.get(INDEX_MAPPING_NESTED_FIELDS_LIMIT_SETTING);
         mappingNestedDocsLimit = scopedSettings.get(INDEX_MAPPING_NESTED_DOCS_LIMIT_SETTING);
         mappingTotalFieldsLimit = scopedSettings.get(INDEX_MAPPING_TOTAL_FIELDS_LIMIT_SETTING);
@@ -1241,21 +1233,9 @@ public final class IndexSettings {
         return searchIdleAfter;
     }
 
-    public String getDefaultPipeline() {
-        return defaultPipeline;
-    }
+    public void setDefaultPipeline(String defaultPipeline) {}
 
-    public void setDefaultPipeline(String defaultPipeline) {
-        this.defaultPipeline = defaultPipeline;
-    }
-
-    public String getRequiredPipeline() {
-        return requiredPipeline;
-    }
-
-    public void setRequiredPipeline(final String requiredPipeline) {
-        this.requiredPipeline = requiredPipeline;
-    }
+    public void setRequiredPipeline(final String requiredPipeline) {}
 
     /**
      * Returns <code>true</code> if soft-delete is enabled.

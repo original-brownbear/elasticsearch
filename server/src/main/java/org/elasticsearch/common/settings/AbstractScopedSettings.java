@@ -166,7 +166,7 @@ public abstract class AbstractScopedSettings {
      * @return the unmerged applied settings
     */
     public synchronized Settings applySettings(Settings newSettings) {
-        if (lastSettingsApplied != null && newSettings.equals(lastSettingsApplied)) {
+        if (newSettings.equals(lastSettingsApplied)) {
             // nothing changed in the settings, ignore
             return newSettings;
         }
@@ -515,11 +515,10 @@ public abstract class AbstractScopedSettings {
      *
      * @param key the key of the setting to validate
      * @param settings the settings
-     * @param validateValue true if value should be validated, otherwise only keys are validated
      * @throws IllegalArgumentException if the setting is invalid
      */
-    void validate(final String key, final Settings settings, final boolean validateValue) {
-        validate(key, settings, validateValue, false);
+    void validate(final String key, final Settings settings) {
+        validate(key, settings, true, false);
     }
 
     /**

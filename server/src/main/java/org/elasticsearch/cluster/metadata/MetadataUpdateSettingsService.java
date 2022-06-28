@@ -52,7 +52,6 @@ public class MetadataUpdateSettingsService {
     private static final Logger logger = LogManager.getLogger(MetadataUpdateSettingsService.class);
 
     private final ClusterService clusterService;
-    private final AllocationService allocationService;
     private final IndexScopedSettings indexScopedSettings;
     private final IndicesService indicesService;
     private final ShardLimitValidator shardLimitValidator;
@@ -68,7 +67,6 @@ public class MetadataUpdateSettingsService {
         ThreadPool threadPool
     ) {
         this.clusterService = clusterService;
-        this.allocationService = allocationService;
         this.indexScopedSettings = indexScopedSettings;
         this.indicesService = indicesService;
         this.shardLimitValidator = shardLimitValidator;
