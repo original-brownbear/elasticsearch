@@ -8,16 +8,14 @@
 
 package org.elasticsearch.common.path;
 
+import org.elasticsearch.common.util.Maps;
+
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.unmodifiableMap;
 
 public class PathTrie<T> {
 
@@ -77,7 +75,7 @@ public class PathTrie<T> {
             this.key = key;
             this.wildcard = wildcard;
             this.value = value;
-            this.children = emptyMap();
+            this.children = Map.of();
             if (isNamedWildcard(key)) {
                 namedWildcard = key.substring(key.indexOf('{') + 1, key.indexOf('}'));
             } else {
@@ -97,9 +95,7 @@ public class PathTrie<T> {
         }
 
         private void addInnerChild(String key, TrieNode child) {
-            Map<String, TrieNode> newChildren = new HashMap<>(children);
-            newChildren.put(key, child);
-            children = unmodifiableMap(newChildren);
+            children = Maps.copyMapWithAddedEntry(children, key, child);
         }
 
         private synchronized void insert(String[] path, int index, T value) {
