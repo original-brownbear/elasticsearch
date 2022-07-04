@@ -444,38 +444,32 @@ public final class RemoteClusterService extends RemoteClusterAware implements Cl
         return remoteClusters.values();
     }
 
-    private static class RemoteConnectionEnabled<T> implements Setting.Validator<T> {
+    private record RemoteConnectionEnabled<T>(String clusterAlias, String key) implements Setting.Validator<T> {
 
-        private final String clusterAlias;
-        private final String key;
-
-        private RemoteConnectionEnabled(String clusterAlias, String key) {
-            this.clusterAlias = clusterAlias;
-            this.key = key;
+        @Override
+            public void validate(T value) {
         }
 
-        @Override
-        public void validate(T value) {}
+            @Override
+            public void validate(T value, Map<Setting<?>, Object> settings, boolean isPresent) {
+                if (isPresent && RemoteConnectionStrategy.isConnectionEnabled(clusterAlias, settings) == false) {
+                    throw new IllegalArgumentException("Cannot configure setting [" + key + "] if remote cluster is not enabled.");
+                }
+            }
 
-        @Override
-        public void validate(T value, Map<Setting<?>, Object> settings, boolean isPresent) {
-            if (isPresent && RemoteConnectionStrategy.isConnectionEnabled(clusterAlias, settings) == false) {
-                throw new IllegalArgumentException("Cannot configure setting [" + key + "] if remote cluster is not enabled.");
+            @Override
+            public Iterator<Setting<?>> settings() {
+                return Stream.concat(
+                        Stream.of(RemoteConnectionStrategy.REMOTE_CONNECTION_MODE.getConcreteSettingForNamespace(clusterAlias)),
+                        settingsStream()
+                ).iterator();
+            }
+
+            private Stream<Setting<?>> settingsStream() {
+                return Arrays.stream(RemoteConnectionStrategy.ConnectionStrategy.values())
+                        .flatMap(strategy -> strategy.getEnablementSettings().get())
+                        .map(as -> as.getConcreteSettingForNamespace(clusterAlias));
             }
         }
 
-        @Override
-        public Iterator<Setting<?>> settings() {
-            return Stream.concat(
-                Stream.of(RemoteConnectionStrategy.REMOTE_CONNECTION_MODE.getConcreteSettingForNamespace(clusterAlias)),
-                settingsStream()
-            ).iterator();
-        }
-
-        private Stream<Setting<?>> settingsStream() {
-            return Arrays.stream(RemoteConnectionStrategy.ConnectionStrategy.values())
-                .flatMap(strategy -> strategy.getEnablementSettings().get())
-                .map(as -> as.getConcreteSettingForNamespace(clusterAlias));
-        }
-    };
 }

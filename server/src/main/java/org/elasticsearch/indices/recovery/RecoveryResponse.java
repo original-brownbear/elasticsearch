@@ -58,7 +58,6 @@ public final class RecoveryResponse extends TransportResponse {
     }
 
     RecoveryResponse(StreamInput in) throws IOException {
-        super(in);
         phase1FileNames = in.readStringList();
         phase1FileSizes = in.readList(StreamInput::readVLong);
         phase1ExistingFileNames = in.readStringList();

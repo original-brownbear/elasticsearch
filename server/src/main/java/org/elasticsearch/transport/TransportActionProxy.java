@@ -30,24 +30,14 @@ public final class TransportActionProxy {
 
     private TransportActionProxy() {} // no instance
 
-    private static class ProxyRequestHandler<T extends ProxyRequest<TransportRequest>> implements TransportRequestHandler<T> {
-
-        private final TransportService service;
-        private final String action;
-        private final Function<TransportRequest, Writeable.Reader<? extends TransportResponse>> responseFunction;
-
-        ProxyRequestHandler(
-            TransportService service,
-            String action,
-            Function<TransportRequest, Writeable.Reader<? extends TransportResponse>> responseFunction
-        ) {
-            this.service = service;
-            this.action = action;
-            this.responseFunction = responseFunction;
-        }
+    private record ProxyRequestHandler<T extends ProxyRequest<TransportRequest>> (
+        TransportService service,
+        String action,
+        Function<TransportRequest, Writeable.Reader<? extends TransportResponse>> responseFunction
+    ) implements TransportRequestHandler<T> {
 
         @Override
-        public void messageReceived(T request, TransportChannel channel, Task task) throws Exception {
+        public void messageReceived(T request, TransportChannel channel, Task task) {
             DiscoveryNode targetNode = request.targetNode;
             TransportRequest wrappedRequest = request.wrapped;
             assert assertConsistentTaskType(task, wrappedRequest);
@@ -76,15 +66,9 @@ public final class TransportActionProxy {
         }
     }
 
-    private static class ProxyResponseHandler<T extends TransportResponse> implements TransportResponseHandler<T> {
-
-        private final Writeable.Reader<T> reader;
-        private final TransportChannel channel;
-
-        ProxyResponseHandler(TransportChannel channel, Writeable.Reader<T> reader) {
-            this.reader = reader;
-            this.channel = channel;
-        }
+    private record ProxyResponseHandler<T extends TransportResponse> (TransportChannel channel, Writeable.Reader<T> reader)
+        implements
+            TransportResponseHandler<T> {
 
         @Override
         public T read(StreamInput in) throws IOException {

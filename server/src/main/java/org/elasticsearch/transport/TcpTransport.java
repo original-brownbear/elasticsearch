@@ -1141,25 +1141,20 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
         }
     }
 
-    private static final class ChannelOpenTraceLogger implements ActionListener<Void> {
-        private final TcpChannel channel;
-
-        ChannelOpenTraceLogger(TcpChannel channel) {
-            this.channel = channel;
-        }
+    private record ChannelOpenTraceLogger(TcpChannel channel) implements ActionListener<Void> {
 
         @Override
-        public void onResponse(Void unused) {
-            logger.trace("Tcp transport channel opened: {}", channel);
-        }
+            public void onResponse(Void unused) {
+                logger.trace("Tcp transport channel opened: {}", channel);
+            }
 
-        @Override
-        public void onFailure(Exception e) {
-            // Connection failures are generally logged elsewhere, but go via the ChannelsConnectedListener which only captures the first
-            // exception for each bundle of channels. If the ChannelOpenTraceLogger is installed then trace-logging is enabled so we can log
-            // every failure.
-            logger.trace(() -> format("failed to open transport channel: %s", channel), e);
+            @Override
+            public void onFailure(Exception e) {
+                // Connection failures are generally logged elsewhere, but go via the ChannelsConnectedListener which only captures the first
+                // exception for each bundle of channels. If the ChannelOpenTraceLogger is installed then trace-logging is enabled so we can log
+                // every failure.
+                logger.trace(() -> format("failed to open transport channel: %s", channel), e);
+            }
         }
-    }
 
 }

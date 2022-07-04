@@ -563,7 +563,6 @@ public class TransportService extends AbstractLifecycleComponent
         }
 
         public HandshakeResponse(StreamInput in) throws IOException {
-            super(in);
             // the first two fields need only VInts and raw (ASCII) characters, so we cross our fingers and hope that they appear
             // on the wire as we expect them to even if this turns out to be an incompatible build
             version = Version.readVersion(in);
@@ -885,7 +884,7 @@ public class TransportService extends AbstractLifecycleComponent
             }
 
             @Override
-            protected void doRun() throws Exception {
+            protected void doRun() {
                 contextToNotify.handler().handleException(sendRequestException);
             }
         });
@@ -1277,36 +1276,7 @@ public class TransportService extends AbstractLifecycleComponent
         }
     }
 
-    static class TimeoutInfoHolder {
-
-        private final DiscoveryNode node;
-        private final String action;
-        private final long sentTime;
-        private final long timeoutTime;
-
-        TimeoutInfoHolder(DiscoveryNode node, String action, long sentTime, long timeoutTime) {
-            this.node = node;
-            this.action = action;
-            this.sentTime = sentTime;
-            this.timeoutTime = timeoutTime;
-        }
-
-        public DiscoveryNode node() {
-            return node;
-        }
-
-        public String action() {
-            return action;
-        }
-
-        public long sentTime() {
-            return sentTime;
-        }
-
-        public long timeoutTime() {
-            return timeoutTime;
-        }
-    }
+    record TimeoutInfoHolder(DiscoveryNode node, String action, long sentTime, long timeoutTime) {}
 
     /**
      * This handler wrapper ensures that the response thread executes with the correct thread context. Before any of the handle methods
@@ -1385,7 +1355,7 @@ public class TransportService extends AbstractLifecycleComponent
         }
 
         @Override
-        public void sendResponse(TransportResponse response) throws IOException {
+        public void sendResponse(TransportResponse response) {
             service.onResponseSent(requestId, action, response);
             try (var shutdownBlock = service.pendingDirectHandlers.withRef()) {
                 if (shutdownBlock == null) {
@@ -1426,7 +1396,7 @@ public class TransportService extends AbstractLifecycleComponent
         }
 
         @Override
-        public void sendResponse(Exception exception) throws IOException {
+        public void sendResponse(Exception exception) {
             service.onResponseSent(requestId, action, exception);
             try (var shutdownBlock = service.pendingDirectHandlers.withRef()) {
                 if (shutdownBlock == null) {

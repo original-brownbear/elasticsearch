@@ -24,7 +24,7 @@ public abstract class ActionResponse extends TransportResponse {
     public ActionResponse() {}
 
     public ActionResponse(StreamInput in) throws IOException {
-        super(in);
+        super();
     }
 
     public static final class Empty extends ActionResponse implements ToXContentObject {

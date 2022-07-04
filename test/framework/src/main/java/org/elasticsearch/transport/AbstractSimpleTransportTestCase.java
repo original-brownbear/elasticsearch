@@ -1933,7 +1933,6 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
         final String info;
 
         TestResponse(StreamInput in) throws IOException {
-            super(in);
             this.info = in.readOptionalString();
         }
 

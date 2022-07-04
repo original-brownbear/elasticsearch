@@ -218,7 +218,6 @@ final class TransportHandshaker {
         }
 
         private HandshakeResponse(StreamInput in) throws IOException {
-            super(in);
             responseVersion = Version.readVersion(in);
         }
 

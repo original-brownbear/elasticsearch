@@ -33,7 +33,7 @@ public interface TransportDecompressor extends Releasable {
     @Override
     void close();
 
-    static TransportDecompressor getDecompressor(Recycler<BytesRef> recycler, BytesReference bytes) throws IOException {
+    static TransportDecompressor getDecompressor(Recycler<BytesRef> recycler, BytesReference bytes) {
         if (bytes.length() < Compression.Scheme.HEADER_LENGTH) {
             return null;
         }

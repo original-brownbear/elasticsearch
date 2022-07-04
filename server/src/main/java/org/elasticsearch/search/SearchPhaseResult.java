@@ -40,7 +40,6 @@ public abstract class SearchPhaseResult extends TransportResponse {
     }
 
     protected SearchPhaseResult(StreamInput in) throws IOException {
-        super(in);
     }
 
     /**

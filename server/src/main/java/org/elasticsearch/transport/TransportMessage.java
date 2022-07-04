@@ -34,12 +34,6 @@ public abstract class TransportMessage implements Writeable, RefCounted {
      */
     public TransportMessage() {}
 
-    /**
-     * Constructs a new transport message with the data from the {@link StreamInput}. This is
-     * currently a no-op
-     */
-    public TransportMessage(StreamInput in) {}
-
     @Override
     public void incRef() {
         // noop, override to manage the life-cycle of resources held by a transport message

@@ -38,7 +38,7 @@ public final class TransportLogger {
     static void logInboundMessage(TcpChannel channel, InboundMessage message) {
         if (logger.isTraceEnabled()) {
             try {
-                String logMessage = format(channel, message, "READ");
+                String logMessage = format(channel, message);
                 logger.trace(logMessage);
             } catch (IOException e) {
                 logger.warn("an exception occurred formatting a READ trace message", e);
@@ -115,12 +115,12 @@ public final class TransportLogger {
         return sb.toString();
     }
 
-    private static String format(TcpChannel channel, InboundMessage message, String event) throws IOException {
+    private static String format(TcpChannel channel, InboundMessage message) throws IOException {
         final StringBuilder sb = new StringBuilder();
         sb.append(channel);
 
         if (message.isPing()) {
-            sb.append(" [ping]").append(' ').append(event).append(": ").append(6).append('B');
+            sb.append(" [ping]").append(' ').append("READ").append(": ").append(6).append('B');
         } else {
             boolean success = false;
             Header header = message.getHeader();
@@ -142,7 +142,7 @@ public final class TransportLogger {
                     sb.append(", action: ").append(header.getActionName());
                 }
                 sb.append(']');
-                sb.append(' ').append(event).append(": ").append(messageLengthWithHeader).append('B');
+                sb.append(' ').append("READ").append(": ").append(messageLengthWithHeader).append('B');
                 success = true;
             } finally {
                 if (success) {
