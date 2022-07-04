@@ -89,18 +89,13 @@ public abstract class TransportAction<Request extends ActionRequest, Response ex
     }
 
     /**
-     * Wrapper for an action listener that stores the result at the end of the execution
-     */
-    private static class TaskResultStoringActionListener<Response extends ActionResponse> implements ActionListener<Response> {
-        private final ActionListener<Response> delegate;
-        private final Task task;
-        private final TaskManager taskManager;
-
-        private TaskResultStoringActionListener(TaskManager taskManager, Task task, ActionListener<Response> delegate) {
-            this.taskManager = taskManager;
-            this.task = task;
-            this.delegate = delegate;
-        }
+         * Wrapper for an action listener that stores the result at the end of the execution
+         */
+    private record TaskResultStoringActionListener<Response extends ActionResponse> (
+        TaskManager taskManager,
+        Task task,
+        ActionListener<Response> delegate
+    ) implements ActionListener<Response> {
 
         @Override
         public void onResponse(Response response) {

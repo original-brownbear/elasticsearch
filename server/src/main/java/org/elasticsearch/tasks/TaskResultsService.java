@@ -89,7 +89,7 @@ public class TaskResultsService {
     }
 
     private void doStoreResult(Iterator<TimeValue> backoff, IndexRequestBuilder index, ActionListener<Void> listener) {
-        index.execute(new ActionListener<IndexResponse>() {
+        index.execute(new ActionListener<>() {
             @Override
             public void onResponse(IndexResponse indexResponse) {
                 listener.onResponse(null);

@@ -36,7 +36,6 @@ import org.elasticsearch.transport.TransportService;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 import static org.elasticsearch.core.Strings.format;
 
@@ -63,28 +62,7 @@ public class TaskCancellationService {
         return transportService.getLocalNode().getId();
     }
 
-    private static class CancelRequest {
-        final CancellableTask task;
-        final boolean waitForCompletion;
-
-        CancelRequest(CancellableTask task, boolean waitForCompletion) {
-            this.task = task;
-            this.waitForCompletion = waitForCompletion;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            final CancelRequest that = (CancelRequest) o;
-            return waitForCompletion == that.waitForCompletion && Objects.equals(task, that.task);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(task, waitForCompletion);
-        }
-    }
+    private record CancelRequest(CancellableTask task, boolean waitForCompletion) {}
 
     void cancelTaskAndDescendants(CancellableTask task, String reason, boolean waitForCompletion, ActionListener<Void> finalListener) {
         deduplicator.executeOnce(

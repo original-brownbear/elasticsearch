@@ -161,35 +161,11 @@ public class TaskManager implements ClusterStateApplier {
             Releasables.close(unregisterChildNode);
             throw e;
         }
-        // NOTE: ActionListener cannot infer Response, see https://bugs.openjdk.java.net/browse/JDK-8203195
-        action.execute(task, request, new ActionListener<Response>() {
-            @Override
-            public void onResponse(Response response) {
-                try {
-                    release();
-                } finally {
-                    taskListener.onResponse(response);
-                }
-            }
-
-            @Override
-            public void onFailure(Exception e) {
-                try {
-                    release();
-                } finally {
-                    taskListener.onFailure(e);
-                }
-            }
-
-            @Override
-            public String toString() {
-                return this.getClass().getName() + "{" + taskListener + "}{" + task + "}";
-            }
-
-            private void release() {
-                Releasables.close(unregisterChildNode, () -> unregister(task));
-            }
-        });
+        action.execute(
+            task,
+            request,
+            ActionListener.runBefore(taskListener, () -> Releasables.close(unregisterChildNode, () -> unregister(task)))
+        );
         return task;
     }
 
@@ -299,7 +275,7 @@ public class TaskManager implements ClusterStateApplier {
             listener.onFailure(ex);
             return;
         }
-        taskResultsService.storeResult(taskResult, new ActionListener<Void>() {
+        taskResultsService.storeResult(taskResult, new ActionListener<>() {
             @Override
             public void onResponse(Void aVoid) {
                 listener.onFailure(error);
@@ -333,7 +309,7 @@ public class TaskManager implements ClusterStateApplier {
             return;
         }
 
-        taskResultsService.storeResult(taskResult, new ActionListener<Void>() {
+        taskResultsService.storeResult(taskResult, new ActionListener<>() {
             @Override
             public void onResponse(Void aVoid) {
                 listener.onResponse(response);
@@ -576,10 +552,6 @@ public class TaskManager implements ClusterStateApplier {
                 }
             }
             ExceptionsHelper.reThrowIfNotNull(rootException);
-        }
-
-        public boolean hasParent(TaskId parentTaskId) {
-            return task.getParentTaskId().equals(parentTaskId);
         }
 
         public CancellableTask getTask() {
