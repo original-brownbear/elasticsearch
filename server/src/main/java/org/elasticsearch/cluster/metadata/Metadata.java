@@ -1202,7 +1202,8 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
         public Metadata apply(Metadata part) {
             // create builder from existing mappings hashes so we don't change existing index metadata instances when deduplicating
             // mappings in the builder
-            Builder builder = new Builder(part.mappingsByHash);
+            final var updatedIndices = indices.apply(part.indices);
+            Builder builder = new Builder(part.mappingsByHash, updatedIndices.size());
             builder.clusterUUID(clusterUUID);
             builder.clusterUUIDCommitted(clusterUUIDCommitted);
             builder.version(version);
@@ -1210,7 +1211,11 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             builder.transientSettings(transientSettings);
             builder.persistentSettings(persistentSettings);
             builder.hashesOfConsistentSettings(hashesOfConsistentSettings.apply(part.hashesOfConsistentSettings));
-            builder.indices(indices.apply(part.indices));
+            // optimized loop that exploits the fact that we know that we are working from an empty builder and thus don't have to do
+            // any checks for existing indices that Builder#indices does
+            for (var value : updatedIndices.values()) {
+                builder.putIndexNoChecks(value);
+            }
             builder.templates(templates.apply(part.templates));
             builder.customs(customs.apply(part.customs));
             builder.put(Collections.unmodifiableMap(immutableStateMetadata.apply(part.immutableStateMetadata)));
@@ -1335,7 +1340,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
         private final Map<String, MappingMetadata> mappingsByHash;
 
         public Builder() {
-            this(Map.of());
+            this(Map.of(), 0);
         }
 
         Builder(Metadata metadata) {
@@ -1356,9 +1361,9 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             this.immutableStateMetadata = new HashMap<>(metadata.immutableStateMetadata);
         }
 
-        private Builder(Map<String, MappingMetadata> mappingsByHash) {
+        private Builder(Map<String, MappingMetadata> mappingsByHash, int sizeHint) {
             clusterUUID = UNKNOWN_CLUSTER_UUID;
-            indices = ImmutableOpenMap.builder();
+            indices = ImmutableOpenMap.builder(sizeHint);
             aliasedIndices = ImmutableOpenMap.builder();
             templates = ImmutableOpenMap.builder();
             customs = ImmutableOpenMap.builder();
@@ -1386,11 +1391,15 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             if (indices.get(indexMetadata.getIndex().getName()) == indexMetadata) {
                 return this;
             }
-            indexMetadata = dedupeMapping(indexMetadata);
             // if we put a new index metadata, increment its version
             if (incrementVersion) {
                 indexMetadata = IndexMetadata.builder(indexMetadata).version(indexMetadata.getVersion() + 1).build();
             }
+            return putIndexNoChecks(indexMetadata);
+        }
+
+        private Builder putIndexNoChecks(IndexMetadata indexMetadata) {
+            indexMetadata = dedupeMapping(indexMetadata);
             IndexMetadata previous = indices.put(indexMetadata.getIndex().getName(), indexMetadata);
             updateAliases(previous, indexMetadata);
             if (unsetPreviousIndicesLookup(previous, indexMetadata)) {
