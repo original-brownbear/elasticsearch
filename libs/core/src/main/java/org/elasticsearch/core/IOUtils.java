@@ -24,13 +24,11 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -208,46 +206,19 @@ public final class IOUtils {
         if (locations != null) {
             for (final Path location : locations) {
                 // TODO: remove this leniency
-                if (location != null && Files.exists(location)) {
-                    try {
-                        Files.walkFileTree(location, new FileVisitor<Path>() {
-                            @Override
-                            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
-                                return FileVisitResult.CONTINUE;
-                            }
-
-                            @Override
-                            public FileVisitResult postVisitDirectory(final Path dir, final IOException impossible) throws IOException {
-                                assert impossible == null;
-
-                                try {
-                                    Files.delete(dir);
-                                } catch (final IOException e) {
-                                    unremoved.put(dir, e);
-                                }
-                                return FileVisitResult.CONTINUE;
-                            }
-
-                            @Override
-                            public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
-                                try {
-                                    Files.delete(file);
-                                } catch (final IOException exc) {
-                                    unremoved.put(file, exc);
-                                }
-                                return FileVisitResult.CONTINUE;
-                            }
-
-                            @Override
-                            public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws IOException {
-                                if (exc != null) {
-                                    unremoved.put(file, exc);
-                                }
-                                return FileVisitResult.CONTINUE;
+                if (location != null) {
+                    try (var stream = Files.walk(location)) {
+                        stream.sorted(Comparator.reverseOrder()).forEach(file -> {
+                            try {
+                                Files.delete(file);
+                            } catch (final IOException exc) {
+                                unremoved.put(file, exc);
                             }
                         });
-                    } catch (final IOException impossible) {
-                        throw new AssertionError("visitor threw exception", impossible);
+                    } catch (NoSuchFileException ignored) {
+                        // ignored
+                    } catch (IOException e) {
+                        unremoved.put(location, e);
                     }
                 }
             }
