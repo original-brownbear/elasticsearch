@@ -1221,7 +1221,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                     sha256HashesInUse.add(mapping.getSha256());
                 }
             }
-            builder.retainMappings(sha256HashesInUse);
+            builder.purgeUnusedMappings(sha256HashesInUse);
             builder.checkForUnusedMappings = false;
             builder.templates(templates.apply(part.templates));
             builder.customs(customs.apply(part.customs));
@@ -2379,14 +2379,15 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 }
             }
 
-            retainMappings(sha256HashesInUse);
+            purgeUnusedMappings(sha256HashesInUse);
         }
 
-        private void retainMappings(Set<String> sha256HashesInUse) {
+        // cleanup all mappings whose sha256 value isn't in the given set
+        private void purgeUnusedMappings(Set<String> sha256ToRetain) {
             final var iterator = mappingsByHash.entrySet().iterator();
             while (iterator.hasNext()) {
                 final var cacheKey = iterator.next().getKey();
-                if (sha256HashesInUse.contains(cacheKey) == false) {
+                if (sha256ToRetain.contains(cacheKey) == false) {
                     iterator.remove();
                 }
             }
