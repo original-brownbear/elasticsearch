@@ -1211,22 +1211,107 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             builder.transientSettings(transientSettings);
             builder.persistentSettings(persistentSettings);
             builder.hashesOfConsistentSettings(hashesOfConsistentSettings.apply(part.hashesOfConsistentSettings));
-            // optimized loop that exploits the fact that we know that we are working from an empty builder and thus don't have to do
-            // any checks for existing indices that Builder#indices does
-            final Set<String> sha256HashesInUse = Sets.newHashSetWithExpectedSize(builder.mappingsByHash.size());
-            for (var value : updatedIndices.values()) {
-                builder.putIndexNoChecks(value);
-                final var mapping = value.mapping();
-                if (mapping != null) {
-                    sha256HashesInUse.add(mapping.getSha256());
-                }
-            }
-            builder.purgeUnusedMappings(sha256HashesInUse);
-            builder.checkForUnusedMappings = false;
             builder.templates(templates.apply(part.templates));
             builder.customs(customs.apply(part.customs));
             builder.put(Collections.unmodifiableMap(immutableStateMetadata.apply(part.immutableStateMetadata)));
-            return builder.build(true);
+            // TODO: We should move these datastructures to IndexNameExpressionResolver, this will give the following benefits:
+            // 1) The datastructures will be rebuilt only when needed. Now during serializing we rebuild these datastructures
+            // while these datastructures aren't even used.
+            // 2) The aliasAndIndexLookup can be updated instead of rebuilding it all the time.
+            final List<String> visibleIndices = new ArrayList<>();
+            final List<String> allOpenIndices = new ArrayList<>();
+            final List<String> visibleOpenIndices = new ArrayList<>();
+            final List<String> allClosedIndices = new ArrayList<>();
+            final List<String> visibleClosedIndices = new ArrayList<>();
+
+            int oldestIndexVersionId = Version.CURRENT.id;
+            int totalNumberOfShards = 0;
+            int totalOpenIndexShards = 0;
+
+            final String[] allIndicesArray = new String[updatedIndices.size()];
+            int i = 0;
+            // optimized loop that exploits the fact that we know that we are working from an empty builder and thus don't have to do
+            // any checks for existing indices that Builder#indices does
+            final Set<String> sha256HashesInUse = Sets.newHashSetWithExpectedSize(builder.mappingsByHash.size());
+            for (var entry : updatedIndices.entrySet()) {
+                final IndexMetadata indexMetadata = entry.getValue();
+                builder.putIndexNoChecks(indexMetadata);
+                final var mapping = indexMetadata.mapping();
+                if (mapping != null) {
+                    sha256HashesInUse.add(mapping.getSha256());
+                }
+                allIndicesArray[i++] = entry.getKey();
+                totalNumberOfShards += indexMetadata.getTotalNumberOfShards();
+                final String name = indexMetadata.getIndex().getName();
+                final boolean visible = indexMetadata.isHidden() == false;
+                if (visible) {
+                    visibleIndices.add(name);
+                }
+                if (indexMetadata.getState() == IndexMetadata.State.OPEN) {
+                    totalOpenIndexShards += indexMetadata.getTotalNumberOfShards();
+                    allOpenIndices.add(name);
+                    if (visible) {
+                        visibleOpenIndices.add(name);
+                    }
+                } else if (indexMetadata.getState() == IndexMetadata.State.CLOSE) {
+                    allClosedIndices.add(name);
+                    if (visible) {
+                        visibleClosedIndices.add(name);
+                    }
+                }
+                oldestIndexVersionId = Math.min(oldestIndexVersionId, indexMetadata.getCompatibilityVersion().id);
+            }
+            builder.purgeUnusedMappings(sha256HashesInUse);
+
+            var aliasedIndices = builder.aliasedIndices.build();
+            final var indicesMap = builder.indices.build();
+            for (var entry : aliasedIndices.entrySet()) {
+                List<IndexMetadata> aliasIndices = entry.getValue().stream().map(idx -> indicesMap.get(idx.getName())).toList();
+                Builder.validateAlias(entry.getKey(), aliasIndices);
+            }
+            SortedMap<String, IndexAbstraction> indicesLookup = null;
+            if (builder.previousIndicesLookup != null) {
+                // no changes to the names of indices, datastreams, and their aliases so we can reuse the previous lookup
+                assert builder.previousIndicesLookup.equals(Builder.buildIndicesLookup(builder.dataStreamMetadata(), indicesMap));
+                indicesLookup = builder.previousIndicesLookup;
+            }
+            assert Builder.assertDataStreams(indicesMap, builder.dataStreamMetadata());
+            // build all concrete indices arrays:
+            // TODO: I think we can remove these arrays. it isn't worth the effort, for operations on all indices.
+            // When doing an operation across all indices, most of the time is spent on actually going to all shards and
+            // do the required operations, the bottleneck isn't resolving expressions into concrete indices.
+            String[] visibleIndicesArray = visibleIndices.toArray(Strings.EMPTY_ARRAY);
+            String[] allOpenIndicesArray = allOpenIndices.toArray(Strings.EMPTY_ARRAY);
+            String[] visibleOpenIndicesArray = visibleOpenIndices.toArray(Strings.EMPTY_ARRAY);
+            String[] allClosedIndicesArray = allClosedIndices.toArray(Strings.EMPTY_ARRAY);
+            String[] visibleClosedIndicesArray = visibleClosedIndices.toArray(Strings.EMPTY_ARRAY);
+
+            return new Metadata(
+                builder.clusterUUID,
+                builder.clusterUUIDCommitted,
+                builder.version,
+                builder.coordinationMetadata,
+                builder.transientSettings,
+                builder.persistentSettings,
+                Settings.builder().put(builder.persistentSettings).put(builder.transientSettings).build(),
+                builder.hashesOfConsistentSettings,
+                totalNumberOfShards,
+                totalOpenIndexShards,
+                indicesMap,
+                aliasedIndices,
+                builder.templates.build(),
+                builder.customs.build(),
+                allIndicesArray,
+                visibleIndicesArray,
+                allOpenIndicesArray,
+                visibleOpenIndicesArray,
+                allClosedIndicesArray,
+                visibleClosedIndicesArray,
+                indicesLookup,
+                Collections.unmodifiableMap(builder.mappingsByHash),
+                Version.fromId(oldestIndexVersionId),
+                Collections.unmodifiableMap(builder.immutableStateMetadata)
+            );
         }
     }
 
