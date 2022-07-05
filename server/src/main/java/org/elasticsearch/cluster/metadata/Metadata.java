@@ -1213,9 +1213,16 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             builder.hashesOfConsistentSettings(hashesOfConsistentSettings.apply(part.hashesOfConsistentSettings));
             // optimized loop that exploits the fact that we know that we are working from an empty builder and thus don't have to do
             // any checks for existing indices that Builder#indices does
+            final Set<String> sha256HashesInUse = Sets.newHashSetWithExpectedSize(builder.mappingsByHash.size());
             for (var value : updatedIndices.values()) {
                 builder.putIndexNoChecks(value);
+                final var mapping = value.mapping();
+                if (mapping != null) {
+                    sha256HashesInUse.add(mapping.getSha256());
+                }
             }
+            builder.retainMappings(sha256HashesInUse);
+            builder.checkForUnusedMappings = false;
             builder.templates(templates.apply(part.templates));
             builder.customs(customs.apply(part.customs));
             builder.put(Collections.unmodifiableMap(immutableStateMetadata.apply(part.immutableStateMetadata)));
@@ -2372,6 +2379,10 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 }
             }
 
+            retainMappings(sha256HashesInUse);
+        }
+
+        private void retainMappings(Set<String> sha256HashesInUse) {
             final var iterator = mappingsByHash.entrySet().iterator();
             while (iterator.hasNext()) {
                 final var cacheKey = iterator.next().getKey();
