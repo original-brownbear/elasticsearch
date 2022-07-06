@@ -233,7 +233,6 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
         CoordinationMetadata coordinationMetadata,
         Settings transientSettings,
         Settings persistentSettings,
-        Settings settings,
         DiffableStringMap hashesOfConsistentSettings,
         int totalNumberOfShards,
         int totalOpenIndexShards,
@@ -259,7 +258,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             coordinationMetadata,
             transientSettings,
             persistentSettings,
-            settings,
+            Settings.builder().put(persistentSettings).put(transientSettings).build(),
             hashesOfConsistentSettings,
             totalNumberOfShards,
             totalOpenIndexShards,
@@ -1288,9 +1287,9 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             // any checks for existing indices that Builder#indices does
             final Set<String> sha256HashesInUse = Sets.newHashSetWithExpectedSize(builder.mappingsByHash.size());
             for (var entry : updatedIndices.entrySet()) {
+                allIndicesArray[i++] = entry.getKey();
                 final IndexMetadata indexMetadata = entry.getValue();
                 builder.putIndexNoChecks(indexMetadata);
-                allIndicesArray[i++] = entry.getKey();
                 totalNumberOfShards += indexMetadata.getTotalNumberOfShards();
                 final String name = indexMetadata.getIndex().getName();
                 final boolean visible = indexMetadata.isHidden() == false;
@@ -1336,7 +1335,6 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 builder.coordinationMetadata,
                 builder.transientSettings,
                 builder.persistentSettings,
-                Settings.builder().put(builder.persistentSettings).put(builder.transientSettings).build(),
                 builder.hashesOfConsistentSettings,
                 totalNumberOfShards,
                 totalOpenIndexShards,
@@ -2070,7 +2068,6 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 coordinationMetadata,
                 transientSettings,
                 persistentSettings,
-                Settings.builder().put(persistentSettings).put(transientSettings).build(),
                 hashesOfConsistentSettings,
                 totalNumberOfShards,
                 totalOpenIndexShards,
