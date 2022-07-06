@@ -242,6 +242,60 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
         ImmutableOpenMap<String, IndexTemplateMetadata> templates,
         ImmutableOpenMap<String, Custom> customs,
         String[] allIndices,
+        List<String> visibleIndices,
+        List<String> allOpenIndices,
+        List<String> visibleOpenIndices,
+        List<String> allClosedIndices,
+        List<String> visibleClosedIndices,
+        SortedMap<String, IndexAbstraction> indicesLookup,
+        Map<String, MappingMetadata> mappingsByHash,
+        Version oldestIndexVersion,
+        Map<String, ImmutableStateMetadata> immutableStateMetadata
+    ) {
+        this(
+            clusterUUID,
+            clusterUUIDCommitted,
+            version,
+            coordinationMetadata,
+            transientSettings,
+            persistentSettings,
+            settings,
+            hashesOfConsistentSettings,
+            totalNumberOfShards,
+            totalOpenIndexShards,
+            indices,
+            aliasedIndices,
+            templates,
+            customs,
+            allIndices,
+            visibleIndices.toArray(Strings.EMPTY_ARRAY),
+            allOpenIndices.toArray(Strings.EMPTY_ARRAY),
+            visibleOpenIndices.toArray(Strings.EMPTY_ARRAY),
+            allClosedIndices.toArray(Strings.EMPTY_ARRAY),
+            visibleClosedIndices.toArray(Strings.EMPTY_ARRAY),
+            indicesLookup,
+            mappingsByHash,
+            oldestIndexVersion,
+            immutableStateMetadata
+        );
+    }
+
+    private Metadata(
+        String clusterUUID,
+        boolean clusterUUIDCommitted,
+        long version,
+        CoordinationMetadata coordinationMetadata,
+        Settings transientSettings,
+        Settings persistentSettings,
+        Settings settings,
+        DiffableStringMap hashesOfConsistentSettings,
+        int totalNumberOfShards,
+        int totalOpenIndexShards,
+        ImmutableOpenMap<String, IndexMetadata> indices,
+        ImmutableOpenMap<String, Set<Index>> aliasedIndices,
+        ImmutableOpenMap<String, IndexTemplateMetadata> templates,
+        ImmutableOpenMap<String, Custom> customs,
+        String[] allIndices,
         String[] visibleIndices,
         String[] allOpenIndices,
         String[] visibleOpenIndices,
@@ -1236,10 +1290,6 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             for (var entry : updatedIndices.entrySet()) {
                 final IndexMetadata indexMetadata = entry.getValue();
                 builder.putIndexNoChecks(indexMetadata);
-                final var mapping = indexMetadata.mapping();
-                if (mapping != null) {
-                    sha256HashesInUse.add(mapping.getSha256());
-                }
                 allIndicesArray[i++] = entry.getKey();
                 totalNumberOfShards += indexMetadata.getTotalNumberOfShards();
                 final String name = indexMetadata.getIndex().getName();
@@ -1260,15 +1310,13 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                     }
                 }
                 oldestIndexVersionId = Math.min(oldestIndexVersionId, indexMetadata.getCompatibilityVersion().id);
+                trackMappingIfExists(sha256HashesInUse, indexMetadata);
             }
             builder.purgeUnusedMappings(sha256HashesInUse);
 
             var aliasedIndices = builder.aliasedIndices.build();
             final var indicesMap = builder.indices.build();
-            for (var entry : aliasedIndices.entrySet()) {
-                List<IndexMetadata> aliasIndices = entry.getValue().stream().map(idx -> indicesMap.get(idx.getName())).toList();
-                Builder.validateAlias(entry.getKey(), aliasIndices);
-            }
+            validateAliases(aliasedIndices, indicesMap);
             SortedMap<String, IndexAbstraction> indicesLookup = null;
             if (builder.previousIndicesLookup != null) {
                 // no changes to the names of indices, datastreams, and their aliases so we can reuse the previous lookup
@@ -1280,11 +1328,6 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             // TODO: I think we can remove these arrays. it isn't worth the effort, for operations on all indices.
             // When doing an operation across all indices, most of the time is spent on actually going to all shards and
             // do the required operations, the bottleneck isn't resolving expressions into concrete indices.
-            String[] visibleIndicesArray = visibleIndices.toArray(Strings.EMPTY_ARRAY);
-            String[] allOpenIndicesArray = allOpenIndices.toArray(Strings.EMPTY_ARRAY);
-            String[] visibleOpenIndicesArray = visibleOpenIndices.toArray(Strings.EMPTY_ARRAY);
-            String[] allClosedIndicesArray = allClosedIndices.toArray(Strings.EMPTY_ARRAY);
-            String[] visibleClosedIndicesArray = visibleClosedIndices.toArray(Strings.EMPTY_ARRAY);
 
             return new Metadata(
                 builder.clusterUUID,
@@ -1302,16 +1345,26 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 builder.templates.build(),
                 builder.customs.build(),
                 allIndicesArray,
-                visibleIndicesArray,
-                allOpenIndicesArray,
-                visibleOpenIndicesArray,
-                allClosedIndicesArray,
-                visibleClosedIndicesArray,
+                visibleIndices,
+                allOpenIndices,
+                visibleOpenIndices,
+                allClosedIndices,
+                visibleClosedIndices,
                 indicesLookup,
                 Collections.unmodifiableMap(builder.mappingsByHash),
                 Version.fromId(oldestIndexVersionId),
                 Collections.unmodifiableMap(builder.immutableStateMetadata)
             );
+        }
+    }
+
+    private static void validateAliases(
+        ImmutableOpenMap<String, Set<Index>> aliasedIndices,
+        ImmutableOpenMap<String, IndexMetadata> indicesMap
+    ) {
+        for (var entry : aliasedIndices.entrySet()) {
+            List<IndexMetadata> aliasIndices = entry.getValue().stream().map(idx -> indicesMap.get(idx.getName())).toList();
+            Builder.validateAlias(entry.getKey(), aliasIndices);
         }
     }
 
@@ -1943,10 +1996,6 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
          * @return a new <code>Metadata</code> instance
          */
         public Metadata build() {
-            return build(false);
-        }
-
-        private Metadata build(boolean skipNameCollisionChecks) {
             // TODO: We should move these datastructures to IndexNameExpressionResolver, this will give the following benefits:
             // 1) The datastructures will be rebuilt only when needed. Now during serializing we rebuild these datastructures
             // while these datastructures aren't even used.
@@ -1964,6 +2013,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
 
             final String[] allIndicesArray = new String[indicesMap.size()];
             int i = 0;
+            final Set<String> sha256HashesInUse = checkForUnusedMappings ? Sets.newHashSetWithExpectedSize(mappingsByHash.size()) : null;
             for (var entry : indicesMap.entrySet()) {
                 allIndicesArray[i++] = entry.getKey();
                 final IndexMetadata indexMetadata = entry.getValue();
@@ -1986,37 +2036,32 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                     }
                 }
                 oldestIndexVersionId = Math.min(oldestIndexVersionId, indexMetadata.getCompatibilityVersion().id);
+                if (sha256HashesInUse != null) {
+                    trackMappingIfExists(sha256HashesInUse, indexMetadata);
+                }
             }
 
             var aliasedIndices = this.aliasedIndices.build();
-            for (var entry : aliasedIndices.entrySet()) {
-                List<IndexMetadata> aliasIndices = entry.getValue().stream().map(idx -> indicesMap.get(idx.getName())).toList();
-                validateAlias(entry.getKey(), aliasIndices);
-            }
+            validateAliases(aliasedIndices, indicesMap);
             SortedMap<String, IndexAbstraction> indicesLookup = null;
             if (previousIndicesLookup != null) {
                 // no changes to the names of indices, datastreams, and their aliases so we can reuse the previous lookup
                 assert previousIndicesLookup.equals(buildIndicesLookup(dataStreamMetadata(), indicesMap));
                 indicesLookup = previousIndicesLookup;
-            } else if (skipNameCollisionChecks == false) {
+            } else {
                 // we have changes to the the entity names so we ensure we have no naming collisions
                 ensureNoNameCollisions(aliasedIndices.keySet(), indicesMap, dataStreamMetadata());
             }
             assert assertDataStreams(indicesMap, dataStreamMetadata());
 
-            if (checkForUnusedMappings) {
-                purgeUnusedEntries(indicesMap);
+            if (sha256HashesInUse != null) {
+                purgeUnusedMappings(sha256HashesInUse);
             }
 
             // build all concrete indices arrays:
             // TODO: I think we can remove these arrays. it isn't worth the effort, for operations on all indices.
             // When doing an operation across all indices, most of the time is spent on actually going to all shards and
             // do the required operations, the bottleneck isn't resolving expressions into concrete indices.
-            String[] visibleIndicesArray = visibleIndices.toArray(Strings.EMPTY_ARRAY);
-            String[] allOpenIndicesArray = allOpenIndices.toArray(Strings.EMPTY_ARRAY);
-            String[] visibleOpenIndicesArray = visibleOpenIndices.toArray(Strings.EMPTY_ARRAY);
-            String[] allClosedIndicesArray = allClosedIndices.toArray(Strings.EMPTY_ARRAY);
-            String[] visibleClosedIndicesArray = visibleClosedIndices.toArray(Strings.EMPTY_ARRAY);
 
             return new Metadata(
                 clusterUUID,
@@ -2034,11 +2079,11 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 templates.build(),
                 customs.build(),
                 allIndicesArray,
-                visibleIndicesArray,
-                allOpenIndicesArray,
-                visibleOpenIndicesArray,
-                allClosedIndicesArray,
-                visibleClosedIndicesArray,
+                visibleIndices,
+                allOpenIndices,
+                visibleOpenIndices,
+                allClosedIndices,
+                visibleClosedIndices,
                 indicesLookup,
                 Collections.unmodifiableMap(mappingsByHash),
                 Version.fromId(oldestIndexVersionId),
@@ -2460,17 +2505,6 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             }
         }
 
-        private void purgeUnusedEntries(ImmutableOpenMap<String, IndexMetadata> indices) {
-            final Set<String> sha256HashesInUse = Sets.newHashSetWithExpectedSize(mappingsByHash.size());
-            for (var im : indices.values()) {
-                if (im.mapping() != null) {
-                    sha256HashesInUse.add(im.mapping().getSha256());
-                }
-            }
-
-            purgeUnusedMappings(sha256HashesInUse);
-        }
-
         // cleanup all mappings whose sha256 value isn't in the given set
         private void purgeUnusedMappings(Set<String> sha256ToRetain) {
             final var iterator = mappingsByHash.entrySet().iterator();
@@ -2482,6 +2516,13 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             }
         }
 
+    }
+
+    private static void trackMappingIfExists(Set<String> sha256HashesInUse, IndexMetadata indexMetadata) {
+        final var mapping = indexMetadata.mapping();
+        if (mapping != null) {
+            sha256HashesInUse.add(mapping.getSha256());
+        }
     }
 
     private static final ToXContent.Params FORMAT_PARAMS;
