@@ -75,6 +75,8 @@ public class FilterAllocationDecider extends AllocationDecider {
         key -> Setting.stringListSetting(key, value -> validateIpValue(key, value), Property.Dynamic, Property.NodeScope)
     );
 
+    private static final Decision YES_PASSES = Decision.single(Decision.Type.YES, NAME, "node passes include/exclude/require filters");
+
     private volatile DiscoveryNodeFilters clusterRequireFilters;
     private volatile DiscoveryNodeFilters clusterIncludeFilters;
     private volatile DiscoveryNodeFilters clusterExcludeFilters;
@@ -123,7 +125,7 @@ public class FilterAllocationDecider extends AllocationDecider {
         decision = shouldIndexFilter(indexMetadata, node, allocation);
         if (decision != null) return decision;
 
-        return allocation.decision(Decision.YES, NAME, "node passes include/exclude/require filters");
+        return YES_PASSES;
     }
 
     private Decision shouldFilter(ShardRouting shardRouting, DiscoveryNode node, RoutingAllocation allocation) {
@@ -133,7 +135,7 @@ public class FilterAllocationDecider extends AllocationDecider {
         decision = shouldIndexFilter(allocation.metadata().getIndexSafe(shardRouting.index()), node, allocation);
         if (decision != null) return decision;
 
-        return allocation.decision(Decision.YES, NAME, "node passes include/exclude/require filters");
+        return YES_PASSES;
     }
 
     private Decision shouldFilter(IndexMetadata indexMd, DiscoveryNode node, RoutingAllocation allocation) {
@@ -143,7 +145,7 @@ public class FilterAllocationDecider extends AllocationDecider {
         decision = shouldIndexFilter(indexMd, node, allocation);
         if (decision != null) return decision;
 
-        return allocation.decision(Decision.YES, NAME, "node passes include/exclude/require filters");
+        return YES_PASSES;
     }
 
     private static Decision shouldIndexFilter(IndexMetadata indexMd, DiscoveryNode node, RoutingAllocation allocation) {
@@ -179,7 +181,7 @@ public class FilterAllocationDecider extends AllocationDecider {
                     Decision.NO,
                     NAME,
                     "node matches index setting [%s] filters [%s]",
-                    IndexMetadata.INDEX_ROUTING_EXCLUDE_GROUP_SETTING.getKey(),
+                    IndexMetadata.INDEX_ROUTING_EXCLUDE_GROUP_PREFIX,
                     indexExcludeFilters
                 );
             }
@@ -188,36 +190,39 @@ public class FilterAllocationDecider extends AllocationDecider {
     }
 
     private Decision shouldClusterFilter(DiscoveryNode node, RoutingAllocation allocation) {
-        if (clusterRequireFilters != null) {
-            if (clusterRequireFilters.match(node) == false) {
+        final DiscoveryNodeFilters require = clusterRequireFilters;
+        if (require != null) {
+            if (require.match(node) == false) {
                 return allocation.decision(
                     Decision.NO,
                     NAME,
                     "node does not match cluster setting [%s] filters [%s]",
                     CLUSTER_ROUTING_REQUIRE_GROUP_PREFIX,
-                    clusterRequireFilters
+                    require
                 );
             }
         }
-        if (clusterIncludeFilters != null) {
-            if (clusterIncludeFilters.match(node) == false) {
+        final DiscoveryNodeFilters include = clusterIncludeFilters;
+        if (include != null) {
+            if (include.match(node) == false) {
                 return allocation.decision(
                     Decision.NO,
                     NAME,
                     "node does not cluster setting [%s] filters [%s]",
                     CLUSTER_ROUTING_INCLUDE_GROUP_PREFIX,
-                    clusterIncludeFilters
+                    include
                 );
             }
         }
-        if (clusterExcludeFilters != null) {
-            if (clusterExcludeFilters.match(node)) {
+        final DiscoveryNodeFilters exclude = clusterExcludeFilters;
+        if (exclude != null) {
+            if (exclude.match(node)) {
                 return allocation.decision(
                     Decision.NO,
                     NAME,
                     "node matches cluster setting [%s] filters [%s]",
                     CLUSTER_ROUTING_EXCLUDE_GROUP_PREFIX,
-                    clusterExcludeFilters
+                    exclude
                 );
             }
         }
