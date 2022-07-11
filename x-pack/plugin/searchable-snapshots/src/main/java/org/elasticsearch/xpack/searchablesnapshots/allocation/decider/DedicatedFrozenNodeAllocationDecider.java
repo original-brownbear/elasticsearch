@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.searchablesnapshots.allocation.decider;
 
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.routing.RoutingNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
@@ -63,19 +62,7 @@ public class DedicatedFrozenNodeAllocationDecider extends AllocationDecider {
     }
 
     private static Decision canAllocateToNode(IndexMetadata indexMetadata, DiscoveryNode discoveryNode) {
-
-        boolean hasDataFrozenRole = false;
-        boolean hasOtherDataRole = false;
-        for (DiscoveryNodeRole role : discoveryNode.getRoles()) {
-            if (DATA_FROZEN_NODE_ROLE.equals(role)) {
-                hasDataFrozenRole = true;
-            } else if (role.canContainData()) {
-                hasOtherDataRole = true;
-                break;
-            }
-        }
-
-        if (hasDataFrozenRole == false || hasOtherDataRole) {
+        if (discoveryNode.getRoles().contains(DATA_FROZEN_NODE_ROLE) == false || discoveryNode.canContainData()) {
             return YES_NOT_DEDICATED_FROZEN_NODE;
         }
 
