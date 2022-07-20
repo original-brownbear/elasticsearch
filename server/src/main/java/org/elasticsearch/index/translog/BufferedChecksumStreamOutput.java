@@ -9,52 +9,27 @@
 package org.elasticsearch.index.translog;
 
 import org.apache.lucene.store.BufferedChecksum;
+import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
-import java.io.IOException;
+import java.io.OutputStream;
 import java.util.zip.CRC32;
-import java.util.zip.Checksum;
+import java.util.zip.CheckedOutputStream;
 
 /**
  * Similar to Lucene's BufferedChecksumIndexOutput, however this wraps a
  * {@link StreamOutput} so anything written will update the checksum
  */
-public final class BufferedChecksumStreamOutput extends StreamOutput {
-    private final StreamOutput out;
-    private final Checksum digest;
-
-    public BufferedChecksumStreamOutput(StreamOutput out) {
-        this.out = out;
-        this.digest = new BufferedChecksum(new CRC32());
+public final class BufferedChecksumStreamOutput extends OutputStreamStreamOutput {
+    public BufferedChecksumStreamOutput(OutputStream out) {
+        super(new CheckedOutputStream(out, new BufferedChecksum(new CRC32())));
     }
 
     public long getChecksum() {
-        return this.digest.getValue();
-    }
-
-    @Override
-    public void writeByte(byte b) throws IOException {
-        out.writeByte(b);
-        digest.update(b);
-    }
-
-    @Override
-    public void writeBytes(byte[] b, int offset, int length) throws IOException {
-        out.writeBytes(b, offset, length);
-        digest.update(b, offset, length);
-    }
-
-    @Override
-    public void flush() throws IOException {
-        out.flush();
-    }
-
-    @Override
-    public void close() throws IOException {
-        out.close();
+        return ((CheckedOutputStream) out).getChecksum().getValue();
     }
 
     public void resetDigest() {
-        digest.reset();
+        ((CheckedOutputStream) out).getChecksum().reset();
     }
 }

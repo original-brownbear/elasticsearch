@@ -17,7 +17,6 @@ import org.apache.lucene.store.OutputStreamDataOutput;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.io.Channels;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
-import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.io.EOFException;
@@ -181,9 +180,7 @@ final class TranslogHeader {
     void write(final FileChannel channel) throws IOException {
         // This output is intentionally not closed because closing it will close the FileChannel.
         @SuppressWarnings({ "IOResourceOpenedButNotSafelyClosed", "resource" })
-        final BufferedChecksumStreamOutput out = new BufferedChecksumStreamOutput(
-            new OutputStreamStreamOutput(java.nio.channels.Channels.newOutputStream(channel))
-        );
+        final BufferedChecksumStreamOutput out = new BufferedChecksumStreamOutput(java.nio.channels.Channels.newOutputStream(channel));
         CodecUtil.writeHeader(new OutputStreamDataOutput(out), TRANSLOG_CODEC, CURRENT_VERSION);
         // Write uuid
         final BytesRef uuid = new BytesRef(translogUUID);

@@ -13,7 +13,7 @@ import java.io.OutputStream;
 
 public class OutputStreamStreamOutput extends StreamOutput {
 
-    private final OutputStream out;
+    protected final OutputStream out;
 
     public OutputStreamStreamOutput(OutputStream out) {
         this.out = out;
