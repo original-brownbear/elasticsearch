@@ -89,8 +89,8 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
                 throw new IllegalStateException("Expecting START_OBJECT or START_ARRAY or VALUE but got [" + token + "]");
             } else {
                 XContentParser subParser = token == Token.START_OBJECT || token == Token.START_ARRAY
-                        ? new XContentSubParser(delegate)
-                        : new SingletonValueXContentParser(delegate);
+                    ? new XContentSubParser(delegate)
+                    : new SingletonValueXContentParser(delegate);
                 parsers.push(new DotExpandingXContentParser(subParser, subpaths, location, isWithinLeafObject));
             }
         }
