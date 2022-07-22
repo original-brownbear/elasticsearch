@@ -272,7 +272,7 @@ public final class DocumentParser {
         }
         if (token == XContentParser.Token.START_OBJECT) {
             // if we are just starting an OBJECT, advance, this is the object we are parsing, we need the name first
-            parser.nextToken();
+            token = parser.nextToken();
         }
 
         innerParseObject(context, mapper);
@@ -294,17 +294,18 @@ public final class DocumentParser {
 
     private static void innerParseObject(DocumentParserContext context, ObjectMapper mapper) throws IOException {
 
-        XContentParser.Token token = context.parser().currentToken();
-        String currentFieldName = context.parser().currentName();
+        final XContentParser parser = context.parser();
+        XContentParser.Token token = parser.currentToken();
+        String currentFieldName = null;
         assert token == XContentParser.Token.FIELD_NAME || token == XContentParser.Token.END_OBJECT;
 
         while (token != XContentParser.Token.END_OBJECT) {
             if (token == null) {
-                throwEOF(mapper, currentFieldName);
+                throwEOF(mapper, context);
             }
             switch (token) {
                 case FIELD_NAME:
-                    currentFieldName = context.parser().currentName();
+                    currentFieldName = parser.currentName();
                     if (currentFieldName.isBlank()) {
                         throwFieldNameBlank(context, currentFieldName);
                     }
@@ -324,7 +325,7 @@ public final class DocumentParser {
                     }
                     break;
             }
-            token = context.parser().nextToken();
+            token = parser.nextToken();
         }
     }
 
@@ -334,12 +335,12 @@ public final class DocumentParser {
         );
     }
 
-    private static void throwEOF(ObjectMapper mapper, String currentFieldName) {
+    private static void throwEOF(ObjectMapper mapper, DocumentParserContext context) throws IOException {
         throw new MapperParsingException(
             "object mapping for ["
                 + mapper.name()
                 + "] tried to parse field ["
-                + currentFieldName
+                + context.parser().currentName()
                 + "] as object, but got EOF, has a concrete value been provided to it?"
         );
     }

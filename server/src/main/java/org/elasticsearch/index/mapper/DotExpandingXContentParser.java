@@ -8,6 +8,7 @@
 
 package org.elasticsearch.index.mapper;
 
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.xcontent.FilterXContentParser;
 import org.elasticsearch.xcontent.FilterXContentParserWrapper;
@@ -17,6 +18,7 @@ import org.elasticsearch.xcontent.XContentSubParser;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -43,14 +45,15 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             this.isWithinLeafObject = isWithinLeafObject;
             parsers.push(in);
             if (in.currentToken() == Token.FIELD_NAME) {
-                expandDots();
+                expandDots(in);
             }
         }
 
         @Override
         public Token nextToken() throws IOException {
             Token token;
-            while ((token = delegate().nextToken()) == null) {
+            XContentParser delegate;
+            while ((token = (delegate = delegate()).nextToken()) == null) {
                 parsers.pop();
                 if (parsers.isEmpty()) {
                     return null;
@@ -59,40 +62,75 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             if (token != Token.FIELD_NAME) {
                 return token;
             }
-            expandDots();
+            expandDots(delegate);
             return Token.FIELD_NAME;
         }
 
-        private void expandDots() throws IOException {
+        private void expandDots(XContentParser delegate) throws IOException {
             // this handles fields that belong to objects that can't hold subobjects, where the document specifies
             // the object holding the flat fields
             // e.g. { "metrics.service": { "time.max" : 10 } } with service having subobjects set to false
             if (isWithinLeafObject.getAsBoolean()) {
                 return;
             }
-            XContentParser delegate = delegate();
             String field = delegate.currentName();
-            String[] subpaths = splitAndValidatePath(field);
-            if (subpaths.length == 0) {
-                throw new IllegalArgumentException("field name cannot contain only dots: [" + field + "]");
-            }
-            // Corner case: if the input has a single trailing '.', eg 'field.', then we will get a single
-            // subpath due to the way String.split() works. We can only return fast here if this is not
-            // the case
-            // TODO make this case throw an error instead? https://github.com/elastic/elasticsearch/issues/28948
-            if (subpaths.length == 1 && field.endsWith(".") == false) {
-                return;
-            }
-            XContentLocation location = delegate.getTokenLocation();
-            Token token = delegate.nextToken();
-            if (token == Token.END_OBJECT || token == Token.END_ARRAY) {
-                throw new IllegalStateException("Expecting START_OBJECT or START_ARRAY or VALUE but got [" + token + "]");
-            } else {
+            int start = field.indexOf('.');
+            if (start != -1) {
+                final ArrayList<String> partsList = new ArrayList<>();
+                partsList.add(field.substring(0, start));
+                while (true) {
+                    int end = field.indexOf('.', start + 1);
+                    if (end == -1) {
+                        if (start + 1 < field.length()) {
+                            partsList.add(field.substring(start + 1));
+                        }
+                        break;
+                    }
+                    partsList.add(field.substring(start + 1, end));
+                    start = end;
+                }
+                String[] parts = partsList.toArray(Strings.EMPTY_ARRAY);
+                if (parts.length == 0) {
+                    throw new IllegalArgumentException("field name cannot contain only dots");
+                }
+                for (String part : parts) {
+                    // check if the field name contains only whitespace
+                    if (part.isBlank()) {
+                        throwOnBlankFieldName(field, part);
+                    }
+                }
+                // Corner case: if the input has a single trailing '.', eg 'field.', then we will get a single
+                // subpath due to the way String.split() works. We can only return fast here if this is not
+                // the case
+                // TODO make this case throw an error instead? https://github.com/elastic/elasticsearch/issues/28948
+                if (parts.length == 1 && field.endsWith(".") == false) {
+                    return;
+                }
+                XContentLocation location = delegate.getTokenLocation();
+                Token token = delegate.nextToken();
+                switch (token) {
+                    case END_OBJECT, END_ARRAY -> throwOnEndObject(token);
+                }
                 XContentParser subParser = token == Token.START_OBJECT || token == Token.START_ARRAY
                     ? new XContentSubParser(delegate)
                     : new SingletonValueXContentParser(delegate);
-                parsers.push(new DotExpandingXContentParser(subParser, subpaths, location, isWithinLeafObject));
+                parsers.push(new DotExpandingXContentParser(subParser, parts, location, isWithinLeafObject));
+            } else if (field.isEmpty()) {
+                throw new IllegalArgumentException("field name cannot be an empty string");
             }
+        }
+
+        private void throwOnBlankFieldName(String field, String part) {
+            if (part.isEmpty()) {
+                throw new IllegalArgumentException("field name cannot contain only whitespace: ['" + field + "']");
+            }
+            throw new IllegalArgumentException(
+                "field name starting or ending with a [.] makes object resolution ambiguous: [" + field + "]"
+            );
+        }
+
+        private static void throwOnEndObject(Token token) {
+            throw new IllegalStateException("Expecting START_OBJECT or START_ARRAY or VALUE but got [" + token + "]");
         }
 
         @Override
@@ -130,32 +168,6 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         public List<Object> listOrderedMap() throws IOException {
             throw new UnsupportedOperationException();
         }
-    }
-
-    private static String[] splitAndValidatePath(String fieldName) {
-        if (fieldName.isEmpty()) {
-            throw new IllegalArgumentException("field name cannot be an empty string");
-        }
-        if (fieldName.contains(".") == false) {
-            return new String[] { fieldName };
-        }
-        String[] parts = fieldName.split("\\.");
-        if (parts.length == 0) {
-            throw new IllegalArgumentException("field name cannot contain only dots");
-        }
-
-        for (String part : parts) {
-            // check if the field name contains only whitespace
-            if (part.isEmpty()) {
-                throw new IllegalArgumentException("field name cannot contain only whitespace: ['" + fieldName + "']");
-            }
-            if (part.isBlank()) {
-                throw new IllegalArgumentException(
-                    "field name starting or ending with a [.] makes object resolution ambiguous: [" + fieldName + "]"
-                );
-            }
-        }
-        return parts;
     }
 
     /**
