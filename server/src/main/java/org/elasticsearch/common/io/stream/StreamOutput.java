@@ -265,6 +265,10 @@ public abstract class StreamOutput extends OutputStream {
         if (i < 0) {
             throw new IllegalStateException("Negative longs unsupported, use writeLong or writeZLong for negative numbers [" + i + "]");
         }
+        if (Long.numberOfLeadingZeros(i) >= 25 + 32) {
+            writeByte((byte) i);
+            return;
+        }
         writeVLongNoCheck(i);
     }
 
