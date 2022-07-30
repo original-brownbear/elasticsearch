@@ -473,7 +473,7 @@ public class FieldCapabilities implements Writeable, ToXContentObject {
     }
 
     static class Builder {
-        private final String name;
+        private String name;
         private final String type;
         private boolean isMetadataField;
         private int searchableIndices = 0;
@@ -484,6 +484,10 @@ public class FieldCapabilities implements Writeable, ToXContentObject {
         private final List<IndexCaps> indiceList;
         private final Map<String, Set<String>> meta;
 
+        Builder(String type) {
+            this(null, type);
+        }
+
         Builder(String name, String type) {
             this.name = name;
             this.type = type;
@@ -491,6 +495,10 @@ public class FieldCapabilities implements Writeable, ToXContentObject {
             this.hasConflictMetricType = false;
             this.indiceList = new ArrayList<>();
             this.meta = new HashMap<>();
+        }
+
+        void name(String name) {
+            this.name = name;
         }
 
         /**

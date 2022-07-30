@@ -52,7 +52,6 @@ public class IndexFieldCapabilities implements Writeable {
         TimeSeriesParams.MetricType metricType,
         Map<String, String> meta
     ) {
-
         this.name = name;
         this.type = type;
         this.isMetadatafield = isMetadatafield;
@@ -60,7 +59,7 @@ public class IndexFieldCapabilities implements Writeable {
         this.isAggregatable = isAggregatable;
         this.isDimension = isDimension;
         this.metricType = metricType;
-        this.meta = meta;
+        this.meta = Map.copyOf(meta);
     }
 
     IndexFieldCapabilities(StreamInput in) throws IOException {
@@ -76,7 +75,7 @@ public class IndexFieldCapabilities implements Writeable {
             this.isDimension = false;
             this.metricType = null;
         }
-        this.meta = in.readMap(StreamInput::readString, StreamInput::readString);
+        this.meta = in.readImmutableMap(StreamInput::readString, StreamInput::readString);
     }
 
     @Override

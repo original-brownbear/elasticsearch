@@ -47,7 +47,7 @@ final class FieldCapabilitiesIndexResponse implements Writeable {
 
     FieldCapabilitiesIndexResponse(StreamInput in) throws IOException {
         this.indexName = in.readString();
-        this.responseMap = in.readMap(StreamInput::readString, IndexFieldCapabilities::new);
+        this.responseMap = in.readImmutableMap(StreamInput::readString, IndexFieldCapabilities::new);
         this.canMatch = in.readBoolean();
         this.originVersion = in.getVersion();
         if (in.getVersion().onOrAfter(MAPPING_HASH_VERSION)) {
@@ -142,14 +142,6 @@ final class FieldCapabilitiesIndexResponse implements Writeable {
      */
     public Map<String, IndexFieldCapabilities> get() {
         return responseMap;
-    }
-
-    /**
-     *
-     * Get the field capabilities for the provided {@code field}
-     */
-    public IndexFieldCapabilities getField(String field) {
-        return responseMap.get(field);
     }
 
     Version getOriginVersion() {
