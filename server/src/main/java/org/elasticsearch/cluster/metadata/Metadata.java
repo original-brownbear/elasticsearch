@@ -1150,42 +1150,59 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
     @Override
     public ChunkedXContentSerialization toXContentChunked(XContentBuilder builder, Params params) {
         return new ChunkedXContentSerialization() {
+
+            private Iterator<IndexMetadata> indexMeta;
+
+            private boolean doneWithIndexMeta = false;
+
+            private boolean wroteStart = false;
+
             @Override
             public XContentBuilder writeChunk() throws IOException {
                 XContentContext context = XContentContext.valueOf(params.param(CONTEXT_MODE_PARAM, CONTEXT_MODE_API));
 
-                if (context == XContentContext.API) {
-                    builder.startObject("metadata");
-                } else {
-                    builder.startObject("meta-data");
-                    builder.field("version", version());
-                }
+                if (wroteStart == false) {
+                    if (context == XContentContext.API) {
+                        builder.startObject("metadata");
+                    } else {
+                        builder.startObject("meta-data");
+                        builder.field("version", version());
+                    }
 
-                builder.field("cluster_uuid", clusterUUID);
-                builder.field("cluster_uuid_committed", clusterUUIDCommitted);
+                    builder.field("cluster_uuid", clusterUUID);
+                    builder.field("cluster_uuid_committed", clusterUUIDCommitted);
 
-                builder.startObject("cluster_coordination");
-                coordinationMetadata().toXContent(builder, params);
-                builder.endObject();
-
-                if (context != XContentContext.API && persistentSettings().isEmpty() == false) {
-                    builder.startObject("settings");
-                    persistentSettings().toXContent(builder, new MapParams(Collections.singletonMap("flat_settings", "true")));
+                    builder.startObject("cluster_coordination");
+                    coordinationMetadata().toXContent(builder, params);
                     builder.endObject();
-                }
 
-                builder.startObject("templates");
-                for (IndexTemplateMetadata template : templates().values()) {
-                    IndexTemplateMetadata.Builder.toXContentWithTypes(template, builder, params);
-                }
-                builder.endObject();
+                    if (context != XContentContext.API && persistentSettings().isEmpty() == false) {
+                        builder.startObject("settings");
+                        persistentSettings().toXContent(builder, new MapParams(Collections.singletonMap("flat_settings", "true")));
+                        builder.endObject();
+                    }
 
-                if (context == XContentContext.API) {
-                    builder.startObject("indices");
-                    for (IndexMetadata indexMetadata : Metadata.this) {
-                        IndexMetadata.Builder.toXContent(indexMetadata, builder, params);
+                    builder.startObject("templates");
+                    for (IndexTemplateMetadata template : templates().values()) {
+                        IndexTemplateMetadata.Builder.toXContentWithTypes(template, builder, params);
                     }
                     builder.endObject();
+                    wroteStart = true;
+                    return null;
+                }
+
+                if (context == XContentContext.API && doneWithIndexMeta == false) {
+                    if (indexMeta == null) {
+                        builder.startObject("indices");
+                        indexMeta = Metadata.this.iterator();
+                    }
+                    if (indexMeta.hasNext()) {
+                        IndexMetadata.Builder.toXContent(indexMeta.next(), builder, params);
+                        return null;
+                    } else {
+                        builder.endObject();
+                        doneWithIndexMeta = true;
+                    }
                 }
 
                 for (Map.Entry<String, Custom> cursor : customs().entrySet()) {
