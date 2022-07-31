@@ -481,6 +481,8 @@ public class ClusterState implements ChunkedToXContent, Diffable<ClusterState> {
 
             private boolean wroteMeta = false;
 
+            private ChunkedXContentSerialization metadataSerialization;
+
             @Override
             public XContentBuilder writeChunk() throws IOException {
                 EnumSet<Metric> metrics = Metric.parseString(params.param("metric", "_all"), true);
@@ -537,7 +539,12 @@ public class ClusterState implements ChunkedToXContent, Diffable<ClusterState> {
                 // meta data
                 if (wroteMeta == false) {
                     if (metrics.contains(Metric.METADATA)) {
-                        metadata.toXContent(builder, params);
+                        if (metadataSerialization == null) {
+                            metadataSerialization = metadata.toXContentChunked(builder, params);
+                        }
+                        if (metadataSerialization.writeChunk() == null) {
+                            return null;
+                        }
                     }
                     wroteMeta = true;
                     return null;

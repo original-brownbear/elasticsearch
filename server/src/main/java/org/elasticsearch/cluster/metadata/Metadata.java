@@ -35,6 +35,7 @@ import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.Nullable;
@@ -89,7 +90,7 @@ import static org.elasticsearch.common.settings.Settings.readSettingsFromStream;
  * The details of how this is persisted are covered in {@link org.elasticsearch.gateway.PersistedClusterStateService}.
  * </p>
  */
-public class Metadata extends AbstractCollection<IndexMetadata> implements Diffable<Metadata>, ToXContentFragment {
+public class Metadata extends AbstractCollection<IndexMetadata> implements Diffable<Metadata>, ChunkedToXContent, ToXContentFragment {
 
     private static final Logger logger = LogManager.getLogger(Metadata.class);
 
@@ -1147,9 +1148,64 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
     }
 
     @Override
-    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        Builder.toXContent(this, builder, params);
-        return builder;
+    public ChunkedXContentSerialization toXContentChunked(XContentBuilder builder, Params params) {
+        return new ChunkedXContentSerialization() {
+            @Override
+            public XContentBuilder writeChunk() throws IOException {
+                XContentContext context = XContentContext.valueOf(params.param(CONTEXT_MODE_PARAM, CONTEXT_MODE_API));
+
+                if (context == XContentContext.API) {
+                    builder.startObject("metadata");
+                } else {
+                    builder.startObject("meta-data");
+                    builder.field("version", version());
+                }
+
+                builder.field("cluster_uuid", clusterUUID);
+                builder.field("cluster_uuid_committed", clusterUUIDCommitted);
+
+                builder.startObject("cluster_coordination");
+                coordinationMetadata().toXContent(builder, params);
+                builder.endObject();
+
+                if (context != XContentContext.API && persistentSettings().isEmpty() == false) {
+                    builder.startObject("settings");
+                    persistentSettings().toXContent(builder, new MapParams(Collections.singletonMap("flat_settings", "true")));
+                    builder.endObject();
+                }
+
+                builder.startObject("templates");
+                for (IndexTemplateMetadata template : templates().values()) {
+                    IndexTemplateMetadata.Builder.toXContentWithTypes(template, builder, params);
+                }
+                builder.endObject();
+
+                if (context == XContentContext.API) {
+                    builder.startObject("indices");
+                    for (IndexMetadata indexMetadata : Metadata.this) {
+                        IndexMetadata.Builder.toXContent(indexMetadata, builder, params);
+                    }
+                    builder.endObject();
+                }
+
+                for (Map.Entry<String, Custom> cursor : customs().entrySet()) {
+                    if (cursor.getValue().context().contains(context)) {
+                        builder.startObject(cursor.getKey());
+                        cursor.getValue().toXContent(builder, params);
+                        builder.endObject();
+                    }
+                }
+
+                builder.startObject("reserved_state");
+                for (ReservedStateMetadata ReservedStateMetadata : reservedStateMetadata().values()) {
+                    ReservedStateMetadata.toXContent(builder, params);
+                }
+                builder.endObject();
+
+                builder.endObject();
+                return builder;
+            }
+        };
     }
 
     public Map<String, MappingMetadata> getMappingsByHash() {
@@ -2252,60 +2308,6 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             return true;
         }
 
-        public static void toXContent(Metadata metadata, XContentBuilder builder, ToXContent.Params params) throws IOException {
-            XContentContext context = XContentContext.valueOf(params.param(CONTEXT_MODE_PARAM, CONTEXT_MODE_API));
-
-            if (context == XContentContext.API) {
-                builder.startObject("metadata");
-            } else {
-                builder.startObject("meta-data");
-                builder.field("version", metadata.version());
-            }
-
-            builder.field("cluster_uuid", metadata.clusterUUID);
-            builder.field("cluster_uuid_committed", metadata.clusterUUIDCommitted);
-
-            builder.startObject("cluster_coordination");
-            metadata.coordinationMetadata().toXContent(builder, params);
-            builder.endObject();
-
-            if (context != XContentContext.API && metadata.persistentSettings().isEmpty() == false) {
-                builder.startObject("settings");
-                metadata.persistentSettings().toXContent(builder, new MapParams(Collections.singletonMap("flat_settings", "true")));
-                builder.endObject();
-            }
-
-            builder.startObject("templates");
-            for (IndexTemplateMetadata template : metadata.templates().values()) {
-                IndexTemplateMetadata.Builder.toXContentWithTypes(template, builder, params);
-            }
-            builder.endObject();
-
-            if (context == XContentContext.API) {
-                builder.startObject("indices");
-                for (IndexMetadata indexMetadata : metadata) {
-                    IndexMetadata.Builder.toXContent(indexMetadata, builder, params);
-                }
-                builder.endObject();
-            }
-
-            for (Map.Entry<String, Custom> cursor : metadata.customs().entrySet()) {
-                if (cursor.getValue().context().contains(context)) {
-                    builder.startObject(cursor.getKey());
-                    cursor.getValue().toXContent(builder, params);
-                    builder.endObject();
-                }
-            }
-
-            builder.startObject("reserved_state");
-            for (ReservedStateMetadata ReservedStateMetadata : metadata.reservedStateMetadata().values()) {
-                ReservedStateMetadata.toXContent(builder, params);
-            }
-            builder.endObject();
-
-            builder.endObject();
-        }
-
         public static Metadata fromXContent(XContentParser parser) throws IOException {
             Builder builder = new Builder();
 
@@ -2433,7 +2435,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
 
         @Override
         public void toXContent(XContentBuilder builder, Metadata state) throws IOException {
-            Builder.toXContent(state, builder, FORMAT_PARAMS);
+            state.toXContent(builder, FORMAT_PARAMS);
         }
 
         @Override
