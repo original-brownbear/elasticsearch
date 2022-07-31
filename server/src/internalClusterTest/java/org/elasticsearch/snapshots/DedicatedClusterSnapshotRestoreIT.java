@@ -32,6 +32,9 @@ import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.CompositeBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.CloseableChannel;
 import org.elasticsearch.common.settings.Settings;
@@ -63,6 +66,7 @@ import org.elasticsearch.test.disruption.ServiceDisruptionScheme;
 import org.elasticsearch.test.rest.FakeRestRequest;
 import org.elasticsearch.test.transport.MockTransportService;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.transport.BytesRefRecycler;
 import org.elasticsearch.transport.TransportMessageListener;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportRequestOptions;
@@ -524,9 +528,19 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
         clusterStateAction.handleRequest(clusterStateRequest, new AbstractRestChannel(clusterStateRequest, true) {
             @Override
             public void sendResponse(RestResponse response) {
+                final List<ReleasableBytesReference> bytes = new ArrayList<>();
+                final var body = response.chunkedContent();
                 try {
-                    assertThat(response.content().utf8ToString(), containsString("notsecretusername"));
-                    assertThat(response.content().utf8ToString(), not(containsString("verysecretpassword")));
+                    while (body.isDone() == false) {
+                        try {
+                            bytes.add(body.encodeChunk(Integer.MAX_VALUE, BytesRefRecycler.NON_RECYCLING_INSTANCE));
+                        } catch (IOException e) {
+                            throw new AssertionError(e);
+                        }
+                    }
+                    final String bodyAsString = CompositeBytesReference.of(bytes.toArray(BytesReference[]::new)).utf8ToString();
+                    assertThat(bodyAsString, containsString("notsecretusername"));
+                    assertThat(bodyAsString, not(containsString("verysecretpassword")));
                 } catch (AssertionError ex) {
                     clusterStateError.set(ex);
                 } finally {

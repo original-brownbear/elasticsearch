@@ -43,6 +43,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.VersionedNamedWriteable;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContent;
@@ -100,7 +101,7 @@ import static org.elasticsearch.gateway.GatewayService.STATE_NOT_RECOVERED_BLOCK
  * Security-sensitive data such as passwords or private keys should not be stored in the cluster state, since the contents of the cluster
  * state are exposed in various APIs.
  */
-public class ClusterState implements ToXContentFragment, Diffable<ClusterState> {
+public class ClusterState implements ChunkedToXContent, Diffable<ClusterState> {
 
     public static final ClusterState EMPTY_STATE = builder(ClusterName.CLUSTER_NAME_SETTING.getDefault(Settings.EMPTY)).build();
 
@@ -473,113 +474,134 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
     }
 
     @Override
-    public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        EnumSet<Metric> metrics = Metric.parseString(params.param("metric", "_all"), true);
+    public ChunkedXContentSerialization toXContentChunked(XContentBuilder builder, Params params) {
+        return new ChunkedXContentSerialization() {
 
-        // always provide the cluster_uuid as part of the top-level response (also part of the metadata response)
-        builder.field("cluster_uuid", metadata().clusterUUID());
+            private boolean wroteStart = false;
 
-        if (metrics.contains(Metric.VERSION)) {
-            builder.field("version", version);
-            builder.field("state_uuid", stateUUID);
-        }
+            private boolean wroteMeta = false;
 
-        if (metrics.contains(Metric.MASTER_NODE)) {
-            builder.field("master_node", nodes().getMasterNodeId());
-        }
+            @Override
+            public XContentBuilder writeChunk() throws IOException {
+                EnumSet<Metric> metrics = Metric.parseString(params.param("metric", "_all"), true);
+                if (wroteStart == false) {
+                    // always provide the cluster_uuid as part of the top-level response (also part of the metadata response)
+                    builder.field("cluster_uuid", metadata().clusterUUID());
 
-        if (metrics.contains(Metric.BLOCKS)) {
-            builder.startObject("blocks");
+                    if (metrics.contains(Metric.VERSION)) {
+                        builder.field("version", version);
+                        builder.field("state_uuid", stateUUID);
+                    }
 
-            if (blocks().global().isEmpty() == false) {
-                builder.startObject("global");
-                for (ClusterBlock block : blocks().global()) {
-                    block.toXContent(builder, params);
+                    if (metrics.contains(Metric.MASTER_NODE)) {
+                        builder.field("master_node", nodes().getMasterNodeId());
+                    }
+
+                    if (metrics.contains(Metric.BLOCKS)) {
+                        builder.startObject("blocks");
+
+                        if (blocks().global().isEmpty() == false) {
+                            builder.startObject("global");
+                            for (ClusterBlock block : blocks().global()) {
+                                block.toXContent(builder, params);
+                            }
+                            builder.endObject();
+                        }
+
+                        if (blocks().indices().isEmpty() == false) {
+                            builder.startObject("indices");
+                            for (Map.Entry<String, Set<ClusterBlock>> entry : blocks().indices().entrySet()) {
+                                builder.startObject(entry.getKey());
+                                for (ClusterBlock block : entry.getValue()) {
+                                    block.toXContent(builder, params);
+                                }
+                                builder.endObject();
+                            }
+                            builder.endObject();
+                        }
+
+                        builder.endObject();
+                    }
+
+                    // nodes
+                    if (metrics.contains(Metric.NODES)) {
+                        builder.startObject("nodes");
+                        for (DiscoveryNode node : nodes) {
+                            node.toXContent(builder, params);
+                        }
+                        builder.endObject();
+                    }
+                    wroteStart = true;
+                    return null;
                 }
-                builder.endObject();
-            }
+                // meta data
+                if (wroteMeta == false) {
+                    if (metrics.contains(Metric.METADATA)) {
+                        metadata.toXContent(builder, params);
+                    }
+                    wroteMeta = true;
+                    return null;
+                }
 
-            if (blocks().indices().isEmpty() == false) {
-                builder.startObject("indices");
-                for (Map.Entry<String, Set<ClusterBlock>> entry : blocks().indices().entrySet()) {
-                    builder.startObject(entry.getKey());
-                    for (ClusterBlock block : entry.getValue()) {
-                        block.toXContent(builder, params);
+                // routing table
+                if (metrics.contains(Metric.ROUTING_TABLE)) {
+                    builder.startObject("routing_table");
+                    builder.startObject("indices");
+                    for (IndexRoutingTable indexRoutingTable : routingTable()) {
+                        builder.startObject(indexRoutingTable.getIndex().getName());
+                        builder.startObject("shards");
+                        for (int shardId = 0; shardId < indexRoutingTable.size(); shardId++) {
+                            IndexShardRoutingTable indexShardRoutingTable = indexRoutingTable.shard(shardId);
+                            builder.startArray(Integer.toString(indexShardRoutingTable.shardId().id()));
+                            for (int copy = 0; copy < indexShardRoutingTable.size(); copy++) {
+                                indexShardRoutingTable.shard(copy).toXContent(builder, params);
+                            }
+                            builder.endArray();
+                        }
+                        builder.endObject();
+                        builder.endObject();
                     }
                     builder.endObject();
+                    builder.endObject();
                 }
-                builder.endObject();
-            }
 
-            builder.endObject();
-        }
-
-        // nodes
-        if (metrics.contains(Metric.NODES)) {
-            builder.startObject("nodes");
-            for (DiscoveryNode node : nodes) {
-                node.toXContent(builder, params);
-            }
-            builder.endObject();
-        }
-
-        // meta data
-        if (metrics.contains(Metric.METADATA)) {
-            metadata.toXContent(builder, params);
-        }
-
-        // routing table
-        if (metrics.contains(Metric.ROUTING_TABLE)) {
-            builder.startObject("routing_table");
-            builder.startObject("indices");
-            for (IndexRoutingTable indexRoutingTable : routingTable()) {
-                builder.startObject(indexRoutingTable.getIndex().getName());
-                builder.startObject("shards");
-                for (int shardId = 0; shardId < indexRoutingTable.size(); shardId++) {
-                    IndexShardRoutingTable indexShardRoutingTable = indexRoutingTable.shard(shardId);
-                    builder.startArray(Integer.toString(indexShardRoutingTable.shardId().id()));
-                    for (int copy = 0; copy < indexShardRoutingTable.size(); copy++) {
-                        indexShardRoutingTable.shard(copy).toXContent(builder, params);
+                // routing nodes
+                if (metrics.contains(Metric.ROUTING_NODES)) {
+                    builder.startObject("routing_nodes");
+                    builder.startArray("unassigned");
+                    for (ShardRouting shardRouting : getRoutingNodes().unassigned()) {
+                        shardRouting.toXContent(builder, params);
                     }
                     builder.endArray();
+
+                    builder.startObject("nodes");
+                    for (RoutingNode routingNode : getRoutingNodes()) {
+                        builder.startArray(routingNode.nodeId() == null ? "null" : routingNode.nodeId());
+                        for (ShardRouting shardRouting : routingNode) {
+                            shardRouting.toXContent(builder, params);
+                        }
+                        builder.endArray();
+                    }
+                    builder.endObject();
+
+                    builder.endObject();
                 }
-                builder.endObject();
-                builder.endObject();
-            }
-            builder.endObject();
-            builder.endObject();
-        }
-
-        // routing nodes
-        if (metrics.contains(Metric.ROUTING_NODES)) {
-            builder.startObject("routing_nodes");
-            builder.startArray("unassigned");
-            for (ShardRouting shardRouting : getRoutingNodes().unassigned()) {
-                shardRouting.toXContent(builder, params);
-            }
-            builder.endArray();
-
-            builder.startObject("nodes");
-            for (RoutingNode routingNode : getRoutingNodes()) {
-                builder.startArray(routingNode.nodeId() == null ? "null" : routingNode.nodeId());
-                for (ShardRouting shardRouting : routingNode) {
-                    shardRouting.toXContent(builder, params);
+                if (metrics.contains(Metric.CUSTOMS)) {
+                    for (Map.Entry<String, Custom> cursor : customs.entrySet()) {
+                        builder.startObject(cursor.getKey());
+                        cursor.getValue().toXContent(builder, params);
+                        builder.endObject();
+                    }
                 }
-                builder.endArray();
-            }
-            builder.endObject();
 
-            builder.endObject();
-        }
-        if (metrics.contains(Metric.CUSTOMS)) {
-            for (Map.Entry<String, Custom> cursor : customs.entrySet()) {
-                builder.startObject(cursor.getKey());
-                cursor.getValue().toXContent(builder, params);
-                builder.endObject();
+                return builder;
             }
-        }
+        };
+    }
 
-        return builder;
+    @Override
+    public boolean isFragment() {
+        return true;
     }
 
     public static Builder builder(ClusterName clusterName) {
