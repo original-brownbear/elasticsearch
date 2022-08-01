@@ -16,13 +16,7 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.gateway.GatewayService;
 import org.elasticsearch.index.Index;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /**
  * An event received by the local node, signaling that the cluster state has changed.
@@ -90,6 +84,14 @@ public class ClusterChangedEvent {
             return state.routingTable().index(index) != previousState.routingTable().index(index);
         }
         return true;
+    }
+
+    public Iterator<IndexMetadata> updatedOrChangedIndices() {
+        final ClusterState.ClusterStateDiff diff = state.getDiff();
+        if (diff != null && diff.fromUuid().equals(previousState.stateUUID())) {
+
+        }
+
     }
 
     /**

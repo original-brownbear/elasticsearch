@@ -54,6 +54,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static org.elasticsearch.gateway.GatewayService.STATE_NOT_RECOVERED_BLOCK;
@@ -155,7 +156,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
 
     private final ClusterName clusterName;
 
-    private final boolean wasReadFromDiff;
+    private final AtomicReference<ClusterStateDiff> fromDiff;
 
     // built on demand
     private volatile RoutingNodes routingNodes;
@@ -170,7 +171,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             state.nodes(),
             state.blocks(),
             state.customs(),
-            false,
+            null,
             state.routingNodes
         );
     }
@@ -184,7 +185,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         DiscoveryNodes nodes,
         ClusterBlocks blocks,
         Map<String, Custom> customs,
-        boolean wasReadFromDiff,
+        @Nullable ClusterStateDiff diff,
         @Nullable RoutingNodes routingNodes
     ) {
         this.version = version;
@@ -195,7 +196,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         this.nodes = nodes;
         this.blocks = blocks;
         this.customs = customs;
-        this.wasReadFromDiff = wasReadFromDiff;
+        this.fromDiff = new AtomicReference<>(diff);
         this.routingNodes = routingNodes;
         assert assertConsistentRoutingNodes(routingTable, nodes, routingNodes);
     }
@@ -340,6 +341,11 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         return RoutingNodes.mutable(routingTable, this.nodes);
     }
 
+    @Nullable
+    public ClusterStateDiff getDiff() {
+        return fromDiff.get();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -352,7 +358,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             .append("\n");
         sb.append("version: ").append(version).append("\n");
         sb.append("state uuid: ").append(stateUUID).append("\n");
-        sb.append("from_diff: ").append(wasReadFromDiff).append("\n");
+        sb.append("from_diff: ").append(fromDiff.get() != null).append("\n");
         sb.append("meta data version: ").append(metadata.version()).append("\n");
         sb.append(TAB).append("coordination_metadata:\n");
         sb.append(TAB).append(TAB).append("term: ").append(coordinationMetadata().term()).append("\n");
@@ -612,8 +618,6 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         private DiscoveryNodes nodes = DiscoveryNodes.EMPTY_NODES;
         private ClusterBlocks blocks = ClusterBlocks.EMPTY_CLUSTER_BLOCK;
         private final ImmutableOpenMap.Builder<String, Custom> customs;
-        private boolean fromDiff;
-
         public Builder(ClusterState state) {
             this.previous = state;
             this.clusterName = state.clusterName;
@@ -624,7 +628,6 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             this.metadata = state.metadata();
             this.blocks = state.blocks();
             this.customs = ImmutableOpenMap.builder(state.customs());
-            this.fromDiff = false;
         }
 
         public Builder(ClusterName clusterName) {
@@ -704,12 +707,11 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             return this;
         }
 
-        public Builder fromDiff(boolean fromDiff) {
-            this.fromDiff = fromDiff;
-            return this;
+        public ClusterState build() {
+            return build(null);
         }
 
-        public ClusterState build() {
+        public ClusterState build(@Nullable ClusterStateDiff fromDiff) {
             if (UNKNOWN_UUID.equals(uuid)) {
                 uuid = UUIDs.randomBase64UUID();
             }
@@ -754,7 +756,9 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
 
     @Override
     public Diff<ClusterState> diff(ClusterState previousState) {
-        return new ClusterStateDiff(previousState, this);
+        final ClusterStateDiff csDiff = new ClusterStateDiff(previousState, this);
+        fromDiff.compareAndSet(null, csDiff);
+        return csDiff;
     }
 
     public static Diff<ClusterState> readDiffFrom(StreamInput in, DiscoveryNode localNode) throws IOException {
@@ -796,7 +800,7 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
         }
     }
 
-    private static class ClusterStateDiff implements Diff<ClusterState> {
+    public static final class ClusterStateDiff implements Diff<ClusterState> {
 
         private final long toVersion;
 
@@ -876,8 +880,11 @@ public class ClusterState implements ToXContentFragment, Diffable<ClusterState> 
             builder.metadata(metadata.apply(state.metadata));
             builder.blocks(blocks.apply(state.blocks));
             builder.customs(customs.apply(state.customs));
-            builder.fromDiff(true);
-            return builder.build();
+            return builder.build(this);
+        }
+
+        public String fromUuid() {
+            return fromUuid;
         }
     }
 }
