@@ -251,10 +251,49 @@ public final class MappingLookup {
 
     void checkLimits(IndexSettings settings) {
         checkFieldLimit(settings.getMappingTotalFieldsLimit());
-        checkObjectDepthLimit(settings.getMappingDepthLimit());
-        checkFieldNameLengthLimit(settings.getMappingFieldNameLengthLimit());
-        checkNestedLimit(settings.getMappingNestedFieldsLimit());
-        checkDimensionFieldLimit(settings.getMappingDimensionFieldsLimit());
+        long mappingDepthLimit = settings.getMappingDepthLimit();
+        long fieldNameLengthLimit = settings.getMappingFieldNameLengthLimit();
+        long nestedFieldsLimit = settings.getMappingNestedFieldsLimit();
+        long actualNestedFields = 0;
+        for (var entry : objectMappers.entrySet()) {
+            final String objectPath = entry.getKey();
+            int numDots = 0;
+            for (int i = 0; i < objectPath.length(); ++i) {
+                if (objectPath.charAt(i) == '.') {
+                    numDots += 1;
+                }
+            }
+            final int depth = numDots + 2;
+            if (depth > mappingDepthLimit) {
+                throw new IllegalArgumentException(
+                    "Limit of mapping depth [" + mappingDepthLimit + "] has been exceeded due to object field [" + objectPath + "]"
+                );
+            }
+            final ObjectMapper objectMapper = entry.getValue();
+            validateMapperName(objectMapper, fieldNameLengthLimit);
+            if (objectMapper.isNested()) {
+                if (++actualNestedFields > nestedFieldsLimit) {
+                    throw new IllegalArgumentException("Limit of nested fields [" + nestedFieldsLimit + "] has been exceeded");
+                }
+            }
+        }
+        long dimensionFieldsLimit = settings.getMappingDimensionFieldsLimit();
+        long dimensionFieldCount = 0L;
+        for (Mapper m : fieldMappers.values()) {
+            validateMapperName(m, fieldNameLengthLimit);
+            if (m instanceof FieldMapper f && f.fieldType().isDimension()) {
+                if (++dimensionFieldCount > dimensionFieldsLimit) {
+                    throw new IllegalArgumentException("Limit of total dimension fields [" + dimensionFieldsLimit + "] has been exceeded");
+                }
+            }
+        }
+    }
+
+    private static void validateMapperName(Mapper mapper, long limit) {
+        String name = mapper.simpleName();
+        if (name.length() > limit) {
+            throw new IllegalArgumentException("Field name [" + name + "] is longer than the limit of [" + limit + "] characters");
+        }
     }
 
     private void checkFieldLimit(long limit) {
@@ -269,59 +308,6 @@ public final class MappingLookup {
                     + "] has been exceeded"
                     + (additionalFieldsToAdd > 0 ? " while adding new fields [" + additionalFieldsToAdd + "]" : "")
             );
-        }
-    }
-
-    private void checkDimensionFieldLimit(long limit) {
-        long dimensionFieldCount = fieldMappers.values()
-            .stream()
-            .filter(m -> m instanceof FieldMapper && ((FieldMapper) m).fieldType().isDimension())
-            .count();
-        if (dimensionFieldCount > limit) {
-            throw new IllegalArgumentException("Limit of total dimension fields [" + limit + "] has been exceeded");
-        }
-    }
-
-    private void checkObjectDepthLimit(long limit) {
-        for (String objectPath : objectMappers.keySet()) {
-            int numDots = 0;
-            for (int i = 0; i < objectPath.length(); ++i) {
-                if (objectPath.charAt(i) == '.') {
-                    numDots += 1;
-                }
-            }
-            final int depth = numDots + 2;
-            if (depth > limit) {
-                throw new IllegalArgumentException(
-                    "Limit of mapping depth [" + limit + "] has been exceeded due to object field [" + objectPath + "]"
-                );
-            }
-        }
-    }
-
-    private void checkFieldNameLengthLimit(long limit) {
-        validateMapperNameIn(objectMappers.values(), limit);
-        validateMapperNameIn(fieldMappers.values(), limit);
-    }
-
-    private static void validateMapperNameIn(Collection<? extends Mapper> mappers, long limit) {
-        for (Mapper mapper : mappers) {
-            String name = mapper.simpleName();
-            if (name.length() > limit) {
-                throw new IllegalArgumentException("Field name [" + name + "] is longer than the limit of [" + limit + "] characters");
-            }
-        }
-    }
-
-    private void checkNestedLimit(long limit) {
-        long actualNestedFields = 0;
-        for (ObjectMapper objectMapper : objectMappers.values()) {
-            if (objectMapper.isNested()) {
-                actualNestedFields++;
-            }
-        }
-        if (actualNestedFields > limit) {
-            throw new IllegalArgumentException("Limit of nested fields [" + limit + "] has been exceeded");
         }
     }
 
