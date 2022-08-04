@@ -374,81 +374,96 @@ public class IndexLifecycleService
             return;
         }
 
-        boolean safeToStop = true; // true until proven false by a run policy
-
         // loop through all indices in cluster state and filter for ones that are
         // managed by the Index Lifecycle Service they have a index.lifecycle.name setting
         // associated to a policy
-        for (IndexMetadata idxMeta : clusterState.metadata().indices().values()) {
-            String policyName = idxMeta.getLifecyclePolicyName();
-            if (Strings.hasText(policyName)) {
-                final LifecycleExecutionState lifecycleState = idxMeta.getLifecycleExecutionState();
-                StepKey stepKey = Step.getCurrentStepKey(lifecycleState);
-
-                try {
-                    if (OperationMode.STOPPING == currentMode) {
-                        if (stepKey != null && IGNORE_STEPS_MAINTENANCE_REQUESTED.contains(stepKey.getName())) {
-                            logger.info(
-                                "waiting to stop ILM because index [{}] with policy [{}] is currently in step [{}]",
-                                idxMeta.getIndex().getName(),
-                                policyName,
-                                stepKey.getName()
-                            );
-                            if (fromClusterStateChange) {
-                                lifecycleRunner.runPolicyAfterStateChange(policyName, idxMeta);
-                            } else {
-                                lifecycleRunner.runPeriodicStep(policyName, clusterState.metadata(), idxMeta);
-                            }
-                            // ILM is trying to stop, but this index is in a Shrink step (or other dangerous step) so we can't stop
-                            safeToStop = false;
-                        } else {
-                            logger.info(
-                                "skipping policy execution of step [{}] for index [{}] with policy [{}] because ILM is stopping",
-                                stepKey == null ? "n/a" : stepKey.getName(),
-                                idxMeta.getIndex().getName(),
-                                policyName
-                            );
-                        }
-                    } else {
+        if (OperationMode.STOPPING == currentMode) {
+            handleTriggerWhileStopping(clusterState, fromClusterStateChange);
+        } else {
+            for (IndexMetadata idxMeta : clusterState.metadata().indices().values()) {
+                String policyName = idxMeta.getLifecyclePolicyName();
+                if (Strings.hasText(policyName)) {
+                    try {
                         if (fromClusterStateChange) {
                             lifecycleRunner.runPolicyAfterStateChange(policyName, idxMeta);
                         } else {
                             lifecycleRunner.runPeriodicStep(policyName, clusterState.metadata(), idxMeta);
                         }
+                    } catch (Exception e) {
+                        handleTriggerException(idxMeta, e);
                     }
-                } catch (Exception e) {
-                    if (logger.isTraceEnabled()) {
-                        logger.warn(
-                            () -> format(
-                                "async action execution failed during policy trigger"
-                                    + " for index [%s] with policy [%s] in step [%s], lifecycle state: [%s]",
-                                idxMeta.getIndex().getName(),
-                                policyName,
-                                stepKey,
-                                lifecycleState.asMap()
-                            ),
-                            e
-                        );
-                    } else {
-                        logger.warn(
-                            () -> format(
-                                "async action execution failed during policy trigger" + " for index [%s] with policy [%s] in step [%s]",
-                                idxMeta.getIndex().getName(),
-                                policyName,
-                                stepKey
-                            ),
-                            e
-                        );
-
-                    }
-                    // Don't rethrow the exception, we don't want a failure for one index to be
-                    // called to cause actions not to be triggered for further indices
                 }
             }
         }
+    }
 
-        if (safeToStop && OperationMode.STOPPING == currentMode) {
-            submitUnbatchedTask("ilm_operation_mode_update[stopped]", OperationModeUpdateTask.ilmMode(OperationMode.STOPPED));
+    private void handleTriggerWhileStopping(ClusterState clusterState, boolean fromClusterStateChange) {
+        boolean safeToStop = true; // true until proven false by a run policy
+        for (IndexMetadata idxMeta : clusterState.metadata().indices().values()) {
+            String policyName = idxMeta.getLifecyclePolicyName();
+            if (Strings.hasText(policyName)) {
+                final LifecycleExecutionState lifecycleState = idxMeta.getLifecycleExecutionState();
+                try {
+                    StepKey stepKey = Step.getCurrentStepKey(lifecycleState);
+                    if (stepKey != null && IGNORE_STEPS_MAINTENANCE_REQUESTED.contains(stepKey.getName())) {
+                        logger.info(
+                            "waiting to stop ILM because index [{}] with policy [{}] is currently in step [{}]",
+                            idxMeta.getIndex().getName(),
+                            policyName,
+                            stepKey.getName()
+                        );
+                        if (fromClusterStateChange) {
+                            lifecycleRunner.runPolicyAfterStateChange(policyName, idxMeta);
+                        } else {
+                            lifecycleRunner.runPeriodicStep(policyName, clusterState.metadata(), idxMeta);
+                        }
+                        // ILM is trying to stop, but this index is in a Shrink step (or other dangerous step) so we can't stop
+                        safeToStop = false;
+                    } else {
+                        logger.info(
+                            "skipping policy execution of step [{}] for index [{}] with policy [{}] because ILM is stopping",
+                            stepKey == null ? "n/a" : stepKey.getName(),
+                            idxMeta.getIndex().getName(),
+                            policyName
+                        );
+                    }
+                } catch (Exception e) {
+                    handleTriggerException(idxMeta, e);
+                }
+            }
+            if (safeToStop) {
+                submitUnbatchedTask("ilm_operation_mode_update[stopped]", OperationModeUpdateTask.ilmMode(OperationMode.STOPPED));
+            }
+        }
+    }
+
+    private static void handleTriggerException(IndexMetadata idxMeta, Exception e) {
+        final LifecycleExecutionState lifecycleState = idxMeta.getLifecycleExecutionState();
+        StepKey stepKey = Step.getCurrentStepKey(lifecycleState);
+        // Don't rethrow the exception, we don't want a failure for one index to be
+        // called to cause actions not to be triggered for further indices
+        if (logger.isTraceEnabled()) {
+            logger.warn(
+                () -> format(
+                    "async action execution failed during policy trigger"
+                        + " for index [%s] with policy [%s] in step [%s], lifecycle state: [%s]",
+                    idxMeta.getIndex().getName(),
+                    idxMeta.getLifecyclePolicyName(),
+                    stepKey,
+                    lifecycleState.asMap()
+                ),
+                e
+            );
+        } else {
+            logger.warn(
+                () -> format(
+                    "async action execution failed during policy trigger" + " for index [%s] with policy [%s] in step [%s]",
+                    idxMeta.getIndex().getName(),
+                    idxMeta.getLifecyclePolicyName(),
+                    stepKey
+                ),
+                e
+            );
         }
     }
 
