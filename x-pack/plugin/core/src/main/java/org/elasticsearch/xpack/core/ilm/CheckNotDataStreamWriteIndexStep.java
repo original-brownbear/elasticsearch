@@ -52,7 +52,7 @@ public class CheckNotDataStreamWriteIndexStep extends ClusterStateWaitStep {
             String errorMessage = String.format(
                 Locale.ROOT,
                 "[%s] lifecycle action for index [%s] executed but index no longer exists",
-                getKey().getAction(),
+                getKey().action(),
                 indexName
             );
             // Index must have been since deleted
