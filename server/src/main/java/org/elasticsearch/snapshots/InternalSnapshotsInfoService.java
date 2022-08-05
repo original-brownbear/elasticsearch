@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -293,11 +292,11 @@ public class InternalSnapshotsInfoService implements ClusterStateListener, Snaps
             assert failedSnapshotShards.contains(shard) == false : "cannot be known and failed at same time: " + shard;
         }
         for (SnapshotShard shard : unknownSnapshotShards) {
-            assert knownSnapshotShards.keySet().contains(shard) == false : "cannot be unknown and known at same time: " + shard;
+            assert knownSnapshotShards.containsKey(shard) == false : "cannot be unknown and known at same time: " + shard;
             assert failedSnapshotShards.contains(shard) == false : "cannot be unknown and failed at same time: " + shard;
         }
         for (SnapshotShard shard : failedSnapshotShards) {
-            assert knownSnapshotShards.keySet().contains(shard) == false : "cannot be failed and known at same time: " + shard;
+            assert knownSnapshotShards.containsKey(shard) == false : "cannot be failed and known at same time: " + shard;
             assert unknownSnapshotShards.contains(shard) == false : "cannot be failed and unknown at same time: " + shard;
         }
         return true;
@@ -339,47 +338,7 @@ public class InternalSnapshotsInfoService implements ClusterStateListener, Snaps
         return Collections.unmodifiableSet(snapshotShards);
     }
 
-    public static class SnapshotShard {
-
-        private final Snapshot snapshot;
-        private final IndexId index;
-        private final ShardId shardId;
-
-        public SnapshotShard(Snapshot snapshot, IndexId index, ShardId shardId) {
-            this.snapshot = snapshot;
-            this.index = index;
-            this.shardId = shardId;
-        }
-
-        public Snapshot snapshot() {
-            return snapshot;
-        }
-
-        public IndexId index() {
-            return index;
-        }
-
-        public ShardId shardId() {
-            return shardId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            final SnapshotShard that = (SnapshotShard) o;
-            return shardId.equals(that.shardId) && snapshot.equals(that.snapshot) && index.equals(that.index);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(snapshot, index, shardId);
-        }
-
+    public record SnapshotShard(Snapshot snapshot, IndexId index, ShardId shardId) {
         @Override
         public String toString() {
             return "[" + "snapshot=" + snapshot + ", index=" + index + ", shard=" + shardId + ']';

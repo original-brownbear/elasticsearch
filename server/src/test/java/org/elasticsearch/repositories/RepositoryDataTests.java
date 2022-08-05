@@ -244,8 +244,8 @@ public class RepositoryDataTests extends ESTestCase {
                 new RepositoryData.SnapshotDetails(
                     parsedRepositoryData.getSnapshotState(snapshotId),
                     parsedRepositoryData.getVersion(snapshotId),
-                    parsedRepositoryData.getSnapshotDetails(snapshotId).getStartTimeMillis(),
-                    parsedRepositoryData.getSnapshotDetails(snapshotId).getEndTimeMillis(),
+                    parsedRepositoryData.getSnapshotDetails(snapshotId).startTimeMillis(),
+                    parsedRepositoryData.getSnapshotDetails(snapshotId).endTimeMillis(),
                     randomAlphaOfLength(10)
                 )
             );

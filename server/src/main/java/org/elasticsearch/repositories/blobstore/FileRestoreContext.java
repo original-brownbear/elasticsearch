@@ -213,7 +213,6 @@ public abstract class FileRestoreContext {
         ActionListener<Void> listener
     );
 
-    @SuppressWarnings("unchecked")
     private static Iterable<StoreFileMetadata> concat(Store.RecoveryDiff diff) {
         return CollectionUtils.concatLists(diff.different, diff.missing);
     }

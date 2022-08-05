@@ -29,7 +29,7 @@ import java.util.Optional;
 
 public class IndexSnapshotsService {
     private static final Comparator<Tuple<SnapshotId, RepositoryData.SnapshotDetails>> START_TIME_COMPARATOR = Comparator.<
-        Tuple<SnapshotId, RepositoryData.SnapshotDetails>>comparingLong(pair -> pair.v2().getStartTimeMillis()).thenComparing(Tuple::v1);
+        Tuple<SnapshotId, RepositoryData.SnapshotDetails>>comparingLong(pair -> pair.v2().startTimeMillis()).thenComparing(Tuple::v1);
 
     private final RepositoriesService repositoriesService;
 
@@ -43,11 +43,9 @@ public class IndexSnapshotsService {
         ActionListener<Optional<ShardSnapshotInfo>> originalListener
     ) {
         final ActionListener<Optional<ShardSnapshotInfo>> listener = originalListener.delegateResponse(
-            (delegate, err) -> {
-                delegate.onFailure(
-                    new RepositoryException(repositoryName, "Unable to find the latest snapshot for shard [" + shardId + "]", err)
-                );
-            }
+            (delegate, err) -> delegate.onFailure(
+                new RepositoryException(repositoryName, "Unable to find the latest snapshot for shard [" + shardId + "]", err)
+            )
         );
 
         final Repository repository = getRepository(repositoryName);
@@ -71,8 +69,8 @@ public class IndexSnapshotsService {
 
             final Optional<SnapshotId> latestSnapshotId = indexSnapshots.stream()
                 .map(snapshotId -> Tuple.tuple(snapshotId, repositoryData.getSnapshotDetails(snapshotId)))
-                .filter(s -> s.v2().getSnapshotState() != null && s.v2().getSnapshotState() == SnapshotState.SUCCESS)
-                .filter(s -> s.v2().getStartTimeMillis() != -1 && s.v2().getEndTimeMillis() != -1)
+                .filter(s -> s.v2().snapshotState() != null && s.v2().snapshotState() == SnapshotState.SUCCESS)
+                .filter(s -> s.v2().startTimeMillis() != -1 && s.v2().endTimeMillis() != -1)
                 .max(START_TIME_COMPARATOR)
                 .map(Tuple::v1);
 

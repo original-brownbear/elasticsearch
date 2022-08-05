@@ -497,7 +497,6 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                         logger.debug("updating repository [{}]", repositoryMetadata.name());
                         closeRepository(repository);
                         archiveRepositoryStats(repository, state.version());
-                        repository = null;
                         try {
                             repository = createRepository(
                                 repositoryMetadata,

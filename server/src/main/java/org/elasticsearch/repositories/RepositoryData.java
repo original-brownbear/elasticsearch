@@ -282,10 +282,10 @@ public final class RepositoryData {
     public boolean hasMissingDetails(SnapshotId snapshotId) {
         final SnapshotDetails snapshotDetails = getSnapshotDetails(snapshotId);
         return snapshotDetails == null
-            || snapshotDetails.getVersion() == null
-            || snapshotDetails.getStartTimeMillis() == -1
-            || snapshotDetails.getEndTimeMillis() == -1
-            || snapshotDetails.getSlmPolicy() == null;
+            || snapshotDetails.version() == null
+            || snapshotDetails.startTimeMillis() == -1
+            || snapshotDetails.endTimeMillis() == -1
+            || snapshotDetails.slmPolicy() == null;
     }
 
     /**
@@ -302,7 +302,7 @@ public final class RepositoryData {
      */
     @Nullable
     public SnapshotState getSnapshotState(final SnapshotId snapshotId) {
-        return snapshotsDetails.getOrDefault(snapshotId.getUUID(), SnapshotDetails.EMPTY).getSnapshotState();
+        return snapshotsDetails.getOrDefault(snapshotId.getUUID(), SnapshotDetails.EMPTY).snapshotState();
     }
 
     /**
@@ -310,7 +310,7 @@ public final class RepositoryData {
      */
     @Nullable
     public Version getVersion(SnapshotId snapshotId) {
-        return snapshotsDetails.getOrDefault(snapshotId.getUUID(), SnapshotDetails.EMPTY).getVersion();
+        return snapshotsDetails.getOrDefault(snapshotId.getUUID(), SnapshotDetails.EMPTY).version();
     }
 
     /**
@@ -719,7 +719,7 @@ public final class RepositoryData {
             final String snapshotUUID = snapshot.getUUID();
             builder.field(UUID, snapshotUUID);
             final SnapshotDetails snapshotDetails = snapshotsDetails.getOrDefault(snapshotUUID, SnapshotDetails.EMPTY);
-            final SnapshotState state = snapshotDetails.getSnapshotState();
+            final SnapshotState state = snapshotDetails.snapshotState();
             if (state != null) {
                 builder.field(STATE, state.value());
             }
@@ -731,19 +731,19 @@ public final class RepositoryData {
                 }
                 builder.endObject();
             }
-            final Version version = snapshotDetails.getVersion();
+            final Version version = snapshotDetails.version();
             if (version != null) {
                 builder.field(VERSION, version.toString());
             }
 
-            if (snapshotDetails.getStartTimeMillis() != -1) {
-                builder.field(START_TIME_MILLIS, snapshotDetails.getStartTimeMillis());
+            if (snapshotDetails.startTimeMillis() != -1) {
+                builder.field(START_TIME_MILLIS, snapshotDetails.startTimeMillis());
             }
-            if (snapshotDetails.getEndTimeMillis() != -1) {
-                builder.field(END_TIME_MILLIS, snapshotDetails.getEndTimeMillis());
+            if (snapshotDetails.endTimeMillis() != -1) {
+                builder.field(END_TIME_MILLIS, snapshotDetails.endTimeMillis());
             }
-            if (snapshotDetails.getSlmPolicy() != null) {
-                builder.field(SLM_POLICY, snapshotDetails.getSlmPolicy());
+            if (snapshotDetails.slmPolicy() != null) {
+                builder.field(SLM_POLICY, snapshotDetails.slmPolicy());
             }
 
             builder.endObject();
@@ -1042,92 +1042,20 @@ public final class RepositoryData {
     /**
      * A few details of an individual snapshot stored in the top-level index blob, so they are readily accessible without having to load
      * the corresponding {@link SnapshotInfo} blob for each snapshot.
+     *
+     * @param startTimeMillis May be -1 if unknown, which happens if the snapshot was taken before 7.14 and hasn't been updated yet
+     * @param endTimeMillis   May be -1 if unknown, which happens if the snapshot was taken before 7.14 and hasn't been updated yet
+     * @param slmPolicy       May be null if unknown, which happens if the snapshot was taken before 7.16 and hasn't been updated yet.
+     *                        Empty string indicates that this snapshot was not created by an SLM policy.
      */
-    public static class SnapshotDetails {
-
-        public static SnapshotDetails EMPTY = new SnapshotDetails(null, null, -1, -1, null);
-
-        @Nullable // TODO forbid nulls here, this only applies to very old repositories
-        private final SnapshotState snapshotState;
-
-        @Nullable // may be omitted if pre-7.6 nodes were involved somewhere
-        private final Version version;
-
-        // May be -1 if unknown, which happens if the snapshot was taken before 7.14 and hasn't been updated yet
-        private final long startTimeMillis;
-
-        // May be -1 if unknown, which happens if the snapshot was taken before 7.14 and hasn't been updated yet
-        private final long endTimeMillis;
-
-        // May be null if unknown, which happens if the snapshot was taken before 7.16 and hasn't been updated yet. Empty string indicates
-        // that this snapshot was not created by an SLM policy.
-        @Nullable
-        private final String slmPolicy;
-
-        public SnapshotDetails(
-            @Nullable SnapshotState snapshotState,
-            @Nullable Version version,
-            long startTimeMillis,
-            long endTimeMillis,
-            @Nullable String slmPolicy
-        ) {
-            this.snapshotState = snapshotState;
-            this.version = version;
-            this.startTimeMillis = startTimeMillis;
-            this.endTimeMillis = endTimeMillis;
-            this.slmPolicy = slmPolicy;
-        }
-
-        @Nullable
-        public SnapshotState getSnapshotState() {
-            return snapshotState;
-        }
-
-        @Nullable
-        public Version getVersion() {
-            return version;
-        }
-
-        /**
-         * @return start time in millis since the epoch, or {@code -1} if unknown.
-         */
-        public long getStartTimeMillis() {
-            return startTimeMillis;
-        }
-
-        /**
-         * @return end time in millis since the epoch, or {@code -1} if unknown.
-         */
-        public long getEndTimeMillis() {
-            return endTimeMillis;
-        }
-
-        /**
-         * @return the SLM policy that the snapshot was created by or an empty string if it was not created by an SLM policy or
-         *         {@code null} if unknown.
-         */
-        @Nullable
-        public String getSlmPolicy() {
-            return slmPolicy;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            SnapshotDetails that = (SnapshotDetails) o;
-            return startTimeMillis == that.startTimeMillis
-                && endTimeMillis == that.endTimeMillis
-                && snapshotState == that.snapshotState
-                && Objects.equals(version, that.version)
-                && Objects.equals(slmPolicy, that.slmPolicy);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(snapshotState, version, startTimeMillis, endTimeMillis, slmPolicy);
-        }
-
+    public record SnapshotDetails(
+        @Nullable SnapshotState snapshotState,
+        @Nullable Version version,
+        long startTimeMillis,
+        long endTimeMillis,
+        @Nullable String slmPolicy
+    ) {
+        public static final SnapshotDetails EMPTY = new SnapshotDetails(null, null, -1, -1, null);
     }
 
 }
