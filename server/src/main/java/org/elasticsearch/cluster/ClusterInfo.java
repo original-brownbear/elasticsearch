@@ -77,9 +77,9 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
     }
 
     public ClusterInfo(StreamInput in) throws IOException {
-        this.leastAvailableSpaceUsage = in.readImmutableMap(StreamInput::readString, DiskUsage::new);
-        this.mostAvailableSpaceUsage = in.readImmutableMap(StreamInput::readString, DiskUsage::new);
-        this.shardSizes = in.readImmutableMap(StreamInput::readString, StreamInput::readLong);
+        this.leastAvailableSpaceUsage = in.readImmutableMap(DiskUsage::new);
+        this.mostAvailableSpaceUsage = in.readImmutableMap(DiskUsage::new);
+        this.shardSizes = in.readImmutableMap(StreamInput::readLong);
         if (in.getVersion().onOrAfter(DATA_SET_SIZE_SIZE_VERSION)) {
             this.shardDataSetSizes = in.readImmutableMap(ShardId::new, StreamInput::readLong);
         } else {

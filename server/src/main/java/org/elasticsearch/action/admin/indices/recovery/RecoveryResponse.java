@@ -29,7 +29,7 @@ public class RecoveryResponse extends BroadcastResponse {
 
     public RecoveryResponse(StreamInput in) throws IOException {
         super(in);
-        shardRecoveryStates = in.readMapOfLists(StreamInput::readString, RecoveryState::new);
+        shardRecoveryStates = in.readMapOfLists(RecoveryState::new);
     }
 
     /**

@@ -24,8 +24,8 @@ public class ProfileHasPrivilegesResponse extends ActionResponse implements ToXC
 
     public ProfileHasPrivilegesResponse(StreamInput in) throws IOException {
         super(in);
-        this.hasPrivilegeUids = in.readSet(StreamInput::readString);
-        this.errorUids = in.readSet(StreamInput::readString);
+        this.hasPrivilegeUids = in.readStringSet();
+        this.errorUids = in.readStringSet();
     }
 
     public ProfileHasPrivilegesResponse(Set<String> hasPrivilegeUids, Set<String> errorUids) {

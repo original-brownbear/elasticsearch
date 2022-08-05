@@ -104,7 +104,7 @@ public class IndexLifecycleFeatureSetUsage extends XPackFeatureSet.Usage {
         }
 
         public PolicyStats(StreamInput in) throws IOException {
-            this.phaseStats = in.readMap(StreamInput::readString, PhaseStats::new);
+            this.phaseStats = in.readMap(PhaseStats::new);
             this.indicesManaged = in.readVInt();
         }
 

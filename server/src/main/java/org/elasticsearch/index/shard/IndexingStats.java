@@ -204,7 +204,7 @@ public class IndexingStats implements Writeable, ToXContentFragment {
         totalStats = new Stats(in);
         if (in.getVersion().before(Version.V_8_0_0)) {
             if (in.readBoolean()) {
-                Map<String, Stats> typeStats = in.readMap(StreamInput::readString, Stats::new);
+                Map<String, Stats> typeStats = in.readMap(Stats::new);
                 assert typeStats.size() == 1;
                 assert typeStats.containsKey(MapperService.SINGLE_MAPPING_NAME);
             }

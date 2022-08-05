@@ -515,7 +515,7 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContentF
         final Map<String, Object> userMetadata = in.readMap();
         final List<String> dataStreams = in.readStringList();
         final List<SnapshotFeatureInfo> featureStates = in.readList(SnapshotFeatureInfo::new);
-        final Map<String, IndexSnapshotDetails> indexSnapshotDetails = in.readMap(StreamInput::readString, IndexSnapshotDetails::new);
+        final Map<String, IndexSnapshotDetails> indexSnapshotDetails = in.readMap(IndexSnapshotDetails::new);
         return new SnapshotInfo(
             snapshot,
             indices,

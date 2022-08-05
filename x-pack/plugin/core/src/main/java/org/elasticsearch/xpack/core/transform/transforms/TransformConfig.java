@@ -251,7 +251,7 @@ public class TransformConfig implements SimpleDiffable<TransformConfig>, Writeab
         } else {
             frequency = null;
         }
-        setHeaders(in.readMap(StreamInput::readString, StreamInput::readString));
+        setHeaders(in.readStringStringMap());
         pivotConfig = in.readOptionalWriteable(PivotConfig::new);
         latestConfig = in.readOptionalWriteable(LatestConfig::new);
         description = in.readOptionalString();

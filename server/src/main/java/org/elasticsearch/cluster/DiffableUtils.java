@@ -12,6 +12,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.io.stream.Writeable.Reader;
 
 import java.io.IOException;
@@ -301,18 +302,18 @@ public final class DiffableUtils {
         ) throws IOException {
             this.keySerializer = keySerializer;
             this.valueSerializer = valueSerializer;
-            deletes = in.readList(keySerializer::readKey);
+            deletes = in.readList(keySerializer);
             int diffsCount = in.readVInt();
             diffs = diffsCount == 0 ? List.of() : new ArrayList<>(diffsCount);
             for (int i = 0; i < diffsCount; i++) {
-                K key = keySerializer.readKey(in);
+                K key = keySerializer.read(in);
                 Diff<T> diff = valueSerializer.readDiff(in, key);
                 diffs.add(mapEntry(key, diff));
             }
             int upsertsCount = in.readVInt();
             upserts = upsertsCount == 0 ? List.of() : new ArrayList<>(upsertsCount);
             for (int i = 0; i < upsertsCount; i++) {
-                K key = keySerializer.readKey(in);
+                K key = keySerializer.read(in);
                 T newValue = valueSerializer.read(in, key);
                 upserts.add(mapEntry(key, newValue));
             }
@@ -425,10 +426,8 @@ public final class DiffableUtils {
      * Provides read and write operations to serialize keys of map
      * @param <K> type of key
      */
-    public interface KeySerializer<K> {
+    public interface KeySerializer<K> extends Writeable.Reader<K> {
         void writeKey(K key, StreamOutput out) throws IOException;
-
-        K readKey(StreamInput in) throws IOException;
     }
 
     /**
@@ -443,7 +442,7 @@ public final class DiffableUtils {
         }
 
         @Override
-        public String readKey(StreamInput in) throws IOException {
+        public String read(StreamInput in) throws IOException {
             return in.readString();
         }
     }
@@ -460,7 +459,7 @@ public final class DiffableUtils {
         }
 
         @Override
-        public Integer readKey(StreamInput in) throws IOException {
+        public Integer read(StreamInput in) throws IOException {
             return in.readInt();
         }
     }
@@ -480,7 +479,7 @@ public final class DiffableUtils {
         }
 
         @Override
-        public Integer readKey(StreamInput in) throws IOException {
+        public Integer read(StreamInput in) throws IOException {
             return in.readVInt();
         }
     }

@@ -97,7 +97,7 @@ public class NodesShutdownMetadata implements Metadata.Custom {
     }
 
     public NodesShutdownMetadata(StreamInput in) throws IOException {
-        this(in.readMap(StreamInput::readString, SingleNodeShutdownMetadata::new));
+        this(in.readMap(SingleNodeShutdownMetadata::new));
     }
 
     @Override

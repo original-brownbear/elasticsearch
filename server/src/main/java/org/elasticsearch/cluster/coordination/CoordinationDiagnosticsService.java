@@ -933,7 +933,7 @@ public class CoordinationDiagnosticsService implements ClusterStateListener {
 
         private static Map<String, String> readClusterFormationStates(StreamInput in) throws IOException {
             if (in.readBoolean()) {
-                return in.readMap(StreamInput::readString, StreamInput::readString);
+                return in.readStringStringMap();
             } else {
                 return Map.of();
             }

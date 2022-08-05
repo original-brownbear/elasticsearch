@@ -235,7 +235,7 @@ public class TextStructure implements ToXContentObject, Writeable {
         needClientTimezone = in.readBoolean();
         mappings = Collections.unmodifiableSortedMap(new TreeMap<>(in.readMap()));
         ingestPipeline = in.readBoolean() ? Collections.unmodifiableMap(in.readMap()) : null;
-        fieldStats = Collections.unmodifiableSortedMap(new TreeMap<>(in.readMap(StreamInput::readString, FieldStats::new)));
+        fieldStats = Collections.unmodifiableSortedMap(new TreeMap<>(in.readMap(FieldStats::new)));
         explanation = Collections.unmodifiableList(in.readStringList());
     }
 

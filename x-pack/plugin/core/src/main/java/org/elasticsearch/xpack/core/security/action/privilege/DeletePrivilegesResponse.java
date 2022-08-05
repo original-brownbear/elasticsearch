@@ -27,7 +27,7 @@ public final class DeletePrivilegesResponse extends ActionResponse implements To
 
     public DeletePrivilegesResponse(StreamInput in) throws IOException {
         super(in);
-        this.found = Collections.unmodifiableSet(in.readSet(StreamInput::readString));
+        this.found = Collections.unmodifiableSet(in.readStringSet());
     }
 
     public DeletePrivilegesResponse(Collection<String> found) {
