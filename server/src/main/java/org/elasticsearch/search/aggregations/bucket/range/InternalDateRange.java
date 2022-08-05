@@ -71,11 +71,6 @@ public class InternalDateRange extends InternalRange<InternalDateRange.Bucket, I
             return to;
         }
 
-        @Override
-        protected InternalRange.Factory<Bucket, ?> getFactory() {
-            return FACTORY;
-        }
-
         boolean keyed() {
             return keyed;
         }

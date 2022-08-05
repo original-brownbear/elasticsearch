@@ -413,10 +413,6 @@ public class GeoDistanceAggregationBuilder extends ValuesSourceAggregationBuilde
         return this;
     }
 
-    public DistanceUnit unit() {
-        return unit;
-    }
-
     public GeoDistanceAggregationBuilder distanceType(GeoDistance distanceType) {
         if (distanceType == null) {
             throw new IllegalArgumentException("[distanceType] must not be null: [" + name + "]");
@@ -425,17 +421,9 @@ public class GeoDistanceAggregationBuilder extends ValuesSourceAggregationBuilde
         return this;
     }
 
-    public GeoDistance distanceType() {
-        return distanceType;
-    }
-
     public GeoDistanceAggregationBuilder keyed(boolean keyed) {
         this.keyed = keyed;
         return this;
-    }
-
-    public boolean keyed() {
-        return keyed;
     }
 
     @Override

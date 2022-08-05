@@ -75,9 +75,6 @@ public class DuplicateByteSequenceSpotter {
     // A KeyedTreeNode specialization with an array ref (dynamically allocated
     // and grown)
     static final long LIGHTWEIGHT_TREE_NODE_OBJECT_SIZE = TREE_NODE_OBJECT_SIZE + RamUsageEstimator.NUM_BYTES_OBJECT_REF;
-    // A KeyedTreeNode specialization with a short-based hit count and a
-    // sequence of bytes encoded as an int
-    static final long LEAF_NODE_OBJECT_SIZE = TREE_NODE_OBJECT_SIZE + Short.BYTES + Integer.BYTES;
 
     public DuplicateByteSequenceSpotter() {
         this.nodesAllocatedByDepth = new int[4];
@@ -156,7 +153,7 @@ public class DuplicateByteSequenceSpotter {
      */
     abstract class TreeNode {
 
-        TreeNode(byte key, TreeNode parentNode, int depth) {
+        TreeNode(int depth) {
             nodesAllocatedByDepth[depth]++;
         }
 
@@ -183,7 +180,7 @@ public class DuplicateByteSequenceSpotter {
         TreeNode[] children;
 
         RootTreeNode(byte key, TreeNode parentNode, int depth) {
-            super(key, parentNode, depth);
+            super(depth);
             bytesAllocated += ROOT_TREE_NODE_OBJECT_SIZE;
         }
 
@@ -227,7 +224,7 @@ public class DuplicateByteSequenceSpotter {
         int[] children = null;
 
         LightweightTreeNode(byte key, TreeNode parentNode, int depth) {
-            super(key, parentNode, depth);
+            super(depth);
             bytesAllocated += LIGHTWEIGHT_TREE_NODE_OBJECT_SIZE;
 
         }
@@ -275,21 +272,6 @@ public class DuplicateByteSequenceSpotter {
 
     public final long getEstimatedSizeInBytes() {
         return bytesAllocated;
-    }
-
-    /**
-     * @return Performance info - the number of nodes allocated at each depth
-     */
-    public int[] getNodesAllocatedByDepth() {
-        return nodesAllocatedByDepth.clone();
-    }
-
-    /**
-     * @return Performance info - the number of resizing of children arrays, at
-     *         each depth
-     */
-    public int getNodesResizedByDepth() {
-        return nodesResizedByDepth;
     }
 
 }

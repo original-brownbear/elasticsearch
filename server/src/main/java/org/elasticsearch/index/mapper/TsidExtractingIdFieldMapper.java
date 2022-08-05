@@ -50,8 +50,6 @@ public class TsidExtractingIdFieldMapper extends IdFieldMapper {
 
     public static final TsidExtractingIdFieldMapper INSTANCE = new TsidExtractingIdFieldMapper();
 
-    public static final TypeParser PARSER = new FixedTypeParser(MappingParserContext::idFieldMapper);
-
     static final class IdFieldType extends TermBasedFieldType {
         IdFieldType() {
             super(NAME, true, true, false, TextSearchInfo.SIMPLE_MATCH_ONLY, Collections.emptyMap());

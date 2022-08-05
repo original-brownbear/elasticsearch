@@ -39,12 +39,6 @@ public class FlushStats implements Writeable, ToXContentFragment {
         this.totalTimeInMillis = totalTimeInMillis;
     }
 
-    public void add(long total, long periodic, long totalTimeInMillis) {
-        this.total += total;
-        this.periodic += periodic;
-        this.totalTimeInMillis += totalTimeInMillis;
-    }
-
     public void add(FlushStats flushStats) {
         addTotals(flushStats);
     }
@@ -70,13 +64,6 @@ public class FlushStats implements Writeable, ToXContentFragment {
      */
     public long getPeriodic() {
         return periodic;
-    }
-
-    /**
-     * The total time merges have been executed (in milliseconds).
-     */
-    public long getTotalTimeInMillis() {
-        return this.totalTimeInMillis;
     }
 
     /**

@@ -29,8 +29,6 @@ import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.QueryBuilder;
 import org.apache.lucene.util.graph.GraphTokenStreamFiniteStrings;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
@@ -80,16 +78,6 @@ public class MatchQueryParser {
 
         Type(int ordinal) {
             this.ordinal = ordinal;
-        }
-
-        public static Type readFromStream(StreamInput in) throws IOException {
-            int ord = in.readVInt();
-            for (Type type : Type.values()) {
-                if (type.ordinal == ord) {
-                    return type;
-                }
-            }
-            throw new ElasticsearchException("unknown serialized type [" + ord + "]");
         }
 
         @Override

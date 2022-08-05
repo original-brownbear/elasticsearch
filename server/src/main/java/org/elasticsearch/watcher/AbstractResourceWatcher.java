@@ -41,13 +41,6 @@ public abstract class AbstractResourceWatcher<Listener> implements ResourceWatch
     }
 
     /**
-     * Unregisters a listener
-     */
-    public void remove(Listener listener) {
-        listeners.remove(listener);
-    }
-
-    /**
      * Returns a list of listeners
      */
     protected List<Listener> listeners() {

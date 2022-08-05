@@ -18,10 +18,6 @@ public class WatcherHandle<W extends ResourceWatcher> {
         this.watcher = watcher;
     }
 
-    public W watcher() {
-        return watcher;
-    }
-
     public ResourceWatcherService.Frequency frequency() {
         return monitor.frequency;
     }

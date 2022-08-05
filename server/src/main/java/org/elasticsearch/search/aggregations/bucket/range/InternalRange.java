@@ -117,11 +117,6 @@ public class InternalRange<B extends InternalRange.Bucket, R extends InternalRan
             return aggregations;
         }
 
-        @SuppressWarnings("unchecked")
-        protected Factory<? extends Bucket, ?> getFactory() {
-            return FACTORY;
-        }
-
         @Override
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
             final String key = getKeyAsString();

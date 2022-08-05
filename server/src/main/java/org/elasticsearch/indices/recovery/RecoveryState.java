@@ -824,10 +824,6 @@ public class RecoveryState implements ToXContentFragment, Writeable {
             return fileDetails.size();
         }
 
-        public boolean isEmpty() {
-            return fileDetails.isEmpty();
-        }
-
         public void clear() {
             fileDetails.clear();
             complete = false;

@@ -46,10 +46,6 @@ public class IngestInfo implements ReportingService.Info {
         }
     }
 
-    public Iterable<ProcessorInfo> getProcessors() {
-        return processors;
-    }
-
     public boolean containsProcessor(String type) {
         return processors.contains(new ProcessorInfo(type));
     }

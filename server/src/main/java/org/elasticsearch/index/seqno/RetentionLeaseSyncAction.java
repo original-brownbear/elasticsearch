@@ -185,7 +185,7 @@ public class RetentionLeaseSyncAction extends TransportWriteAction<
 
     public static final class Request extends ReplicatedWriteRequest<Request> {
 
-        private RetentionLeases retentionLeases;
+        private final RetentionLeases retentionLeases;
 
         public RetentionLeases getRetentionLeases() {
             return retentionLeases;

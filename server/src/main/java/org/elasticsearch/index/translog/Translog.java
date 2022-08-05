@@ -1132,11 +1132,9 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
     public static class Source {
 
         public final BytesReference source;
-        public final String routing;
 
-        public Source(BytesReference source, String routing) {
+        public Source(BytesReference source) {
             this.source = source;
-            this.routing = routing;
         }
 
     }
@@ -1243,7 +1241,7 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
 
         @Override
         public Source getSource() {
-            return new Source(source, routing);
+            return new Source(source);
         }
 
         private void write(final StreamOutput out) throws IOException {

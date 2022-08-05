@@ -1317,14 +1317,6 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             // ignore
         }
 
-        protected static ContentPath parentPath(String name) {
-            int endPos = name.lastIndexOf(".");
-            if (endPos == -1) {
-                return new ContentPath(0);
-            }
-            return new ContentPath(name.substring(0, endPos));
-        }
-
         // These parameters were previously *always* parsed by TypeParsers#parseField(), even if they
         // made no sense; if we've got here, that means that they're not declared on a current mapper,
         // and so we emit a deprecation warning rather than failing a previously working mapping.

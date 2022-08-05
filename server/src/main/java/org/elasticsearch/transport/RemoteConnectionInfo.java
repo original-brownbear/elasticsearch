@@ -65,18 +65,6 @@ public final class RemoteConnectionInfo implements ToXContentFragment, Writeable
         return clusterAlias;
     }
 
-    public ModeInfo getModeInfo() {
-        return modeInfo;
-    }
-
-    public TimeValue getInitialConnectionTimeout() {
-        return initialConnectionTimeout;
-    }
-
-    public boolean isSkipUnavailable() {
-        return skipUnavailable;
-    }
-
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         if (out.getVersion().onOrAfter(Version.V_7_6_0)) {

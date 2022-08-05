@@ -23,27 +23,18 @@ import java.util.Map;
 public class LuceneDocument implements Iterable<IndexableField> {
 
     private final LuceneDocument parent;
-    private final String path;
     private final String prefix;
     private final List<IndexableField> fields;
     private Map<Object, IndexableField> keyedFields;
 
     LuceneDocument(String path, LuceneDocument parent) {
         fields = new ArrayList<>();
-        this.path = path;
         this.prefix = path.isEmpty() ? "" : path + ".";
         this.parent = parent;
     }
 
     public LuceneDocument() {
         this("", null);
-    }
-
-    /**
-     * Return the path associated with this document.
-     */
-    public String getPath() {
-        return path;
     }
 
     /**

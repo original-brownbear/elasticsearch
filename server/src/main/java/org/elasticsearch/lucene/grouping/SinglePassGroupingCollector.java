@@ -445,10 +445,4 @@ public class SinglePassGroupingCollector<T> extends SimpleCollector {
         groupSelector.setNextReader(readerContext);
     }
 
-    /**
-     * @return the GroupSelector used for this Collector
-     */
-    public GroupSelector<T> getGroupSelector() {
-        return groupSelector;
-    }
 }

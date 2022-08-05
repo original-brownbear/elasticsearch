@@ -1465,10 +1465,6 @@ public class NumberFieldMapper extends FieldMapper {
             return type.reduceToStoredPrecision(value);
         }
 
-        public NumericType numericType() {
-            return type.numericType();
-        }
-
         @Override
         public boolean mayExistInIndex(SearchExecutionContext context) {
             return context.fieldExistsInIndex(this.name());

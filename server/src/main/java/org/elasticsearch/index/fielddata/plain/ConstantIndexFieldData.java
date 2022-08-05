@@ -183,8 +183,4 @@ public class ConstantIndexFieldData extends AbstractIndexOrdinalsFieldData {
         return loadGlobal(indexReader);
     }
 
-    public String getValue() {
-        return atomicFieldData.value;
-    }
-
 }

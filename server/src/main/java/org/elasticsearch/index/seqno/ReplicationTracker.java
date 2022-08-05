@@ -685,10 +685,6 @@ public class ReplicationTracker extends AbstractIndexShardComponent implements L
             return localCheckpoint;
         }
 
-        public long getGlobalCheckpoint() {
-            return globalCheckpoint;
-        }
-
         @Override
         public String toString() {
             return "LocalCheckpointState{"

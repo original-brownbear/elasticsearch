@@ -74,11 +74,6 @@ public class GeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<Geomet
             this.coerce = coerceParam(m -> builder(m).coerce.get(), coerceByDefault);
         }
 
-        public Builder ignoreZValue(boolean ignoreZValue) {
-            this.ignoreZValue.setValue(Explicit.explicitBoolean(ignoreZValue));
-            return this;
-        }
-
         @Override
         protected Parameter<?>[] getParameters() {
             return new Parameter<?>[] { indexed, ignoreMalformed, ignoreZValue, coerce, orientation, meta };

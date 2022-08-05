@@ -27,7 +27,6 @@ public final class IgnoredFieldMapper extends MetadataFieldMapper {
     public static final String CONTENT_TYPE = "_ignored";
 
     public static class Defaults {
-        public static final String NAME = IgnoredFieldMapper.NAME;
 
         public static final FieldType FIELD_TYPE = new FieldType();
 

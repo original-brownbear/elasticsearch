@@ -33,8 +33,8 @@ public class ParsedDocument {
 
     private final List<LuceneDocument> documents;
 
-    private BytesReference source;
-    private XContentType xContentType;
+    private final BytesReference source;
+    private final XContentType xContentType;
 
     private Mapping dynamicMappingsUpdate;
 
@@ -141,11 +141,6 @@ public class ParsedDocument {
 
     public XContentType getXContentType() {
         return this.xContentType;
-    }
-
-    public void setSource(BytesReference source, XContentType xContentType) {
-        this.source = source;
-        this.xContentType = xContentType;
     }
 
     /**

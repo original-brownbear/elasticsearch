@@ -287,16 +287,6 @@ public class TextFieldMapper extends FieldMapper {
             );
         }
 
-        public Builder index(boolean index) {
-            this.index.setValue(index);
-            return this;
-        }
-
-        public Builder store(boolean store) {
-            this.store.setValue(store);
-            return this;
-        }
-
         public Builder fielddata(boolean fielddata) {
             this.fieldData.setValue(fielddata);
             return this;

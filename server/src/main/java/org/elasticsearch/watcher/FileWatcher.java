@@ -53,18 +53,6 @@ public class FileWatcher extends AbstractResourceWatcher<FileChangesListener> {
         rootFileObserver = new FileObserver(path);
     }
 
-    /**
-     * Clears any state with the FileWatcher, making all files show up as new
-     */
-    public void clearState() {
-        rootFileObserver = new FileObserver(path);
-        try {
-            rootFileObserver.init(false);
-        } catch (IOException e) {
-            // ignore IOException
-        }
-    }
-
     @Override
     protected void doInit() throws IOException {
         rootFileObserver.init(true);

@@ -285,7 +285,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     private final AtomicReference<Translog.Location> pendingRefreshLocation = new AtomicReference<>();
     private final RefreshPendingLocationListener refreshPendingLocationListener;
     private volatile boolean useRetentionLeasesInPeerRecovery;
-    private final boolean isDataStreamIndex; // if a shard is a part of data stream
 
     public IndexShard(
         final ShardRouting shardRouting,
@@ -384,7 +383,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         persistMetadata(path, indexSettings, shardRouting, null, logger);
         this.useRetentionLeasesInPeerRecovery = replicationTracker.hasAllPeerRecoveryRetentionLeases();
         this.refreshPendingLocationListener = new RefreshPendingLocationListener();
-        this.isDataStreamIndex = mapperService == null ? false : mapperService.mappingLookup().isDataStreamTimestampFieldEnabled();
     }
 
     public ThreadPool getThreadPool() {
@@ -400,14 +398,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      */
     public Sort getIndexSort() {
         return indexSortSupplier.get();
-    }
-
-    /**
-     * Returns if this shard is a part of datastream
-     * @return {@code true} if this shard is a part of datastream, {@code false} otherwise
-     */
-    public boolean isDataStreamIndex() {
-        return isDataStreamIndex;
     }
 
     public ShardGetService getService() {

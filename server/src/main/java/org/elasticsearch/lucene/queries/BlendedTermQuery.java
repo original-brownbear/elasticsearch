@@ -210,10 +210,6 @@ public abstract class BlendedTermQuery extends Query {
         return newCtx;
     }
 
-    public List<Term> getTerms() {
-        return Arrays.asList(terms);
-    }
-
     @Override
     public String toString(String field) {
         StringBuilder builder = new StringBuilder("blended(terms:[");

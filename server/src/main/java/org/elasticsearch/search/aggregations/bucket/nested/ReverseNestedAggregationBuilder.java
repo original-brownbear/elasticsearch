@@ -71,13 +71,6 @@ public class ReverseNestedAggregationBuilder extends AbstractAggregationBuilder<
         return this;
     }
 
-    /**
-     * Get the path to use for this nested aggregation.
-     */
-    public String path() {
-        return path;
-    }
-
     @Override
     public BucketCardinality bucketCardinality() {
         return BucketCardinality.ONE;

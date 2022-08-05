@@ -115,10 +115,6 @@ public class InternalIpPrefix extends InternalMultiBucketAggregation<InternalIpP
             aggregations.writeTo(out);
         }
 
-        public DocValueFormat getFormat() {
-            return format;
-        }
-
         public BytesRef getKey() {
             return key;
         }
