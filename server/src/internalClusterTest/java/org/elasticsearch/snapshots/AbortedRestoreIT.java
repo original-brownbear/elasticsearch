@@ -21,7 +21,6 @@ import org.hamcrest.Matcher;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
@@ -45,7 +44,7 @@ public class AbortedRestoreIT extends AbstractSnapshotIntegTestCase {
 
         final String snapshotName = "snapshot";
         createFullSnapshot(repositoryName, snapshotName);
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         logger.info("--> blocking all data nodes for repository [{}]", repositoryName);
         blockAllDataNodes(repositoryName);
@@ -85,7 +84,7 @@ public class AbortedRestoreIT extends AbstractSnapshotIntegTestCase {
         waitForMaxActiveSnapshotThreads(dataNode, equalTo(snapshotThreadPoolInfo.getMax()));
 
         logger.info("--> aborting restore by deleting the index");
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         logger.info("--> unblocking repository [{}]", repositoryName);
         unblockAllDataNodes(repositoryName);

@@ -267,7 +267,7 @@ public class SearchPreferenceIT extends ESIntegTestCase {
 
         assertSearchesSpecificNode("test", customPreference, nodeId);
 
-        assertAcked(client().admin().indices().prepareDelete("test2"));
+        deleteIndex("test2");
 
         assertSearchesSpecificNode("test", customPreference, nodeId);
     }

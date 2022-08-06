@@ -462,7 +462,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
                         throw new AssertionError(e);
                     }
                     try {
-                        assertAcked(client().admin().indices().prepareDelete(indexToDelete));
+                        deleteIndex(indexToDelete);
                     } catch (final Exception e) {
                         exceptionConsumer.accept(e);
                     }

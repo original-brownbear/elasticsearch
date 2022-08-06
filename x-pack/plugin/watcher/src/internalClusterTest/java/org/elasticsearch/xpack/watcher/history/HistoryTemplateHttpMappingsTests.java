@@ -34,7 +34,6 @@ import java.util.Map;
 
 import static org.elasticsearch.search.aggregations.AggregationBuilders.terms;
 import static org.elasticsearch.search.builder.SearchSourceBuilder.searchSource;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.elasticsearch.xpack.watcher.actions.ActionBuilders.webhookAction;
 import static org.elasticsearch.xpack.watcher.client.WatchSourceBuilders.watchBuilder;
@@ -126,7 +125,7 @@ public class HistoryTemplateHttpMappingsTests extends AbstractWatcherIntegration
 
     public void testExceptionMapping() {
         // delete all history indices to ensure that we only need to check a single index
-        assertAcked(client().admin().indices().prepareDelete(HistoryStoreField.INDEX_PREFIX + "*"));
+        deleteIndex(HistoryStoreField.INDEX_PREFIX + "*");
 
         String id = randomAlphaOfLength(10);
         // switch between delaying the input or the action http request

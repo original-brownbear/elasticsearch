@@ -36,8 +36,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
-
 @ESIntegTestCase.ClusterScope(scope = ESIntegTestCase.Scope.TEST, minNumDataNodes = 2)
 public class SearchableSnapshotShutdownIntegTests extends BaseSearchableSnapshotsIntegTestCase {
 
@@ -111,7 +109,7 @@ public class SearchableSnapshotShutdownIntegTests extends BaseSearchableSnapshot
             createAndPopulateIndex(indexName, Settings.builder());
 
             final SnapshotId snapshotId = createSnapshot(repositoryName, "snapshot-" + i, List.of(indexName)).snapshotId();
-            assertAcked(client().admin().indices().prepareDelete(indexName));
+            deleteIndex(indexName);
             restoredIndices.add(mountSnapshot(repositoryName, snapshotId.getName(), indexName, Settings.EMPTY));
         }
         return restoredIndices;

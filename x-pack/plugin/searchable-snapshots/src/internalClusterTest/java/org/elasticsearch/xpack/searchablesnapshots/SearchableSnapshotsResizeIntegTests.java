@@ -46,7 +46,7 @@ public class SearchableSnapshotsResizeIntegTests extends BaseFrozenSearchableSna
         );
         indexRandomDocs("index", scaledRandomIntBetween(0, 1_000));
         createSnapshot("repository", "snapshot", List.of("index"));
-        assertAcked(client().admin().indices().prepareDelete("index"));
+        deleteIndex("index");
         mountSnapshot("repository", "snapshot", "index", "mounted-index", Settings.EMPTY, randomFrom(Storage.values()));
         ensureGreen("mounted-index");
     }
@@ -54,9 +54,9 @@ public class SearchableSnapshotsResizeIntegTests extends BaseFrozenSearchableSna
     @After
     @Override
     public void tearDown() throws Exception {
-        assertAcked(client().admin().indices().prepareDelete("mounted-*"));
-        assertAcked(client().admin().cluster().prepareDeleteSnapshot("repository", "snapshot").get());
-        assertAcked(client().admin().cluster().prepareDeleteRepository("repository"));
+        deleteIndex("mounted-*");
+        assertAcked(startDeleteSnapshot("repository", "snapshot").get());
+        deleteRepository("repository");
         super.tearDown();
     }
 
@@ -125,6 +125,6 @@ public class SearchableSnapshotsResizeIntegTests extends BaseFrozenSearchableSna
                 )
         );
         ensureGreen("cloned-index");
-        assertAcked(client().admin().indices().prepareDelete("cloned-index"));
+        deleteIndex("cloned-index");
     }
 }

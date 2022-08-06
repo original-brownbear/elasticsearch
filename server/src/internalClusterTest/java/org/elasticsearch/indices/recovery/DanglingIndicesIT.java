@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.elasticsearch.cluster.metadata.IndexGraveyard.SETTING_MAX_TOMBSTONES;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -190,7 +189,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
         // not cause the deleted dangling index to be considered "live" again, just because its
         // tombstone has been pushed out of the graveyard.
         createIndex("additional");
-        assertAcked(client().admin().indices().prepareDelete("additional"));
+        deleteIndex("additional");
         assertThat(listDanglingIndices(), is(empty()));
     }
 
@@ -215,8 +214,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
                     @Override
                     public Settings onNodeStopped(String nodeName) throws Exception {
                         internalCluster().validateClusterFormed();
-                        assertAcked(client().admin().indices().prepareDelete(INDEX_NAME));
-                        assertAcked(client().admin().indices().prepareDelete(OTHER_INDEX_NAME));
+                        deleteIndex(INDEX_NAME, OTHER_INDEX_NAME);
                         return super.onNodeStopped(nodeName);
                     }
                 });
@@ -244,7 +242,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
         // not cause the deleted dangling index to be considered "live" again, just because its
         // tombstone has been pushed out of the graveyard.
         createIndex("additional");
-        assertAcked(client().admin().indices().prepareDelete("additional"));
+        deleteIndex("additional");
         assertBusy(() -> assertThat(listDanglingIndices(), empty()));
     }
 
@@ -391,7 +389,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
                 internalCluster().validateClusterFormed();
                 stoppedNodeName.set(nodeName);
                 for (String index : indices) {
-                    assertAcked(client().admin().indices().prepareDelete(index));
+                    deleteIndex(index);
                 }
                 return super.onNodeStopped(nodeName);
             }

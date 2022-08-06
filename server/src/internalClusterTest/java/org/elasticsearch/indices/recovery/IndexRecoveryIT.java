@@ -1669,7 +1669,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
         internalCluster().startNode();
         internalCluster().startNode();
         client().admin().cluster().prepareReroute().setRetryFailed(true).get();
-        assertAcked(client().admin().indices().prepareDelete("test")); // cancel recoveries
+        deleteIndex("test"); // cancel recoveries
         assertBusy(() -> {
             for (PeerRecoverySourceService recoveryService : internalCluster().getDataNodeInstances(PeerRecoverySourceService.class)) {
                 assertThat(recoveryService.numberOfOngoingRecoveries(), equalTo(0));

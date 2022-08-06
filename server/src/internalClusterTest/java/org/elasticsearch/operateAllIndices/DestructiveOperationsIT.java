@@ -36,9 +36,9 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
         createIndex("index1", "1index");
 
         // Should succeed, since no wildcards
-        assertAcked(client().admin().indices().prepareDelete("1index").get());
+        deleteIndex("1index");
         // Special "match none" pattern succeeds, since non-destructive
-        assertAcked(client().admin().indices().prepareDelete("*", "-*").get());
+        deleteIndex("*", "-*");
 
         expectThrows(IllegalArgumentException.class, () -> client().admin().indices().prepareDelete("i*").get());
         expectThrows(IllegalArgumentException.class, () -> client().admin().indices().prepareDelete("_all").get());

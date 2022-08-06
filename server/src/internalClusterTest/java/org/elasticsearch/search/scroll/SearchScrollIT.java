@@ -563,7 +563,7 @@ public class SearchScrollIT extends ESIntegTestCase {
             assertAcked(client().admin().indices().prepareOpen("test"));
             ensureGreen("test");
         } else {
-            assertAcked(client().admin().indices().prepareDelete("test"));
+            deleteIndex("test");
         }
     }
 

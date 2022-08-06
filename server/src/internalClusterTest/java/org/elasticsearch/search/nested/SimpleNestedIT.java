@@ -1596,7 +1596,7 @@ public class SimpleNestedIT extends ESIntegTestCase {
         clusterStatsResponse = client().admin().cluster().prepareClusterStats().get();
         assertThat(clusterStatsResponse.getIndicesStats().getSegments().getBitsetMemoryInBytes(), greaterThan(0L));
 
-        assertAcked(client().admin().indices().prepareDelete("test"));
+        deleteIndex("test");
         clusterStatsResponse = client().admin().cluster().prepareClusterStats().get();
         assertThat(clusterStatsResponse.getIndicesStats().getSegments().getBitsetMemoryInBytes(), equalTo(0L));
     }

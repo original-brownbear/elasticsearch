@@ -71,7 +71,7 @@ public class SearchableSnapshotsSystemIndicesIntegTests extends BaseFrozenSearch
         if (randomBoolean()) {
             assertAcked(client.admin().indices().prepareClose(indexName));
         } else {
-            assertAcked(client.admin().indices().prepareDelete(indexName));
+            deleteIndex(indexName);
         }
 
         final MountSearchableSnapshotRequest mountRequest = new MountSearchableSnapshotRequest(

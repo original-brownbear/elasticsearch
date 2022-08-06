@@ -16,7 +16,6 @@ import org.elasticsearch.xpack.core.searchablesnapshots.MountSearchableSnapshotA
 import org.elasticsearch.xpack.core.searchablesnapshots.MountSearchableSnapshotRequest;
 import org.junit.Before;
 
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -33,7 +32,7 @@ public class SearchableSnapshotsSettingValidationIntegTests extends BaseFrozenSe
         createIndex(indexName);
         createFullSnapshot(repoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final MountSearchableSnapshotRequest req = new MountSearchableSnapshotRequest(
             indexName,

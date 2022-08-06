@@ -59,7 +59,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_BLOB_CACHE_INDEX;
 import static org.elasticsearch.xpack.searchablesnapshots.cache.shared.SharedBytes.pageAligned;
@@ -152,7 +151,7 @@ public class SearchableSnapshotsBlobStoreCacheIntegTests extends BaseFrozenSearc
         createRepository(repositoryName, "fs", repositoryLocation);
 
         final SnapshotId snapshot = createSnapshot(repositoryName, "test-snapshot", List.of(indexName)).snapshotId();
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         expectThrows(
             IndexNotFoundException.class,
@@ -329,7 +328,7 @@ public class SearchableSnapshotsBlobStoreCacheIntegTests extends BaseFrozenSearc
         assertHitCount(client().prepareSearch(restoredAgainIndex).setSize(0).setTrackTotalHits(true).get(), numberOfDocs);
 
         logger.info("--> deleting indices, maintenance service should clean up [{}] docs in system index", numberOfCachedBlobs);
-        assertAcked(client().admin().indices().prepareDelete("restored-*"));
+        deleteIndex("restored-*");
 
         assertBusy(() -> {
             refreshSystemIndex();

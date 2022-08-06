@@ -158,7 +158,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
 
         final boolean deletedBeforeMount = randomBoolean();
         if (deletedBeforeMount) {
-            assertAcked(client().admin().indices().prepareDelete(indexName));
+            deleteIndex(indexName);
         } else {
             assertAcked(client().admin().indices().prepareClose(indexName));
         }
@@ -370,7 +370,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
         assertFalse(clonedIndexSettings.hasValue(SearchableSnapshots.SNAPSHOT_INDEX_ID_SETTING.getKey()));
         assertFalse(clonedIndexSettings.hasValue(IndexModule.INDEX_RECOVERY_TYPE_SETTING.getKey()));
 
-        assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+        deleteIndex(restoredIndexName);
         assertThat(client().admin().indices().prepareGetAliases(aliasName).get().getAliases().size(), equalTo(0));
         assertAcked(client().admin().indices().prepareAliases().addAlias(clonedIndexName, aliasName));
         assertTotalHits(aliasName, originalAllHits, originalBarHits);
@@ -424,7 +424,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
         indexingThead.join();
         snapshotThread.join();
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         logger.info("--> restoring index [{}]", restoredIndexName);
 
@@ -444,7 +444,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
         assertThat(restoreSnapshotResponse.getRestoreInfo().failedShards(), equalTo(0));
         ensureGreen(restoredIndexName);
 
-        assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+        deleteIndex(restoredIndexName);
     }
 
     public void testMaxRestoreBytesPerSecIsUsed() throws Exception {
@@ -482,7 +482,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
         assertThat(snapshotInfo.successfulShards(), greaterThan(0));
         assertThat(snapshotInfo.successfulShards(), equalTo(snapshotInfo.totalShards()));
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         logger.info("--> restoring index [{}] using rate limits [{}]", restoredIndexName, useRateLimits);
         final MountSearchableSnapshotRequest mount = new MountSearchableSnapshotRequest(
@@ -513,7 +513,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
             }
         }
 
-        assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+        deleteIndex(restoredIndexName);
     }
 
     private Map<String, Long> getMaxShardSizeByNodeInBytes(String indexName) {
@@ -558,7 +558,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
 
         createFullSnapshot(fsRepoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         {
             logger.info("--> restoring index [{}] with default replica counts", restoredIndexName);
@@ -588,7 +588,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
             assertThat(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.get(settings), equalTo(0));
             assertThat(IndexMetadata.INDEX_AUTO_EXPAND_REPLICAS_SETTING.get(settings).toString(), equalTo("false"));
 
-            assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+            deleteIndex(restoredIndexName);
         }
 
         {
@@ -622,7 +622,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
             assertThat(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.get(settings), equalTo(replicaCount));
             assertThat(IndexMetadata.INDEX_AUTO_EXPAND_REPLICAS_SETTING.get(settings).toString(), equalTo("false"));
 
-            assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+            deleteIndex(restoredIndexName);
         }
 
         {
@@ -653,7 +653,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                 equalTo(Math.min(replicaLimit + 1, dataNodesCount))
             );
 
-            assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+            deleteIndex(restoredIndexName);
         }
     }
 
@@ -668,7 +668,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
         createRepository(repositoryName, "fs");
 
         final SnapshotId snapshotOne = createSnapshot(repositoryName, "snapshot-1", List.of(indexName)).snapshotId();
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final SnapshotStatus snapshotOneStatus = client().admin()
             .cluster()
@@ -752,7 +752,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
         createRepository(repositoryName, "fs");
 
         final SnapshotId snapshotOne = createSnapshot(repositoryName, "snapshot-1", List.of(indexName)).snapshotId();
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         mountSnapshot(repositoryName, snapshotOne.getName(), indexName, indexName, Settings.EMPTY);
         ensureGreen(indexName);
@@ -857,7 +857,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                 assertThat(stats.getTotalFileCount(), greaterThan(1));
             }
         }
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         assertThat(
             client().admin().cluster().prepareGetRepositories(repositoryName).get().repositories().get(0).uuid(),
@@ -900,7 +900,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                 assertThat(stats.getTotalFileCount(), equalTo(0));
             }
         }
-        assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+        deleteIndex(restoredIndexName);
 
         // The repository that contains the cluster snapshot -- may be different from backupRepositoryName if we're only using one repo and
         // we rename it.
@@ -1004,7 +1004,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
         createRepository(dataRepoName, "fs");
 
         final SnapshotId dataSnapshot = createSnapshot(dataRepoName, "data-snapshot", List.of(indexName)).snapshotId();
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final String restoredIndexName = randomValueOtherThan(indexName, () -> randomAlphaOfLength(10).toLowerCase(Locale.ROOT));
         mountSnapshot(dataRepoName, dataSnapshot.getName(), indexName, restoredIndexName, Settings.EMPTY);
@@ -1027,9 +1027,8 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
             .get()
             .repositories()
             .get(0);
-        assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
-        assertAcked(client().admin().cluster().prepareDeleteRepository(dataRepoName));
-
+        deleteIndex(restoredIndexName);
+        deleteRepository(dataRepoName);
         // Restore the backup snapshot
         assertThat(
             client().admin()
@@ -1112,7 +1111,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
 
         final String snapshot = "snapshot_" + suffix;
         createFullSnapshot(repository, snapshot);
-        assertAcked(client().admin().indices().prepareDelete(index));
+        deleteIndex(index);
 
         {
             final String mountedIndex = mountSnapshot(repository, snapshot, index, Settings.EMPTY);
@@ -1126,7 +1125,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                     .get(IndexSettings.INDEX_CHECK_ON_STARTUP.getKey()),
                 equalTo("false")
             );
-            assertAcked(client().admin().indices().prepareDelete(mountedIndex));
+            deleteIndex(mountedIndex);
         }
         {
             final String overridingCheckOnStartup = randomValueOtherThan(checkOnStartup, () -> randomFrom("false", "true", "checksum"));
@@ -1146,7 +1145,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
                     .get(IndexSettings.INDEX_CHECK_ON_STARTUP.getKey()),
                 equalTo(overridingCheckOnStartup)
             );
-            assertAcked(client().admin().indices().prepareDelete(mountedIndex));
+            deleteIndex(mountedIndex);
         }
     }
 

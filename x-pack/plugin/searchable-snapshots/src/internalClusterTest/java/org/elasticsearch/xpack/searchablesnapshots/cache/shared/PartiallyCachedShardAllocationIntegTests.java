@@ -84,7 +84,7 @@ public class PartiallyCachedShardAllocationIntegTests extends BaseFrozenSearchab
         populateIndex(indexName, 10);
         ensureGreen(indexName);
         createFullSnapshot(fsRepoName, snapshotName);
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final Settings.Builder indexSettingsBuilder = Settings.builder()
             .put(SearchableSnapshots.SNAPSHOT_CACHE_ENABLED_SETTING.getKey(), true);

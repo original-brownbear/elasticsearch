@@ -36,8 +36,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
-
 @ESIntegTestCase.ClusterScope(supportsDedicatedMasters = false, numClientNodes = 0, scope = ESIntegTestCase.Scope.TEST)
 public abstract class AbstractArchiveTestCase extends AbstractSnapshotIntegTestCase {
 
@@ -110,7 +108,7 @@ public abstract class AbstractArchiveTestCase extends AbstractSnapshotIntegTestC
         createIndex(indexName);
         createFullSnapshot(repoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         PostStartTrialRequest request = new PostStartTrialRequest().setType(License.LicenseType.TRIAL.getTypeName()).acknowledge(true);
         client().execute(PostStartTrialAction.INSTANCE, request).get();

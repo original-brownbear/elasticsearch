@@ -177,7 +177,7 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
             client().admin().cluster().prepareCreateSnapshot(repository, snapshot).setWaitForCompletion(true).setIndices(index)
         );
 
-        assertAcked(client().admin().indices().prepareDelete(index));
+        deleteIndex(index);
 
         assertSuccessfulRestore(client().admin().cluster().prepareRestoreSnapshot(repository, snapshot).setWaitForCompletion(true));
         ensureGreen(index);
@@ -209,7 +209,7 @@ public abstract class ESMockAPIBasedRepositoryIntegTestCase extends ESBlobStoreR
             client().admin().cluster().prepareCreateSnapshot(repository, snapshot).setWaitForCompletion(true).setIndices(index)
         );
 
-        assertAcked(client().admin().indices().prepareDelete(index));
+        deleteIndex(index);
 
         assertSuccessfulRestore(client().admin().cluster().prepareRestoreSnapshot(repository, snapshot).setWaitForCompletion(true));
         ensureGreen(index);

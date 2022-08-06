@@ -868,7 +868,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         final ActionFuture<CreateSnapshotResponse> snapshotFour = startFullSnapshot(repoName, "snapshot-four", true);
         awaitNumberOfSnapshotsInProgress(2);
 
-        assertAcked(client().admin().indices().prepareDelete("index-two"));
+        deleteIndex("index-two");
         unblockNode(repoName, masterNode);
 
         assertThat(snapshotThree.get().getSnapshotInfo().state(), is(SnapshotState.SUCCESS));
@@ -1733,7 +1733,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         assertSuccessful(snapshot2);
         awaitNumberOfSnapshotsInProgress(2);
         assertFalse(snapshot3.isDone());
-        assertAcked(admin().indices().prepareDelete(index1).get());
+        deleteIndex(index1);
         assertSuccessful(snapshot3);
         unblockNode(repository, master);
 
@@ -1792,7 +1792,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
             cloneTarget2
         ).setIndices(index1, index2).execute();
 
-        assertAcked(admin().indices().prepareDelete(index1).get());
+        deleteIndex(index1);
         assertSuccessful(snapshot3);
         unblockNode(repository, master);
 
@@ -2019,7 +2019,7 @@ public class ConcurrentSnapshotsIT extends AbstractSnapshotIntegTestCase {
         waitForBlockOnAnyDataNode(repoName);
         // recreate index and start full snapshot to test that shard state updates from the first partial snapshot are correctly are
         // correctly applied to the second snapshot that will contain a different index by the same name
-        assertAcked(client().admin().indices().prepareDelete(index1).get());
+        deleteIndex(index1);
         createIndexWithContent(index1, highShardCountSettings);
         final ActionFuture<CreateSnapshotResponse> nonPartialFuture = startFullSnapshot(repoName, "full-snapshot");
         unblockAllDataNodes(repoName);

@@ -148,7 +148,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
 
         final boolean deletedBeforeMount = randomBoolean();
         if (deletedBeforeMount) {
-            assertAcked(client().admin().indices().prepareDelete(indexName));
+            deleteIndex(indexName);
         } else {
             assertAcked(client().admin().indices().prepareClose(indexName));
         }
@@ -445,7 +445,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
         assertFalse(clonedIndexSettings.hasValue(SearchableSnapshots.SNAPSHOT_INDEX_ID_SETTING.getKey()));
         assertFalse(clonedIndexSettings.hasValue(IndexModule.INDEX_RECOVERY_TYPE_SETTING.getKey()));
 
-        assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+        deleteIndex(restoredIndexName);
         assertThat(client().admin().indices().prepareGetAliases(aliasName).get().getAliases().size(), equalTo(0));
         assertAcked(client().admin().indices().prepareAliases().addAlias(clonedIndexName, aliasName));
         assertTotalHits(aliasName, originalAllHits, originalBarHits);
@@ -476,7 +476,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
 
         createFullSnapshot("repo", "snap");
 
-        assertAcked(client().admin().indices().prepareDelete("test-index"));
+        deleteIndex("test-index");
 
         logger.info("--> restoring index [{}]", "test-index");
 

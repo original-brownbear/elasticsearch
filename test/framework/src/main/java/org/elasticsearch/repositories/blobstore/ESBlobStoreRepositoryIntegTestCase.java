@@ -18,6 +18,7 @@ import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotR
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.client.internal.Client;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.blobstore.BlobContainer;
 import org.elasticsearch.common.blobstore.BlobPath;
 import org.elasticsearch.common.blobstore.BlobStore;
@@ -303,8 +304,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
 
         List<String> deleteIndices = randomSubsetOf(randomIntBetween(0, indexCount), indexNames);
         if (deleteIndices.size() > 0) {
-            logger.info("-->  delete indices {}", deleteIndices);
-            assertAcked(client().admin().indices().prepareDelete(deleteIndices.toArray(new String[deleteIndices.size()])));
+            deleteIndex(deleteIndices.toArray(Strings.EMPTY_ARRAY));
         }
 
         Set<String> closeIndices = new HashSet<>(Arrays.asList(indexNames));

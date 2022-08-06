@@ -815,6 +815,11 @@ public abstract class ESIntegTestCase extends ESTestCase {
         return client().admin().indices().prepareCreate(index).setSettings(builder.build());
     }
 
+    protected void deleteIndex(String... indexNames) {
+        logger.info("Deleting indices {}", Arrays.asList(indexNames));
+        assertAcked(admin().indices().prepareDelete(indexNames));
+    }
+
     /**
      * updates the settings for an index
      */

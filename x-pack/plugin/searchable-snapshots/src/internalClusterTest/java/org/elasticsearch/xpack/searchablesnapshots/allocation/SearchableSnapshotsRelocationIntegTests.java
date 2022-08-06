@@ -41,7 +41,7 @@ public class SearchableSnapshotsRelocationIntegTests extends BaseSearchableSnaps
         createRepository(repoName, "mock");
         final String snapshotName = "test-snapshot";
         createSnapshot(repoName, snapshotName, List.of(index));
-        assertAcked(client().admin().indices().prepareDelete(index));
+        deleteIndex(index);
         final String restoredIndex = mountSnapshot(repoName, snapshotName, index, Settings.EMPTY);
         ensureGreen(restoredIndex);
         final String secondDataNode = internalCluster().startDataOnlyNode();

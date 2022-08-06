@@ -328,8 +328,7 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
         );
         assertThat(e.getDetailedMessage(), containsString("current license is non-compliant for [encrypted snapshots]"));
 
-        logger.info("-->  delete index {}", indexName);
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         // but restore is permitted
         logger.info("--> restore index from the snapshot");

@@ -65,7 +65,7 @@ public class RetrySearchIntegTests extends BaseSearchableSnapshotsIntegTestCase 
         createRepository(repositoryName, "fs");
 
         final SnapshotId snapshotOne = createSnapshot(repositoryName, "snapshot-1", List.of(indexName)).snapshotId();
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final int numberOfReplicas = between(0, 2);
         final Settings indexSettings = Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, numberOfReplicas).build();
@@ -134,7 +134,7 @@ public class RetrySearchIntegTests extends BaseSearchableSnapshotsIntegTestCase 
         createRepository(repositoryName, "fs");
 
         final SnapshotId snapshotOne = createSnapshot(repositoryName, "snapshot-1", List.of(indexName)).snapshotId();
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final int numberOfReplicas = between(0, 2);
         final Settings indexSettings = Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, numberOfReplicas).build();

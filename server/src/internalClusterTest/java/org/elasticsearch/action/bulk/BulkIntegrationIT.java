@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.elasticsearch.action.DocWriteResponse.Result.CREATED;
 import static org.elasticsearch.action.DocWriteResponse.Result.UPDATED;
 import static org.elasticsearch.test.StreamsUtils.copyToStringFromClasspath;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -189,7 +188,7 @@ public class BulkIntegrationIT extends ESIntegTestCase {
         }
         ensureGreen(index);
         assertBusy(() -> assertThat(docID.get(), greaterThanOrEqualTo(1)));
-        assertAcked(client().admin().indices().prepareDelete(index));
+        deleteIndex(index);
         stopped.set(true);
         for (Thread thread : threads) {
             thread.join(ReplicationRequest.DEFAULT_TIMEOUT.millis() / 2);

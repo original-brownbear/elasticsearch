@@ -642,7 +642,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
                     )
                 );
 
-                assertAcked(client().admin().indices().prepareDelete(indexName).get());
+                deleteIndex(indexName);
 
                 assertBusy(mockLogAppender::assertAllExpectationsMatched);
             } finally {
@@ -677,7 +677,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
         createRepo(repoName, TestRepositoryPlugin.INSTRUMENTED_TYPE);
         createSnapshot(repoName, "snap", Collections.singletonList(indexName));
 
-        assertAcked(client().admin().indices().prepareDelete(indexName).get());
+        deleteIndex(indexName);
 
         List<String> restoredIndexDataNodes = internalCluster().startDataOnlyNodes(2);
         RestoreSnapshotResponse restoreSnapshotResponse = client().admin()
@@ -1003,7 +1003,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
 
                 boolean cancelRecovery = randomBoolean();
                 if (cancelRecovery) {
-                    assertAcked(client().admin().indices().prepareDelete(indexRecoveredFromSnapshot1).get());
+                    deleteIndex(indexRecoveredFromSnapshot1);
 
                     respondToRecoverSnapshotFile.run();
 

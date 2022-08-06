@@ -20,7 +20,6 @@ import org.elasticsearch.xpack.watcher.watch.WatchStoreUtils;
 import java.util.concurrent.TimeUnit;
 
 import static org.elasticsearch.test.ESIntegTestCase.Scope.SUITE;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.xpack.watcher.actions.ActionBuilders.loggingAction;
 import static org.elasticsearch.xpack.watcher.client.WatchSourceBuilders.watchBuilder;
 import static org.elasticsearch.xpack.watcher.input.InputBuilders.simpleInput;
@@ -46,7 +45,7 @@ public class SingleNodeTests extends AbstractWatcherIntegrationTestCase {
         ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().get();
         IndexMetadata metadata = WatchStoreUtils.getConcreteIndex(Watch.INDEX, clusterStateResponse.getState().metadata());
         String watchIndexName = metadata.getIndex().getName();
-        assertAcked(client().admin().indices().prepareDelete(watchIndexName));
+        deleteIndex(watchIndexName);
         startWatcher();
 
         String watchId = randomAlphaOfLength(20);

@@ -58,7 +58,7 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
 
         final String snapshotName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         createSnapshot(repositoryName, snapshotName, List.of(indexName));
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final int nbMountedIndices = 1;
         randomIntBetween(1, 5);
@@ -87,8 +87,8 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
         if (randomBoolean()) {
             final String snapshotWithMountedIndices = snapshotName + "-with-mounted-indices";
             createSnapshot(repositoryName, snapshotWithMountedIndices, Arrays.asList(mountedIndices));
-            assertAcked(client().admin().indices().prepareDelete(mountedIndices));
-            assertAcked(clusterAdmin().prepareDeleteRepository(repositoryName));
+            deleteIndex(mountedIndices);
+            deleteRepository(repositoryName);
 
             updatedRepositoryName = repositoryName + "-with-mounted-indices";
             createRepository(updatedRepositoryName, FsRepository.TYPE, repositorySettings, randomBoolean());
@@ -117,10 +117,10 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
                         + " searchable snapshots indices that use the repository:"
                 )
             );
-            assertAcked(client().admin().indices().prepareDelete(mountedIndices[i]));
+            deleteIndex(mountedIndices[i]);
         }
 
-        assertAcked(clusterAdmin().prepareDeleteRepository(updatedRepositoryName));
+        deleteRepository(updatedRepositoryName);
     }
 
     public void testMountIndexWithDeletionOfSnapshotFailsIfNotSingleIndexSnapshot() throws Exception {
@@ -137,7 +137,7 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
 
         final String snapshot = "snapshot";
         createFullSnapshot(repository, snapshot);
-        assertAcked(client().admin().indices().prepareDelete("index-*"));
+        deleteIndex("index-*");
 
         final String index = "index-" + randomInt(nbIndices - 1);
         final String mountedIndex = "mounted-" + index;
@@ -168,7 +168,7 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
 
         final String snapshot = "snapshot";
         createSnapshot(repository, snapshot, List.of(index));
-        assertAcked(client().admin().indices().prepareDelete(index));
+        deleteIndex(index);
 
         final boolean deleteSnapshot = randomBoolean();
         final String mounted = "mounted-with-setting-" + deleteSnapshot;
@@ -209,8 +209,8 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
         );
         assertHitCount(client().prepareSearch(mountedAgain).setTrackTotalHits(true).get(), totalHits.value);
 
-        assertAcked(client().admin().indices().prepareDelete(mountedAgain));
-        assertAcked(client().admin().indices().prepareDelete(mounted));
+        deleteIndex(mountedAgain);
+        deleteIndex(mounted);
     }
 
     public void testDeletionOfSnapshotSettingCannotBeUpdated() throws Exception {
@@ -224,7 +224,7 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
 
         final String snapshot = "snapshot";
         createSnapshot(repository, snapshot, List.of(index));
-        assertAcked(client().admin().indices().prepareDelete(index));
+        deleteIndex(index);
 
         final String mounted = "mounted-" + index;
         final boolean deleteSnapshot = randomBoolean();
@@ -256,7 +256,7 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
             containsString("can not update private setting [index.store.snapshot.delete_searchable_snapshot]; ")
         );
 
-        assertAcked(client().admin().indices().prepareDelete(mounted));
+        deleteIndex(mounted);
     }
 
     public void testRestoreSearchableSnapshotIndexConflicts() throws Exception {
@@ -268,7 +268,7 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
 
         final String snapshotOfIndex = "snapshot-of-index";
         createSnapshot(repository, snapshotOfIndex, List.of(indexName));
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final String mountedIndex = "mounted-index";
         final boolean deleteSnapshot = randomBoolean();
@@ -284,7 +284,7 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
 
         final String snapshotOfMountedIndex = "snapshot-of-mounted-index";
         createSnapshot(repository, snapshotOfMountedIndex, List.of(mountedIndex));
-        assertAcked(client().admin().indices().prepareDelete(mountedIndex));
+        deleteIndex(mountedIndex);
 
         final String mountedIndexAgain = "mounted-index-again";
         final boolean deleteSnapshotAgain = deleteSnapshot == false;
@@ -318,7 +318,7 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
                 containsString("is mounted with [index.store.snapshot.delete_searchable_snapshot: " + deleteSnapshotAgain + "].")
             )
         );
-        assertAcked(client().admin().indices().prepareDelete("mounted-*"));
+        deleteIndex("mounted-*");
     }
 
     public void testRestoreSearchableSnapshotIndexWithDifferentSettingsConflicts() throws Exception {
@@ -398,8 +398,8 @@ public class SearchableSnapshotsRepositoryIntegTests extends BaseFrozenSearchabl
         assertThat(restoreResponse.getRestoreInfo().totalShards(), greaterThan(0));
         assertThat(restoreResponse.getRestoreInfo().failedShards(), equalTo(0));
 
-        assertAcked(client().admin().indices().prepareDelete("mounted-*"));
-        assertAcked(client().admin().indices().prepareDelete("restored-with-same-setting-*"));
+        deleteIndex("mounted-*");
+        deleteIndex("restored-with-same-setting-*");
     }
 
     private static Settings deleteSnapshotIndexSettings(boolean value) {

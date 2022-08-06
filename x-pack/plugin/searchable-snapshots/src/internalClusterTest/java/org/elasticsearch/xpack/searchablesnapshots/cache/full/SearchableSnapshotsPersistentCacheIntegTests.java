@@ -77,7 +77,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         final SnapshotInfo snapshotInfo = createFullSnapshot(fsRepoName, snapshotName);
         assertThat(snapshotInfo.successfulShards(), greaterThan(0));
         assertThat(snapshotInfo.successfulShards(), equalTo(snapshotInfo.totalShards()));
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         final DiscoveryNodes discoveryNodes = client().admin().cluster().prepareState().clear().setNodes(true).get().getState().nodes();
         final String dataNode = randomFrom(discoveryNodes.getDataNodes().values()).getName();
@@ -165,7 +165,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         cacheFiles.forEach(cacheFile -> assertTrue(cacheFile + " should have survived node restart", Files.exists(cacheFile)));
         assertThat("Cache files should be loaded in cache", persistentCacheAfterRestart.getNumDocs(), equalTo((long) cacheFiles.size()));
 
-        assertAcked(client().admin().indices().prepareDelete(restoredIndexName));
+        deleteIndex(restoredIndexName);
         assertBusy(() -> cacheFiles.forEach(cacheFile -> assertFalse(cacheFile + " should have been cleaned up", Files.exists(cacheFile))));
         assertEmptyPersistentCacheOnDataNodes();
     }
@@ -200,7 +200,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         final String snapshotName = prefix + "snapshot";
         createFullSnapshot(fsRepoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(prefix + '*'));
+        deleteIndex(prefix + '*');
 
         final String mountedIndexName = mountSnapshot(fsRepoName, snapshotName, indexName, Settings.EMPTY);
 
@@ -278,7 +278,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         }, 30L, TimeUnit.SECONDS);
 
         logger.info("--> deleting mounted index {}", mountedIndex);
-        assertAcked(client().admin().indices().prepareDelete(mountedIndexName));
+        deleteIndex(mountedIndexName);
         assertEmptyPersistentCacheOnDataNodes();
     }
 

@@ -53,7 +53,7 @@ public abstract class ESFsBasedRepositoryIntegTestCase extends ESBlobStoreReposi
             client().admin().cluster().prepareCreateSnapshot(repoName, snapshotName).setWaitForCompletion(true).setIndices(indexName)
         );
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
         assertAcked(client().admin().cluster().prepareDeleteRepository(repoName));
 
         final Path deletedPath;

@@ -119,7 +119,7 @@ public abstract class MonitoringIntegTestCase extends ESIntegTestCase {
     }
 
     protected void deleteMonitoringIndices() {
-        assertAcked(client().admin().indices().prepareDelete(ALL_MONITORING_INDICES));
+        deleteIndex(ALL_MONITORING_INDICES);
     }
 
     protected void ensureMonitoringIndicesYellow() {

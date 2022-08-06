@@ -264,7 +264,7 @@ public class CloseIndexIT extends ESIntegTestCase {
                     throw new AssertionError(e);
                 }
                 try {
-                    assertAcked(client().admin().indices().prepareDelete(indexToDelete));
+                    deleteIndex(indexToDelete);
                 } catch (final Exception e) {
                     assertException(e, indexToDelete);
                 }

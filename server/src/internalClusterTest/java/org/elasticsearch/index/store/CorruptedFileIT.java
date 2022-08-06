@@ -243,7 +243,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
             eventListener.setNewDelegate(listener);
         }
         try {
-            client().admin().indices().prepareDelete("test").get();
+            deleteIndex("test");
             latch.await();
             assertThat(exception, empty());
         } finally {

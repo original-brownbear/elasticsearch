@@ -114,7 +114,7 @@ public class SearchableSnapshotsCanMatchOnCoordinatorIntegTests extends BaseFroz
         createRepository(repositoryName, "mock");
 
         final SnapshotId snapshotId = createSnapshot(repositoryName, "snapshot-1", List.of(indexOutsideSearchRange)).snapshotId();
-        assertAcked(client().admin().indices().prepareDelete(indexOutsideSearchRange));
+        deleteIndex(indexOutsideSearchRange);
 
         final String searchableSnapshotIndexOutsideSearchRange = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
 
@@ -360,7 +360,7 @@ public class SearchableSnapshotsCanMatchOnCoordinatorIntegTests extends BaseFroz
         createRepository(repositoryName, "mock");
 
         final SnapshotId snapshotId = createSnapshot(repositoryName, "snapshot-1", List.of(indexWithinSearchRange)).snapshotId();
-        assertAcked(client().admin().indices().prepareDelete(indexWithinSearchRange));
+        deleteIndex(indexWithinSearchRange);
 
         final String searchableSnapshotIndexWithinSearchRange = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
 

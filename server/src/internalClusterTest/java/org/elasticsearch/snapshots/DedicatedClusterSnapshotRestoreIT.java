@@ -658,8 +658,8 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
         createSnapshot(repo, snapshot, Collections.singletonList(shrunkIdx));
 
         logger.info("--> delete index and stop the data node");
-        assertAcked(client().admin().indices().prepareDelete(sourceIdx).get());
-        assertAcked(client().admin().indices().prepareDelete(shrunkIdx).get());
+        deleteIndex(sourceIdx);
+        deleteIndex(shrunkIdx);
         internalCluster().stopRandomDataNode();
         clusterAdmin().prepareHealth().setTimeout("30s").setWaitForNodes("1");
 
@@ -1135,7 +1135,7 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
             .setIndices(indexName)
             .get();
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         awaitNoMoreRunningOperations();
         SnapshotInfo snapshotInfo = getSnapshot(repoName, "test-snap");
@@ -1159,7 +1159,7 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
         final ActionFuture<CreateSnapshotResponse> snapshotResponse = startFullSnapshot(repoName, snapshot, true);
         waitForBlock(dataNode, repoName);
 
-        assertAcked(client().admin().indices().prepareDelete(firstIndex));
+        deleteIndex(firstIndex);
 
         unblockNode(repoName, dataNode);
 
@@ -1188,8 +1188,7 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
 
         Thread.sleep(200);
 
-        logger.info("--> delete index");
-        assertAcked(admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         for (Future<Void> future : futures) {
             future.get(30, TimeUnit.SECONDS);

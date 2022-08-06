@@ -82,7 +82,7 @@ public class SplitIndexIT extends ESIntegTestCase {
         assumeFalse("https://github.com/elastic/elasticsearch/issues/34080", Constants.WINDOWS);
 
         splitToN(1, 5, 10);
-        client().admin().indices().prepareDelete("*").get();
+        deleteIndex("*");
         int randomSplit = randomIntBetween(2, 6);
         splitToN(1, randomSplit, randomSplit * 2);
     }

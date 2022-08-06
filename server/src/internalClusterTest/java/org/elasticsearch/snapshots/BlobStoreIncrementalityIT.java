@@ -255,7 +255,7 @@ public class BlobStoreIncrementalityIT extends AbstractSnapshotIntegTestCase {
         logger.info("--> asserting that index [{}] contains [{}] documents", index, expectedCount);
         assertDocCount(index, expectedCount);
         logger.info("--> deleting index [{}]", index);
-        assertThat(client().admin().indices().prepareDelete(index).get().isAcknowledged(), is(true));
+        deleteIndex(index);
     }
 
     private void assertTwoIdenticalShardSnapshots(String repo, String indexName, String snapshot1, String snapshot2) {

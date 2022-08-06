@@ -77,7 +77,7 @@ public class SearchableSnapshotRecoveryStateIntegrationTests extends BaseSearcha
 
         final SnapshotInfo snapshotInfo = createFullSnapshot(fsRepoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         mountSnapshot(fsRepoName, snapshotName, indexName, restoredIndexName, Settings.EMPTY);
         ensureGreen(restoredIndexName);
@@ -131,7 +131,7 @@ public class SearchableSnapshotRecoveryStateIntegrationTests extends BaseSearcha
 
         final SnapshotInfo snapshotInfo = createFullSnapshot(fsRepoName, snapshotName);
 
-        assertAcked(client().admin().indices().prepareDelete(indexName));
+        deleteIndex(indexName);
 
         mountSnapshot(fsRepoName, snapshotName, indexName, restoredIndexName, Settings.EMPTY);
         ensureGreen(restoredIndexName);

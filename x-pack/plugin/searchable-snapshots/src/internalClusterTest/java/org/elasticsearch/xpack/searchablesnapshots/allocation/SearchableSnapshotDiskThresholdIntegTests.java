@@ -157,7 +157,7 @@ public class SearchableSnapshotDiskThresholdIntegTests extends DiskUsageIntegTes
         assertThat(snapshotInfo.failedShards(), equalTo(0));
 
         final Map<String, Long> indicesStoresSizes = sizeOfShardsStores("index-*");
-        assertAcked(client().admin().indices().prepareDelete("index-*"));
+        deleteIndex("index-*");
 
         final Storage storage = randomFrom(Storage.values());
         logger.info("--> using storage [{}]", storage);
