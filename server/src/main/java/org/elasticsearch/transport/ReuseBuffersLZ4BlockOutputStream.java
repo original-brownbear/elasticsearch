@@ -88,8 +88,6 @@ public class ReuseBuffersLZ4BlockOutputStream extends FilterOutputStream {
     static final int COMPRESSION_METHOD_RAW = 0x10;
     static final int COMPRESSION_METHOD_LZ4 = 0x20;
 
-    static final int DEFAULT_SEED = 0x9747b28c;
-
     private static int compressionLevel(int blockSize) {
         if (blockSize < MIN_BLOCK_SIZE) {
             throw new IllegalArgumentException("blockSize must be >= " + MIN_BLOCK_SIZE + ", got " + blockSize);

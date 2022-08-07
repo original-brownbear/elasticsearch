@@ -68,9 +68,7 @@ public class Lz4TransportDecompressor implements TransportDecompressor {
      */
     static final int COMPRESSION_LEVEL_BASE = 10;
 
-    static final int MIN_BLOCK_SIZE = 64;
     static final int MAX_BLOCK_SIZE = 1 << COMPRESSION_LEVEL_BASE + 0x0F;   // 32 M
-    static final int DEFAULT_BLOCK_SIZE = 1 << 16;  // 64 KB
 
     static final int BLOCK_TYPE_NON_COMPRESSED = 0x10;
     static final int BLOCK_TYPE_COMPRESSED = 0x20;
@@ -336,11 +334,4 @@ public class Lz4TransportDecompressor implements TransportDecompressor {
         return buffer;
     }
 
-    /**
-     * Returns {@code true} if and only if the end of the compressed stream
-     * has been reached.
-     */
-    public boolean isClosed() {
-        return currentState == State.FINISHED;
-    }
 }

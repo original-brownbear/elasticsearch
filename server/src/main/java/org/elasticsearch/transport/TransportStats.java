@@ -103,14 +103,6 @@ public class TransportStats implements Writeable, ToXContentFragment {
         return serverOpen();
     }
 
-    public long totalOutboundConnections() {
-        return this.totalOutboundConnections;
-    }
-
-    public long getTotalOutboundConnections() {
-        return totalOutboundConnections();
-    }
-
     public long rxCount() {
         return rxCount;
     }

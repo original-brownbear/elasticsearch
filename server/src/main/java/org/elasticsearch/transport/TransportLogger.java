@@ -142,7 +142,7 @@ public final class TransportLogger {
                     sb.append(", action: ").append(header.getActionName());
                 }
                 sb.append(']');
-                sb.append(' ').append(event).append(": ").append(messageLengthWithHeader).append('B');
+                sb.append(' ').append("READ").append(": ").append(messageLengthWithHeader).append('B');
                 success = true;
             } finally {
                 if (success) {

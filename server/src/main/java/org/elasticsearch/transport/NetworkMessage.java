@@ -35,24 +35,8 @@ public abstract class NetworkMessage {
         }
     }
 
-    public Version getVersion() {
-        return version;
-    }
-
-    public long getRequestId() {
-        return requestId;
-    }
-
     boolean isCompress() {
         return TransportStatus.isCompress(status);
-    }
-
-    boolean isResponse() {
-        return TransportStatus.isRequest(status) == false;
-    }
-
-    boolean isRequest() {
-        return TransportStatus.isRequest(status);
     }
 
     boolean isHandshake() {

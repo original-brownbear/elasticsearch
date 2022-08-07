@@ -322,8 +322,8 @@ public class CorsHandler {
         private static class Builder {
 
             private boolean enabled = true;
-            private Optional<Set<String>> origins;
-            private Optional<Pattern> pattern;
+            private final Optional<Set<String>> origins;
+            private final Optional<Pattern> pattern;
             private final boolean anyOrigin;
             private boolean allowCredentials = false;
             long maxAge;
@@ -384,12 +384,6 @@ public class CorsHandler {
                 return new Config(this);
             }
         }
-    }
-
-    public static CorsHandler disabled() {
-        Config.Builder builder = new Config.Builder();
-        builder.enabled = false;
-        return new CorsHandler(new Config(builder));
     }
 
     public static Config buildConfig(Settings settings) {

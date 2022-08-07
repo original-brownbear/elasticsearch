@@ -13,7 +13,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.TimeValue;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -233,7 +232,7 @@ public final class TransportSettings {
     );
     public static final Setting<List<String>> TRACE_LOG_EXCLUDE_SETTING = listSetting(
         "transport.tracer.exclude",
-        Arrays.asList("internal:coordination/fault_detection/*"),
+        List.of("internal:coordination/fault_detection/*"),
         Function.identity(),
         Setting.Property.Dynamic,
         Setting.Property.NodeScope

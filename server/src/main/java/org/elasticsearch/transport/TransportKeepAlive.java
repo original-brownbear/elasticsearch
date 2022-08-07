@@ -103,7 +103,7 @@ final class TransportKeepAlive implements Closeable {
     }
 
     private void sendPing(TcpChannel channel) {
-        pingSender.apply(channel, PING_MESSAGE, new ActionListener<Void>() {
+        pingSender.apply(channel, PING_MESSAGE, new ActionListener<>() {
 
             @Override
             public void onResponse(Void v) {

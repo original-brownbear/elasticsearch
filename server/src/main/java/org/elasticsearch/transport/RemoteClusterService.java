@@ -384,7 +384,7 @@ public final class RemoteClusterService extends RemoteClusterAware implements Cl
         Function<String, DiscoveryNode> nullFunction = s -> null;
         for (final String cluster : clusters) {
             RemoteClusterConnection connection = this.remoteClusters.get(cluster);
-            connection.collectNodes(new ActionListener<Function<String, DiscoveryNode>>() {
+            connection.collectNodes(new ActionListener<>() {
                 @Override
                 public void onResponse(Function<String, DiscoveryNode> nodeLookup) {
                     synchronized (clusterMap) {
