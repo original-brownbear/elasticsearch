@@ -135,30 +135,24 @@ public class PolicyStepsRegistry {
             stepMap.remove(deletedPolicyName);
         }
 
-        if (mapDiff.getUpserts().isEmpty() == false) {
-            for (var entry : mapDiff.getUpserts()) {
-                LifecyclePolicyMetadata policyMetadata = entry.getValue();
-                LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(
-                    client,
-                    ClientHelper.INDEX_LIFECYCLE_ORIGIN,
-                    policyMetadata.getHeaders()
-                );
-                lifecyclePolicyMap.put(policyMetadata.getName(), policyMetadata);
-                List<Step> policyAsSteps = policyMetadata.getPolicy().toSteps(policyClient, licenseState);
-                if (policyAsSteps.isEmpty() == false) {
-                    firstStepMap.put(policyMetadata.getName(), policyAsSteps.get(0));
-                    final Map<Step.StepKey, Step> stepMapForPolicy = new LinkedHashMap<>();
-                    for (Step step : policyAsSteps) {
-                        assert ErrorStep.NAME.equals(step.getKey().getName()) == false : "unexpected error step in policy";
-                        stepMapForPolicy.put(step.getKey(), step);
-                    }
-                    logger.trace(
-                        "updating cached steps for [{}] policy, new steps: {}",
-                        policyMetadata.getName(),
-                        stepMapForPolicy.keySet()
-                    );
-                    stepMap.put(policyMetadata.getName(), stepMapForPolicy);
+        for (var entry : mapDiff.getUpserts()) {
+            LifecyclePolicyMetadata policyMetadata = entry.v2();
+            LifecyclePolicySecurityClient policyClient = new LifecyclePolicySecurityClient(
+                client,
+                ClientHelper.INDEX_LIFECYCLE_ORIGIN,
+                policyMetadata.getHeaders()
+            );
+            lifecyclePolicyMap.put(policyMetadata.getName(), policyMetadata);
+            List<Step> policyAsSteps = policyMetadata.getPolicy().toSteps(policyClient, licenseState);
+            if (policyAsSteps.isEmpty() == false) {
+                firstStepMap.put(policyMetadata.getName(), policyAsSteps.get(0));
+                final Map<Step.StepKey, Step> stepMapForPolicy = new LinkedHashMap<>();
+                for (Step step : policyAsSteps) {
+                    assert ErrorStep.NAME.equals(step.getKey().getName()) == false : "unexpected error step in policy";
+                    stepMapForPolicy.put(step.getKey(), step);
                 }
+                logger.trace("updating cached steps for [{}] policy, new steps: {}", policyMetadata.getName(), stepMapForPolicy.keySet());
+                stepMap.put(policyMetadata.getName(), stepMapForPolicy);
             }
         }
     }

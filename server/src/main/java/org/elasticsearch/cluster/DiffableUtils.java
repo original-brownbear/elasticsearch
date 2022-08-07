@@ -13,6 +13,7 @@ import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable.Reader;
+import org.elasticsearch.core.Tuple;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -144,18 +145,18 @@ public final class DiffableUtils {
         assert after != null && before != null;
 
         int inserts = 0;
-        var upserts = new ArrayList<Map.Entry<K, T>>();
-        var diffs = new ArrayList<Map.Entry<K, Diff<T>>>();
+        var upserts = new ArrayList<Tuple<K, T>>();
+        var diffs = new ArrayList<Tuple<K, Diff<T>>>();
         for (Map.Entry<K, T> entry : after.entrySet()) {
             T previousValue = before.get(entry.getKey());
             if (previousValue == null) {
-                upserts.add(entry);
+                upserts.add(Tuple.tuple(entry.getKey(), entry.getValue()));
                 inserts++;
             } else if (entry.getValue().equals(previousValue) == false) {
                 if (valueSerializer.supportsDiffableValues()) {
-                    diffs.add(mapEntry(entry.getKey(), valueSerializer.diff(entry.getValue(), previousValue)));
+                    diffs.add(Tuple.tuple(entry.getKey(), valueSerializer.diff(entry.getValue(), previousValue)));
                 } else {
-                    upserts.add(entry);
+                    upserts.add(Tuple.tuple(entry.getKey(), entry.getValue()));
                 }
             }
         }
@@ -271,8 +272,8 @@ public final class DiffableUtils {
     public static class MapDiff<K, T, M extends Map<K, T>> implements Diff<M> {
 
         protected final List<K> deletes;
-        protected final List<Map.Entry<K, Diff<T>>> diffs; // incremental updates
-        protected final List<Map.Entry<K, T>> upserts; // additions or full updates
+        protected final List<Tuple<K, Diff<T>>> diffs; // incremental updates
+        protected final List<Tuple<K, T>> upserts; // additions or full updates
         protected final KeySerializer<K> keySerializer;
         protected final ValueSerializer<K, T> valueSerializer;
         private final Function<M, MapBuilder<K, T, M>> builderCtor;
@@ -281,8 +282,8 @@ public final class DiffableUtils {
             KeySerializer<K> keySerializer,
             ValueSerializer<K, T> valueSerializer,
             List<K> deletes,
-            List<Map.Entry<K, Diff<T>>> diffs,
-            List<Map.Entry<K, T>> upserts,
+            List<Tuple<K, Diff<T>>> diffs,
+            List<Tuple<K, T>> upserts,
             Function<M, MapBuilder<K, T, M>> builderCtor
         ) {
             this.keySerializer = keySerializer;
@@ -307,14 +308,14 @@ public final class DiffableUtils {
             for (int i = 0; i < diffsCount; i++) {
                 K key = keySerializer.readKey(in);
                 Diff<T> diff = valueSerializer.readDiff(in, key);
-                diffs.add(mapEntry(key, diff));
+                diffs.add(Tuple.tuple(key, diff));
             }
             int upsertsCount = in.readVInt();
             upserts = upsertsCount == 0 ? List.of() : new ArrayList<>(upsertsCount);
             for (int i = 0; i < upsertsCount; i++) {
                 K key = keySerializer.readKey(in);
                 T newValue = valueSerializer.read(in, key);
-                upserts.add(mapEntry(key, newValue));
+                upserts.add(Tuple.tuple(key, newValue));
             }
             this.builderCtor = builderCtor;
         }
@@ -327,12 +328,12 @@ public final class DiffableUtils {
                 builder.remove(part);
             }
 
-            for (Map.Entry<K, Diff<T>> diff : diffs) {
-                builder.put(diff.getKey(), diff.getValue().apply(builder.get(diff.getKey())));
+            for (Tuple<K, Diff<T>> diff : diffs) {
+                builder.put(diff.v1(), diff.v2().apply(builder.get(diff.v1())));
             }
 
-            for (Map.Entry<K, T> upsert : upserts) {
-                builder.put(upsert.getKey(), upsert.getValue());
+            for (Tuple<K, T> upsert : upserts) {
+                builder.put(upsert.v1(), upsert.v2());
             }
             return builder.build();
         }
@@ -353,7 +354,7 @@ public final class DiffableUtils {
          *
          * @return the map entries that are incrementally updated
          */
-        public List<Map.Entry<K, Diff<T>>> getDiffs() {
+        public List<Tuple<K, Diff<T>>> getDiffs() {
             return diffs;
         }
 
@@ -363,7 +364,7 @@ public final class DiffableUtils {
          *
          * @return the map entries that are additions or full updates
          */
-        public List<Map.Entry<K, T>> getUpserts() {
+        public List<Tuple<K, T>> getUpserts() {
             return upserts;
         }
 
@@ -373,52 +374,33 @@ public final class DiffableUtils {
             Version version = out.getVersion();
             // filter out custom states not supported by the other node
             int diffCount = 0;
-            for (Map.Entry<K, Diff<T>> diff : diffs) {
-                if (valueSerializer.supportsVersion(diff.getValue(), version)) {
+            for (Tuple<K, Diff<T>> diff : diffs) {
+                if (valueSerializer.supportsVersion(diff.v2(), version)) {
                     diffCount++;
                 }
             }
             out.writeVInt(diffCount);
-            for (Map.Entry<K, Diff<T>> entry : diffs) {
-                if (valueSerializer.supportsVersion(entry.getValue(), version)) {
-                    keySerializer.writeKey(entry.getKey(), out);
-                    valueSerializer.writeDiff(entry.getValue(), out);
+            for (Tuple<K, Diff<T>> entry : diffs) {
+                if (valueSerializer.supportsVersion(entry.v2(), version)) {
+                    keySerializer.writeKey(entry.v1(), out);
+                    valueSerializer.writeDiff(entry.v2(), out);
                 }
             }
             // filter out custom states not supported by the other node
             int upsertsCount = 0;
-            for (Map.Entry<K, T> upsert : upserts) {
-                if (valueSerializer.supportsVersion(upsert.getValue(), version)) {
+            for (Tuple<K, T> upsert : upserts) {
+                if (valueSerializer.supportsVersion(upsert.v2(), version)) {
                     upsertsCount++;
                 }
             }
             out.writeVInt(upsertsCount);
-            for (Map.Entry<K, T> entry : upserts) {
-                if (valueSerializer.supportsVersion(entry.getValue(), version)) {
-                    keySerializer.writeKey(entry.getKey(), out);
-                    valueSerializer.write(entry.getValue(), out);
+            for (Tuple<K, T> entry : upserts) {
+                if (valueSerializer.supportsVersion(entry.v2(), version)) {
+                    keySerializer.writeKey(entry.v1(), out);
+                    valueSerializer.write(entry.v2(), out);
                 }
             }
         }
-    }
-
-    private static <K, T> Map.Entry<K, T> mapEntry(K key, T newValue) {
-        return new Map.Entry<>() {
-            @Override
-            public K getKey() {
-                return key;
-            }
-
-            @Override
-            public T getValue() {
-                return newValue;
-            }
-
-            @Override
-            public T setValue(T value) {
-                throw new UnsupportedOperationException();
-            }
-        };
     }
 
     /**

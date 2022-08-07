@@ -22,6 +22,7 @@ import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
@@ -74,8 +75,14 @@ public class ScriptMetadataTests extends AbstractSerializingTestCase<ScriptMetad
         ScriptMetadata.ScriptMetadataDiff diff = (ScriptMetadata.ScriptMetadataDiff) scriptMetadata2.diff(scriptMetadata1);
         DiffableUtils.MapDiff<?, ?, ?> pipelinesDiff = (DiffableUtils.MapDiff) diff.pipelines;
         assertThat(pipelinesDiff.getDeletes(), contains("3"));
-        assertThat(Maps.ofEntries(pipelinesDiff.getDiffs()), allOf(aMapWithSize(1), hasKey("2")));
-        assertThat(Maps.ofEntries(pipelinesDiff.getUpserts()), allOf(aMapWithSize(1), hasKey("4")));
+        assertThat(
+            Maps.ofEntries(pipelinesDiff.getDiffs().stream().map(t -> Map.entry(t.v1(), t.v2())).toList()),
+            allOf(aMapWithSize(1), hasKey("2"))
+        );
+        assertThat(
+            Maps.ofEntries(pipelinesDiff.getUpserts().stream().map(t -> Map.entry(t.v1(), t.v2())).toList()),
+            allOf(aMapWithSize(1), hasKey("4"))
+        );
 
         ScriptMetadata result = (ScriptMetadata) diff.apply(scriptMetadata1);
         assertEquals("{\"foo\":\"abc\"}", result.getStoredScript("1").getSource());

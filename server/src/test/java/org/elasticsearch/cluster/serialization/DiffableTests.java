@@ -249,12 +249,12 @@ public class DiffableTests extends ESTestCase {
             // check properties of diffMap
             assertThat(new HashSet<>(diffMap.getDeletes()), equalTo(keysToRemove));
             if (diffableValues()) {
-                Map<Integer, Diff<V>> diffs = Maps.ofEntries(diffMap.getDiffs());
+                Map<Integer, Diff<V>> diffs = Maps.ofEntries(diffMap.getDiffs().stream().map(t -> Map.entry(t.v1(), t.v2())).toList());
                 assertThat(diffs.keySet(), equalTo(keysToOverride));
                 for (Integer key : keysToOverride) {
                     assertThat(diffs.get(key).apply(get(beforeMap, key)), equalTo(get(afterMap, key)));
                 }
-                Map<Integer, V> upserts = Maps.ofEntries(diffMap.getUpserts());
+                Map<Integer, V> upserts = Maps.ofEntries(diffMap.getUpserts().stream().map(t -> Map.entry(t.v1(), t.v2())).toList());
                 assertThat(upserts.keySet(), equalTo(keysToAdd));
                 for (Integer key : keysToAdd) {
                     assertThat(upserts.get(key), equalTo(get(afterMap, key)));
@@ -262,7 +262,7 @@ public class DiffableTests extends ESTestCase {
             } else {
                 assertThat(diffMap.getDiffs(), empty());
                 Set<Integer> keysToAddAndOverride = Sets.union(keysToAdd, keysToOverride);
-                Map<Integer, V> upserts = Maps.ofEntries(diffMap.getUpserts());
+                Map<Integer, V> upserts = Maps.ofEntries(diffMap.getUpserts().stream().map(t -> Map.entry(t.v1(), t.v2())).toList());
                 assertThat(upserts.keySet(), equalTo(keysToAddAndOverride));
                 for (Integer key : keysToAddAndOverride) {
                     assertThat(upserts.get(key), equalTo(get(afterMap, key)));
