@@ -147,6 +147,24 @@ public class RoutingTable implements Iterable<IndexRoutingTable>, Diffable<Routi
         return shard;
     }
 
+    public ShardRouting deduplicate(ShardRouting shardRouting) {
+        final IndexRoutingTable indexShardRoutingTable = indicesRouting.get(shardRouting.index().getName());
+        if (indexShardRoutingTable == null) {
+            return shardRouting;
+        }
+        final IndexShardRoutingTable shardRoutingTable = indexShardRoutingTable.shard(shardRouting.id());
+        if (shardRoutingTable == null) {
+            return shardRouting;
+        }
+        for (int i = 0; i < shardRoutingTable.size(); i++) {
+            ShardRouting found = shardRoutingTable.shard(i);
+            if (shardRouting.equals(found)) {
+                return found;
+            }
+        }
+        return shardRouting;
+    }
+
     @Nullable
     public ShardRouting getByAllocationId(ShardId shardId, String allocationId) {
         final IndexRoutingTable indexRoutingTable = index(shardId.getIndex());
