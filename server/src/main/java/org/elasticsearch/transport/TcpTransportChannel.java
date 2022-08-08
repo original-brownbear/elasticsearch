@@ -26,6 +26,20 @@ public final class TcpTransportChannel implements TransportChannel {
     private final boolean isHandshake;
     private final Releasable breakerRelease;
 
+    static TcpTransportChannel create(OutboundHandler outboundHandler, TcpChannel channel, InboundMessage message) {
+        final Header header = message.getHeader();
+        return new TcpTransportChannel(
+            outboundHandler,
+            channel,
+            header.actionName,
+            header.getRequestId(),
+            header.getVersion(),
+            header.getCompressionScheme(),
+            header.isHandshake(),
+            message.takeBreakerReleaseControl()
+        );
+    }
+
     TcpTransportChannel(
         OutboundHandler outboundHandler,
         TcpChannel channel,

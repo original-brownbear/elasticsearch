@@ -70,22 +70,26 @@ public class EsThreadPoolExecutor extends ThreadPoolExecutor {
         final Runnable wrappedRunnable = wrapRunnable(command);
         try {
             super.execute(wrappedRunnable);
-        } catch (Exception e) {
-            if (wrappedRunnable instanceof AbstractRunnable abstractRunnable) {
-                try {
-                    // If we are an abstract runnable we can handle the exception
-                    // directly and don't need to rethrow it, but we log and assert
-                    // any unexpected exception first.
-                    if (e instanceof EsRejectedExecutionException == false) {
-                        logException(abstractRunnable, e);
-                    }
-                    abstractRunnable.onRejection(e);
-                } finally {
-                    abstractRunnable.onAfter();
+        } catch (RuntimeException e) {
+            handleExecuteException(wrappedRunnable, e);
+        }
+    }
+
+    private void handleExecuteException(Runnable wrappedRunnable, RuntimeException e) {
+        if (wrappedRunnable instanceof AbstractRunnable abstractRunnable) {
+            try {
+                // If we are an abstract runnable we can handle the exception
+                // directly and don't need to rethrow it, but we log and assert
+                // any unexpected exception first.
+                if (e instanceof EsRejectedExecutionException == false) {
+                    logException(abstractRunnable, e);
                 }
-            } else {
-                throw e;
+                abstractRunnable.onRejection(e);
+            } finally {
+                abstractRunnable.onAfter();
             }
+        } else {
+            throw e;
         }
     }
 
