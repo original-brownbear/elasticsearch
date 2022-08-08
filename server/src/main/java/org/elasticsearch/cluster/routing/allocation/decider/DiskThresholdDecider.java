@@ -399,7 +399,6 @@ public class DiskThresholdDecider extends AllocationDecider {
         final double freeDiskPercentage = usage.getFreeDiskAsPercentage();
         final long freeBytes = usage.getFreeBytes();
         double usedDiskPercentage = usage.getUsedDiskAsPercentage();
-        final ByteSizeValue total = ByteSizeValue.ofBytes(usage.getTotalBytes());
         if (logger.isTraceEnabled()) {
             logger.trace("node [{}] has {}% free disk ({} bytes)", node.nodeId(), freeDiskPercentage, freeBytes);
         }
@@ -407,52 +406,11 @@ public class DiskThresholdDecider extends AllocationDecider {
             return YES_NOT_MOST_UTILIZED_DISK;
         }
         if (freeBytes < 0L) {
-            final long sizeOfRelocatingShards = sizeOfRelocatingShards(
-                node,
-                true,
-                usage.getPath(),
-                allocation.clusterInfo(),
-                allocation.metadata(),
-                allocation.routingTable()
-            );
-            logger.debug(
-                "fewer free bytes remaining than the size of all incoming shards: "
-                    + "usage {} on node {} including {} bytes of relocations, shard cannot remain",
-                usage,
-                node.nodeId(),
-                sizeOfRelocatingShards
-            );
-            return allocation.decision(
-                Decision.NO,
-                NAME,
-                "the shard cannot remain on this node because the node has fewer free bytes remaining than the total size of all "
-                    + "incoming shards: free space [%s], relocating shards [%s]",
-                freeBytes + sizeOfRelocatingShards,
-                sizeOfRelocatingShards
-            );
+            return noOnNegativeFreeBytes(node, allocation, usage, freeBytes);
         }
+        final ByteSizeValue total = ByteSizeValue.ofBytes(usage.getTotalBytes());
         if (freeBytes < diskThresholdSettings.getFreeBytesThresholdHighStage(total).getBytes()) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                    "node {} is over the high watermark setting [{}], having less than the required {} free space "
-                        + "(actual free: {}, actual used: {}), shard cannot remain",
-                    node.nodeId(),
-                    diskThresholdSettings.describeHighThreshold(total, false),
-                    diskThresholdSettings.getFreeBytesThresholdHighStage(total),
-                    freeBytes,
-                    Strings.format1Decimals(usedDiskPercentage, "%")
-                );
-            }
-            return allocation.decision(
-                Decision.NO,
-                NAME,
-                "the shard cannot remain on this node because it is above the high watermark cluster setting [%s] "
-                    + "and there is less than the required [%s] free space on node, actual free: [%s], actual used: [%s]",
-                diskThresholdSettings.describeHighThreshold(total, true),
-                diskThresholdSettings.getFreeBytesThresholdHighStage(total),
-                new ByteSizeValue(freeBytes),
-                Strings.format1Decimals(usedDiskPercentage, "%")
-            );
+            return noBelowFreeBytesThresholdHighStage(node, allocation, freeBytes, usedDiskPercentage, total);
         }
 
         return allocation.decision(
@@ -460,6 +418,67 @@ public class DiskThresholdDecider extends AllocationDecider {
             NAME,
             "there is enough disk on this node for the shard to remain, free: [%s]",
             new ByteSizeValue(freeBytes)
+        );
+    }
+
+    private Decision noBelowFreeBytesThresholdHighStage(
+        RoutingNode node,
+        RoutingAllocation allocation,
+        long freeBytes,
+        double usedDiskPercentage,
+        ByteSizeValue total
+    ) {
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                "node {} is over the high watermark setting [{}], having less than the required {} free space "
+                    + "(actual free: {}, actual used: {}), shard cannot remain",
+                node.nodeId(),
+                diskThresholdSettings.describeHighThreshold(total, false),
+                diskThresholdSettings.getFreeBytesThresholdHighStage(total),
+                freeBytes,
+                Strings.format1Decimals(usedDiskPercentage, "%")
+            );
+        }
+        return allocation.decision(
+            Decision.NO,
+            NAME,
+            "the shard cannot remain on this node because it is above the high watermark cluster setting [%s] "
+                + "and there is less than the required [%s] free space on node, actual free: [%s], actual used: [%s]",
+            diskThresholdSettings.describeHighThreshold(total, true),
+            diskThresholdSettings.getFreeBytesThresholdHighStage(total),
+            new ByteSizeValue(freeBytes),
+            Strings.format1Decimals(usedDiskPercentage, "%")
+        );
+    }
+
+    private static Decision noOnNegativeFreeBytes(
+        RoutingNode node,
+        RoutingAllocation allocation,
+        DiskUsageWithRelocations usage,
+        long freeBytes
+    ) {
+        final long sizeOfRelocatingShards = sizeOfRelocatingShards(
+            node,
+            true,
+            usage.getPath(),
+            allocation.clusterInfo(),
+            allocation.metadata(),
+            allocation.routingTable()
+        );
+        logger.debug(
+            "fewer free bytes remaining than the size of all incoming shards: "
+                + "usage {} on node {} including {} bytes of relocations, shard cannot remain",
+            usage,
+            node.nodeId(),
+            sizeOfRelocatingShards
+        );
+        return allocation.decision(
+            Decision.NO,
+            NAME,
+            "the shard cannot remain on this node because the node has fewer free bytes remaining than the total size of all "
+                + "incoming shards: free space [%s], relocating shards [%s]",
+            freeBytes + sizeOfRelocatingShards,
+            sizeOfRelocatingShards
         );
     }
 
