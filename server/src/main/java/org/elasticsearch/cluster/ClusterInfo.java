@@ -228,33 +228,16 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
     }
 
     /**
-     * Represents a data path on a node
-     */
-    public static class NodeAndPath implements Writeable {
-        public final String nodeId;
-        public final String path;
-
+         * Represents a data path on a node
+         */
+    public record NodeAndPath(String nodeId, String path) implements Writeable {
         public NodeAndPath(String nodeId, String path) {
             this.nodeId = Objects.requireNonNull(nodeId);
             this.path = Objects.requireNonNull(path);
         }
 
         public NodeAndPath(StreamInput in) throws IOException {
-            this.nodeId = in.readString();
-            this.path = in.readString();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            NodeAndPath that = (NodeAndPath) o;
-            return nodeId.equals(that.nodeId) && path.equals(that.path);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(nodeId, path);
+            this(in.readString(), in.readString());
         }
 
         @Override
