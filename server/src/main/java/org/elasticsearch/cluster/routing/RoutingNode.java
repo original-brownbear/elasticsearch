@@ -242,12 +242,12 @@ public class RoutingNode implements Iterable<ShardRouting> {
 
     private static final ShardRouting[] EMPTY_SHARD_ROUTING_ARRAY = new ShardRouting[0];
 
-    public ShardRouting[] initializing() {
-        return initializingShards.toArray(EMPTY_SHARD_ROUTING_ARRAY);
+    public Iterable<ShardRouting> initializing() {
+        return initializingShards;
     }
 
-    public ShardRouting[] relocating() {
-        return relocatingShards.toArray(EMPTY_SHARD_ROUTING_ARRAY);
+    public Iterable<ShardRouting> relocating() {
+        return relocatingShards;
     }
 
     /**
