@@ -12,7 +12,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ import java.util.List;
  * </p>
  *
  */
-public class Hop implements ToXContentFragment {
+public class Hop implements ToXContent {
     final Hop parentHop;
     List<VertexRequest> vertices = null;
     QueryBuilder guidingQuery = null;

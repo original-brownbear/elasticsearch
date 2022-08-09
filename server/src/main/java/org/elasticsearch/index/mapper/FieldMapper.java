@@ -27,7 +27,6 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.lookup.SearchLookup;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.support.AbstractXContentParser;
@@ -1116,7 +1115,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
     /**
      * A Builder for a ParametrizedFieldMapper
      */
-    public abstract static class Builder extends Mapper.Builder implements ToXContentFragment {
+    public abstract static class Builder extends Mapper.Builder implements ToXContent {
 
         protected final MultiFields.Builder multiFieldsBuilder = new MultiFields.Builder();
         protected final CopyTo.Builder copyTo = new CopyTo.Builder();

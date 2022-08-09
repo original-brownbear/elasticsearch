@@ -13,12 +13,12 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 
-public class StoreStats implements Writeable, ToXContentFragment {
+public class StoreStats implements Writeable, ToXContent {
 
     /**
      * Sentinel value for cases where the shard does not yet know its reserved size so we must fall back to an estimate, for instance

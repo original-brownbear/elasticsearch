@@ -19,7 +19,7 @@ import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.store.StoreFileMetadata;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -33,7 +33,7 @@ import static org.elasticsearch.index.store.StoreFileMetadata.UNAVAILABLE_WRITER
 /**
  * Shard snapshot metadata
  */
-public class BlobStoreIndexShardSnapshot implements ToXContentFragment {
+public class BlobStoreIndexShardSnapshot implements ToXContent {
 
     /**
      * Information about snapshotted file

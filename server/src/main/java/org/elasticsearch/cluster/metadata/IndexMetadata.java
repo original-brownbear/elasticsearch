@@ -48,7 +48,6 @@ import org.elasticsearch.index.shard.ShardLongFieldRange;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.snapshots.SearchableSnapshotsSettings;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
@@ -79,7 +78,7 @@ import static org.elasticsearch.cluster.node.DiscoveryNodeFilters.validateIpValu
 import static org.elasticsearch.common.settings.Settings.readSettingsFromStream;
 import static org.elasticsearch.snapshots.SearchableSnapshotsSettings.SEARCHABLE_SNAPSHOT_PARTIAL_SETTING_KEY;
 
-public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragment {
+public class IndexMetadata implements Diffable<IndexMetadata>, ToXContent {
 
     public static final ClusterBlock INDEX_READ_ONLY_BLOCK = new ClusterBlock(
         5,

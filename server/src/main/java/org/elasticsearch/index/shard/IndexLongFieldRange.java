@@ -12,7 +12,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
  * information is accumulated shard-by-shard, and we keep track of which shards are represented in this value. Only once all shards are
  * represented should this information be considered accurate for the index.
  */
-public class IndexLongFieldRange implements Writeable, ToXContentFragment {
+public class IndexLongFieldRange implements Writeable, ToXContent {
 
     /**
      * Sentinel value indicating that no information is currently available, for instance because the index has just been created.

@@ -18,7 +18,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.RelativeByteSizeValue;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -74,11 +74,6 @@ public final class HealthMetadata extends AbstractNamedDiffable<ClusterState.Cus
         return clusterState.custom(HealthMetadata.TYPE);
     }
 
-    @Override
-    public boolean isFragment() {
-        return true;
-    }
-
     public Disk getDiskMetadata() {
         return diskMetadata;
     }
@@ -105,7 +100,7 @@ public final class HealthMetadata extends AbstractNamedDiffable<ClusterState.Cus
         RelativeByteSizeValue floodStageWatermark,
         RelativeByteSizeValue frozenFloodStageWatermark,
         ByteSizeValue frozenFloodStageMaxHeadroom
-    ) implements ToXContentFragment, Writeable {
+    ) implements ToXContent, Writeable {
 
         public static final String TYPE = "disk";
 
@@ -129,11 +124,6 @@ public final class HealthMetadata extends AbstractNamedDiffable<ClusterState.Cus
             out.writeString(describeFloodStageWatermark());
             out.writeString(describeFrozenFloodStageWatermark());
             frozenFloodStageMaxHeadroom.writeTo(out);
-        }
-
-        @Override
-        public boolean isFragment() {
-            return true;
         }
 
         @Override

@@ -14,7 +14,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-public class JvmStats implements Writeable, ToXContentFragment {
+public class JvmStats implements Writeable, ToXContent {
 
     private static final RuntimeMXBean runtimeMXBean;
     private static final MemoryMXBean memoryMXBean;

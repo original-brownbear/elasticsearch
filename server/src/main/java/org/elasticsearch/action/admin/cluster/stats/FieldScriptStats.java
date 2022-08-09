@@ -11,7 +11,7 @@ package org.elasticsearch.action.admin.cluster.stats;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * Holds stats about the content of a script
  */
-public final class FieldScriptStats implements Writeable, ToXContentFragment {
+public final class FieldScriptStats implements Writeable, ToXContent {
     private long maxLines = 0;
     private long totalLines = 0;
     private long maxChars = 0;

@@ -14,7 +14,7 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.profile.SearchProfileResults;
 import org.elasticsearch.search.profile.SearchProfileShardResult;
 import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ import java.util.Map;
  * to parse aggregations into, which are not serializable. This is the common part that can be
  * shared between core and client.
  */
-public class SearchResponseSections implements ToXContentFragment {
+public class SearchResponseSections implements ToXContent {
 
     protected final SearchHits hits;
     protected final Aggregations aggregations;

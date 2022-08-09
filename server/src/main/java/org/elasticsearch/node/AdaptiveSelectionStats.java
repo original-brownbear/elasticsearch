@@ -13,7 +13,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  * EWMA of queue size, service time, and response time, as well as outgoing
  * searches to each node and the "rank" based on the ARS formula.
  */
-public class AdaptiveSelectionStats implements Writeable, ToXContentFragment {
+public class AdaptiveSelectionStats implements Writeable, ToXContent {
 
     private final Map<String, Long> clientOutgoingConnections;
     private final Map<String, ResponseCollectorService.ComputedNodeStats> nodeComputedStats;

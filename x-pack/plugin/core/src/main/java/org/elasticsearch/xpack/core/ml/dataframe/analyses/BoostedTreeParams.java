@@ -12,7 +12,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.xcontent.AbstractObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.ml.utils.ExceptionsHelper;
 
@@ -26,7 +26,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstr
 /**
  * Parameters used by both {@link Classification} and {@link Regression} analyses.
  */
-public class BoostedTreeParams implements ToXContentFragment, Writeable {
+public class BoostedTreeParams implements ToXContent, Writeable {
 
     static final String NAME = "boosted_tree_params";
 

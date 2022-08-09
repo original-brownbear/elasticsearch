@@ -13,7 +13,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -126,7 +126,7 @@ public class FieldUsageStats implements ToXContentObject, Writeable {
         KNN_VECTORS,
     }
 
-    public static class PerFieldUsageStats implements ToXContentFragment, Writeable {
+    public static class PerFieldUsageStats implements ToXContent, Writeable {
 
         static final PerFieldUsageStats EMPTY = new PerFieldUsageStats(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 

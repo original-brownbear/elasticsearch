@@ -13,7 +13,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -26,7 +26,7 @@ import java.util.Objects;
  * parsing and conversion from similarities to edit distances
  * etc.
  */
-public final class Fuzziness implements ToXContentFragment, Writeable {
+public final class Fuzziness implements ToXContent, Writeable {
 
     static final String X_FIELD_NAME = "fuzziness";
     public static final ParseField FIELD = new ParseField(X_FIELD_NAME);

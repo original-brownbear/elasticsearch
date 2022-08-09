@@ -17,7 +17,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.Index;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -66,7 +66,7 @@ public class CloseIndexResponse extends ShardsAcknowledgedResponse {
         return Strings.toString(this);
     }
 
-    public static class IndexResult implements Writeable, ToXContentFragment {
+    public static class IndexResult implements Writeable, ToXContent {
 
         private final Index index;
         private final @Nullable Exception exception;
@@ -161,7 +161,7 @@ public class CloseIndexResponse extends ShardsAcknowledgedResponse {
         }
     }
 
-    public static class ShardResult implements Writeable, ToXContentFragment {
+    public static class ShardResult implements Writeable, ToXContent {
 
         private final int id;
         private final Failure[] failures;

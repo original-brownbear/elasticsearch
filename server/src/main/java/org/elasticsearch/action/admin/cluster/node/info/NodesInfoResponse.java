@@ -24,7 +24,7 @@ import org.elasticsearch.monitor.process.ProcessInfo;
 import org.elasticsearch.search.aggregations.support.AggregationInfo;
 import org.elasticsearch.threadpool.ThreadPoolInfo;
 import org.elasticsearch.transport.TransportInfo;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 
@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class NodesInfoResponse extends BaseNodesResponse<NodeInfo> implements ToXContentFragment {
+public class NodesInfoResponse extends BaseNodesResponse<NodeInfo> implements ToXContent {
 
     public NodesInfoResponse(StreamInput in) throws IOException {
         super(in);

@@ -20,7 +20,7 @@ import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -38,7 +38,7 @@ import static org.elasticsearch.core.RestApiVersion.equalTo;
  * - Can write new intervals to old format when streaming out
  * - Provides a variety of helper methods to interpret the intervals as different types, depending on caller's need
  */
-public class DateIntervalWrapper implements ToXContentFragment, Writeable {
+public class DateIntervalWrapper implements ToXContent, Writeable {
     private static final DeprecationLogger DEPRECATION_LOGGER = DeprecationLogger.getLogger(DateHistogramAggregationBuilder.class);
     private static final String DEPRECATION_TEXT = "[interval] on [date_histogram] is deprecated, use [fixed_interval] or "
         + "[calendar_interval] in the future.";

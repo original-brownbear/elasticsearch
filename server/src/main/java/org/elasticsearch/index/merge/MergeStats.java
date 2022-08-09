@@ -13,12 +13,12 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 
-public class MergeStats implements Writeable, ToXContentFragment {
+public class MergeStats implements Writeable, ToXContent {
 
     private long total;
     private long totalTimeInMillis;

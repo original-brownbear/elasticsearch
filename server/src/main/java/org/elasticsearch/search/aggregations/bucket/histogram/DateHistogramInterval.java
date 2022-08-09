@@ -14,7 +14,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * The interval the date histogram is based on.
  */
-public class DateHistogramInterval implements Writeable, ToXContentFragment {
+public class DateHistogramInterval implements Writeable, ToXContent {
 
     public static final DateHistogramInterval SECOND = new DateHistogramInterval("1s");
     public static final DateHistogramInterval MINUTE = new DateHistogramInterval("1m");

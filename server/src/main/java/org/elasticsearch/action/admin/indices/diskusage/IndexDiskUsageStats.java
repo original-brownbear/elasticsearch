@@ -14,7 +14,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.util.Objects;
 /**
  * The result of analyzing disk usage of each field in a shard/index
  */
-public final class IndexDiskUsageStats implements ToXContentFragment, Writeable {
+public final class IndexDiskUsageStats implements ToXContent, Writeable {
     public static final String TOTAL = "total";
     public static final String TOTAL_IN_BYTES = "total_in_bytes";
     public static final String INVERTED_INDEX = "inverted_index";
@@ -169,7 +169,7 @@ public final class IndexDiskUsageStats implements ToXContentFragment, Writeable 
     /**
      * Disk usage stats for a single field
      */
-    public static final class PerFieldDiskUsage implements ToXContentFragment, Writeable {
+    public static final class PerFieldDiskUsage implements ToXContent, Writeable {
         private long invertedIndexBytes;
         private long storedFieldBytes;
         private long docValuesBytes;

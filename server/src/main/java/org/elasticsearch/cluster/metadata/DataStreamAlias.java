@@ -18,7 +18,7 @@ import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
@@ -32,7 +32,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
-public class DataStreamAlias implements SimpleDiffable<DataStreamAlias>, ToXContentFragment {
+public class DataStreamAlias implements SimpleDiffable<DataStreamAlias>, ToXContent {
 
     public static final ParseField DATA_STREAMS_FIELD = new ParseField("data_streams");
     public static final ParseField WRITE_DATA_STREAM_FIELD = new ParseField("write_data_stream");

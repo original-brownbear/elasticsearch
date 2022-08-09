@@ -49,7 +49,6 @@ import org.elasticsearch.transport.Transports;
 import org.elasticsearch.xcontent.NamedObjectNotFoundException;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -89,7 +88,7 @@ import static org.elasticsearch.common.settings.Settings.readSettingsFromStream;
  * The details of how this is persisted are covered in {@link org.elasticsearch.gateway.PersistedClusterStateService}.
  * </p>
  */
-public class Metadata extends AbstractCollection<IndexMetadata> implements Diffable<Metadata>, ToXContentFragment {
+public class Metadata extends AbstractCollection<IndexMetadata> implements Diffable<Metadata>, ToXContent {
 
     private static final Logger logger = LogManager.getLogger(Metadata.class);
 
@@ -135,7 +134,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
      * Custom metadata that persists (via XContent) across restarts. The deserialization method for each implementation must be registered
      * with the {@link NamedXContentRegistry}.
      */
-    public interface Custom extends NamedDiffable<Custom>, ToXContentFragment {
+    public interface Custom extends NamedDiffable<Custom>, ToXContent {
 
         EnumSet<XContentContext> context();
 

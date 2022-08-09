@@ -11,6 +11,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.autoscaling.capacity.AutoscalingCapacity;
 import org.elasticsearch.xpack.autoscaling.capacity.AutoscalingDeciderResult;
@@ -21,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public class MlScalingReason implements AutoscalingDeciderResult.Reason {
+public class MlScalingReason implements AutoscalingDeciderResult.Reason, ToXContentObject {
 
     public static final String NAME = MlAutoscalingDeciderService.NAME;
     static final String WAITING_ANALYTICS_JOBS = "waiting_analytics_jobs";
@@ -167,11 +168,6 @@ public class MlScalingReason implements AutoscalingDeciderResult.Reason {
         builder.field(REASON, simpleReason);
         builder.endObject();
         return builder;
-    }
-
-    @Override
-    public boolean isFragment() {
-        return false;
     }
 
     static class Builder {

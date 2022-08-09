@@ -11,13 +11,13 @@ package org.elasticsearch.http;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.List;
 
-public class HttpStats implements Writeable, ToXContentFragment {
+public class HttpStats implements Writeable, ToXContent {
 
     private final long serverOpen;
     private final long totalOpen;
@@ -91,7 +91,7 @@ public class HttpStats implements Writeable, ToXContentFragment {
         return builder;
     }
 
-    public static class ClientStats implements Writeable, ToXContentFragment {
+    public static class ClientStats implements Writeable, ToXContent {
         public static final long NOT_CLOSED = -1L;
 
         final int id;

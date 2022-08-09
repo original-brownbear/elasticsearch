@@ -15,7 +15,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -27,7 +27,7 @@ import java.util.Objects;
  * {@link SnapshotLifecyclePolicyMetadata}, however, it elides the headers to ensure that they
  * are not leaked to the user since they may contain sensitive information.
  */
-public class SnapshotLifecyclePolicyItem implements ToXContentFragment, Writeable {
+public class SnapshotLifecyclePolicyItem implements ToXContent, Writeable {
 
     private static final ParseField SNAPSHOT_IN_PROGRESS = new ParseField("in_progress");
     private static final ParseField POLICY_STATS = new ParseField("stats");

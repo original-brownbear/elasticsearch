@@ -25,7 +25,7 @@ import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -44,7 +44,7 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpect
 /**
  * Top level suggest result, containing the result for each suggestion.
  */
-public class Suggest implements Iterable<Suggest.Suggestion<? extends Entry<? extends Option>>>, Writeable, ToXContentFragment {
+public class Suggest implements Iterable<Suggest.Suggestion<? extends Entry<? extends Option>>>, Writeable, ToXContent {
 
     public static final String NAME = "suggest";
 
@@ -204,7 +204,7 @@ public class Suggest implements Iterable<Suggest.Suggestion<? extends Entry<? ex
      * The suggestion responses corresponding with the suggestions in the request.
      */
     @SuppressWarnings("rawtypes")
-    public abstract static class Suggestion<T extends Suggestion.Entry> implements Iterable<T>, NamedWriteable, ToXContentFragment {
+    public abstract static class Suggestion<T extends Suggestion.Entry> implements Iterable<T>, NamedWriteable, ToXContent {
 
         public static final int TYPE = 0;
         protected final String name;
@@ -384,7 +384,7 @@ public class Suggest implements Iterable<Suggest.Suggestion<? extends Entry<? ex
         /**
          * Represents a part from the suggest text with suggested options.
          */
-        public abstract static class Entry<O extends Option> implements Iterable<O>, Writeable, ToXContentFragment {
+        public abstract static class Entry<O extends Option> implements Iterable<O>, Writeable, ToXContent {
 
             private static final String TEXT = "text";
             private static final String OFFSET = "offset";
@@ -569,7 +569,7 @@ public class Suggest implements Iterable<Suggest.Suggestion<? extends Entry<? ex
             /**
              * Contains the suggested text with its document frequency and score.
              */
-            public abstract static class Option implements Writeable, ToXContentFragment {
+            public abstract static class Option implements Writeable, ToXContent {
 
                 public static final ParseField TEXT = new ParseField("text");
                 public static final ParseField HIGHLIGHTED = new ParseField("highlighted");

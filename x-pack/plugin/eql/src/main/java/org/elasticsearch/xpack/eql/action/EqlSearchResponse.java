@@ -26,7 +26,7 @@ import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.InstantiatingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -451,7 +451,7 @@ public class EqlSearchResponse extends ActionResponse implements ToXContentObjec
         }
     }
 
-    public static class Hits implements Writeable, ToXContentFragment {
+    public static class Hits implements Writeable, ToXContent {
         public static final Hits EMPTY = new Hits(null, null, null);
 
         private final List<Event> events;

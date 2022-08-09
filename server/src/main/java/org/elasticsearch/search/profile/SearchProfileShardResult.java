@@ -15,7 +15,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.search.profile.aggregation.AggregationProfileShardResult;
 import org.elasticsearch.search.profile.query.QueryProfileShardResult;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * Profile results from a particular shard for all search phases.
  */
-public class SearchProfileShardResult implements Writeable, ToXContentFragment {
+public class SearchProfileShardResult implements Writeable, ToXContent {
     private final SearchProfileQueryPhaseResult queryPhase;
 
     private final ProfileResult fetchPhase;

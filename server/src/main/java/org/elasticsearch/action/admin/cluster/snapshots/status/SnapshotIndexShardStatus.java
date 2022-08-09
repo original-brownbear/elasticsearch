@@ -20,7 +20,7 @@ import org.elasticsearch.index.snapshots.IndexShardSnapshotStatus;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -30,7 +30,7 @@ import java.util.Objects;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
-public class SnapshotIndexShardStatus extends BroadcastShardResponse implements ToXContentFragment {
+public class SnapshotIndexShardStatus extends BroadcastShardResponse implements ToXContent {
 
     private SnapshotIndexShardStage stage = SnapshotIndexShardStage.INIT;
 

@@ -11,7 +11,7 @@ package org.elasticsearch.index.seqno;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * Represents retention lease stats.
  */
-public final class RetentionLeaseStats implements ToXContentFragment, Writeable {
+public final class RetentionLeaseStats implements ToXContent, Writeable {
 
     private final RetentionLeases retentionLeases;
 

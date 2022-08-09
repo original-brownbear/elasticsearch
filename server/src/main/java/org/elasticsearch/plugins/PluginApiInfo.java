@@ -11,7 +11,7 @@ package org.elasticsearch.plugins;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.util.List;
  * @param legacyInterfaces Plugin API interfaces that the plugin implemented, introspected at runtime.
  * @param legacyMethods Method names overriden from the {@link Plugin} class and Plugin API interfaces
  */
-public record PluginApiInfo(List<String> legacyInterfaces, List<String> legacyMethods) implements Writeable, ToXContentFragment {
+public record PluginApiInfo(List<String> legacyInterfaces, List<String> legacyMethods) implements Writeable, ToXContent {
 
     public PluginApiInfo(StreamInput in) throws IOException {
         this(in.readImmutableList(StreamInput::readString), in.readImmutableList(StreamInput::readString));

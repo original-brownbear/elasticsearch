@@ -33,7 +33,7 @@ import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
@@ -75,7 +75,7 @@ import static org.elasticsearch.core.TimeValue.parseTimeValue;
 /**
  * An immutable settings implementation.
  */
-public final class Settings implements ToXContentFragment, Writeable, Diffable<Settings> {
+public final class Settings implements ToXContent, Writeable, Diffable<Settings> {
 
     public static final Settings EMPTY = new Settings(Map.of(), null);
 

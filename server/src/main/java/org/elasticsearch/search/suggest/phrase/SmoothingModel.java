@@ -11,13 +11,13 @@ package org.elasticsearch.search.suggest.phrase;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.VersionedNamedWriteable;
 import org.elasticsearch.search.suggest.phrase.WordScorer.WordScorerFactory;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 
-public abstract class SmoothingModel implements VersionedNamedWriteable, ToXContentFragment {
+public abstract class SmoothingModel implements VersionedNamedWriteable, ToXContent {
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {

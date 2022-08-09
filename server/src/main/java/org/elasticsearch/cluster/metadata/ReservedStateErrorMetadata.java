@@ -14,7 +14,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -32,7 +32,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg
 public record ReservedStateErrorMetadata(Long version, ErrorKind errorKind, List<String> errors)
     implements
         SimpleDiffable<ReservedStateErrorMetadata>,
-        ToXContentFragment {
+        ToXContent {
 
     static final ParseField ERRORS = new ParseField("errors");
     static final ParseField VERSION = new ParseField("version");

@@ -15,7 +15,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.reservedstate.ReservedClusterStateHandler;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -44,7 +44,7 @@ public record ReservedStateMetadata(
     Long version,
     Map<String, ReservedStateHandlerMetadata> handlers,
     ReservedStateErrorMetadata errorMetadata
-) implements SimpleDiffable<ReservedStateMetadata>, ToXContentFragment {
+) implements SimpleDiffable<ReservedStateMetadata>, ToXContent {
 
     private static final ParseField VERSION = new ParseField("version");
     private static final ParseField HANDLERS = new ParseField("handlers");

@@ -13,7 +13,7 @@ import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -32,7 +32,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg
 /**
  * Represents snapshot status of all shards in the index
  */
-public class SnapshotIndexStatus implements Iterable<SnapshotIndexShardStatus>, ToXContentFragment {
+public class SnapshotIndexStatus implements Iterable<SnapshotIndexShardStatus>, ToXContent {
 
     private final String index;
 

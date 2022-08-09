@@ -14,7 +14,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.xcontent.InstantiatingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -30,7 +30,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstr
  * not used interchangeably and therefore don't share any common interfaces except for serialization.
  */
 
-public class DoubleBounds implements ToXContentFragment, Writeable {
+public class DoubleBounds implements ToXContent, Writeable {
     static final ParseField MIN_FIELD = new ParseField("min");
     static final ParseField MAX_FIELD = new ParseField("max");
     static final InstantiatingObjectParser<DoubleBounds, Void> PARSER;

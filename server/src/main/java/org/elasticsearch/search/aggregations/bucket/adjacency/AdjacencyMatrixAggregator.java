@@ -27,7 +27,7 @@ import org.elasticsearch.search.aggregations.bucket.BucketsAggregator;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.xcontent.ObjectParser.NamedObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -47,7 +47,7 @@ public class AdjacencyMatrixAggregator extends BucketsAggregator {
 
     public static final ParseField FILTERS_FIELD = new ParseField("filters");
 
-    protected static class KeyedFilter implements Writeable, ToXContentFragment {
+    protected static class KeyedFilter implements Writeable, ToXContent {
         private final String key;
         private final QueryBuilder filter;
 

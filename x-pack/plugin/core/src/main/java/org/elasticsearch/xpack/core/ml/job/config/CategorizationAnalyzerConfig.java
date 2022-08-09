@@ -16,7 +16,7 @@ import org.elasticsearch.index.analysis.NameOrDefinition;
 import org.elasticsearch.rest.action.admin.indices.RestAnalyzeAction;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
@@ -54,7 +54,7 @@ import java.util.Objects;
  *     ]
  * </code>
  */
-public class CategorizationAnalyzerConfig implements ToXContentFragment, Writeable {
+public class CategorizationAnalyzerConfig implements ToXContent, Writeable {
 
     public static final ParseField CATEGORIZATION_ANALYZER = new ParseField("categorization_analyzer");
     public static final ParseField TOKENIZER = AnalyzeAction.Fields.TOKENIZER;

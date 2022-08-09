@@ -19,7 +19,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.rollup.RollupField;
@@ -42,7 +42,7 @@ public class GetRollupIndexCapsAction extends ActionType<GetRollupIndexCapsActio
         super(NAME, GetRollupIndexCapsAction.Response::new);
     }
 
-    public static class Request extends ActionRequest implements IndicesRequest.Replaceable, ToXContentFragment {
+    public static class Request extends ActionRequest implements IndicesRequest.Replaceable, ToXContent {
         private String[] indices;
         private IndicesOptions options;
 

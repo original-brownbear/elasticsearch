@@ -21,7 +21,7 @@ import org.elasticsearch.cluster.ClusterModule;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -686,7 +686,7 @@ public class MetadataStateFormatTests extends ESTestCase {
         }
     }
 
-    private static class DummyState implements ToXContentFragment {
+    private static class DummyState implements ToXContent {
         String string;
         int aInt;
         long aLong;

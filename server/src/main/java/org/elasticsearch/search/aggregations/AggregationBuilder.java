@@ -16,7 +16,7 @@ import org.elasticsearch.search.aggregations.pipeline.PipelineAggregator.Pipelin
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.SamplingContext;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 public abstract class AggregationBuilder
     implements
         VersionedNamedWriteable,
-        ToXContentFragment,
+        ToXContent,
         BaseAggregationBuilder,
         Rewriteable<AggregationBuilder> {
     public static final long DEFAULT_PREALLOCATION = 1024 * 6;

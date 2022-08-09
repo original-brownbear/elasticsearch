@@ -17,7 +17,7 @@ import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser.ValueType;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParser.Token;
@@ -31,7 +31,7 @@ import java.util.Objects;
 /**
  * Represents an enrich policy including its configuration.
  */
-public final class EnrichPolicy implements Writeable, ToXContentFragment {
+public final class EnrichPolicy implements Writeable, ToXContent {
 
     public static final String ENRICH_INDEX_NAME_BASE = ".enrich-";
     public static final String ENRICH_INDEX_PATTERN = ENRICH_INDEX_NAME_BASE + "*";
@@ -295,7 +295,7 @@ public final class EnrichPolicy implements Writeable, ToXContentFragment {
         }
     }
 
-    public static class NamedPolicy implements Writeable, ToXContentFragment {
+    public static class NamedPolicy implements Writeable, ToXContent {
 
         static final ParseField NAME = new ParseField("name");
         @SuppressWarnings("unchecked")

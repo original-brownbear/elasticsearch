@@ -17,7 +17,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -37,7 +36,7 @@ import java.util.Set;
 /**
  * Statistics about analysis usage.
  */
-public final class AnalysisStats implements ToXContentFragment, Writeable {
+public final class AnalysisStats implements ToXContent, Writeable {
 
     /**
      * Create {@link AnalysisStats} from the given cluster state.

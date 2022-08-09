@@ -25,7 +25,7 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.ReportingService;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -745,7 +745,7 @@ public class ThreadPool implements ReportingService<ThreadPoolInfo>, Scheduler {
         }
     }
 
-    public static class Info implements Writeable, ToXContentFragment {
+    public static class Info implements Writeable, ToXContent {
 
         private final String name;
         private final ThreadPoolType type;

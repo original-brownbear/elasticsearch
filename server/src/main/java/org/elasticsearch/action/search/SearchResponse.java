@@ -29,7 +29,7 @@ import org.elasticsearch.search.profile.SearchProfileResults;
 import org.elasticsearch.search.profile.SearchProfileShardResult;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParser.Token;
@@ -457,7 +457,7 @@ public class SearchResponse extends ActionResponse implements StatusToXContentOb
      * Holds info about the clusters that the search was executed on: how many in total, how many of them were successful
      * and how many of them were skipped.
      */
-    public static class Clusters implements ToXContentFragment, Writeable {
+    public static class Clusters implements ToXContent, Writeable {
 
         public static final Clusters EMPTY = new Clusters(0, 0, 0);
 

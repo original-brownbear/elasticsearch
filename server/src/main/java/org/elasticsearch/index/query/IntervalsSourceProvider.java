@@ -26,7 +26,7 @@ import org.elasticsearch.script.Script;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -49,7 +49,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstr
  * strict the matching should be); {@link Combine}, which allows proximity queries
  * between different sub-sources; and {@link Disjunction}.
  */
-public abstract class IntervalsSourceProvider implements NamedWriteable, ToXContentFragment {
+public abstract class IntervalsSourceProvider implements NamedWriteable, ToXContent {
 
     public abstract IntervalsSource getSource(SearchExecutionContext context, MappedFieldType fieldType) throws IOException;
 

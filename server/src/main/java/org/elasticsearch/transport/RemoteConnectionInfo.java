@@ -13,7 +13,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.Objects;
  * This class encapsulates all remote cluster information to be rendered on
  * {@code _remote/info} requests.
  */
-public final class RemoteConnectionInfo implements ToXContentFragment, Writeable {
+public final class RemoteConnectionInfo implements ToXContent, Writeable {
 
     final ModeInfo modeInfo;
     final TimeValue initialConnectionTimeout;
@@ -131,7 +131,7 @@ public final class RemoteConnectionInfo implements ToXContentFragment, Writeable
         return Objects.hash(modeInfo, initialConnectionTimeout, clusterAlias, skipUnavailable);
     }
 
-    public interface ModeInfo extends ToXContentFragment, Writeable {
+    public interface ModeInfo extends ToXContent, Writeable {
 
         boolean isConnected();
 

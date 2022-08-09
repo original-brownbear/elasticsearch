@@ -21,7 +21,7 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.store.StoreStats;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -36,7 +36,7 @@ import java.util.Map;
 /**
  * Keeps track of state related to shard recovery.
  */
-public class RecoveryState implements ToXContentFragment, Writeable {
+public class RecoveryState implements ToXContent, Writeable {
 
     public enum Stage {
         INIT((byte) 0),
@@ -428,7 +428,7 @@ public class RecoveryState implements ToXContentFragment, Writeable {
         }
     }
 
-    public static class VerifyIndex extends Timer implements ToXContentFragment, Writeable {
+    public static class VerifyIndex extends Timer implements ToXContent, Writeable {
         private volatile long checkIndexTime;
 
         public VerifyIndex() {}
@@ -465,7 +465,7 @@ public class RecoveryState implements ToXContentFragment, Writeable {
         }
     }
 
-    public static class Translog extends Timer implements ToXContentFragment, Writeable {
+    public static class Translog extends Timer implements ToXContent, Writeable {
         public static final int UNKNOWN = -1;
 
         private int recovered;
@@ -740,7 +740,7 @@ public class RecoveryState implements ToXContentFragment, Writeable {
         }
     }
 
-    public static class RecoveryFilesDetails implements ToXContentFragment, Writeable {
+    public static class RecoveryFilesDetails implements ToXContent, Writeable {
         protected final Map<String, FileDetail> fileDetails = new HashMap<>();
         protected boolean complete;
 
@@ -842,7 +842,7 @@ public class RecoveryState implements ToXContentFragment, Writeable {
         }
     }
 
-    public static class Index extends Timer implements ToXContentFragment, Writeable {
+    public static class Index extends Timer implements ToXContent, Writeable {
         protected final RecoveryFilesDetails fileDetails;
 
         public static final long UNKNOWN = -1L;

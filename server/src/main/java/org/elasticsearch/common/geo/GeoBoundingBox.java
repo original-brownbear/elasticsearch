@@ -17,7 +17,7 @@ import org.elasticsearch.geometry.ShapeType;
 import org.elasticsearch.geometry.utils.StandardValidator;
 import org.elasticsearch.geometry.utils.WellKnownText;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -29,7 +29,7 @@ import java.util.Objects;
  * A class representing a Geo-Bounding-Box for use by Geo queries and aggregations
  * that deal with extents/rectangles representing rectangular areas of interest.
  */
-public class GeoBoundingBox implements ToXContentFragment, Writeable {
+public class GeoBoundingBox implements ToXContent, Writeable {
     static final ParseField TOP_RIGHT_FIELD = new ParseField("top_right");
     static final ParseField BOTTOM_LEFT_FIELD = new ParseField("bottom_left");
     static final ParseField TOP_FIELD = new ParseField("top");

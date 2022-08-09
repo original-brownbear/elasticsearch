@@ -16,14 +16,14 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.common.logging.LogConfigurator;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 
-public class ByteSizeValue implements Writeable, Comparable<ByteSizeValue>, ToXContentFragment {
+public class ByteSizeValue implements Writeable, Comparable<ByteSizeValue>, ToXContent {
 
     /**
      * We have to lazy initialize the deprecation logger as otherwise a static logger here would be constructed before logging is configured

@@ -7,14 +7,14 @@
 package org.elasticsearch.xpack.core.watcher.transform;
 
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.watcher.execution.WatchExecutionContext;
 import org.elasticsearch.xpack.core.watcher.watch.Payload;
 
 import java.io.IOException;
 
-public abstract class ExecutableTransform<T extends Transform, R extends Transform.Result> implements ToXContentFragment {
+public abstract class ExecutableTransform<T extends Transform, R extends Transform.Result> implements ToXContent {
 
     protected final T transform;
     protected final Logger logger;

@@ -45,7 +45,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.vectors.KnnSearchBuilder;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -1641,7 +1641,7 @@ public final class SearchSourceBuilder implements Writeable, ToXContentObject, R
 
     }
 
-    public static class ScriptField implements Writeable, ToXContentFragment {
+    public static class ScriptField implements Writeable, ToXContent {
 
         private final boolean ignoreFailure;
         private final String fieldName;

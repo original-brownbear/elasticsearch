@@ -14,7 +14,7 @@ import java.util.function.Function;
 /**
  * This interface provides a way for non-JDK classes to plug in a way to serialize to xcontent.
  *
- * It is <b>greatly</b> preferred that you implement {@link ToXContentFragment}
+ * It is <b>greatly</b> preferred that you implement {@link ToXContent}
  * in the class for encoding, however, in some situations you may not own the
  * class, in which case you can add an implementation here for encoding it.
  */

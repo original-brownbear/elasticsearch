@@ -11,7 +11,7 @@ package org.elasticsearch.cluster.routing.allocation;
 import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.util.Optional;
  * Class used to encapsulate a number of {@link RerouteExplanation}
  * explanations.
  */
-public class RoutingExplanations implements ToXContentFragment {
+public class RoutingExplanations implements ToXContent {
     private final List<RerouteExplanation> explanations;
 
     public RoutingExplanations() {

@@ -26,7 +26,6 @@ import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -45,7 +44,7 @@ import java.util.Objects;
 /**
  * Information about a snapshot
  */
-public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContentFragment, Writeable {
+public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContent, Writeable {
 
     public static final String INDEX_DETAILS_XCONTENT_PARAM = "index_details";
 

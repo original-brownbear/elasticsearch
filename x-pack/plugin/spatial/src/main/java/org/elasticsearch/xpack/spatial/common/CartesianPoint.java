@@ -15,7 +15,7 @@ import org.elasticsearch.geometry.ShapeType;
 import org.elasticsearch.geometry.utils.StandardValidator;
 import org.elasticsearch.geometry.utils.WellKnownText;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.support.MapXContentParser;
@@ -29,7 +29,7 @@ import java.util.Objects;
 /**
  * Represents a point in the cartesian space.
  */
-public class CartesianPoint implements ToXContentFragment {
+public class CartesianPoint implements ToXContent {
 
     private static final String X_FIELD = "x";
     private static final String Y_FIELD = "y";

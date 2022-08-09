@@ -17,7 +17,7 @@ import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInter
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -41,7 +41,7 @@ public class DateHistogramGroupSource extends SingleGroupSource {
      *
      * Note: data frames do not support the deprecated interval option
      */
-    public interface Interval extends Writeable, ToXContentFragment {
+    public interface Interval extends Writeable, ToXContent {
         String getName();
 
         DateHistogramInterval getInterval();

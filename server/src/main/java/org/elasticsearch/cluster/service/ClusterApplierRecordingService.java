@@ -16,7 +16,7 @@ import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -90,7 +90,7 @@ public final class ClusterApplierRecordingService {
         }
     }
 
-    public static class Stats implements Writeable, ToXContentFragment {
+    public static class Stats implements Writeable, ToXContent {
 
         private final Map<String, Recording> recordings;
 

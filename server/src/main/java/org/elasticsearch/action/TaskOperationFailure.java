@@ -16,7 +16,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -29,7 +29,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg
  *
  * The class is final due to serialization limitations
  */
-public final class TaskOperationFailure implements Writeable, ToXContentFragment {
+public final class TaskOperationFailure implements Writeable, ToXContent {
     private static final String TASK_ID = "task_id";
     private static final String NODE_ID = "node_id";
     private static final String STATUS = "status";

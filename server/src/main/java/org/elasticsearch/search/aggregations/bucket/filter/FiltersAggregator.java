@@ -28,7 +28,7 @@ import org.elasticsearch.search.aggregations.bucket.BucketsAggregator;
 import org.elasticsearch.search.aggregations.bucket.DocCountProvider;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ public abstract class FiltersAggregator extends BucketsAggregator {
     public static final ParseField OTHER_BUCKET_FIELD = new ParseField("other_bucket");
     public static final ParseField OTHER_BUCKET_KEY_FIELD = new ParseField("other_bucket_key");
 
-    public static class KeyedFilter implements Writeable, ToXContentFragment {
+    public static class KeyedFilter implements Writeable, ToXContent {
         private final String key;
         private final QueryBuilder filter;
 

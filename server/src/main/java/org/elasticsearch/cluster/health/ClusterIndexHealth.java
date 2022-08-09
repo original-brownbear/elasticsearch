@@ -18,7 +18,7 @@ import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -35,7 +35,7 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpect
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
-public final class ClusterIndexHealth implements Iterable<ClusterShardHealth>, Writeable, ToXContentFragment {
+public final class ClusterIndexHealth implements Iterable<ClusterShardHealth>, Writeable, ToXContent {
     private static final String STATUS = "status";
     private static final String NUMBER_OF_SHARDS = "number_of_shards";
     private static final String NUMBER_OF_REPLICAS = "number_of_replicas";

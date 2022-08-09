@@ -14,7 +14,7 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 
@@ -25,7 +25,7 @@ import java.util.List;
  * The response for the nodes usage api which contains the individual usage
  * statistics for all nodes queried.
  */
-public class NodesUsageResponse extends BaseNodesResponse<NodeUsage> implements ToXContentFragment {
+public class NodesUsageResponse extends BaseNodesResponse<NodeUsage> implements ToXContent {
 
     public NodesUsageResponse(StreamInput in) throws IOException {
         super(in);

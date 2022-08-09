@@ -29,6 +29,7 @@ import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.snapshots.SnapshotFeatureInfo;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.xcontent.ToXContent;
+import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -653,7 +654,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         }
     }
 
-    public static class Entry implements Writeable, ToXContent, RepositoryOperation {
+    public static class Entry implements Writeable, ToXContentObject, RepositoryOperation {
         private final State state;
         private final Snapshot snapshot;
         private final boolean includeGlobalState;
@@ -1304,11 +1305,6 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 out.writeMap(shardStatusByRepoShardId);
             }
             out.writeList(featureStates);
-        }
-
-        @Override
-        public boolean isFragment() {
-            return false;
         }
     }
 }

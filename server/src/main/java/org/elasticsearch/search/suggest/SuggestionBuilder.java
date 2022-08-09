@@ -19,7 +19,7 @@ import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.search.suggest.SuggestionSearchContext.SuggestionContext;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -29,7 +29,7 @@ import java.util.Objects;
 /**
  * Base class for the different suggestion implementations.
  */
-public abstract class SuggestionBuilder<T extends SuggestionBuilder<T>> implements VersionedNamedWriteable, ToXContentFragment {
+public abstract class SuggestionBuilder<T extends SuggestionBuilder<T>> implements VersionedNamedWriteable, ToXContent {
 
     protected final String field;
     protected String text;

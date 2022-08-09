@@ -15,7 +15,7 @@ import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.core.Tuple;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.util.StringTokenizer;
  * decorator class to have a useful toString() method for an IpFilterRule
  * as this is needed for audit logging
  */
-public class SecurityIpFilterRule implements IpFilterRule, ToXContentFragment {
+public class SecurityIpFilterRule implements IpFilterRule, ToXContent {
 
     public static final SecurityIpFilterRule ACCEPT_ALL = new SecurityIpFilterRule(true, "accept_all") {
         @Override

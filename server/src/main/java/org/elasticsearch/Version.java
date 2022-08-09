@@ -14,7 +14,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.monitor.jvm.JvmInfo;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
-public class Version implements Comparable<Version>, ToXContentFragment {
+public class Version implements Comparable<Version>, ToXContent {
     /*
      * The logic for ID is: XXYYZZAA, where XX is major version, YY is minor version, ZZ is revision, and AA is alpha/beta/rc indicator AA
      * values below 25 are for alpha builder (since 5.0), and above 25 and below 50 are beta builds, and below 99 are RC builds, with 99

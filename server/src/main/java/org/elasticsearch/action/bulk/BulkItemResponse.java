@@ -29,7 +29,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -157,7 +157,7 @@ public class BulkItemResponse implements Writeable, StatusToXContentObject {
     /**
      * Represents a failure.
      */
-    public static class Failure implements Writeable, ToXContentFragment {
+    public static class Failure implements Writeable, ToXContent {
         public static final String INDEX_FIELD = "index";
         public static final String ID_FIELD = "id";
         public static final String CAUSE_FIELD = "cause";

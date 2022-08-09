@@ -21,7 +21,6 @@ import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.repositories.blobstore.ChecksumBlobStoreFormat;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -36,7 +35,7 @@ public class BlobStoreFormatTests extends ESTestCase {
 
     public static final String BLOB_CODEC = "blob";
 
-    private static class BlobObj implements ToXContentFragment {
+    private static class BlobObj implements ToXContent {
 
         private final String text;
 

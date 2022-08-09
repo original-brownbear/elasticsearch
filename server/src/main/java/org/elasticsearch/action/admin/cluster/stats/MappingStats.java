@@ -18,7 +18,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 /**
  * Usage statistics about mappings usage.
  */
-public final class MappingStats implements ToXContentFragment, Writeable {
+public final class MappingStats implements ToXContent, Writeable {
 
     private static final Pattern DOC_PATTERN = Pattern.compile("doc[\\[.]");
     private static final Pattern SOURCE_PATTERN = Pattern.compile("params\\._source");

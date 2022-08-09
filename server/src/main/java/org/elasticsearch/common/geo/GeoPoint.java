@@ -23,14 +23,14 @@ import org.elasticsearch.geometry.ShapeType;
 import org.elasticsearch.geometry.utils.GeographyValidator;
 import org.elasticsearch.geometry.utils.Geohash;
 import org.elasticsearch.geometry.utils.WellKnownText;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Locale;
 
-public class GeoPoint implements ToXContentFragment {
+public class GeoPoint implements ToXContent {
 
     protected double lat;
     protected double lon;

@@ -14,7 +14,6 @@ import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -33,7 +32,7 @@ import java.util.stream.Collectors;
  */
 public record Manifest(long currentTerm, long clusterStateVersion, long globalGeneration, Map<Index, Long> indexGenerations)
     implements
-        ToXContentFragment {
+        ToXContent {
 
     private static final long MISSING_GLOBAL_GENERATION = -1L;
     private static final long MISSING_CURRENT_TERM = 0L;
@@ -141,7 +140,7 @@ public record Manifest(long currentTerm, long clusterStateVersion, long globalGe
         return globalGeneration == MISSING_GLOBAL_GENERATION;
     }
 
-    private record IndexEntry(Index index, long generation) implements ToXContentFragment {
+    private record IndexEntry(Index index, long generation) implements ToXContent {
         private static final ParseField INDEX_GENERATION_PARSE_FIELD = new ParseField("generation");
         private static final ParseField INDEX_PARSE_FIELD = new ParseField("index");
 

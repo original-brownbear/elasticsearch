@@ -16,7 +16,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -163,7 +163,7 @@ public class NodeAllocationResult implements ToXContentObject, Writeable, Compar
     }
 
     /** A class that captures metadata about a shard store on a node. */
-    public static final class ShardStoreInfo implements ToXContentFragment, Writeable {
+    public static final class ShardStoreInfo implements ToXContent, Writeable {
         private final boolean inSync;
         @Nullable
         private final String allocationId;

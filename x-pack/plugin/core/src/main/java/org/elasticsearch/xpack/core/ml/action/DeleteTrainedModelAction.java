@@ -14,7 +14,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.ml.inference.TrainedModelConfig;
 import org.elasticsearch.xpack.core.ml.utils.ExceptionsHelper;
@@ -31,7 +31,7 @@ public class DeleteTrainedModelAction extends ActionType<AcknowledgedResponse> {
         super(NAME, AcknowledgedResponse::readFrom);
     }
 
-    public static class Request extends AcknowledgedRequest<Request> implements ToXContentFragment {
+    public static class Request extends AcknowledgedRequest<Request> implements ToXContent {
 
         public static final ParseField FORCE = new ParseField("force");
 

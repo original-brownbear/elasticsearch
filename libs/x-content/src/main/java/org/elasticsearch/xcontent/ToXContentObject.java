@@ -10,7 +10,7 @@ package org.elasticsearch.xcontent;
 
 /**
  * An interface allowing to transfer an object to "XContent" using an
- * {@link XContentBuilder}. The difference between {@link ToXContentFragment}
+ * {@link XContentBuilder}. The difference between {@link ToXContent}
  * and {@link ToXContentObject} is that the former outputs a fragment that
  * requires to start and end a new anonymous object externally, while the latter
  * guarantees that what gets printed out is fully valid syntax without any

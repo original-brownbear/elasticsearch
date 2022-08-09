@@ -28,7 +28,7 @@ import org.elasticsearch.monitor.jvm.JvmInfo;
 import org.elasticsearch.monitor.os.OsInfo;
 import org.elasticsearch.plugins.PluginRuntimeInfo;
 import org.elasticsearch.transport.TransportInfo;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -45,7 +45,7 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ClusterStatsNodes implements ToXContentFragment {
+public class ClusterStatsNodes implements ToXContent {
 
     private final Counts counts;
     private final Set<Version> versions;
@@ -182,7 +182,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
         return builder;
     }
 
-    public static class Counts implements ToXContentFragment {
+    public static class Counts implements ToXContent {
         static final String COORDINATING_ONLY = "coordinating_only";
 
         private final int total;
@@ -233,7 +233,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
         }
     }
 
-    public static class OsStats implements ToXContentFragment {
+    public static class OsStats implements ToXContent {
         final int availableProcessors;
         final int allocatedProcessors;
         final Map<String, Integer> names;
@@ -359,7 +359,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
         }
     }
 
-    public static class ProcessStats implements ToXContentFragment {
+    public static class ProcessStats implements ToXContent {
 
         final int count;
         final int cpuPercent;
@@ -452,7 +452,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
         }
     }
 
-    public static class JvmStats implements ToXContentFragment {
+    public static class JvmStats implements ToXContent {
 
         private final Map<JvmVersion, Integer> versions;
         private final long threads;
@@ -605,7 +605,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
         }
     }
 
-    static class NetworkTypes implements ToXContentFragment {
+    static class NetworkTypes implements ToXContent {
 
         private final Map<String, AtomicInteger> transportTypes;
         private final Map<String, AtomicInteger> httpTypes;
@@ -648,7 +648,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
 
     }
 
-    static class DiscoveryTypes implements ToXContentFragment {
+    static class DiscoveryTypes implements ToXContent {
 
         private final Map<String, AtomicInteger> discoveryTypes;
 
@@ -673,7 +673,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
         }
     }
 
-    static class PackagingTypes implements ToXContentFragment {
+    static class PackagingTypes implements ToXContent {
 
         private final Map<String, AtomicInteger> packagingTypes;
 
@@ -707,7 +707,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
 
     }
 
-    static class IngestStats implements ToXContentFragment {
+    static class IngestStats implements ToXContent {
 
         final int pipelineCount;
         final SortedMap<String, long[]> stats;
@@ -770,7 +770,7 @@ public class ClusterStatsNodes implements ToXContentFragment {
 
     }
 
-    static class IndexPressureStats implements ToXContentFragment {
+    static class IndexPressureStats implements ToXContent {
 
         private final IndexingPressureStats indexingPressureStats;
 

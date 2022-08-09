@@ -11,7 +11,7 @@ package org.elasticsearch.test.rest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  * Allows to cache the last obtained test response and or part of it within variables
  * that can be used as input values in following requests and assertions.
  */
-public class Stash implements ToXContentFragment {
+public class Stash implements ToXContent {
     private static final Pattern EXTENDED_KEY = Pattern.compile("(\\\\)?\\$\\{([^}]+)\\}");
     private static final Pattern PATH = Pattern.compile("\\$_path");
 

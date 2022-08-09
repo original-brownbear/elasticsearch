@@ -10,7 +10,7 @@ package org.elasticsearch.common.time;
 
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.Objects;
 /**
  * Simple wrapper around {@link ZoneId} so that it can be written to XContent
  */
-public class WriteableZoneId implements Writeable, ToXContentFragment {
+public class WriteableZoneId implements Writeable, ToXContent {
 
     private final ZoneId zoneId;
 

@@ -18,7 +18,6 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
@@ -33,7 +32,7 @@ import java.util.Set;
 /**
  * Represents an alias, to be associated with an index
  */
-public class Alias implements Writeable, ToXContentFragment {
+public class Alias implements Writeable, ToXContent {
 
     private static final ParseField FILTER = new ParseField("filter");
     private static final ParseField ROUTING = new ParseField("routing");

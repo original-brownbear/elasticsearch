@@ -20,7 +20,7 @@ import org.elasticsearch.geometry.utils.WellKnownText;
 import org.elasticsearch.index.mapper.GeoShapeIndexer;
 import org.elasticsearch.index.mapper.GeoShapeQueryable;
 import org.elasticsearch.search.aggregations.support.ValuesSourceType;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.spatial.index.mapper.BinaryShapeDocValuesField;
 import org.elasticsearch.xpack.spatial.search.aggregations.support.GeoShapeValuesSourceType;
@@ -88,7 +88,7 @@ public abstract class GeoShapeValues {
 
     /** thin wrapper around a {@link GeometryDocValueReader} which encodes / decodes values using
      * the Geo decoder */
-    public static class GeoShapeValue implements ToXContentFragment {
+    public static class GeoShapeValue implements ToXContent {
         private static final GeoShapeIndexer MISSING_GEOSHAPE_INDEXER = new GeoShapeIndexer(Orientation.CCW, "missing");
         private final GeometryDocValueReader reader;
         private final BoundingBox boundingBox;

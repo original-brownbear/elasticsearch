@@ -17,7 +17,7 @@ import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser.ValueType;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParser.Token;
@@ -34,7 +34,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstr
  * This class is similar to {@link DoubleBounds} used in histograms, but is using longs to store data. LongBounds and DoubleBounds are
  *  * not used interchangeably and therefore don't share any common interfaces except for serialization.
  */
-public class LongBounds implements ToXContentFragment, Writeable {
+public class LongBounds implements ToXContent, Writeable {
     static final ParseField MIN_FIELD = new ParseField("min");
     static final ParseField MAX_FIELD = new ParseField("max");
 

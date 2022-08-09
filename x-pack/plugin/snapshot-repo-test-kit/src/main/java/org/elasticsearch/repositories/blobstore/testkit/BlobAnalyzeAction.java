@@ -44,7 +44,7 @@ import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportService;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -897,7 +897,7 @@ public class BlobAnalyzeAction extends ActionType<BlobAnalyzeAction.Response> {
         }
     }
 
-    public static class ReadDetail implements Writeable, ToXContentFragment {
+    public static class ReadDetail implements Writeable, ToXContent {
 
         private final String nodeId;
         private final String nodeName;

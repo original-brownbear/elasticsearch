@@ -15,7 +15,7 @@ import org.elasticsearch.index.query.QueryRewriteContext;
 import org.elasticsearch.index.query.Rewriteable;
 import org.elasticsearch.search.aggregations.AggregatorFactories.Builder;
 import org.elasticsearch.search.aggregations.pipeline.PipelineAggregator;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -30,7 +30,7 @@ public abstract class PipelineAggregationBuilder
     implements
         VersionedNamedWriteable,
         BaseAggregationBuilder,
-        ToXContentFragment,
+        ToXContent,
         Rewriteable<PipelineAggregationBuilder> {
 
     protected final String name;

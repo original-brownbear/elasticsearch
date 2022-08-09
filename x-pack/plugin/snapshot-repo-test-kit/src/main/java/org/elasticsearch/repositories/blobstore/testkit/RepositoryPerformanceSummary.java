@@ -11,7 +11,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import static org.elasticsearch.repositories.blobstore.testkit.SnapshotRepositoryTestKit.humanReadableNanos;
 
-public class RepositoryPerformanceSummary implements Writeable, ToXContentFragment {
+public class RepositoryPerformanceSummary implements Writeable, ToXContent {
 
     private final long writeCount;
     private final long writeBytes;

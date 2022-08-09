@@ -11,7 +11,7 @@ package org.elasticsearch.indices.breaker;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ import java.io.IOException;
 /**
  * Stats class encapsulating all of the different circuit breaker stats
  */
-public class AllCircuitBreakerStats implements Writeable, ToXContentFragment {
+public class AllCircuitBreakerStats implements Writeable, ToXContent {
 
     private final CircuitBreakerStats[] allStats;
 

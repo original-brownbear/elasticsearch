@@ -14,7 +14,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -28,7 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class CoordinationMetadata implements Writeable, ToXContentFragment {
+public class CoordinationMetadata implements Writeable, ToXContent {
 
     public static final CoordinationMetadata EMPTY_METADATA = builder().build();
 
@@ -229,7 +229,7 @@ public class CoordinationMetadata implements Writeable, ToXContentFragment {
         }
     }
 
-    public static class VotingConfigExclusion implements Writeable, ToXContentFragment {
+    public static class VotingConfigExclusion implements Writeable, ToXContent {
         public static final String MISSING_VALUE_MARKER = "_absent_";
         private final String nodeId;
         private final String nodeName;
@@ -323,7 +323,7 @@ public class CoordinationMetadata implements Writeable, ToXContentFragment {
     /**
      * A collection of persistent node ids, denoting the voting configuration for cluster state changes.
      */
-    public static class VotingConfiguration implements Writeable, ToXContentFragment {
+    public static class VotingConfiguration implements Writeable, ToXContent {
 
         public static final VotingConfiguration EMPTY_CONFIG = new VotingConfiguration(Collections.emptySet());
         public static final VotingConfiguration MUST_JOIN_ELECTED_MASTER = new VotingConfiguration(

@@ -12,7 +12,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.Maps;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 
 // This class is deprecated in favor of ScriptStats and ScriptContextStats
-public class ScriptCacheStats implements Writeable, ToXContentFragment {
+public class ScriptCacheStats implements Writeable, ToXContent {
     private final Map<String, ScriptStats> context;
     private final ScriptStats general;
 

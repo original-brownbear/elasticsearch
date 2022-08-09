@@ -11,7 +11,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Recovery related statistics, starting at the shard level and allowing aggregation to
  * indices and node level
  */
-public class RecoveryStats implements ToXContentFragment, Writeable {
+public class RecoveryStats implements ToXContent, Writeable {
 
     private final AtomicInteger currentAsSource = new AtomicInteger();
     private final AtomicInteger currentAsTarget = new AtomicInteger();

@@ -15,7 +15,7 @@ import org.elasticsearch.index.fielddata.FieldDataStats;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.store.StoreStats;
 import org.elasticsearch.search.suggest.completion.CompletionStats;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ClusterStatsIndices implements ToXContentFragment {
+public class ClusterStatsIndices implements ToXContent {
 
     private int indexCount;
     private ShardStats shards;
@@ -157,7 +157,7 @@ public class ClusterStatsIndices implements ToXContentFragment {
         return builder;
     }
 
-    public static class ShardStats implements ToXContentFragment {
+    public static class ShardStats implements ToXContent {
 
         int indices;
         int total;

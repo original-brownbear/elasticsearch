@@ -17,7 +17,7 @@ import org.elasticsearch.common.xcontent.ObjectParserHelper;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -49,7 +49,7 @@ public record TaskInfo(
     boolean cancelled,
     TaskId parentTaskId,
     Map<String, String> headers
-) implements Writeable, ToXContentFragment {
+) implements Writeable, ToXContent {
 
     static final String INCLUDE_CANCELLED_PARAM = "include_cancelled";
 

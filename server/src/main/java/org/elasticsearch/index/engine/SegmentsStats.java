@@ -15,7 +15,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.index.store.LuceneFilesExtensions;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -23,7 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SegmentsStats implements Writeable, ToXContentFragment {
+public class SegmentsStats implements Writeable, ToXContent {
 
     private long count;
     private long indexWriterMemoryInBytes;
@@ -222,7 +222,7 @@ public class SegmentsStats implements Writeable, ToXContentFragment {
         files.clear();
     }
 
-    public static class FileStats implements Writeable, ToXContentFragment {
+    public static class FileStats implements Writeable, ToXContent {
 
         private final String ext;
         private final long total;

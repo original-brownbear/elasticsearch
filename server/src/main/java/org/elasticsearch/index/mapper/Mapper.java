@@ -11,12 +11,12 @@ package org.elasticsearch.index.mapper;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.StringLiteralDeduplicator;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 
 import java.util.Map;
 import java.util.Objects;
 
-public abstract class Mapper implements ToXContentFragment, Iterable<Mapper> {
+public abstract class Mapper implements ToXContent, Iterable<Mapper> {
     public abstract static class Builder {
 
         protected final String name;

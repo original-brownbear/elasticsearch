@@ -179,11 +179,6 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
     }
 
     @Override
-    public boolean isFragment() {
-        return delegate.isFragment();
-    }
-
-    @Override
     public boolean equals(Object obj) {
         assert hasReferences();
         return delegate.equals(obj);

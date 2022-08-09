@@ -8,7 +8,7 @@ package org.elasticsearch.xpack.core.scheduler;
 
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.time.DateFormatter;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -197,7 +197,7 @@ import static org.elasticsearch.xpack.core.watcher.support.Exceptions.illegalArg
  * @author Contributions from Mads Henderson
  * @author Refactoring from CronTrigger to CronExpression by Aaron Craven
  */
-public class Cron implements ToXContentFragment {
+public class Cron implements ToXContent {
     protected static final TimeZone UTC = TimeZone.getTimeZone(ZoneOffset.UTC);
     protected static final DateFormatter formatter = DateFormatter.forPattern("yyyy-MM-dd'T'HH:mm:ss");
 

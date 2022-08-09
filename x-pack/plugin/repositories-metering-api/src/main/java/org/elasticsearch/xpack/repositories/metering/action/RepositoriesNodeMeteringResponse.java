@@ -13,13 +13,12 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.repositories.RepositoryStatsSnapshot;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.List;
 
-public final class RepositoriesNodeMeteringResponse extends BaseNodeResponse implements ToXContentFragment {
+public final class RepositoriesNodeMeteringResponse extends BaseNodeResponse implements ToXContent {
 
     final List<RepositoryStatsSnapshot> repositoryStatsSnapshots;
 

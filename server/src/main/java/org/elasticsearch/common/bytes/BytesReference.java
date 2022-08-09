@@ -14,7 +14,7 @@ import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.util.ByteArray;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.ByteArrayOutputStream;
@@ -26,7 +26,7 @@ import java.util.ArrayList;
 /**
  * A reference to bytes.
  */
-public interface BytesReference extends Comparable<BytesReference>, ToXContentFragment {
+public interface BytesReference extends Comparable<BytesReference>, ToXContent {
 
     /**
      * Convert an {@link XContentBuilder} into a BytesReference. This method closes the builder,

@@ -15,7 +15,7 @@ import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -283,7 +283,7 @@ public class SnapshotLifecycleStats implements Writeable, ToXContentObject {
         return Strings.toString(this);
     }
 
-    public static class SnapshotPolicyStats implements Writeable, ToXContentFragment {
+    public static class SnapshotPolicyStats implements Writeable, ToXContent {
         private final String policyId;
         private final CounterMetric snapshotsTaken = new CounterMetric();
         private final CounterMetric snapshotsFailed = new CounterMetric();

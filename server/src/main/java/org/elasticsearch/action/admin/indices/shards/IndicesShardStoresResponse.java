@@ -15,7 +15,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -29,12 +29,12 @@ import java.util.Map;
  * Consists of {@link StoreStatus}s for requested indices grouped by
  * indices and shard ids and a list of encountered node {@link Failure}s
  */
-public class IndicesShardStoresResponse extends ActionResponse implements ToXContentFragment {
+public class IndicesShardStoresResponse extends ActionResponse implements ToXContent {
 
     /**
      * Shard store information from a node
      */
-    public static class StoreStatus implements Writeable, ToXContentFragment, Comparable<StoreStatus> {
+    public static class StoreStatus implements Writeable, ToXContent, Comparable<StoreStatus> {
         private final DiscoveryNode node;
         private final String allocationId;
         private Exception storeException;

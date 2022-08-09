@@ -48,7 +48,7 @@ import org.elasticsearch.transport.TransportRequestOptions;
 import org.elasticsearch.transport.TransportResponse;
 import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -125,7 +125,7 @@ public class TestTaskPlugin extends Plugin implements ActionPlugin, NetworkPlugi
         }
     }
 
-    public static class NodesResponse extends BaseNodesResponse<NodeResponse> implements ToXContentFragment {
+    public static class NodesResponse extends BaseNodesResponse<NodeResponse> implements ToXContent {
 
         NodesResponse(StreamInput in) throws IOException {
             super(in);

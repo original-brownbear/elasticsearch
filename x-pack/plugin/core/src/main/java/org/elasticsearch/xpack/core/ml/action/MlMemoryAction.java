@@ -22,7 +22,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.ml.utils.ExceptionsHelper;
 
@@ -110,7 +109,7 @@ public class MlMemoryAction extends ActionType<MlMemoryAction.Response> {
         }
     }
 
-    public static class Response extends BaseNodesResponse<Response.MlMemoryStats> implements ToXContentFragment {
+    public static class Response extends BaseNodesResponse<Response.MlMemoryStats> implements ToXContent {
 
         public static class MlMemoryStats extends BaseNodeResponse implements ToXContent, Writeable {
 

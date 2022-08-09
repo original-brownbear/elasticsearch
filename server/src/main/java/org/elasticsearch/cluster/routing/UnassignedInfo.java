@@ -24,7 +24,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ import java.util.Set;
 /**
  * Holds additional information as to why the shard is in unassigned state.
  */
-public final class UnassignedInfo implements ToXContentFragment, Writeable {
+public final class UnassignedInfo implements ToXContent, Writeable {
 
     /**
      * The version that the {@code lastAllocatedNode} field was added in. Used to adapt streaming of this class as appropriate for the

@@ -17,7 +17,7 @@ import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -30,7 +30,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg
 /**
  * Encapsulates the parameters needed to fetch terms.
  */
-public class TermsLookup implements Writeable, ToXContentFragment {
+public class TermsLookup implements Writeable, ToXContent {
 
     private final String index;
     private final String id;

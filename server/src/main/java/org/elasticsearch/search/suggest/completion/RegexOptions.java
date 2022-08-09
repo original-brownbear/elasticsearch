@@ -17,7 +17,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.query.RegexpFlag;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * Regular expression options for completion suggester
  */
-public class RegexOptions implements ToXContentFragment, Writeable {
+public class RegexOptions implements ToXContent, Writeable {
     static final ParseField REGEX_OPTIONS = new ParseField("regex");
     private static final ParseField FLAGS_VALUE = new ParseField("flags", "flags_value");
     private static final ParseField MAX_DETERMINIZED_STATES = new ParseField("max_determinized_states");

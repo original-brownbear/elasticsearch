@@ -18,7 +18,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.monitor.fs.FsInfo;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.util.Objects;
 /**
  * Encapsulation class used to represent the amount of disk used on a node.
  */
-public class DiskUsage implements ToXContentFragment, Writeable {
+public class DiskUsage implements ToXContent, Writeable {
 
     private static final Logger logger = LogManager.getLogger(DiskUsage.class);
 

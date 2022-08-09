@@ -19,7 +19,6 @@ import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
@@ -32,7 +31,7 @@ import java.util.Set;
 
 import static java.util.Collections.emptySet;
 
-public class AliasMetadata implements SimpleDiffable<AliasMetadata>, ToXContentFragment {
+public class AliasMetadata implements SimpleDiffable<AliasMetadata>, ToXContent {
 
     private final String alias;
 

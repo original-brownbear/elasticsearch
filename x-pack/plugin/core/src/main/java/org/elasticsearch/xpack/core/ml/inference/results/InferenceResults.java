@@ -8,12 +8,12 @@ package org.elasticsearch.xpack.core.ml.inference.results;
 
 import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xpack.core.ml.utils.ExceptionsHelper;
 
 import java.util.Map;
 
-public interface InferenceResults extends NamedWriteable, ToXContentFragment {
+public interface InferenceResults extends NamedWriteable, ToXContent {
     String PREDICTION_PROBABILITY = "prediction_probability";
     String MODEL_ID_RESULTS_FIELD = "model_id";
 

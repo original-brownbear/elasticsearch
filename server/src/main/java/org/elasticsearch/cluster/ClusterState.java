@@ -44,7 +44,7 @@ import org.elasticsearch.common.io.stream.VersionedNamedWriteable;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -92,7 +92,7 @@ import static org.elasticsearch.gateway.GatewayService.STATE_NOT_RECOVERED_BLOCK
  * <p>
  * Cluster state updates can be used to trigger various actions via a {@link ClusterStateListener} rather than using a timer.
  * <p>
- * Implements {@link ToXContentFragment} to be exposed in REST APIs (e.g. {@code GET _cluster/state} and {@code POST _cluster/reroute}) and
+ * Implements {@link ToXContent} to be exposed in REST APIs (e.g. {@code GET _cluster/state} and {@code POST _cluster/reroute}) and
  * to be indexed by monitoring, mostly just for diagnostics purposes. The {@link XContent} representation does not need to be 100% faithful
  * since we never reconstruct a cluster state from its XContent representation, but the more faithful it is the more useful it is for
  * diagnostics. Note that the {@link XContent} representation of the {@link Metadata} portion does have to be faithful (in {@link
@@ -101,11 +101,11 @@ import static org.elasticsearch.gateway.GatewayService.STATE_NOT_RECOVERED_BLOCK
  * Security-sensitive data such as passwords or private keys should not be stored in the cluster state, since the contents of the cluster
  * state are exposed in various APIs.
  */
-public class ClusterState implements ToXContentFragment, Diffable<ClusterState> {
+public class ClusterState implements ToXContent, Diffable<ClusterState> {
 
     public static final ClusterState EMPTY_STATE = builder(ClusterName.CLUSTER_NAME_SETTING.getDefault(Settings.EMPTY)).build();
 
-    public interface Custom extends NamedDiffable<Custom>, ToXContentFragment {
+    public interface Custom extends NamedDiffable<Custom>, ToXContent {
 
         /**
          * Returns <code>true</code> iff this {@link Custom} is private to the cluster and should never be send to a client.

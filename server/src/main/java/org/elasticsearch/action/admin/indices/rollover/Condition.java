@@ -11,14 +11,14 @@ package org.elasticsearch.action.admin.indices.rollover;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 
 import java.util.Objects;
 
 /**
  * Base class for rollover request conditions
  */
-public abstract class Condition<T> implements NamedWriteable, ToXContentFragment {
+public abstract class Condition<T> implements NamedWriteable, ToXContent {
 
     /**
      * Describes the type of condition - a min_* condition (MIN) or max_* condition (MAX).

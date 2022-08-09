@@ -19,7 +19,7 @@ import org.elasticsearch.index.mapper.DateFieldMapper;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.test.AbstractNamedWriteableTestCase;
 import org.elasticsearch.test.VersionUtils;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -234,7 +234,7 @@ public class SortValueTests extends AbstractNamedWriteableTestCase<SortValue> {
     }
 
     public String toXContent(SortValue sortValue, DocValueFormat format) {
-        return Strings.toString(new ToXContentFragment() {
+        return Strings.toString(new ToXContent() {
             @Override
             public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
                 builder.field("test");

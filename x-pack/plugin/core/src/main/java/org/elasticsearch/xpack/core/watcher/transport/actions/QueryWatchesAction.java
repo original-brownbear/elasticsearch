@@ -20,7 +20,6 @@ import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -261,7 +260,7 @@ public class QueryWatchesAction extends ActionType<QueryWatchesAction.Response> 
             return Objects.hash(watches, watchTotalCount);
         }
 
-        public static class Item implements Writeable, ToXContentFragment {
+        public static class Item implements Writeable, ToXContent {
 
             private final String id;
             private final XContentSource source;

@@ -16,7 +16,6 @@ import org.elasticsearch.index.mapper.DocumentParserContext;
 import org.elasticsearch.index.mapper.LuceneDocument;
 import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParser.Token;
@@ -35,7 +34,7 @@ import java.util.function.Function;
  *
  * Implementations have to define how contexts are parsed at query/index time
  */
-public abstract class ContextMapping<T extends ToXContent> implements ToXContentFragment {
+public abstract class ContextMapping<T extends ToXContent> implements ToXContent {
 
     public static final String FIELD_TYPE = "type";
     public static final String FIELD_NAME = "name";

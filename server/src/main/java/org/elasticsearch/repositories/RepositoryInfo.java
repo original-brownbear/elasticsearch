@@ -13,14 +13,14 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-public final class RepositoryInfo implements Writeable, ToXContentFragment {
+public final class RepositoryInfo implements Writeable, ToXContent {
     public final String ephemeralId;
     public final String name;
     public final String type;

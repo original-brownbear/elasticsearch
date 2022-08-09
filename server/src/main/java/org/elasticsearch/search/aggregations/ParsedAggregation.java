@@ -10,7 +10,6 @@ package org.elasticsearch.search.aggregations;
 
 import org.elasticsearch.xcontent.AbstractObjectParser;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParser.Token;
@@ -23,7 +22,7 @@ import java.util.Map;
  * An implementation of {@link Aggregation} that is parsed from a REST response.
  * Serves as a base class for all aggregation implementations that are parsed from REST.
  */
-public abstract class ParsedAggregation implements Aggregation, ToXContentFragment {
+public abstract class ParsedAggregation implements Aggregation, ToXContent {
 
     protected static void declareAggregationFields(AbstractObjectParser<? extends ParsedAggregation, ?> objectParser) {
         objectParser.declareObject(

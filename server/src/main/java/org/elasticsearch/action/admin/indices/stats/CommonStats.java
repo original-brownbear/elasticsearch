@@ -36,12 +36,11 @@ import org.elasticsearch.index.warmer.WarmerStats;
 import org.elasticsearch.indices.IndicesQueryCache;
 import org.elasticsearch.search.suggest.completion.CompletionStats;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 
-public class CommonStats implements Writeable, ToXContentFragment {
+public class CommonStats implements Writeable, ToXContent {
 
     @Nullable
     public DocsStats docs;

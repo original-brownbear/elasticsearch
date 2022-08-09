@@ -16,7 +16,7 @@ import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 
@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
-public class ClusterStatsResponse extends BaseNodesResponse<ClusterStatsNodeResponse> implements ToXContentFragment {
+public class ClusterStatsResponse extends BaseNodesResponse<ClusterStatsNodeResponse> implements ToXContent {
 
     final ClusterStatsNodes nodesStats;
     final ClusterStatsIndices indicesStats;

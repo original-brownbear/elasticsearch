@@ -18,13 +18,13 @@ import org.elasticsearch.index.engine.CommitStats;
 import org.elasticsearch.index.seqno.RetentionLeaseStats;
 import org.elasticsearch.index.seqno.SeqNoStats;
 import org.elasticsearch.index.shard.ShardPath;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Objects;
 
-public class ShardStats implements Writeable, ToXContentFragment {
+public class ShardStats implements Writeable, ToXContent {
 
     private static final Version DEDUPLICATE_SHARD_PATH_VERSION = Version.V_8_4_0;
 

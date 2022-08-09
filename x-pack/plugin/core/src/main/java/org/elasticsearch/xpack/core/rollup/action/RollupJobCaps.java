@@ -13,7 +13,7 @@ import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggre
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.rollup.job.DateHistogramGroupConfig;
@@ -204,7 +204,7 @@ public class RollupJobCaps implements Writeable, ToXContentObject {
         );
     }
 
-    public static class RollupFieldCaps implements Writeable, ToXContentFragment {
+    public static class RollupFieldCaps implements Writeable, ToXContent {
         private final List<Map<String, Object>> aggs;
 
         RollupFieldCaps(StreamInput in) throws IOException {

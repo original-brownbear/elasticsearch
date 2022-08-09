@@ -15,7 +15,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.search.profile.aggregation.AggregationProfileShardResult;
 import org.elasticsearch.search.profile.query.QueryProfileShardResult;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -32,7 +32,7 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpect
 /**
  * Profile results for all shards.
  */
-public final class SearchProfileResults implements Writeable, ToXContentFragment {
+public final class SearchProfileResults implements Writeable, ToXContent {
 
     private static final String ID_FIELD = "id";
     private static final String SHARDS_FIELD = "shards";

@@ -13,7 +13,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.Index;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.Objects;
 /**
  * Allows for shard level components to be injected with the shard id.
  */
-public class ShardId implements Comparable<ShardId>, ToXContentFragment, Writeable {
+public class ShardId implements Comparable<ShardId>, ToXContent, Writeable {
 
     private final Index index;
     private final int shardId;

@@ -14,7 +14,6 @@ import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.index.mapper.MapperService.MergeReason;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 
@@ -29,7 +28,7 @@ import java.util.Map;
  * Wrapper around everything that defines a mapping, without references to
  * utility classes like MapperService, ...
  */
-public final class Mapping implements ToXContentFragment {
+public final class Mapping implements ToXContent {
 
     public static final Mapping EMPTY = new Mapping(
         new RootObjectMapper.Builder("_doc", ObjectMapper.Defaults.SUBOBJECTS).build(MapperBuilderContext.ROOT),

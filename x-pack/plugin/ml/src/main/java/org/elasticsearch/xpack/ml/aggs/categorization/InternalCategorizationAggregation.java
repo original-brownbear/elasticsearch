@@ -19,7 +19,7 @@ import org.elasticsearch.search.aggregations.InternalAggregations;
 import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.support.SamplingContext;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.core.ml.job.results.CategoryDefinition;
 
@@ -36,7 +36,7 @@ public class InternalCategorizationAggregation extends InternalMultiBucketAggreg
     InternalCategorizationAggregation,
     InternalCategorizationAggregation.Bucket> {
 
-    static class BucketKey implements ToXContentFragment, Comparable<BucketKey> {
+    static class BucketKey implements ToXContent, Comparable<BucketKey> {
 
         private final BytesRef[] key;
 

@@ -17,7 +17,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.store.StoreStats;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ import java.util.Set;
  * <code>InternalClusterInfoService.shardIdentifierFromRouting(String)</code>
  * for the key used in the shardSizes map
  */
-public class ClusterInfo implements ToXContentFragment, Writeable {
+public class ClusterInfo implements ToXContent, Writeable {
 
     public static final Version DATA_SET_SIZE_SIZE_VERSION = Version.V_7_13_0;
 

@@ -20,7 +20,7 @@ import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParser.Token;
@@ -35,7 +35,7 @@ import java.util.Map;
  * {@link ScriptMetadata} is used to store user-defined scripts
  * as part of the {@link ClusterState} using only an id as the key.
  */
-public final class ScriptMetadata implements Metadata.Custom, Writeable, ToXContentFragment {
+public final class ScriptMetadata implements Metadata.Custom, Writeable, ToXContent {
 
     /**
      * Standard logger used to warn about dropped scripts.

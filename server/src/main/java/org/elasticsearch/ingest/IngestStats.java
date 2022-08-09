@@ -13,7 +13,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-public class IngestStats implements Writeable, ToXContentFragment {
+public class IngestStats implements Writeable, ToXContent {
     private final Stats totalStats;
     private final List<PipelineStat> pipelineStats;
     private final Map<String, List<ProcessorStat>> processorStats;
@@ -155,7 +155,7 @@ public class IngestStats implements Writeable, ToXContentFragment {
         return Objects.hash(totalStats, pipelineStats, processorStats);
     }
 
-    public static class Stats implements Writeable, ToXContentFragment {
+    public static class Stats implements Writeable, ToXContent {
 
         private final long ingestCount;
         private final long ingestTimeInMillis;

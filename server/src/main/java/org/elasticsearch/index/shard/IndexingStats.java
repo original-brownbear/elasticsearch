@@ -16,15 +16,14 @@ import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class IndexingStats implements Writeable, ToXContentFragment {
+public class IndexingStats implements Writeable, ToXContent {
 
-    public static class Stats implements Writeable, ToXContentFragment {
+    public static class Stats implements Writeable, ToXContent {
 
         private long indexCount;
         private long indexTimeInMillis;

@@ -13,7 +13,7 @@ import org.elasticsearch.script.CompositeFieldScript;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.lookup.SearchLookup;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 /**
  * Definition of a runtime field that can be defined as part of the runtime section of the index mappings
  */
-public interface RuntimeField extends ToXContentFragment {
+public interface RuntimeField extends ToXContent {
 
     /**
      * Exposes the name of the runtime field

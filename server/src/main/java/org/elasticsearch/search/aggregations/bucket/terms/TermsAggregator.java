@@ -22,7 +22,7 @@ import org.elasticsearch.search.aggregations.bucket.DeferableBucketAggregator;
 import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregator;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
 import org.elasticsearch.search.aggregations.support.AggregationPath;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.util.Set;
 
 public abstract class TermsAggregator extends DeferableBucketAggregator {
 
-    public static class BucketCountThresholds implements Writeable, ToXContentFragment {
+    public static class BucketCountThresholds implements Writeable, ToXContent {
         private long minDocCount;
         private long shardMinDocCount;
         private int requiredSize;

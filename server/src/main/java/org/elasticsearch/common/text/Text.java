@@ -10,7 +10,7 @@ package org.elasticsearch.common.text;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
  * Both {@link String} and {@link BytesReference} representation of the text. Starts with one of those, and if
  * the other is requests, caches the other one in a local reference so no additional conversion will be needed.
  */
-public final class Text implements Comparable<Text>, ToXContentFragment {
+public final class Text implements Comparable<Text>, ToXContent {
 
     public static final Text[] EMPTY_ARRAY = new Text[0];
 

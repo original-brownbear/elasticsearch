@@ -13,7 +13,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.util.Maps;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -24,7 +24,7 @@ import java.util.Map;
 import static java.util.Map.entry;
 
 /** a class the returns dynamic information with respect to the last commit point of this shard */
-public final class CommitStats implements Writeable, ToXContentFragment {
+public final class CommitStats implements Writeable, ToXContent {
 
     private final Map<String, String> userData;
     private final long generation;

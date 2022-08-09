@@ -13,7 +13,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -22,7 +22,7 @@ import java.util.Objects;
 /**
  * Various statistics (timing information etc) about cluster state updates coordinated by this node.
  */
-public class ClusterStateUpdateStats implements Writeable, ToXContentFragment {
+public class ClusterStateUpdateStats implements Writeable, ToXContent {
 
     private final long unchangedTaskCount;
     private final long publicationSuccessCount;

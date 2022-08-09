@@ -16,7 +16,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.plugins.SearchPlugin;
 import org.elasticsearch.plugins.SearchPlugin.SearchExtSpec;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 
 /**
  * Intermediate serializable representation of a search ext section. To be subclassed by plugins that support
@@ -33,7 +33,7 @@ import org.elasticsearch.xcontent.ToXContentFragment;
  *
  * @see SearchExtSpec
  */
-public abstract class SearchExtBuilder implements VersionedNamedWriteable, ToXContentFragment {
+public abstract class SearchExtBuilder implements VersionedNamedWriteable, ToXContent {
 
     @Override
     public abstract int hashCode();

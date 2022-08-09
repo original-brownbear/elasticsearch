@@ -16,7 +16,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -27,7 +27,7 @@ import java.util.Objects;
 /**
  * Class for holding Rollover related information within an index
  */
-public class RolloverInfo implements SimpleDiffable<RolloverInfo>, Writeable, ToXContentFragment {
+public class RolloverInfo implements SimpleDiffable<RolloverInfo>, Writeable, ToXContent {
 
     public static final ParseField CONDITION_FIELD = new ParseField("met_conditions");
     public static final ParseField TIME_FIELD = new ParseField("time");

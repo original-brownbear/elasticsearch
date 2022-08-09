@@ -18,7 +18,7 @@ import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.IngestDocument.Metadata;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -30,7 +30,7 @@ import java.util.Objects;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
-final class WriteableIngestDocument implements Writeable, ToXContentFragment {
+final class WriteableIngestDocument implements Writeable, ToXContent {
 
     static final String SOURCE_FIELD = "_source";
     static final String INGEST_FIELD = "_ingest";

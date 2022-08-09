@@ -37,7 +37,7 @@ import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ObjectParser.ValueType;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -1031,7 +1031,7 @@ public final class SearchHit implements Writeable, ToXContentObject, Iterable<Do
     /**
      * Encapsulates the nested identity of a hit.
      */
-    public static final class NestedIdentity implements Writeable, ToXContentFragment {
+    public static final class NestedIdentity implements Writeable, ToXContent {
 
         private static final String _NESTED = "_nested";
         private static final String FIELD = "field";

@@ -10,7 +10,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -27,7 +27,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstr
  * A vertex term could be a bank account number, an email address, a hashtag or any
  * other term that appears in documents and is interesting to represent in a network.
  */
-public class Vertex implements ToXContentFragment {
+public class Vertex implements ToXContent {
 
     private final String field;
     private final String term;

@@ -26,7 +26,7 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportService;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots;
@@ -168,7 +168,7 @@ public class TransportSearchableSnapshotsNodeCachesStatsAction extends Transport
         }
     }
 
-    public static class NodeCachesStatsResponse extends BaseNodeResponse implements ToXContentFragment {
+    public static class NodeCachesStatsResponse extends BaseNodeResponse implements ToXContent {
 
         private final int numRegions;
         private final long size;

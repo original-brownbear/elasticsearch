@@ -20,7 +20,7 @@ import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
@@ -122,7 +122,7 @@ public class GetFieldMappingsResponse extends ActionResponse implements ToXConte
         }
     }
 
-    public record FieldMappingMetadata(String fullName, BytesReference source) implements ToXContentFragment {
+    public record FieldMappingMetadata(String fullName, BytesReference source) implements ToXContent {
 
         private static final ParseField FULL_NAME = new ParseField("full_name");
         private static final ParseField MAPPING = new ParseField("mapping");

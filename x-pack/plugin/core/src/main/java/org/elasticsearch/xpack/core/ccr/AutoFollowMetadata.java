@@ -19,7 +19,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xpack.core.ccr.action.ImmutableFollowParameters;
@@ -170,11 +170,6 @@ public class AutoFollowMetadata extends AbstractNamedDiffable<Metadata.Custom> i
     }
 
     @Override
-    public boolean isFragment() {
-        return true;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -189,7 +184,7 @@ public class AutoFollowMetadata extends AbstractNamedDiffable<Metadata.Custom> i
         return Objects.hash(patterns, followedLeaderIndexUUIDs, headers);
     }
 
-    public static class AutoFollowPattern extends ImmutableFollowParameters implements ToXContentFragment {
+    public static class AutoFollowPattern extends ImmutableFollowParameters implements ToXContent {
 
         public static final ParseField ACTIVE = new ParseField("active");
         public static final ParseField REMOTE_CLUSTER_FIELD = new ParseField("remote_cluster");

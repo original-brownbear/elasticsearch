@@ -14,7 +14,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.search.SearchHit.Fields;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
-public class SearchSortValues implements ToXContentFragment, Writeable {
+public class SearchSortValues implements ToXContent, Writeable {
 
     private static final Object[] EMPTY_ARRAY = new Object[0];
     static final SearchSortValues EMPTY = new SearchSortValues(EMPTY_ARRAY);

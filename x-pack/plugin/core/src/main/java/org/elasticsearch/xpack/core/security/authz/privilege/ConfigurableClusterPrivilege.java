@@ -9,7 +9,7 @@ package org.elasticsearch.xpack.core.security.authz.privilege;
 
 import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ import java.util.Collection;
  * A ConfigurableClusterPrivilege is a form of {@link ClusterPrivilege} that can be configured by an Elasticsearch security administrator
  * within a {@link org.elasticsearch.xpack.core.security.authz.RoleDescriptor}.
  */
-public interface ConfigurableClusterPrivilege extends NamedWriteable, ToXContentFragment, ClusterPrivilege {
+public interface ConfigurableClusterPrivilege extends NamedWriteable, ToXContent, ClusterPrivilege {
 
     /**
      * The category under which this privilege should be rendered when output as XContent.

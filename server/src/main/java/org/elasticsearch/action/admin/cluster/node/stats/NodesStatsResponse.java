@@ -14,14 +14,14 @@ import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 
 import java.io.IOException;
 import java.util.List;
 
-public class NodesStatsResponse extends BaseNodesResponse<NodeStats> implements ToXContentFragment {
+public class NodesStatsResponse extends BaseNodesResponse<NodeStats> implements ToXContent {
 
     public NodesStatsResponse(StreamInput in) throws IOException {
         super(in);

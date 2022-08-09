@@ -12,7 +12,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParseException;
 import org.elasticsearch.xcontent.XContentParser;
@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-public class NameOrDefinition implements Writeable, ToXContentFragment {
+public class NameOrDefinition implements Writeable, ToXContent {
     // exactly one of these two members is not null
     public final String name;
     public final Settings definition;

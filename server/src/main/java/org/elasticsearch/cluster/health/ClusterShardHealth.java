@@ -19,7 +19,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -30,7 +30,7 @@ import java.util.Objects;
 import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 
-public final class ClusterShardHealth implements Writeable, ToXContentFragment {
+public final class ClusterShardHealth implements Writeable, ToXContent {
     private static final String STATUS = "status";
     private static final String ACTIVE_SHARDS = "active_shards";
     private static final String RELOCATING_SHARDS = "relocating_shards";

@@ -16,7 +16,6 @@ import org.elasticsearch.gateway.MetadataStateFormat;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -32,7 +31,7 @@ import java.util.Objects;
  * Represents a versioned collection of retention leases. We version the collection of retention leases to ensure that sync requests that
  * arrive out of order on the replica, using the version to ensure that older sync requests are rejected.
  */
-public class RetentionLeases implements ToXContentFragment, Writeable {
+public class RetentionLeases implements ToXContent, Writeable {
 
     private final long primaryTerm;
 

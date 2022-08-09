@@ -13,7 +13,6 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ import java.util.Objects;
  * Bulk related statistics, including the time and size of shard bulk requests,
  * starting at the shard level and allowing aggregation to indices and node level
  */
-public class BulkStats implements Writeable, ToXContentFragment {
+public class BulkStats implements Writeable, ToXContent {
 
     private long totalOperations = 0;
     private long totalTimeInMillis = 0;

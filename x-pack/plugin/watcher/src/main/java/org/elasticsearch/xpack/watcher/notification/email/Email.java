@@ -11,7 +11,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.common.time.DateFormatters;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -445,7 +445,7 @@ public class Email implements ToXContentObject {
         }
     }
 
-    public static class Address extends javax.mail.internet.InternetAddress implements ToXContentFragment {
+    public static class Address extends javax.mail.internet.InternetAddress implements ToXContent {
 
         public static final ParseField ADDRESS_NAME_FIELD = new ParseField("name");
         public static final ParseField ADDRESS_EMAIL_FIELD = new ParseField("email");

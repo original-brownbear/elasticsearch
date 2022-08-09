@@ -14,13 +14,13 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.network.HandlingTimeTracker;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-public class TransportStats implements Writeable, ToXContentFragment {
+public class TransportStats implements Writeable, ToXContent {
 
     private final long serverOpen;
     private final long totalOutboundConnections;

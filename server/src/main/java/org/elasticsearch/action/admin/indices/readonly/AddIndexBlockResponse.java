@@ -17,7 +17,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.Index;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -162,7 +162,7 @@ public class AddIndexBlockResponse extends ShardsAcknowledgedResponse {
         }
     }
 
-    public static class AddBlockShardResult implements Writeable, ToXContentFragment {
+    public static class AddBlockShardResult implements Writeable, ToXContent {
 
         private final int id;
         private final Failure[] failures;

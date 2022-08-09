@@ -13,12 +13,12 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 
-public class CompletionStats implements Writeable, ToXContentFragment {
+public class CompletionStats implements Writeable, ToXContent {
 
     private static final String COMPLETION = "completion";
     private static final String SIZE_IN_BYTES = "size_in_bytes";

@@ -18,7 +18,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.StringLiteralDeduplicator;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ import static org.elasticsearch.node.NodeRoleSettings.NODE_ROLES_SETTING;
 /**
  * A discovery node represents a node that is part of the cluster.
  */
-public class DiscoveryNode implements Writeable, ToXContentFragment {
+public class DiscoveryNode implements Writeable, ToXContent {
 
     static final String COORDINATING_ONLY = "coordinating_only";
     public static final Version EXTERNAL_ID_VERSION = Version.V_8_3_0;

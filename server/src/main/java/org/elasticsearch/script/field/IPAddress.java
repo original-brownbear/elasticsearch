@@ -9,7 +9,7 @@
 package org.elasticsearch.script.field;
 
 import org.elasticsearch.common.network.InetAddresses;
-import org.elasticsearch.xcontent.ToXContent;
+import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.net.InetAddress;
 /**
  * IP address for use in scripting.
  */
-public class IPAddress implements ToXContent {
+public class IPAddress implements ToXContentObject {
     protected final InetAddress address;
 
     IPAddress(InetAddress address) {
@@ -47,10 +47,5 @@ public class IPAddress implements ToXContent {
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         return builder.value(this.toString());
-    }
-
-    @Override
-    public boolean isFragment() {
-        return false;
     }
 }

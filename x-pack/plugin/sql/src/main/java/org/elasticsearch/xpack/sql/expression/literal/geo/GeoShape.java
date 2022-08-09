@@ -26,7 +26,7 @@ import org.elasticsearch.geometry.Polygon;
 import org.elasticsearch.geometry.Rectangle;
 import org.elasticsearch.geometry.utils.WellKnownText;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.json.JsonXContent;
@@ -44,7 +44,7 @@ import java.util.Objects;
  * It is required to override the XContent serialization. The ShapeBuilder serializes using GeoJSON by default,
  * but in SQL we need the serialization to be WKT-based.
  */
-public class GeoShape implements ToXContentFragment, ConstantNamedWriteable {
+public class GeoShape implements ToXContent, ConstantNamedWriteable {
 
     public static final String NAME = "geo";
 

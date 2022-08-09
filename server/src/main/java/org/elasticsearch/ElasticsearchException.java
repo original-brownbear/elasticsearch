@@ -24,7 +24,7 @@ import org.elasticsearch.search.SearchException;
 import org.elasticsearch.search.aggregations.MultiBucketConsumerService;
 import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParseException;
 import org.elasticsearch.xcontent.XContentParser;
@@ -49,7 +49,7 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureFieldN
 /**
  * A base class for all elasticsearch exceptions.
  */
-public class ElasticsearchException extends RuntimeException implements ToXContentFragment, Writeable {
+public class ElasticsearchException extends RuntimeException implements ToXContent, Writeable {
 
     private static final Version UNKNOWN_VERSION_ADDED = Version.fromId(0);
 

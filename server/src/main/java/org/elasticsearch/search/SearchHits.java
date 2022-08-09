@@ -18,7 +18,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.rest.action.search.RestSearchAction;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -31,7 +31,7 @@ import java.util.Objects;
 
 import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
 
-public final class SearchHits implements Writeable, ToXContentFragment, Iterable<SearchHit> {
+public final class SearchHits implements Writeable, ToXContent, Iterable<SearchHit> {
 
     public static final SearchHit[] EMPTY = new SearchHit[0];
     public static final SearchHits EMPTY_WITH_TOTAL_HITS = new SearchHits(EMPTY, new TotalHits(0, Relation.EQUAL_TO), 0);

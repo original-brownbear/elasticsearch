@@ -34,7 +34,7 @@ import org.elasticsearch.index.store.StoreStats;
 import org.elasticsearch.index.translog.TranslogStats;
 import org.elasticsearch.index.warmer.WarmerStats;
 import org.elasticsearch.search.suggest.completion.CompletionStats;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -47,7 +47,7 @@ import java.util.Objects;
 /**
  * Global information on indices stats running on a specific node.
  */
-public class NodeIndicesStats implements Writeable, ToXContentFragment {
+public class NodeIndicesStats implements Writeable, ToXContent {
 
     private final CommonStats stats;
     private final Map<Index, List<IndexShardStats>> statsByShard;

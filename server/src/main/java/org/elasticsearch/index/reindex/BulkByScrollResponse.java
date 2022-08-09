@@ -21,7 +21,7 @@ import org.elasticsearch.index.reindex.ScrollableHitSource.SearchFailure;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParser.Token;
@@ -39,7 +39,7 @@ import static org.elasticsearch.core.TimeValue.timeValueNanos;
 /**
  * Response used for actions that index many documents using a scroll request.
  */
-public class BulkByScrollResponse extends ActionResponse implements ToXContentFragment {
+public class BulkByScrollResponse extends ActionResponse implements ToXContent {
     private TimeValue took;
     private BulkByScrollTask.Status status;
     private List<Failure> bulkFailures;

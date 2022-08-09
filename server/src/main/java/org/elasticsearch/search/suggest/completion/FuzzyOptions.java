@@ -16,7 +16,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -26,7 +26,7 @@ import java.util.Objects;
 /**
  * Fuzzy options for completion suggester
  */
-public class FuzzyOptions implements ToXContentFragment, Writeable {
+public class FuzzyOptions implements ToXContent, Writeable {
     static final ParseField FUZZY_OPTIONS = new ParseField("fuzzy");
     private static final ParseField TRANSPOSITION_FIELD = new ParseField("transpositions");
     private static final ParseField MIN_LENGTH_FIELD = new ParseField("min_length");

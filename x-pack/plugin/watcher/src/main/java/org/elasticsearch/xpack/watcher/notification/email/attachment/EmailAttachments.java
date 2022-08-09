@@ -7,7 +7,7 @@
 package org.elasticsearch.xpack.watcher.notification.email.attachment;
 
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 
-public class EmailAttachments implements ToXContentFragment {
+public class EmailAttachments implements ToXContent {
 
     public static final EmailAttachments EMPTY_ATTACHMENTS = new EmailAttachments(
         Collections.<EmailAttachmentParser.EmailAttachment>emptyList()

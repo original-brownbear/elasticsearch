@@ -12,12 +12,12 @@ import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.search.aggregations.AggregationReduceContext;
 import org.elasticsearch.search.aggregations.bucket.terms.SignificantTerms;
 import org.elasticsearch.search.aggregations.support.AggregationContext;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 
 /**
  * Heuristic for that {@link SignificantTerms} uses to pick out significant terms.
  */
-public abstract class SignificanceHeuristic implements NamedWriteable, ToXContentFragment {
+public abstract class SignificanceHeuristic implements NamedWriteable, ToXContent {
     /**
      * @param subsetFreq   The frequency of the term in the selected sample
      * @param subsetSize   The size of the selected sample (typically number of docs)

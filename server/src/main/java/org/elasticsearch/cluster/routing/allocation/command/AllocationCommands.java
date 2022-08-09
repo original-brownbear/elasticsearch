@@ -14,7 +14,7 @@ import org.elasticsearch.cluster.routing.allocation.RoutingExplanations;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -28,7 +28,7 @@ import java.util.Objects;
  * A simple {@link AllocationCommand} composite managing several
  * {@link AllocationCommand} implementations
  */
-public class AllocationCommands implements ToXContentFragment {
+public class AllocationCommands implements ToXContent {
     private final List<AllocationCommand> commands = new ArrayList<>();
 
     /**

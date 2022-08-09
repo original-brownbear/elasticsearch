@@ -14,13 +14,13 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Objects;
 
-public class FieldDataStats implements Writeable, ToXContentFragment {
+public class FieldDataStats implements Writeable, ToXContent {
 
     private static final String FIELDDATA = "fielddata";
     private static final String MEMORY_SIZE = "memory_size";

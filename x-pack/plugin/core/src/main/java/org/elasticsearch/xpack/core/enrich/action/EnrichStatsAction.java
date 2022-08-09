@@ -15,7 +15,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.tasks.TaskInfo;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -131,7 +131,7 @@ public class EnrichStatsAction extends ActionType<EnrichStatsAction.Response> {
             return Objects.hash(executingPolicies, coordinatorStats, cacheStats);
         }
 
-        public static class CoordinatorStats implements Writeable, ToXContentFragment {
+        public static class CoordinatorStats implements Writeable, ToXContent {
 
             private final String nodeId;
             private final int queueSize;
@@ -214,7 +214,7 @@ public class EnrichStatsAction extends ActionType<EnrichStatsAction.Response> {
             }
         }
 
-        public static class ExecutingPolicy implements Writeable, ToXContentFragment {
+        public static class ExecutingPolicy implements Writeable, ToXContent {
 
             private final String name;
             private final TaskInfo taskInfo;
@@ -267,7 +267,7 @@ public class EnrichStatsAction extends ActionType<EnrichStatsAction.Response> {
             }
         }
 
-        public static class CacheStats implements Writeable, ToXContentFragment {
+        public static class CacheStats implements Writeable, ToXContent {
 
             private final String nodeId;
             private final long count;

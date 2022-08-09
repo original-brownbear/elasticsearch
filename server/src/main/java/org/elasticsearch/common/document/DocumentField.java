@@ -15,7 +15,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.get.GetResult;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.fetch.subphase.LookupField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
@@ -131,7 +131,7 @@ public class DocumentField implements Writeable, Iterable<Object> {
         return lookupFields;
     }
 
-    public ToXContentFragment getValidValuesWriter() {
+    public ToXContent getValidValuesWriter() {
         return (builder, params) -> {
             builder.startArray(name);
             for (Object value : values) {
@@ -145,7 +145,7 @@ public class DocumentField implements Writeable, Iterable<Object> {
         };
     }
 
-    public ToXContentFragment getIgnoredValuesWriter() {
+    public ToXContent getIgnoredValuesWriter() {
         return (builder, params) -> {
             builder.startArray(name);
             for (Object value : ignoredValues) {

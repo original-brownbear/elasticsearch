@@ -17,7 +17,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -37,7 +37,7 @@ import java.util.TreeSet;
  * indices, primary shards, and size of primary shards on disk. This is used from
  * {@link ClusterStatsIndices} and exposed as part of the {@code "/_cluster/stats"} API.
  */
-public final class VersionStats implements ToXContentFragment, Writeable {
+public final class VersionStats implements ToXContent, Writeable {
 
     private final Set<SingleVersionStats> versionStats;
 

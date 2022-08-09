@@ -16,16 +16,15 @@ import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public class SearchStats implements Writeable, ToXContentFragment {
+public class SearchStats implements Writeable, ToXContent {
 
-    public static class Stats implements Writeable, ToXContentFragment {
+    public static class Stats implements Writeable, ToXContent {
 
         private long queryCount;
         private long queryTimeInMillis;

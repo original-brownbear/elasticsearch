@@ -9,14 +9,14 @@ package org.elasticsearch.xpack.watcher.common.http;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.Objects;
 
-public class HttpProxy implements ToXContentFragment {
+public class HttpProxy implements ToXContent {
 
     public static final HttpProxy NO_PROXY = new HttpProxy(null, null, null);
 

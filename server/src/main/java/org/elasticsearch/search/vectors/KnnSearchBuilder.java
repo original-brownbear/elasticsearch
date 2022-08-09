@@ -18,7 +18,7 @@ import org.elasticsearch.index.query.Rewriteable;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -33,7 +33,7 @@ import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg
 /**
  * Defines a kNN search to run in the search request.
  */
-public class KnnSearchBuilder implements Writeable, ToXContentFragment, Rewriteable<KnnSearchBuilder> {
+public class KnnSearchBuilder implements Writeable, ToXContent, Rewriteable<KnnSearchBuilder> {
     private static final int NUM_CANDS_LIMIT = 10000;
     static final ParseField FIELD_FIELD = new ParseField("field");
     static final ParseField K_FIELD = new ParseField("k");

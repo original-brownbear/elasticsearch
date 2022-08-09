@@ -16,7 +16,6 @@ import org.elasticsearch.core.Nullable;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParser.Token;
@@ -34,7 +33,7 @@ import static org.elasticsearch.common.xcontent.support.XContentMapValues.nodeSt
  * Controls how to deal with unavailable concrete indices (closed or missing), how wildcard expressions are expanded
  * to actual indices (all, closed or open indices) and how to deal with wildcard expressions that resolve to no indices.
  */
-public record IndicesOptions(EnumSet<Option> options, EnumSet<WildcardStates> expandWildcards) implements ToXContentFragment {
+public record IndicesOptions(EnumSet<Option> options, EnumSet<WildcardStates> expandWildcards) implements ToXContent {
 
     public enum WildcardStates {
         OPEN,

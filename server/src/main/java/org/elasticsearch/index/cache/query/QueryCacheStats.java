@@ -14,12 +14,11 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 
-public class QueryCacheStats implements Writeable, ToXContentFragment {
+public class QueryCacheStats implements Writeable, ToXContent {
 
     private long ramBytesUsed;
     private long hitCount;

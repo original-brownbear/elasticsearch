@@ -19,7 +19,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.analysis.NameOrDefinition;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -505,7 +505,7 @@ public class AnalyzeAction extends ActionType<AnalyzeAction.Response> {
         }
     }
 
-    public static class DetailAnalyzeResponse implements Writeable, ToXContentFragment {
+    public static class DetailAnalyzeResponse implements Writeable, ToXContent {
 
         private final boolean customAnalyzer;
         private final AnalyzeTokenList analyzer;

@@ -11,7 +11,7 @@ package org.elasticsearch.cluster.coordination;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ import java.io.IOException;
 /**
  * Class encapsulating stats about the PendingClusterStatsQueue
  */
-public class PendingClusterStateStats implements Writeable, ToXContentFragment {
+public class PendingClusterStateStats implements Writeable, ToXContent {
 
     private final int total;
     private final int pending;

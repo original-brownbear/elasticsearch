@@ -71,7 +71,6 @@ import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.NodeMetadata;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.ToXContent;
-import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParser;
@@ -1090,7 +1089,7 @@ public class PersistedClusterStateService {
             });
         }
 
-        private void writePages(ToXContentFragment metadata, PageWriter pageWriter) throws IOException {
+        private void writePages(ToXContent metadata, PageWriter pageWriter) throws IOException {
             try (
                 PageWriterOutputStream paginatedStream = new PageWriterOutputStream(documentBuffer, pageWriter);
                 OutputStream compressedStream = CompressorFactory.COMPRESSOR.threadLocalOutputStream(paginatedStream);

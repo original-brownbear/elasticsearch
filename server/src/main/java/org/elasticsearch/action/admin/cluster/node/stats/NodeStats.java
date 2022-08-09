@@ -29,7 +29,7 @@ import org.elasticsearch.script.ScriptCacheStats;
 import org.elasticsearch.script.ScriptStats;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.elasticsearch.transport.TransportStats;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -38,7 +38,7 @@ import java.util.Map;
 /**
  * Node statistics (dynamic, changes depending on when created).
  */
-public class NodeStats extends BaseNodeResponse implements ToXContentFragment {
+public class NodeStats extends BaseNodeResponse implements ToXContent {
 
     private long timestamp;
 

@@ -17,7 +17,7 @@ import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
+import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentType;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 
-public class RollupIndexCaps implements Writeable, ToXContentFragment {
+public class RollupIndexCaps implements Writeable, ToXContent {
     private static ParseField ROLLUP_JOBS = new ParseField("rollup_jobs");
     private static ParseField DOC_FIELD = new ParseField("_doc");
     private static ParseField META_FIELD = new ParseField("_meta");
