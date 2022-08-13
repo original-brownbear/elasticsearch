@@ -16,6 +16,9 @@ import org.elasticsearch.cluster.routing.RoutingNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.Collection;
 
 /**
@@ -23,12 +26,111 @@ import java.util.Collection;
  */
 public class AllocationDeciders {
 
+    private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+    private static final MethodType canRemainSignature = MethodType.methodType(
+            Decision.class,
+            IndexMetadata.class,
+            ShardRouting.class,
+            RoutingNode.class,
+            RoutingAllocation.class
+    );
+
     private static final Logger logger = LogManager.getLogger(AllocationDeciders.class);
 
+    private static final MethodHandle maybeLogHandle;
+
+    private static final MethodHandle maybeLogThenNoHandle;
+
+
+    private static final MethodHandle canRemainHandle;
+
+    private static final MethodHandle typeHandle;
+
+    private static final MethodHandle isNoHandle;
+
+    private static final MethodHandle identity;
+
+    static {
+        try {
+            maybeLogHandle = lookup.findStatic(
+                AllocationDeciders.class,
+                "maybeTraceLogNoDecision",
+                MethodType.methodType(void.class, ShardRouting.class, RoutingNode.class, AllocationDecider.class)
+            );
+            maybeLogThenNoHandle = MethodHandles.filterReturnValue(maybeLogHandle, MethodHandles.constant(Decision.class, Decision.NO));
+            canRemainHandle = lookup.findVirtual(
+                    AllocationDecider.class,
+                    "canRemain",
+                    canRemainSignature
+            );
+            typeHandle = lookup.findVirtual(Decision.class, "type", MethodType.methodType(Decision.Type.class));
+            isNoHandle = lookup.findStatic(AllocationDeciders.class, "isNo", MethodType.methodType(boolean.class, Decision.class));
+            identity = MethodHandles.identity(Decision.class);
+        } catch (Exception e) {
+            throw new AssertionError(e);
+        }
+    }
+
+
+    private final MethodHandle[] maybeLogThenNoHandleSites;
     private final AllocationDecider[] allocations;
+
+    private final MethodHandle[] canRemainSites;
 
     public AllocationDeciders(Collection<AllocationDecider> allocations) {
         this.allocations = allocations.toArray(AllocationDecider[]::new);
+        MethodHandle cr = null;
+        for (int i = 0; i < this.allocations.length; ++i) {
+            final AllocationDecider decider = this.allocations[i];
+            try {
+                MethodHandle mh = lookup.findVirtual(
+                    AllocationDecider.class,
+                    "canRemain",
+                        canRemainSignature
+                );
+                if (cr == null) {
+                    cr = mh.bindTo(decider);
+                } else {
+
+                }
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        }
+        canRemainSites = new MethodHandle[this.allocations.length];
+        maybeLogThenNoHandleSites = new MethodHandle[this.allocations.length];
+        for (int i = 0; i < this.allocations.length; i++) {
+            try {
+                canRemainSites[i] = canRemainHandle.bindTo(this.allocations[i]);
+                maybeLogThenNoHandleSites[i] = MethodHandles.insertArguments(maybeLogThenNoHandle, 2, this.allocations[i]);
+                canRemainSites[i] = MethodHandles.filterReturnValue(
+                    MethodHandles.foldArguments(
+                        MethodHandles.dropArguments(
+                            MethodHandles.guardWithTest(
+                                isNoHandle,
+                                MethodHandles.dropArguments(
+                                    MethodHandles.dropArguments(maybeLogThenNoHandleSites[i], 0, Decision.class),
+                                    3,
+                                    RoutingAllocation.class
+                                ),
+                                MethodHandles.dropArguments(identity, 1, ShardRouting.class, RoutingNode.class, RoutingAllocation.class)
+                            ),
+                            1,
+                            IndexMetadata.class
+                        ),
+                        canRemainHandle.bindTo(this.allocations[i])
+                    ),
+                    typeHandle
+                );
+            } catch (Exception e) {
+                throw new AssertionError(e);
+            }
+        }
+    }
+
+    private static boolean isNo(Decision decision) {
+        return decision.type() == Decision.Type.NO;
     }
 
     public Decision canRebalance(ShardRouting shardRouting, RoutingAllocation allocation) {
@@ -102,21 +204,35 @@ public class AllocationDeciders {
             return ret;
         } else {
             // tighter loop if debug information is not collected: don't collect yes decisions + break out right away on NO
-            Decision ret = Decision.YES;
-            for (AllocationDecider allocationDecider : allocations) {
-                switch (allocationDecider.canRemain(indexMetadata, shardRouting, node, allocation).type()) {
-                    case NO -> {
-                        maybeTraceLogNoDecision(shardRouting, node, allocationDecider);
+            try {
+                Decision ret = Decision.YES;
+                int i = 0;
+                first_loop: for (; i < canRemainSites.length; i++) {
+                    MethodHandle mh = canRemainSites[i];
+                    switch ((Decision.Type) mh.invoke(indexMetadata, shardRouting, node, allocation)) {
+                        case NO -> {
+                            return Decision.NO;
+                        }
+                        case THROTTLE -> {
+                            ret = Decision.THROTTLE;
+                            break first_loop;
+                        }
+                    }
+                }
+                for (; i < canRemainSites.length; i++) {
+                    MethodHandle mh = canRemainSites[i];
+                    if ((Decision.Type) mh.invoke(indexMetadata, shardRouting, node, allocation) == Decision.Type.NO) {
                         return Decision.NO;
                     }
-                    case THROTTLE -> ret = Decision.THROTTLE;
                 }
+                return ret;
+            } catch (Throwable e) {
+                throw new AssertionError(e);
             }
-            return ret;
         }
     }
 
-    private void maybeTraceLogNoDecision(ShardRouting shardRouting, RoutingNode node, AllocationDecider allocationDecider) {
+    private static void maybeTraceLogNoDecision(ShardRouting shardRouting, RoutingNode node, AllocationDecider allocationDecider) {
         if (logger.isTraceEnabled()) {
             logger.trace(
                 "Shard [{}] can not remain on node [{}] due to [{}]",
