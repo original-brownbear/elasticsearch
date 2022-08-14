@@ -30,6 +30,12 @@ public class NodeShutdownAllocationDecider extends AllocationDecider {
 
     private static final String NAME = "node_shutdown";
 
+    private static final Decision YES_NOT_SHUTTING_DOWN = Decision.single(
+        Decision.Type.YES,
+        NAME,
+        "this node is not currently shutting down"
+    );
+
     /**
      * Determines if a shard can be allocated to a particular node, based on whether that node is shutting down or not.
      */
@@ -39,9 +45,17 @@ public class NodeShutdownAllocationDecider extends AllocationDecider {
 
         if (thisNodeShutdownMetadata == null) {
             // There's no shutdown metadata for this node, return yes.
-            return allocation.decision(Decision.YES, NAME, "this node is not currently shutting down");
+            return YES_NOT_SHUTTING_DOWN;
         }
 
+        return noDecision(node, allocation, thisNodeShutdownMetadata);
+    }
+
+    private static Decision noDecision(
+        RoutingNode node,
+        RoutingAllocation allocation,
+        SingleNodeShutdownMetadata thisNodeShutdownMetadata
+    ) {
         return switch (thisNodeShutdownMetadata.getType()) {
             case REPLACE, REMOVE -> allocation.decision(
                 Decision.NO,

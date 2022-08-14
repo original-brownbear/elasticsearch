@@ -166,12 +166,21 @@ public class AwarenessAllocationDecider extends AllocationDecider {
             return YES_NOT_ENABLED;
         }
 
-        final boolean debug = allocation.debugDecision();
-
         if (indexMetadata.getAutoExpandReplicas().expandToAllNodes()) {
             return YES_AUTO_EXPAND_ALL;
         }
 
+        return checkUnderCapacity(indexMetadata, shardRouting, node, allocation, moveToNode);
+    }
+
+    private Decision checkUnderCapacity(
+        IndexMetadata indexMetadata,
+        ShardRouting shardRouting,
+        RoutingNode node,
+        RoutingAllocation allocation,
+        boolean moveToNode
+    ) {
+        final boolean debug = allocation.debugDecision();
         final int shardCount = indexMetadata.getNumberOfReplicas() + 1; // 1 for primary
         for (String awarenessAttribute : awarenessAttributes) {
             // the node the shard exists on must be associated with an awareness attribute
