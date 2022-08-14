@@ -16,7 +16,9 @@ import org.elasticsearch.cluster.routing.RoutingNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Combines the decision of multiple {@link AllocationDecider} implementations into a single allocation decision.
@@ -27,8 +29,24 @@ public class AllocationDeciders {
 
     private final AllocationDecider[] allocations;
 
+    private final AllocationDecider[] canRemainDeciders;
+
     public AllocationDeciders(Collection<AllocationDecider> allocations) {
         this.allocations = allocations.toArray(AllocationDecider[]::new);
+        final List<AllocationDecider> crDeciders = new ArrayList<>();
+        for (AllocationDecider allocation : this.allocations) {
+            try {
+                if (allocation.getClass()
+                    .getMethod("canRemain", IndexMetadata.class, ShardRouting.class, RoutingNode.class, RoutingAllocation.class)
+                    .getDeclaringClass()
+                    .equals(AllocationDecider.class) == false) {
+                    crDeciders.add(allocation);
+                }
+            } catch (NoSuchMethodException e) {
+                throw new AssertionError(e);
+            }
+        }
+        this.canRemainDeciders = crDeciders.toArray(AllocationDecider[]::new);
     }
 
     public Decision canRebalance(ShardRouting shardRouting, RoutingAllocation allocation) {
@@ -88,22 +106,11 @@ public class AllocationDeciders {
         }
         final IndexMetadata indexMetadata = allocation.metadata().getIndexSafe(shardRouting.index());
         if (allocation.debugDecision()) {
-            Decision.Multi ret = new Decision.Multi();
-            for (AllocationDecider allocationDecider : allocations) {
-                Decision decision = allocationDecider.canRemain(indexMetadata, shardRouting, node, allocation);
-                // short track if a NO is returned.
-                if (decision.type() == Decision.Type.NO) {
-                    maybeTraceLogNoDecision(shardRouting, node, allocationDecider);
-                    ret.add(decision);
-                } else {
-                    addDecision(ret, decision, allocation);
-                }
-            }
-            return ret;
+            return canRemainDebug(shardRouting, node, allocation, indexMetadata);
         } else {
             // tighter loop if debug information is not collected: don't collect yes decisions + break out right away on NO
             Decision ret = Decision.YES;
-            for (AllocationDecider allocationDecider : allocations) {
+            for (AllocationDecider allocationDecider : canRemainDeciders) {
                 switch (allocationDecider.canRemain(indexMetadata, shardRouting, node, allocation).type()) {
                     case NO -> {
                         maybeTraceLogNoDecision(shardRouting, node, allocationDecider);
@@ -114,6 +121,26 @@ public class AllocationDeciders {
             }
             return ret;
         }
+    }
+
+    private Decision.Multi canRemainDebug(
+        ShardRouting shardRouting,
+        RoutingNode node,
+        RoutingAllocation allocation,
+        IndexMetadata indexMetadata
+    ) {
+        Decision.Multi ret = new Decision.Multi();
+        for (AllocationDecider allocationDecider : canRemainDeciders) {
+            Decision decision = allocationDecider.canRemain(indexMetadata, shardRouting, node, allocation);
+            // short track if a NO is returned.
+            if (decision.type() == Decision.Type.NO) {
+                maybeTraceLogNoDecision(shardRouting, node, allocationDecider);
+                ret.add(decision);
+            } else {
+                addDecision(ret, decision, allocation);
+            }
+        }
+        return ret;
     }
 
     private void maybeTraceLogNoDecision(ShardRouting shardRouting, RoutingNode node, AllocationDecider allocationDecider) {
