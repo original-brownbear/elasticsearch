@@ -22,7 +22,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -93,7 +92,7 @@ public class NodesShutdownMetadata implements Metadata.Custom {
     private final Map<String, SingleNodeShutdownMetadata> nodes;
 
     public NodesShutdownMetadata(Map<String, SingleNodeShutdownMetadata> nodes) {
-        this.nodes = Collections.unmodifiableMap(nodes);
+        this.nodes = Map.copyOf(nodes);
     }
 
     public NodesShutdownMetadata(StreamInput in) throws IOException {

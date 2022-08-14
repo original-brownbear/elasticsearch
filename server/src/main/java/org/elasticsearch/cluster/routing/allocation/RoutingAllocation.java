@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.RestoreInProgress;
 import org.elasticsearch.cluster.metadata.DesiredNodes;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.cluster.metadata.NodesShutdownMetadata;
 import org.elasticsearch.cluster.metadata.SingleNodeShutdownMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.RoutingChangesObserver;
@@ -26,7 +27,6 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.RestoreService.RestoreInProgressUpdater;
 import org.elasticsearch.snapshots.SnapshotShardSizeInfo;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -71,6 +71,8 @@ public class RoutingAllocation {
         restoreInProgressUpdater
     );
 
+    private final NodesShutdownMetadata nodesShutdownMetadata;
+
     private final Map<String, SingleNodeShutdownMetadata> nodeReplacementTargets;
 
     public RoutingAllocation(
@@ -112,7 +114,8 @@ public class RoutingAllocation {
                 targetNameToShutdown.put(shutdown.getTargetNodeName(), shutdown);
             }
         }
-        this.nodeReplacementTargets = Collections.unmodifiableMap(targetNameToShutdown);
+        this.nodeReplacementTargets = Map.copyOf(targetNameToShutdown);
+        this.nodesShutdownMetadata = clusterState.metadata().custom(NodesShutdownMetadata.TYPE, NodesShutdownMetadata.EMPTY);
     }
 
     /** returns the nano time captured at the beginning of the allocation. used to make sure all time based decisions are aligned */
@@ -180,7 +183,11 @@ public class RoutingAllocation {
      * Returns the map of node id to shutdown metadata currently in the cluster
      */
     public Map<String, SingleNodeShutdownMetadata> nodeShutdowns() {
-        return metadata().nodeShutdowns();
+        return nodesShutdownMetadata.getAllNodeMetadataMap();
+    }
+
+    public NodesShutdownMetadata nodesShutdownMetadata() {
+        return nodesShutdownMetadata;
     }
 
     /**

@@ -76,7 +76,12 @@ public class NodeReplacementAllocationDecider extends AllocationDecider {
     public Decision canRemain(IndexMetadata indexMetadata, ShardRouting shardRouting, RoutingNode node, RoutingAllocation allocation) {
         if (replacementOngoing(allocation) == false) {
             return NO_REPLACEMENTS;
-        } else if (isReplacementSource(allocation, node.nodeId())) {
+        }
+        return canRemainWithOngoing(node, allocation);
+    }
+
+    private static Decision canRemainWithOngoing(RoutingNode node, RoutingAllocation allocation) {
+        if (isReplacementSource(allocation, node.nodeId())) {
             return Decision.single(
                 Decision.Type.NO,
                 NAME,
@@ -84,9 +89,8 @@ public class NodeReplacementAllocationDecider extends AllocationDecider {
                 node.nodeId(),
                 getReplacementName(allocation, node.nodeId())
             );
-        } else {
-            return Decision.single(Decision.Type.YES, NAME, "node [%s] is not being replaced", node.nodeId());
         }
+        return Decision.single(Decision.Type.YES, NAME, "node [%s] is not being replaced", node.nodeId());
     }
 
     @Override
