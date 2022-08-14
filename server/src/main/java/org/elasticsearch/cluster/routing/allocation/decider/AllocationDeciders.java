@@ -76,7 +76,18 @@ public class AllocationDeciders {
         this.allocations = allocations.toArray(AllocationDecider[]::new);
         MethodHandle crSite = null;
         for (int i = this.allocations.length - 1; i >= 0; i--) {
-            MethodHandle crs = canRemainHandle.bindTo(this.allocations[i]);
+            final AllocationDecider decider = this.allocations[i];
+            try {
+                if (decider.getClass()
+                    .getMethod("canRemain", IndexMetadata.class, ShardRouting.class, RoutingNode.class, RoutingAllocation.class)
+                    .getDeclaringClass()
+                    .equals(AllocationDecider.class)) {
+                    continue;
+                }
+            } catch (NoSuchMethodException e) {
+                throw new AssertionError(e);
+            }
+            MethodHandle crs = canRemainHandle.bindTo(decider);
             try {
                 if (crSite == null) {
                     crSite = crs;
@@ -103,7 +114,12 @@ public class AllocationDeciders {
                 throw new AssertionError(e);
             }
         }
-        canRemainNoDebugSite = crSite;
+        if (crSite == null) {
+            canRemainNoDebugSite = canRemainHandle.bindTo(new AllocationDecider() {
+            });
+        } else {
+            canRemainNoDebugSite = crSite;
+        }
     }
 
     private static boolean isNo(Decision decision) {
