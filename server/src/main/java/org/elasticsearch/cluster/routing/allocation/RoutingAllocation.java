@@ -75,6 +75,8 @@ public class RoutingAllocation {
 
     private final Map<String, SingleNodeShutdownMetadata> nodeReplacementTargets;
 
+    private final DesiredNodes desiredNodes;
+
     public RoutingAllocation(
         AllocationDeciders deciders,
         ClusterState clusterState,
@@ -116,6 +118,7 @@ public class RoutingAllocation {
         }
         this.nodeReplacementTargets = Map.copyOf(targetNameToShutdown);
         this.nodesShutdownMetadata = clusterState.metadata().custom(NodesShutdownMetadata.TYPE, NodesShutdownMetadata.EMPTY);
+        this.desiredNodes = DesiredNodes.latestFromClusterState(clusterState);
     }
 
     /** returns the nano time captured at the beginning of the allocation. used to make sure all time based decisions are aligned */
@@ -176,7 +179,7 @@ public class RoutingAllocation {
 
     @Nullable
     public DesiredNodes desiredNodes() {
-        return DesiredNodes.latestFromClusterState(clusterState);
+        return desiredNodes;
     }
 
     /**
