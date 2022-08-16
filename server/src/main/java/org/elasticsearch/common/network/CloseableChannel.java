@@ -8,19 +8,17 @@
 
 package org.elasticsearch.common.network;
 
-import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.support.GroupedActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.core.IOUtils;
+import org.elasticsearch.core.Releasable;
+import org.elasticsearch.core.Releasables;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public interface CloseableChannel extends Closeable {
+public interface CloseableChannel extends Releasable {
 
     /**
      * Closes the channel. For most implementations, this will be be an asynchronous process. For this
@@ -49,52 +47,20 @@ public interface CloseableChannel extends Closeable {
     boolean isOpen();
 
     /**
-     * Closes the channel without blocking.
-     *
-     * @param channel to close
-     */
-    static <C extends CloseableChannel> void closeChannel(C channel) {
-        closeChannel(channel, false);
-    }
-
-    /**
-     * Closes the channel.
-     *
-     * @param channel  to close
-     * @param blocking indicates if we should block on channel close
-     */
-    static <C extends CloseableChannel> void closeChannel(C channel, boolean blocking) {
-        closeChannels(Collections.singletonList(channel), blocking);
-    }
-
-    /**
-     * Closes the channels.
+     * Closes the channels and block until closing completes.
      *
      * @param channels to close
-     * @param blocking indicates if we should block on channel close
      */
-    static <C extends CloseableChannel> void closeChannels(List<C> channels, boolean blocking) {
-        try {
-            IOUtils.close(channels);
-        } catch (IOException e) {
-            // The CloseableChannel#close method does not throw IOException, so this should not occur.
-            throw new AssertionError(e);
-        }
-        if (blocking) {
-            ArrayList<ActionFuture<Void>> futures = new ArrayList<>(channels.size());
+    static <C extends CloseableChannel> void closeChannels(List<C> channels) {
+        if (channels.isEmpty() == false) {
+            Releasables.close(channels);
+            final var f = PlainActionFuture.<Collection<Void>>newFuture();
+            final var closeListener = new GroupedActionListener<>(f, channels.size());
             for (final C channel : channels) {
-                PlainActionFuture<Void> closeFuture = PlainActionFuture.newFuture();
-                channel.addCloseListener(closeFuture);
-                futures.add(closeFuture);
+                channel.addCloseListener(closeListener);
             }
-            blockOnFutures(futures);
-        }
-    }
-
-    static void blockOnFutures(List<ActionFuture<Void>> futures) {
-        for (ActionFuture<Void> future : futures) {
             try {
-                future.get();
+                f.get();
             } catch (ExecutionException e) {
                 // Ignore as we are only interested in waiting for the close process to complete. Logging
                 // close exceptions happens elsewhere.

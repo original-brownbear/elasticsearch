@@ -18,12 +18,12 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
-import org.elasticsearch.common.network.CloseableChannel;
 import org.elasticsearch.common.network.HandlingTimeTracker;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.transport.NetworkExceptionHelper;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.threadpool.ThreadPool;
 
@@ -231,7 +231,7 @@ final class OutboundHandler {
             });
         } catch (RuntimeException ex) {
             listener.onFailure(ex);
-            CloseableChannel.closeChannel(channel);
+            Releasables.close(channel);
             throw ex;
         }
     }
