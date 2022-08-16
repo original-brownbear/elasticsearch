@@ -105,15 +105,17 @@ public class InboundHandler {
         assert header.needsToReadVariableHeader() == false;
 
         TransportResponseHandler<?> responseHandler = null;
-        final boolean isRequest = message.getHeader().isRequest();
-
         ThreadContext threadContext = threadPool.getThreadContext();
         try (ThreadContext.StoredContext existing = threadContext.stashContext()) {
             // Place the context with the headers from the message
             threadContext.setHeaders(header.getHeaders());
             threadContext.putTransient("_remote_address", remoteAddress);
-            if (isRequest) {
-                handleRequest(channel, header, message);
+            if (header.isRequest()) {
+                if (header.isHandshake()) {
+                    handleHandshakeRequest(channel, message);
+                } else {
+                    handleRequest(channel, message);
+                }
             } else {
                 // Responses do not support short circuiting currently
                 assert message.isShortCircuit() == false;
@@ -133,9 +135,8 @@ public class InboundHandler {
                 }
                 // ignore if its null, the service logs it
                 if (responseHandler != null) {
-                    final StreamInput streamInput;
                     if (message.getContentLength() > 0 || header.getVersion().equals(Version.CURRENT) == false) {
-                        streamInput = namedWriteableStream(message.openOrGetStreamInput());
+                        final StreamInput streamInput = namedWriteableStream(message.openOrGetStreamInput());
                         assertRemoteVersion(streamInput, header.getVersion());
                         if (header.isError()) {
                             handlerResponseError(streamInput, responseHandler);
@@ -146,17 +147,7 @@ public class InboundHandler {
                         final int nextByte = streamInput.read();
                         // calling read() is useful to make sure the message is fully read, even if there is an EOS marker
                         if (nextByte != -1) {
-                            final IllegalStateException exception = new IllegalStateException(
-                                "Message not fully read (response) for requestId ["
-                                    + requestId
-                                    + "], handler ["
-                                    + responseHandler
-                                    + "], error ["
-                                    + header.isError()
-                                    + "]; resetting"
-                            );
-                            assert ignoreDeserializationErrors : exception;
-                            throw exception;
+                            throwOnResponseReadIncomplete(header, responseHandler);
                         }
                     } else {
                         assert header.isError() == false;
@@ -169,7 +160,7 @@ public class InboundHandler {
             handlingTimeTracker.addHandlingTime(took);
             final long logThreshold = slowLogThresholdMs;
             if (logThreshold > 0 && took > logThreshold) {
-                if (isRequest) {
+                if (header.isRequest()) {
                     logger.warn(
                         "handling request [{}] took [{}ms] which is above the warn threshold of [{}ms]",
                         message,
@@ -189,138 +180,162 @@ public class InboundHandler {
         }
     }
 
-    private <T extends TransportRequest> void handleRequest(TcpChannel channel, Header header, InboundMessage message) throws IOException {
+    private void throwOnResponseReadIncomplete(Header header, TransportResponseHandler<?> responseHandler) {
+        final IllegalStateException exception = new IllegalStateException(
+            "Message not fully read (response) for requestId ["
+                + header.getRequestId()
+                + "], handler ["
+                + responseHandler
+                + "], error ["
+                + header.isError()
+                + "]; resetting"
+        );
+        assert ignoreDeserializationErrors : exception;
+        throw exception;
+    }
+
+    private <T extends TransportRequest> void handleRequest(TcpChannel channel, InboundMessage message) {
+        final Header header = message.getHeader();
+        assert header.isHandshake() == false;
         final String action = header.getActionName();
         final long requestId = header.getRequestId();
-        final Version version = header.getVersion();
-        if (header.isHandshake()) {
+        final TransportChannel transportChannel = tcpTransportChannel(channel, message);
+        try {
             messageListener.onRequestReceived(requestId, action);
-            // Cannot short circuit handshakes
-            assert message.isShortCircuit() == false;
-            final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
-            assertRemoteVersion(stream, header.getVersion());
-            final TransportChannel transportChannel = new TcpTransportChannel(
-                outboundHandler,
-                channel,
-                action,
-                requestId,
-                version,
-                header.getCompressionScheme(),
-                header.isHandshake(),
-                message.takeBreakerReleaseControl()
-            );
-            try {
-                handshaker.handleHandshake(transportChannel, requestId, stream);
-            } catch (Exception e) {
-                if (Version.CURRENT.isCompatible(header.getVersion())) {
-                    sendErrorResponse(action, transportChannel, e);
-                } else {
-                    logger.warn(
-                        () -> format(
-                            "could not send error response to handshake received on [%s] using wire format version [%s], closing channel",
-                            channel,
-                            header.getVersion()
-                        ),
-                        e
-                    );
-                    channel.close();
+            if (message.isShortCircuit()) {
+                sendErrorResponse(action, transportChannel, message.getException());
+            } else {
+                final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
+                assertRemoteVersion(stream, header.getVersion());
+                final RequestHandlerRegistry<T> reg = requestHandlers.getHandler(action);
+                assert reg != null;
+                final T request;
+                try {
+                    request = reg.newRequest(stream);
+                } catch (Exception e) {
+                    assert ignoreDeserializationErrors : e;
+                    throw e;
+                }
+                try {
+                    request.remoteAddress(channel.getRemoteAddress());
+                    // in case we throw an exception, i.e. when the limit is hit, we don't want to verify
+                    final int nextByte = stream.read();
+                    // calling read() is useful to make sure the message is fully read, even if there some kind of EOS marker
+                    if (nextByte != -1) {
+                        throwOnRequestReadIncomplete(action, requestId, stream);
+                    }
+                    if (ThreadPool.Names.SAME.equals(reg.getExecutor())) {
+                        try (var ignored = threadPool.getThreadContext().newTraceContext()) {
+                            try {
+                                reg.processMessageReceived(request, transportChannel);
+                            } catch (Exception e) {
+                                sendErrorResponse(reg.getAction(), transportChannel, e);
+                            }
+                        }
+                    } else {
+                        handleRequestForking(transportChannel, reg, request);
+                    }
+                } finally {
+                    request.decRef();
                 }
             }
-        } else {
-            final TransportChannel transportChannel = new TcpTransportChannel(
-                outboundHandler,
-                channel,
-                action,
-                requestId,
-                version,
-                header.getCompressionScheme(),
-                header.isHandshake(),
-                message.takeBreakerReleaseControl()
-            );
-            try {
-                messageListener.onRequestReceived(requestId, action);
-                if (message.isShortCircuit()) {
-                    sendErrorResponse(action, transportChannel, message.getException());
-                } else {
-                    final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
-                    assertRemoteVersion(stream, header.getVersion());
-                    final RequestHandlerRegistry<T> reg = requestHandlers.getHandler(action);
-                    assert reg != null;
-                    final T request;
-                    try {
-                        request = reg.newRequest(stream);
-                    } catch (Exception e) {
-                        assert ignoreDeserializationErrors : e;
-                        throw e;
-                    }
-                    try {
-                        request.remoteAddress(channel.getRemoteAddress());
-                        // in case we throw an exception, i.e. when the limit is hit, we don't want to verify
-                        final int nextByte = stream.read();
-                        // calling read() is useful to make sure the message is fully read, even if there some kind of EOS marker
-                        if (nextByte != -1) {
-                            final IllegalStateException exception = new IllegalStateException(
-                                "Message not fully read (request) for requestId ["
-                                    + requestId
-                                    + "], action ["
-                                    + action
-                                    + "], available ["
-                                    + stream.available()
-                                    + "]; resetting"
-                            );
-                            assert ignoreDeserializationErrors : exception;
-                            throw exception;
-                        }
-                        final String executor = reg.getExecutor();
-                        if (ThreadPool.Names.SAME.equals(executor)) {
-                            try (var ignored = threadPool.getThreadContext().newTraceContext()) {
-                                try {
-                                    reg.processMessageReceived(request, transportChannel);
-                                } catch (Exception e) {
-                                    sendErrorResponse(reg.getAction(), transportChannel, e);
-                                }
-                            }
-                        } else {
-                            boolean success = false;
-                            request.incRef();
-                            try {
-                                threadPool.executor(executor)
-                                    .execute(threadPool.getThreadContext().preserveContextWithTracing(new AbstractRunnable() {
-                                        @Override
-                                        protected void doRun() throws Exception {
-                                            reg.processMessageReceived(request, transportChannel);
-                                        }
+        } catch (Exception e) {
+            sendErrorResponse(action, transportChannel, e);
+        }
+    }
 
-                                        @Override
-                                        public boolean isForceExecution() {
-                                            return reg.isForceExecution();
-                                        }
-
-                                        @Override
-                                        public void onFailure(Exception e) {
-                                            sendErrorResponse(reg.getAction(), transportChannel, e);
-                                        }
-
-                                        @Override
-                                        public void onAfter() {
-                                            request.decRef();
-                                        }
-                                    }));
-                                success = true;
-                            } finally {
-                                if (success == false) {
-                                    request.decRef();
-                                }
-                            }
-                        }
-                    } finally {
-                        request.decRef();
-                    }
+    private <T extends TransportRequest> void handleRequestForking(
+        TransportChannel transportChannel,
+        RequestHandlerRegistry<T> reg,
+        T request
+    ) {
+        boolean success = false;
+        request.incRef();
+        try {
+            threadPool.executor(reg.getExecutor()).execute(threadPool.getThreadContext().preserveContextWithTracing(new AbstractRunnable() {
+                @Override
+                protected void doRun() throws Exception {
+                    reg.processMessageReceived(request, transportChannel);
                 }
-            } catch (Exception e) {
-                sendErrorResponse(action, transportChannel, e);
+
+                @Override
+                public boolean isForceExecution() {
+                    return reg.isForceExecution();
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    sendErrorResponse(reg.getAction(), transportChannel, e);
+                }
+
+                @Override
+                public void onAfter() {
+                    request.decRef();
+                }
+            }));
+            success = true;
+        } finally {
+            if (success == false) {
+                request.decRef();
             }
         }
+    }
+
+    private void handleHandshakeRequest(TcpChannel channel, InboundMessage message) throws IOException {
+        final Header header = message.getHeader();
+        final long requestId = header.getRequestId();
+        assert header.getActionName().equals(TransportHandshaker.HANDSHAKE_ACTION_NAME);
+        messageListener.onRequestReceived(requestId, TransportHandshaker.HANDSHAKE_ACTION_NAME);
+        // Cannot short circuit handshakes
+        assert message.isShortCircuit() == false;
+        final StreamInput stream = namedWriteableStream(message.openOrGetStreamInput());
+        assertRemoteVersion(stream, header.getVersion());
+        final TransportChannel transportChannel = tcpTransportChannel(channel, message);
+        try {
+            handshaker.handleHandshake(transportChannel, requestId, stream);
+        } catch (Exception e) {
+            if (Version.CURRENT.isCompatible(header.getVersion())) {
+                sendErrorResponse(TransportHandshaker.HANDSHAKE_ACTION_NAME, transportChannel, e);
+            } else {
+                logger.warn(
+                    () -> format(
+                        "could not send error response to handshake received on [%s] using wire format version [%s], closing channel",
+                        channel,
+                        header.getVersion()
+                    ),
+                    e
+                );
+                channel.close();
+            }
+        }
+    }
+
+    private void throwOnRequestReadIncomplete(String action, long requestId, StreamInput stream) throws IOException {
+        final IllegalStateException exception = new IllegalStateException(
+            "Message not fully read (request) for requestId ["
+                + requestId
+                + "], action ["
+                + action
+                + "], available ["
+                + stream.available()
+                + "]; resetting"
+        );
+        assert ignoreDeserializationErrors : exception;
+        throw exception;
+    }
+
+    private TcpTransportChannel tcpTransportChannel(TcpChannel channel, InboundMessage message) {
+        final Header header = message.getHeader();
+        return new TcpTransportChannel(
+            outboundHandler,
+            channel,
+            header.getActionName(),
+            header.getRequestId(),
+            header.getVersion(),
+            header.getCompressionScheme(),
+            header.isHandshake(),
+            message.takeBreakerReleaseControl()
+        );
     }
 
     private static void sendErrorResponse(String actionName, TransportChannel transportChannel, Exception e) {
@@ -342,13 +357,7 @@ public class InboundHandler {
             response = handler.read(stream);
             response.remoteAddress(remoteAddress);
         } catch (Exception e) {
-            final TransportException serializationException = new TransportSerializationException(
-                "Failed to deserialize response from handler [" + handler + "]",
-                e
-            );
-            logger.warn(() -> "Failed to deserialize response from [" + remoteAddress + "]", serializationException);
-            assert ignoreDeserializationErrors : e;
-            handleException(handler, serializationException);
+            handleResponseDeserializationException(remoteAddress, handler, e);
             return;
         }
         final String executor = handler.executor();
@@ -362,6 +371,20 @@ public class InboundHandler {
                 }
             });
         }
+    }
+
+    private <T extends TransportResponse> void handleResponseDeserializationException(
+        InetSocketAddress remoteAddress,
+        TransportResponseHandler<T> handler,
+        Exception e
+    ) {
+        final TransportException serializationException = new TransportSerializationException(
+            "Failed to deserialize response from handler [" + handler + "]",
+            e
+        );
+        logger.warn(() -> "Failed to deserialize response from [" + remoteAddress + "]", serializationException);
+        assert ignoreDeserializationErrors : e;
+        handleException(handler, serializationException);
     }
 
     private static <T extends TransportResponse> void doHandleResponse(TransportResponseHandler<T> handler, T response) {
