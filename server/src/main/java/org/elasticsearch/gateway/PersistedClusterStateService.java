@@ -698,7 +698,10 @@ public class PersistedClusterStateService {
 
     private static BytesReference uncompress(BytesReference bytesReference) throws IOException {
         try {
-            return CompressorFactory.COMPRESSOR.uncompress(bytesReference);
+            if (CompressorFactory.isCompressed(bytesReference)) {
+                return CompressorFactory.COMPRESSOR.uncompress(bytesReference);
+            }
+            return bytesReference;
         } catch (IOException e) {
             // no actual IO takes place, the data is all in-memory, so an exception indicates corruption
             throw new CorruptStateException(e);
@@ -1093,8 +1096,7 @@ public class PersistedClusterStateService {
         private void writePages(ToXContentFragment metadata, PageWriter pageWriter) throws IOException {
             try (
                 PageWriterOutputStream paginatedStream = new PageWriterOutputStream(documentBuffer, pageWriter);
-                OutputStream compressedStream = CompressorFactory.COMPRESSOR.threadLocalOutputStream(paginatedStream);
-                XContentBuilder xContentBuilder = XContentFactory.contentBuilder(XContentType.SMILE, compressedStream)
+                XContentBuilder xContentBuilder = XContentFactory.contentBuilder(XContentType.SMILE, paginatedStream)
             ) {
                 xContentBuilder.startObject();
                 metadata.toXContent(xContentBuilder, FORMAT_PARAMS);
