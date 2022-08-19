@@ -11,7 +11,6 @@ import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.repositories.get.GetRepositoriesResponse;
 import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyRepositoryResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.metadata.Metadata;
@@ -54,8 +53,7 @@ public class RepositoriesIT extends AbstractSnapshotIntegTestCase {
         assertThat(FileSystemUtils.files(location).length, equalTo(numberOfFiles));
 
         logger.info("--> check that repository is really there");
-        ClusterStateResponse clusterStateResponse = client.admin().cluster().prepareState().clear().setMetadata(true).get();
-        Metadata metadata = clusterStateResponse.getState().getMetadata();
+        Metadata metadata = getState().getMetadata();
         RepositoriesMetadata repositoriesMetadata = metadata.custom(RepositoriesMetadata.TYPE);
         assertThat(repositoriesMetadata, notNullValue());
         assertThat(repositoriesMetadata.repository("test-repo-1"), notNullValue());
@@ -65,8 +63,7 @@ public class RepositoriesIT extends AbstractSnapshotIntegTestCase {
         createRepository("test-repo-2", "fs");
 
         logger.info("--> check that both repositories are in cluster state");
-        clusterStateResponse = client.admin().cluster().prepareState().clear().setMetadata(true).get();
-        metadata = clusterStateResponse.getState().getMetadata();
+        metadata = getState().getMetadata();
         repositoriesMetadata = metadata.custom(RepositoriesMetadata.TYPE);
         assertThat(repositoriesMetadata, notNullValue());
         assertThat(repositoriesMetadata.repositories().size(), equalTo(2));
@@ -85,7 +82,7 @@ public class RepositoriesIT extends AbstractSnapshotIntegTestCase {
         assertThat(findRepository(repositoriesResponse.repositories(), "test-repo-2"), notNullValue());
 
         logger.info("--> check that trying to create a repository with the same settings repeatedly does not update cluster state");
-        String beforeStateUuid = clusterStateResponse.getState().stateUUID();
+        String beforeStateUuid = getState().stateUUID();
         assertThat(
             client.admin()
                 .cluster()

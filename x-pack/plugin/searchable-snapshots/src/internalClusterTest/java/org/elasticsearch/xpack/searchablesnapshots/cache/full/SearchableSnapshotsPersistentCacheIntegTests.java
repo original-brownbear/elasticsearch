@@ -226,7 +226,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         final Index mountedIndex = state.getState().metadata().index(mountedIndexName).getIndex();
 
         final Set<DiscoveryNode> dataNodes = new HashSet<>();
-        for (DiscoveryNode node : getDiscoveryNodes()) {
+        for (DiscoveryNode node : getNodesFromClusterState()) {
             if (node.getRoles().stream().anyMatch(DiscoveryNodeRole::canContainData)) {
                 IndicesService indicesService = internalCluster().getInstance(IndicesService.class, node.getName());
                 if (indicesService.hasIndex(mountedIndex)) {
@@ -283,7 +283,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
     }
 
     private void assertEmptyPersistentCacheOnDataNodes() throws Exception {
-        final Set<DiscoveryNode> dataNodes = new HashSet<>(getDiscoveryNodes().getDataNodes().values());
+        final Set<DiscoveryNode> dataNodes = new HashSet<>(getNodesFromClusterState().getDataNodes().values());
         logger.info("--> verifying persistent caches are empty on nodes... {}", dataNodes);
         try {
             assertBusy(() -> {

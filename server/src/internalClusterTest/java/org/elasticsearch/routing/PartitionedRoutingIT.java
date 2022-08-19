@@ -105,15 +105,7 @@ public class PartitionedRoutingIT extends ESIntegTestCase {
                     Settings.builder()
                         .put(
                             "index.routing.allocation.require._name",
-                            client().admin()
-                                .cluster()
-                                .prepareState()
-                                .get()
-                                .getState()
-                                .nodes()
-                                .getDataNodes()
-                                .values()
-                                .toArray(DiscoveryNode[]::new)[0].getName()
+                            getState().nodes().getDataNodes().values().toArray(DiscoveryNode[]::new)[0].getName()
                         )
                         .put("index.blocks.write", true)
                 )

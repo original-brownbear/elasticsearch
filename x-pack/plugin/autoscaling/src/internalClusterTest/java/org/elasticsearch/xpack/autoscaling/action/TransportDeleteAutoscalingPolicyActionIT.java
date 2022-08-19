@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.autoscaling.action;
 
 import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.xpack.autoscaling.AutoscalingIntegTestCase;
 import org.elasticsearch.xpack.autoscaling.AutoscalingMetadata;
 import org.elasticsearch.xpack.autoscaling.policy.AutoscalingPolicy;
@@ -35,8 +34,7 @@ public class TransportDeleteAutoscalingPolicyActionIT extends AutoscalingIntegTe
         final DeleteAutoscalingPolicyAction.Request deleteRequest = new DeleteAutoscalingPolicyAction.Request(deleteName);
         assertAcked(client().execute(DeleteAutoscalingPolicyAction.INSTANCE, deleteRequest).actionGet());
         // now verify that the policy is not in the cluster state
-        final ClusterState state = client().admin().cluster().prepareState().get().getState();
-        final AutoscalingMetadata metadata = state.metadata().custom(AutoscalingMetadata.NAME);
+        final AutoscalingMetadata metadata = getState().metadata().custom(AutoscalingMetadata.NAME);
         assertNotNull(metadata);
         assertThat(metadata.policies(), not(hasKey(policy.name())));
         // and verify that we can not obtain the policy via get

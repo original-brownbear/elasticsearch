@@ -9,7 +9,6 @@ package org.elasticsearch.xpack.shutdown;
 
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.SingleNodeShutdownMetadata;
 import org.elasticsearch.cluster.routing.RoutingNodesHelper;
@@ -228,14 +227,12 @@ public class NodeShutdownDelayedAllocationIT extends ESIntegTestCase {
     }
 
     private String findIdOfNodeWithShard() {
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
-        List<ShardRouting> startedShards = RoutingNodesHelper.shardsWithState(state.getRoutingNodes(), ShardRoutingState.STARTED);
+        List<ShardRouting> startedShards = RoutingNodesHelper.shardsWithState(getState().getRoutingNodes(), ShardRoutingState.STARTED);
         Collections.shuffle(startedShards, random());
         return startedShards.get(0).currentNodeId();
     }
 
     private String findNodeNameFromId(String id) {
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
-        return state.nodes().get(id).getName();
+        return getState().nodes().get(id).getName();
     }
 }

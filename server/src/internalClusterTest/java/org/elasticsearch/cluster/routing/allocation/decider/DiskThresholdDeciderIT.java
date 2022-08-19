@@ -188,15 +188,7 @@ public class DiskThresholdDeciderIT extends DiskUsageIntegTestCase {
 
     private Set<ShardRouting> getShardRoutings(final String nodeId, final String indexName) {
         final Set<ShardRouting> shardRoutings = new HashSet<>();
-        final IndexRoutingTable indexRoutingTable = client().admin()
-            .cluster()
-            .prepareState()
-            .clear()
-            .setRoutingTable(true)
-            .get()
-            .getState()
-            .getRoutingTable()
-            .index(indexName);
+        final IndexRoutingTable indexRoutingTable = getRoutingTableFromClusterState().index(indexName);
         for (int shardId = 0; shardId < indexRoutingTable.size(); shardId++) {
             final IndexShardRoutingTable shardRoutingTable = indexRoutingTable.shard(shardId);
             for (int copy = 0; copy < shardRoutingTable.size(); copy++) {

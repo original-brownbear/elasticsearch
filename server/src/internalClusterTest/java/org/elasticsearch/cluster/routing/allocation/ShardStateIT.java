@@ -31,7 +31,7 @@ public class ShardStateIT extends ESIntegTestCase {
         logger.info("--> disabling allocation to capture shard failure");
         disableAllocation("test");
 
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
         final int shard = randomBoolean() ? 0 : 1;
         final String nodeId = state.routingTable().index("test").shard(shard).primaryShard().currentNodeId();
         final String node = state.nodes().get(nodeId).getName();

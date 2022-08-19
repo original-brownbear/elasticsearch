@@ -11,7 +11,6 @@ package org.elasticsearch.cluster;
 import org.elasticsearch.action.ActionRequestBuilder;
 import org.elasticsearch.action.admin.cluster.configuration.AddVotingConfigExclusionsAction;
 import org.elasticsearch.action.admin.cluster.configuration.AddVotingConfigExclusionsRequest;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -235,8 +234,7 @@ public class NoMasterNodeIT extends ESIntegTestCase {
 
         ensureSearchable("test1", "test2");
 
-        ClusterStateResponse clusterState = client().admin().cluster().prepareState().get();
-        logger.info("Cluster state:\n{}", clusterState.getState());
+        logger.info("Cluster state:\n{}", getState());
 
         final NetworkDisruption disruptionScheme = new NetworkDisruption(
             new IsolateAllNodes(new HashSet<>(nodes)),
@@ -313,17 +311,16 @@ public class NoMasterNodeIT extends ESIntegTestCase {
 
         ensureGreen("test1");
 
-        ClusterStateResponse clusterState = client().admin().cluster().prepareState().get();
-        logger.info("Cluster state:\n{}", clusterState.getState());
+        ClusterState state = getState();
+        logger.info("Cluster state:\n{}", state);
 
-        final List<String> nodesWithShards = clusterState.getState()
-            .routingTable()
+        final List<String> nodesWithShards = state.routingTable()
             .index("test1")
             .shard(0)
             .activeShards()
             .stream()
             .map(shardRouting -> shardRouting.currentNodeId())
-            .map(nodeId -> clusterState.getState().nodes().resolveNode(nodeId))
+            .map(nodeId -> state.nodes().resolveNode(nodeId))
             .map(DiscoveryNode::getName)
             .toList();
 
@@ -344,8 +341,8 @@ public class NoMasterNodeIT extends ESIntegTestCase {
 
         assertBusy(() -> {
             for (String node : nodesWithShards) {
-                ClusterState state = client(node).admin().cluster().prepareState().setLocal(true).get().getState();
-                assertTrue(state.blocks().hasGlobalBlockWithId(NoMasterBlockService.NO_MASTER_BLOCK_ID));
+                ClusterState clusterState = client(node).admin().cluster().prepareState().setLocal(true).get().getState();
+                assertTrue(clusterState.blocks().hasGlobalBlockWithId(NoMasterBlockService.NO_MASTER_BLOCK_ID));
             }
         });
 

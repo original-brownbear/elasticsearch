@@ -12,7 +12,6 @@ import org.elasticsearch.action.admin.cluster.repositories.verify.VerifyReposito
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.common.settings.MockSecureSettings;
@@ -439,8 +438,7 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
             .map(sf -> sf.nodeId())
             .collect(Collectors.toSet());
         assertThat(nodesWithFailures.size(), equalTo(1));
-        final ClusterStateResponse clusterState = client().admin().cluster().prepareState().clear().setNodes(true).get();
-        assertThat(clusterState.getState().nodes().get(nodesWithFailures.iterator().next()).getName(), equalTo(otherNode));
+        assertThat(getNodesFromClusterState().get(nodesWithFailures.iterator().next()).getName(), equalTo(otherNode));
     }
 
     public void testSnapshotIsPartialForDifferentPassword() throws Exception {
@@ -531,8 +529,7 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
             .map(sf -> sf.nodeId())
             .collect(Collectors.toSet());
         assertThat(nodesWithFailures.size(), equalTo(1));
-        final ClusterStateResponse clusterState = client().admin().cluster().prepareState().clear().setNodes(true).get();
-        assertThat(clusterState.getState().nodes().get(nodesWithFailures.iterator().next()).getName(), equalTo(otherNode));
+        assertThat(getNodesFromClusterState().get(nodesWithFailures.iterator().next()).getName(), equalTo(otherNode));
     }
 
     public void testWrongRepositoryPassword() throws Exception {
@@ -770,8 +767,7 @@ public final class EncryptedRepositorySecretIntegTests extends ESIntegTestCase {
             assertThat(snapshotInfos.size(), equalTo(1));
             if (snapshotInfos.get(0).state().completed()) {
                 // Make sure that snapshot clean up operations are finished
-                ClusterStateResponse stateResponse = client().admin().cluster().prepareState().get();
-                SnapshotsInProgress snapshotsInProgress = stateResponse.getState().custom(SnapshotsInProgress.TYPE);
+                SnapshotsInProgress snapshotsInProgress = getState().custom(SnapshotsInProgress.TYPE);
                 if (snapshotsInProgress == null) {
                     return snapshotInfos.get(0);
                 } else {

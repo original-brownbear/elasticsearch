@@ -8,7 +8,6 @@
 
 package org.elasticsearch.gateway;
 
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.cluster.coordination.Coordinator;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -102,8 +101,7 @@ public class MetadataNodesIT extends ESIntegTestCase {
         logger.info("--> close index");
         client().admin().indices().prepareClose(index).get();
         // close the index
-        ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().get();
-        assertThat(clusterStateResponse.getState().getMetadata().index(index).getState().name(), equalTo(IndexMetadata.State.CLOSE.name()));
+        assertThat(getState().getMetadata().index(index).getState().name(), equalTo(IndexMetadata.State.CLOSE.name()));
 
         // update the mapping. this should cause the new meta data to be written although index is closed
         client().admin()

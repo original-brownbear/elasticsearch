@@ -11,10 +11,10 @@ package org.elasticsearch.indices.state;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexResponse;
 import org.elasticsearch.action.support.ActiveShardCount;
+import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
@@ -40,11 +40,11 @@ public class SimpleIndexStateIT extends ESIntegTestCase {
 
         NumShards numShards = getNumShards("test");
 
-        ClusterStateResponse stateResponse = client().admin().cluster().prepareState().get();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
-        assertThat(stateResponse.getState().routingTable().index("test").size(), equalTo(numShards.numPrimaries));
+        ClusterState stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
+        assertThat(stateResponse.routingTable().index("test").size(), equalTo(numShards.numPrimaries));
         assertEquals(
-            stateResponse.getState().routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
+            stateResponse.routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
             numShards.totalNumShards
         );
 
@@ -54,9 +54,9 @@ public class SimpleIndexStateIT extends ESIntegTestCase {
         logger.info("--> closing test index...");
         assertAcked(client().admin().indices().prepareClose("test"));
 
-        stateResponse = client().admin().cluster().prepareState().get();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
-        assertThat(stateResponse.getState().routingTable().index("test"), notNullValue());
+        stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
+        assertThat(stateResponse.routingTable().index("test"), notNullValue());
 
         logger.info("--> trying to index into a closed index ...");
         try {
@@ -73,12 +73,12 @@ public class SimpleIndexStateIT extends ESIntegTestCase {
         logger.info("--> waiting for green status");
         ensureGreen();
 
-        stateResponse = client().admin().cluster().prepareState().get();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
+        stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
 
-        assertThat(stateResponse.getState().routingTable().index("test").size(), equalTo(numShards.numPrimaries));
+        assertThat(stateResponse.routingTable().index("test").size(), equalTo(numShards.numPrimaries));
         assertEquals(
-            stateResponse.getState().routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
+            stateResponse.routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
             numShards.totalNumShards
         );
 
@@ -115,11 +115,11 @@ public class SimpleIndexStateIT extends ESIntegTestCase {
 
         NumShards numShards = getNumShards("test");
 
-        ClusterStateResponse stateResponse = client().admin().cluster().prepareState().get();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
-        assertThat(stateResponse.getState().routingTable().index("test").size(), equalTo(numShards.numPrimaries));
+        ClusterState stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
+        assertThat(stateResponse.routingTable().index("test").size(), equalTo(numShards.numPrimaries));
         assertEquals(
-            stateResponse.getState().routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
+            stateResponse.routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
             numShards.totalNumShards
         );
 

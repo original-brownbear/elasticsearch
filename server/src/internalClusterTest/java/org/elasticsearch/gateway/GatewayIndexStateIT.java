@@ -98,15 +98,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
             .actionGet();
 
         logger.info("--> verify meta _routing required exists");
-        MappingMetadata mappingMd = client().admin()
-            .cluster()
-            .prepareState()
-            .execute()
-            .actionGet()
-            .getState()
-            .metadata()
-            .index("test")
-            .mapping();
+        MappingMetadata mappingMd = getState().metadata().index("test").mapping();
         assertThat(mappingMd.routingRequired(), equalTo(true));
 
         logger.info("--> restarting nodes...");
@@ -116,7 +108,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         ensureYellow();
 
         logger.info("--> verify meta _routing required exists");
-        mappingMd = client().admin().cluster().prepareState().execute().actionGet().getState().metadata().index("test").mapping();
+        mappingMd = getState().metadata().index("test").mapping();
         assertThat(mappingMd.routingRequired(), equalTo(true));
     }
 
@@ -132,11 +124,11 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         logger.info("--> waiting for green status");
         ensureGreen();
 
-        ClusterStateResponse stateResponse = client().admin().cluster().prepareState().execute().actionGet();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
-        assertThat(stateResponse.getState().routingTable().index("test").size(), equalTo(test.numPrimaries));
+        ClusterState stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
+        assertThat(stateResponse.routingTable().index("test").size(), equalTo(test.numPrimaries));
         assertThat(
-            stateResponse.getState().routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
+            stateResponse.routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
             equalTo(test.totalNumShards)
         );
 
@@ -146,9 +138,9 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         logger.info("--> closing test index...");
         assertAcked(client().admin().indices().prepareClose("test"));
 
-        stateResponse = client().admin().cluster().prepareState().execute().actionGet();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
-        assertThat(stateResponse.getState().routingTable().index("test"), notNullValue());
+        stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
+        assertThat(stateResponse.routingTable().index("test"), notNullValue());
 
         logger.info("--> verifying that the state is green");
         ensureGreen();
@@ -172,11 +164,11 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         logger.info("--> verifying that the state is green");
         ensureGreen();
 
-        stateResponse = client().admin().cluster().prepareState().execute().actionGet();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
-        assertThat(stateResponse.getState().routingTable().index("test").size(), equalTo(test.numPrimaries));
+        stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
+        assertThat(stateResponse.routingTable().index("test").size(), equalTo(test.numPrimaries));
         assertThat(
-            stateResponse.getState().routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
+            stateResponse.routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
             equalTo(test.totalNumShards)
         );
 
@@ -186,18 +178,18 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
 
         logger.info("--> closing test index...");
         assertAcked(client().admin().indices().prepareClose("test"));
-        stateResponse = client().admin().cluster().prepareState().execute().actionGet();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
-        assertThat(stateResponse.getState().routingTable().index("test"), notNullValue());
+        stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
+        assertThat(stateResponse.routingTable().index("test"), notNullValue());
 
         logger.info("--> restarting nodes...");
         internalCluster().fullRestart();
         logger.info("--> waiting for two nodes and green status");
         ensureGreen();
 
-        stateResponse = client().admin().cluster().prepareState().execute().actionGet();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
-        assertThat(stateResponse.getState().routingTable().index("test"), notNullValue());
+        stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
+        assertThat(stateResponse.routingTable().index("test"), notNullValue());
 
         logger.info("--> trying to index into a closed index ...");
         try {
@@ -213,11 +205,11 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         logger.info("--> waiting for green status");
         ensureGreen();
 
-        stateResponse = client().admin().cluster().prepareState().execute().actionGet();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
-        assertThat(stateResponse.getState().routingTable().index("test").size(), equalTo(test.numPrimaries));
+        stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.OPEN));
+        assertThat(stateResponse.routingTable().index("test").size(), equalTo(test.numPrimaries));
         assertThat(
-            stateResponse.getState().routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
+            stateResponse.routingTable().index("test").shardsWithState(ShardRoutingState.STARTED).size(),
             equalTo(test.totalNumShards)
         );
 
@@ -413,7 +405,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
                 )
                 .actionGet();
         }
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
 
         final IndexMetadata metadata = state.getMetadata().index("test");
         final IndexMetadata.Builder brokenMeta = IndexMetadata.builder(metadata)
@@ -430,7 +422,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
 
         // check that the cluster does not keep reallocating shards
         assertBusy(() -> {
-            final RoutingTable routingTable = client().admin().cluster().prepareState().get().getState().routingTable();
+            final RoutingTable routingTable = getState().routingTable();
             final IndexRoutingTable indexRoutingTable = routingTable.index("test");
             assertNotNull(indexRoutingTable);
             for (int i = 0; i < indexRoutingTable.size(); i++) {
@@ -445,7 +437,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         }, 60, TimeUnit.SECONDS);
         client().admin().indices().prepareClose("test").get();
 
-        state = client().admin().cluster().prepareState().get().getState();
+        state = getState();
         assertEquals(IndexMetadata.State.CLOSE, state.getMetadata().index(metadata.getIndex()).getState());
         assertEquals("boolean", state.getMetadata().index(metadata.getIndex()).getSettings().get("archived.index.similarity.BM25.type"));
         // try to open it with the broken setting - fail again!
@@ -494,7 +486,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
                 )
                 .actionGet();
         }
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
 
         final IndexMetadata metadata = state.getMetadata().index("test");
         final IndexMetadata.Builder brokenMeta = IndexMetadata.builder(metadata)
@@ -503,7 +495,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
 
         // check that the cluster does not keep reallocating shards
         assertBusy(() -> {
-            final RoutingTable routingTable = client().admin().cluster().prepareState().get().getState().routingTable();
+            final RoutingTable routingTable = getState().routingTable();
             final IndexRoutingTable indexRoutingTable = routingTable.index("test");
             assertNotNull(indexRoutingTable);
             for (int i = 0; i < indexRoutingTable.size(); i++) {
@@ -546,7 +538,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
                 )
                 .actionGet();
         }
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
 
         final Metadata metadata = state.getMetadata();
         final Metadata brokenMeta = Metadata.builder(metadata)
@@ -561,7 +553,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         restartNodesOnBrokenClusterState(ClusterState.builder(state).metadata(brokenMeta));
 
         ensureYellow("test"); // wait for state recovery
-        state = client().admin().cluster().prepareState().get().getState();
+        state = getState();
         assertEquals("true", state.metadata().persistentSettings().get("archived.this.is.unknown"));
         assertEquals(
             "broken",
@@ -571,7 +563,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         // delete these settings
         client().admin().cluster().prepareUpdateSettings().setPersistentSettings(Settings.builder().putNull("archived.*")).get();
 
-        state = client().admin().cluster().prepareState().get().getState();
+        state = getState();
         assertNull(state.metadata().persistentSettings().get("archived.this.is.unknown"));
         assertNull(
             state.metadata().persistentSettings().get("archived." + ShardLimitValidator.SETTING_CLUSTER_MAX_SHARDS_PER_NODE.getKey())

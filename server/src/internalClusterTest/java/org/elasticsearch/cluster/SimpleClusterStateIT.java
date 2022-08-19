@@ -115,7 +115,7 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
     public void testMetadataVersion() {
         createIndex("index-1");
         createIndex("index-2");
-        long baselineVersion = client().admin().cluster().prepareState().get().getState().metadata().version();
+        long baselineVersion = getState().metadata().version();
         assertThat(baselineVersion, greaterThan(0L));
         assertThat(
             client().admin().cluster().prepareState().setIndices("index-1").get().getState().metadata().version(),

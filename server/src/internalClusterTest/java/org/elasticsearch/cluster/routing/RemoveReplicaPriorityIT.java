@@ -53,15 +53,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
             });
         }
 
-        final String dataNodeIdFilter = client().admin()
-            .cluster()
-            .prepareState()
-            .clear()
-            .setNodes(true)
-            .get()
-            .getState()
-            .nodes()
-            .getDataNodes()
+        final String dataNodeIdFilter = getNodesFromClusterState().getDataNodes()
             .values()
             .stream()
             .map(DiscoveryNode::getId)
@@ -80,16 +72,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
         );
 
         assertBusy(() -> {
-            final IndexShardRoutingTable indexShardRoutingTable = client().admin()
-                .cluster()
-                .prepareState()
-                .clear()
-                .setRoutingTable(true)
-                .get()
-                .getState()
-                .routingTable()
-                .index("testindex")
-                .shard(0);
+            final IndexShardRoutingTable indexShardRoutingTable = getRoutingTableFromClusterState().index("testindex").shard(0);
             assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(STARTED), hasSize(2));
             assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(UNASSIGNED), hasSize(2));
         });
@@ -103,16 +86,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
         );
 
         assertBusy(() -> {
-            final IndexShardRoutingTable indexShardRoutingTable = client().admin()
-                .cluster()
-                .prepareState()
-                .clear()
-                .setRoutingTable(true)
-                .get()
-                .getState()
-                .routingTable()
-                .index("testindex")
-                .shard(0);
+            final IndexShardRoutingTable indexShardRoutingTable = getRoutingTableFromClusterState().index("testindex").shard(0);
             assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(STARTED), hasSize(2));
             assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(INITIALIZING), hasSize(1));
             assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(UNASSIGNED), hasSize(1));
@@ -127,16 +101,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
             );
 
             assertBusy(() -> {
-                final IndexShardRoutingTable indexShardRoutingTable = client().admin()
-                    .cluster()
-                    .prepareState()
-                    .clear()
-                    .setRoutingTable(true)
-                    .get()
-                    .getState()
-                    .routingTable()
-                    .index("testindex")
-                    .shard(0);
+                final IndexShardRoutingTable indexShardRoutingTable = getRoutingTableFromClusterState().index("testindex").shard(0);
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(STARTED), hasSize(2));
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(INITIALIZING), hasSize(1));
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(UNASSIGNED), hasSize(0));
@@ -152,16 +117,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
             );
 
             assertBusy(() -> {
-                final IndexShardRoutingTable indexShardRoutingTable = client().admin()
-                    .cluster()
-                    .prepareState()
-                    .clear()
-                    .setRoutingTable(true)
-                    .get()
-                    .getState()
-                    .routingTable()
-                    .index("testindex")
-                    .shard(0);
+                final IndexShardRoutingTable indexShardRoutingTable = getRoutingTableFromClusterState().index("testindex").shard(0);
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(STARTED), hasSize(2));
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(INITIALIZING), hasSize(0));
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(UNASSIGNED), hasSize(0));
@@ -177,16 +133,7 @@ public class RemoveReplicaPriorityIT extends ESIntegTestCase {
             );
 
             assertBusy(() -> {
-                final IndexShardRoutingTable indexShardRoutingTable = client().admin()
-                    .cluster()
-                    .prepareState()
-                    .clear()
-                    .setRoutingTable(true)
-                    .get()
-                    .getState()
-                    .routingTable()
-                    .index("testindex")
-                    .shard(0);
+                final IndexShardRoutingTable indexShardRoutingTable = getRoutingTableFromClusterState().index("testindex").shard(0);
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(STARTED), hasSize(1));
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(INITIALIZING), hasSize(0));
                 assertThat(indexShardRoutingTable.toString(), indexShardRoutingTable.shardsWithState(UNASSIGNED), hasSize(0));

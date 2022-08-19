@@ -12,7 +12,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.cluster.metadata.Metadata;
@@ -382,7 +381,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
                 .get()
         );
 
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
         if (readOnly) {
             assertTrue(Metadata.SETTING_READ_ONLY_SETTING.get(state.getMetadata().transientSettings()));
             assertTrue(Metadata.SETTING_READ_ONLY_SETTING.get(state.getMetadata().persistentSettings()));
@@ -399,7 +398,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
             .build();
         restartNodesOnBrokenClusterState(ClusterState.builder(state).metadata(brokenMeta));
         ensureGreen(); // wait for state recovery
-        state = client().admin().cluster().prepareState().get().getState();
+        state = getState();
         assertTrue(state.getMetadata().persistentSettings().getAsBoolean("archived.this.is.unknown", false));
 
         // cannot remove read only block due to archived settings
@@ -486,7 +485,7 @@ public class ClusterSettingsIT extends ESIntegTestCase {
         clearOrSetFalse(builder, readOnlyAllowDelete, Metadata.SETTING_READ_ONLY_ALLOW_DELETE_SETTING);
         assertAcked(client().admin().cluster().prepareUpdateSettings().setPersistentSettings(builder).setTransientSettings(builder).get());
 
-        state = client().admin().cluster().prepareState().get().getState();
+        state = getState();
         assertFalse(Metadata.SETTING_READ_ONLY_SETTING.get(state.getMetadata().transientSettings()));
         assertFalse(Metadata.SETTING_READ_ONLY_ALLOW_DELETE_SETTING.get(state.getMetadata().transientSettings()));
         assertFalse(Metadata.SETTING_READ_ONLY_SETTING.get(state.getMetadata().persistentSettings()));
@@ -637,14 +636,12 @@ public class ClusterSettingsIT extends ESIntegTestCase {
         consumer.accept(settings, builder);
 
         builder.execute().actionGet();
-        ClusterStateResponse state = client().admin().cluster().prepareState().execute().actionGet();
-        assertEquals(value, getter.apply(state.getState().getMetadata()).get(key));
+        assertEquals(value, getter.apply(getState().getMetadata()).get(key));
 
         ClusterUpdateSettingsRequestBuilder updateBuilder = client().admin().cluster().prepareUpdateSettings();
         consumer.accept(updatedSettings, updateBuilder);
         updateBuilder.execute().actionGet();
 
-        ClusterStateResponse updatedState = client().admin().cluster().prepareState().execute().actionGet();
-        assertEquals(updatedValue, getter.apply(updatedState.getState().getMetadata()).get(key));
+        assertEquals(updatedValue, getter.apply(getState().getMetadata()).get(key));
     }
 }

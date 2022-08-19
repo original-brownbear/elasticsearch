@@ -195,7 +195,7 @@ public class FullRollingRestartIT extends ESIntegTestCase {
                 .actionGet();
         }
         ensureGreen();
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
         RecoveryResponse recoveryResponse = client().admin().indices().prepareRecoveries("test").get();
         for (RecoveryState recoveryState : recoveryResponse.shardRecoveryStates().get("test")) {
             assertTrue(
@@ -205,7 +205,7 @@ public class FullRollingRestartIT extends ESIntegTestCase {
         }
         internalCluster().restartRandomDataNode();
         ensureGreen();
-        client().admin().cluster().prepareState().get().getState();
+        getState();
 
         recoveryResponse = client().admin().indices().prepareRecoveries("test").get();
         for (RecoveryState recoveryState : recoveryResponse.shardRecoveryStates().get("test")) {

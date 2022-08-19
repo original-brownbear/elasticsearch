@@ -181,7 +181,7 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
             .create(createIndexRequest("test").settings(settings))
             .actionGet();
         assertAcked(createIndexResponse);
-        ClusterState clusterState = client().admin().cluster().prepareState().get().getState();
+        ClusterState clusterState = getState();
         RoutingNode routingNodeEntry1 = clusterState.getRoutingNodes().node(node1);
         assertThat(routingNodeEntry1.numberOfShardsWithState(STARTED), equalTo(1));
         assertBusy(() -> { assertTrue(indexExists("test")); });
@@ -189,15 +189,7 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
         assertThat(indexLifecycleService.getScheduler().jobCount(), equalTo(1));
         assertNotNull(indexLifecycleService.getScheduledJob());
         assertBusy(() -> {
-            LifecycleExecutionState lifecycleState = client().admin()
-                .cluster()
-                .prepareState()
-                .execute()
-                .actionGet()
-                .getState()
-                .getMetadata()
-                .index("test")
-                .getLifecycleExecutionState();
+            LifecycleExecutionState lifecycleState = getState().getMetadata().index("test").getLifecycleExecutionState();
             assertThat(lifecycleState.step(), equalTo("complete"));
         });
     }
@@ -452,21 +444,13 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
             .actionGet();
         assertAcked(createIndexResponse);
 
-        ClusterState clusterState = client().admin().cluster().prepareState().get().getState();
+        ClusterState clusterState = getState();
         RoutingNode routingNodeEntry1 = clusterState.getRoutingNodes().node(node2);
         assertThat(routingNodeEntry1.numberOfShardsWithState(STARTED), equalTo(1));
 
         assertBusy(() -> assertTrue(indexExists("test")));
         assertBusy(() -> {
-            LifecycleExecutionState lifecycleState = client().admin()
-                .cluster()
-                .prepareState()
-                .execute()
-                .actionGet()
-                .getState()
-                .getMetadata()
-                .index("test")
-                .getLifecycleExecutionState();
+            LifecycleExecutionState lifecycleState = getState().getMetadata().index("test").getLifecycleExecutionState();
             assertThat(lifecycleState.step(), equalTo("complete"));
         });
     }

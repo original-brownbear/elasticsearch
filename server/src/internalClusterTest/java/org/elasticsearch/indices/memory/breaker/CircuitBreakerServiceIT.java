@@ -331,14 +331,7 @@ public class CircuitBreakerServiceIT extends ESIntegTestCase {
         reset();
 
         assertThat(
-            client().admin()
-                .cluster()
-                .prepareState()
-                .get()
-                .getState()
-                .metadata()
-                .persistentSettings()
-                .get(HierarchyCircuitBreakerService.TOTAL_CIRCUIT_BREAKER_LIMIT_SETTING.getKey()),
+            getState().metadata().persistentSettings().get(HierarchyCircuitBreakerService.TOTAL_CIRCUIT_BREAKER_LIMIT_SETTING.getKey()),
             nullValue()
         );
 

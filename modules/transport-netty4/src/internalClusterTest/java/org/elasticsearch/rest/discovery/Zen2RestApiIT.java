@@ -58,7 +58,7 @@ public class Zen2RestApiIT extends ESNetty4IntegTestCase {
         );
         ensureGreen("test");
 
-        final DiscoveryNodes discoveryNodes = client().admin().cluster().prepareState().clear().setNodes(true).get().getState().nodes();
+        final DiscoveryNodes discoveryNodes = getNodesFromClusterState();
         final Map<String, String> nodeIdsByName = Maps.newMapWithExpectedSize(discoveryNodes.getSize());
         discoveryNodes.forEach(n -> nodeIdsByName.put(n.getName(), n.getId()));
 

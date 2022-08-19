@@ -90,7 +90,7 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
             assertAcked(client().admin().indices().prepareClose("*").get());
         }
 
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
         for (Map.Entry<String, IndexMetadata> indexMetadataEntry : state.getMetadata().indices().entrySet()) {
             assertEquals(IndexMetadata.State.CLOSE, indexMetadataEntry.getValue().getState());
         }
@@ -125,7 +125,7 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
             assertAcked(client().admin().indices().prepareOpen("*").get());
         }
 
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
         for (Map.Entry<String, IndexMetadata> indexMetadataEntry : state.getMetadata().indices().entrySet()) {
             assertEquals(IndexMetadata.State.OPEN, indexMetadataEntry.getValue().getState());
         }
@@ -160,7 +160,7 @@ public class DestructiveOperationsIT extends ESIntegTestCase {
             assertAcked(client().admin().indices().prepareAddBlock(WRITE, "*").get());
         }
 
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = getState();
         assertTrue("write block is set on index1", state.getBlocks().hasIndexBlock("index1", IndexMetadata.INDEX_WRITE_BLOCK));
         assertTrue("write block is set on 1index", state.getBlocks().hasIndexBlock("1index", IndexMetadata.INDEX_WRITE_BLOCK));
     }

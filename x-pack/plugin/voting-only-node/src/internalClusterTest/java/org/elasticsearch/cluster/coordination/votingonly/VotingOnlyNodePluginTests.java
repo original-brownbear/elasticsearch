@@ -73,12 +73,7 @@ public class VotingOnlyNodePluginTests extends ESIntegTestCase {
         internalCluster().setBootstrapMasterNodeIndex(0);
         internalCluster().startNodes(2);
         internalCluster().startNode(addRoles(Set.of(DiscoveryNodeRole.VOTING_ONLY_NODE_ROLE)));
-        assertBusy(
-            () -> assertThat(
-                client().admin().cluster().prepareState().get().getState().getLastCommittedConfiguration().getNodeIds(),
-                hasSize(3)
-            )
-        );
+        assertBusy(() -> assertThat(getState().getLastCommittedConfiguration().getNodeIds(), hasSize(3)));
         assertThat(
             client().admin()
                 .cluster()
@@ -100,36 +95,20 @@ public class VotingOnlyNodePluginTests extends ESIntegTestCase {
         internalCluster().startNodes(2);
         internalCluster().startNode(addRoles(Set.of(DiscoveryNodeRole.VOTING_ONLY_NODE_ROLE)));
         internalCluster().startDataOnlyNodes(randomInt(2));
-        assertBusy(
-            () -> assertThat(
-                client().admin().cluster().prepareState().get().getState().getLastCommittedConfiguration().getNodeIds().size(),
-                equalTo(3)
-            )
-        );
+        assertBusy(() -> assertThat(getState().getLastCommittedConfiguration().getNodeIds().size(), equalTo(3)));
         final String originalMaster = internalCluster().getMasterName();
 
         internalCluster().stopCurrentMasterNode();
         client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).get();
         assertNotEquals(originalMaster, internalCluster().getMasterName());
-        assertThat(
-            VotingOnlyNodePlugin.isVotingOnlyNode(client().admin().cluster().prepareState().get().getState().nodes().getMasterNode()),
-            equalTo(false)
-        );
+        assertThat(VotingOnlyNodePlugin.isVotingOnlyNode(getState().nodes().getMasterNode()), equalTo(false));
     }
 
     public void testBootstrapOnlyVotingOnlyNodes() throws Exception {
         internalCluster().setBootstrapMasterNodeIndex(0);
         internalCluster().startNodes(addRoles(Set.of(DiscoveryNodeRole.VOTING_ONLY_NODE_ROLE)), Settings.EMPTY, Settings.EMPTY);
-        assertBusy(
-            () -> assertThat(
-                client().admin().cluster().prepareState().get().getState().getLastCommittedConfiguration().getNodeIds().size(),
-                equalTo(3)
-            )
-        );
-        assertThat(
-            VotingOnlyNodePlugin.isVotingOnlyNode(client().admin().cluster().prepareState().get().getState().nodes().getMasterNode()),
-            equalTo(false)
-        );
+        assertBusy(() -> assertThat(getState().getLastCommittedConfiguration().getNodeIds().size(), equalTo(3)));
+        assertThat(VotingOnlyNodePlugin.isVotingOnlyNode(getState().nodes().getMasterNode()), equalTo(false));
     }
 
     public void testBootstrapOnlySingleVotingOnlyNode() throws Exception {
@@ -141,11 +120,8 @@ public class VotingOnlyNodePluginTests extends ESIntegTestCase {
                 .build()
         );
         internalCluster().startNode();
-        assertBusy(() -> assertThat(client().admin().cluster().prepareState().get().getState().getNodes().getSize(), equalTo(2)));
-        assertThat(
-            VotingOnlyNodePlugin.isVotingOnlyNode(client().admin().cluster().prepareState().get().getState().nodes().getMasterNode()),
-            equalTo(false)
-        );
+        assertBusy(() -> assertThat(getState().getNodes().getSize(), equalTo(2)));
+        assertThat(VotingOnlyNodePlugin.isVotingOnlyNode(getState().nodes().getMasterNode()), equalTo(false));
     }
 
     public void testVotingOnlyNodesCannotBeMasterWithoutFullMasterNodes() throws Exception {
@@ -153,13 +129,8 @@ public class VotingOnlyNodePluginTests extends ESIntegTestCase {
         internalCluster().startNode();
         internalCluster().startNodes(2, addRoles(Set.of(DiscoveryNodeRole.VOTING_ONLY_NODE_ROLE)));
         internalCluster().startDataOnlyNodes(randomInt(2));
-        assertBusy(
-            () -> assertThat(
-                client().admin().cluster().prepareState().get().getState().getLastCommittedConfiguration().getNodeIds().size(),
-                equalTo(3)
-            )
-        );
-        final String oldMasterId = client().admin().cluster().prepareState().get().getState().nodes().getMasterNodeId();
+        assertBusy(() -> assertThat(getState().getLastCommittedConfiguration().getNodeIds().size(), equalTo(3)));
+        final String oldMasterId = getState().nodes().getMasterNodeId();
 
         internalCluster().stopCurrentMasterNode();
 
@@ -182,7 +153,7 @@ public class VotingOnlyNodePluginTests extends ESIntegTestCase {
         // start a fresh full master node, which will be brought into the cluster as master by the voting-only nodes
         final String newMaster = internalCluster().startNode();
         assertEquals(newMaster, internalCluster().getMasterName());
-        final String newMasterId = client().admin().cluster().prepareState().get().getState().nodes().getMasterNodeId();
+        final String newMasterId = getState().nodes().getMasterNodeId();
         assertNotEquals(oldMasterId, newMasterId);
     }
 

@@ -8,7 +8,6 @@
 
 package org.elasticsearch.recovery;
 
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.indices.IndicesService;
@@ -28,8 +27,7 @@ public class RestartInactiveAutoExpandReplicaNotStaleIT extends ESIntegTestCase 
 
         ensureGreen();
 
-        ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().get();
-        IndexMetadata target = clusterStateResponse.getState().getMetadata().index("test");
+        IndexMetadata target = getState().getMetadata().index("test");
 
         internalCluster().restartNode(replica, new InternalTestCluster.RestartCallback() {
             @Override

@@ -20,12 +20,12 @@ import org.elasticsearch.action.admin.indices.stats.IndexStats;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.RestoreInProgress;
 import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.AllocateUnassignedDecision;
 import org.elasticsearch.cluster.routing.allocation.AllocationDecision;
@@ -295,9 +295,7 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
 
         internalCluster().ensureAtLeastNumDataNodes(2);
 
-        final DiscoveryNode dataNode = randomFrom(
-            client().admin().cluster().prepareState().get().getState().nodes().getDataNodes().values()
-        );
+        final DiscoveryNode dataNode = randomFrom(getState().nodes().getDataNodes().values());
 
         assertAcked(
             client().admin()
@@ -646,10 +644,10 @@ public class SearchableSnapshotsIntegTests extends BaseSearchableSnapshotsIntegT
             assertThat(restoreSnapshotResponse.getRestoreInfo().failedShards(), equalTo(0));
             ensureGreen(restoredIndexName);
 
-            final ClusterState state = client().admin().cluster().prepareState().clear().setRoutingTable(true).get().getState();
+            final RoutingTable routingTable = getRoutingTableFromClusterState();
             assertThat(
-                state.toString(),
-                state.routingTable().index(restoredIndexName).shard(0).size(),
+                routingTable.toString(),
+                routingTable.index(restoredIndexName).shard(0).size(),
                 equalTo(Math.min(replicaLimit + 1, dataNodesCount))
             );
 

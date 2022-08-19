@@ -63,12 +63,7 @@ public class BlobStoreRepositoryCleanupIT extends AbstractSnapshotIntegTestCase 
         assertFutureThrows(client().admin().cluster().prepareCleanupRepository("test-repo").execute(), IllegalStateException.class);
 
         logger.info("-->  ensure cleanup is still in progress");
-        final RepositoryCleanupInProgress cleanup = client().admin()
-            .cluster()
-            .prepareState()
-            .get()
-            .getState()
-            .custom(RepositoryCleanupInProgress.TYPE);
+        final RepositoryCleanupInProgress cleanup = getState().custom(RepositoryCleanupInProgress.TYPE);
         assertTrue(cleanup.hasCleanupInProgress());
 
         logger.info("-->  unblocking master node");

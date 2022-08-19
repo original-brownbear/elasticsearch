@@ -80,7 +80,7 @@ import static org.hamcrest.Matchers.notNullValue;
 public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
 
     public void testRandomActivities() throws InterruptedException {
-        final DiscoveryNodes discoveryNodes = client().admin().cluster().prepareState().clear().setNodes(true).get().getState().nodes();
+        final DiscoveryNodes discoveryNodes = getNodesFromClusterState();
         new TrackedCluster(internalCluster(), nodeNames(discoveryNodes.getMasterNodes()), nodeNames(discoveryNodes.getDataNodes())).run();
         disableRepoConsistencyCheck("have not necessarily written to all repositories");
     }
@@ -338,20 +338,14 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
 
             if (failedPermitAcquisitions.isEmpty() == false) {
                 logger.warn("--> failed to acquire all permits: {}", failedPermitAcquisitions);
-                logger.info(
-                    "--> current cluster state:\n{}",
-                    Strings.toString(client().admin().cluster().prepareState().get().getState(), true, true)
-                );
+                logger.info("--> current cluster state:\n{}", Strings.toString(getState(), true, true));
                 fail("failed to acquire all permits: " + failedPermitAcquisitions);
             }
             logger.info("--> acquired all permits");
 
             if (ThreadPool.terminate(threadPool, 30, TimeUnit.SECONDS) == false) {
                 logger.warn("--> threadpool termination timed out");
-                logger.info(
-                    "--> current cluster state:\n{}",
-                    Strings.toString(client().admin().cluster().prepareState().get().getState(), true, true)
-                );
+                logger.info("--> current cluster state:\n{}", Strings.toString(getState(), true, true));
             }
         }
 
@@ -369,10 +363,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
                         logger.info("--> acquired permit [{}]", label);
                     } else {
                         logger.warn("--> failed to acquire permit [{}]", label);
-                        logger.info(
-                            "--> current cluster state:\n{}",
-                            Strings.toString(client().admin().cluster().prepareState().get().getState(), true, true)
-                        );
+                        logger.info("--> current cluster state:\n{}", Strings.toString(getState(), true, true));
                         logger.info(
                             "--> hot threads:\n{}",
                             client().admin()

@@ -13,7 +13,6 @@ import org.elasticsearch.action.admin.indices.recovery.RecoveryResponse;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
-import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -329,10 +328,6 @@ public abstract class BaseSearchableSnapshotsIntegTestCase extends AbstractSnaps
                 }
             }
         }, 30L, TimeUnit.SECONDS);
-    }
-
-    protected DiscoveryNodes getDiscoveryNodes() {
-        return client().admin().cluster().prepareState().clear().setNodes(true).get().getState().nodes();
     }
 
     protected void assertExecutorIsIdle(String executorName) throws Exception {

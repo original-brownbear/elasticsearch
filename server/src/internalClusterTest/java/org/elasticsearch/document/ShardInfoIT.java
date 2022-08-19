@@ -118,7 +118,7 @@ public class ShardInfoIT extends ESIntegTestCase {
 
     private void ensureActiveShardCopies(final int shardId, final int copyCount) throws Exception {
         assertBusy(() -> {
-            ClusterState state = client().admin().cluster().prepareState().get().getState();
+            ClusterState state = getState();
             assertThat(state.routingTable().index("idx"), not(nullValue()));
             assertThat(state.routingTable().index("idx").shard(shardId), not(nullValue()));
             assertThat(state.routingTable().index("idx").shard(shardId).activeShards().size(), equalTo(copyCount));

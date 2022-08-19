@@ -127,12 +127,7 @@ public class NodesCachesStatsIntegTests extends BaseFrozenSearchableSnapshotsInt
         assertThat(clearCacheResponse.getSuccessfulShards(), greaterThan(0));
         assertThat(clearCacheResponse.getFailedShards(), equalTo(0));
 
-        final String[] dataNodesWithFrozenShards = client().admin()
-            .cluster()
-            .prepareState()
-            .get()
-            .getState()
-            .routingTable()
+        final String[] dataNodesWithFrozenShards = getState().routingTable()
             .index(mountedIndex)
             .shardsWithState(ShardRoutingState.STARTED)
             .stream()

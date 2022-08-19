@@ -258,11 +258,10 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
             // an extra segments_N file is created for bootstrapping new history and associating translog. We can extract the size of this
             // extra file but we have to unwrap the in-memory directory first.
             final Directory unwrappedDir = FilterDirectory.unwrap(
-                internalCluster().getInstance(IndicesService.class, getDiscoveryNodes().resolveNode(shardRouting.currentNodeId()).getName())
-                    .indexServiceSafe(shardRouting.index())
-                    .getShard(shardRouting.getId())
-                    .store()
-                    .directory()
+                internalCluster().getInstance(
+                    IndicesService.class,
+                    getNodesFromClusterState().resolveNode(shardRouting.currentNodeId()).getName()
+                ).indexServiceSafe(shardRouting.index()).getShard(shardRouting.getId()).store().directory()
             );
             assertThat(shardRouting.toString(), unwrappedDir, notNullValue());
             assertThat(shardRouting.toString(), unwrappedDir, instanceOf(ByteBuffersDirectory.class));
@@ -369,9 +368,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
 
         internalCluster().ensureAtLeastNumDataNodes(2);
 
-        final DiscoveryNode dataNode = randomFrom(
-            client().admin().cluster().prepareState().get().getState().nodes().getDataNodes().values()
-        );
+        final DiscoveryNode dataNode = randomFrom(getState().nodes().getDataNodes().values());
 
         assertAcked(
             client().admin()

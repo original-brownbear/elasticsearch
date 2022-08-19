@@ -215,7 +215,7 @@ public class SearchableSnapshotRecoveryStateIntegrationTests extends BaseSearcha
 
     @SuppressForbidden(reason = "Uses FileSystem APIs")
     private long getPhysicalCacheSize(Index index, String snapshotUUID) throws Exception {
-        final Collection<DiscoveryNode> dataNodes = getDiscoveryNodes().getDataNodes().values();
+        final Collection<DiscoveryNode> dataNodes = getNodesFromClusterState().getDataNodes().values();
 
         assertThat(dataNodes.size(), equalTo(1));
 

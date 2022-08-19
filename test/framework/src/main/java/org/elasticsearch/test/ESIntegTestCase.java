@@ -68,8 +68,10 @@ import org.elasticsearch.cluster.coordination.ElasticsearchNodeCommand;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
+import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.DiskThresholdSettings;
@@ -563,7 +565,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
             try {
                 if (cluster() != null) {
                     if (currentClusterScope != Scope.TEST) {
-                        Metadata metadata = client().admin().cluster().prepareState().execute().actionGet().getState().getMetadata();
+                        Metadata metadata = getState().getMetadata();
 
                         final Set<String> persistentKeys = new HashSet<>(metadata.persistentSettings().keySet());
                         assertThat("test leaves persistent cluster metadata behind", persistentKeys, empty());
@@ -832,6 +834,18 @@ public abstract class ESIntegTestCase extends ESTestCase {
         return builder;
     }
 
+    public static ClusterState getState() {
+        return clusterAdmin().prepareState().get().getState();
+    }
+
+    public static DiscoveryNodes getNodesFromClusterState() {
+        return clusterAdmin().prepareState().clear().setNodes(true).get().getState().nodes();
+    }
+
+    public static RoutingTable getRoutingTableFromClusterState() {
+        return clusterAdmin().prepareState().clear().setRoutingTable(true).get().getState().routingTable();
+    }
+
     /**
      * Waits until all nodes have no pending tasks.
      */
@@ -959,7 +973,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
             logger.info(
                 "{} timed out, cluster state:\n{}\npending tasks:\n{}\nhot threads:\n{}\n",
                 method,
-                client().admin().cluster().prepareState().get().getState(),
+                getState(),
                 client().admin().cluster().preparePendingClusterTasks().get(),
                 hotThreads
             );
@@ -995,7 +1009,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
             logger.info(
                 "waitForRelocation timed out (status={}), cluster state:\n{}\n{}",
                 status,
-                client().admin().cluster().prepareState().get().getState(),
+                getState(),
                 client().admin().cluster().preparePendingClusterTasks().get()
             );
             assertThat("timed out waiting for relocation", actionGet.isTimedOut(), equalTo(false));
@@ -1075,11 +1089,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
      * Prints the current cluster state as debug logging.
      */
     public void logClusterState() {
-        logger.debug(
-            "cluster state:\n{}\n{}",
-            client().admin().cluster().prepareState().get().getState(),
-            client().admin().cluster().preparePendingClusterTasks().get()
-        );
+        logger.debug("cluster state:\n{}\n{}", getState(), client().admin().cluster().preparePendingClusterTasks().get());
     }
 
     protected void ensureClusterSizeConsistency() {
@@ -2152,7 +2162,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
     }
 
     protected NumShards getNumShards(String index) {
-        Metadata metadata = client().admin().cluster().prepareState().get().getState().metadata();
+        Metadata metadata = getState().metadata();
         assertThat(metadata.hasIndex(index), equalTo(true));
         int numShards = Integer.valueOf(metadata.index(index).getSettings().get(SETTING_NUMBER_OF_SHARDS));
         int numReplicas = Integer.valueOf(metadata.index(index).getSettings().get(SETTING_NUMBER_OF_REPLICAS));
@@ -2164,7 +2174,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
      */
     public Set<String> assertAllShardsOnNodes(String index, String... pattern) {
         Set<String> nodes = new HashSet<>();
-        ClusterState clusterState = client().admin().cluster().prepareState().execute().actionGet().getState();
+        ClusterState clusterState = getState();
         for (IndexRoutingTable indexRoutingTable : clusterState.routingTable()) {
             for (int shardId = 0; shardId < indexRoutingTable.size(); shardId++) {
                 final IndexShardRoutingTable indexShard = indexRoutingTable.shard(shardId);
