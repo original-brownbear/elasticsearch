@@ -19,7 +19,6 @@ import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.AnalyzerScope;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
-import org.elasticsearch.index.mapper.FieldMapper.Parameter;
 import org.elasticsearch.plugins.MapperPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.script.ScriptCompiler;
@@ -92,10 +91,18 @@ public class ParametrizedMapperTests extends MapperServiceTestCase {
         final Parameter<Boolean> fixed2 = Parameter.boolParam("fixed2", false, m -> toType(m).fixed2, false)
             .addDeprecatedName("fixed2_old");
         final Parameter<String> variable = Parameter.stringParam("variable", true, m -> toType(m).variable, "default").acceptsNull();
-        final Parameter<StringWrapper> wrapper = new Parameter<>("wrapper", false, () -> new StringWrapper("default"), (n, c, o) -> {
-            if (o == null) return null;
-            return new StringWrapper(o.toString());
-        }, m -> toType(m).wrapper, (b, n, v) -> b.field(n, v.name), v -> "wrapper_" + v.name);
+        final Parameter<StringWrapper> wrapper = new FieldMapper.ParameterImpl<>(
+            "wrapper",
+            false,
+            () -> new StringWrapper("default"),
+            (n, c, o) -> {
+                if (o == null) return null;
+                return new StringWrapper(o.toString());
+            },
+            m -> toType(m).wrapper,
+            (b, n, v) -> b.field(n, v.name),
+            v -> "wrapper_" + v.name
+        );
         final Parameter<Integer> intValue = Parameter.intParam("int_value", true, m -> toType(m).intValue, 5).addValidator(n -> {
             if (n > 50) {
                 throw new IllegalArgumentException("Value of [n] cannot be greater than 50");

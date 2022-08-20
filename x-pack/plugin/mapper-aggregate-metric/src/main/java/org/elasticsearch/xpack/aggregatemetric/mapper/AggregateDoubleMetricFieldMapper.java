@@ -118,11 +118,11 @@ public class AggregateDoubleMetricFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
-        private final Parameter<Boolean> ignoreMalformed;
+        private final ParameterImpl<Boolean> ignoreMalformed;
 
-        private final Parameter<EnumSet<Metric>> metrics = new Parameter<>(Names.METRICS, false, () -> Defaults.METRICS, (n, c, o) -> {
+        private final ParameterImpl<EnumSet<Metric>> metrics = new ParameterImpl<>(Names.METRICS, false, () -> Defaults.METRICS, (n, c, o) -> {
             @SuppressWarnings("unchecked")
             List<String> metricsList = (List<String>) o;
             EnumSet<Metric> parsedMetrics = EnumSet.noneOf(Metric.class);
@@ -146,12 +146,12 @@ public class AggregateDoubleMetricFieldMapper extends FieldMapper {
          * For {@link AggregateDoubleMetricFieldMapper} fields gauge, counter and summary metric types are
          * supported.
          */
-        private final Parameter<MetricType> timeSeriesMetric;
+        private final ParameterImpl<MetricType> timeSeriesMetric;
 
         /**
          * Set the default metric so that query operations are delegated to it.
          */
-        private final Parameter<Metric> defaultMetric = new Parameter<>(Names.DEFAULT_METRIC, false, () -> null, (n, c, o) -> {
+        private final ParameterImpl<Metric> defaultMetric = new ParameterImpl<>(Names.DEFAULT_METRIC, false, () -> null, (n, c, o) -> {
             try {
                 return Metric.valueOf(o.toString());
             } catch (IllegalArgumentException e) {
@@ -181,8 +181,8 @@ public class AggregateDoubleMetricFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { ignoreMalformed, metrics, defaultMetric, meta, timeSeriesMetric };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { ignoreMalformed, metrics, defaultMetric, meta, timeSeriesMetric };
         }
 
         public Builder metric(MetricType metric) {

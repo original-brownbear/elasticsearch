@@ -50,16 +50,16 @@ public class Murmur3FieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).fieldType().isStored(), false);
-        final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        final ParameterImpl<Boolean> stored = Parameter.storeParam(m -> toType(m).fieldType().isStored(), false);
+        final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         public Builder(String name) {
             super(name);
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { stored, meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { stored, meta };
         }
 
         @Override

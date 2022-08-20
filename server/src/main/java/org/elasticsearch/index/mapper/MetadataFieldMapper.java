@@ -45,12 +45,12 @@ public abstract class MetadataFieldMapper extends FieldMapper {
      * ignored by the update merge.  Instead, we use an {@link Explicit} object that
      * will serialize its value if it has been configured, no matter what the value is.
      */
-    public static Parameter<Explicit<Boolean>> updateableBoolParam(
+    public static ParameterImpl<Explicit<Boolean>> updateableBoolParam(
         String name,
         Function<FieldMapper, Explicit<Boolean>> initializer,
         boolean defaultValue
     ) {
-        return new Parameter<>(
+        return new ParameterImpl<>(
             name,
             true,
             defaultValue ? () -> Explicit.IMPLICIT_TRUE : () -> Explicit.IMPLICIT_FALSE,

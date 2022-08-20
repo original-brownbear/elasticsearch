@@ -741,7 +741,7 @@ public class DateFieldMapperTests extends MapperTestCase {
 
         // Check that we allow the use of camel case date formats on 7.x indices
         @SuppressWarnings("unchecked")
-        FieldMapper.Parameter<String> formatParam = (FieldMapper.Parameter<String>) builder.getParameters()[3];
+        Parameter<String> formatParam = (Parameter<String>) builder.getParameters()[3];
         formatParam.parse("date_time_format", mock(MappingParserContext.class), "strictDateOptionalTime");
         builder.buildFormatter(); // shouldn't throw exception
 
@@ -758,7 +758,7 @@ public class DateFieldMapperTests extends MapperTestCase {
         );
 
         @SuppressWarnings("unchecked")
-        final FieldMapper.Parameter<String> newFormatParam = (FieldMapper.Parameter<String>) newFieldBuilder.getParameters()[3];
+        final Parameter<String> newFormatParam = (Parameter<String>) newFieldBuilder.getParameters()[3];
 
         // Check that we don't allow the use of camel case date formats on 8.x indices
         assertEquals(

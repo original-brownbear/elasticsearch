@@ -76,7 +76,7 @@ public class SourceFieldMapper extends MetadataFieldMapper {
             .setMergeValidator(
                 (previous, current, conflicts) -> (previous.value() == current.value()) || (previous.value() && current.value() == false)
             );
-        private final Parameter<Mode> mode = new Parameter<>(
+        private final ParameterImpl<Mode> mode = new ParameterImpl<>(
             "mode",
             true,
             () -> null,

@@ -22,17 +22,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.index.fielddata.FieldDataContext;
 import org.elasticsearch.index.fielddata.IndexFieldData;
-import org.elasticsearch.index.mapper.ArraySourceValueFetcher;
-import org.elasticsearch.index.mapper.DocumentParserContext;
-import org.elasticsearch.index.mapper.FieldMapper;
-import org.elasticsearch.index.mapper.MappedFieldType;
-import org.elasticsearch.index.mapper.MapperBuilderContext;
-import org.elasticsearch.index.mapper.MapperParsingException;
-import org.elasticsearch.index.mapper.MappingLookup;
-import org.elasticsearch.index.mapper.MappingParser;
-import org.elasticsearch.index.mapper.SimpleMappedFieldType;
-import org.elasticsearch.index.mapper.TextSearchInfo;
-import org.elasticsearch.index.mapper.ValueFetcher;
+import org.elasticsearch.index.mapper.*;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
@@ -62,7 +52,7 @@ public class DenseVectorFieldMapper extends FieldMapper {
     }
 
     public static class Builder extends FieldMapper.Builder {
-        private final Parameter<Integer> dims = new Parameter<>(
+        private final ParameterImpl<Integer> dims = new ParameterImpl<>(
             "dims",
             false,
             () -> null,
@@ -95,7 +85,7 @@ public class DenseVectorFieldMapper extends FieldMapper {
             null,
             VectorSimilarity.class
         );
-        private final Parameter<IndexOptions> indexOptions = new Parameter<>(
+        private final ParameterImpl<IndexOptions> indexOptions = new ParameterImpl<>(
             "index_options",
             false,
             () -> null,

@@ -51,14 +51,14 @@ public class PointFieldMapper extends AbstractPointGeometryFieldMapper<Cartesian
 
     public static class Builder extends FieldMapper.Builder {
 
-        final Parameter<Boolean> indexed = Parameter.indexParam(m -> builder(m).indexed.get(), true);
-        final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> builder(m).hasDocValues.get(), true);
-        final Parameter<Boolean> stored = Parameter.storeParam(m -> builder(m).stored.get(), false);
+        final ParameterImpl<Boolean> indexed = Parameter.indexParam(m -> builder(m).indexed.get(), true);
+        final ParameterImpl<Boolean> hasDocValues = Parameter.docValuesParam(m -> builder(m).hasDocValues.get(), true);
+        final ParameterImpl<Boolean> stored = Parameter.storeParam(m -> builder(m).stored.get(), false);
 
-        final Parameter<Explicit<Boolean>> ignoreMalformed;
-        final Parameter<Explicit<Boolean>> ignoreZValue = ignoreZValueParam(m -> builder(m).ignoreZValue.get());
-        final Parameter<CartesianPoint> nullValue;
-        final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        final ParameterImpl<Explicit<Boolean>> ignoreMalformed;
+        final ParameterImpl<Explicit<Boolean>> ignoreZValue = ignoreZValueParam(m -> builder(m).ignoreZValue.get());
+        final ParameterImpl<CartesianPoint> nullValue;
+        final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         public Builder(String name, boolean ignoreMalformedByDefault) {
             super(name);
@@ -72,8 +72,8 @@ public class PointFieldMapper extends AbstractPointGeometryFieldMapper<Cartesian
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { indexed, hasDocValues, stored, ignoreMalformed, ignoreZValue, nullValue, meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { indexed, hasDocValues, stored, ignoreMalformed, ignoreZValue, nullValue, meta };
         }
 
         private static CartesianPoint parseNullValue(Object nullValue, boolean ignoreZValue, boolean ignoreMalformed) {

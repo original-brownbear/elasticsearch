@@ -49,7 +49,7 @@ public class DateScriptFieldType extends AbstractScriptFieldType<DateFieldScript
     public static final RuntimeField.Parser PARSER = new RuntimeField.Parser(Builder::new);
 
     private static class Builder extends AbstractScriptFieldType.Builder<DateFieldScript.Factory> {
-        private final FieldMapper.Parameter<String> format = FieldMapper.Parameter.stringParam(
+        private final Parameter<String> format = Parameter.stringParam(
             "format",
             true,
             RuntimeField.initializerNotSupported(),
@@ -61,7 +61,7 @@ public class DateScriptFieldType extends AbstractScriptFieldType<DateFieldScript
             }
         ).acceptsNull();
 
-        private final FieldMapper.Parameter<Locale> locale = new FieldMapper.Parameter<>(
+        private final Parameter<Locale> locale = new FieldMapper.ParameterImpl<>(
             "locale",
             true,
             () -> null,
@@ -80,8 +80,8 @@ public class DateScriptFieldType extends AbstractScriptFieldType<DateFieldScript
         }
 
         @Override
-        protected List<FieldMapper.Parameter<?>> getParameters() {
-            List<FieldMapper.Parameter<?>> parameters = new ArrayList<>(super.getParameters());
+        protected List<Parameter<?>> getParameters() {
+            List<Parameter<?>> parameters = new ArrayList<>(super.getParameters());
             parameters.add(format);
             parameters.add(locale);
             return Collections.unmodifiableList(parameters);

@@ -24,8 +24,8 @@ public abstract class AbstractShapeGeometryFieldMapper<T> extends AbstractGeomet
 
     private static final Explicit<Orientation> IMPLICIT_RIGHT = new Explicit<>(Orientation.RIGHT, false);
 
-    public static Parameter<Explicit<Orientation>> orientationParam(Function<FieldMapper, Explicit<Orientation>> initializer) {
-        return new Parameter<>(
+    public static ParameterImpl<Explicit<Orientation>> orientationParam(Function<FieldMapper, Explicit<Orientation>> initializer) {
+        return new ParameterImpl<>(
             "orientation",
             true,
             () -> IMPLICIT_RIGHT,

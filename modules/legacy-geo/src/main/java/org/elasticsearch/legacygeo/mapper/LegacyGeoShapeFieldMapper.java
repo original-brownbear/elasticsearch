@@ -38,6 +38,7 @@ import org.elasticsearch.index.mapper.MappedFieldType;
 import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.MapperBuilderContext;
 import org.elasticsearch.index.mapper.MapperParsingException;
+import org.elasticsearch.index.mapper.Parameter;
 import org.elasticsearch.index.query.SearchExecutionContext;
 import org.elasticsearch.legacygeo.ShapesAvailability;
 import org.elasticsearch.legacygeo.XShapeCollection;
@@ -153,7 +154,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
         final Parameter<Explicit<Boolean>> coerce;
         Parameter<Explicit<Orientation>> orientation = orientationParam(m -> builder(m).orientation.get());
 
-        Parameter<SpatialStrategy> strategy = new Parameter<>(
+        Parameter<SpatialStrategy> strategy = new ParameterImpl<>(
             "strategy",
             false,
             () -> SpatialStrategy.RECURSIVE,
@@ -163,7 +164,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
             SpatialStrategy::getStrategyName
         ).deprecated();
         Parameter<String> tree = Parameter.stringParam("tree", false, m -> builder(m).tree.get(), Defaults.TREE).deprecated();
-        Parameter<Integer> treeLevels = new Parameter<>(
+        Parameter<Integer> treeLevels = new ParameterImpl<>(
             "tree_levels",
             false,
             () -> null,
@@ -178,7 +179,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
             },
             Objects::toString
         ).deprecated();
-        Parameter<DistanceUnit.Distance> precision = new Parameter<>(
+        Parameter<DistanceUnit.Distance> precision = new ParameterImpl<>(
             "precision",
             false,
             () -> null,
@@ -193,7 +194,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
             },
             Objects::toString
         ).deprecated();
-        Parameter<Double> distanceErrorPct = new Parameter<>(
+        Parameter<Double> distanceErrorPct = new ParameterImpl<>(
             "distance_error_pct",
             true,
             () -> null,
@@ -202,7 +203,7 @@ public class LegacyGeoShapeFieldMapper extends AbstractShapeGeometryFieldMapper<
             XContentBuilder::field,
             Objects::toString
         ).deprecated().acceptsNull();
-        Parameter<Boolean> pointsOnly = new Parameter<>(
+        Parameter<Boolean> pointsOnly = new ParameterImpl<>(
             "points_only",
             false,
             () -> null,

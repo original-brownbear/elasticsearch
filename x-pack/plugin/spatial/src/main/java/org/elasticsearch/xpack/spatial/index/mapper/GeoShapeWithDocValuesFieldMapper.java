@@ -93,15 +93,15 @@ public class GeoShapeWithDocValuesFieldMapper extends AbstractShapeGeometryField
 
     public static class Builder extends FieldMapper.Builder {
 
-        final Parameter<Boolean> indexed = Parameter.indexParam(m -> builder(m).indexed.get(), true);
-        final Parameter<Boolean> hasDocValues;
+        final ParameterImpl<Boolean> indexed = Parameter.indexParam(m -> builder(m).indexed.get(), true);
+        final ParameterImpl<Boolean> hasDocValues;
 
-        final Parameter<Explicit<Boolean>> ignoreMalformed;
-        final Parameter<Explicit<Boolean>> ignoreZValue = ignoreZValueParam(m -> builder(m).ignoreZValue.get());
-        final Parameter<Explicit<Boolean>> coerce;
-        final Parameter<Explicit<Orientation>> orientation = orientationParam(m -> builder(m).orientation.get());
+        final ParameterImpl<Explicit<Boolean>> ignoreMalformed;
+        final ParameterImpl<Explicit<Boolean>> ignoreZValue = ignoreZValueParam(m -> builder(m).ignoreZValue.get());
+        final ParameterImpl<Explicit<Boolean>> coerce;
+        final ParameterImpl<Explicit<Orientation>> orientation = orientationParam(m -> builder(m).orientation.get());
 
-        final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         private final Version version;
         private final GeoFormatterFactory<Geometry> geoFormatterFactory;
@@ -122,8 +122,8 @@ public class GeoShapeWithDocValuesFieldMapper extends AbstractShapeGeometryField
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { indexed, hasDocValues, ignoreMalformed, ignoreZValue, coerce, orientation, meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { indexed, hasDocValues, ignoreMalformed, ignoreZValue, coerce, orientation, meta };
         }
 
         @Override

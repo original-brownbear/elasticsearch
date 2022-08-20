@@ -21,9 +21,9 @@ import java.util.stream.Stream;
 public final class LeafRuntimeField implements RuntimeField {
     private final String name;
     private final MappedFieldType mappedFieldType;
-    private final List<FieldMapper.Parameter<?>> parameters;
+    private final List<Parameter<?>> parameters;
 
-    public LeafRuntimeField(String name, MappedFieldType mappedFieldType, List<FieldMapper.Parameter<?>> parameters) {
+    public LeafRuntimeField(String name, MappedFieldType mappedFieldType, List<Parameter<?>> parameters) {
         this.name = name;
         this.mappedFieldType = mappedFieldType;
         this.parameters = parameters;
@@ -45,7 +45,7 @@ public final class LeafRuntimeField implements RuntimeField {
         builder.startObject(name);
         builder.field("type", mappedFieldType.typeName());
         boolean includeDefaults = params.paramAsBoolean("include_defaults", false);
-        for (FieldMapper.Parameter<?> parameter : parameters) {
+        for (Parameter<?> parameter : parameters) {
             parameter.toXContent(builder, includeDefaults);
         }
         builder.endObject();

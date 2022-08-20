@@ -64,7 +64,7 @@ public class FieldNamesFieldMapper extends MetadataFieldMapper {
 
     static class Builder extends MetadataFieldMapper.Builder {
 
-        private final Parameter<Explicit<Boolean>> enabled = updateableBoolParam(
+        private final ParameterImpl<Explicit<Boolean>> enabled = updateableBoolParam(
             "enabled",
             m -> toType(m).enabled,
             Defaults.ENABLED.value()
@@ -82,8 +82,8 @@ public class FieldNamesFieldMapper extends MetadataFieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { enabled };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { enabled };
         }
 
         @Override

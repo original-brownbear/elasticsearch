@@ -197,9 +197,9 @@ public final class KeywordFieldMapper extends FieldMapper {
                         "Field ["
                             + TimeSeriesParams.TIME_SERIES_DIMENSION_PARAM
                             + "] requires that ["
-                            + indexed.name
+                            + indexed.name()
                             + "] and ["
-                            + hasDocValues.name
+                            + hasDocValues.name()
                             + "] are true"
                     );
                 }

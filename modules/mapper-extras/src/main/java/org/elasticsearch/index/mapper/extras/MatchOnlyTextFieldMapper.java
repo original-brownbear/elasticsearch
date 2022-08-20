@@ -82,7 +82,7 @@ public class MatchOnlyTextFieldMapper extends FieldMapper {
 
         private final Version indexCreatedVersion;
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         private final TextParams.Analyzers analyzers;
 
@@ -102,8 +102,8 @@ public class MatchOnlyTextFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { meta };
         }
 
         private MatchOnlyTextFieldType buildFieldType(MapperBuilderContext context) {

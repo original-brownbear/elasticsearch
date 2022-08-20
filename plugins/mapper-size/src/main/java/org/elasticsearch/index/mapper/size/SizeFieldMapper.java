@@ -30,15 +30,15 @@ public class SizeFieldMapper extends MetadataFieldMapper {
 
     public static class Builder extends MetadataFieldMapper.Builder {
 
-        private final Parameter<Explicit<Boolean>> enabled = updateableBoolParam("enabled", m -> toType(m).enabled, false);
+        private final ParameterImpl<Explicit<Boolean>> enabled = updateableBoolParam("enabled", m -> toType(m).enabled, false);
 
         private Builder() {
             super(NAME);
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { enabled };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { enabled };
         }
 
         @Override

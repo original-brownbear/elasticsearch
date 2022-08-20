@@ -74,7 +74,7 @@ public class RangeFieldMapper extends FieldMapper {
             m -> toType(m).format,
             Defaults.DATE_FORMATTER.pattern()
         );
-        private final Parameter<Locale> locale = new Parameter<>(
+        private final ParameterImpl<Locale> locale = new ParameterImpl<>(
             "locale",
             false,
             () -> Locale.ROOT,

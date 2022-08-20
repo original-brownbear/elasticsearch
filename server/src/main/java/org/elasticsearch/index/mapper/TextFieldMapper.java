@@ -243,7 +243,7 @@ public class TextFieldMapper extends FieldMapper {
         final Parameter<String> termVectors = TextParams.termVectors(m -> ((TextFieldMapper) m).termVectors);
 
         final Parameter<Boolean> fieldData = Parameter.boolParam("fielddata", true, m -> ((TextFieldMapper) m).fieldData, false);
-        final Parameter<FielddataFrequencyFilter> freqFilter = new Parameter<>(
+        final Parameter<FielddataFrequencyFilter> freqFilter = new ParameterImpl<>(
             "fielddata_frequency_filter",
             true,
             () -> DEFAULT_FILTER,
@@ -260,7 +260,7 @@ public class TextFieldMapper extends FieldMapper {
         );
 
         final Parameter<Boolean> indexPhrases = Parameter.boolParam("index_phrases", false, m -> ((TextFieldMapper) m).indexPhrases, false);
-        final Parameter<PrefixConfig> indexPrefixes = new Parameter<>(
+        final Parameter<PrefixConfig> indexPrefixes = new ParameterImpl<>(
             "index_prefixes",
             false,
             () -> null,

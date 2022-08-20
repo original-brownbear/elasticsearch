@@ -15,7 +15,6 @@ import org.elasticsearch.index.analysis.AnalysisMode;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
-import org.elasticsearch.index.mapper.FieldMapper.Parameter;
 import org.elasticsearch.index.similarity.SimilarityProvider;
 
 import java.util.Objects;
@@ -127,8 +126,8 @@ public final class TextParams {
         return Parameter.boolParam("norms", true, initializer, defaultValue).setMergeValidator((o, n, c) -> o == n || (o && n == false));
     }
 
-    public static Parameter<SimilarityProvider> similarity(Function<FieldMapper, SimilarityProvider> init) {
-        return new Parameter<>(
+    public static FieldMapper.ParameterImpl<SimilarityProvider> similarity(Function<FieldMapper, SimilarityProvider> init) {
+        return new FieldMapper.ParameterImpl<>(
             "similarity",
             false,
             () -> null,

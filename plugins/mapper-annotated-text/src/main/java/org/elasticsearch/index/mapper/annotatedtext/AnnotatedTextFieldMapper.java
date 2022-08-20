@@ -75,16 +75,16 @@ public class AnnotatedTextFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Boolean> store = Parameter.storeParam(m -> builder(m).store.getValue(), false);
+        private final ParameterImpl<Boolean> store = Parameter.storeParam(m -> builder(m).store.getValue(), false);
 
         final TextParams.Analyzers analyzers;
-        final Parameter<SimilarityProvider> similarity = TextParams.similarity(m -> builder(m).similarity.getValue());
+        final ParameterImpl<SimilarityProvider> similarity = TextParams.similarity(m -> builder(m).similarity.getValue());
 
-        final Parameter<String> indexOptions = TextParams.textIndexOptions(m -> builder(m).indexOptions.getValue());
-        final Parameter<Boolean> norms = TextParams.norms(true, m -> builder(m).norms.getValue());
-        final Parameter<String> termVectors = TextParams.termVectors(m -> builder(m).termVectors.getValue());
+        final ParameterImpl<String> indexOptions = TextParams.textIndexOptions(m -> builder(m).indexOptions.getValue());
+        final ParameterImpl<Boolean> norms = TextParams.norms(true, m -> builder(m).norms.getValue());
+        final ParameterImpl<String> termVectors = TextParams.termVectors(m -> builder(m).termVectors.getValue());
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         private final Version indexCreatedVersion;
 
@@ -100,8 +100,8 @@ public class AnnotatedTextFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] {
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] {
                 store,
                 indexOptions,
                 norms,

@@ -8,7 +8,6 @@
 
 package org.elasticsearch.index.mapper;
 
-import org.elasticsearch.index.mapper.FieldMapper.Parameter;
 import org.elasticsearch.script.CompositeFieldScript;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
@@ -69,7 +68,7 @@ public interface RuntimeField extends ToXContentFragment {
         public final void parse(String name, MappingParserContext parserContext, Map<String, Object> fieldNode) {
             Map<String, Parameter<?>> paramsMap = new HashMap<>();
             for (Parameter<?> param : getParameters()) {
-                paramsMap.put(param.name, param);
+                paramsMap.put(param.name(), param);
             }
             String type = (String) fieldNode.remove("type");
             for (Iterator<Map.Entry<String, Object>> iterator = fieldNode.entrySet().iterator(); iterator.hasNext();) {

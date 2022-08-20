@@ -101,19 +101,19 @@ public class SearchAsYouTypeFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Boolean> index = Parameter.indexParam(m -> builder(m).index.get(), true);
-        private final Parameter<Boolean> store = Parameter.storeParam(m -> builder(m).store.get(), false);
+        private final ParameterImpl<Boolean> index = Parameter.indexParam(m -> builder(m).index.get(), true);
+        private final ParameterImpl<Boolean> store = Parameter.storeParam(m -> builder(m).store.get(), false);
 
         // This is only here because for some reason the initial impl of this always serialized
         // `doc_values=false`, even though it cannot be set; and so we need to continue
         // serializing it forever because of mapper assertions in mixed clusters.
-        private final Parameter<Boolean> docValues = Parameter.docValuesParam(m -> false, false).addValidator(v -> {
+        private final ParameterImpl<Boolean> docValues = Parameter.docValuesParam(m -> false, false).addValidator(v -> {
             if (v) {
                 throw new MapperParsingException("Cannot set [doc_values] on field of type [search_as_you_type]");
             }
         }).alwaysSerialize();
 
-        private final Parameter<Integer> maxShingleSize = Parameter.intParam(
+        private final ParameterImpl<Integer> maxShingleSize = Parameter.intParam(
             "max_shingle_size",
             false,
             m -> builder(m).maxShingleSize.get(),
@@ -134,13 +134,13 @@ public class SearchAsYouTypeFieldMapper extends FieldMapper {
         }).alwaysSerialize();
 
         final TextParams.Analyzers analyzers;
-        final Parameter<SimilarityProvider> similarity = TextParams.similarity(m -> builder(m).similarity.get());
+        final ParameterImpl<SimilarityProvider> similarity = TextParams.similarity(m -> builder(m).similarity.get());
 
-        final Parameter<String> indexOptions = TextParams.textIndexOptions(m -> builder(m).indexOptions.get());
-        final Parameter<Boolean> norms = TextParams.norms(true, m -> builder(m).norms.get());
-        final Parameter<String> termVectors = TextParams.termVectors(m -> builder(m).termVectors.get());
+        final ParameterImpl<String> indexOptions = TextParams.textIndexOptions(m -> builder(m).indexOptions.get());
+        final ParameterImpl<Boolean> norms = TextParams.norms(true, m -> builder(m).norms.get());
+        final ParameterImpl<String> termVectors = TextParams.termVectors(m -> builder(m).termVectors.get());
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         private final Version indexCreatedVersion;
 
@@ -156,8 +156,8 @@ public class SearchAsYouTypeFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] {
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] {
                 index,
                 store,
                 docValues,

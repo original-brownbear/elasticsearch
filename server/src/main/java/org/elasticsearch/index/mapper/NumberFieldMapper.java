@@ -144,7 +144,7 @@ public class NumberFieldMapper extends FieldMapper {
                 ignoreMalformedByDefault
             );
             this.coerce = Parameter.explicitBoolParam("coerce", true, m -> toType(m).coerce, coerceByDefault);
-            this.nullValue = new Parameter<>(
+            this.nullValue = new ParameterImpl<>(
                 "null_value",
                 false,
                 () -> null,
@@ -165,9 +165,9 @@ public class NumberFieldMapper extends FieldMapper {
                         "Field ["
                             + TimeSeriesParams.TIME_SERIES_DIMENSION_PARAM
                             + "] requires that ["
-                            + indexed.name
+                            + indexed.name()
                             + "] and ["
-                            + hasDocValues.name
+                            + hasDocValues.name()
                             + "] are true"
                     );
                 }
@@ -176,7 +176,7 @@ public class NumberFieldMapper extends FieldMapper {
             this.metric = TimeSeriesParams.metricParam(m -> toType(m).metricType, MetricType.gauge, MetricType.counter).addValidator(v -> {
                 if (v != null && hasDocValues.getValue() == false) {
                     throw new IllegalArgumentException(
-                        "Field [" + TimeSeriesParams.TIME_SERIES_METRIC_PARAM + "] requires that [" + hasDocValues.name + "] is true"
+                        "Field [" + TimeSeriesParams.TIME_SERIES_METRIC_PARAM + "] requires that [" + hasDocValues.name() + "] is true"
                     );
                 }
             }).precludesParameters(dimension);

@@ -230,7 +230,7 @@ public final class DateFieldMapper extends FieldMapper {
         private final Parameter<Map<String, String>> meta = Parameter.metaParam();
 
         private final Parameter<String> format;
-        private final Parameter<Locale> locale = new Parameter<>(
+        private final Parameter<Locale> locale = new ParameterImpl<>(
             "locale",
             false,
             () -> Locale.ROOT,

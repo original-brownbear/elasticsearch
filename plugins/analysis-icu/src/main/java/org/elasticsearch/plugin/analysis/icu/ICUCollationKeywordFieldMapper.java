@@ -219,42 +219,42 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        final Parameter<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
-        final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
-        final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).fieldType.stored(), false);
+        final ParameterImpl<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
+        final ParameterImpl<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
+        final ParameterImpl<Boolean> stored = Parameter.storeParam(m -> toType(m).fieldType.stored(), false);
 
-        final Parameter<String> indexOptions = TextParams.keywordIndexOptions(m -> toType(m).indexOptions);
-        final Parameter<Boolean> hasNorms = TextParams.norms(false, m -> toType(m).fieldType.omitNorms() == false);
+        final ParameterImpl<String> indexOptions = TextParams.keywordIndexOptions(m -> toType(m).indexOptions);
+        final ParameterImpl<Boolean> hasNorms = TextParams.norms(false, m -> toType(m).fieldType.omitNorms() == false);
 
-        final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
-        final Parameter<String> rules = Parameter.stringParam("rules", false, m -> toType(m).params.rules, null).acceptsNull();
-        final Parameter<String> language = Parameter.stringParam("language", false, m -> toType(m).params.language, null).acceptsNull();
-        final Parameter<String> country = Parameter.stringParam("country", false, m -> toType(m).params.country, null).acceptsNull();
-        final Parameter<String> variant = Parameter.stringParam("variant", false, m -> toType(m).params.variant, null).acceptsNull();
-        final Parameter<String> strength = Parameter.stringParam("strength", false, m -> toType(m).params.strength, null).acceptsNull();
-        final Parameter<String> decomposition = Parameter.stringParam("decomposition", false, m -> toType(m).params.decomposition, null)
+        final ParameterImpl<String> rules = Parameter.stringParam("rules", false, m -> toType(m).params.rules, null).acceptsNull();
+        final ParameterImpl<String> language = Parameter.stringParam("language", false, m -> toType(m).params.language, null).acceptsNull();
+        final ParameterImpl<String> country = Parameter.stringParam("country", false, m -> toType(m).params.country, null).acceptsNull();
+        final ParameterImpl<String> variant = Parameter.stringParam("variant", false, m -> toType(m).params.variant, null).acceptsNull();
+        final ParameterImpl<String> strength = Parameter.stringParam("strength", false, m -> toType(m).params.strength, null).acceptsNull();
+        final ParameterImpl<String> decomposition = Parameter.stringParam("decomposition", false, m -> toType(m).params.decomposition, null)
             .acceptsNull();
-        final Parameter<String> alternate = Parameter.stringParam("alternate", false, m -> toType(m).params.alternate, null).acceptsNull();
-        final Parameter<Boolean> caseLevel = Parameter.boolParam("case_level", false, m -> toType(m).params.caseLevel, false);
-        final Parameter<String> caseFirst = Parameter.stringParam("case_first", false, m -> toType(m).params.caseFirst, null).acceptsNull();
-        final Parameter<Boolean> numeric = Parameter.boolParam("numeric", false, m -> toType(m).params.numeric, false);
-        final Parameter<String> variableTop = Parameter.stringParam("variable_top", false, m -> toType(m).params.variableTop, null)
+        final ParameterImpl<String> alternate = Parameter.stringParam("alternate", false, m -> toType(m).params.alternate, null).acceptsNull();
+        final ParameterImpl<Boolean> caseLevel = Parameter.boolParam("case_level", false, m -> toType(m).params.caseLevel, false);
+        final ParameterImpl<String> caseFirst = Parameter.stringParam("case_first", false, m -> toType(m).params.caseFirst, null).acceptsNull();
+        final ParameterImpl<Boolean> numeric = Parameter.boolParam("numeric", false, m -> toType(m).params.numeric, false);
+        final ParameterImpl<String> variableTop = Parameter.stringParam("variable_top", false, m -> toType(m).params.variableTop, null)
             .acceptsNull();
-        final Parameter<Boolean> hiraganaQuaternaryMode = Parameter.boolParam(
+        final ParameterImpl<Boolean> hiraganaQuaternaryMode = Parameter.boolParam(
             "hiragana_quaternary_mode",
             false,
             m -> toType(m).params.hiraganaQuaternaryMode,
             false
         ).acceptsNull();
 
-        final Parameter<Integer> ignoreAbove = Parameter.intParam("ignore_above", true, m -> toType(m).ignoreAbove, Integer.MAX_VALUE)
+        final ParameterImpl<Integer> ignoreAbove = Parameter.intParam("ignore_above", true, m -> toType(m).ignoreAbove, Integer.MAX_VALUE)
             .addValidator(v -> {
                 if (v < 0) {
                     throw new IllegalArgumentException("[ignore_above] must be positive, got [" + v + "]");
                 }
             });
-        final Parameter<String> nullValue = Parameter.stringParam("null_value", false, m -> toType(m).nullValue, null).acceptsNull();
+        final ParameterImpl<String> nullValue = Parameter.stringParam("null_value", false, m -> toType(m).nullValue, null).acceptsNull();
 
         public Builder(String name) {
             super(name);
@@ -271,8 +271,8 @@ public class ICUCollationKeywordFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] {
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] {
                 indexed,
                 hasDocValues,
                 stored,

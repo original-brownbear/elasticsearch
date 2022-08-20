@@ -85,7 +85,7 @@ public class BooleanFieldMapper extends FieldMapper {
         private final Parameter<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
         private final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).stored, false);
 
-        private final Parameter<Boolean> nullValue = new Parameter<>(
+        private final Parameter<Boolean> nullValue = new ParameterImpl<>(
             "null_value",
             false,
             () -> null,

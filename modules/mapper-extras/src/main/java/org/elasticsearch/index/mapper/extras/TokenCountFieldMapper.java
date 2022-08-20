@@ -43,12 +43,12 @@ public class TokenCountFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Boolean> index = Parameter.indexParam(m -> toType(m).index, true);
-        private final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
-        private final Parameter<Boolean> store = Parameter.storeParam(m -> toType(m).store, false);
+        private final ParameterImpl<Boolean> index = Parameter.indexParam(m -> toType(m).index, true);
+        private final ParameterImpl<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
+        private final ParameterImpl<Boolean> store = Parameter.storeParam(m -> toType(m).store, false);
 
-        private final Parameter<NamedAnalyzer> analyzer = Parameter.analyzerParam("analyzer", true, m -> toType(m).analyzer, () -> null);
-        private final Parameter<Integer> nullValue = new Parameter<>(
+        private final ParameterImpl<NamedAnalyzer> analyzer = Parameter.analyzerParam("analyzer", true, m -> toType(m).analyzer, () -> null);
+        private final ParameterImpl<Integer> nullValue = new ParameterImpl<>(
             "null_value",
             false,
             () -> null,
@@ -57,22 +57,22 @@ public class TokenCountFieldMapper extends FieldMapper {
             XContentBuilder::field,
             Objects::toString
         ).acceptsNull();
-        private final Parameter<Boolean> enablePositionIncrements = Parameter.boolParam(
+        private final ParameterImpl<Boolean> enablePositionIncrements = Parameter.boolParam(
             "enable_position_increments",
             false,
             m -> toType(m).enablePositionIncrements,
             true
         );
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         public Builder(String name) {
             super(name);
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { index, hasDocValues, store, analyzer, nullValue, enablePositionIncrements, meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { index, hasDocValues, store, analyzer, nullValue, enablePositionIncrements, meta };
         }
 
         @Override

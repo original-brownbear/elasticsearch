@@ -90,7 +90,7 @@ public class VersionStringFieldMapper extends FieldMapper {
 
     static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         Builder(String name) {
             super(name);
@@ -113,8 +113,8 @@ public class VersionStringFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { meta };
         }
     }
 

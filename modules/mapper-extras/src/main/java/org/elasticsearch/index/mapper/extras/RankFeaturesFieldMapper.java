@@ -41,21 +41,21 @@ public class RankFeaturesFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Boolean> positiveScoreImpact = Parameter.boolParam(
+        private final ParameterImpl<Boolean> positiveScoreImpact = Parameter.boolParam(
             "positive_score_impact",
             false,
             m -> ft(m).positiveScoreImpact,
             true
         );
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         public Builder(String name) {
             super(name);
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { positiveScoreImpact, meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { positiveScoreImpact, meta };
         }
 
         @Override

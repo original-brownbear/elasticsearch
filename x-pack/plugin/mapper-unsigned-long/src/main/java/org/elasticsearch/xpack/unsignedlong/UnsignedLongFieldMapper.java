@@ -69,24 +69,24 @@ public class UnsignedLongFieldMapper extends FieldMapper {
     }
 
     public static class Builder extends FieldMapper.Builder {
-        private final Parameter<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
-        private final Parameter<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
-        private final Parameter<Boolean> stored = Parameter.storeParam(m -> toType(m).stored, false);
-        private final Parameter<Explicit<Boolean>> ignoreMalformed;
-        private final Parameter<String> nullValue;
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Boolean> indexed = Parameter.indexParam(m -> toType(m).indexed, true);
+        private final ParameterImpl<Boolean> hasDocValues = Parameter.docValuesParam(m -> toType(m).hasDocValues, true);
+        private final ParameterImpl<Boolean> stored = Parameter.storeParam(m -> toType(m).stored, false);
+        private final ParameterImpl<Explicit<Boolean>> ignoreMalformed;
+        private final ParameterImpl<String> nullValue;
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         /**
          * Parameter that marks this field as a time series dimension.
          */
-        private final Parameter<Boolean> dimension;
+        private final ParameterImpl<Boolean> dimension;
 
         /**
          * Parameter that marks this field as a time series metric defining its time series metric type.
          * For the numeric fields gauge and counter metric types are
          * supported
          */
-        private final Parameter<MetricType> metric;
+        private final ParameterImpl<MetricType> metric;
 
         public Builder(String name, Settings settings) {
             this(name, IGNORE_MALFORMED_SETTING.get(settings));
@@ -100,7 +100,7 @@ public class UnsignedLongFieldMapper extends FieldMapper {
                 m -> toType(m).ignoreMalformed,
                 ignoreMalformedByDefault
             );
-            this.nullValue = new Parameter<>(
+            this.nullValue = new ParameterImpl<>(
                 "null_value",
                 false,
                 () -> null,
@@ -159,8 +159,8 @@ public class UnsignedLongFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { indexed, hasDocValues, stored, ignoreMalformed, nullValue, meta, dimension, metric };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { indexed, hasDocValues, stored, ignoreMalformed, nullValue, meta, dimension, metric };
         }
 
         Number parsedNullValue() {

@@ -67,14 +67,14 @@ public class HistogramFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
-        private final Parameter<Explicit<Boolean>> ignoreMalformed;
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Explicit<Boolean>> ignoreMalformed;
 
         /**
          * Parameter that marks this field as a time series metric defining its time series metric type.
          * For {@link HistogramFieldMapper} fields only the histogram metric type is supported.
          */
-        private final Parameter<TimeSeriesParams.MetricType> metric;
+        private final ParameterImpl<TimeSeriesParams.MetricType> metric;
 
         public Builder(String name, boolean ignoreMalformedByDefault) {
             super(name);
@@ -89,8 +89,8 @@ public class HistogramFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { ignoreMalformed, meta, metric };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { ignoreMalformed, meta, metric };
         }
 
         @Override

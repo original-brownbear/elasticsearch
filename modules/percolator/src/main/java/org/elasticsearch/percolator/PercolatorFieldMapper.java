@@ -108,7 +108,7 @@ public class PercolatorFieldMapper extends FieldMapper {
 
     static class Builder extends FieldMapper.Builder {
 
-        private final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        private final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         private final Supplier<SearchExecutionContext> searchExecutionContext;
         private final boolean mapUnmappedFieldsAsText;
@@ -128,8 +128,8 @@ public class PercolatorFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { meta };
         }
 
         @Override

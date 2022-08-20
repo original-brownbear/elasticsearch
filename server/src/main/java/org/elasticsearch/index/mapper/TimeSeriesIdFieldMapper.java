@@ -81,7 +81,7 @@ public class TimeSeriesIdFieldMapper extends MetadataFieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
+        protected ParameterImpl<?>[] getParameters() {
             return EMPTY_PARAMETERS;
         }
 

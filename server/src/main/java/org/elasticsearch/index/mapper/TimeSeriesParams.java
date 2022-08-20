@@ -39,11 +39,11 @@ public final class TimeSeriesParams {
         }
     }
 
-    public static FieldMapper.Parameter<MetricType> metricParam(Function<FieldMapper, MetricType> initializer, MetricType... values) {
+    public static Parameter<MetricType> metricParam(Function<FieldMapper, MetricType> initializer, MetricType... values) {
         assert values.length > 0;
         EnumSet<MetricType> acceptedValues = EnumSet.noneOf(MetricType.class);
         acceptedValues.addAll(Arrays.asList(values));
-        return FieldMapper.Parameter.restrictedEnumParam(
+        return Parameter.restrictedEnumParam(
             TIME_SERIES_METRIC_PARAM,
             false,
             initializer,
@@ -53,8 +53,8 @@ public final class TimeSeriesParams {
         ).acceptsNull();
     }
 
-    public static FieldMapper.Parameter<Boolean> dimensionParam(Function<FieldMapper, Boolean> initializer) {
-        return FieldMapper.Parameter.boolParam(TIME_SERIES_DIMENSION_PARAM, false, initializer, false);
+    public static Parameter<Boolean> dimensionParam(Function<FieldMapper, Boolean> initializer) {
+        return Parameter.boolParam(TIME_SERIES_DIMENSION_PARAM, false, initializer, false);
     }
 
 }

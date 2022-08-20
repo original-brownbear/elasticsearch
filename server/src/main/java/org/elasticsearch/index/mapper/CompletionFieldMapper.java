@@ -129,7 +129,7 @@ public class CompletionFieldMapper extends FieldMapper {
             m -> builder(m).preservePosInc.get(),
             Defaults.DEFAULT_POSITION_INCREMENTS
         ).alwaysSerialize();
-        private final Parameter<ContextMappings> contexts = new Parameter<>(
+        private final Parameter<ContextMappings> contexts = new ParameterImpl<>(
             "contexts",
             false,
             () -> null,

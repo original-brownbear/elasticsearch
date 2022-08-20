@@ -52,7 +52,7 @@ public final class LookupRuntimeFieldType extends MappedFieldType {
     public static final String CONTENT_TYPE = "lookup";
 
     private static class Builder extends RuntimeField.Builder {
-        private final FieldMapper.Parameter<String> targetIndex = FieldMapper.Parameter.stringParam(
+        private final Parameter<String> targetIndex = Parameter.stringParam(
             "target_index",
             false,
             RuntimeField.initializerNotSupported(),
@@ -63,7 +63,7 @@ public final class LookupRuntimeFieldType extends MappedFieldType {
             }
         });
 
-        private final FieldMapper.Parameter<String> inputField = FieldMapper.Parameter.stringParam(
+        private final Parameter<String> inputField = Parameter.stringParam(
             "input_field",
             false,
             RuntimeField.initializerNotSupported(),
@@ -77,7 +77,7 @@ public final class LookupRuntimeFieldType extends MappedFieldType {
             }
         });
 
-        private final FieldMapper.Parameter<String> targetField = FieldMapper.Parameter.stringParam(
+        private final Parameter<String> targetField = Parameter.stringParam(
             "target_field",
             false,
             RuntimeField.initializerNotSupported(),
@@ -88,8 +88,8 @@ public final class LookupRuntimeFieldType extends MappedFieldType {
             }
         });
 
-        private static FieldMapper.Parameter<List<FieldAndFormat>> newFetchFields() {
-            final FieldMapper.Parameter<List<FieldAndFormat>> fetchFields = new FieldMapper.Parameter<>(
+        private static Parameter<List<FieldAndFormat>> newFetchFields() {
+            final Parameter<List<FieldAndFormat>> fetchFields = new FieldMapper.ParameterImpl<>(
                 "fetch_fields",
                 false,
                 List::of,
@@ -125,7 +125,7 @@ public final class LookupRuntimeFieldType extends MappedFieldType {
             }).toList();
         }
 
-        private final FieldMapper.Parameter<List<FieldAndFormat>> fetchFields = newFetchFields();
+        private final Parameter<List<FieldAndFormat>> fetchFields = newFetchFields();
 
         Builder(String name) {
             super(name);
@@ -133,8 +133,8 @@ public final class LookupRuntimeFieldType extends MappedFieldType {
         }
 
         @Override
-        protected List<FieldMapper.Parameter<?>> getParameters() {
-            final List<FieldMapper.Parameter<?>> parameters = new ArrayList<>(super.getParameters());
+        protected List<Parameter<?>> getParameters() {
+            final List<Parameter<?>> parameters = new ArrayList<>(super.getParameters());
             parameters.add(targetIndex);
             parameters.add(inputField);
             parameters.add(targetField);

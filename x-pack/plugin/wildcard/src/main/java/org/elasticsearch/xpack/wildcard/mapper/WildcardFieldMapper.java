@@ -193,15 +193,15 @@ public class WildcardFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        final Parameter<Integer> ignoreAbove = Parameter.intParam("ignore_above", true, m -> toType(m).ignoreAbove, Defaults.IGNORE_ABOVE)
+        final ParameterImpl<Integer> ignoreAbove = Parameter.intParam("ignore_above", true, m -> toType(m).ignoreAbove, Defaults.IGNORE_ABOVE)
             .addValidator(v -> {
                 if (v < 0) {
                     throw new IllegalArgumentException("[ignore_above] must be positive, got [" + v + "]");
                 }
             });
-        final Parameter<String> nullValue = Parameter.stringParam("null_value", false, m -> toType(m).nullValue, null).acceptsNull();
+        final ParameterImpl<String> nullValue = Parameter.stringParam("null_value", false, m -> toType(m).nullValue, null).acceptsNull();
 
-        final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         final Version indexVersionCreated;
 
@@ -211,8 +211,8 @@ public class WildcardFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { ignoreAbove, nullValue, meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { ignoreAbove, nullValue, meta };
         }
 
         Builder ignoreAbove(int ignoreAbove) {

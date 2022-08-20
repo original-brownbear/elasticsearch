@@ -29,7 +29,7 @@ public abstract class AbstractPointGeometryFieldMapper<T> extends AbstractGeomet
         Supplier<T> def,
         Serializer<T> serializer
     ) {
-        return new Parameter<T>("null_value", false, def, parser, initializer, serializer, Objects::toString);
+        return new ParameterImpl<T>("null_value", false, def, parser, initializer, serializer, Objects::toString);
     }
 
     protected final T nullValue;

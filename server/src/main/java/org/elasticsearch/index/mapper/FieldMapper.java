@@ -12,7 +12,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.LeafReaderContext;
 import org.elasticsearch.Version;
-import org.elasticsearch.common.Explicit;
 import org.elasticsearch.common.TriFunction;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.logging.DeprecationCategory;
@@ -21,10 +20,8 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.Maps;
-import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.index.analysis.NamedAnalyzer;
 import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.lookup.SearchLookup;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentFragment;
@@ -37,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -50,10 +46,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static org.elasticsearch.core.Strings.format;
-
 public abstract class FieldMapper extends Mapper implements Cloneable {
-    private static final Logger logger = LogManager.getLogger(FieldMapper.class);
+
+    static final Logger logger = LogManager.getLogger(FieldMapper.class);
 
     public static final Setting<Boolean> IGNORE_MALFORMED_SETTING = Setting.boolSetting(
         "index.mapping.ignore_malformed",
@@ -64,7 +59,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
 
     private static final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(FieldMapper.class);
     @SuppressWarnings("rawtypes")
-    static final Parameter<?>[] EMPTY_PARAMETERS = new Parameter[0];
+    static final ParameterImpl<?>[] EMPTY_PARAMETERS = new ParameterImpl[0];
 
     protected final MappedFieldType mappedFieldType;
     protected final MultiFields multiFields;
@@ -563,7 +558,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
      * A configurable parameter for a field mapper
      * @param <T> the type of the value the parameter holds
      */
-    public static final class Parameter<T> implements Supplier<T> {
+    public static final class ParameterImpl<T> implements Parameter<T> {
 
         public final String name;
         private List<String> deprecatedNames = List.of();
@@ -595,7 +590,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          *                      the use of default values or other indirection to this constructor.
          * @param conflictSerializer a function that serializes a parameter value on conflict
          */
-        public Parameter(
+        public ParameterImpl(
             String name,
             boolean updateable,
             Supplier<T> defaultValue,
@@ -616,9 +611,20 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             this.conflictSerializer = conflictSerializer;
         }
 
+        @Override
+        public boolean isDeprecated() {
+            return deprecated;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
         /**
          * Returns the current value of the parameter
          */
+        @Override
         public T getValue() {
             return isSet ? value : getDefaultValue();
         }
@@ -631,6 +637,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         /**
          * Returns the default value of the parameter
          */
+        @Override
         public T getDefaultValue() {
             return defaultValue.get();
         }
@@ -638,11 +645,13 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         /**
          * Sets the current value of the parameter
          */
+        @Override
         public void setValue(T value) {
             this.isSet = true;
             this.value = value;
         }
 
+        @Override
         public boolean isConfigured() {
             return isSet && Objects.equals(value, getDefaultValue()) == false;
         }
@@ -650,11 +659,13 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         /**
          * Allows the parameter to accept a {@code null} value
          */
-        public Parameter<T> acceptsNull() {
+        @Override
+        public ParameterImpl<T> acceptsNull() {
             this.acceptsNull = true;
             return this;
         }
 
+        @Override
         public boolean canAcceptNull() {
             return acceptsNull;
         }
@@ -665,7 +676,8 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * If this parameter name is encountered during parsing, a deprecation warning will
          * be emitted.  The parameter will be serialized with its main name.
          */
-        public Parameter<T> addDeprecatedName(String deprecatedName) {
+        @Override
+        public ParameterImpl<T> addDeprecatedName(String deprecatedName) {
             this.deprecatedNames = CollectionUtils.appendToCopyNoNullElements(this.deprecatedNames, deprecatedName);
             return this;
         }
@@ -676,16 +688,23 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * If this parameter is encountered during parsing, a deprecation warning will
          * be emitted.
          */
-        public Parameter<T> deprecated() {
+        @Override
+        public ParameterImpl<T> deprecated() {
             this.deprecated = true;
             return this;
+        }
+
+        @Override
+        public List<String> deprecatedNames() {
+            return deprecatedNames;
         }
 
         /**
          * Adds validation to a parameter, called after parsing and merging. Multiple
          * validators can be added and all of them will be executed.
          */
-        public Parameter<T> addValidator(Consumer<T> validator) {
+        @Override
+        public ParameterImpl<T> addValidator(Consumer<T> validator) {
             this.validator = this.validator == null ? validator : this.validator.andThen(validator);
             return this;
         }
@@ -693,7 +712,8 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         /**
          * Configure a custom serialization check for this parameter
          */
-        public Parameter<T> setSerializerCheck(SerializerCheck<T> check) {
+        @Override
+        public ParameterImpl<T> setSerializerCheck(SerializerCheck<T> check) {
             this.serializerCheck = check;
             return this;
         }
@@ -701,7 +721,8 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         /**
          * Always serialize this parameter, no matter its value
          */
-        public Parameter<T> alwaysSerialize() {
+        @Override
+        public ParameterImpl<T> alwaysSerialize() {
             this.serializerCheck = (id, ic, v) -> true;
             return this;
         }
@@ -709,6 +730,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
         /**
          * Never serialize this parameter, no matter its value
          */
+        @Override
         public Parameter<T> neverSerialize() {
             this.serializerCheck = (id, ic, v) -> false;
             return this;
@@ -718,22 +740,26 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * Sets a custom merge validator.  By default, merges are accepted if the
          * parameter is updateable, or if the previous and new values are equal
          */
-        public Parameter<T> setMergeValidator(MergeValidator<T> mergeValidator) {
+        @Override
+        public ParameterImpl<T> setMergeValidator(MergeValidator<T> mergeValidator) {
             this.mergeValidator = mergeValidator;
             return this;
         }
 
-        public Parameter<T> requiresParameter(Parameter<?> ps) {
+        @Override
+        public ParameterImpl<T> requiresParameter(Parameter<?> ps) {
             this.requires = CollectionUtils.appendToCopyNoNullElements(this.requires, ps);
             return this;
         }
 
-        public Parameter<T> precludesParameters(Parameter<?>... ps) {
+        @Override
+        public ParameterImpl<T> precludesParameters(Parameter<?>... ps) {
             this.precludes = CollectionUtils.appendToCopyNoNullElements(this.precludes, ps);
             return this;
         }
 
-        void validate() {
+        @Override
+        public void validate() {
             // Iterate over the list of validators and execute them one by one.
             if (validator != null) {
                 validator.accept(getValue());
@@ -741,18 +767,21 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             if (this.isConfigured()) {
                 for (Parameter<?> p : requires) {
                     if (p.isConfigured() == false) {
-                        throw new IllegalArgumentException("Field [" + name + "] requires field [" + p.name + "] to be configured");
+                        throw new IllegalArgumentException("Field [" + name + "] requires field [" + p.name() + "] to be configured");
                     }
                 }
                 for (Parameter<?> p : precludes) {
                     if (p.isConfigured()) {
-                        throw new IllegalArgumentException("Field [" + p.name + "] cannot be set in conjunction with field [" + name + "]");
+                        throw new IllegalArgumentException(
+                            "Field [" + p.name() + "] cannot be set in conjunction with field [" + name + "]"
+                        );
                     }
                 }
             }
         }
 
-        private void init(FieldMapper toInit) {
+        @Override
+        public void init(FieldMapper toInit) {
             setValue(initializer.apply(toInit));
         }
 
@@ -762,11 +791,13 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
          * @param context   the parser context
          * @param in        the object
          */
+        @Override
         public void parse(String field, MappingParserContext context, Object in) {
             setValue(parser.apply(field, context, in));
         }
 
-        private void merge(FieldMapper toMerge, Conflicts conflicts) {
+        @Override
+        public void merge(FieldMapper toMerge, Conflicts conflicts) {
             T value = initializer.apply(toMerge);
             T current = getValue();
             if (mergeValidator.canMerge(current, value, conflicts)) {
@@ -776,314 +807,14 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             }
         }
 
-        protected void toXContent(XContentBuilder builder, boolean includeDefaults) throws IOException {
+        @Override
+        public void toXContent(XContentBuilder builder, boolean includeDefaults) throws IOException {
             T value = getValue();
             if (serializerCheck.check(includeDefaults, isConfigured(), value)) {
                 serializer.serialize(builder, name, value);
             }
         }
 
-        /**
-         * Defines a parameter that takes the values {@code true} or {@code false}
-         * @param name          the parameter name
-         * @param updateable    whether the parameter can be changed by a mapping update
-         * @param initializer   a function that reads the parameter value from an existing mapper
-         * @param defaultValue  the default value, to be used if the parameter is undefined in a mapping
-         */
-        public static Parameter<Boolean> boolParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, Boolean> initializer,
-            boolean defaultValue
-        ) {
-            return new Parameter<>(
-                name,
-                updateable,
-                defaultValue ? () -> true : () -> false,
-                (n, c, o) -> XContentMapValues.nodeBooleanValue(o),
-                initializer,
-                XContentBuilder::field,
-                Objects::toString
-            );
-        }
-
-        /**
-         * Defines a parameter that takes the values {@code true} or {@code false}, and will always serialize
-         * its value if configured.
-         * @param name          the parameter name
-         * @param updateable    whether the parameter can be changed by a mapping update
-         * @param initializer   a function that reads the parameter value from an existing mapper
-         * @param defaultValue  the default value, to be used if the parameter is undefined in a mapping
-         */
-        public static Parameter<Explicit<Boolean>> explicitBoolParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, Explicit<Boolean>> initializer,
-            boolean defaultValue
-        ) {
-            return new Parameter<>(
-                name,
-                updateable,
-                defaultValue ? () -> Explicit.IMPLICIT_TRUE : () -> Explicit.IMPLICIT_FALSE,
-                (n, c, o) -> Explicit.explicitBoolean(XContentMapValues.nodeBooleanValue(o)),
-                initializer,
-                (b, n, v) -> b.field(n, v.value()),
-                v -> Boolean.toString(v.value())
-            );
-        }
-
-        /**
-         * Defines a parameter that takes an integer value
-         * @param name          the parameter name
-         * @param updateable    whether the parameter can be changed by a mapping update
-         * @param initializer   a function that reads the parameter value from an existing mapper
-         * @param defaultValue  the default value, to be used if the parameter is undefined in a mapping
-         */
-        public static Parameter<Integer> intParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, Integer> initializer,
-            int defaultValue
-        ) {
-            return new Parameter<>(
-                name,
-                updateable,
-                () -> defaultValue,
-                (n, c, o) -> XContentMapValues.nodeIntegerValue(o),
-                initializer,
-                XContentBuilder::field,
-                Objects::toString
-            );
-        }
-
-        /**
-         * Defines a parameter that takes a string value
-         * @param name          the parameter name
-         * @param updateable    whether the parameter can be changed by a mapping update
-         * @param initializer   a function that reads the parameter value from an existing mapper
-         * @param defaultValue  the default value, to be used if the parameter is undefined in a mapping
-         */
-        public static Parameter<String> stringParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, String> initializer,
-            String defaultValue
-        ) {
-            return stringParam(name, updateable, initializer, defaultValue, XContentBuilder::field);
-        }
-
-        public static Parameter<String> stringParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, String> initializer,
-            String defaultValue,
-            Serializer<String> serializer
-        ) {
-            return new Parameter<>(
-                name,
-                updateable,
-                defaultValue == null ? () -> null : () -> defaultValue,
-                (n, c, o) -> XContentMapValues.nodeStringValue(o),
-                initializer,
-                serializer,
-                Function.identity()
-            );
-        }
-
-        @SuppressWarnings("unchecked")
-        public static Parameter<List<String>> stringArrayParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, List<String>> initializer
-        ) {
-            return new Parameter<>(name, updateable, List::of, (n, c, o) -> {
-                List<Object> values = (List<Object>) o;
-                List<String> strValues = new ArrayList<>();
-                for (Object item : values) {
-                    strValues.add(item.toString());
-                }
-                return strValues;
-            }, initializer, XContentBuilder::stringListField, Objects::toString);
-        }
-
-        /**
-         * Defines a parameter that takes any of the values of an enumeration.
-         *
-         * @param name          the parameter name
-         * @param updateable    whether the parameter can be changed by a mapping update
-         * @param initializer   a function that reads the parameter value from an existing mapper
-         * @param defaultValue  the default value, to be used if the parameter is undefined in a mapping
-         * @param enumClass     the enumeration class the parameter takes values from
-         */
-        public static <T extends Enum<T>> Parameter<T> enumParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, T> initializer,
-            T defaultValue,
-            Class<T> enumClass
-        ) {
-            Set<T> acceptedValues = EnumSet.allOf(enumClass);
-            return restrictedEnumParam(name, updateable, initializer, defaultValue, enumClass, acceptedValues);
-        }
-
-        /**
-         * Defines a parameter that takes one of a restricted set of values from an enumeration.
-         *
-         * @param name          the parameter name
-         * @param updateable    whether the parameter can be changed by a mapping update
-         * @param initializer   a function that reads the parameter value from an existing mapper
-         * @param defaultValue  the default value, to be used if the parameter is undefined in a mapping
-         * @param enumClass     the enumeration class the parameter takes values from
-         * @param values        the set of values that the parameter can take
-         */
-        public static <T extends Enum<T>> Parameter<T> restrictedEnumParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, T> initializer,
-            T defaultValue,
-            Class<T> enumClass,
-            Set<T> values
-        ) {
-            assert values.size() > 0;
-            return new Parameter<T>(name, updateable, () -> defaultValue, (n, c, o) -> {
-                if (o == null) {
-                    return defaultValue;
-                }
-                try {
-                    @SuppressWarnings("unchecked")
-                    T enumValue = Enum.valueOf(enumClass, (String) o);
-                    return enumValue;
-                } catch (IllegalArgumentException e) {
-                    throw new MapperParsingException("Unknown value [" + o + "] for field [" + name + "] - accepted values are " + values);
-                }
-            }, initializer, XContentBuilder::field, Objects::toString).addValidator(v -> {
-                if (v != null && values.contains(v) == false) {
-                    throw new MapperParsingException("Unknown value [" + v + "] for field [" + name + "] - accepted values are " + values);
-                }
-            });
-        }
-
-        /**
-         * Defines a parameter that takes an analyzer name
-         * @param name              the parameter name
-         * @param updateable        whether the parameter can be changed by a mapping update
-         * @param initializer       a function that reads the parameter value from an existing mapper
-         * @param defaultAnalyzer   the default value, to be used if the parameter is undefined in a mapping
-         * @param indexCreatedVersion the version on which this index was created
-         */
-        public static Parameter<NamedAnalyzer> analyzerParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, NamedAnalyzer> initializer,
-            Supplier<NamedAnalyzer> defaultAnalyzer,
-            Version indexCreatedVersion
-        ) {
-            return new Parameter<>(name, updateable, defaultAnalyzer, (n, c, o) -> {
-                String analyzerName = o.toString();
-                NamedAnalyzer a = c.getIndexAnalyzers().get(analyzerName);
-                if (a == null) {
-                    if (indexCreatedVersion.isLegacyIndexVersion()) {
-                        logger.warn(() -> format("Could not find analyzer [%s] of legacy index, falling back to default", analyzerName));
-                        a = defaultAnalyzer.get();
-                    } else {
-                        throw new IllegalArgumentException("analyzer [" + analyzerName + "] has not been configured in mappings");
-                    }
-                }
-                return a;
-            }, initializer, (b, n, v) -> b.field(n, v.name()), NamedAnalyzer::name);
-        }
-
-        /**
-         * Defines a parameter that takes an analyzer name
-         * @param name              the parameter name
-         * @param updateable        whether the parameter can be changed by a mapping update
-         * @param initializer       a function that reads the parameter value from an existing mapper
-         * @param defaultAnalyzer   the default value, to be used if the parameter is undefined in a mapping
-         */
-        public static Parameter<NamedAnalyzer> analyzerParam(
-            String name,
-            boolean updateable,
-            Function<FieldMapper, NamedAnalyzer> initializer,
-            Supplier<NamedAnalyzer> defaultAnalyzer
-        ) {
-            return analyzerParam(name, updateable, initializer, defaultAnalyzer, Version.CURRENT);
-        }
-
-        /**
-         * Declares a metadata parameter
-         */
-        public static Parameter<Map<String, String>> metaParam() {
-            return new Parameter<>(
-                "meta",
-                true,
-                Collections::emptyMap,
-                (n, c, o) -> TypeParsers.parseMeta(n, o),
-                m -> m.fieldType().meta(),
-                XContentBuilder::stringStringMap,
-                Objects::toString
-            );
-        }
-
-        public static Parameter<Boolean> indexParam(Function<FieldMapper, Boolean> initializer, boolean defaultValue) {
-            return Parameter.boolParam("index", false, initializer, defaultValue);
-        }
-
-        public static Parameter<Boolean> storeParam(Function<FieldMapper, Boolean> initializer, boolean defaultValue) {
-            return Parameter.boolParam("store", false, initializer, defaultValue);
-        }
-
-        public static Parameter<Boolean> docValuesParam(Function<FieldMapper, Boolean> initializer, boolean defaultValue) {
-            return Parameter.boolParam("doc_values", false, initializer, defaultValue);
-        }
-
-        /**
-         * Defines a script parameter
-         * @param initializer   retrieves the equivalent parameter from an existing FieldMapper for use in merges
-         * @return a script parameter
-         */
-        public static Parameter<Script> scriptParam(Function<FieldMapper, Script> initializer) {
-            return new FieldMapper.Parameter<>("script", false, () -> null, (n, c, o) -> {
-                if (o == null) {
-                    return null;
-                }
-                Script script = Script.parse(o);
-                if (script.getType() == ScriptType.STORED) {
-                    throw new IllegalArgumentException("stored scripts are not supported on field [" + n + "]");
-                }
-                return script;
-            }, initializer, XContentBuilder::field, Objects::toString).acceptsNull();
-        }
-
-        /**
-         * Defines an on_script_error parameter
-         * @param initializer   retrieves the equivalent parameter from an existing FieldMapper for use in merges
-         * @param dependentScriptParam the corresponding required script parameter
-         * @return a new on_error_script parameter
-         */
-        public static Parameter<String> onScriptErrorParam(
-            Function<FieldMapper, String> initializer,
-            Parameter<Script> dependentScriptParam
-        ) {
-            return new Parameter<>(
-                "on_script_error",
-                true,
-                () -> "fail",
-                (n, c, o) -> XContentMapValues.nodeStringValue(o),
-                initializer,
-                XContentBuilder::field,
-                Function.identity()
-            ).addValidator(v -> {
-                switch (v) {
-                    case "fail":
-                    case "continue":
-                        return;
-                    default:
-                        throw new MapperParsingException(
-                            "Unknown value [" + v + "] for field [on_script_error] - accepted values are [fail, continue]"
-                        );
-                }
-            }).requiresParameter(dependentScriptParam);
-        }
     }
 
     public static final class Conflicts {
@@ -1210,8 +941,8 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
             // don't know this map's size up-front
             Map<String, Parameter<?>> deprecatedParamsMap = new HashMap<>();
             for (Parameter<?> param : params) {
-                paramsMap.put(param.name, param);
-                for (String deprecatedName : param.deprecatedNames) {
+                paramsMap.put(param.name(), param);
+                for (String deprecatedName : param.deprecatedNames()) {
                     deprecatedParamsMap.put(deprecatedName, param);
                 }
             }
@@ -1253,7 +984,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                         "Parameter [{}] on mapper [{}] is deprecated, use [{}]",
                         propName,
                         name,
-                        parameter.name
+                        parameter.name()
                     );
                 } else {
                     parameter = paramsMap.get(propName);
@@ -1294,7 +1025,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                         "unknown parameter [" + propName + "] on mapper [" + name + "] of type [" + type + "]"
                     );
                 }
-                if (parameter.deprecated) {
+                if (parameter.isDeprecated()) {
                     deprecationLogger.warn(
                         DeprecationCategory.API,
                         propName,
@@ -1302,7 +1033,7 @@ public abstract class FieldMapper extends Mapper implements Cloneable {
                         propName
                     );
                 }
-                if (propNode == null && parameter.acceptsNull == false) {
+                if (propNode == null && parameter.canAcceptNull() == false) {
                     throw new MapperParsingException(
                         "[" + propName + "] on mapper [" + name + "] of type [" + type + "] must not have a [null] value"
                     );

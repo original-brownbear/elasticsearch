@@ -91,13 +91,13 @@ public final class ParentJoinFieldMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder {
 
-        final Parameter<Boolean> eagerGlobalOrdinals = Parameter.boolParam(
+        final ParameterImpl<Boolean> eagerGlobalOrdinals = Parameter.boolParam(
             "eager_global_ordinals",
             true,
             m -> toType(m).eagerGlobalOrdinals,
             true
         );
-        final Parameter<List<Relations>> relations = new Parameter<List<Relations>>(
+        final ParameterImpl<List<Relations>> relations = new ParameterImpl<List<Relations>>(
             "relations",
             true,
             Collections::emptyList,
@@ -107,7 +107,7 @@ public final class ParentJoinFieldMapper extends FieldMapper {
             Objects::toString
         ).setMergeValidator(ParentJoinFieldMapper::checkRelationsConflicts);
 
-        final Parameter<Map<String, String>> meta = Parameter.metaParam();
+        final ParameterImpl<Map<String, String>> meta = Parameter.metaParam();
 
         public Builder(String name) {
             super(name);
@@ -119,8 +119,8 @@ public final class ParentJoinFieldMapper extends FieldMapper {
         }
 
         @Override
-        protected Parameter<?>[] getParameters() {
-            return new Parameter<?>[] { eagerGlobalOrdinals, relations, meta };
+        protected ParameterImpl<?>[] getParameters() {
+            return new ParameterImpl<?>[] { eagerGlobalOrdinals, relations, meta };
         }
 
         @Override

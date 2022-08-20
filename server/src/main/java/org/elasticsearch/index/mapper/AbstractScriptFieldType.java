@@ -215,7 +215,7 @@ abstract class AbstractScriptFieldType<LeafFactory> extends MappedFieldType {
     abstract static class Builder<Factory> extends RuntimeField.Builder {
         private final ScriptContext<Factory> scriptContext;
 
-        final FieldMapper.Parameter<Script> script = new FieldMapper.Parameter<>(
+        final Parameter<Script> script = new FieldMapper.ParameterImpl<>(
             "script",
             true,
             () -> null,
@@ -284,8 +284,8 @@ abstract class AbstractScriptFieldType<LeafFactory> extends MappedFieldType {
         }
 
         @Override
-        protected List<FieldMapper.Parameter<?>> getParameters() {
-            List<FieldMapper.Parameter<?>> parameters = new ArrayList<>(super.getParameters());
+        protected List<Parameter<?>> getParameters() {
+            List<Parameter<?>> parameters = new ArrayList<>(super.getParameters());
             parameters.add(script);
             return Collections.unmodifiableList(parameters);
         }

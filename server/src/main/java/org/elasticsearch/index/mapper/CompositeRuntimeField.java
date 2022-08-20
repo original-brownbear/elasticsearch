@@ -33,7 +33,7 @@ public class CompositeRuntimeField implements RuntimeField {
     public static final String CONTENT_TYPE = "composite";
 
     public static final Parser PARSER = new Parser(name -> new RuntimeField.Builder(name) {
-        private final FieldMapper.Parameter<Script> script = new FieldMapper.Parameter<>(
+        private final Parameter<Script> script = new FieldMapper.ParameterImpl<>(
             "script",
             false,
             () -> null,
@@ -47,7 +47,7 @@ public class CompositeRuntimeField implements RuntimeField {
             }
         });
 
-        private final FieldMapper.Parameter<Map<String, Object>> fields = new FieldMapper.Parameter<Map<String, Object>>(
+        private final Parameter<Map<String, Object>> fields = new FieldMapper.ParameterImpl<Map<String, Object>>(
             "fields",
             false,
             Collections::emptyMap,
@@ -62,8 +62,8 @@ public class CompositeRuntimeField implements RuntimeField {
         });
 
         @Override
-        protected List<FieldMapper.Parameter<?>> getParameters() {
-            List<FieldMapper.Parameter<?>> parameters = new ArrayList<>(super.getParameters());
+        protected List<Parameter<?>> getParameters() {
+            List<Parameter<?>> parameters = new ArrayList<>(super.getParameters());
             parameters.add(script);
             parameters.add(fields);
             return Collections.unmodifiableList(parameters);
@@ -97,10 +97,10 @@ public class CompositeRuntimeField implements RuntimeField {
     });
 
     private final String name;
-    private final List<FieldMapper.Parameter<?>> parameters;
+    private final List<Parameter<?>> parameters;
     private final Collection<RuntimeField> subfields;
 
-    CompositeRuntimeField(String name, List<FieldMapper.Parameter<?>> parameters, Collection<RuntimeField> subfields) {
+    CompositeRuntimeField(String name, List<Parameter<?>> parameters, Collection<RuntimeField> subfields) {
         this.name = name;
         this.parameters = parameters;
         this.subfields = subfields;
@@ -121,7 +121,7 @@ public class CompositeRuntimeField implements RuntimeField {
         builder.startObject(name);
         builder.field("type", "composite");
         boolean includeDefaults = params.paramAsBoolean("include_defaults", false);
-        for (FieldMapper.Parameter<?> parameter : parameters) {
+        for (Parameter<?> parameter : parameters) {
             parameter.toXContent(builder, includeDefaults);
         }
         builder.endObject();
