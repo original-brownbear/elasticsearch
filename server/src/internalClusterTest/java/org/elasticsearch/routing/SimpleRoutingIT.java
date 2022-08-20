@@ -25,7 +25,6 @@ import org.elasticsearch.action.termvectors.TermVectorsResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.internal.Requests;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.IndexRouting;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -46,8 +45,7 @@ public class SimpleRoutingIT extends ESIntegTestCase {
     }
 
     public String findNonMatchingRoutingValue(String index, String id) {
-        ClusterState state = client().admin().cluster().prepareState().all().get().getState();
-        IndexMetadata metadata = state.metadata().index(index);
+        IndexMetadata metadata = getState().metadata().index(index);
         IndexMetadata withoutRoutingRequired = IndexMetadata.builder(metadata).putMapping("{}").build();
         IndexRouting indexRouting = IndexRouting.fromIndexMetadata(withoutRoutingRequired);
         int routing = -1;

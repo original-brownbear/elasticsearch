@@ -212,7 +212,7 @@ public class SearchableSnapshotDiskThresholdIntegTests extends DiskUsageIntegTes
 
         // The cold/frozen data node has enough disk space to hold all the shards
         assertBusy(() -> {
-            var state = client().admin().cluster().prepareState().setRoutingTable(true).get().getState();
+            var state = getState();
             assertThat(
                 state.routingTable()
                     .allShards()
@@ -250,7 +250,7 @@ public class SearchableSnapshotDiskThresholdIntegTests extends DiskUsageIntegTes
 
         // TODO Indices should not be allocated without checking the node disk usage first
         assertBusy(() -> {
-            var state = client().admin().cluster().prepareState().setRoutingTable(true).get().getState();
+            var state = getState();
             assertThat(
                 state.routingTable()
                     .allShards()

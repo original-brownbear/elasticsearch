@@ -838,6 +838,10 @@ public abstract class ESIntegTestCase extends ESTestCase {
         return clusterAdmin().prepareState().get().getState();
     }
 
+    public static Metadata getMetadataFromClusterState() {
+        return clusterAdmin().prepareState().clear().setMetadata(true).get().getState().metadata();
+    }
+
     public static DiscoveryNodes getNodesFromClusterState() {
         return clusterAdmin().prepareState().clear().setNodes(true).get().getState().nodes();
     }

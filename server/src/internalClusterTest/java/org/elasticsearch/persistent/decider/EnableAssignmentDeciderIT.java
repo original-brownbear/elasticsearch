@@ -9,7 +9,6 @@ package org.elasticsearch.persistent.decider;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.node.tasks.list.ListTasksResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
@@ -127,8 +126,7 @@ public class EnableAssignmentDeciderIT extends ESIntegTestCase {
     }
 
     private void assertEnableAssignmentSetting(final Allocation expected) {
-        ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().clear().setMetadata(true).get();
-        Settings settings = clusterStateResponse.getState().getMetadata().settings();
+        Settings settings = getMetadataFromClusterState().settings();
 
         String value = settings.get(CLUSTER_TASKS_ALLOCATION_ENABLE_SETTING.getKey());
         assertThat(Allocation.fromString(value), equalTo(expected));

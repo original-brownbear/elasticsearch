@@ -294,9 +294,9 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         logger.info("--> closing test index...");
         assertAcked(client().admin().indices().prepareClose("test"));
 
-        ClusterStateResponse stateResponse = client().admin().cluster().prepareState().execute().actionGet();
-        assertThat(stateResponse.getState().metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
-        assertThat(stateResponse.getState().routingTable().index("test"), notNullValue());
+        ClusterState stateResponse = getState();
+        assertThat(stateResponse.metadata().index("test").getState(), equalTo(IndexMetadata.State.CLOSE));
+        assertThat(stateResponse.routingTable().index("test"), notNullValue());
 
         logger.info("--> opening the index...");
         client().admin().indices().prepareOpen("test").execute().actionGet();

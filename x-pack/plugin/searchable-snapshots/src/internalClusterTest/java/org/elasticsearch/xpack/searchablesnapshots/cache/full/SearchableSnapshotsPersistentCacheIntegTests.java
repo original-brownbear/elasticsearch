@@ -79,7 +79,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         assertThat(snapshotInfo.successfulShards(), equalTo(snapshotInfo.totalShards()));
         assertAcked(client().admin().indices().prepareDelete(indexName));
 
-        final DiscoveryNodes discoveryNodes = client().admin().cluster().prepareState().clear().setNodes(true).get().getState().nodes();
+        final DiscoveryNodes discoveryNodes = getNodesFromClusterState();
         final String dataNode = randomFrom(discoveryNodes.getDataNodes().values()).getName();
 
         mountSnapshot(

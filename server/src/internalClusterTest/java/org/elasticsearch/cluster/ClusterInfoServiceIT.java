@@ -211,16 +211,7 @@ public class ClusterInfoServiceIT extends ESIntegTestCase {
         prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)).get();
         ensureGreen("test");
 
-        final IndexShardRoutingTable indexShardRoutingTable = client().admin()
-            .cluster()
-            .prepareState()
-            .clear()
-            .setRoutingTable(true)
-            .get()
-            .getState()
-            .getRoutingTable()
-            .index("test")
-            .shard(0);
+        final IndexShardRoutingTable indexShardRoutingTable = getRoutingTableFromClusterState().index("test").shard(0);
         final List<ShardRouting> shardRoutings = new ArrayList<>(indexShardRoutingTable.size());
         for (int copy = 0; copy < indexShardRoutingTable.size(); copy++) {
             shardRoutings.add(indexShardRoutingTable.shard(copy));
