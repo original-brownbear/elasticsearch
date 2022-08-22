@@ -8,7 +8,6 @@ package org.elasticsearch.xpack.ilm;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.cluster.routing.RoutingNode;
 import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
@@ -188,18 +187,7 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
         IndexLifecycleService indexLifecycleService = internalCluster().getInstance(IndexLifecycleService.class, server_1);
         assertThat(indexLifecycleService.getScheduler().jobCount(), equalTo(1));
         assertNotNull(indexLifecycleService.getScheduledJob());
-        assertBusy(() -> {
-            LifecycleExecutionState lifecycleState = client().admin()
-                .cluster()
-                .prepareState()
-                .execute()
-                .actionGet()
-                .getState()
-                .getMetadata()
-                .index("test")
-                .getLifecycleExecutionState();
-            assertThat(lifecycleState.step(), equalTo("complete"));
-        });
+        awaitClusterState(state -> state.getMetadata().index("test").getLifecycleExecutionState().step().equals("complete"));
     }
 
     public void testNoOpPolicyUpdates() throws Exception {
@@ -457,18 +445,7 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
         assertThat(routingNodeEntry1.numberOfShardsWithState(STARTED), equalTo(1));
 
         assertBusy(() -> assertTrue(indexExists("test")));
-        assertBusy(() -> {
-            LifecycleExecutionState lifecycleState = client().admin()
-                .cluster()
-                .prepareState()
-                .execute()
-                .actionGet()
-                .getState()
-                .getMetadata()
-                .index("test")
-                .getLifecycleExecutionState();
-            assertThat(lifecycleState.step(), equalTo("complete"));
-        });
+        awaitClusterState(state -> state.getMetadata().index("test").getLifecycleExecutionState().step().equals("complete"));
     }
 
     public void testCreatePolicyWhenStopped() throws Exception {

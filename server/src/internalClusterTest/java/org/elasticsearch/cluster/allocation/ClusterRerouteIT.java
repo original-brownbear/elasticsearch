@@ -351,10 +351,9 @@ public class ClusterRerouteIT extends ESIntegTestCase {
 
         logger.info("--> get the state, verify shard 1 primary allocated");
         final String nodeToCheck = node_1;
-        assertBusy(() -> {
-            ClusterState clusterState = client().admin().cluster().prepareState().execute().actionGet().getState();
+        awaitClusterState(clusterState -> {
             String nodeId = clusterState.nodes().resolveNode(nodeToCheck).getId();
-            assertThat(clusterState.getRoutingNodes().node(nodeId).iterator().next().state(), equalTo(ShardRoutingState.STARTED));
+            return clusterState.getRoutingNodes().node(nodeId).iterator().next().state().equals(ShardRoutingState.STARTED);
         });
     }
 

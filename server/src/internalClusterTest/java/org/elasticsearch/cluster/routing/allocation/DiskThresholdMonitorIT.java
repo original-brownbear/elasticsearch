@@ -83,22 +83,9 @@ public class DiskThresholdMonitorIT extends DiskUsageIntegTestCase {
         // Verify that we can still move shards around even while blocked
         final String newDataNodeName = internalCluster().startDataOnlyNode();
         final String newDataNodeId = client().admin().cluster().prepareNodesInfo(newDataNodeName).get().getNodes().get(0).getNode().getId();
-        assertBusy(() -> {
-            final ShardRouting primaryShard = client().admin()
-                .cluster()
-                .prepareState()
-                .clear()
-                .setRoutingTable(true)
-                .setNodes(true)
-                .setIndices(indexName)
-                .get()
-                .getState()
-                .routingTable()
-                .index(indexName)
-                .shard(0)
-                .primaryShard();
-            assertThat(primaryShard.state(), equalTo(ShardRoutingState.STARTED));
-            assertThat(primaryShard.currentNodeId(), equalTo(newDataNodeId));
+        awaitClusterState(state -> {
+            final ShardRouting primaryShard = state.routingTable().index(indexName).shard(0).primaryShard();
+            return primaryShard.state() == ShardRoutingState.STARTED && primaryShard.currentNodeId().equals(newDataNodeId);
         });
 
         // Verify that the block is removed once the shard migration is complete

@@ -50,7 +50,6 @@ import static org.elasticsearch.index.mapper.MapperService.INDEX_MAPPING_TOTAL_F
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchHits;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 
 public class DynamicMappingIT extends ESIntegTestCase {
@@ -284,7 +283,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
         final ClusterService clusterService = internalCluster().clusterService();
         final long previousVersion = clusterService.state().metadata().index("test").getMappingVersion();
         client().prepareIndex("test").setId("1").setSource("field", "text").get();
-        assertBusy(() -> assertThat(clusterService.state().metadata().index("test").getMappingVersion(), equalTo(1 + previousVersion)));
+        awaitClusterState(state -> state.metadata().index("test").getMappingVersion() == 1 + previousVersion);
     }
 
     public void testBulkRequestWithDynamicTemplates() throws Exception {

@@ -17,7 +17,6 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -26,7 +25,6 @@ import org.elasticsearch.xcontent.XContentType;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 public class ShardInfoIT extends ESIntegTestCase {
@@ -117,12 +115,13 @@ public class ShardInfoIT extends ESIntegTestCase {
     }
 
     private void ensureActiveShardCopies(final int shardId, final int copyCount) throws Exception {
+        awaitClusterState(state -> {
+            var routingTable = state.routingTable().index("idx");
+            return routingTable != null
+                && routingTable.shard(shardId) != null
+                && routingTable.shard(shardId).activeShards().size() == copyCount;
+        });
         assertBusy(() -> {
-            ClusterState state = client().admin().cluster().prepareState().get().getState();
-            assertThat(state.routingTable().index("idx"), not(nullValue()));
-            assertThat(state.routingTable().index("idx").shard(shardId), not(nullValue()));
-            assertThat(state.routingTable().index("idx").shard(shardId).activeShards().size(), equalTo(copyCount));
-
             ClusterHealthResponse healthResponse = client().admin().cluster().prepareHealth("idx").setWaitForNoRelocatingShards(true).get();
             assertThat(healthResponse.isTimedOut(), equalTo(false));
 

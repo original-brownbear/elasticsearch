@@ -332,11 +332,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             // its possible that the shard has not completed initialization, even though the cluster health is yellow, so the
             // search can throw an "all shards failed" exception. We will wait until the shard initialization has completed before
             // verifying the search hit count.
-            assertBusy(
-                () -> assertTrue(
-                    client().admin().cluster().prepareState().get().getState().routingTable().index(idxName).allPrimaryShardsActive()
-                )
-            );
+            awaitClusterState(state -> state.routingTable().index(idxName).allPrimaryShardsActive());
         }
         ShardStats[] shardStats = client().admin()
             .indices()
@@ -497,11 +493,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             }
         });
         logger.info("--> wait until shard is failed and becomes unassigned again");
-        assertBusy(
-            () -> assertTrue(
-                client().admin().cluster().prepareState().get().getState().getRoutingTable().index("test").allPrimaryShardsUnassigned()
-            )
-        );
+        awaitClusterState(state -> state.getRoutingTable().index("test").allPrimaryShardsUnassigned());
         assertEquals(2, client().admin().cluster().prepareState().get().getState().metadata().index("test").inSyncAllocationIds(0).size());
 
         logger.info("--> starting node that reuses data folder with the up-to-date shard");
@@ -540,20 +532,12 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             }
         });
         logger.info("--> wait until shard is failed and becomes unassigned again");
-        assertBusy(
-            () -> assertTrue(
-                client().admin().cluster().prepareState().get().getState().getRoutingTable().index("test").allPrimaryShardsUnassigned()
-            )
-        );
+        awaitClusterState(state -> state.getRoutingTable().index("test").allPrimaryShardsUnassigned());
         assertEquals(1, client().admin().cluster().prepareState().get().getState().metadata().index("test").inSyncAllocationIds(0).size());
 
         logger.info("--> starting node that reuses data folder with the up-to-date shard");
         internalCluster().startDataOnlyNode(inSyncDataPathSettings);
-        assertBusy(
-            () -> assertTrue(
-                client().admin().cluster().prepareState().get().getState().getRoutingTable().index("test").allPrimaryShardsUnassigned()
-            )
-        );
+        awaitClusterState(state -> state.getRoutingTable().index("test").allPrimaryShardsUnassigned());
     }
 
     public void testNotWaitForQuorumCopies() throws Exception {

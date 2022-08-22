@@ -118,11 +118,10 @@ public class AllocationIdIT extends ESIntegTestCase {
         client(node1).admin().cluster().prepareReroute().add(new AllocateStalePrimaryAllocationCommand(indexName, 0, node1, true)).get();
 
         // allocation fails due to corruption marker
-        assertBusy(() -> {
-            final ClusterState state = client().admin().cluster().prepareState().get().getState();
+        awaitClusterState(state -> {
             final ShardRouting shardRouting = state.routingTable().index(indexName).shard(shardId.id()).primaryShard();
-            assertThat(shardRouting.state(), equalTo(ShardRoutingState.UNASSIGNED));
-            assertThat(shardRouting.unassignedInfo().getReason(), equalTo(UnassignedInfo.Reason.ALLOCATION_FAILED));
+            return shardRouting.state() == ShardRoutingState.UNASSIGNED
+                && shardRouting.unassignedInfo().getReason() == UnassignedInfo.Reason.ALLOCATION_FAILED;
         });
 
         internalCluster().stopNode(node1);

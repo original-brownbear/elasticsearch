@@ -32,7 +32,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.Murmur3HashFunction;
-import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.decider.EnableAllocationDecider;
@@ -426,15 +425,11 @@ public class ShrinkIndexIT extends ESIntegTestCase {
             .setSettings(Settings.builder().putNull("index.routing.allocation.exclude._name"))
             .get();
         // wait until it fails
-        assertBusy(() -> {
-            ClusterStateResponse clusterStateResponse = client().admin().cluster().prepareState().get();
-            RoutingTable routingTables = clusterStateResponse.getState().routingTable();
-            assertTrue(routingTables.index("target").shard(0).shard(0).unassigned());
-            assertEquals(
-                UnassignedInfo.Reason.ALLOCATION_FAILED,
-                routingTables.index("target").shard(0).shard(0).unassignedInfo().getReason()
-            );
-            assertEquals(1, routingTables.index("target").shard(0).shard(0).unassignedInfo().getNumFailedAllocations());
+        awaitClusterState(state -> {
+            ShardRouting shardRouting = state.routingTable().index("target").shard(0).shard(0);
+            return shardRouting.unassigned()
+                && UnassignedInfo.Reason.ALLOCATION_FAILED == shardRouting.unassignedInfo().getReason()
+                && 1 == shardRouting.unassignedInfo().getNumFailedAllocations();
         });
         client().admin()
             .indices()

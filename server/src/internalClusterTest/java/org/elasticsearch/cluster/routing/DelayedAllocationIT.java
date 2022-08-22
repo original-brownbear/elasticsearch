@@ -62,12 +62,7 @@ public class DelayedAllocationIT extends ESIntegTestCase {
         String nodeWithShard = findNodeWithShard();
         Settings nodeWithShardDataPathSettings = internalCluster().dataPathSettings(nodeWithShard);
         internalCluster().stopNode(nodeWithShard);
-        assertBusy(
-            () -> assertThat(
-                client().admin().cluster().prepareState().all().get().getState().getRoutingNodes().unassigned().size() > 0,
-                equalTo(true)
-            )
-        );
+        awaitClusterState(state -> state.getRoutingNodes().unassigned().size() > 0);
         assertThat(client().admin().cluster().prepareHealth().get().getDelayedUnassignedShards(), equalTo(1));
         internalCluster().startNode(nodeWithShardDataPathSettings); // this will use the same data location as the stopped node
         ensureGreen("test");
@@ -120,12 +115,7 @@ public class DelayedAllocationIT extends ESIntegTestCase {
         ensureGreen("test");
         indexRandomData();
         internalCluster().stopNode(findNodeWithShard());
-        assertBusy(
-            () -> assertThat(
-                client().admin().cluster().prepareState().all().get().getState().getRoutingNodes().unassigned().size() > 0,
-                equalTo(true)
-            )
-        );
+        awaitClusterState(state -> state.getRoutingNodes().unassigned().size() > 0);
         assertThat(client().admin().cluster().prepareHealth().get().getDelayedUnassignedShards(), equalTo(1));
         assertAcked(
             client().admin()
@@ -156,12 +146,7 @@ public class DelayedAllocationIT extends ESIntegTestCase {
         ensureGreen("test");
         indexRandomData();
         internalCluster().stopNode(findNodeWithShard());
-        assertBusy(
-            () -> assertThat(
-                client().admin().cluster().prepareState().all().get().getState().getRoutingNodes().unassigned().size() > 0,
-                equalTo(true)
-            )
-        );
+        awaitClusterState(state -> state.getRoutingNodes().unassigned().size() > 0);
         assertThat(client().admin().cluster().prepareHealth().get().getDelayedUnassignedShards(), equalTo(1));
         assertAcked(
             client().admin()

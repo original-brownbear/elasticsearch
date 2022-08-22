@@ -32,7 +32,6 @@ import static org.elasticsearch.cluster.routing.allocation.decider.EnableAllocat
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 
 @ESIntegTestCase.ClusterScope(numDataNodes = 0, scope = ESIntegTestCase.Scope.TEST)
@@ -148,22 +147,13 @@ public class TransportClusterStateActionDisruptionIT extends ESIntegTestCase {
     public void runRepeatedlyWhileChangingMaster(Runnable runnable) throws Exception {
         internalCluster().startNodes(3);
 
-        assertBusy(
-            () -> assertThat(
-                client().admin()
-                    .cluster()
-                    .prepareState()
-                    .clear()
-                    .setMetadata(true)
-                    .get()
-                    .getState()
-                    .getLastCommittedConfiguration()
-                    .getNodeIds()
-                    .stream()
-                    .filter(n -> ClusterBootstrapService.isBootstrapPlaceholder(n) == false)
-                    .collect(Collectors.toSet()),
-                hasSize(3)
-            )
+        awaitClusterState(
+            state -> state.getLastCommittedConfiguration()
+                .getNodeIds()
+                .stream()
+                .filter(n -> ClusterBootstrapService.isBootstrapPlaceholder(n) == false)
+                .collect(Collectors.toSet())
+                .size() == 3
         );
 
         final String masterName = internalCluster().getMasterName();

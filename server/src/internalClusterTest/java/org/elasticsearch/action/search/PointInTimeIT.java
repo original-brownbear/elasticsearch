@@ -180,16 +180,15 @@ public class PointInTimeIT extends ESIntegTestCase {
             assertNoFailures(resp);
             assertHitCount(resp, numDocs);
             assertThat(resp.pointInTimeId(), equalTo(pitId));
-            assertBusy(() -> {
-                final Set<String> assignedNodes = clusterService().state()
-                    .routingTable()
+            awaitClusterState(state -> {
+                final Set<String> assignedNodes = state.routingTable()
                     .allShards()
                     .stream()
                     .filter(shr -> shr.index().getName().equals("test") && shr.assignedToNode())
                     .map(ShardRouting::currentNodeId)
                     .collect(Collectors.toSet());
-                assertThat(assignedNodes, everyItem(not(in(excludedNodes))));
-            }, 30, TimeUnit.SECONDS);
+                return everyItem(not(in(excludedNodes))).matches(assignedNodes);
+            });
             resp = client().prepareSearch().setPreference(null).setPointInTime(new PointInTimeBuilder(pitId)).get();
             assertNoFailures(resp);
             assertHitCount(resp, numDocs);

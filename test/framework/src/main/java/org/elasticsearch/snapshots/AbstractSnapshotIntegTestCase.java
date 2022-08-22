@@ -49,7 +49,6 @@ import org.elasticsearch.repositories.blobstore.ChecksumBlobStoreFormat;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.snapshots.mockstore.MockRepository;
-import org.elasticsearch.test.ClusterServiceUtils;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.VersionUtils;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -79,7 +78,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.repositories.blobstore.BlobStoreRepository.READONLY_SETTING_KEY;
@@ -561,18 +559,6 @@ public abstract class AbstractSnapshotIntegTestCase extends ESIntegTestCase {
             state -> state.custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY).isEmpty()
                 && state.custom(SnapshotDeletionsInProgress.TYPE, SnapshotDeletionsInProgress.EMPTY).hasDeletionsInProgress() == false
         );
-    }
-
-    protected void awaitClusterState(Predicate<ClusterState> statePredicate) throws Exception {
-        awaitClusterState(logger, internalCluster().getMasterName(), statePredicate);
-    }
-
-    public static void awaitClusterState(Logger logger, Predicate<ClusterState> statePredicate) throws Exception {
-        awaitClusterState(logger, internalCluster().getMasterName(), statePredicate);
-    }
-
-    public static void awaitClusterState(Logger logger, String viaNode, Predicate<ClusterState> statePredicate) throws Exception {
-        ClusterServiceUtils.awaitClusterState(logger, statePredicate, internalCluster().getInstance(ClusterService.class, viaNode));
     }
 
     protected ActionFuture<CreateSnapshotResponse> startFullSnapshotBlockedOnDataNode(String snapshotName, String repoName, String dataNode)
