@@ -116,6 +116,7 @@ public final class Netty4WriteThrottlingHandler extends ChannelDuplexHandler {
             failQueuedWrites();
             return false;
         }
+        boolean needsFlush = true;
         while (channel.isWritable()) {
             if (currentWrite == null) {
                 currentWrite = queuedWrites.poll();
@@ -136,14 +137,22 @@ public final class Netty4WriteThrottlingHandler extends ChannelDuplexHandler {
                 writeBuffer = write.buf;
             }
             final ChannelFuture writeFuture = ctx.write(writeBuffer);
+            needsFlush = true;
             if (sliced == false) {
                 currentWrite = null;
                 writeFuture.addListener(forwardResultListener(ctx, write.promise));
             } else {
                 writeFuture.addListener(forwardFailureListener(ctx, write.promise));
             }
+            if (channel.isWritable() == false) {
+                // try flushing to make channel writable again, loop will only continue if channel becomes writable again
+                ctx.flush();
+                needsFlush = false;
+            }
         }
-        ctx.flush();
+        if (needsFlush) {
+            ctx.flush();
+        }
         if (channel.isActive() == false) {
             failQueuedWrites();
         }
