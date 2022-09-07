@@ -909,6 +909,17 @@ public class RestControllerTests extends ESTestCase {
         );
     }
 
+    public void testDispatchRequestAddsAndFreesBytesOnError() {
+        int contentLength = BREAKER_LIMIT.bytesAsInt();
+        String content = randomAlphaOfLength((int) Math.round(contentLength / inFlightRequestsBreaker.getOverhead()));
+        RestRequest request = testRestRequest("/error", content, XContentType.JSON);
+
+        restController.dispatchRequest(request, request.getHttpChannel()., client.threadPool().getThreadContext());
+
+        assertEquals(0, inFlightRequestsBreaker.getTrippedCount());
+        assertEquals(0, inFlightRequestsBreaker.getUsed());
+    }
+
     private static final class TestHttpServerTransport extends AbstractLifecycleComponent implements HttpServerTransport {
 
         TestHttpServerTransport() {}

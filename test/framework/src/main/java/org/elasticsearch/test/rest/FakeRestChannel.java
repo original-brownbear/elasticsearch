@@ -7,15 +7,22 @@
  */
 package org.elasticsearch.test.rest;
 
+import org.elasticsearch.common.io.stream.BytesStream;
+import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
+import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.rest.AbstractRestChannel;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.transport.BytesRefRecycler;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class FakeRestChannel extends AbstractRestChannel {
+
+    private static final BytesRefRecycler recycler = new BytesRefRecycler(MockPageCacheRecycler.NON_RECYCLING_INSTANCE);
+
     private final CountDownLatch latch;
     private final AtomicInteger responses = new AtomicInteger();
     private final AtomicInteger errors = new AtomicInteger();
@@ -47,5 +54,10 @@ public final class FakeRestChannel extends AbstractRestChannel {
 
     public AtomicInteger errors() {
         return errors;
+    }
+
+    @Override
+    protected BytesStream newBytesOutput() {
+        return new RecyclerBytesStreamOutput(recycler);
     }
 }
