@@ -46,11 +46,16 @@ public class ShardSnapshotTaskRunner {
 
         @Override
         public final int compareTo(SnapshotTask other) {
-            int res = Integer.compare(priority(), other.priority());
+            int res = Long.compare(context.snapshotStartTime(), other.context.snapshotStartTime());
             if (res != 0) {
                 return res;
             }
-            return Long.compare(context.snapshotStartTime(), other.context.snapshotStartTime());
+            // In case two snapshot were started exactly at the same time, order them by UUID
+            res = context.snapshotId().getUUID().compareTo(other.context.snapshotId().getUUID());
+            if (res != 0) {
+                return res;
+            }
+            return Integer.compare(priority(), other.priority());
         }
     }
 
