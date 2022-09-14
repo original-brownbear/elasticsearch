@@ -27,6 +27,7 @@ import org.elasticsearch.xcontent.XContentType;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -235,6 +236,7 @@ public interface IndexAbstraction {
                 }
                 isSystem = isSystem && imd.isSystem();
             }
+            this.referenceIndices.sort(Comparator.comparing(Index::getName));
 
             if (widx == null && indexMetadatas.size() == 1 && indexMetadatas.get(0).getAliases().get(aliasName).writeIndex() == null) {
                 widx = indexMetadatas.get(0).getIndex();
