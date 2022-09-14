@@ -686,6 +686,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         @Nullable
         private final String failure;
 
+        private final boolean hasInitStateShards;
+
         // visible for testing, use #startedEntry and copy constructors in production code
         public static Entry snapshot(
             Snapshot snapshot,
@@ -704,13 +706,16 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         ) {
             final Map<String, Index> res = Maps.newMapWithExpectedSize(indices.size());
             final Map<RepositoryShardId, ShardSnapshotStatus> byRepoShardIdBuilder = Maps.newHashMapWithExpectedSize(shards.size());
+            boolean hasInitStateShards = false;
             for (Map.Entry<ShardId, ShardSnapshotStatus> entry : shards.entrySet()) {
                 final ShardId shardId = entry.getKey();
                 final IndexId indexId = indices.get(shardId.getIndexName());
                 final Index index = shardId.getIndex();
                 final Index existing = res.put(indexId.getName(), index);
                 assert existing == null || existing.equals(index) : "Conflicting indices [" + existing + "] and [" + index + "]";
-                byRepoShardIdBuilder.put(new RepositoryShardId(indexId, shardId.id()), entry.getValue());
+                final var shardSnapshotStatus = entry.getValue();
+                hasInitStateShards |= shardSnapshotStatus.state() == ShardState.INIT;
+                byRepoShardIdBuilder.put(new RepositoryShardId(indexId, shardId.id()), shardSnapshotStatus);
             }
             return new Entry(
                 snapshot,
@@ -728,7 +733,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 version,
                 null,
                 byRepoShardIdBuilder,
-                res
+                res,
+                hasInitStateShards
             );
         }
 
@@ -759,7 +765,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 version,
                 source,
                 shardStatusByRepoShardId,
-                Map.of()
+                Map.of(),
+                false
             );
         }
 
@@ -779,7 +786,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             Version version,
             @Nullable SnapshotId source,
             Map<RepositoryShardId, ShardSnapshotStatus> shardStatusByRepoShardId,
-            Map<String, Index> snapshotIndices
+            Map<String, Index> snapshotIndices,
+            boolean hasInitStateShards
         ) {
             this.state = state;
             this.snapshot = snapshot;
@@ -797,6 +805,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             this.source = source;
             this.shardStatusByRepoShardId = Map.copyOf(shardStatusByRepoShardId);
             this.snapshotIndices = snapshotIndices;
+            this.hasInitStateShards = hasInitStateShards;
             assert assertShardsConsistent(this.source, this.state, this.indices, this.shards, this.shardStatusByRepoShardId);
         }
 
@@ -912,7 +921,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                 version,
                 source,
                 shardStatusByRepoShardId,
-                snapshotIndices
+                snapshotIndices,
+                hasInitStateShards
             );
         }
 
@@ -1128,6 +1138,10 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
 
         public Map<String, Object> userMetadata() {
             return userMetadata;
+        }
+
+        public boolean hasInitStateShards() {
+            return hasInitStateShards;
         }
 
         public boolean partial() {
@@ -1514,7 +1528,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
                     part.version,
                     null,
                     part.shardStatusByRepoShardId,
-                    part.snapshotIndices
+                    part.snapshotIndices,
+                    part.hasInitStateShards
                 );
             }
             if (part.isClone()) {
