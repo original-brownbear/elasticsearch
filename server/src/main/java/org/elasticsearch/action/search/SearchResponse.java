@@ -15,6 +15,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.StatusToXContentObject;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
@@ -28,17 +29,11 @@ import org.elasticsearch.search.internal.InternalSearchResponse;
 import org.elasticsearch.search.profile.SearchProfileResults;
 import org.elasticsearch.search.profile.SearchProfileShardResult;
 import org.elasticsearch.search.suggest.Suggest;
-import org.elasticsearch.xcontent.ParseField;
-import org.elasticsearch.xcontent.ToXContentFragment;
-import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xcontent.XContentParser;
+import org.elasticsearch.xcontent.*;
 import org.elasticsearch.xcontent.XContentParser.Token;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static org.elasticsearch.action.search.ShardSearchFailure.readShardSearchFailure;
@@ -47,7 +42,7 @@ import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpect
 /**
  * A response of a search request.
  */
-public class SearchResponse extends ActionResponse implements StatusToXContentObject {
+public class SearchResponse extends ActionResponse implements StatusToXContentObject, ChunkedToXContent {
 
     private static final ParseField SCROLL_ID = new ParseField("_scroll_id");
     private static final ParseField POINT_IN_TIME_ID = new ParseField("pit_id");
@@ -132,10 +127,6 @@ public class SearchResponse extends ActionResponse implements StatusToXContentOb
     @Override
     public RestStatus status() {
         return RestStatus.status(successfulShards, totalShards, shardFailures);
-    }
-
-    public SearchResponseSections getInternalResponse() {
-        return internalResponse;
     }
 
     /**
@@ -261,6 +252,11 @@ public class SearchResponse extends ActionResponse implements StatusToXContentOb
      */
     public Clusters getClusters() {
         return clusters;
+    }
+
+    @Override
+    public Iterator<? extends ToXContent> toXContentChunked() {
+        return null;
     }
 
     @Override
