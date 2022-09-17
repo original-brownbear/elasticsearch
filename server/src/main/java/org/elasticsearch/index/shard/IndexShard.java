@@ -488,6 +488,10 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         return cachingPolicy;
     }
 
+    private volatile Set<String> seenInSyncAllocationIds;
+
+    private volatile IndexShardRoutingTable seenRoutingTable;
+
     @Override
     public void updateShardState(
         final ShardRouting newRouting,
@@ -500,6 +504,12 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         final ShardRouting currentRouting;
         synchronized (mutex) {
             currentRouting = this.shardRouting;
+            if (currentRouting == newRouting
+                && newPrimaryTerm == getPendingPrimaryTerm()
+                && inSyncAllocationIds.equals(seenInSyncAllocationIds)
+                && routingTable == seenRoutingTable) {
+                return;
+            }
             assert currentRouting != null;
 
             if (newRouting.shardId().equals(shardId()) == false) {
@@ -686,6 +696,8 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
                 this.replicationTracker.isPrimaryMode()
                 : "a started primary with non-pending operation term must be in primary mode " + this.shardRouting;
             shardStateUpdated.countDown();
+            seenInSyncAllocationIds = inSyncAllocationIds;
+            seenRoutingTable = routingTable;
         }
         if (currentRouting.active() == false && newRouting.active()) {
             indexEventListener.afterIndexShardStarted(this);
