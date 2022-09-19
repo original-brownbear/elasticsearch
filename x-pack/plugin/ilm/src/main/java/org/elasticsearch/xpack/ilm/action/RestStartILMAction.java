@@ -32,9 +32,7 @@ public class RestStartILMAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
-        StartILMRequest request = new StartILMRequest();
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        StartILMRequest request = new StartILMRequest().parseTimeoutParams(restRequest);
         return channel -> client.execute(StartILMAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }
 }

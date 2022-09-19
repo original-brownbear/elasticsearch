@@ -36,9 +36,8 @@ public class RestPostDataFrameAnalyticsUpdateAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) throws IOException {
         String id = restRequest.param(DataFrameAnalyticsConfig.ID.getPreferredName());
         XContentParser parser = restRequest.contentParser();
-        UpdateDataFrameAnalyticsAction.Request updateRequest = UpdateDataFrameAnalyticsAction.Request.parseRequest(id, parser);
-        updateRequest.timeout(restRequest.paramAsTime("timeout", updateRequest.timeout()));
-
+        UpdateDataFrameAnalyticsAction.Request updateRequest = UpdateDataFrameAnalyticsAction.Request.parseRequest(id, parser)
+            .parseTimeoutParams(restRequest);
         return channel -> client.execute(UpdateDataFrameAnalyticsAction.INSTANCE, updateRequest, new RestToXContentListener<>(channel));
     }
 }

@@ -39,9 +39,9 @@ public class RestResetJobAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) throws IOException {
-        ResetJobAction.Request request = new ResetJobAction.Request(restRequest.param(Job.ID.getPreferredName()));
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        ResetJobAction.Request request = new ResetJobAction.Request(restRequest.param(Job.ID.getPreferredName())).parseTimeoutParams(
+            restRequest
+        );
 
         if (restRequest.paramAsBoolean("wait_for_completion", true)) {
             return channel -> client.execute(ResetJobAction.INSTANCE, request, new RestToXContentListener<>(channel));

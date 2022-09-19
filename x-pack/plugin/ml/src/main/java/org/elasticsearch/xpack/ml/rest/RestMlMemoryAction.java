@@ -24,8 +24,6 @@ import static org.elasticsearch.xpack.ml.MachineLearning.BASE_PATH;
 public class RestMlMemoryAction extends BaseRestHandler {
 
     public static final String NODE_ID = "nodeId";
-    public static final String MASTER_TIMEOUT = "master_timeout";
-    public static final String TIMEOUT = "timeout";
 
     @Override
     public List<Route> routes() {
@@ -43,9 +41,7 @@ public class RestMlMemoryAction extends BaseRestHandler {
         if (Strings.isNullOrEmpty(nodeId)) {
             nodeId = Metadata.ALL;
         }
-        MlMemoryAction.Request request = new MlMemoryAction.Request(nodeId);
-        request.masterNodeTimeout(restRequest.paramAsTime(MASTER_TIMEOUT, request.masterNodeTimeout()));
-        request.timeout(restRequest.paramAsTime(TIMEOUT, request.timeout()));
+        MlMemoryAction.Request request = new MlMemoryAction.Request(nodeId).parseTimeoutParams(restRequest);
         return channel -> client.execute(MlMemoryAction.INSTANCE, request, new NodesResponseRestListener<>(channel));
     }
 }

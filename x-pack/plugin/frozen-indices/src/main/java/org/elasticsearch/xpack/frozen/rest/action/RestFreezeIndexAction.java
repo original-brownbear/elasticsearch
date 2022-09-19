@@ -47,9 +47,8 @@ public final class RestFreezeIndexAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) {
         if (request.getRestApiVersion() == RestApiVersion.V_7 && request.path().endsWith("/_freeze")) {
             // translate to a get indices request, so that we'll 404 on non-existent indices
-            final GetIndexRequest getIndexRequest = new GetIndexRequest();
+            final GetIndexRequest getIndexRequest = new GetIndexRequest().parseMasterTimeout(request);
             getIndexRequest.indices(Strings.splitStringByCommaToArray(request.param("index")));
-            getIndexRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getIndexRequest.masterNodeTimeout()));
             getIndexRequest.indicesOptions(IndicesOptions.fromRequest(request, getIndexRequest.indicesOptions()));
             return channel -> client.admin().indices().getIndex(getIndexRequest, new RestBuilderListener<>(channel) {
                 @Override
@@ -61,9 +60,9 @@ public final class RestFreezeIndexAction extends BaseRestHandler {
             });
         }
 
-        FreezeRequest freezeRequest = new FreezeRequest(Strings.splitStringByCommaToArray(request.param("index")));
-        freezeRequest.timeout(request.paramAsTime("timeout", freezeRequest.timeout()));
-        freezeRequest.masterNodeTimeout(request.paramAsTime("master_timeout", freezeRequest.masterNodeTimeout()));
+        FreezeRequest freezeRequest = new FreezeRequest(Strings.splitStringByCommaToArray(request.param("index"))).parseTimeoutParams(
+            request
+        );
         freezeRequest.indicesOptions(IndicesOptions.fromRequest(request, freezeRequest.indicesOptions()));
         String waitForActiveShards = request.param("wait_for_active_shards");
         if (waitForActiveShards != null) {

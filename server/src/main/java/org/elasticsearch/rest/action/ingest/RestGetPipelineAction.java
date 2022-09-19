@@ -37,8 +37,7 @@ public class RestGetPipelineAction extends BaseRestHandler {
         GetPipelineRequest request = new GetPipelineRequest(
             restRequest.paramAsBoolean("summary", false),
             Strings.splitStringByCommaToArray(restRequest.param("id"))
-        );
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        ).parseCommonParams(restRequest);
         return channel -> client.admin().cluster().getPipeline(request, new RestStatusToXContentListener<>(channel));
     }
 }

@@ -12,6 +12,7 @@ import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.rest.RestRequest;
 
 import java.io.IOException;
 
@@ -51,6 +52,10 @@ public abstract class MasterNodeRequest<Request extends MasterNodeRequest<Reques
      */
     public final Request masterNodeTimeout(String timeout) {
         return masterNodeTimeout(TimeValue.parseTimeValue(timeout, null, getClass().getSimpleName() + ".masterNodeTimeout"));
+    }
+
+    public final Request parseMasterTimeout(RestRequest restRequest) {
+        return masterNodeTimeout(restRequest.paramAsTime("master_timeout", masterNodeTimeout()));
     }
 
     public final TimeValue masterNodeTimeout() {

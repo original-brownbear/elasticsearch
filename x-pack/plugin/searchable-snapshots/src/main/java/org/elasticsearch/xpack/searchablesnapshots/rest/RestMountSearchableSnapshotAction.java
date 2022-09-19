@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.searchablesnapshots.rest;
 
-import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
@@ -36,7 +35,7 @@ public class RestMountSearchableSnapshotAction extends BaseRestHandler {
         MountSearchableSnapshotRequest mountSearchableSnapshotRequest = MountSearchableSnapshotRequest.PARSER.apply(
             request.contentParser(),
             request
-        ).masterNodeTimeout(request.paramAsTime("master_timeout", MasterNodeRequest.DEFAULT_MASTER_NODE_TIMEOUT));
+        ).parseMasterTimeout(request);
         return channel -> client.execute(
             MountSearchableSnapshotAction.INSTANCE,
             mountSearchableSnapshotRequest,

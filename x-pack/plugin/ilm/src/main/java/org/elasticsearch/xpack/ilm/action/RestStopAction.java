@@ -32,9 +32,7 @@ public class RestStopAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
-        StopILMRequest request = new StopILMRequest();
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        StopILMRequest request = new StopILMRequest().parseTimeoutParams(restRequest);
         return channel -> client.execute(StopILMAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }
 }

@@ -36,9 +36,8 @@ public class RestPutDataFrameAnalyticsAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) throws IOException {
         String id = restRequest.param(DataFrameAnalyticsConfig.ID.getPreferredName());
         XContentParser parser = restRequest.contentParser();
-        PutDataFrameAnalyticsAction.Request putRequest = PutDataFrameAnalyticsAction.Request.parseRequest(id, parser);
-        putRequest.timeout(restRequest.paramAsTime("timeout", putRequest.timeout()));
-
+        PutDataFrameAnalyticsAction.Request putRequest = PutDataFrameAnalyticsAction.Request.parseRequest(id, parser)
+            .parseTimeoutParams(restRequest);
         return channel -> client.execute(PutDataFrameAnalyticsAction.INSTANCE, putRequest, new RestToXContentListener<>(channel));
     }
 }

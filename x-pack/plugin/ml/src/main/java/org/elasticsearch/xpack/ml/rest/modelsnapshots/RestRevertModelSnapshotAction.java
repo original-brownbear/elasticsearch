@@ -62,9 +62,7 @@ public class RestRevertModelSnapshotAction extends BaseRestHandler {
                 )
             );
         }
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
-
+        request.parseTimeoutParams(restRequest);
         return channel -> client.execute(RevertModelSnapshotAction.INSTANCE, request, new RestStatusToXContentListener<>(channel));
     }
 }

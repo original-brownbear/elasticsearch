@@ -44,11 +44,8 @@ public class RestGetComponentTemplateAction extends BaseRestHandler {
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
 
-        final GetComponentTemplateAction.Request getRequest = new GetComponentTemplateAction.Request(request.param("name"));
-
-        getRequest.local(request.paramAsBoolean("local", getRequest.local()));
-        getRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getRequest.masterNodeTimeout()));
-
+        final GetComponentTemplateAction.Request getRequest = new GetComponentTemplateAction.Request(request.param("name"))
+            .parseCommonParams(request);
         final boolean implicitAll = getRequest.name() == null;
 
         return channel -> client.execute(GetComponentTemplateAction.INSTANCE, getRequest, new RestToXContentListener<>(channel) {

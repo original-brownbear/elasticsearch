@@ -50,8 +50,7 @@ public class RestDeleteForecastAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) throws IOException {
         String jobId = restRequest.param(Job.ID.getPreferredName());
         String forecastId = restRequest.param(Forecast.FORECAST_ID.getPreferredName(), Metadata.ALL);
-        final DeleteForecastAction.Request request = new DeleteForecastAction.Request(jobId, forecastId);
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
+        final DeleteForecastAction.Request request = new DeleteForecastAction.Request(jobId, forecastId).parseTimeoutParams(restRequest);
         request.setAllowNoForecasts(restRequest.paramAsBoolean("allow_no_forecasts", request.isAllowNoForecasts()));
         return channel -> client.execute(DeleteForecastAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }

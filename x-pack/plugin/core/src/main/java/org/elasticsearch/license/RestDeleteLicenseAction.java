@@ -35,10 +35,7 @@ public class RestDeleteLicenseAction extends BaseRestHandler {
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        DeleteLicenseRequest deleteLicenseRequest = new DeleteLicenseRequest();
-        deleteLicenseRequest.timeout(request.paramAsTime("timeout", deleteLicenseRequest.timeout()));
-        deleteLicenseRequest.masterNodeTimeout(request.paramAsTime("master_timeout", deleteLicenseRequest.masterNodeTimeout()));
-
+        DeleteLicenseRequest deleteLicenseRequest = new DeleteLicenseRequest().parseTimeoutParams(request);
         return channel -> client.admin()
             .cluster()
             .execute(DeleteLicenseAction.INSTANCE, deleteLicenseRequest, new RestToXContentListener<>(channel));

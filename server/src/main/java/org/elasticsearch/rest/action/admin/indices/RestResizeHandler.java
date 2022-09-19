@@ -46,11 +46,9 @@ public abstract class RestResizeHandler extends BaseRestHandler {
                 throw new IllegalArgumentException("parameter [copy_settings] can not be explicitly set to [false]");
             }
         }
-        final ResizeRequest resizeRequest = new ResizeRequest(request.param("target"), request.param("index"));
+        final ResizeRequest resizeRequest = new ResizeRequest(request.param("target"), request.param("index")).parseTimeoutParams(request);
         resizeRequest.setResizeType(getResizeType());
         request.applyContentParser(resizeRequest::fromXContent);
-        resizeRequest.timeout(request.paramAsTime("timeout", resizeRequest.timeout()));
-        resizeRequest.masterNodeTimeout(request.paramAsTime("master_timeout", resizeRequest.masterNodeTimeout()));
         resizeRequest.setWaitForActiveShards(ActiveShardCount.parseString(request.param("wait_for_active_shards")));
         return channel -> client.admin().indices().resizeIndex(resizeRequest, new RestToXContentListener<>(channel));
     }

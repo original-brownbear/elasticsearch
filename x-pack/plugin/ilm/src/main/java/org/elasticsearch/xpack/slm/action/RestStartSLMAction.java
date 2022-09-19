@@ -31,9 +31,7 @@ public class RestStartSLMAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
-        StartSLMAction.Request request = new StartSLMAction.Request();
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        StartSLMAction.Request request = new StartSLMAction.Request().parseTimeoutParams(restRequest);
         return channel -> client.execute(StartSLMAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }
 }

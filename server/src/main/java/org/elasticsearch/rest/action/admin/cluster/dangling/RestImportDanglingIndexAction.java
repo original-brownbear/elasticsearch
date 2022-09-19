@@ -38,11 +38,7 @@ public class RestImportDanglingIndexAction extends BaseRestHandler {
         final ImportDanglingIndexRequest importRequest = new ImportDanglingIndexRequest(
             request.param("index_uuid"),
             request.paramAsBoolean("accept_data_loss", false)
-        );
-
-        importRequest.timeout(request.paramAsTime("timeout", importRequest.timeout()));
-        importRequest.masterNodeTimeout(request.paramAsTime("master_timeout", importRequest.masterNodeTimeout()));
-
+        ).parseTimeoutParams(request);
         return channel -> client.admin().cluster().importDanglingIndex(importRequest, new RestToXContentListener<>(channel) {
             @Override
             protected RestStatus getStatus(AcknowledgedResponse acknowledgedResponse) {

@@ -41,12 +41,10 @@ public class RestDeleteDatafeedAction extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) throws IOException {
         String datafeedId = restRequest.param(DatafeedConfig.ID.getPreferredName());
-        DeleteDatafeedAction.Request request = new DeleteDatafeedAction.Request(datafeedId);
+        DeleteDatafeedAction.Request request = new DeleteDatafeedAction.Request(datafeedId).parseTimeoutParams(restRequest);
         if (restRequest.hasParam(DeleteDatafeedAction.Request.FORCE.getPreferredName())) {
             request.setForce(restRequest.paramAsBoolean(CloseJobAction.Request.FORCE.getPreferredName(), request.isForce()));
         }
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
         return channel -> client.execute(DeleteDatafeedAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }
 }

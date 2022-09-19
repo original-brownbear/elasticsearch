@@ -35,9 +35,7 @@ public class RestRetryAction extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
         String[] indices = Strings.splitStringByCommaToArray(restRequest.param("index"));
-        RetryAction.Request request = new RetryAction.Request(indices);
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        RetryAction.Request request = new RetryAction.Request(indices).parseTimeoutParams(restRequest);
         request.indices(indices);
         request.indicesOptions(IndicesOptions.fromRequest(restRequest, IndicesOptions.strictExpandOpen()));
         return channel -> client.execute(RetryAction.INSTANCE, request, new RestToXContentListener<>(channel));

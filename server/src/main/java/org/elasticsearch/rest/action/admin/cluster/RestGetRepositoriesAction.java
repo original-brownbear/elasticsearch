@@ -48,9 +48,7 @@ public class RestGetRepositoriesAction extends BaseRestHandler {
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
         final String[] repositories = request.paramAsStringArray("repository", Strings.EMPTY_ARRAY);
-        GetRepositoriesRequest getRepositoriesRequest = getRepositoryRequest(repositories);
-        getRepositoriesRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getRepositoriesRequest.masterNodeTimeout()));
-        getRepositoriesRequest.local(request.paramAsBoolean("local", getRepositoriesRequest.local()));
+        GetRepositoriesRequest getRepositoriesRequest = getRepositoryRequest(repositories).parseCommonParams(request);
         settingsFilter.addFilterSettingParams(request);
         return channel -> client.admin().cluster().getRepositories(getRepositoriesRequest, new RestToXContentListener<>(channel));
     }

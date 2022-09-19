@@ -51,7 +51,7 @@ public class RestPutIndexTemplateAction extends BaseRestHandler {
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        PutIndexTemplateRequest putRequest = new PutIndexTemplateRequest(request.param("name"));
+        PutIndexTemplateRequest putRequest = new PutIndexTemplateRequest(request.param("name")).parseMasterTimeout(request);
         if (request.getRestApiVersion() == RestApiVersion.V_7 && request.hasParam("template")) {
             deprecationLogger.compatibleCritical(
                 "template_parameter_deprecation",
@@ -62,7 +62,6 @@ public class RestPutIndexTemplateAction extends BaseRestHandler {
             putRequest.patterns(asList(request.paramAsStringArray("index_patterns", Strings.EMPTY_ARRAY)));
         }
         putRequest.order(request.paramAsInt("order", putRequest.order()));
-        putRequest.masterNodeTimeout(request.paramAsTime("master_timeout", putRequest.masterNodeTimeout()));
         putRequest.create(request.paramAsBoolean("create", false));
         putRequest.cause(request.param("cause", ""));
 

@@ -34,7 +34,7 @@ public class RestSimulateTemplateAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) throws IOException {
-        SimulateTemplateAction.Request simulateRequest = new SimulateTemplateAction.Request();
+        SimulateTemplateAction.Request simulateRequest = new SimulateTemplateAction.Request().parseCommonParams(request);
         simulateRequest.templateName(request.param("name"));
         if (request.hasContent()) {
             PutComposableIndexTemplateAction.Request indexTemplateRequest = new PutComposableIndexTemplateAction.Request(
@@ -46,7 +46,6 @@ public class RestSimulateTemplateAction extends BaseRestHandler {
 
             simulateRequest.indexTemplateRequest(indexTemplateRequest);
         }
-        simulateRequest.masterNodeTimeout(request.paramAsTime("master_timeout", simulateRequest.masterNodeTimeout()));
 
         return channel -> client.execute(SimulateTemplateAction.INSTANCE, simulateRequest, new RestToXContentListener<>(channel));
     }

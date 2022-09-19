@@ -33,10 +33,7 @@ public class RestGetLifecycleAction extends BaseRestHandler {
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
         String[] lifecycleNames = Strings.splitStringByCommaToArray(restRequest.param("name"));
-        GetLifecycleAction.Request getLifecycleRequest = new GetLifecycleAction.Request(lifecycleNames);
-        getLifecycleRequest.timeout(restRequest.paramAsTime("timeout", getLifecycleRequest.timeout()));
-        getLifecycleRequest.masterNodeTimeout(restRequest.paramAsTime("master_timeout", getLifecycleRequest.masterNodeTimeout()));
-
+        GetLifecycleAction.Request getLifecycleRequest = new GetLifecycleAction.Request(lifecycleNames).parseTimeoutParams(restRequest);
         return channel -> client.execute(GetLifecycleAction.INSTANCE, getLifecycleRequest, new RestToXContentListener<>(channel));
     }
 }

@@ -33,9 +33,7 @@ public class RestSnapshottableFeaturesAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) throws IOException {
-        final GetSnapshottableFeaturesRequest req = new GetSnapshottableFeaturesRequest();
-        req.masterNodeTimeout(request.paramAsTime("master_timeout", req.masterNodeTimeout()));
-
+        final GetSnapshottableFeaturesRequest req = new GetSnapshottableFeaturesRequest().parseMasterTimeout(request);
         return restChannel -> { client.execute(SnapshottableFeaturesAction.INSTANCE, req, new RestToXContentListener<>(restChannel)); };
     }
 }

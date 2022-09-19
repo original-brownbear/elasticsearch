@@ -35,9 +35,8 @@ public class RestPutSnapshotLifecycleAction extends BaseRestHandler {
     protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) throws IOException {
         String snapLifecycleName = request.param("name");
         try (XContentParser parser = request.contentParser()) {
-            PutSnapshotLifecycleAction.Request req = PutSnapshotLifecycleAction.Request.parseRequest(snapLifecycleName, parser);
-            req.timeout(request.paramAsTime("timeout", req.timeout()));
-            req.masterNodeTimeout(request.paramAsTime("master_timeout", req.masterNodeTimeout()));
+            PutSnapshotLifecycleAction.Request req = PutSnapshotLifecycleAction.Request.parseRequest(snapLifecycleName, parser)
+                .parseTimeoutParams(request);
             return channel -> client.execute(PutSnapshotLifecycleAction.INSTANCE, req, new RestToXContentListener<>(channel));
         }
     }

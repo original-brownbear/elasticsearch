@@ -59,7 +59,7 @@ public class RestCreateIndexAction extends BaseRestHandler {
 
     // default scope for testing types in mapping
     static CreateIndexRequest prepareRequestV7(RestRequest request) {
-        CreateIndexRequest createIndexRequest = new CreateIndexRequest(request.param("index"));
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(request.param("index")).parseTimeoutParams(request);
         if (request.hasParam(INCLUDE_TYPE_NAME_PARAMETER)) {
             request.param(INCLUDE_TYPE_NAME_PARAMETER);// just consume, it is always replaced with _doc
             deprecationLogger.compatibleCritical("create_index_with_types", TYPES_DEPRECATION_MESSAGE);
@@ -72,9 +72,6 @@ public class RestCreateIndexAction extends BaseRestHandler {
 
             createIndexRequest.source(sourceAsMap, LoggingDeprecationHandler.INSTANCE);
         }
-
-        createIndexRequest.timeout(request.paramAsTime("timeout", createIndexRequest.timeout()));
-        createIndexRequest.masterNodeTimeout(request.paramAsTime("master_timeout", createIndexRequest.masterNodeTimeout()));
         createIndexRequest.waitForActiveShards(ActiveShardCount.parseString(request.param("wait_for_active_shards")));
         return createIndexRequest;
     }
@@ -104,16 +101,13 @@ public class RestCreateIndexAction extends BaseRestHandler {
     }
 
     static CreateIndexRequest prepareRequest(RestRequest request) {
-        CreateIndexRequest createIndexRequest = new CreateIndexRequest(request.param("index"));
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(request.param("index")).parseTimeoutParams(request);
 
         if (request.hasContent()) {
             Map<String, Object> sourceAsMap = XContentHelper.convertToMap(request.requiredContent(), false, request.getXContentType()).v2();
             sourceAsMap = prepareMappings(sourceAsMap);
             createIndexRequest.source(sourceAsMap, LoggingDeprecationHandler.INSTANCE);
         }
-
-        createIndexRequest.timeout(request.paramAsTime("timeout", createIndexRequest.timeout()));
-        createIndexRequest.masterNodeTimeout(request.paramAsTime("master_timeout", createIndexRequest.masterNodeTimeout()));
         createIndexRequest.waitForActiveShards(ActiveShardCount.parseString(request.param("wait_for_active_shards")));
 
         return createIndexRequest;

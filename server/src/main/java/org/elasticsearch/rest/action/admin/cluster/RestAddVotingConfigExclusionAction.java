@@ -82,7 +82,7 @@ public class RestAddVotingConfigExclusionAction extends BaseRestHandler {
             request.paramAsTime("timeout", DEFAULT_TIMEOUT)
         );
 
-        return resolvedRequest.masterNodeTimeout(request.paramAsTime("master_timeout", resolvedRequest.masterNodeTimeout()));
+        return resolvedRequest.parseMasterTimeout(request);
     }
 
 }

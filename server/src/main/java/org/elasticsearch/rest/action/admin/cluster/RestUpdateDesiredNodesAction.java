@@ -41,7 +41,7 @@ public class RestUpdateDesiredNodesAction extends BaseRestHandler {
             updateDesiredNodesRequest = UpdateDesiredNodesRequest.fromXContent(historyId, version, dryRun, parser);
         }
 
-        updateDesiredNodesRequest.masterNodeTimeout(request.paramAsTime("master_timeout", updateDesiredNodesRequest.masterNodeTimeout()));
+        updateDesiredNodesRequest.parseTimeoutParams(request);
         return restChannel -> client.execute(
             UpdateDesiredNodesAction.INSTANCE,
             updateDesiredNodesRequest,

@@ -39,9 +39,7 @@ public class RestDeleteFilterAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) throws IOException {
-        Request request = new Request(restRequest.param(Request.FILTER_ID.getPreferredName()));
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        Request request = new Request(restRequest.param(Request.FILTER_ID.getPreferredName())).parseTimeoutParams(restRequest);
         return channel -> client.execute(DeleteFilterAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }
 

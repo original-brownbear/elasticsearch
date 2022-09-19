@@ -36,8 +36,9 @@ public class RestPutComponentTemplateAction extends BaseRestHandler {
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
 
-        PutComponentTemplateAction.Request putRequest = new PutComponentTemplateAction.Request(request.param("name"));
-        putRequest.masterNodeTimeout(request.paramAsTime("master_timeout", putRequest.masterNodeTimeout()));
+        PutComponentTemplateAction.Request putRequest = new PutComponentTemplateAction.Request(request.param("name")).parseMasterTimeout(
+            request
+        );
         putRequest.create(request.paramAsBoolean("create", false));
         putRequest.cause(request.param("cause", "api"));
         putRequest.componentTemplate(ComponentTemplate.parse(request.contentParser()));

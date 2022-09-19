@@ -76,9 +76,7 @@ public class RestNodesAction extends AbstractCatAction {
 
     @Override
     public RestChannelConsumer doCatRequest(final RestRequest request, final NodeClient client) {
-        final ClusterStateRequest clusterStateRequest = new ClusterStateRequest();
-        clusterStateRequest.clear().nodes(true);
-        clusterStateRequest.masterNodeTimeout(request.paramAsTime("master_timeout", clusterStateRequest.masterNodeTimeout()));
+        final ClusterStateRequest clusterStateRequest = new ClusterStateRequest().clear().nodes(true).parseCommonParams(request);
         final boolean fullId = request.paramAsBoolean("full_id", false);
         final boolean includeUnloadedSegments = request.paramAsBoolean("include_unloaded_segments", false);
         return channel -> client.admin().cluster().state(clusterStateRequest, new RestActionListener<ClusterStateResponse>(channel) {

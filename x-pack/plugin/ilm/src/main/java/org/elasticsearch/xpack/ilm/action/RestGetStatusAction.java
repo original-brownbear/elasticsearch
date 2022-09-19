@@ -31,9 +31,7 @@ public class RestGetStatusAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) {
-        GetStatusAction.Request request = new GetStatusAction.Request();
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        GetStatusAction.Request request = new GetStatusAction.Request().parseTimeoutParams(restRequest);
         return channel -> client.execute(GetStatusAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }
 }

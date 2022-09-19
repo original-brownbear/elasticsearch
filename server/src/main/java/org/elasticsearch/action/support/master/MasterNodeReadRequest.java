@@ -10,6 +10,7 @@ package org.elasticsearch.action.support.master;
 
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.rest.RestRequest;
 
 import java.io.IOException;
 
@@ -37,6 +38,10 @@ public abstract class MasterNodeReadRequest<Request extends MasterNodeReadReques
     public final Request local(boolean local) {
         this.local = local;
         return (Request) this;
+    }
+
+    public final Request parseCommonParams(RestRequest restRequest) {
+        return local(restRequest.paramAsBoolean("local", local())).parseMasterTimeout(restRequest);
     }
 
     /**

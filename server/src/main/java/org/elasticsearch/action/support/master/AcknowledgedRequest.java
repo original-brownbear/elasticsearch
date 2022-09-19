@@ -11,6 +11,7 @@ import org.elasticsearch.cluster.ack.AckedRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.rest.RestRequest;
 
 import java.io.IOException;
 
@@ -80,6 +81,11 @@ public abstract class AcknowledgedRequest<Request extends MasterNodeRequest<Requ
     public void writeTo(StreamOutput out) throws IOException {
         super.writeTo(out);
         out.writeTimeValue(timeout);
+    }
+
+    public final Request parseTimeoutParams(RestRequest request) {
+        ;
+        return timeout(request.paramAsTime("timeout", timeout())).parseMasterTimeout(request);
     }
 
 }

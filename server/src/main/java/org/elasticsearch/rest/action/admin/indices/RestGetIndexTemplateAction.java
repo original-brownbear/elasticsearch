@@ -59,10 +59,7 @@ public class RestGetIndexTemplateAction extends BaseRestHandler {
         }
         final String[] names = Strings.splitStringByCommaToArray(request.param("name"));
 
-        final GetIndexTemplatesRequest getIndexTemplatesRequest = new GetIndexTemplatesRequest(names);
-
-        getIndexTemplatesRequest.local(request.paramAsBoolean("local", getIndexTemplatesRequest.local()));
-        getIndexTemplatesRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getIndexTemplatesRequest.masterNodeTimeout()));
+        final GetIndexTemplatesRequest getIndexTemplatesRequest = new GetIndexTemplatesRequest(names).parseCommonParams(request);
 
         final boolean implicitAll = getIndexTemplatesRequest.names().length == 0;
 

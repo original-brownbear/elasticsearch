@@ -38,9 +38,8 @@ public class RestSetUpgradeModeAction extends BaseRestHandler {
 
     @Override
     protected RestChannelConsumer prepareRequest(RestRequest restRequest, NodeClient client) throws IOException {
-        SetUpgradeModeAction.Request request = new SetUpgradeModeAction.Request(restRequest.paramAsBoolean("enabled", false));
-        request.timeout(restRequest.paramAsTime("timeout", request.timeout()));
-        request.masterNodeTimeout(restRequest.paramAsTime("master_timeout", request.masterNodeTimeout()));
+        SetUpgradeModeAction.Request request = (new SetUpgradeModeAction.Request(restRequest.paramAsBoolean("enabled", false)))
+            .parseTimeoutParams(restRequest);
         return channel -> client.execute(SetUpgradeModeAction.INSTANCE, request, new RestToXContentListener<>(channel));
     }
 }

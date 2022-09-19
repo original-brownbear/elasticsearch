@@ -191,11 +191,10 @@ public class RestGetAliasesAction extends BaseRestHandler {
 
         final boolean namesProvided = request.hasParam("name");
         final String[] aliases = request.paramAsStringArrayOrEmptyIfAll("name");
-        final GetAliasesRequest getAliasesRequest = new GetAliasesRequest(aliases);
+        final GetAliasesRequest getAliasesRequest = new GetAliasesRequest(aliases).parseCommonParams(request);
         final String[] indices = Strings.splitStringByCommaToArray(request.param("index"));
         getAliasesRequest.indices(indices);
         getAliasesRequest.indicesOptions(IndicesOptions.fromRequest(request, getAliasesRequest.indicesOptions()));
-        getAliasesRequest.local(request.paramAsBoolean("local", getAliasesRequest.local()));
 
         // we may want to move this logic to TransportGetAliasesAction but it is based on the original provided aliases, which will
         // not always be available there (they may get replaced so retrieving request.aliases is not quite the same).

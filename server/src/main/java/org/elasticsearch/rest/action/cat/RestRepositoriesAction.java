@@ -33,10 +33,7 @@ public class RestRepositoriesAction extends AbstractCatAction {
 
     @Override
     protected RestChannelConsumer doCatRequest(RestRequest request, NodeClient client) {
-        GetRepositoriesRequest getRepositoriesRequest = new GetRepositoriesRequest();
-        getRepositoriesRequest.local(request.paramAsBoolean("local", getRepositoriesRequest.local()));
-        getRepositoriesRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getRepositoriesRequest.masterNodeTimeout()));
-
+        GetRepositoriesRequest getRepositoriesRequest = new GetRepositoriesRequest().parseCommonParams(request);
         return channel -> client.admin()
             .cluster()
             .getRepositories(getRepositoriesRequest, new RestResponseListener<GetRepositoriesResponse>(channel) {

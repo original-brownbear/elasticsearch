@@ -14,7 +14,6 @@ import org.elasticsearch.client.internal.node.NodeClient;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.core.RestApiVersion;
-import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.http.HttpChannel;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestRequest;
@@ -78,12 +77,9 @@ public class RestGetMappingAction extends BaseRestHandler {
         }
         final String[] indices = Strings.splitStringByCommaToArray(request.param("index"));
 
-        final GetMappingsRequest getMappingsRequest = new GetMappingsRequest();
+        final GetMappingsRequest getMappingsRequest = new GetMappingsRequest().parseCommonParams(request);
         getMappingsRequest.indices(indices);
         getMappingsRequest.indicesOptions(IndicesOptions.fromRequest(request, getMappingsRequest.indicesOptions()));
-        final TimeValue timeout = request.paramAsTime("master_timeout", getMappingsRequest.masterNodeTimeout());
-        getMappingsRequest.masterNodeTimeout(timeout);
-        getMappingsRequest.local(request.paramAsBoolean("local", getMappingsRequest.local()));
         final HttpChannel httpChannel = request.getHttpChannel();
         return channel -> new RestCancellableNodeClient(client, httpChannel).admin()
             .indices()
