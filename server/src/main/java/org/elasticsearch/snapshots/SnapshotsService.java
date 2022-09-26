@@ -651,7 +651,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         ).hasExecutingDeletion(repoName) == false;
                         final InFlightShardSnapshotStates inFlightShardStates;
                         if (readyToExecute) {
-                            inFlightShardStates = InFlightShardSnapshotStates.forEntries(snapshotsInProgress.forRepo(repoName));
+                            inFlightShardStates = snapshotsInProgress.inFlightShardSnapshotStates(repoName);
                         } else {
                             // no need to compute these, we'll mark all shards as queued anyway because we wait for the delete
                             inFlightShardStates = null;
@@ -2691,7 +2691,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                             snapshotEntries.add(entry);
                         } else {
                             if (inFlightShardStates == null) {
-                                inFlightShardStates = InFlightShardSnapshotStates.forEntries(snapshotsInProgress.forRepo(repoName));
+                                inFlightShardStates = snapshotsInProgress.inFlightShardSnapshotStates(repoName);
                             }
                             final ImmutableOpenMap.Builder<RepositoryShardId, ShardSnapshotStatus> updatedAssignmentsBuilder =
                                 ImmutableOpenMap.builder(entry.shardsByRepoShardId());
@@ -2858,9 +2858,7 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
     ) {
         ImmutableOpenMap.Builder<ShardId, SnapshotsInProgress.ShardSnapshotStatus> builder = ImmutableOpenMap.builder();
         final ShardGenerations shardGenerations = repositoryData.shardGenerations();
-        final InFlightShardSnapshotStates inFlightShardStates = InFlightShardSnapshotStates.forEntries(
-            snapshotsInProgress.forRepo(repoName)
-        );
+        final InFlightShardSnapshotStates inFlightShardStates = snapshotsInProgress.inFlightShardSnapshotStates(repoName);
         final boolean readyToExecute = deletionsInProgress.hasExecutingDeletion(repoName) == false;
         for (IndexId index : indices) {
             final String indexName = index.getName();

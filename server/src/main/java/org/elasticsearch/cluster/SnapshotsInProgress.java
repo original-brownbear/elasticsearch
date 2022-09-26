@@ -58,6 +58,8 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
     // keyed by repository name
     private final Map<String, ByRepo> entries;
 
+    private Map<String, InFlightShardSnapshotStates> inflightShardStates = Map.of();
+
     public SnapshotsInProgress(StreamInput in) throws IOException {
         this(collectByRepo(in));
     }
@@ -104,6 +106,20 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         final List<Entry> forRepo = new ArrayList<>(forRepo(entry.repository()));
         forRepo.add(entry);
         return withUpdatedEntriesForRepo(entry.repository(), forRepo);
+    }
+
+    public final Collection<String> activeRepositories() {
+        return entries.keySet();
+    }
+
+    public InFlightShardSnapshotStates inFlightShardSnapshotStates(String repository) {
+        final var cache = inflightShardStates;
+        InFlightShardSnapshotStates found = cache.get(repository);
+        if (found == null) {
+            found = InFlightShardSnapshotStates.forEntries(forRepo(repository));
+            inflightShardStates = Maps.copyMapWithAddedEntry(cache, repository, found);
+        }
+        return found;
     }
 
     public List<Entry> forRepo(String repository) {
