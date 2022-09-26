@@ -10,6 +10,10 @@ package org.elasticsearch.cluster;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState.Custom;
+import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.routing.IndexRoutingTable;
+import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -23,6 +27,7 @@ import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoryOperation;
 import org.elasticsearch.repositories.RepositoryShardId;
 import org.elasticsearch.repositories.ShardGeneration;
+import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.repositories.ShardSnapshotResult;
 import org.elasticsearch.snapshots.InFlightShardSnapshotStates;
 import org.elasticsearch.snapshots.Snapshot;
@@ -42,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -104,6 +110,98 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
         final List<Entry> forRepo = new ArrayList<>(forRepo(entry.repository()));
         forRepo.add(entry);
         return withUpdatedEntriesForRepo(entry.repository(), forRepo);
+    }
+
+    @Nullable
+    public State state(Snapshot snapshot) {
+        final Entry entry = snapshot(snapshot);
+        if (entry == null) {
+            return null;
+        }
+        return entry.state();
+    }
+
+    public boolean nodesHaveOutstandingWork(List<DiscoveryNode> nodes) {
+        if (nodes.isEmpty()) {
+            // Nothing to do, no nodes removed
+            return false;
+        }
+        final Set<String> removedNodeIds = nodes.stream().map(DiscoveryNode::getId).collect(Collectors.toSet());
+        return asStream().anyMatch(snapshot -> {
+            if (snapshot.state().completed() || snapshot.isClone()) {
+                // nothing to do for already completed snapshots or clones that run on master anyways
+                return false;
+            }
+            for (ShardSnapshotStatus shardSnapshotStatus : snapshot.shardsByRepoShardId().values()) {
+                // TODO: nasty contains call
+                if (shardSnapshotStatus.state().completed() == false && removedNodeIds.contains(shardSnapshotStatus.nodeId())) {
+                    // Snapshot had an incomplete shard running on a removed node so we need to adjust that shard's snapshot status
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    /**
+     * @param event cluster changed event with {@link ClusterChangedEvent#state()} that contains this instance.
+     * @return true if any waiting shards have been started or snapshotting shards have become unassigned by the changes in the event
+     */
+    public boolean waitingShardsStartedOrUnassigned(ClusterChangedEvent event) {
+        assert event.state().custom(SnapshotsInProgress.TYPE, SnapshotsInProgress.EMPTY) == this;
+        if (event.routingTableChanged() == false) {
+            // no routing table changes, just break out
+            return false;
+        }
+        return checkWaitingShardsStartedOrUnassigned(event);
+    }
+
+    private boolean checkWaitingShardsStartedOrUnassigned(ClusterChangedEvent event) {
+        for (var entries : entries.values()) {
+            for (Entry entry : entries.entries) {
+                if (entry.state() == State.STARTED && entry.isClone() == false) {
+                    for (Map.Entry<RepositoryShardId, ShardSnapshotStatus> shardStatus : entry.shardsByRepoShardId().entrySet()) {
+                        final ShardState state = shardStatus.getValue().state();
+                        if (state != ShardState.WAITING && state != ShardState.QUEUED) {
+                            continue;
+                        }
+                        final RepositoryShardId shardId = shardStatus.getKey();
+                        if (event.indexRoutingTableChanged(shardId.indexName())) {
+                            IndexRoutingTable indexShardRoutingTable = event.state()
+                                .getRoutingTable()
+                                .index(entry.indexByName(shardId.indexName()));
+                            if (indexShardRoutingTable == null) {
+                                // index got removed concurrently and we have to fail WAITING or QUEUED state shards
+                                return true;
+                            }
+                            ShardRouting shardRouting = indexShardRoutingTable.shard(shardId.shardId()).primaryShard();
+                            if (shardRouting != null && (shardRouting.started() || shardRouting.unassigned())) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public ShardGenerations shardGenerations(Snapshot snap, Metadata metadata) {
+        final Entry snapshot = snapshot(snap);
+        ShardGenerations.Builder builder = ShardGenerations.builder();
+        if (snapshot.isClone()) {
+            snapshot.shardsByRepoShardId().forEach((key, value) -> builder.put(key.index(), key.shardId(), value));
+        } else {
+            snapshot.shardsByRepoShardId().forEach((key, value) -> {
+                final Index index = snapshot.indexByName(key.indexName());
+                if (metadata.index(index) == null) {
+                    assert snapshot.partial() : "Index [" + index + "] was deleted during a snapshot but snapshot was not partial.";
+                    return;
+                }
+                builder.put(key.index(), key.shardId(), value);
+            });
+        }
+        return builder.build();
     }
 
     public List<Entry> forRepo(String repository) {
