@@ -41,7 +41,6 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.repositories.IndexId;
 import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
-import org.elasticsearch.repositories.RepositoryShardId;
 import org.elasticsearch.repositories.ShardGeneration;
 import org.elasticsearch.repositories.ShardGenerations;
 import org.elasticsearch.repositories.ShardSnapshotResult;
@@ -185,17 +184,14 @@ public class SnapshotShardsService extends AbstractLifecycleComponent implements
         while (it.hasNext()) {
             final Map.Entry<Snapshot, Map<ShardId, IndexShardSnapshotStatus>> entry = it.next();
             final Snapshot snapshot = entry.getKey();
-            final SnapshotsInProgress.State found = snapshotsInProgress.state(snapshot);
-            if (found == null || found.completed()) {
+            if (snapshotsInProgress.state(snapshot) == null) {
                 // abort any running snapshots of shards for the removed entry;
                 // this could happen if for some reason the cluster state update for aborting
                 // running shards is missed, then the snapshot is removed is a subsequent cluster
                 // state update, which is being processed here
                 it.remove();
-                if (found == null) {
-                    for (IndexShardSnapshotStatus snapshotStatus : entry.getValue().values()) {
-                        snapshotStatus.abortIfNotCompleted("snapshot has been removed in cluster state, aborting");
-                    }
+                for (IndexShardSnapshotStatus snapshotStatus : entry.getValue().values()) {
+                    snapshotStatus.abortIfNotCompleted("snapshot has been removed in cluster state, aborting");
                 }
             }
         }
@@ -260,8 +256,8 @@ public class SnapshotShardsService extends AbstractLifecycleComponent implements
                 // Abort all running shards for this snapshot
                 final Snapshot snapshot = entry.snapshot();
                 Map<ShardId, IndexShardSnapshotStatus> snapshotShards = shardSnapshots.getOrDefault(snapshot, emptyMap());
-                for (Map.Entry<RepositoryShardId, ShardSnapshotStatus> shard : entry.shardsByRepoShardId().entrySet()) {
-                    final ShardId sid = entry.shardId(shard.getKey());
+                for (Map.Entry<ShardId, ShardSnapshotStatus> shard : entry.shards().entrySet()) {
+                    final ShardId sid = shard.getKey();
                     final IndexShardSnapshotStatus snapshotStatus = snapshotShards.get(sid);
                     if (snapshotStatus == null) {
                         // due to CS batching we might have missed the INIT state and straight went into ABORTED
