@@ -15,7 +15,9 @@ import io.netty.handler.ssl.SslHandler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
@@ -114,8 +116,8 @@ public class SecurityNetty4Transport extends Netty4Transport {
     }
 
     @Override
-    protected ChannelHandler getClientChannelInitializer(DiscoveryNode node) {
-        return new SecurityClientChannelInitializer(node);
+    protected ChannelHandler getClientChannelInitializer(DiscoveryNode node, ActionListener<Void> initFuture) {
+        return new SecurityClientChannelInitializer(node, initFuture);
     }
 
     @Override
@@ -156,7 +158,9 @@ public class SecurityNetty4Transport extends Netty4Transport {
         private final boolean hostnameVerificationEnabled;
         private final SNIHostName serverName;
 
-        SecurityClientChannelInitializer(DiscoveryNode node) {
+        private final ActionListener<Void> initListener;
+
+        SecurityClientChannelInitializer(DiscoveryNode node, ActionListener<Void> initListener) {
             this.hostnameVerificationEnabled = sslEnabled && sslConfiguration.verificationMode().isHostnameVerificationEnabled();
             String configuredServerName = node.getAttributes().get("server_name");
             if (configuredServerName != null) {
@@ -168,6 +172,7 @@ public class SecurityNetty4Transport extends Netty4Transport {
             } else {
                 serverName = null;
             }
+            this.initListener = initListener;
         }
 
         @Override
@@ -175,7 +180,11 @@ public class SecurityNetty4Transport extends Netty4Transport {
             super.initChannel(ch);
             if (sslEnabled) {
                 ch.pipeline()
-                    .addFirst(new ClientSslHandlerInitializer(sslConfiguration, sslService, hostnameVerificationEnabled, serverName));
+                    .addFirst(
+                        new ClientSslHandlerInitializer(sslConfiguration, sslService, hostnameVerificationEnabled, serverName, initListener)
+                    );
+            } else {
+                initListener.onResponse(null);
             }
         }
     }
@@ -187,16 +196,20 @@ public class SecurityNetty4Transport extends Netty4Transport {
         private final SSLService sslService;
         private final SNIServerName serverName;
 
+        private final ActionListener<Void> initListener;
+
         private ClientSslHandlerInitializer(
             SslConfiguration sslConfiguration,
             SSLService sslService,
             boolean hostnameVerificationEnabled,
-            SNIServerName serverName
+            SNIServerName serverName,
+            ActionListener<Void> initListener
         ) {
             this.sslConfiguration = sslConfiguration;
             this.hostnameVerificationEnabled = hostnameVerificationEnabled;
             this.sslService = sslService;
             this.serverName = serverName;
+            this.initListener = initListener;
         }
 
         @Override
@@ -217,7 +230,23 @@ public class SecurityNetty4Transport extends Netty4Transport {
                 sslParameters.setServerNames(Collections.singletonList(serverName));
                 sslEngine.setSSLParameters(sslParameters);
             }
-            ctx.pipeline().replace(this, "ssl", new SslHandler(sslEngine));
+            final SslHandler sslHandler = new SslHandler(sslEngine);
+            sslHandler.handshakeFuture().addListener(result -> {
+                if (result.isSuccess()) {
+                    initListener.onResponse(null);
+                } else {
+                    Throwable cause = result.cause();
+                    final Exception e;
+                    if (cause instanceof Error) {
+                        ExceptionsHelper.maybeDieOnAnotherThread(cause);
+                        e = new Exception(cause);
+                    } else {
+                        e = (Exception) cause;
+                    }
+                    initListener.onFailure(e);
+                }
+            });
+            ctx.pipeline().replace(this, "ssl", sslHandler);
             super.connect(ctx, remoteAddress, localAddress, promise);
         }
     }

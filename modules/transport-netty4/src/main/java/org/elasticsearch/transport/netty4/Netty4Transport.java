@@ -27,6 +27,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.StepListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
@@ -267,7 +269,8 @@ public class Netty4Transport extends TcpTransport {
         return new ServerChannelInitializer(name);
     }
 
-    protected ChannelHandler getClientChannelInitializer(DiscoveryNode node) {
+    protected ChannelHandler getClientChannelInitializer(DiscoveryNode node, ActionListener<Void> initListener) {
+        initListener.onResponse(null);
         return new ClientChannelInitializer();
     }
 
@@ -278,7 +281,8 @@ public class Netty4Transport extends TcpTransport {
     protected Netty4TcpChannel initiateChannel(DiscoveryNode node) throws IOException {
         InetSocketAddress address = node.getAddress().address();
         Bootstrap bootstrapWithHandler = clientBootstrap.clone();
-        bootstrapWithHandler.handler(getClientChannelInitializer(node));
+        final StepListener<Void> initListener = new StepListener<>();
+        bootstrapWithHandler.handler(getClientChannelInitializer(node, initListener));
         bootstrapWithHandler.remoteAddress(address);
         ChannelFuture connectFuture = bootstrapWithHandler.connect();
 
@@ -288,7 +292,24 @@ public class Netty4Transport extends TcpTransport {
             throw new IOException(connectFuture.cause());
         }
 
-        Netty4TcpChannel nettyChannel = new Netty4TcpChannel(channel, false, "default", rstOnClose, connectFuture);
+        final StepListener<Void> fullyConnected = new StepListener<>();
+
+        connectFuture.addListener(result -> {
+            if (result.isSuccess()) {
+                initListener.addListener(fullyConnected);
+            } else {
+                Throwable cause = result.cause();
+                final Exception e;
+                if (cause instanceof Error) {
+                    ExceptionsHelper.maybeDieOnAnotherThread(cause);
+                    e = new Exception(cause);
+                } else {
+                    e = (Exception) cause;
+                }
+                fullyConnected.onFailure(e);
+            }
+        });
+        Netty4TcpChannel nettyChannel = new Netty4TcpChannel(channel, false, "default", rstOnClose, fullyConnected);
         channel.attr(CHANNEL_KEY).set(nettyChannel);
 
         return nettyChannel;
@@ -342,7 +363,9 @@ public class Netty4Transport extends TcpTransport {
             addClosedExceptionLogger(ch);
             assert ch instanceof Netty4NioSocketChannel;
             NetUtils.tryEnsureReasonableKeepAliveConfig(((Netty4NioSocketChannel) ch).javaChannel());
-            Netty4TcpChannel nettyTcpChannel = new Netty4TcpChannel(ch, true, name, rstOnClose, ch.newSucceededFuture());
+            final StepListener<Void> succeeded = new StepListener<>();
+            succeeded.onResponse(null);
+            Netty4TcpChannel nettyTcpChannel = new Netty4TcpChannel(ch, true, name, rstOnClose, succeeded);
             ch.attr(CHANNEL_KEY).set(nettyTcpChannel);
             setupPipeline(ch);
             serverAcceptedChannel(nettyTcpChannel);
