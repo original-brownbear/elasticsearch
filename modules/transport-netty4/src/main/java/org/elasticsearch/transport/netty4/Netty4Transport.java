@@ -40,6 +40,7 @@ import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
@@ -292,7 +293,7 @@ public class Netty4Transport extends TcpTransport {
             throw new IOException(connectFuture.cause());
         }
 
-        final StepListener<Void> fullyConnected = new StepListener<>();
+        final ListenableFuture<Void> fullyConnected = new ListenableFuture<>();
 
         connectFuture.addListener(result -> {
             if (result.isSuccess()) {
@@ -363,7 +364,7 @@ public class Netty4Transport extends TcpTransport {
             addClosedExceptionLogger(ch);
             assert ch instanceof Netty4NioSocketChannel;
             NetUtils.tryEnsureReasonableKeepAliveConfig(((Netty4NioSocketChannel) ch).javaChannel());
-            final StepListener<Void> succeeded = new StepListener<>();
+            final ListenableFuture<Void> succeeded = new ListenableFuture<>();
             succeeded.onResponse(null);
             Netty4TcpChannel nettyTcpChannel = new Netty4TcpChannel(ch, true, name, rstOnClose, succeeded);
             ch.attr(CHANNEL_KEY).set(nettyTcpChannel);
