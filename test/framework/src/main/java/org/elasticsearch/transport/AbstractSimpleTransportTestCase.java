@@ -8,6 +8,7 @@
 
 package org.elasticsearch.transport;
 
+import io.netty.handler.ssl.SslHandshakeTimeoutException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.util.Supplier;
@@ -2333,7 +2334,7 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
                 ConnectTransportException.class,
                 () -> connectToNode(serviceA, dummy, builder.build())
             );
-            assertEquals("[][" + dummy.getAddress() + "] handshake_timeout[1ms]", ex.getMessage());
+            assertNotNull(ExceptionsHelper.unwrap(ex, SslHandshakeTimeoutException.class));
         }
     }
 
@@ -2348,18 +2349,15 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
                 emptySet(),
                 version0
             );
-            Thread t = new Thread() {
-                @Override
-                public void run() {
-                    try (Socket accept = socket.accept()) {
-                        if (randomBoolean()) { // sometimes wait until the other side sends the message
-                            accept.getInputStream().read();
-                        }
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
+            Thread t = new Thread(() -> {
+                try (Socket accept = socket.accept()) {
+                    if (randomBoolean()) { // sometimes wait until the other side sends the message
+                        accept.getInputStream().read();
                     }
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
-            };
+            });
             t.start();
             ConnectionProfile.Builder builder = new ConnectionProfile.Builder();
             builder.addConnections(
@@ -2375,7 +2373,7 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
                 ConnectTransportException.class,
                 () -> connectToNode(serviceA, dummy, builder.build())
             );
-            assertEquals(ex.getMessage(), "[][" + dummy.getAddress() + "] general node connection failure");
+            assertEquals("[][" + dummy.getAddress() + "] general node connection failure", ex.getMessage());
             assertThat(ex.getCause().getMessage(), startsWith("handshake failed"));
             t.join();
         }
