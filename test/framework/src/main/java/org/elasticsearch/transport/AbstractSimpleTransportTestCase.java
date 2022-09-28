@@ -9,6 +9,7 @@
 package org.elasticsearch.transport;
 
 import io.netty.handler.ssl.SslHandshakeTimeoutException;
+
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.util.Supplier;
@@ -2207,7 +2208,7 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
                 IOUtils.close(openConnection(service, first, builder.build()));
                 builder.setConnectTimeout(TimeValue.timeValueMillis(1));
                 final ConnectionProfile profile = builder.build();
-                // now with the 1ms timeout we got and test that is it's applied
+                // now with the 1ms timeout we got and test that it's applied
                 long startTime = System.nanoTime();
                 ConnectTransportException ex = expectThrows(
                     ConnectTransportException.class,
