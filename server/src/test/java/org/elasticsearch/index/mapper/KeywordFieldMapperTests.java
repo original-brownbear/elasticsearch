@@ -108,6 +108,14 @@ public class KeywordFieldMapperTests extends MapperTestCase {
         assertParseMinimalWarnings();
     }
 
+    public void testAggregationsDocValuesDisabled() throws IOException {
+        MapperService mapperService = createMapperService(fieldMapping(b -> {
+            minimalMapping(b);
+            b.field("doc_values", false);
+        }));
+        assertAggregatableConsistency(mapperService.fieldType("field"));
+    }
+
     @Override
     protected Collection<? extends Plugin> getPlugins() {
         return singletonList(new MockAnalysisPlugin());
@@ -621,6 +629,11 @@ public class KeywordFieldMapperTests extends MapperTestCase {
             () -> mapper.parse(source(b -> b.field("field", stringBuilder.toString())))
         );
         assertThat(e.getCause().getMessage(), containsString("UTF8 encoding is longer than the max length"));
+    }
+
+    @Override
+    protected boolean supportsIgnoreMalformed() {
+        return false;
     }
 
     @Override
