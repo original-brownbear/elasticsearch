@@ -401,14 +401,11 @@ public class SnapshotsService extends AbstractLifecycleComponent implements Clus
                         }
                     }
                     if (missing.isEmpty() == false) {
-                        throw new SnapshotException(
-                            new Snapshot(repositoryName, snapshotId),
-                            "Indices don't have primary shards " + missing
-                        );
+                        throw new SnapshotException(snapshot, "Indices don't have primary shards " + missing);
                     }
                 }
                 newEntry = SnapshotsInProgress.startedEntry(
-                    new Snapshot(repositoryName, snapshotId),
+                    snapshot,
                     request.includeGlobalState(),
                     request.partial(),
                     indexIds,
