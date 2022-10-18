@@ -156,12 +156,14 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
         // nothing to do
     }
 
+    @Override
     public void seek(long position) {
         ensureCapacityFromPosition(position);
         this.pageIndex = (int) position / pageSize;
         this.currentPageOffset = (int) position % pageSize;
     }
 
+    @Override
     public void skip(int length) {
         seek(position() + length);
     }

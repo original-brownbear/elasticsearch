@@ -17,6 +17,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
@@ -72,7 +73,7 @@ public class InboundHandlerTests extends ESTestCase {
             version,
             new StatsTracker(),
             threadPool,
-            new BytesRefRecycler(PageCacheRecycler.NON_RECYCLING_INSTANCE),
+            BytesStreamOutput::new,
             new HandlingTimeTracker(),
             false
         );

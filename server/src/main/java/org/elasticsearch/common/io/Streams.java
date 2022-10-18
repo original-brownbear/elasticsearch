@@ -247,6 +247,16 @@ public abstract class Streams {
         }
 
         @Override
+        public void seek(long position) {
+            delegate.seek(position);
+        }
+
+        @Override
+        public void skip(int length) {
+            delegate.skip(length);
+        }
+
+        @Override
         public BytesReference bytes() {
             return delegate.bytes();
         }

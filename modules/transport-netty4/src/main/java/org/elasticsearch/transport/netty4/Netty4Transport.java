@@ -9,6 +9,7 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -28,6 +29,8 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.recycler.Recycler;
@@ -128,6 +131,79 @@ public class Netty4Transport extends TcpTransport {
     @Override
     protected Recycler<BytesRef> createRecycler(Settings settings, PageCacheRecycler pageCacheRecycler) {
         return Netty4Utils.createRecycler(settings);
+    }
+
+    @Override
+    public BytesStream newNetworkBytesStream() {
+        return new BytesStream() {
+
+            private int markedWriterIndex = -1;
+
+            private final ByteBuf buf = NettyAllocator.getAllocator().heapBuffer();
+
+            @Override
+            public void seek(long position) {
+                markedWriterIndex = buf.writerIndex();
+                buf.writerIndex(Math.toIntExact(position));
+            }
+
+            @Override
+            public void skip(int length) {
+                buf.writerIndex(buf.writerIndex() + length);
+            }
+
+            @Override
+            public long position() {
+                return buf.writerIndex();
+            }
+
+            @Override
+            public BytesReference bytes() {
+                if (markedWriterIndex > 0) {
+                    int newPosition = Math.max(buf.writerIndex(), markedWriterIndex);
+                    buf.writerIndex(newPosition).capacity(newPosition);
+                }
+                return Netty4Utils.toBytesReference(buf);
+            }
+
+            @Override
+            public void writeByte(byte b) {
+                buf.writeByte(b);
+            }
+
+            @Override
+            public void writeInt(int i) {
+                buf.writeInt(i);
+            }
+
+            @Override
+            public void writeLong(long i) {
+                buf.writeLong(i);
+            }
+
+            @Override
+            public void writeFloat(float v) {
+                buf.writeFloat(v);
+            }
+
+            @Override
+            public void writeDouble(double v) {
+                buf.writeDouble(v);
+            }
+
+            @Override
+            public void writeBytes(byte[] b, int offset, int length) {
+                buf.writeBytes(b, offset, length);
+            }
+
+            @Override
+            public void flush() {}
+
+            @Override
+            public void close() {
+                buf.release();
+            }
+        };
     }
 
     @Override

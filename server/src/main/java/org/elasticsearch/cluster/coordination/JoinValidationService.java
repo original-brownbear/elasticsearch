@@ -26,6 +26,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.core.AbstractRefCounted;
+import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.Environment;
@@ -341,7 +342,7 @@ public class JoinValidationService {
             } catch (IOException e) {
                 throw new ElasticsearchException("failed to serialize cluster state for publishing to node {}", e, discoveryNode);
             }
-            final var newBytes = new ReleasableBytesReference(bytesStream.bytes(), bytesStream);
+            final var newBytes = new ReleasableBytesReference(bytesStream.bytes(), () -> IOUtils.closeWhileHandlingException(bytesStream));
             logger.trace(
                 "serialized join validation cluster state version [{}] for node version [{}] with size [{}]",
                 clusterState.version(),
@@ -354,7 +355,7 @@ public class JoinValidationService {
             return newBytes;
         } finally {
             if (success == false) {
-                bytesStream.close();
+                IOUtils.closeWhileHandlingException(bytesStream);
                 assert false;
             }
         }
