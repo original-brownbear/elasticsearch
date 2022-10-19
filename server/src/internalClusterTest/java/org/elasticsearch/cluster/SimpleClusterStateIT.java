@@ -235,8 +235,8 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
 
     public void testLargeClusterStatePublishing() throws Exception {
         int estimatedBytesSize = scaledRandomIntBetween(
-            ByteSizeValue.parseBytesSizeValue("10k", "estimatedBytesSize").bytesAsInt(),
-            ByteSizeValue.parseBytesSizeValue("256k", "estimatedBytesSize").bytesAsInt()
+            ByteSizeValue.parseBytesSizeValue("5M", "estimatedBytesSize").bytesAsInt(),
+            ByteSizeValue.parseBytesSizeValue("10M", "estimatedBytesSize").bytesAsInt()
         );
         XContentBuilder mapping = XContentFactory.jsonBuilder().startObject().startObject("_doc").startObject("properties");
         int counter = 0;
