@@ -23,7 +23,6 @@ import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.Booleans;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -72,6 +71,9 @@ public class Netty4Utils {
      * pages of the BytesReference. Don't free the bytes of reference before the ByteBuf goes out of scope.
      */
     public static ByteBuf toByteBuf(final BytesReference reference) {
+        if (reference instanceof ByteBufBytesReference) {
+            return ((ByteBufBytesReference) reference).byteBuf();
+        }
         if (reference.length() == 0) {
             return Unpooled.EMPTY_BUFFER;
         }
@@ -103,12 +105,8 @@ public class Netty4Utils {
         final int readableBytes = buffer.readableBytes();
         if (readableBytes == 0) {
             return BytesArray.EMPTY;
-        } else if (buffer.hasArray()) {
-            return new BytesArray(buffer.array(), buffer.arrayOffset() + buffer.readerIndex(), readableBytes);
-        } else {
-            final ByteBuffer[] byteBuffers = buffer.nioBuffers();
-            return BytesReference.fromByteBuffers(byteBuffers);
         }
+        return new ByteBufBytesReference(buffer);
     }
 
     public static Recycler<BytesRef> createRecycler(Settings settings) {
