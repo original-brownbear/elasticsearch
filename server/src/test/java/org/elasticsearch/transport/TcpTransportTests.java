@@ -16,6 +16,7 @@ import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.HandlingTimeTracker;
 import org.elasticsearch.common.network.NetworkService;
@@ -596,6 +597,7 @@ public class TcpTransportTests extends ESTestCase {
             final PlainActionFuture<Void> listener = new PlainActionFuture<>();
             channel.addCloseListener(listener);
 
+            final var recycler = new BytesRefRecycler(new MockPageCacheRecycler(Settings.EMPTY));
             TcpTransport.handleException(
                 channel,
                 exception,
@@ -605,7 +607,7 @@ public class TcpTransportTests extends ESTestCase {
                     Version.CURRENT,
                     new StatsTracker(),
                     testThreadPool,
-                    new BytesRefRecycler(new MockPageCacheRecycler(Settings.EMPTY)),
+                    () -> new RecyclerBytesStreamOutput(recycler),
                     new HandlingTimeTracker(),
                     false
                 )

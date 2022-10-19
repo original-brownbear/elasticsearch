@@ -12,5 +12,9 @@ import org.elasticsearch.common.bytes.BytesReference;
 
 public abstract class BytesStream extends StreamOutput {
 
+    public abstract void seek(long position);
+
+    public abstract void skip(int length);
+
     public abstract BytesReference bytes();
 }
