@@ -9,6 +9,7 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -20,6 +21,8 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.RecvByteBufAllocator;
 import io.netty.channel.socket.nio.NioChannelOption;
+import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.util.AttributeKey;
 
 import org.apache.logging.log4j.LogManager;
@@ -47,6 +50,7 @@ import org.elasticsearch.transport.TransportSettings;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteOrder;
 import java.util.Map;
 
 import static org.elasticsearch.common.settings.Setting.byteSizeSetting;
@@ -356,8 +360,19 @@ public class Netty4Transport extends TcpTransport {
     }
 
     private void setupPipeline(Channel ch) {
+        final var frameDecoder = new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 2, 4) {
+            @Override
+            protected long getUnadjustedFrameLength(ByteBuf buf, int offset, int length, ByteOrder order) {
+                int read = buf.getInt(offset);
+                if (read == -1) {
+                    read = 0;
+                }
+                return read;
+            }
+        };
+        frameDecoder.setCumulator(ByteToMessageDecoder.COMPOSITE_CUMULATOR);
         ch.pipeline()
-            .addLast("byte_buf_sizer", NettyByteBufSizer.INSTANCE)
+            .addLast("length_frame_decoder", frameDecoder)
             .addLast("logging", ESLoggingHandler.INSTANCE)
             .addLast("chunked_writer", new Netty4WriteThrottlingHandler(getThreadPool().getThreadContext()))
             .addLast("dispatcher", new Netty4MessageInboundHandler(this, recycler));
