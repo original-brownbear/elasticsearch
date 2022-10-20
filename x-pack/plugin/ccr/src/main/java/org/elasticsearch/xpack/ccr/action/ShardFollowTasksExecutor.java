@@ -281,8 +281,6 @@ public class ShardFollowTasksExecutor extends PersistentTasksExecutor<ShardFollo
                 final var leaderIndex = params.getLeaderShardId().getIndex();
                 final var followerIndex = params.getFollowShardId().getIndex();
 
-                final var clusterStateRequest = CcrRequests.metadataRequest(leaderIndex.getName());
-
                 final CheckedConsumer<ClusterStateResponse, Exception> onResponse = clusterStateResponse -> {
                     final var leaderIndexMetadata = clusterStateResponse.getState().metadata().getIndexSafe(leaderIndex);
                     final var followerIndexMetadata = clusterService.state().metadata().getIndexSafe(followerIndex);
@@ -374,7 +372,9 @@ public class ShardFollowTasksExecutor extends PersistentTasksExecutor<ShardFollo
                 };
 
                 try {
-                    remoteClient(params).admin().cluster().state(clusterStateRequest, ActionListener.wrap(onResponse, errorHandler));
+                    remoteClient(params).admin()
+                        .cluster()
+                        .state(CcrRequests.metadataRequest(leaderIndex.getName()), ActionListener.wrap(onResponse, errorHandler));
                 } catch (final NoSuchRemoteClusterException e) {
                     errorHandler.accept(e);
                 }
