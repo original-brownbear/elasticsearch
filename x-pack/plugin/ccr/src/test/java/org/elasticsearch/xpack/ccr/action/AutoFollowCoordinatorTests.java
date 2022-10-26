@@ -1708,12 +1708,10 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         Consumer<List<AutoFollowCoordinator.AutoFollowResult>> handler = allResults::addAll;
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(states), () -> 1L, Runnable::run) {
 
-            long previousRequestedMetadataVersion = 0;
-
             @Override
             void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
                 assertThat(remoteCluster, equalTo("remote"));
-                assertThat(metadataVersion, greaterThan(previousRequestedMetadataVersion));
+                assertThat(metadataVersion, greaterThan(0L));
                 handler.accept(new ClusterStateResponse(new ClusterName("name"), leaderStates.poll(), false), null);
             }
 
@@ -1766,13 +1764,11 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         AtomicInteger counter = new AtomicInteger();
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(states), () -> 1L, Runnable::run) {
 
-            long previousRequestedMetadataVersion = 0;
-
             @Override
             void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
                 counter.incrementAndGet();
                 assertThat(remoteCluster, equalTo("remote"));
-                assertThat(metadataVersion, greaterThan(previousRequestedMetadataVersion));
+                assertThat(metadataVersion, greaterThan(0L));
                 handler.accept(new ClusterStateResponse(new ClusterName("name"), null, true), null);
             }
 

@@ -64,14 +64,14 @@ public class ShardFollowNodeTaskTests extends ESTestCase {
 
     private List<long[]> shardChangesRequests;
     private List<List<Translog.Operation>> bulkShardOperationRequests;
-    private BiConsumer<TimeValue, Runnable> scheduler = (delay, task) -> task.run();
+    private final BiConsumer<TimeValue, Runnable> scheduler = (delay, task) -> task.run();
 
     private Consumer<ShardFollowNodeTaskStatus> beforeSendShardChangesRequest = status -> {};
 
-    private AtomicBoolean scheduleRetentionLeaseRenewal = new AtomicBoolean();
+    private final AtomicBoolean scheduleRetentionLeaseRenewal = new AtomicBoolean();
     private LongConsumer retentionLeaseRenewal = followerGlobalCheckpoint -> {};
 
-    private AtomicBoolean simulateResponse = new AtomicBoolean();
+    private final AtomicBoolean simulateResponse = new AtomicBoolean();
 
     private Queue<Exception> readFailures;
     private Queue<Exception> writeFailures;
@@ -1257,26 +1257,25 @@ public class ShardFollowNodeTaskTests extends ESTestCase {
     }
 
     static final class ShardFollowTaskParams {
-        private String remoteCluster = null;
-        private ShardId followShardId = new ShardId("follow_index", "", 0);
-        private ShardId leaderShardId = new ShardId("leader_index", "", 0);
+        private final ShardId followShardId = new ShardId("follow_index", "", 0);
+        private final ShardId leaderShardId = new ShardId("leader_index", "", 0);
         private int maxReadRequestOperationCount = Integer.MAX_VALUE;
-        private ByteSizeValue maxReadRequestSize = new ByteSizeValue(Long.MAX_VALUE, ByteSizeUnit.BYTES);
+        private final ByteSizeValue maxReadRequestSize = new ByteSizeValue(Long.MAX_VALUE, ByteSizeUnit.BYTES);
         private int maxOutstandingReadRequests = Integer.MAX_VALUE;
         private int maxWriteRequestOperationCount = Integer.MAX_VALUE;
         private ByteSizeValue maxWriteRequestSize = new ByteSizeValue(Long.MAX_VALUE, ByteSizeUnit.BYTES);
         private int maxOutstandingWriteRequests = Integer.MAX_VALUE;
         private int maxWriteBufferCount = Integer.MAX_VALUE;
         private ByteSizeValue maxWriteBufferSize = new ByteSizeValue(Long.MAX_VALUE, ByteSizeUnit.BYTES);
-        private TimeValue maxRetryDelay = TimeValue.ZERO;
-        private TimeValue readPollTimeout = TimeValue.ZERO;
-        private Map<String, String> headers = Collections.emptyMap();
+        private final TimeValue maxRetryDelay = TimeValue.ZERO;
+        private final TimeValue readPollTimeout = TimeValue.ZERO;
+        private final Map<String, String> headers = Collections.emptyMap();
     }
 
     private ShardFollowNodeTask createShardFollowTask(ShardFollowTaskParams params) {
         AtomicBoolean stopped = new AtomicBoolean(false);
         ShardFollowTask followTask = new ShardFollowTask(
-            params.remoteCluster,
+            null,
             params.followShardId,
             params.leaderShardId,
             params.maxReadRequestOperationCount,

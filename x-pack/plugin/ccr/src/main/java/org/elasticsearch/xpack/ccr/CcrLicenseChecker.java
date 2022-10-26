@@ -243,7 +243,7 @@ public class CcrLicenseChecker {
         // we have to check the license on the remote cluster
         new RemoteClusterLicenseChecker(client, CcrConstants.CCR_FEATURE).checkRemoteClusterLicenses(
             Collections.singletonList(clusterAlias),
-            new ActionListener<RemoteClusterLicenseChecker.LicenseCheck>() {
+            new ActionListener<>() {
 
                 @Override
                 public void onResponse(final RemoteClusterLicenseChecker.LicenseCheck licenseCheck) {

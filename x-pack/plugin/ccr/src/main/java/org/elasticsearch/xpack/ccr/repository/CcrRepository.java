@@ -14,7 +14,6 @@ import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
@@ -747,25 +746,9 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
         @Override
         public void close() {
             ClearCcrRestoreSessionRequest clearRequest = new ClearCcrRestoreSessionRequest(sessionUUID, node);
-            ActionResponse.Empty response = remoteClient.execute(ClearCcrRestoreSessionAction.INSTANCE, clearRequest)
-                .actionGet(ccrSettings.getRecoveryActionTimeout());
+            remoteClient.execute(ClearCcrRestoreSessionAction.INSTANCE, clearRequest).actionGet(ccrSettings.getRecoveryActionTimeout());
         }
 
-        private static class FileChunk implements MultiChunkTransfer.ChunkRequest {
-            final StoreFileMetadata md;
-            final int bytesRequested;
-            final boolean lastChunk;
-
-            FileChunk(StoreFileMetadata md, int bytesRequested, boolean lastChunk) {
-                this.md = md;
-                this.bytesRequested = bytesRequested;
-                this.lastChunk = lastChunk;
-            }
-
-            @Override
-            public boolean lastChunk() {
-                return lastChunk;
-            }
-        }
+        private record FileChunk(StoreFileMetadata md, int bytesRequested, boolean lastChunk) implements MultiChunkTransfer.ChunkRequest {}
     }
 }

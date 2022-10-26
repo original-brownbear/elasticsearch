@@ -266,10 +266,6 @@ public class ShardFollowNodeTaskStatus implements Task.Status {
 
     private final long totalReadRemoteExecTimeMillis;
 
-    public long totalReadRemoteExecTimeMillis() {
-        return totalReadRemoteExecTimeMillis;
-    }
-
     private final long successfulReadRequests;
 
     public long successfulReadRequests() {

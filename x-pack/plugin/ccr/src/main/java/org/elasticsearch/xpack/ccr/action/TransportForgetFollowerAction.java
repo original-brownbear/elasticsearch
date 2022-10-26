@@ -37,7 +37,6 @@ import org.elasticsearch.xpack.core.ccr.action.ForgetFollowerAction;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -115,7 +114,7 @@ public class TransportForgetFollowerAction extends TransportBroadcastByNodeActio
             @Override
             public void onResponse(Releasable releasable) {
                 try {
-                    indexShard.removeRetentionLease(id, new ActionListener<ReplicationResponse>() {
+                    indexShard.removeRetentionLease(id, new ActionListener<>() {
                         @Override
                         public void onResponse(ReplicationResponse replicationResponse) {
                             releasable.close();
@@ -145,9 +144,7 @@ public class TransportForgetFollowerAction extends TransportBroadcastByNodeActio
         final GroupShardsIterator<ShardIterator> activePrimaryShards = clusterState.routingTable()
             .activePrimaryShardsGrouped(concreteIndices, false);
         final List<ShardRouting> shardRoutings = new ArrayList<>();
-        final Iterator<ShardIterator> it = activePrimaryShards.iterator();
-        while (it.hasNext()) {
-            final ShardIterator shardIterator = it.next();
+        for (ShardIterator shardIterator : activePrimaryShards) {
             final ShardRouting primaryShard = shardIterator.nextOrNull();
             assert primaryShard != null;
             shardRoutings.add(primaryShard);

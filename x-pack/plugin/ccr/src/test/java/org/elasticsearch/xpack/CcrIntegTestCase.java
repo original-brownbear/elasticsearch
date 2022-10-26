@@ -742,9 +742,7 @@ public abstract class CcrIntegTestCase extends ESTestCase {
     protected void assertMaxSeqNoOfUpdatesIsTransferred(Index leaderIndex, Index followerIndex, int numberOfShards) throws Exception {
         assertBusy(() -> {
             long[] msuOnLeader = new long[numberOfShards];
-            for (int i = 0; i < msuOnLeader.length; i++) {
-                msuOnLeader[i] = SequenceNumbers.UNASSIGNED_SEQ_NO;
-            }
+            Arrays.fill(msuOnLeader, SequenceNumbers.UNASSIGNED_SEQ_NO);
             Set<String> leaderNodes = getLeaderCluster().nodesInclude(leaderIndex.getName());
             for (String leaderNode : leaderNodes) {
                 IndicesService indicesService = getLeaderCluster().getInstance(IndicesService.class, leaderNode);
@@ -912,15 +910,7 @@ public abstract class CcrIntegTestCase extends ESTestCase {
         latch.await();
     }
 
-    static class ClusterGroup implements Closeable {
-
-        final InternalTestCluster leaderCluster;
-        final InternalTestCluster followerCluster;
-
-        ClusterGroup(InternalTestCluster leaderCluster, InternalTestCluster followerCluster) {
-            this.leaderCluster = leaderCluster;
-            this.followerCluster = followerCluster;
-        }
+    record ClusterGroup(InternalTestCluster leaderCluster, InternalTestCluster followerCluster) implements Closeable {
 
         @Override
         public void close() throws IOException {

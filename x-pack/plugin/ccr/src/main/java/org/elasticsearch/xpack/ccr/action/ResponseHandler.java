@@ -25,7 +25,7 @@ final class ResponseHandler {
     }
 
     <T> ActionListener<T> getActionListener(final int requestId) {
-        return new ActionListener<T>() {
+        return new ActionListener<>() {
 
             @Override
             public void onResponse(T response) {

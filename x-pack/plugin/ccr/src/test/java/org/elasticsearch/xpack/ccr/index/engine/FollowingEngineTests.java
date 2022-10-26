@@ -77,8 +77,8 @@ public class FollowingEngineTests extends ESTestCase {
     private ThreadPool threadPool;
     private Index index;
     private ShardId shardId;
-    private AtomicLong primaryTerm = new AtomicLong();
-    private AtomicLong globalCheckpoint = new AtomicLong(SequenceNumbers.NO_OPS_PERFORMED);
+    private final AtomicLong primaryTerm = new AtomicLong();
+    private final AtomicLong globalCheckpoint = new AtomicLong(SequenceNumbers.NO_OPS_PERFORMED);
     private IndexMode indexMode;
     private FieldType idFieldType;
 
@@ -91,14 +91,9 @@ public class FollowingEngineTests extends ESTestCase {
         primaryTerm.set(randomLongBetween(1, Long.MAX_VALUE));
         indexMode = randomFrom(IndexMode.values());
         switch (indexMode) {
-            case STANDARD:
-                idFieldType = ProvidedIdFieldMapper.Defaults.FIELD_TYPE;
-                break;
-            case TIME_SERIES:
-                idFieldType = TsidExtractingIdFieldMapper.FIELD_TYPE;
-                break;
-            default:
-                throw new UnsupportedOperationException("Unknown index mode [" + indexMode + "]");
+            case STANDARD -> idFieldType = ProvidedIdFieldMapper.Defaults.FIELD_TYPE;
+            case TIME_SERIES -> idFieldType = TsidExtractingIdFieldMapper.FIELD_TYPE;
+            default -> throw new UnsupportedOperationException("Unknown index mode [" + indexMode + "]");
         }
     }
 

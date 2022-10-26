@@ -110,10 +110,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
     private long numberOfFailedRemoteClusterStateRequests = 0;
     private final LinkedHashMap<AutoFollowErrorKey, Tuple<Long, ElasticsearchException>> recentAutoFollowErrors;
 
-    private static final class AutoFollowErrorKey {
-        private final String pattern;
-        private final String index;
-
+    private record AutoFollowErrorKey(String pattern, String index) {
         private AutoFollowErrorKey(String pattern, String index) {
             this.pattern = Objects.requireNonNull(pattern);
             this.index = index;
@@ -616,7 +613,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                 List<String> otherMatchingPatterns = patternsForTheSameRemoteCluster.stream()
                     .filter(otherPattern -> otherPattern.v2().match(indexAbstraction))
                     .map(Tuple::v1)
-                    .collect(Collectors.toList());
+                    .toList();
                 if (otherMatchingPatterns.size() != 0) {
                     groupedListener.onResponse(
                         new Tuple<>(

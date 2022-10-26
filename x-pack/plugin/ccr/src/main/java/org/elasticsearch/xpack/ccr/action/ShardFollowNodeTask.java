@@ -130,7 +130,7 @@ public abstract class ShardFollowNodeTask extends AllocatedPersistentTask {
          * concurrent fetches. For each failed fetch, we track the from sequence number associated with the request, and we clear the entry
          * when the fetch task associated with that from sequence number succeeds.
          */
-        this.fetchExceptions = new LinkedHashMap<Long, Tuple<AtomicInteger, ElasticsearchException>>() {
+        this.fetchExceptions = new LinkedHashMap<>() {
             @Override
             protected boolean removeEldestEntry(final Map.Entry<Long, Tuple<AtomicInteger, ElasticsearchException>> eldest) {
                 return size() > params.getMaxOutstandingReadRequests();

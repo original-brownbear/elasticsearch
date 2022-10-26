@@ -41,7 +41,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -134,7 +133,6 @@ public class ShardFollowNodeTaskRandomTests extends ESTestCase {
 
             private volatile long mappingVersion = 0L;
             private volatile long settingsVersion = 0L;
-            private volatile long aliasesVersion = 0L;
             private final Map<Long, Integer> fromToSlot = new HashMap<>();
 
             @Override
@@ -149,7 +147,7 @@ public class ShardFollowNodeTaskRandomTests extends ESTestCase {
 
             @Override
             protected void innerUpdateAliases(LongConsumer handler, Consumer<Exception> errorHandler) {
-                handler.accept(aliasesVersion);
+                handler.accept(0L);
             }
 
             @Override
@@ -268,7 +266,7 @@ public class ShardFollowNodeTaskRandomTests extends ESTestCase {
                     .filter(Objects::nonNull)
                     .flatMap(response -> Arrays.stream(response.getOperations()))
                     .sorted(Comparator.comparingLong(Translog.Operation::seqNo))
-                    .collect(Collectors.toList());
+                    .toList();
                 assertThat(receivedOperations.size(), equalTo(expectedOperations.size()));
                 receivedOperations.sort(Comparator.comparingLong(Translog.Operation::seqNo));
                 for (int i = 0; i < receivedOperations.size(); i++) {
@@ -396,15 +394,14 @@ public class ShardFollowNodeTaskRandomTests extends ESTestCase {
         return randomIntBetween(0, 10) == 5;
     }
 
-    private static class TestRun {
-
-        final int maxOperationCount;
-        final long startSeqNo;
-        final long startMappingVersion;
-
-        final long finalMappingVersion;
-        final long finalExpectedGlobalCheckpoint;
-        final Map<Long, List<TestResponse>> responses;
+    private record TestRun(
+        int maxOperationCount,
+        long startSeqNo,
+        long startMappingVersion,
+        long finalMappingVersion,
+        long finalExpectedGlobalCheckpoint,
+        Map<Long, List<TestResponse>> responses
+    ) {
 
         private TestRun(
             int maxOperationCount,
@@ -423,20 +420,7 @@ public class ShardFollowNodeTaskRandomTests extends ESTestCase {
         }
     }
 
-    private static class TestResponse {
-
-        final Exception exception;
-        final long mappingVersion;
-        final long settingsVersion;
-        final ShardChangesAction.Response response;
-
-        private TestResponse(Exception exception, long mappingVersion, long settingsVersion, ShardChangesAction.Response response) {
-            this.exception = exception;
-            this.mappingVersion = mappingVersion;
-            this.settingsVersion = settingsVersion;
-            this.response = response;
-        }
-    }
+    private record TestResponse(Exception exception, long mappingVersion, long settingsVersion, ShardChangesAction.Response response) {}
 
     private static final Translog.Operation[] EMPTY = new Translog.Operation[0];
 

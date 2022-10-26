@@ -161,7 +161,7 @@ public class FollowingEngine extends InternalEngine {
 
     @Override
     protected boolean assertPrimaryIncomingSequenceNumber(final Operation.Origin origin, final long seqNo) {
-        assert FollowingEngineAssertions.assertPrimaryIncomingSequenceNumber(origin, seqNo);
+        assert FollowingEngineAssertions.assertPrimaryIncomingSequenceNumber(seqNo);
         return true;
     }
 

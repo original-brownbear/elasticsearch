@@ -164,11 +164,7 @@ public class PutAutoFollowPatternRequestTests extends AbstractXContentSerializin
         request.setRemoteCluster("_alias");
         request.setLeaderIndexPatterns(Collections.singletonList("logs-*"));
 
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < 256; i++) {
-            stringBuilder.append('x');
-        }
-        request.setName(stringBuilder.toString());
+        request.setName("x".repeat(256));
         ActionRequestValidationException validationException = request.validate();
         assertThat(validationException, notNullValue());
         assertThat(validationException.getMessage(), containsString("name is too long (256 > 255)"));
