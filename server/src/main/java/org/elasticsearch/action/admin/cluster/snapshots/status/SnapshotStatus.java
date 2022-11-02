@@ -11,7 +11,6 @@ package org.elasticsearch.action.admin.cluster.snapshots.status;
 import org.elasticsearch.cluster.SnapshotsInProgress;
 import org.elasticsearch.cluster.SnapshotsInProgress.State;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -191,9 +190,8 @@ public class SnapshotStatus implements ChunkedToXContent, Writeable {
 
     @Override
     public Iterator<? extends ToXContent> toXContentChunked() {
-        return Iterators.concat(Iterators.single((ToXContent) (b, p) -> {
-            b.startObject()
-                .field(SNAPSHOT, snapshot.getSnapshotId().getName())
+        return ChunkedToXContent.builder().add((b, p) -> {
+            b.field(SNAPSHOT, snapshot.getSnapshotId().getName())
                 .field(REPOSITORY, snapshot.getRepository())
                 .field(UUID, snapshot.getSnapshotId().getUUID())
                 .field(STATE, state.name());
@@ -203,7 +201,7 @@ public class SnapshotStatus implements ChunkedToXContent, Writeable {
             return b.field(SnapshotShardsStats.Fields.SHARDS_STATS, shardsStats, p)
                 .field(SnapshotStats.Fields.STATS, stats, p)
                 .startObject(INDICES);
-        }), getIndices().values().iterator(), Iterators.single((b, p) -> b.endObject().endObject()));
+        }).add(getIndices().values().iterator()).add((b, p) -> b.endObject()).build();
     }
 
     static final ConstructingObjectParser<SnapshotStatus, Void> PARSER = new ConstructingObjectParser<>(

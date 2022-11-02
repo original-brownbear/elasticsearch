@@ -8,11 +8,18 @@
 
 package org.elasticsearch.common.xcontent;
 
+import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.StreamSupport;
 
 /**
  * An extension of {@link ToXContent} that can be serialized in chunks by creating an {@link Iterator<ToXContent>}.
@@ -41,5 +48,48 @@ public interface ChunkedToXContent {
             }
             return builder;
         };
+    }
+
+    static Builder builder() {
+        return new Builder();
+    }
+
+    final class Builder {
+
+        private final List<Iterator<? extends ToXContent>> iterators = new ArrayList<>();
+
+        private Builder() {
+
+        }
+
+        public <T extends ToXContent> Builder add(T toXContent) {
+            iterators.add(Iterators.single(toXContent));
+            return this;
+        }
+
+        public <T extends ToXContent> Builder add(Iterator<T> iterator) {
+            iterators.add(iterator);
+            return this;
+        }
+
+        public <T extends ChunkedToXContent> Builder addChunked(Collection<T> iterator) {
+            iterators.add(
+                iterator.stream()
+                    .flatMap(
+                        s -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(s.toXContentChunked(), Spliterator.ORDERED), false)
+                    )
+                    .iterator()
+            );
+            return this;
+        }
+
+        @SuppressWarnings({"raw", "unchecked"})
+        public Iterator<? extends ToXContent> build() {
+            return Iterators.concat(
+                Iterators.single((b, p) -> b.startObject()),
+                Iterators.concat(iterators.toArray(new Iterator[0])),
+                Iterators.single((b, p) -> b.endObject())
+            );
+        }
     }
 }

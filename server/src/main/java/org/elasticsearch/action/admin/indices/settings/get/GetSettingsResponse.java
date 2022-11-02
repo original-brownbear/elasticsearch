@@ -10,7 +10,6 @@ package org.elasticsearch.action.admin.indices.settings.get;
 
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
@@ -159,28 +158,28 @@ public class GetSettingsResponse extends ActionResponse implements ChunkedToXCon
         return toXContentChunked(omitEmptySettings);
     }
 
-    private Iterator<ToXContent> toXContentChunked(boolean omitEmptySettings) {
+    private Iterator<? extends ToXContent> toXContentChunked(boolean omitEmptySettings) {
         final boolean indexToDefaultSettingsEmpty = indexToDefaultSettings.isEmpty();
-        return Iterators.concat(
-            Iterators.single((builder, params) -> builder.startObject()),
-            getIndexToSettings().entrySet()
-                .stream()
-                .filter(entry -> omitEmptySettings == false || entry.getValue().isEmpty() == false)
-                .map(entry -> (ToXContent) (builder, params) -> {
-                    builder.startObject(entry.getKey());
-                    builder.startObject("settings");
-                    entry.getValue().toXContent(builder, params);
-                    builder.endObject();
-                    if (indexToDefaultSettingsEmpty == false) {
-                        builder.startObject("defaults");
-                        indexToDefaultSettings.get(entry.getKey()).toXContent(builder, params);
+        return ChunkedToXContent.builder()
+            .add(
+                getIndexToSettings().entrySet()
+                    .stream()
+                    .filter(entry -> omitEmptySettings == false || entry.getValue().isEmpty() == false)
+                    .map(entry -> (ToXContent) (builder, params) -> {
+                        builder.startObject(entry.getKey());
+                        builder.startObject("settings");
+                        entry.getValue().toXContent(builder, params);
                         builder.endObject();
-                    }
-                    return builder.endObject();
-                })
-                .iterator(),
-            Iterators.single((builder, params) -> builder.endObject())
-        );
+                        if (indexToDefaultSettingsEmpty == false) {
+                            builder.startObject("defaults");
+                            indexToDefaultSettings.get(entry.getKey()).toXContent(builder, params);
+                            builder.endObject();
+                        }
+                        return builder.endObject();
+                    })
+                    .iterator()
+            )
+            .build();
     }
 
     @Override

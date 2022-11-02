@@ -11,7 +11,6 @@ package org.elasticsearch.action.admin.indices.recovery;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.action.support.broadcast.BaseBroadcastResponse;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
@@ -65,27 +64,27 @@ public class RecoveryResponse extends BaseBroadcastResponse implements ChunkedTo
     }
 
     @Override
-    public Iterator<ToXContent> toXContentChunked() {
-        return Iterators.concat(
-            Iterators.single((b, p) -> b.startObject()),
-            shardRecoveryStates.entrySet()
-                .stream()
-                .filter(entry -> entry != null && entry.getValue().isEmpty() == false)
-                .map(entry -> (ToXContent) (b, p) -> {
-                    b.startObject(entry.getKey());
-                    b.startArray("shards");
-                    for (RecoveryState recoveryState : entry.getValue()) {
-                        b.startObject();
-                        recoveryState.toXContent(b, p);
+    public Iterator<? extends ToXContent> toXContentChunked() {
+        return ChunkedToXContent.builder()
+            .add(
+                shardRecoveryStates.entrySet()
+                    .stream()
+                    .filter(entry -> entry != null && entry.getValue().isEmpty() == false)
+                    .map(entry -> (ToXContent) (b, p) -> {
+                        b.startObject(entry.getKey());
+                        b.startArray("shards");
+                        for (RecoveryState recoveryState : entry.getValue()) {
+                            b.startObject();
+                            recoveryState.toXContent(b, p);
+                            b.endObject();
+                        }
+                        b.endArray();
                         b.endObject();
-                    }
-                    b.endArray();
-                    b.endObject();
-                    return b;
-                })
-                .iterator(),
-            Iterators.single((b, p) -> b.endObject())
-        );
+                        return b;
+                    })
+                    .iterator()
+            )
+            .build();
     }
 
     @Override

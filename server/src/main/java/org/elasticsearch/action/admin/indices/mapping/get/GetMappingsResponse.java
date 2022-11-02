@@ -12,7 +12,6 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
@@ -67,30 +66,26 @@ public class GetMappingsResponse extends ActionResponse implements ChunkedToXCon
     }
 
     @Override
-    public Iterator<ToXContent> toXContentChunked() {
-        return Iterators.concat(
-            Iterators.single((b, p) -> b.startObject()),
-            getMappings().entrySet().stream().map(indexEntry -> (ToXContent) (builder, params) -> {
-                builder.startObject(indexEntry.getKey());
-                boolean includeTypeName = params.paramAsBoolean(INCLUDE_TYPE_NAME_PARAMETER, DEFAULT_INCLUDE_TYPE_NAME_POLICY);
-                if (builder.getRestApiVersion() == RestApiVersion.V_7 && includeTypeName && indexEntry.getValue() != null) {
-                    builder.startObject(MAPPINGS.getPreferredName());
+    public Iterator<? extends ToXContent> toXContentChunked() {
+        return ChunkedToXContent.builder().add(getMappings().entrySet().stream().map(indexEntry -> (ToXContent) (builder, params) -> {
+            builder.startObject(indexEntry.getKey());
+            boolean includeTypeName = params.paramAsBoolean(INCLUDE_TYPE_NAME_PARAMETER, DEFAULT_INCLUDE_TYPE_NAME_POLICY);
+            if (builder.getRestApiVersion() == RestApiVersion.V_7 && includeTypeName && indexEntry.getValue() != null) {
+                builder.startObject(MAPPINGS.getPreferredName());
 
-                    if (indexEntry.getValue() != MappingMetadata.EMPTY_MAPPINGS) {
-                        builder.field(MapperService.SINGLE_MAPPING_NAME, indexEntry.getValue().sourceAsMap());
-                    }
-                    builder.endObject();
-
-                } else if (indexEntry.getValue() != null) {
-                    builder.field(MAPPINGS.getPreferredName(), indexEntry.getValue().sourceAsMap());
-                } else {
-                    builder.startObject(MAPPINGS.getPreferredName()).endObject();
+                if (indexEntry.getValue() != MappingMetadata.EMPTY_MAPPINGS) {
+                    builder.field(MapperService.SINGLE_MAPPING_NAME, indexEntry.getValue().sourceAsMap());
                 }
                 builder.endObject();
-                return builder;
-            }).iterator(),
-            Iterators.single((b, p) -> b.endObject())
-        );
+
+            } else if (indexEntry.getValue() != null) {
+                builder.field(MAPPINGS.getPreferredName(), indexEntry.getValue().sourceAsMap());
+            } else {
+                builder.startObject(MAPPINGS.getPreferredName()).endObject();
+            }
+            builder.endObject();
+            return builder;
+        }).iterator()).build();
     }
 
     @Override

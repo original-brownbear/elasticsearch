@@ -11,7 +11,6 @@ package org.elasticsearch.action.admin.cluster.snapshots.get;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
@@ -165,14 +164,11 @@ public class GetSnapshotsResponse extends ActionResponse implements ChunkedToXCo
     }
 
     @Override
-    public Iterator<ToXContent> toXContentChunked() {
-        return Iterators.concat(Iterators.single((b, p) -> {
-            b.startObject();
-            b.startArray("snapshots");
-            return b;
-        }),
-            getSnapshots().stream().map(snapshotInfo -> (ToXContent) snapshotInfo::toXContentExternal).iterator(),
-            Iterators.single((b, p) -> {
+    public Iterator<? extends ToXContent> toXContentChunked() {
+        return ChunkedToXContent.builder()
+            .add((b, p) -> b.startArray("snapshots"))
+            .add(getSnapshots().stream().map(snapshotInfo -> (ToXContent) snapshotInfo::toXContentExternal).iterator())
+            .add((b, p) -> {
                 b.endArray();
                 if (failures.isEmpty() == false) {
                     b.startObject("failures");
@@ -195,10 +191,9 @@ public class GetSnapshotsResponse extends ActionResponse implements ChunkedToXCo
                 if (remaining >= 0) {
                     b.field("remaining", remaining);
                 }
-                b.endObject();
                 return b;
             })
-        );
+            .build();
     }
 
     public static GetSnapshotsResponse fromXContent(XContentParser parser) throws IOException {

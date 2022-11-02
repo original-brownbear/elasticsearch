@@ -14,7 +14,6 @@ import org.apache.lucene.search.SortedNumericSortField;
 import org.apache.lucene.search.SortedSetSortField;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.action.support.broadcast.BaseBroadcastResponse;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.ByteSizeValue;
@@ -80,11 +79,10 @@ public class IndicesSegmentResponse extends BaseBroadcastResponse implements Chu
 
     @Override
     public Iterator<? extends ToXContent> toXContentChunked() {
-        return Iterators.concat(Iterators.single(((builder, params) -> {
-            builder.startObject();
+        return ChunkedToXContent.builder().add((builder, params) -> {
             RestActions.buildBroadcastShardsHeader(builder, params, this);
             return builder.startObject(Fields.INDICES);
-        })), getIndices().values().stream().map(indexSegments -> (ToXContent) (builder, params) -> {
+        }).add(getIndices().values().stream().map(indexSegments -> (ToXContent) (builder, params) -> {
             builder.startObject(indexSegments.getIndex());
 
             builder.startObject(Fields.SHARDS);
@@ -144,7 +142,7 @@ public class IndicesSegmentResponse extends BaseBroadcastResponse implements Chu
 
             builder.endObject();
             return builder;
-        }).iterator(), Iterators.single((builder, params) -> builder.endObject().endObject()));
+        }).iterator()).add((builder, params) -> builder.endObject()).build();
     }
 
     private static void toXContent(XContentBuilder builder, Sort sort) throws IOException {

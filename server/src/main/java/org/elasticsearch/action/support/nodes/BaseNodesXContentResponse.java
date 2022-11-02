@@ -10,7 +10,6 @@ package org.elasticsearch.action.support.nodes;
 
 import org.elasticsearch.action.FailedNodeException;
 import org.elasticsearch.cluster.ClusterName;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.rest.action.RestActions;
@@ -34,11 +33,10 @@ public abstract class BaseNodesXContentResponse<TNodeResponse extends BaseNodeRe
 
     @Override
     public final Iterator<? extends ToXContent> toXContentChunked() {
-        return Iterators.concat(Iterators.single((b, p) -> {
-            b.startObject();
+        return ChunkedToXContent.builder().add((b, p) -> {
             RestActions.buildNodesHeader(b, p, this);
             return b.field("cluster_name", getClusterName().value());
-        }), xContentChunks(), Iterators.single((ToXContent) (b, p) -> b.endObject()));
+        }).add(xContentChunks()).build();
     }
 
     protected abstract Iterator<? extends ToXContent> xContentChunks();

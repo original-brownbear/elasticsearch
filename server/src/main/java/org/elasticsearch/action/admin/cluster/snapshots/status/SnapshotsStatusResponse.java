@@ -9,7 +9,6 @@
 package org.elasticsearch.action.admin.cluster.snapshots.status;
 
 import org.elasticsearch.action.ActionResponse;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
@@ -22,9 +21,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.xcontent.ConstructingObjectParser.constructorArg;
 
@@ -90,12 +86,10 @@ public class SnapshotsStatusResponse extends ActionResponse implements ChunkedTo
 
     @Override
     public Iterator<? extends ToXContent> toXContentChunked() {
-        return Iterators.concat(
-            Iterators.single((ToXContent) (b, p) -> b.startObject().startArray("snapshots")),
-            snapshots.stream()
-                .flatMap(s -> StreamSupport.stream(Spliterators.spliteratorUnknownSize(s.toXContentChunked(), Spliterator.ORDERED), false))
-                .iterator(),
-            Iterators.single((b, p) -> b.endArray().endObject())
-        );
+        return ChunkedToXContent.builder()
+            .add((b, p) -> b.startArray("snapshots"))
+            .addChunked(snapshots)
+            .add((b, p) -> b.endArray())
+            .build();
     }
 }

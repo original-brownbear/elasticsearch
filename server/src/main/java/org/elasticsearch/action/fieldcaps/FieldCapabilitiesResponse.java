@@ -10,7 +10,6 @@ package org.elasticsearch.action.fieldcaps;
 
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
@@ -157,24 +156,20 @@ public class FieldCapabilitiesResponse extends ActionResponse implements Chunked
             throw new IllegalStateException("cannot serialize non-merged response");
         }
 
-        return Iterators.concat(
-            Iterators.single(
-                (b, p) -> b.startObject().array(INDICES_FIELD.getPreferredName(), indices).startObject(FIELDS_FIELD.getPreferredName())
-            ),
-            responseMap.entrySet().stream().map(r -> (ToXContent) (b, p) -> b.xContentValuesMap(r.getKey(), r.getValue())).iterator(),
-            this.failures.size() > 0
-                ? Iterators.concat(
-                    Iterators.single(
-                        (ToXContent) (b, p) -> b.endObject()
-                            .field(FAILED_INDICES_FIELD.getPreferredName(), getFailedIndices().length)
-                            .field(FAILURES_FIELD.getPreferredName())
-                            .startArray()
-                    ),
-                    failures.iterator(),
-                    Iterators.single((b, p) -> b.endArray().endObject())
-                )
-                : Iterators.single((b, p) -> b.endObject().endObject())
-        );
+        var res = ChunkedToXContent.builder()
+            .add((b, p) -> b.array(INDICES_FIELD.getPreferredName(), indices).startObject(FIELDS_FIELD.getPreferredName()))
+            .add(responseMap.entrySet().stream().map(r -> (ToXContent) (b, p) -> b.xContentValuesMap(r.getKey(), r.getValue())).iterator());
+        if (this.failures.size() > 0) {
+            res.add(
+                (b, p) -> b.endObject()
+                    .field(FAILED_INDICES_FIELD.getPreferredName(), getFailedIndices().length)
+                    .field(FAILURES_FIELD.getPreferredName())
+                    .startArray()
+            ).add(failures.iterator()).add((b, p) -> b.endArray());
+        } else {
+            res.add((b, p) -> b.endObject());
+        }
+        return res.build();
     }
 
     public static FieldCapabilitiesResponse fromXContent(XContentParser parser) throws IOException {
