@@ -51,6 +51,7 @@ import org.elasticsearch.transport.TransportKeepAlive;
 import org.elasticsearch.transport.TransportSettings;
 
 import java.io.IOException;
+import java.io.StreamCorruptedException;
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.Map;
@@ -318,6 +319,31 @@ public class Netty4Transport extends TcpTransport {
         }, serverBootstraps::clear, () -> clientBootstrap = null);
     }
 
+    private static final class FrameDecoder extends LengthFieldBasedFrameDecoder {
+        FrameDecoder() {
+            super(Math.toIntExact(Math.min(Integer.MAX_VALUE, TcpTransport.THIRTY_PER_HEAP_SIZE)), 2, 4);
+        }
+
+        @Override
+        protected long getUnadjustedFrameLength(ByteBuf buf, int offset, int length, ByteOrder order) {
+            if (buf.getByte(0) != 'E' || buf.getByte(1) != 'S') {
+                try {
+                    TcpTransport.throwOnCorruptedMessage(Netty4Utils.toBytesReference(buf));
+                } catch (StreamCorruptedException e) {
+                    throw new DecoderException(e);
+                }
+            }
+            int messageLength = buf.getInt(offset);
+            if (messageLength == TransportKeepAlive.PING_DATA_SIZE) {
+                return 0;
+            }
+            if (messageLength <= 0) {
+                throw new DecoderException("invalid data length: " + messageLength);
+            }
+            return messageLength;
+        }
+    }
+
     protected class ClientChannelInitializer extends ChannelInitializer<Channel> {
 
         @Override
@@ -362,51 +388,7 @@ public class Netty4Transport extends TcpTransport {
     }
 
     private void setupPipeline(Channel ch) {
-        final var frameDecoder = new LengthFieldBasedFrameDecoder(
-            Math.toIntExact(Math.min(Integer.MAX_VALUE, TcpTransport.THIRTY_PER_HEAP_SIZE)),
-            2,
-            4
-        ) {
-            @Override
-            protected long getUnadjustedFrameLength(ByteBuf buf, int offset, int length, ByteOrder order) {
-                if (buf.getByte(0) != 'E' || buf.getByte(1) != 'S') {
-                    if (appearsToBeHTTPRequest(buf)) {
-                        throw new HttpRequestOnTransportException("This is not an HTTP port");
-                    }
-
-                    if (appearsToBeHTTPResponse(buf)) {
-                        throw new DecoderException(
-                            "received HTTP response on transport port, ensure that transport port (not "
-                                + "HTTP port) of a remote node is specified in the configuration"
-                        );
-                    }
-
-                    String firstBytes = "("
-                        + Integer.toHexString(buf.getByte(0) & 0xFF)
-                        + ","
-                        + Integer.toHexString(buf.getByte(1) & 0xFF)
-                        + ","
-                        + Integer.toHexString(buf.getByte(2) & 0xFF)
-                        + ","
-                        + Integer.toHexString(buf.getByte(3) & 0xFF)
-                        + ")";
-
-                    if (appearsToBeTLS(buf)) {
-                        throw new DecoderException("SSL/TLS request received but SSL/TLS is not enabled on this node, got " + firstBytes);
-                    }
-
-                    throw new DecoderException("invalid internal transport message format, got " + firstBytes);
-                }
-                int messageLength = buf.getInt(offset);
-                if (messageLength == TransportKeepAlive.PING_DATA_SIZE) {
-                    return 0;
-                }
-                if (messageLength <= 0) {
-                    throw new DecoderException("invalid data length: " + messageLength);
-                }
-                return messageLength;
-            }
-        };
+        final var frameDecoder = new FrameDecoder();
         frameDecoder.setCumulator(ByteToMessageDecoder.COMPOSITE_CUMULATOR);
         ch.pipeline()
             .addLast("byte_buf_sizer", NettyByteBufSizer.INSTANCE)
@@ -414,36 +396,6 @@ public class Netty4Transport extends TcpTransport {
             .addLast("logging", ESLoggingHandler.INSTANCE)
             .addLast("chunked_writer", new Netty4WriteThrottlingHandler(getThreadPool().getThreadContext()))
             .addLast("dispatcher", new Netty4MessageInboundHandler(this, recycler));
-    }
-
-    private static boolean appearsToBeHTTPResponse(ByteBuf headerBuffer) {
-        return bufferStartsWith(headerBuffer, "HTTP");
-    }
-
-    private static boolean appearsToBeTLS(ByteBuf headerBuffer) {
-        return headerBuffer.getByte(0) == 0x16 && headerBuffer.getByte(1) == 0x03;
-    }
-
-    private static boolean appearsToBeHTTPRequest(ByteBuf headerBuffer) {
-        return bufferStartsWith(headerBuffer, "GET")
-            || bufferStartsWith(headerBuffer, "POST")
-            || bufferStartsWith(headerBuffer, "PUT")
-            || bufferStartsWith(headerBuffer, "HEAD")
-            || bufferStartsWith(headerBuffer, "DELETE")
-            // Actually 'OPTIONS'. But we are only guaranteed to have read six bytes at this point.
-            || bufferStartsWith(headerBuffer, "OPTION")
-            || bufferStartsWith(headerBuffer, "PATCH")
-            || bufferStartsWith(headerBuffer, "TRACE");
-    }
-
-    private static boolean bufferStartsWith(ByteBuf buffer, String method) {
-        char[] chars = method.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            if (buffer.getByte(i) != chars[i]) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private static void addClosedExceptionLogger(Channel channel) {

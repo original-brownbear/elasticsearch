@@ -832,32 +832,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
 
     private static int readHeaderBuffer(BytesReference headerBuffer) throws IOException {
         if (headerBuffer.get(0) != 'E' || headerBuffer.get(1) != 'S') {
-            if (appearsToBeHTTPRequest(headerBuffer)) {
-                throw new HttpRequestOnTransportException("This is not an HTTP port");
-            }
-
-            if (appearsToBeHTTPResponse(headerBuffer)) {
-                throw new StreamCorruptedException(
-                    "received HTTP response on transport port, ensure that transport port (not "
-                        + "HTTP port) of a remote node is specified in the configuration"
-                );
-            }
-
-            String firstBytes = "("
-                + Integer.toHexString(headerBuffer.get(0) & 0xFF)
-                + ","
-                + Integer.toHexString(headerBuffer.get(1) & 0xFF)
-                + ","
-                + Integer.toHexString(headerBuffer.get(2) & 0xFF)
-                + ","
-                + Integer.toHexString(headerBuffer.get(3) & 0xFF)
-                + ")";
-
-            if (appearsToBeTLS(headerBuffer)) {
-                throw new StreamCorruptedException("SSL/TLS request received but SSL/TLS is not enabled on this node, got " + firstBytes);
-            }
-
-            throw new StreamCorruptedException("invalid internal transport message format, got " + firstBytes);
+            throwOnCorruptedMessage(headerBuffer);
         }
         final int messageLength = headerBuffer.getInt(TcpHeader.MARKER_BYTES_SIZE);
 
@@ -881,6 +856,35 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
         }
 
         return messageLength;
+    }
+
+    public static void throwOnCorruptedMessage(BytesReference headerBuffer) throws StreamCorruptedException {
+        if (appearsToBeHTTPRequest(headerBuffer)) {
+            throw new HttpRequestOnTransportException("This is not an HTTP port");
+        }
+
+        if (appearsToBeHTTPResponse(headerBuffer)) {
+            throw new StreamCorruptedException(
+                "received HTTP response on transport port, ensure that transport port (not "
+                    + "HTTP port) of a remote node is specified in the configuration"
+            );
+        }
+
+        String firstBytes = "("
+            + Integer.toHexString(headerBuffer.get(0) & 0xFF)
+            + ","
+            + Integer.toHexString(headerBuffer.get(1) & 0xFF)
+            + ","
+            + Integer.toHexString(headerBuffer.get(2) & 0xFF)
+            + ","
+            + Integer.toHexString(headerBuffer.get(3) & 0xFF)
+            + ")";
+
+        if (appearsToBeTLS(headerBuffer)) {
+            throw new StreamCorruptedException("SSL/TLS request received but SSL/TLS is not enabled on this node, got " + firstBytes);
+        }
+
+        throw new StreamCorruptedException("invalid internal transport message format, got " + firstBytes);
     }
 
     private static boolean appearsToBeHTTPRequest(BytesReference headerBuffer) {
