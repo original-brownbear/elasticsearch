@@ -210,7 +210,7 @@ public class InboundPipelineTests extends ESTestCase {
         final LongSupplier millisSupplier = () -> TimeValue.nsecToMSec(System.nanoTime());
         final InboundDecoder decoder = new InboundDecoder(Version.CURRENT, recycler);
         final Supplier<CircuitBreaker> breaker = () -> new NoopCircuitBreaker("test");
-        final InboundAggregator aggregator = new InboundAggregator(breaker, (Predicate<String>) action -> true);
+        final InboundAggregator aggregator = new InboundAggregator(breaker, action -> true);
         final InboundPipeline pipeline = new InboundPipeline(statsTracker, millisSupplier, decoder, aggregator, messageHandler);
 
         try (RecyclerBytesStreamOutput streamOutput = new RecyclerBytesStreamOutput(recycler)) {
