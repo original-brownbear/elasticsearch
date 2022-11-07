@@ -77,6 +77,8 @@ public abstract class TransportBroadcastByNodeAction<
 
     final String transportNodeBroadcastAction;
 
+    private final String executor;
+
     public TransportBroadcastByNodeAction(
         String actionName,
         ClusterService clusterService,
@@ -107,6 +109,7 @@ public abstract class TransportBroadcastByNodeAction<
 
         transportNodeBroadcastAction = actionName + "[n]";
 
+        this.executor = executor;
         transportService.registerRequestHandler(
             transportNodeBroadcastAction,
             executor,
@@ -364,6 +367,11 @@ public abstract class TransportBroadcastByNodeAction<
                         @Override
                         public void handleException(TransportException exp) {
                             onNodeFailure(node, nodeIndex, exp);
+                        }
+
+                        @Override
+                        public String executor() {
+                            return executor;
                         }
                     }
                 );
