@@ -361,7 +361,7 @@ public class TransportService extends AbstractLifecycleComponent
                     if (executor.equals(ThreadPool.Names.SAME)) {
                         handler.handleException(exception);
                     } else {
-                        threadPool.executor(executor).execute(new ForkingResponseHandlerRunnable(handler, exception) {
+                        threadPool.executor(executor).execute(new ForkingResponseHandlerRunnable(handler, () -> exception) {
                             @Override
                             protected void doRun() {
                                 handler.handleException(exception);
@@ -1478,7 +1478,7 @@ public class TransportService extends AbstractLifecycleComponent
                 if (ThreadPool.Names.SAME.equals(executor)) {
                     processException(handler, rtx);
                 } else {
-                    threadPool.executor(executor).execute(new ForkingResponseHandlerRunnable(handler, rtx) {
+                    threadPool.executor(executor).execute(new ForkingResponseHandlerRunnable(handler, () -> rtx) {
                         @Override
                         protected void doRun() {
                             processException(handler, rtx);

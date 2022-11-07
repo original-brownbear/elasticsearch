@@ -14,6 +14,8 @@ import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import java.util.function.Supplier;
+
 import static org.elasticsearch.core.Strings.format;
 
 /**
@@ -27,12 +29,12 @@ abstract class ForkingResponseHandlerRunnable extends AbstractRunnable {
     private final TransportResponseHandler<?> handler;
 
     @Nullable
-    private final TransportException transportException;
+    private final Supplier<TransportException> exceptionSupplier;
 
-    ForkingResponseHandlerRunnable(TransportResponseHandler<?> handler, @Nullable TransportException transportException) {
+    ForkingResponseHandlerRunnable(TransportResponseHandler<?> handler, Supplier<TransportException> exceptionSupplier) {
         assert handler.executor().equals(ThreadPool.Names.SAME) == false : "forking handler required, but got " + handler;
         this.handler = handler;
-        this.transportException = transportException;
+        this.exceptionSupplier = exceptionSupplier;
     }
 
     @Override
@@ -53,10 +55,10 @@ abstract class ForkingResponseHandlerRunnable extends AbstractRunnable {
         // we must complete every pending listener, and we can't fork to the target threadpool because we're shutting down, so just complete
         // it on this thread.
         final TransportException exceptionToDeliver;
-        if (transportException == null) {
+        if (exceptionSupplier == null) {
             exceptionToDeliver = new RemoteTransportException(e.getMessage(), e);
         } else {
-            exceptionToDeliver = transportException;
+            exceptionToDeliver = exceptionSupplier.get();
             exceptionToDeliver.addSuppressed(e);
         }
         try {
@@ -66,7 +68,7 @@ abstract class ForkingResponseHandlerRunnable extends AbstractRunnable {
             logger.error(
                 () -> format(
                     "%s [%s]",
-                    transportException == null ? "failed to handle rejection of response" : "failed to handle rejection of error response",
+                    exceptionSupplier == null ? "failed to handle rejection of response" : "failed to handle rejection of error response",
                     handler
                 ),
                 exceptionToDeliver
@@ -80,7 +82,7 @@ abstract class ForkingResponseHandlerRunnable extends AbstractRunnable {
         logger.error(
             () -> format(
                 "%s [%s]",
-                transportException == null ? "failed to handle rejection of response" : "failed to handle rejection of error response",
+                exceptionSupplier == null ? "failed to handle rejection of response" : "failed to handle rejection of error response",
                 handler
             ),
             e
