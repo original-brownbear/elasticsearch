@@ -15,12 +15,14 @@ import org.elasticsearch.common.breaker.NoopCircuitBreaker;
 import org.elasticsearch.common.breaker.TestCircuitBreaker;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.MockPageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Releasable;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.Streams;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
@@ -255,7 +257,7 @@ public class InboundPipelineTests extends ESTestCase {
         final LongSupplier millisSupplier = () -> TimeValue.nsecToMSec(System.nanoTime());
         final InboundDecoder decoder = new InboundDecoder(Version.CURRENT, recycler);
         final Supplier<CircuitBreaker> breaker = () -> new NoopCircuitBreaker("test");
-        final InboundAggregator aggregator = new InboundAggregator(breaker, (Predicate<String>) action -> true);
+        final InboundAggregator aggregator = new InboundAggregator(breaker, action -> true);
         final InboundPipeline pipeline = new InboundPipeline(statsTracker, millisSupplier, decoder, aggregator, messageHandler);
 
         try (RecyclerBytesStreamOutput streamOutput = new RecyclerBytesStreamOutput(recycler)) {
@@ -294,6 +296,98 @@ public class InboundPipelineTests extends ESTestCase {
                 pipeline.handleBytes(new FakeTcpChannel(), slice);
             }
             assertTrue(bodyReleased.get());
+        }
+    }
+
+    public void testBreakerShortCircuitIsHandledCorrectly() throws IOException {
+        BiConsumer<TcpChannel, InboundMessage> messageHandler = (c, m) -> {};
+        final StatsTracker statsTracker = new StatsTracker();
+        final LongSupplier millisSupplier = () -> TimeValue.nsecToMSec(System.nanoTime());
+        final InboundDecoder decoder = new InboundDecoder(Version.CURRENT, recycler);
+        final Supplier<CircuitBreaker> breaker = () -> new NoopCircuitBreaker("throwing") {
+
+            @Override
+            public void circuitBreak(String fieldName, long bytesNeeded) {
+                super.circuitBreak(fieldName, bytesNeeded);
+            }
+
+            @Override
+            public void addEstimateBytesAndMaybeBreak(long bytes, String label) throws CircuitBreakingException {
+                throw new CircuitBreakingException("break", Durability.TRANSIENT);
+            }
+        };
+        final InboundAggregator aggregator = new InboundAggregator(breaker, action -> {
+            throw new ActionNotFoundTransportException("bla");
+        });
+        final InboundPipeline pipeline = new InboundPipeline(statsTracker, millisSupplier, decoder, aggregator, messageHandler);
+
+        try (RecyclerBytesStreamOutput streamOutput = new RecyclerBytesStreamOutput(recycler)) {
+            String actionName = "actionName";
+            final Version version = Version.CURRENT;
+            final String value = randomAlphaOfLength(100000);
+            final boolean isRequest = randomBoolean();
+            final long requestId = randomNonNegativeLong();
+
+            OutboundMessage message;
+            if (isRequest) {
+                message = new OutboundMessage.Request(
+                    threadContext,
+                    new TestRequest(value),
+                    version,
+                    actionName,
+                    requestId,
+                    false,
+                    null
+                );
+            } else {
+                message = new OutboundMessage.Response(
+                    threadContext,
+                    new TestResponse(value),
+                    version,
+                    requestId,
+                    false,
+                    null
+                );
+            }
+
+            final BytesReference reference = message.serialize(streamOutput);
+            final int fixedHeaderSize = TcpHeader.headerSize(Version.CURRENT);
+            final int variableHeaderSize = reference.getInt(fixedHeaderSize - 4);
+            final int totalHeaderSize = fixedHeaderSize + variableHeaderSize;
+            final AtomicBoolean bodyReleased = new AtomicBoolean(false);
+            final int length = 1;
+            final int from = totalHeaderSize - length;
+            for (int i = 0; i < from; ++i) {
+                try (ReleasableBytesReference slice = ReleasableBytesReference.wrap(reference.slice(i, length))) {
+                    pipeline.handleBytes(new FakeTcpChannel(), slice);
+                }
+            }
+
+            final Releasable releasable = () -> bodyReleased.set(true);
+            final BytesReference partHeaderPartBody = reference.slice(from, reference.length() - from - length);
+            try (ReleasableBytesReference slice = new ReleasableBytesReference(partHeaderPartBody, releasable)) {
+                pipeline.handleBytes(new FakeTcpChannel(), slice);
+            }
+            final var secondBuffer = ReleasableBytesReference.wrap(reference);
+            try (
+                ReleasableBytesReference slice = new ReleasableBytesReference(
+                    reference.slice(reference.length() - length, length),
+                    releasable
+                )
+            ) {
+                pipeline.handleBytes(
+                    new FakeTcpChannel(),
+                    new ReleasableBytesReference(
+                        CompositeBytesReference.of(slice, secondBuffer),
+                        Releasables.wrap(releasable, secondBuffer)
+                    )
+                );
+                pipeline.handleBytes(new FakeTcpChannel(), secondBuffer);
+            } finally {
+                secondBuffer.decRef();
+            }
+            assertTrue(bodyReleased.get());
+            assertFalse(secondBuffer.hasReferences());
         }
     }
 
