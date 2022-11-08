@@ -14,6 +14,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexingPressure;
+import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentType;
@@ -53,23 +54,13 @@ public class LocalIndexFollowingIT extends CcrSingleNodeTestCase {
         final PutFollowAction.Request followRequest = getPutFollowRequest("leader", "follower");
         client().execute(PutFollowAction.INSTANCE, followRequest).get();
 
-        assertBusy(
-            () -> { assertThat(client().prepareSearch("follower").get().getHits().getTotalHits().value, equalTo(firstBatchNumDocs)); }
-        );
-
+        ESIntegTestCase.waitForDocs(client(), "follower", firstBatchNumDocs);
         final long secondBatchNumDocs = randomIntBetween(2, 64);
         for (int i = 0; i < secondBatchNumDocs; i++) {
             client().prepareIndex("leader").setSource("{}", XContentType.JSON).get();
         }
 
-        assertBusy(
-            () -> {
-                assertThat(
-                    client().prepareSearch("follower").get().getHits().getTotalHits().value,
-                    equalTo(firstBatchNumDocs + secondBatchNumDocs)
-                );
-            }
-        );
+        ESIntegTestCase.waitForDocs(client(), "follower", firstBatchNumDocs + secondBatchNumDocs);
 
         PauseFollowAction.Request pauseRequest = new PauseFollowAction.Request("follower");
         client().execute(PauseFollowAction.INSTANCE, pauseRequest);
@@ -80,12 +71,7 @@ public class LocalIndexFollowingIT extends CcrSingleNodeTestCase {
         }
 
         client().execute(ResumeFollowAction.INSTANCE, getResumeFollowRequest("follower")).get();
-        assertBusy(() -> {
-            assertThat(
-                client().prepareSearch("follower").get().getHits().getTotalHits().value,
-                equalTo(firstBatchNumDocs + secondBatchNumDocs + thirdBatchNumDocs)
-            );
-        });
+        ESIntegTestCase.waitForDocs(client(), "follower", firstBatchNumDocs + secondBatchNumDocs + thirdBatchNumDocs);
         ensureEmptyWriteBuffers();
     }
 
@@ -138,16 +124,13 @@ public class LocalIndexFollowingIT extends CcrSingleNodeTestCase {
                 assertEquals(firstBatchNumDocs, indexingPressure.stats().getCurrentPrimaryOps());
             });
             blocker.countDown();
-            assertBusy(
-                () -> { assertThat(client().prepareSearch("follower").get().getHits().getTotalHits().value, equalTo(firstBatchNumDocs)); }
-            );
+            ESIntegTestCase.waitForDocs(client(), "follower", firstBatchNumDocs);
             ensureEmptyWriteBuffers();
         } finally {
             if (blocker.getCount() > 0) {
                 blocker.countDown();
             }
         }
-
     }
 
     public void testRemoveRemoteConnection() throws Exception {
@@ -212,7 +195,7 @@ public class LocalIndexFollowingIT extends CcrSingleNodeTestCase {
             client().prepareIndex("index-1").setSource("{}", XContentType.JSON).get();
         }
         client().execute(PutFollowAction.INSTANCE, getPutFollowRequest("index-1", "index-2")).get();
-        assertBusy(() -> assertThat(client().prepareSearch("index-2").get().getHits().getTotalHits().value, equalTo((long) numDocs)));
+        ESIntegTestCase.waitForDocs(client(), "index-2", numDocs);
 
         // Then switch index-1 to be a follower of index-0
         assertAcked(client().admin().indices().prepareCreate("index-0").setSource(settings, XContentType.JSON));

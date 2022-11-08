@@ -1053,6 +1053,10 @@ public abstract class ESIntegTestCase extends ESTestCase {
         }, maxWaitTimeMs, TimeUnit.MILLISECONDS);
     }
 
+    public static void waitForDocs(Client client, String index, long count) throws Exception {
+        assertBusy(() -> assertThat(client.prepareSearch(index).get().getHits().getTotalHits().value, equalTo(count)));
+    }
+
     /**
      * Retrieves the persistent tasks with the requested task name from the given cluster state.
      */

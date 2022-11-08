@@ -15,6 +15,7 @@ import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequ
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.transport.RemoteConnectionInfo;
 import org.elasticsearch.transport.RemoteConnectionStrategy;
 import org.elasticsearch.transport.TransportService;
@@ -70,10 +71,7 @@ public class RestartIndexFollowingIT extends CcrIntegTestCase {
             final String source = formatted("{\"f\":%d}", i);
             leaderClient().prepareIndex("index1").setId(Integer.toString(i)).setSource(source, XContentType.JSON).get();
         }
-
-        assertBusy(
-            () -> assertThat(followerClient().prepareSearch("index2").get().getHits().getTotalHits().value, equalTo(firstBatchNumDocs))
-        );
+        ESIntegTestCase.waitForDocs(followerClient(), "index2", firstBatchNumDocs);
 
         getFollowerCluster().fullRestart();
         ensureFollowerGreen("index2");
@@ -90,13 +88,7 @@ public class RestartIndexFollowingIT extends CcrIntegTestCase {
         for (int i = 0; i < thirdBatchNumDocs; i++) {
             leaderClient().prepareIndex("index1").setSource("{}", XContentType.JSON).get();
         }
-
-        assertBusy(
-            () -> assertThat(
-                followerClient().prepareSearch("index2").get().getHits().getTotalHits().value,
-                equalTo(firstBatchNumDocs + secondBatchNumDocs + thirdBatchNumDocs)
-            )
-        );
+        ESIntegTestCase.waitForDocs(followerClient(), "index2", firstBatchNumDocs + secondBatchNumDocs + thirdBatchNumDocs);
 
         cleanRemoteCluster();
         assertAcked(followerClient().execute(PauseFollowAction.INSTANCE, new PauseFollowAction.Request("index2")).actionGet());
