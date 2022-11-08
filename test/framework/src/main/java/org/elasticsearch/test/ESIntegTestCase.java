@@ -21,7 +21,6 @@ import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -757,7 +756,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
                 success = true;
             } finally {
                 if (success == false && created.isEmpty() == false) {
-                    cluster().wipeIndices(created.toArray(new String[created.size()]));
+                    cluster().wipeIndices(created.toArray(Strings.EMPTY_ARRAY));
                 }
             }
         }
@@ -1334,10 +1333,6 @@ public abstract class ESIntegTestCase extends ESTestCase {
      */
     protected final IndexResponse index(String index, String id, Map<String, Object> source) {
         return client().prepareIndex(index).setId(id).setSource(source).execute().actionGet();
-    }
-
-    protected final ActionFuture<IndexResponse> startIndex(String index, String id, BytesReference source, XContentType type) {
-        return client().prepareIndex(index).setId(id).setSource(source, type).execute();
     }
 
     /**
@@ -2108,7 +2103,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
             NamedWriteableRegistry namedWriteableRegistry,
             ThreadContext threadContext
         ) {
-            return Arrays.asList(new TransportInterceptor() {
+            return List.of(new TransportInterceptor() {
                 @Override
                 public <T extends TransportRequest> TransportRequestHandler<T> interceptHandler(
                     String action,
@@ -2374,7 +2369,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
                 hosts.add(new HttpHost(NetworkAddress.format(address.getAddress()), address.getPort(), protocol));
             }
         }
-        RestClientBuilder builder = RestClient.builder(hosts.toArray(new HttpHost[hosts.size()]));
+        RestClientBuilder builder = RestClient.builder(hosts.toArray(new HttpHost[0]));
         if (httpClientConfigCallback != null) {
             builder.setHttpClientConfigCallback(httpClientConfigCallback);
         }

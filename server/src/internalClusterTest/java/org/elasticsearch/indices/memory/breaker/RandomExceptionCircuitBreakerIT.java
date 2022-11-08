@@ -209,7 +209,7 @@ public class RandomExceptionCircuitBreakerIT extends ESIntegTestCase {
     public static final String EXCEPTION_LOW_LEVEL_RATIO_KEY = "index.engine.exception.ratio.low";
 
     // TODO: Generalize this class and add it as a utility
-    public static class RandomExceptionDirectoryReaderWrapper extends MockEngineSupport.DirectoryReaderWrapper {
+    public static class RandomExceptionDirectoryReaderWrapper extends FilterDirectoryReader {
 
         public static final Setting<Double> EXCEPTION_TOP_LEVEL_RATIO_SETTING = Setting.doubleSetting(
             EXCEPTION_TOP_LEVEL_RATIO_KEY,

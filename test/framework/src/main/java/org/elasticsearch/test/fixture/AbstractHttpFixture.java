@@ -119,7 +119,7 @@ public abstract class AbstractHttpFixture {
                                 body.flush();
                             }
 
-                            final Request request = new Request(requestId, method, exchange.getRequestURI(), headers, body.toByteArray());
+                            final Request request = new Request(method, exchange.getRequestURI(), headers, body.toByteArray());
                             response = handle(request);
 
                         } catch (Exception e) {
@@ -171,14 +171,6 @@ public abstract class AbstractHttpFixture {
             this.body = Objects.requireNonNull(body);
         }
 
-        public String getContentType() {
-            for (String header : headers.keySet()) {
-                if (header.equalsIgnoreCase("Content-Type")) {
-                    return headers.get(header);
-                }
-            }
-            return null;
-        }
     }
 
     /**
@@ -186,15 +178,13 @@ public abstract class AbstractHttpFixture {
      */
     protected static class Request {
 
-        private final long id;
         private final String method;
         private final URI uri;
         private final Map<String, String> parameters;
         private final Map<String, String> headers;
         private final byte[] body;
 
-        public Request(final long id, final String method, final URI uri, final Map<String, String> headers, final byte[] body) {
-            this.id = id;
+        public Request(final String method, final URI uri, final Map<String, String> headers, final byte[] body) {
             this.method = Objects.requireNonNull(method);
             this.uri = Objects.requireNonNull(uri);
             this.headers = Objects.requireNonNull(headers);
@@ -212,10 +202,6 @@ public abstract class AbstractHttpFixture {
                 }
             }
             this.parameters = params;
-        }
-
-        public long getId() {
-            return id;
         }
 
         public String getMethod() {
@@ -245,19 +231,6 @@ public abstract class AbstractHttpFixture {
 
         public Map<String, String> getParameters() {
             return parameters;
-        }
-
-        public String getParam(final String paramName) {
-            for (String param : parameters.keySet()) {
-                if (param.equals(paramName)) {
-                    return parameters.get(param);
-                }
-            }
-            return null;
-        }
-
-        public String getContentType() {
-            return getHeader("Content-Type");
         }
 
         @Override

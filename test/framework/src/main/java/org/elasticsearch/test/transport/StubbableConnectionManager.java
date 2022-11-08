@@ -33,10 +33,6 @@ public class StubbableConnectionManager implements ConnectionManager {
         this.getConnectionBehaviors = new ConcurrentHashMap<>();
     }
 
-    public boolean addGetConnectionBehavior(TransportAddress transportAddress, GetConnectionBehavior connectBehavior) {
-        return getConnectionBehaviors.put(transportAddress, connectBehavior) == null;
-    }
-
     public boolean setDefaultGetConnectionBehavior(GetConnectionBehavior behavior) {
         GetConnectionBehavior prior = defaultGetConnectionBehavior;
         defaultGetConnectionBehavior = behavior;

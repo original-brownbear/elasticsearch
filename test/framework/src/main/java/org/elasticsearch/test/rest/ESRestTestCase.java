@@ -1688,19 +1688,6 @@ public abstract class ESRestTestCase extends ESTestCase {
         return RestStatus.OK.getStatus() == response.getStatusLine().getStatusCode();
     }
 
-    @SuppressWarnings("unchecked")
-    protected static Map<String, Object> getAlias(final String index, final String alias) throws IOException {
-        String endpoint = "/_alias";
-        if (false == Strings.isEmpty(index)) {
-            endpoint = index + endpoint;
-        }
-        if (false == Strings.isEmpty(alias)) {
-            endpoint = endpoint + "/" + alias;
-        }
-        Map<String, Object> getAliasResponse = getAsMap(endpoint);
-        return (Map<String, Object>) XContentMapValues.extractValue(index + ".aliases." + alias, getAliasResponse);
-    }
-
     protected static Map<String, Object> getAsMap(final String endpoint) throws IOException {
         return getAsMap(client(), endpoint);
     }
@@ -1960,24 +1947,6 @@ public abstract class ESRestTestCase extends ESTestCase {
         }
         assertNotNull(minVersion);
         return minVersion;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void ensureGlobalCheckpointSynced(String index) throws Exception {
-        assertBusy(() -> {
-            Map<?, ?> stats = entityAsMap(client().performRequest(new Request("GET", index + "/_stats?level=shards")));
-            List<Map<?, ?>> shardStats = (List<Map<?, ?>>) XContentMapValues.extractValue("indices." + index + ".shards.0", stats);
-            shardStats.stream()
-                .map(shard -> (Map<?, ?>) XContentMapValues.extractValue("seq_no", shard))
-                .filter(Objects::nonNull)
-                .forEach(seqNoStat -> {
-                    long globalCheckpoint = ((Number) XContentMapValues.extractValue("global_checkpoint", seqNoStat)).longValue();
-                    long localCheckpoint = ((Number) XContentMapValues.extractValue("local_checkpoint", seqNoStat)).longValue();
-                    long maxSeqNo = ((Number) XContentMapValues.extractValue("max_seq_no", seqNoStat)).longValue();
-                    assertThat(shardStats.toString(), localCheckpoint, equalTo(maxSeqNo));
-                    assertThat(shardStats.toString(), globalCheckpoint, equalTo(maxSeqNo));
-                });
-        }, 60, TimeUnit.SECONDS);
     }
 
     /**

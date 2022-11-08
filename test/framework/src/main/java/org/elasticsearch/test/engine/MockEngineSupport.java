@@ -157,16 +157,6 @@ public final class MockEngineSupport {
         return reader;
     }
 
-    public abstract static class DirectoryReaderWrapper extends FilterDirectoryReader {
-        protected final SubReaderWrapper subReaderWrapper;
-
-        public DirectoryReaderWrapper(DirectoryReader in, SubReaderWrapper subReaderWrapper) throws IOException {
-            super(in, subReaderWrapper);
-            this.subReaderWrapper = subReaderWrapper;
-        }
-
-    }
-
     public Engine.Searcher wrapSearcher(Engine.Searcher searcher) {
         final IndexReader reader = newReader(searcher.getIndexReader());
 

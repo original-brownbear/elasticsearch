@@ -106,7 +106,4 @@ public class NoOpNodeClient extends NodeClient {
         }
     }
 
-    public long getExecutionCount() {
-        return executionCount.get();
-    }
 }

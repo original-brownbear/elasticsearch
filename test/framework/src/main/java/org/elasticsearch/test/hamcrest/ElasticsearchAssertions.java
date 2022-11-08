@@ -46,7 +46,6 @@ import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matcher;
-import org.hamcrest.core.CombinableMatcher;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -61,7 +60,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 import static org.apache.lucene.tests.util.LuceneTestCase.expectThrows;
 import static org.apache.lucene.tests.util.LuceneTestCase.expectThrowsAnyOf;
@@ -512,14 +510,6 @@ public class ElasticsearchAssertions {
 
     public static Matcher<SearchHit> hasScore(final float score) {
         return new ElasticsearchMatchers.SearchHitHasScoreMatcher(score);
-    }
-
-    public static <T, V> CombinableMatcher<T> hasProperty(Function<? super T, ? extends V> property, Matcher<V> valueMatcher) {
-        return ElasticsearchMatchers.HasPropertyLambdaMatcher.hasProperty(property, valueMatcher);
-    }
-
-    public static Function<SearchHit, Object> fieldFromSource(String fieldName) {
-        return (response) -> response.getSourceAsMap().get(fieldName);
     }
 
     public static <T extends Query> T assertBooleanSubQuery(Query query, Class<T> subqueryType, int i) {

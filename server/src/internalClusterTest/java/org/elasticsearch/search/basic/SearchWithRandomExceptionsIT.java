@@ -160,7 +160,7 @@ public class SearchWithRandomExceptionsIT extends ESIntegTestCase {
     public static final String EXCEPTION_TOP_LEVEL_RATIO_KEY = "index.engine.exception.ratio.top";
     public static final String EXCEPTION_LOW_LEVEL_RATIO_KEY = "index.engine.exception.ratio.low";
 
-    public static class RandomExceptionDirectoryReaderWrapper extends MockEngineSupport.DirectoryReaderWrapper {
+    public static class RandomExceptionDirectoryReaderWrapper extends FilterDirectoryReader {
 
         public static class TestPlugin extends MockEngineFactoryPlugin {
             public static final Setting<Double> EXCEPTION_TOP_LEVEL_RATIO_SETTING = Setting.doubleSetting(

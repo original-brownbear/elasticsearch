@@ -292,13 +292,6 @@ public final class MockTransportService extends TransportService {
     }
 
     /**
-     * Clears all the inbound rules.
-     */
-    public void clearInboundRules() {
-        transport().clearInboundBehaviors();
-    }
-
-    /**
      * Clears the outbound rules associated with the provided delegate service.
      */
     public void clearOutboundRules(TransportService transportService) {
@@ -615,33 +608,6 @@ public final class MockTransportService extends TransportService {
      */
     public boolean addConnectBehavior(TransportAddress transportAddress, StubbableTransport.OpenConnectionBehavior connectBehavior) {
         return transport().addConnectBehavior(transportAddress, connectBehavior);
-    }
-
-    /**
-     * Adds a get connection behavior that is used for communication with the given delegate address.
-     *
-     * @return {@code true} if no other get connection behavior was registered for this address before.
-     */
-    public boolean addGetConnectionBehavior(TransportAddress transportAddress, StubbableConnectionManager.GetConnectionBehavior behavior) {
-        return connectionManager().addGetConnectionBehavior(transportAddress, behavior);
-    }
-
-    /**
-     * Adds a get connection behavior that is the default get connection behavior.
-     *
-     * @return {@code true} if no default get connection behavior was registered.
-     */
-    public boolean addGetConnectionBehavior(StubbableConnectionManager.GetConnectionBehavior behavior) {
-        return connectionManager().setDefaultGetConnectionBehavior(behavior);
-    }
-
-    /**
-     * Adds a node connected behavior that is the default node connected behavior.
-     *
-     * @return {@code true} if no default node connected behavior was registered.
-     */
-    public boolean addNodeConnectedBehavior(StubbableConnectionManager.NodeConnectedBehavior behavior) {
-        return connectionManager().setDefaultNodeConnectedBehavior(behavior);
     }
 
     public StubbableTransport transport() {

@@ -56,7 +56,6 @@ import static java.util.Collections.emptyMap;
 public class TestSearchContext extends SearchContext {
     public static final SearchShardTarget SHARD_TARGET = new SearchShardTarget("test", new ShardId("test", "test", 0), null);
 
-    final IndexService indexService;
     final BitsetFilterCache fixedBitSetFilterCache;
     final Map<Class<?>, Collector> queryCollectors = new HashMap<>();
     final IndexShard indexShard;
@@ -83,7 +82,6 @@ public class TestSearchContext extends SearchContext {
     private final Map<String, SearchExtBuilder> searchExtBuilders = new HashMap<>();
 
     public TestSearchContext(IndexService indexService) {
-        this.indexService = indexService;
         this.fixedBitSetFilterCache = indexService.cache().bitsetFilterCache();
         this.indexShard = indexService.getShardOrNull(0);
         searchExecutionContext = indexService.newSearchExecutionContext(0, 0, null, () -> 0L, null, emptyMap());
@@ -104,7 +102,6 @@ public class TestSearchContext extends SearchContext {
         ContextIndexSearcher searcher,
         ScrollContext scrollContext
     ) {
-        this.indexService = null;
         this.fixedBitSetFilterCache = null;
         this.indexShard = indexShard;
         this.searchExecutionContext = searchExecutionContext;
