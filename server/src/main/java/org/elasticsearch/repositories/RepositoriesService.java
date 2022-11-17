@@ -252,8 +252,7 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
         @Override
         public ClusterState execute(ClusterState currentState) {
             RepositoryMetadata newRepositoryMetadata = new RepositoryMetadata(request.name(), request.type(), request.settings());
-            Metadata metadata = currentState.metadata();
-            Metadata.Builder mdBuilder = Metadata.builder(currentState.metadata());
+            final Metadata metadata = currentState.metadata();
             RepositoriesMetadata repositories = metadata.custom(RepositoriesMetadata.TYPE, RepositoriesMetadata.EMPTY);
             List<RepositoryMetadata> repositoriesMetadata = new ArrayList<>(repositories.repositories().size() + 1);
             for (RepositoryMetadata repositoryMetadata : repositories.repositories()) {
@@ -301,9 +300,8 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                 repositoriesMetadata.add(new RepositoryMetadata(request.name(), request.type(), request.settings()));
             }
             repositories = new RepositoriesMetadata(repositoriesMetadata);
-            mdBuilder.putCustom(RepositoriesMetadata.TYPE, repositories);
             changed = true;
-            return ClusterState.builder(currentState).metadata(mdBuilder).build();
+            return ClusterState.builder(currentState).metadata(metadata.withCustom(RepositoriesMetadata.TYPE, repositories)).build();
         }
     }
 
@@ -377,9 +375,9 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                         return currentState;
                     } else {
                         final RepositoriesMetadata newReposMetadata = currentReposMetadata.withUuid(repositoryName, repositoryUuid);
-                        final Metadata.Builder metadata = Metadata.builder(currentState.metadata())
-                            .putCustom(RepositoriesMetadata.TYPE, newReposMetadata);
-                        return ClusterState.builder(currentState).metadata(metadata).build();
+                        return ClusterState.builder(currentState)
+                            .metadata(currentState.metadata().withCustom(RepositoriesMetadata.TYPE, newReposMetadata))
+                            .build();
                     }
                 }
 
@@ -444,9 +442,7 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
 
         @Override
         public ClusterState execute(ClusterState currentState) {
-            Metadata metadata = currentState.metadata();
-            Metadata.Builder mdBuilder = Metadata.builder(currentState.metadata());
-            RepositoriesMetadata repositories = metadata.custom(RepositoriesMetadata.TYPE, RepositoriesMetadata.EMPTY);
+            RepositoriesMetadata repositories = currentState.metadata().custom(RepositoriesMetadata.TYPE, RepositoriesMetadata.EMPTY);
             if (repositories.repositories().size() > 0) {
                 List<RepositoryMetadata> repositoriesMetadata = new ArrayList<>(repositories.repositories().size());
                 boolean changed = false;
@@ -462,8 +458,9 @@ public class RepositoriesService extends AbstractLifecycleComponent implements C
                 }
                 if (changed) {
                     repositories = new RepositoriesMetadata(repositoriesMetadata);
-                    mdBuilder.putCustom(RepositoriesMetadata.TYPE, repositories);
-                    return ClusterState.builder(currentState).metadata(mdBuilder).build();
+                    return ClusterState.builder(currentState)
+                        .metadata(currentState.metadata().withCustom(RepositoriesMetadata.TYPE, repositories))
+                        .build();
                 }
             }
             if (Regex.isMatchAllPattern(request.name())) { // we use a wildcard so we don't barf if it's not present.
