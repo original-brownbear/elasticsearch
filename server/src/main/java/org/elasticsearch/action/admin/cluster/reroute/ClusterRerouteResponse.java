@@ -75,7 +75,10 @@ public class ClusterRerouteResponse extends AcknowledgedResponse implements ToXC
                 deprecationLogger.critical(DeprecationCategory.API, "reroute_cluster_state", STATE_FIELD_DEPRECATION_MESSAGE);
             }
             builder.startObject("state");
-            state.toXContent(builder, params);
+            final var iterator = state.toXContentChunked();
+            while (iterator.hasNext()) {
+                iterator.next().toXContent(builder, params);
+            }
             builder.endObject();
         }
 

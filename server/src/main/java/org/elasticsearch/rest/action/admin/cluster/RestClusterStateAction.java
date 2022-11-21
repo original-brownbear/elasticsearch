@@ -168,7 +168,10 @@ public class RestClusterStateAction extends BaseRestHandler {
             builder.field(Fields.CLUSTER_NAME, response.getClusterName().value());
             final ClusterState responseState = response.getState();
             if (responseState != null) {
-                responseState.toXContent(builder, params);
+                final var iterator = responseState.toXContentChunked();
+                while (iterator.hasNext()) {
+                    iterator.next().toXContent(builder, params);
+                }
             }
             builder.endObject();
             return builder;
