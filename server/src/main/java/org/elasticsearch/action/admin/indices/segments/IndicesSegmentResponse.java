@@ -13,15 +13,13 @@ import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.SortedNumericSortField;
 import org.apache.lucene.search.SortedSetSortField;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
-import org.elasticsearch.action.support.broadcast.BaseBroadcastResponse;
+import org.elasticsearch.action.support.broadcast.ChunkedBroadCastResponse;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.index.engine.Segment;
-import org.elasticsearch.rest.action.RestActions;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -33,7 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class IndicesSegmentResponse extends BaseBroadcastResponse implements ChunkedToXContent {
+public class IndicesSegmentResponse extends ChunkedBroadCastResponse {
 
     private final ShardSegments[] shards;
 
@@ -77,14 +75,10 @@ public class IndicesSegmentResponse extends BaseBroadcastResponse implements Chu
         super.writeTo(out);
         out.writeArray(shards);
     }
-
     @Override
-    public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params outerParams) {
-        return Iterators.concat(Iterators.single(((builder, params) -> {
-            builder.startObject();
-            RestActions.buildBroadcastShardsHeader(builder, params, this);
-            return builder.startObject(Fields.INDICES);
-        })), getIndices().values().stream().map(indexSegments -> (ToXContent) (builder, params) -> {
+    protected Iterator<ToXContent> addCustomXContentFields() {
+        return Iterators.concat(Iterators.single((b, p) -> b.startObject(Fields.INDICES)),
+                getIndices().values().stream().map(indexSegments -> (ToXContent) (builder, params) -> {
             builder.startObject(indexSegments.getIndex());
 
             builder.startObject(Fields.SHARDS);
@@ -144,7 +138,7 @@ public class IndicesSegmentResponse extends BaseBroadcastResponse implements Chu
 
             builder.endObject();
             return builder;
-        }).iterator(), Iterators.single((builder, params) -> builder.endObject().endObject()));
+        }).iterator(), Iterators.single((builder, p) -> builder.endObject()));
     }
 
     private static void toXContent(XContentBuilder builder, Sort sort) throws IOException {
