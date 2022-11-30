@@ -985,8 +985,10 @@ public final class KeywordFieldMapper extends FieldMapper {
             return;
         }
 
-        if (value.length() > fieldType().ignoreAbove()) {
-            context.addIgnoredField(name());
+        final var ft = fieldType();
+        final String name = ft.name();
+        if (value.length() > ft.ignoreAbove()) {
+            context.addIgnoredField(name);
             if (storeIgnored) {
                 // Save a copy of the field so synthetic source can load it
                 context.doc().add(new StoredField(originalName(), new BytesRef(value)));
@@ -994,9 +996,9 @@ public final class KeywordFieldMapper extends FieldMapper {
             return;
         }
 
-        value = normalizeValue(fieldType().normalizer(), name(), value);
-        if (fieldType().isDimension()) {
-            context.getDimensions().addString(fieldType().name(), value);
+        value = normalizeValue(ft.normalizer(), name, value);
+        if (ft.isDimension()) {
+            context.getDimensions().addString(name, value);
         }
 
         // convert to utf8 only once before feeding postings/dv/stored fields
@@ -1007,39 +1009,48 @@ public final class KeywordFieldMapper extends FieldMapper {
         // workload, which in turn leads to slower merges, as these will potentially have to fall back to MergeStrategy.DOC instead of
         // MergeStrategy.BULK. To avoid this, we do a preflight check here before indexing the document into Lucene.
         if (binaryValue.length > MAX_TERM_LENGTH) {
-            byte[] prefix = new byte[30];
-            System.arraycopy(binaryValue.bytes, binaryValue.offset, prefix, 0, 30);
-            String msg = "Document contains at least one immense term in field=\""
-                + fieldType().name()
-                + "\" (whose "
-                + "UTF8 encoding is longer than the max length "
-                + MAX_TERM_LENGTH
-                + "), all of which were "
-                + "skipped. Please correct the analyzer to not produce such terms. The prefix of the first immense "
-                + "term is: '"
-                + Arrays.toString(prefix)
-                + "...'";
-            throw new IllegalArgumentException(msg);
+            throwOnImmenseTerm(binaryValue);
         }
 
+        final boolean hasDocValues = ft.hasDocValues();
         if (fieldType.indexOptions() != IndexOptions.NONE || fieldType.stored()) {
-            Field field = new KeywordField(fieldType().name(), binaryValue, fieldType);
+            Field field = new KeywordField(name, binaryValue, fieldType);
             context.doc().add(field);
 
-            if (fieldType().hasDocValues() == false && fieldType.omitNorms()) {
-                context.addToFieldNames(fieldType().name());
+            if (hasDocValues == false && fieldType.omitNorms()) {
+                context.addToFieldNames(name);
             }
         }
 
-        if (fieldType().hasDocValues()) {
-            context.doc().add(new SortedSetDocValuesField(fieldType().name(), binaryValue));
+        if (hasDocValues) {
+            context.doc().add(new SortedSetDocValuesField(name, binaryValue));
         }
+    }
+
+    private void throwOnImmenseTerm(BytesRef binaryValue) {
+        byte[] prefix = new byte[30];
+        System.arraycopy(binaryValue.bytes, binaryValue.offset, prefix, 0, 30);
+        String msg = "Document contains at least one immense term in field=\""
+            + fieldType().name()
+            + "\" (whose "
+            + "UTF8 encoding is longer than the max length "
+            + MAX_TERM_LENGTH
+            + "), all of which were "
+            + "skipped. Please correct the analyzer to not produce such terms. The prefix of the first immense "
+            + "term is: '"
+            + Arrays.toString(prefix)
+            + "...'";
+        throw new IllegalArgumentException(msg);
     }
 
     private static String normalizeValue(NamedAnalyzer normalizer, String field, String value) {
         if (normalizer == Lucene.KEYWORD_ANALYZER) {
             return value;
         }
+        return doNormalizeValue(normalizer, field, value);
+    }
+
+    private static String doNormalizeValue(NamedAnalyzer normalizer, String field, String value) {
         try (TokenStream ts = normalizer.tokenStream(field, value)) {
             final CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
             ts.reset();
