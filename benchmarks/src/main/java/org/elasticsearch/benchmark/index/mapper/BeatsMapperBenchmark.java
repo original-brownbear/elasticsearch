@@ -36,7 +36,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Fork(
     value = 1,
-    jvmArgs = "-agentpath:/home/brownbear/asycp/async-profiler-2.8-linux-x64/build/libasyncProfiler.so=start,event=wall,file=profile2.out,collapsed"
+    jvmArgs = "-agentpath:/home/brownbear/asycp/async-profiler-2.8-linux-x64/build/libasyncProfiler.so=start,event=cpu,file=profile2.out,collapsed"
 )
 @Warmup(iterations = 5)
 @Measurement(iterations = 5)

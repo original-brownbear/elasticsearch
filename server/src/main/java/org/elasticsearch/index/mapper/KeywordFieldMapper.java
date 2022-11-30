@@ -986,16 +986,12 @@ public final class KeywordFieldMapper extends FieldMapper {
         }
 
         final var ft = fieldType();
-        final String name = ft.name();
         if (value.length() > ft.ignoreAbove()) {
-            context.addIgnoredField(name);
-            if (storeIgnored) {
-                // Save a copy of the field so synthetic source can load it
-                context.doc().add(new StoredField(originalName(), new BytesRef(value)));
-            }
+            ignore(context, value);
             return;
         }
 
+        final String name = ft.name();
         value = normalizeValue(ft.normalizer(), name, value);
         if (ft.isDimension()) {
             context.getDimensions().addString(name, value);
@@ -1024,6 +1020,14 @@ public final class KeywordFieldMapper extends FieldMapper {
 
         if (hasDocValues) {
             context.doc().add(new SortedSetDocValuesField(name, binaryValue));
+        }
+    }
+
+    private void ignore(DocumentParserContext context, String value) {
+        context.addIgnoredField(name());
+        if (storeIgnored) {
+            // Save a copy of the field so synthetic source can load it
+            context.doc().add(new StoredField(originalName(), new BytesRef(value)));
         }
     }
 
