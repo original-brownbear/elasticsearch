@@ -967,7 +967,8 @@ public final class KeywordFieldMapper extends FieldMapper {
     @Override
     protected void parseCreateField(DocumentParserContext context) throws IOException {
         final String value = context.parser().textOrNull();
-        indexValue(context, value == null ? fieldType().nullValue : value);
+        final KeywordFieldType ft = fieldType();
+        indexValue(ft, context, value == null ? ft.nullValue : value);
     }
 
     @Override
@@ -977,15 +978,15 @@ public final class KeywordFieldMapper extends FieldMapper {
         int doc,
         DocumentParserContext documentParserContext
     ) {
-        this.fieldType().scriptValues.valuesForDoc(searchLookup, readerContext, doc, value -> indexValue(documentParserContext, value));
+        final KeywordFieldType ft = fieldType();
+        ft.scriptValues.valuesForDoc(searchLookup, readerContext, doc, value -> indexValue(ft, documentParserContext, value));
     }
 
-    private void indexValue(DocumentParserContext context, String value) {
+    private void indexValue(KeywordFieldType ft, DocumentParserContext context, String value) {
         if (value == null) {
             return;
         }
 
-        final var ft = fieldType();
         if (value.length() > ft.ignoreAbove()) {
             ignore(context, value);
             return;
