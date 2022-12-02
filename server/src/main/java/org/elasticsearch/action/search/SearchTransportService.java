@@ -109,7 +109,7 @@ public class SearchTransportService {
             new SearchFreeContextRequest(originalIndices, contextId),
             TransportRequestOptions.EMPTY,
             // no need to respond if it was freed or not
-            new ActionListenerResponseHandler<>(ActionListener.noop(), SearchFreeContextResponse::new)
+            new ActionListenerResponseHandler<>(ActionListener.noop(), SearchFreeContextResponse::readFrom)
         );
     }
 
@@ -123,7 +123,7 @@ public class SearchTransportService {
             FREE_CONTEXT_SCROLL_ACTION_NAME,
             new ScrollFreeContextRequest(contextId),
             TransportRequestOptions.EMPTY,
-            new ActionListenerResponseHandler<>(listener, SearchFreeContextResponse::new)
+            new ActionListenerResponseHandler<>(listener, SearchFreeContextResponse::readFrom)
         );
     }
 
@@ -415,13 +415,20 @@ public class SearchTransportService {
 
     public static class SearchFreeContextResponse extends TransportResponse {
 
-        private boolean freed;
+        private static final SearchFreeContextResponse FREED = new SearchFreeContextResponse(true);
+        private static final SearchFreeContextResponse NOT_FREED = new SearchFreeContextResponse(false);
 
-        SearchFreeContextResponse(StreamInput in) throws IOException {
-            freed = in.readBoolean();
+        private final boolean freed;
+
+        static SearchFreeContextResponse readFrom(StreamInput in) throws IOException {
+            return of(in.readBoolean());
         }
 
-        SearchFreeContextResponse(boolean freed) {
+        public static SearchFreeContextResponse of(boolean freed) {
+            return freed ? FREED : NOT_FREED;
+        }
+
+        private SearchFreeContextResponse(boolean freed) {
             this.freed = freed;
         }
 
@@ -442,20 +449,25 @@ public class SearchTransportService {
             ScrollFreeContextRequest::new,
             (request, channel, task) -> {
                 boolean freed = searchService.freeReaderContext(request.id());
-                channel.sendResponse(new SearchFreeContextResponse(freed));
+                channel.sendResponse(SearchFreeContextResponse.of(freed));
             }
         );
-        TransportActionProxy.registerProxyAction(transportService, FREE_CONTEXT_SCROLL_ACTION_NAME, false, SearchFreeContextResponse::new);
+        TransportActionProxy.registerProxyAction(
+            transportService,
+            FREE_CONTEXT_SCROLL_ACTION_NAME,
+            false,
+            SearchFreeContextResponse::readFrom
+        );
         transportService.registerRequestHandler(
             FREE_CONTEXT_ACTION_NAME,
             ThreadPool.Names.SAME,
             SearchFreeContextRequest::new,
             (request, channel, task) -> {
                 boolean freed = searchService.freeReaderContext(request.id());
-                channel.sendResponse(new SearchFreeContextResponse(freed));
+                channel.sendResponse(SearchFreeContextResponse.of(freed));
             }
         );
-        TransportActionProxy.registerProxyAction(transportService, FREE_CONTEXT_ACTION_NAME, false, SearchFreeContextResponse::new);
+        TransportActionProxy.registerProxyAction(transportService, FREE_CONTEXT_ACTION_NAME, false, SearchFreeContextResponse::readFrom);
         transportService.registerRequestHandler(
             CLEAR_SCROLL_CONTEXTS_ACTION_NAME,
             ThreadPool.Names.SAME,

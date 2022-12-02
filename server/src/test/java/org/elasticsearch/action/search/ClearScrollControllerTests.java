@@ -129,7 +129,7 @@ public class ClearScrollControllerTests extends ESTestCase {
                 if (freed) {
                     numFreed.incrementAndGet();
                 }
-                Thread t = new Thread(() -> listener.onResponse(new SearchFreeContextResponse(freed)));
+                Thread t = new Thread(() -> listener.onResponse(SearchFreeContextResponse.of(freed)));
                 t.start();
             }
 
@@ -214,7 +214,7 @@ public class ClearScrollControllerTests extends ESTestCase {
                         if (freed) {
                             numFreed.incrementAndGet();
                         }
-                        listener.onResponse(new SearchFreeContextResponse(freed));
+                        listener.onResponse(SearchFreeContextResponse.of(freed));
                     }
                 });
                 t.start();
