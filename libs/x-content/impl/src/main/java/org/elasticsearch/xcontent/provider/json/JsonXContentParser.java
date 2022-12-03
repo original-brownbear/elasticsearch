@@ -109,6 +109,14 @@ public class JsonXContentParser extends AbstractXContentParser {
         return parser.getText();
     }
 
+    @Override
+    public String textOrNull() throws IOException {
+        if (parser.currentToken() == JsonToken.VALUE_NULL) {
+            return null;
+        }
+        return parser.getText();
+    }
+
     private void throwOnNoText() {
         throw new IllegalStateException("Can't get text on a " + currentToken() + " at " + getTokenLocation());
     }

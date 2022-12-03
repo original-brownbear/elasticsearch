@@ -991,7 +991,7 @@ public final class KeywordFieldMapper extends FieldMapper {
             return;
         }
 
-        String fieldName = name();
+        String fieldName = ft.name();
         value = normalizeValue(ft.normalizer(), fieldName, value);
         if (ft.isDimension()) {
             context.getDimensions().addString(fieldName, value);
