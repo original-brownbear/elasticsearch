@@ -12,10 +12,10 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.core.RestApiVersion;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.xcontent.ParseField;
@@ -68,8 +68,7 @@ public class GetMappingsResponse extends ActionResponse implements ChunkedToXCon
 
     @Override
     public Iterator<ToXContent> toXContentChunked(ToXContent.Params outerParams) {
-        return Iterators.concat(
-            Iterators.single((b, p) -> b.startObject()),
+        return ChunkedToXContentHelper.wrapWithObject(
             getMappings().entrySet().stream().map(indexEntry -> (ToXContent) (builder, params) -> {
                 builder.startObject(indexEntry.getKey());
                 boolean includeTypeName = params.paramAsBoolean(INCLUDE_TYPE_NAME_PARAMETER, DEFAULT_INCLUDE_TYPE_NAME_POLICY);
@@ -88,8 +87,7 @@ public class GetMappingsResponse extends ActionResponse implements ChunkedToXCon
                 }
                 builder.endObject();
                 return builder;
-            }).iterator(),
-            Iterators.single((b, p) -> b.endObject())
+            }).iterator()
         );
     }
 

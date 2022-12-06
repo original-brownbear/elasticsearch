@@ -11,11 +11,11 @@ package org.elasticsearch.cluster;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
 import org.elasticsearch.cluster.ClusterState.Custom;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.xcontent.ToXContent;
@@ -399,40 +399,36 @@ public class RestoreInProgress extends AbstractNamedDiffable<Custom> implements 
 
     @Override
     public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params ignored) {
-        return Iterators.concat(
-            Iterators.single((builder, params) -> builder.startArray("snapshots")),
-            entries.values().stream().<ToXContent>map(entry -> (builder, params) -> {
-                builder.startObject();
-                builder.field("snapshot", entry.snapshot().getSnapshotId().getName());
-                builder.field("repository", entry.snapshot().getRepository());
-                builder.field("state", entry.state());
-                builder.startArray("indices");
-                {
-                    for (String index : entry.indices()) {
-                        builder.value(index);
-                    }
+        return ChunkedToXContentHelper.array("snapshots", entries.values(), entry -> (builder, params) -> {
+            builder.startObject();
+            builder.field("snapshot", entry.snapshot().getSnapshotId().getName());
+            builder.field("repository", entry.snapshot().getRepository());
+            builder.field("state", entry.state());
+            builder.startArray("indices");
+            {
+                for (String index : entry.indices()) {
+                    builder.value(index);
                 }
-                builder.endArray();
-                builder.startArray("shards");
-                {
-                    for (Map.Entry<ShardId, ShardRestoreStatus> shardEntry : entry.shards.entrySet()) {
-                        ShardId shardId = shardEntry.getKey();
-                        ShardRestoreStatus status = shardEntry.getValue();
-                        builder.startObject();
-                        {
-                            builder.field("index", shardId.getIndex());
-                            builder.field("shard", shardId.getId());
-                            builder.field("state", status.state());
-                        }
-                        builder.endObject();
+            }
+            builder.endArray();
+            builder.startArray("shards");
+            {
+                for (Map.Entry<ShardId, ShardRestoreStatus> shardEntry : entry.shards.entrySet()) {
+                    ShardId shardId = shardEntry.getKey();
+                    ShardRestoreStatus status = shardEntry.getValue();
+                    builder.startObject();
+                    {
+                        builder.field("index", shardId.getIndex());
+                        builder.field("shard", shardId.getId());
+                        builder.field("state", status.state());
                     }
+                    builder.endObject();
                 }
+            }
 
-                builder.endArray();
-                builder.endObject();
-                return builder;
-            }).iterator(),
-            Iterators.single((builder, params) -> builder.endArray())
-        );
+            builder.endArray();
+            builder.endObject();
+            return builder;
+        });
     }
 }

@@ -13,13 +13,13 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.Table;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.SizeValue;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
@@ -74,18 +74,14 @@ public class RestTable {
         return new RestResponse(
             RestStatus.OK,
             ChunkedRestResponseBody.fromXContent(
-                ignored -> Iterators.concat(
-                    Iterators.single((builder, params) -> builder.startArray()),
-                    rowOrder.stream().<ToXContent>map(row -> (builder, params) -> {
-                        builder.startObject();
-                        for (DisplayHeader header : displayHeaders) {
-                            builder.field(header.display, renderValue(request, table.getAsMap().get(header.name).get(row).value));
-                        }
-                        builder.endObject();
-                        return builder;
-                    }).iterator(),
-                    Iterators.single((builder, params) -> builder.endArray())
-                ),
+                ignored -> ChunkedToXContentHelper.array(() -> rowOrder.stream().<ToXContent>map(row -> (builder, params) -> {
+                    builder.startObject();
+                    for (DisplayHeader header : displayHeaders) {
+                        builder.field(header.display, renderValue(request, table.getAsMap().get(header.name).get(row).value));
+                    }
+                    builder.endObject();
+                    return builder;
+                }).iterator()),
                 ToXContent.EMPTY_PARAMS,
                 channel
             )

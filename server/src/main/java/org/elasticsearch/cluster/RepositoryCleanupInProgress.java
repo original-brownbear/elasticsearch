@@ -9,10 +9,10 @@ package org.elasticsearch.cluster;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.repositories.RepositoryOperation;
 import org.elasticsearch.xcontent.ToXContent;
 
@@ -65,16 +65,12 @@ public final class RepositoryCleanupInProgress extends AbstractNamedDiffable<Clu
 
     @Override
     public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params ignored) {
-        return Iterators.concat(
-            Iterators.single((builder, params) -> builder.startArray(TYPE)),
-            entries.stream().<ToXContent>map(entry -> (builder, params) -> {
-                builder.startObject();
-                builder.field("repository", entry.repository);
-                builder.endObject();
-                return builder;
-            }).iterator(),
-            Iterators.single((builder, params) -> builder.endArray())
-        );
+        return ChunkedToXContentHelper.array(TYPE, entries, entry -> (builder, params) -> {
+            builder.startObject();
+            builder.field("repository", entry.repository);
+            builder.endObject();
+            return builder;
+        });
     }
 
     @Override

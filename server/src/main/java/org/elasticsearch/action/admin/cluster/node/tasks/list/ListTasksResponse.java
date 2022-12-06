@@ -193,7 +193,7 @@ public class ListTasksResponse extends BaseTasksResponse {
                     }
                     builder.startObject(TASKS);
                     return builder;
-                }), entry.getValue().stream().<ToXContent>map(task -> (builder, params) -> {
+                }), entry.getValue().stream().map(task -> (builder, params) -> {
                     builder.startObject(task.taskId().toString());
                     task.toXContent(builder, params);
                     builder.endObject();

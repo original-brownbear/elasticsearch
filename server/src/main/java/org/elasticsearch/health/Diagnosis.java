@@ -11,6 +11,7 @@ package org.elasticsearch.health;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.xcontent.ToXContent;
 
@@ -78,9 +79,9 @@ public record Diagnosis(Definition definition, @Nullable List<Resource> affected
 
         @Override
         public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params outerParams) {
-            Iterator<? extends ToXContent> valuesIterator;
+            Iterable<ToXContent> valuesIterator;
             if (nodes != null) {
-                valuesIterator = nodes.stream().map(node -> (ToXContent) (builder, params) -> {
+                valuesIterator = () -> nodes.stream().map(node -> (ToXContent) (builder, params) -> {
                     builder.startObject();
                     builder.field(ID_FIELD, node.getId());
                     if (node.getName() != null) {
@@ -90,13 +91,9 @@ public record Diagnosis(Definition definition, @Nullable List<Resource> affected
                     return builder;
                 }).iterator();
             } else {
-                valuesIterator = values.stream().map(value -> (ToXContent) (builder, params) -> builder.value(value)).iterator();
+                valuesIterator = () -> values.stream().map(value -> (ToXContent) (builder, params) -> builder.value(value)).iterator();
             }
-            return Iterators.concat(
-                Iterators.single((ToXContent) (builder, params) -> builder.startArray(type.displayValue)),
-                valuesIterator,
-                Iterators.single((builder, params) -> builder.endArray())
-            );
+            return ChunkedToXContentHelper.array(type.displayValue, valuesIterator);
         }
 
         @Override

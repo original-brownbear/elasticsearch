@@ -11,7 +11,6 @@ package org.elasticsearch.cluster.metadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
@@ -71,11 +70,7 @@ public class IndexGraveyardTests extends ESTestCase {
             // check that date properly printed
             assertThat(
                 Strings.toString(
-                    ignored -> Iterators.concat(
-                        ChunkedToXContentHelper.startObject(),
-                        graveyard.toXContentChunked(ToXContent.EMPTY_PARAMS),
-                        ChunkedToXContentHelper.endObject()
-                    ),
+                    ignored -> ChunkedToXContentHelper.wrapWithObject(graveyard.toXContentChunked(ToXContent.EMPTY_PARAMS)),
                     false,
                     true
                 ),

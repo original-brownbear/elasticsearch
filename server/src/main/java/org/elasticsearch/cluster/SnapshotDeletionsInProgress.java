@@ -11,11 +11,11 @@ package org.elasticsearch.cluster;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState.Custom;
 import org.elasticsearch.common.UUIDs;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.repositories.RepositoryOperation;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.xcontent.ToXContent;
@@ -163,26 +163,22 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
 
     @Override
     public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params ignored) {
-        return Iterators.concat(
-            Iterators.single((builder, params) -> builder.startArray(TYPE)),
-            entries.stream().<ToXContent>map(entry -> (builder, params) -> {
-                builder.startObject();
-                {
-                    builder.field("repository", entry.repository());
-                    builder.startArray("snapshots");
-                    for (SnapshotId snapshot : entry.snapshots) {
-                        builder.value(snapshot.getName());
-                    }
-                    builder.endArray();
-                    builder.timeField("start_time_millis", "start_time", entry.startTime);
-                    builder.field("repository_state_id", entry.repositoryStateId);
-                    builder.field("state", entry.state);
+        return ChunkedToXContentHelper.array(TYPE, entries, entry -> (builder, params) -> {
+            builder.startObject();
+            {
+                builder.field("repository", entry.repository());
+                builder.startArray("snapshots");
+                for (SnapshotId snapshot : entry.snapshots) {
+                    builder.value(snapshot.getName());
                 }
-                builder.endObject();
-                return builder;
-            }).iterator(),
-            Iterators.single((builder, params) -> builder.endArray())
-        );
+                builder.endArray();
+                builder.timeField("start_time_millis", "start_time", entry.startTime);
+                builder.field("repository_state_id", entry.repositoryStateId);
+                builder.field("state", entry.state);
+            }
+            builder.endObject();
+            return builder;
+        });
     }
 
     @Override

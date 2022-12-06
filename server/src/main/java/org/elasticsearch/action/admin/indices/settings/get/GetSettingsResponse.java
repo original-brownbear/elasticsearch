@@ -10,11 +10,11 @@ package org.elasticsearch.action.admin.indices.settings.get;
 
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.collect.Iterators;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -161,8 +161,7 @@ public class GetSettingsResponse extends ActionResponse implements ChunkedToXCon
 
     private Iterator<ToXContent> toXContentChunked(boolean omitEmptySettings) {
         final boolean indexToDefaultSettingsEmpty = indexToDefaultSettings.isEmpty();
-        return Iterators.concat(
-            Iterators.single((builder, params) -> builder.startObject()),
+        return ChunkedToXContentHelper.wrapWithObject(
             getIndexToSettings().entrySet()
                 .stream()
                 .filter(entry -> omitEmptySettings == false || entry.getValue().isEmpty() == false)
@@ -178,8 +177,7 @@ public class GetSettingsResponse extends ActionResponse implements ChunkedToXCon
                     }
                     return builder.endObject();
                 })
-                .iterator(),
-            Iterators.single((builder, params) -> builder.endObject())
+                .iterator()
         );
     }
 

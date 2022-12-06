@@ -34,6 +34,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.ChunkedToXContentHelper;
 import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.test.VersionUtils;
@@ -288,10 +289,8 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
 
         @Override
         public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params ignored) {
-            return Iterators.concat(
-                Iterators.single((builder, params) -> builder.startObject()),
-                Iterators.single((builder, params) -> builder.field("custom_string_object", strObject)),
-                Iterators.single((builder, params) -> builder.endObject())
+            return ChunkedToXContentHelper.wrapWithObject(
+                Iterators.single((builder, params) -> builder.field("custom_string_object", strObject))
             );
         }
 
@@ -331,10 +330,8 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
 
         @Override
         public Iterator<? extends ToXContent> toXContentChunked(ToXContent.Params ignored) {
-            return Iterators.concat(
-                Iterators.single((builder, params) -> builder.startObject()),
-                Iterators.single((builder, params) -> builder.field("custom_integer_object", intObject)),
-                Iterators.single((builder, params) -> builder.endObject())
+            return ChunkedToXContentHelper.wrapWithObject(
+                Iterators.single((builder, params) -> builder.field("custom_integer_object", intObject))
             );
         }
 
