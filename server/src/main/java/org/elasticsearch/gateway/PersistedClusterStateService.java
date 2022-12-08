@@ -760,21 +760,6 @@ public class PersistedClusterStateService {
             indexWriter.deleteAll();
         }
 
-        public void deleteGlobalMetadata() throws IOException {
-            this.logger.trace("deleting global metadata docs");
-            indexWriter.deleteDocuments(new Term(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME));
-        }
-
-        void deleteIndexMetadata(String indexUUID) throws IOException {
-            this.logger.trace("removing metadata for [{}]", indexUUID);
-            indexWriter.deleteDocuments(new Term(INDEX_UUID_FIELD_NAME, indexUUID));
-        }
-
-        public void deleteMappingMetadata(String mappingHash) throws IOException {
-            this.logger.trace("removing mapping metadata for [{}]", mappingHash);
-            indexWriter.deleteDocuments(new Term(MAPPING_HASH_FIELD_NAME, mappingHash));
-        }
-
         void flush() throws IOException {
             this.logger.trace("flushing");
             this.indexWriter.flush();
@@ -950,10 +935,6 @@ public class PersistedClusterStateService {
             }
             final boolean updateGlobalMeta = Metadata.isGlobalStateEquals(previouslyWrittenMetadata, metadata) == false;
             if (updateGlobalMeta) {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.deleteGlobalMetadata();
-                }
-
                 addGlobalMetadataDocuments(metadata);
             }
 
@@ -968,13 +949,6 @@ public class PersistedClusterStateService {
                 } else {
                     logger.trace("no action required for mapping [{}]", entry.getKey());
                     numMappingsUnchanged++;
-                }
-            }
-
-            for (final var unusedMappingHash : previousMappingHashes) {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.deleteMappingMetadata(unusedMappingHash);
-                    numMappingsRemoved++;
                 }
             }
 
@@ -1003,10 +977,6 @@ public class PersistedClusterStateService {
                         numIndicesUpdated++;
                     }
 
-                    for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                        metadataIndexWriter.deleteIndexMetadata(indexMetadata.getIndexUUID());
-                    }
-
                     addIndexMetadataDocuments(indexMetadata);
                 } else {
                     numIndicesUnchanged++;
@@ -1015,17 +985,27 @@ public class PersistedClusterStateService {
                 indexMetadataVersionByUUID.remove(indexMetadata.getIndexUUID());
             }
 
-            for (String removedIndexUUID : indexMetadataVersionByUUID.keySet()) {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    numIndicesRemoved++;
-                    metadataIndexWriter.deleteIndexMetadata(removedIndexUUID);
+            if (indexMetadataVersionByUUID.keySet().isEmpty() == false || previousMappingHashes.isEmpty() == false) {
+                final Term[] termsToDelete = new Term[indexMetadataVersionByUUID.size() + previousMappingHashes.size()];
+                int i = 0;
+                for (String removedIndexUUID : indexMetadataVersionByUUID.keySet()) {
+                    termsToDelete[i++] = new Term(INDEX_UUID_FIELD_NAME, removedIndexUUID);
                 }
-            }
-
-            // Flush, to try and expose a failure (e.g. out of disk space) before committing, because we can handle a failure here more
-            // gracefully than one that occurs during the commit process.
-            for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                metadataIndexWriter.flush();
+                for (String previousMappingHash : previousMappingHashes) {
+                    termsToDelete[i++] = new Term(MAPPING_HASH_FIELD_NAME, previousMappingHash);
+                }
+                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
+                    metadataIndexWriter.indexWriter.deleteDocuments(termsToDelete);
+                    // Flush, to try and expose a failure (e.g. out of disk space) before committing, because we can handle a failure here
+                    // more gracefully than one that occurs during the commit process.
+                    metadataIndexWriter.flush();
+                }
+                numIndicesRemoved += indexMetadataVersionByUUID.size();
+                numMappingsRemoved += previousMappingHashes.size();
+            } else {
+                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
+                    metadataIndexWriter.flush();
+                }
             }
 
             return new WriterStats(
@@ -1074,11 +1054,20 @@ public class PersistedClusterStateService {
                 document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
                 document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
                 document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.indexWriter.addDocument(document);
+                if (pageIndex == 0) {
+                    final Term termToDelete = new Term(INDEX_UUID_FIELD_NAME, indexUUID);
+                    for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
+                        metadataIndexWriter.indexWriter.updateDocument(termToDelete, document);
+                    }
+                } else {
+                    for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
+                        metadataIndexWriter.indexWriter.addDocument(document);
+                    }
                 }
             }));
         }
+
+        private static final Term GLOBAL_META_TERM = new Term(TYPE_FIELD_NAME, GLOBAL_TYPE_NAME);
 
         private void addGlobalMetadataDocuments(Metadata metadata) throws IOException {
             logger.trace("updating global metadata doc");
@@ -1089,7 +1078,11 @@ public class PersistedClusterStateService {
                 document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
                 document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
                 for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.indexWriter.addDocument(document);
+                    if (pageIndex == 0) {
+                        metadataIndexWriter.indexWriter.updateDocument(GLOBAL_META_TERM, document);
+                    } else {
+                        metadataIndexWriter.indexWriter.addDocument(document);
+                    }
                 }
             });
         }
