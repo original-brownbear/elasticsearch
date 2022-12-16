@@ -11,7 +11,9 @@ package org.elasticsearch.index.seqno;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.GroupedActionListener;
+import org.elasticsearch.action.support.replication.ReplicationRequest;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
+import org.elasticsearch.action.support.replication.TransportReplicationAction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.AllocationId;
 import org.elasticsearch.cluster.routing.IndexShardRoutingTable;
@@ -1006,7 +1008,7 @@ public class ReplicationTracker extends AbstractIndexShardComponent implements L
      *
      * @return the replication group
      */
-    public ReplicationGroup getReplicationGroup() {
+    public ReplicationGroup getReplicationGroup(ReplicationRequest<?> request) {
         assert primaryMode;
         return replicationGroup;
     }

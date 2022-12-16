@@ -115,9 +115,9 @@ public class ReplicationTrackerTests extends ReplicationTrackerTestCase {
 
         tracker.updateFromMaster(initialClusterStateVersion, ids(active), routingTable(initializing, primaryId));
         tracker.activatePrimaryMode(NO_OPS_PERFORMED);
-        assertThat(tracker.getReplicationGroup().getReplicationTargets().size(), equalTo(1));
+        assertThat(tracker.getReplicationGroup(null).getReplicationTargets().size(), equalTo(1));
         initializing.forEach(aId -> markAsTrackingAndInSyncQuietly(tracker, aId.getId(), NO_OPS_PERFORMED));
-        assertThat(tracker.getReplicationGroup().getReplicationTargets().size(), equalTo(1 + initializing.size()));
+        assertThat(tracker.getReplicationGroup(null).getReplicationTargets().size(), equalTo(1 + initializing.size()));
         allocations.keySet().forEach(aId -> updateLocalCheckpoint(tracker, aId.getId(), allocations.get(aId)));
 
         assertThat(tracker.getGlobalCheckpoint(), equalTo(minLocalCheckpoint));
@@ -485,8 +485,8 @@ public class ReplicationTrackerTests extends ReplicationTrackerTestCase {
         final ReplicationTracker tracker = newTracker(primaryId);
         tracker.updateFromMaster(initialClusterStateVersion, ids(activeAllocationIds), routingTable);
         tracker.activatePrimaryMode(NO_OPS_PERFORMED);
-        assertThat(tracker.getReplicationGroup().getInSyncAllocationIds(), equalTo(ids(activeAllocationIds)));
-        assertThat(tracker.getReplicationGroup().getRoutingTable(), equalTo(routingTable));
+        assertThat(tracker.getReplicationGroup(null).getInSyncAllocationIds(), equalTo(ids(activeAllocationIds)));
+        assertThat(tracker.getReplicationGroup(null).getRoutingTable(), equalTo(routingTable));
 
         // first we assert that the in-sync and tracking sets are set up correctly
         assertTrue(activeAllocationIds.stream().allMatch(a -> tracker.getTrackedLocalCheckpointForShard(a.getId()).inSync));

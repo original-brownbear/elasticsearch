@@ -157,8 +157,8 @@ public class RetentionLeasesReplicationTests extends ESIndexLevelReplicationTest
                     shard.getOperationPrimaryTerm(),
                     null,
                     1L,
-                    group.getPrimary().getReplicationGroup().getInSyncAllocationIds(),
-                    group.getPrimary().getReplicationGroup().getRoutingTable()
+                    group.getPrimary().getReplicationGroup(null).getInSyncAllocationIds(),
+                    group.getPrimary().getReplicationGroup(null).getRoutingTable()
                 );
             }
             group.syncGlobalCheckpoint();

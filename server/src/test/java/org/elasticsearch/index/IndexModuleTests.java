@@ -27,7 +27,9 @@ import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.support.PlainActionFuture;
+import org.elasticsearch.action.support.replication.ReplicationRequest;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
+import org.elasticsearch.action.support.replication.TransportReplicationAction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -767,6 +769,11 @@ public class IndexModuleTests extends ESTestCase {
                     safeCommitInfoSupplier,
                     onReplicationGroupUpdated
                 );
+            }
+
+            @Override
+            public ReplicationGroup getReplicationGroup(ReplicationRequest<?> request) {
+                return super.getReplicationGroup(request);
             }
         }
         module.setReplicationTrackerFactory(

@@ -145,7 +145,7 @@ public class ReplicationOperation<
             // on.
             final long maxSeqNoOfUpdatesOrDeletes = primary.maxSeqNoOfUpdatesOrDeletes();
             assert maxSeqNoOfUpdatesOrDeletes != SequenceNumbers.UNASSIGNED_SEQ_NO : "seqno_of_updates still uninitialized";
-            final ReplicationGroup replicationGroup = primary.getReplicationGroup();
+            final ReplicationGroup replicationGroup = primary.getReplicationGroup(request);
             final PendingReplicationActions pendingReplicationActions = primary.getPendingReplicationActions();
             markUnavailableShardsAsStale(replicaRequest, replicationGroup);
             performOnReplicas(replicaRequest, globalCheckpoint, maxSeqNoOfUpdatesOrDeletes, replicationGroup, pendingReplicationActions);
@@ -406,7 +406,7 @@ public class ReplicationOperation<
         if (waitForActiveShards == ActiveShardCount.NONE) {
             return null;  // not waiting for any shards
         }
-        final IndexShardRoutingTable shardRoutingTable = primary.getReplicationGroup().getRoutingTable();
+        final IndexShardRoutingTable shardRoutingTable = primary.getReplicationGroup(request).getRoutingTable();
         if (waitForActiveShards.enoughShardsActive(shardRoutingTable)) {
             return null;
         } else {
@@ -541,7 +541,7 @@ public class ReplicationOperation<
          *
          * @return the replication group
          */
-        ReplicationGroup getReplicationGroup();
+        ReplicationGroup getReplicationGroup(ReplicationRequest<?> request);
 
         /**
          * Returns the pending replication actions on the primary shard

@@ -558,7 +558,7 @@ public class IndexShardTests extends IndexShardTestCase {
                     final PlainActionFuture<Releasable> permitAcquiredFuture = new PlainActionFuture<>();
                     indexShard.acquirePrimaryOperationPermit(permitAcquiredFuture, ThreadPool.Names.SAME, "bla");
                     try (Releasable ignored = permitAcquiredFuture.actionGet()) {
-                        assertThat(indexShard.getReplicationGroup(), notNullValue());
+                        assertThat(indexShard.getReplicationGroup(null), notNullValue());
                     }
                 }
             }

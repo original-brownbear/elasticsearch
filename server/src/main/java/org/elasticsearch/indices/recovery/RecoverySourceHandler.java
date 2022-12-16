@@ -185,7 +185,7 @@ public class RecoverySourceHandler {
             final SetOnce<RetentionLease> retentionLeaseRef = new SetOnce<>();
 
             runUnderPrimaryPermit(() -> {
-                final IndexShardRoutingTable routingTable = shard.getReplicationGroup().getRoutingTable();
+                final IndexShardRoutingTable routingTable = shard.getReplicationGroup(null).getRoutingTable();
                 ShardRouting targetShardRouting = routingTable.getByAllocationId(request.targetAllocationId());
                 if (targetShardRouting == null) {
                     logger.debug(

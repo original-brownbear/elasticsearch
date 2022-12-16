@@ -749,8 +749,8 @@ public abstract class ESIndexLevelReplicationTestCase extends IndexShardTestCase
             }
 
             @Override
-            public org.elasticsearch.index.shard.ReplicationGroup getReplicationGroup() {
-                return getPrimaryShard().getReplicationGroup();
+            public org.elasticsearch.index.shard.ReplicationGroup getReplicationGroup(ReplicationRequest<?> request) {
+                return getPrimaryShard().getReplicationGroup(request);
             }
 
             @Override

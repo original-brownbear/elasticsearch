@@ -1180,8 +1180,8 @@ public abstract class TransportReplicationAction<
         }
 
         @Override
-        public ReplicationGroup getReplicationGroup() {
-            return indexShard.getReplicationGroup();
+        public ReplicationGroup getReplicationGroup(ReplicationRequest<?> request) {
+            return indexShard.getReplicationGroup(request);
         }
 
         @Override

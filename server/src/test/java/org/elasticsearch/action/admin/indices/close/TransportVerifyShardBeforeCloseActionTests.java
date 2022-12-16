@@ -14,6 +14,7 @@ import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.replication.PendingReplicationActions;
 import org.elasticsearch.action.support.replication.ReplicationOperation;
+import org.elasticsearch.action.support.replication.ReplicationRequest;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.action.support.replication.TransportReplicationAction;
 import org.elasticsearch.action.support.replication.TransportReplicationAction.ConcreteShardRequest;
@@ -320,7 +321,7 @@ public class TransportVerifyShardBeforeCloseActionTests extends ESTestCase {
             }
 
             @Override
-            public ReplicationGroup getReplicationGroup() {
+            public ReplicationGroup getReplicationGroup(ReplicationRequest<?> request) {
                 return replicationGroup;
             }
 

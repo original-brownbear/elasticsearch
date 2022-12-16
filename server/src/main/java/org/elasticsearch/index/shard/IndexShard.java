@@ -34,6 +34,7 @@ import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.support.replication.PendingReplicationActions;
+import org.elasticsearch.action.support.replication.ReplicationRequest;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -2739,10 +2740,10 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      *
      * @return the replication group
      */
-    public ReplicationGroup getReplicationGroup() {
+    public ReplicationGroup getReplicationGroup(ReplicationRequest<?> request) {
         assert assertPrimaryMode();
         verifyNotClosed();
-        ReplicationGroup replicationGroup = replicationTracker.getReplicationGroup();
+        ReplicationGroup replicationGroup = replicationTracker.getReplicationGroup(request);
         // PendingReplicationActions is dependent on ReplicationGroup. Every time we expose ReplicationGroup,
         // ensure PendingReplicationActions is updated with the newest version to prevent races.
         pendingReplicationActions.accept(replicationGroup);

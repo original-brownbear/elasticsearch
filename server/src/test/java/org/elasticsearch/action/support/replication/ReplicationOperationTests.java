@@ -700,13 +700,13 @@ public class ReplicationOperationTests extends ESTestCase {
         }
 
         @Override
-        public ReplicationGroup getReplicationGroup() {
+        public ReplicationGroup getReplicationGroup(ReplicationRequest<?> request) {
             return replicationGroupSupplier.get();
         }
 
         @Override
         public PendingReplicationActions getPendingReplicationActions() {
-            pendingReplicationActions.accept(getReplicationGroup());
+            pendingReplicationActions.accept(getReplicationGroup(null));
             return pendingReplicationActions;
         }
     }

@@ -929,7 +929,7 @@ public class TransportReplicationActionTests extends ESTestCase {
             ? singleton(routingEntry.allocationId().getId())
             : clusterService.state().metadata().index(index).inSyncAllocationIds(0);
         ReplicationGroup replicationGroup = new ReplicationGroup(shardRoutingTable, inSyncIds, shardRoutingTable.getAllAllocationIds(), 0);
-        when(shard.getReplicationGroup()).thenReturn(replicationGroup);
+        when(shard.getReplicationGroup(null)).thenReturn(replicationGroup);
         PendingReplicationActions replicationActions = new PendingReplicationActions(shardId, threadPool);
         replicationActions.accept(replicationGroup);
         when(shard.getPendingReplicationActions()).thenReturn(replicationActions);
