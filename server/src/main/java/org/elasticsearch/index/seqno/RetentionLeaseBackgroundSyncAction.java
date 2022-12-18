@@ -170,7 +170,7 @@ public class RetentionLeaseBackgroundSyncAction extends TransportReplicationActi
             Objects.requireNonNull(replica);
             replica.updateRetentionLeasesOnReplica(request.getRetentionLeases());
             replica.persistRetentionLeases();
-            return new ReplicaResult();
+            return ReplicaResult.SUCCESS;
         });
     }
 

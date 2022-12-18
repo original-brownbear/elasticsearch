@@ -1047,7 +1047,7 @@ public class TransportReplicationActionTests extends ESTestCase {
                     if (throwException) {
                         throw new ElasticsearchException("simulated");
                     }
-                    return new ReplicaResult();
+                    return ReplicaResult.SUCCESS;
                 });
             }
         };
@@ -1217,7 +1217,7 @@ public class TransportReplicationActionTests extends ESTestCase {
                     if (throwException.get()) {
                         throw new RetryOnReplicaException(shardId, "simulation");
                     }
-                    return new ReplicaResult();
+                    return ReplicaResult.SUCCESS;
                 });
             }
         };
@@ -1319,7 +1319,7 @@ public class TransportReplicationActionTests extends ESTestCase {
                         throw new RetryOnReplicaException(shardId, "simulation");
                     }
                     calledSuccessfully.set(true);
-                    return new ReplicaResult();
+                    return ReplicaResult.SUCCESS;
                 });
             }
         };
@@ -1523,7 +1523,7 @@ public class TransportReplicationActionTests extends ESTestCase {
         @Override
         protected void shardOperationOnReplica(Request request, IndexShard replica, ActionListener<ReplicaResult> listener) {
             request.processedOnReplicas.incrementAndGet();
-            listener.onResponse(new ReplicaResult());
+            listener.onResponse(ReplicaResult.SUCCESS);
         }
     }
 

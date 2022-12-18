@@ -503,7 +503,7 @@ public class TransportReplicationAllPermitsAcquisitionTests extends IndexShardTe
             // The TransportReplicationAction.getIndexShard() method is overridden for testing purpose but we double check here
             // that the permit has been acquired on the replica shard
             assertSame(replica, replica);
-            listener.onResponse(new ReplicaResult());
+            listener.onResponse(ReplicaResult.SUCCESS);
         }
     }
 

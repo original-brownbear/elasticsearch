@@ -103,7 +103,7 @@ public class ReplicationOperation<
         this.retryTimeout = retryTimeout;
     }
 
-    public void execute() throws Exception {
+    public void execute() {
         final String activeShardCountFailure = checkActiveShardCount();
         final ShardRouting primaryRouting = primary.routingEntry();
         final ShardId primaryId = primaryRouting.shardId();

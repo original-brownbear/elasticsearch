@@ -112,7 +112,7 @@ public class TransportVerifyShardBeforeCloseAction extends TransportReplicationA
     protected void shardOperationOnReplica(ShardRequest shardRequest, IndexShard replica, ActionListener<ReplicaResult> listener) {
         ActionListener.completeWith(listener, () -> {
             executeShardOperation(shardRequest, replica);
-            return new ReplicaResult();
+            return ReplicaResult.SUCCESS;
         });
     }
 

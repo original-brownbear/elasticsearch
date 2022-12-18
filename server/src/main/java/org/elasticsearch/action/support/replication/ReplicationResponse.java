@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.common.xcontent.XContentParserUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.rest.RestStatus;
@@ -24,7 +25,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -175,10 +175,7 @@ public class ReplicationResponse extends ActionResponse {
                     }
                 } else if (token == XContentParser.Token.START_ARRAY) {
                     if (FAILURES.equals(currentFieldName)) {
-                        failuresList = new ArrayList<>();
-                        while ((token = parser.nextToken()) != XContentParser.Token.END_ARRAY) {
-                            failuresList.add(Failure.fromXContent(parser));
-                        }
+                        failuresList = XContentParserUtils.parseList(parser, Failure::fromXContent);
                     } else {
                         parser.skipChildren(); // skip potential inner arrays for forward compatibility
                     }
@@ -188,7 +185,7 @@ public class ReplicationResponse extends ActionResponse {
             }
             Failure[] failures = EMPTY;
             if (failuresList != null) {
-                failures = failuresList.toArray(new Failure[failuresList.size()]);
+                failures = failuresList.toArray(EMPTY);
             }
             return new ShardInfo(total, successful, failures);
         }

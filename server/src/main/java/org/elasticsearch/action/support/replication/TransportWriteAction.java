@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action.support.replication;
 
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRunnable;
@@ -57,6 +58,8 @@ public abstract class TransportWriteAction<
     protected final IndexingPressure indexingPressure;
     protected final SystemIndices systemIndices;
     protected final ExecutorSelector executorSelector;
+
+    private static final Logger logger = LogManager.getLogger(TransportWriteAction.class);
 
     private final BiFunction<ExecutorSelector, IndexShard, String> executorFunction;
 
@@ -108,11 +111,11 @@ public abstract class TransportWriteAction<
         return indexingPressure.markPrimaryOperationStarted(primaryOperationCount(request), primaryOperationSize(request), force(request));
     }
 
-    protected boolean force(ReplicatedWriteRequest<?> request) {
+    private boolean force(ReplicatedWriteRequest<?> request) {
         return forceExecutionOnPrimary || isSystemShard(request.shardId);
     }
 
-    protected boolean isSystemShard(ShardId shardId) {
+    private boolean isSystemShard(ShardId shardId) {
         final IndexAbstraction abstraction = clusterService.state().metadata().getIndicesLookup().get(shardId.getIndexName());
         return abstraction != null ? abstraction.isSystem() : systemIndices.isSystemIndex(shardId.getIndexName());
     }
@@ -206,7 +209,7 @@ public abstract class TransportWriteAction<
         IndexShard primary,
         ActionListener<PrimaryResult<ReplicaRequest, Response>> listener
     ) {
-        threadPool.executor(executorFunction.apply(executorSelector, primary)).execute(new ActionRunnable<>(listener) {
+        threadPool.executor(executor(primary)).execute(new ActionRunnable<>(listener) {
             @Override
             protected void doRun() {
                 dispatchedShardOperationOnPrimary(request, primary, listener);
@@ -234,7 +237,7 @@ public abstract class TransportWriteAction<
      */
     @Override
     protected void shardOperationOnReplica(ReplicaRequest request, IndexShard replica, ActionListener<ReplicaResult> listener) {
-        threadPool.executor(executorFunction.apply(executorSelector, replica)).execute(new ActionRunnable<>(listener) {
+        threadPool.executor(executor(replica)).execute(new ActionRunnable<>(listener) {
             @Override
             protected void doRun() {
                 dispatchedShardOperationOnReplica(request, replica, listener);

@@ -8,6 +8,8 @@
 
 package org.elasticsearch.action.admin.indices.refresh;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.ActionFilters;
@@ -33,6 +35,8 @@ public class TransportShardRefreshAction extends TransportReplicationAction<
 
     public static final String NAME = RefreshAction.NAME + "[s]";
     public static final ActionType<ReplicationResponse> TYPE = new ActionType<>(NAME, ReplicationResponse::new);
+
+    private static final Logger logger = LogManager.getLogger(TransportShardRefreshAction.class);
 
     @Inject
     public TransportShardRefreshAction(
@@ -82,7 +86,7 @@ public class TransportShardRefreshAction extends TransportReplicationAction<
         ActionListener.completeWith(listener, () -> {
             replica.refresh("api");
             logger.trace("{} refresh request executed on replica", replica.shardId());
-            return new ReplicaResult();
+            return ReplicaResult.SUCCESS;
         });
     }
 }

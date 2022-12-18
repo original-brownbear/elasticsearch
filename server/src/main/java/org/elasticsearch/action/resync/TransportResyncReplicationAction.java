@@ -7,6 +7,8 @@
  */
 package org.elasticsearch.action.resync;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.action.support.ActionFilters;
@@ -43,6 +45,8 @@ public class TransportResyncReplicationAction extends TransportWriteAction<
     ResyncReplicationRequest,
     ResyncReplicationRequest,
     ResyncReplicationResponse> implements PrimaryReplicaSyncer.SyncAction {
+
+    private static final Logger logger = LogManager.getLogger(TransportResyncReplicationAction.class);
 
     private static final String ACTION_NAME = "internal:index/seq_no/resync";
 

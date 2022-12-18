@@ -8,6 +8,8 @@
 
 package org.elasticsearch.action.support.replication;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.elasticsearch.Assertions;
 import org.elasticsearch.ElasticsearchException;
@@ -86,6 +88,8 @@ public abstract class TransportReplicationAction<
     Request extends ReplicationRequest<Request>,
     ReplicaRequest extends ReplicationRequest<ReplicaRequest>,
     Response extends ReplicationResponse> extends TransportAction<Request, Response> {
+
+    private static final Logger logger = LogManager.getLogger(TransportReplicationAction.class);
 
     /**
      * The timeout for retrying replication requests.
@@ -306,10 +310,7 @@ public abstract class TransportReplicationAction<
         }
         ClusterBlockLevel indexBlockLevel = indexBlockLevel();
         if (indexBlockLevel != null) {
-            ClusterBlockException blockException = state.blocks().indexBlockedException(indexBlockLevel, indexName);
-            if (blockException != null) {
-                return blockException;
-            }
+            return state.blocks().indexBlockedException(indexBlockLevel, indexName);
         }
         return null;
     }
@@ -581,14 +582,13 @@ public abstract class TransportReplicationAction<
     }
 
     public static class ReplicaResult {
+
+        public static final ReplicaResult SUCCESS = new ReplicaResult(null);
+
         final Exception finalFailure;
 
         public ReplicaResult(Exception finalFailure) {
             this.finalFailure = finalFailure;
-        }
-
-        public ReplicaResult() {
-            this(null);
         }
 
         public void runPostReplicaActions(ActionListener<Void> listener) {
@@ -737,13 +737,13 @@ public abstract class TransportReplicationAction<
             }
         }
 
-        protected void responseWithFailure(Exception e) {
+        private void responseWithFailure(Exception e) {
             setPhase(task, "finished");
             onCompletionListener.onFailure(e);
         }
 
         @Override
-        protected void doRun() throws Exception {
+        protected void doRun() {
             setPhase(task, "replica");
             final String actualAllocationId = this.replica.routingEntry().allocationId().getId();
             if (actualAllocationId.equals(replicaRequest.getTargetAllocationID()) == false) {
@@ -1191,8 +1191,8 @@ public abstract class TransportReplicationAction<
     }
 
     public static class ReplicaResponse extends ActionResponse implements ReplicationOperation.ReplicaResponse {
-        private long localCheckpoint;
-        private long globalCheckpoint;
+        private final long localCheckpoint;
+        private final long globalCheckpoint;
 
         ReplicaResponse(StreamInput in) throws IOException {
             super(in);
