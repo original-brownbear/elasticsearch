@@ -57,7 +57,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Executor;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
@@ -294,7 +293,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                 void getRemoteClusterState(
                     final String remoteCluster,
                     final long metadataVersion,
-                    final BiConsumer<ClusterStateResponse, Exception> handler
+                    final ActionListener<ClusterStateResponse> listener
                 ) {
                     // TODO: set non-compliant status on auto-follow coordination that can be viewed via a stats API
                     CcrLicenseChecker.checkRemoteClusterLicenseAndFetchClusterState(
@@ -305,24 +304,14 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                             .routingTable(true)
                             .waitForMetadataVersion(metadataVersion)
                             .waitForTimeout(waitForMetadataTimeOut),
-                        e -> handler.accept(null, e),
-                        remoteClusterStateResponse -> handler.accept(remoteClusterStateResponse, null)
+                        listener
                     );
                 }
 
                 @Override
-                void createAndFollow(
-                    Map<String, String> headers,
-                    PutFollowAction.Request request,
-                    Runnable successHandler,
-                    Consumer<Exception> failureHandler
-                ) {
+                void createAndFollow(Map<String, String> headers, PutFollowAction.Request request, ActionListener<Void> listener) {
                     Client followerClient = CcrLicenseChecker.wrapClient(client, headers, clusterService.state());
-                    followerClient.execute(
-                        PutFollowAction.INSTANCE,
-                        request,
-                        ActionListener.wrap(r -> successHandler.run(), failureHandler)
-                    );
+                    followerClient.execute(PutFollowAction.INSTANCE, request, listener.map(r -> null));
                 }
 
                 @Override
@@ -330,7 +319,7 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                     submitUnbatchedTask("update_auto_follow_metadata", new ClusterStateUpdateTask() {
 
                         @Override
-                        public ClusterState execute(ClusterState currentState) throws Exception {
+                        public ClusterState execute(ClusterState currentState) {
                             return updateFunction.apply(currentState);
                         }
 
@@ -494,15 +483,15 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
             this.lastActivePatterns = List.copyOf(patterns);
 
             final Thread thread = Thread.currentThread();
-            getRemoteClusterState(remoteCluster, Math.max(1L, nextMetadataVersion), (remoteClusterStateResponse, remoteError) -> {
-                // Also check removed flag here, as it may take a while for this remote cluster state api call to return:
-                if (removed) {
-                    LOGGER.trace("auto-follower instance for cluster [{}] has been removed", remoteCluster);
-                    return;
-                }
+            getRemoteClusterState(remoteCluster, Math.max(1L, nextMetadataVersion), new ActionListener<>() {
+                @Override
+                public void onResponse(ClusterStateResponse remoteClusterStateResponse) {
+                    // Also check removed flag here, as it may take a while for this remote cluster state api call to return:
+                    if (removed) {
+                        LOGGER.trace("auto-follower instance for cluster [{}] has been removed", remoteCluster);
+                        return;
+                    }
 
-                if (remoteClusterStateResponse != null) {
-                    assert remoteError == null;
                     if (remoteClusterStateResponse.isWaitForTimedOut()) {
                         LOGGER.trace("auto-follow coordinator timed out getting remote cluster state from [{}]", remoteCluster);
                         start();
@@ -511,8 +500,10 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
                     ClusterState remoteClusterState = remoteClusterStateResponse.getState();
                     metadataVersion = remoteClusterState.metadata().version();
                     autoFollowIndices(autoFollowMetadata, clusterState, remoteClusterState, patterns, thread);
-                } else {
-                    assert remoteError != null;
+                }
+
+                @Override
+                public void onFailure(Exception remoteError) {
                     if (remoteError instanceof NoSuchRemoteClusterException) {
                         LOGGER.info("auto-follower for cluster [{}] has stopped, because remote connection is gone", remoteCluster);
                         remoteClusterConnectionMissing = true;
@@ -748,17 +739,24 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
         ) {
             PutFollowAction.Request request = generateRequest(remoteClusterString, indexToFollow, indexAbstraction, pattern);
 
-            // Execute if the create and follow api call succeeds:
-            Runnable successHandler = () -> {
-                LOGGER.info("auto followed leader index [{}] as follow index [{}]", indexToFollow, request.getFollowerIndex());
+            createAndFollow(headers, request, new ActionListener<>() {
+                @Override
+                public void onResponse(Void unused) {
+                    // Execute if the create and follow api call succeeds
+                    LOGGER.info("auto followed leader index [{}] as follow index [{}]", indexToFollow, request.getFollowerIndex());
 
-                // This function updates the auto follow metadata in the cluster to record that the leader index has been followed:
-                // (so that we do not try to follow it in subsequent auto follow runs)
-                Function<ClusterState, ClusterState> function = recordLeaderIndexAsFollowFunction(autoFollowPattenName, indexToFollow);
-                // The coordinator always runs on the elected master node, so we can update cluster state here:
-                updateAutoFollowMetadata(function, onResult);
-            };
-            createAndFollow(headers, request, successHandler, onResult);
+                    // This function updates the auto follow metadata in the cluster to record that the leader index has been followed:
+                    // (so that we do not try to follow it in subsequent auto follow runs)
+                    Function<ClusterState, ClusterState> function = recordLeaderIndexAsFollowFunction(autoFollowPattenName, indexToFollow);
+                    // The coordinator always runs on the elected master node, so we can update cluster state here:
+                    updateAutoFollowMetadata(function, onResult);
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                    onResult.accept(e);
+                }
+            });
         }
 
         private void finalise(int slot, AutoFollowResult result, final Thread thread) {
@@ -964,21 +962,12 @@ public class AutoFollowCoordinator extends AbstractLifecycleComponent implements
         /**
          * Fetch a remote cluster state from with the specified cluster alias
          * @param remoteCluster      the name of the leader cluster
-         * @param metadataVersion   the last seen metadata version
-         * @param handler            the callback to invoke
+         * @param metadataVersion    the last seen metadata version
+         * @param listener           the callback to invoke
          */
-        abstract void getRemoteClusterState(
-            String remoteCluster,
-            long metadataVersion,
-            BiConsumer<ClusterStateResponse, Exception> handler
-        );
+        abstract void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener);
 
-        abstract void createAndFollow(
-            Map<String, String> headers,
-            PutFollowAction.Request followRequest,
-            Runnable successHandler,
-            Consumer<Exception> failureHandler
-        );
+        abstract void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener);
 
         abstract void updateAutoFollowMetadata(Function<ClusterState, ClusterState> updateFunction, Consumer<Exception> handler);
 

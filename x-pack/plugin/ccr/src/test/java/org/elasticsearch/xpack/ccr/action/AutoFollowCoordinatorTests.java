@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.ccr.action;
 
 import org.elasticsearch.Version;
+import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.support.replication.ClusterStateCreationUtils;
 import org.elasticsearch.client.internal.Client;
@@ -63,7 +64,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -124,24 +124,19 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(currentState), () -> 1L, Runnable::run) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remoteCluster, equalTo("remote"));
-                handler.accept(new ClusterStateResponse(new ClusterName("name"), remoteState, false), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("name"), remoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 assertThat(headers, equalTo(autoFollowHeaders.get("remote")));
                 assertThat(followRequest.getRemoteCluster(), equalTo("remote"));
                 assertThat(followRequest.getLeaderIndex(), equalTo("logs-20190101"));
                 assertThat(followRequest.getFollowerIndex(), equalTo("logs-20190101"));
                 assertThat(followRequest.masterNodeTimeout(), equalTo(TimeValue.MAX_VALUE));
-                successHandler.run();
+                listener.onResponse(null);
             }
 
             @Override
@@ -194,24 +189,19 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(currentState), () -> 1L, Runnable::run) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remoteCluster, equalTo("remote"));
-                handler.accept(new ClusterStateResponse(new ClusterName("name"), remoteState, false), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("name"), remoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 assertThat(headers, equalTo(autoFollowHeaders.get("remote")));
                 assertThat(followRequest.getRemoteCluster(), equalTo("remote"));
                 assertThat(followRequest.getLeaderIndex(), matchesPattern(DataStreamTestHelper.backingIndexPattern("logs-foobar", 1)));
                 assertThat(followRequest.getFollowerIndex(), matchesPattern(DataStreamTestHelper.backingIndexPattern("logs-foobar", 1)));
                 assertThat(followRequest.masterNodeTimeout(), equalTo(TimeValue.MAX_VALUE));
-                successHandler.run();
+                listener.onResponse(null);
             }
 
             @Override
@@ -258,17 +248,12 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(clusterState), () -> 1L, Runnable::run) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
-                handler.accept(null, failure);
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
+                listener.onFailure(failure);
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 fail("should not get here");
             }
 
@@ -311,22 +296,17 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(clusterState), () -> 1L, Runnable::run) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
-                handler.accept(new ClusterStateResponse(new ClusterName("name"), remoteState, false), null);
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
+                listener.onResponse(new ClusterStateResponse(new ClusterName("name"), remoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 assertThat(followRequest.getRemoteCluster(), equalTo("remote"));
                 assertThat(followRequest.getLeaderIndex(), equalTo("logs-20190101"));
                 assertThat(followRequest.getFollowerIndex(), equalTo("logs-20190101"));
                 assertThat(followRequest.masterNodeTimeout(), equalTo(TimeValue.MAX_VALUE));
-                successHandler.run();
+                listener.onResponse(null);
             }
 
             @Override
@@ -412,19 +392,14 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             Runnable::run
         ) {
             @Override
-            void getRemoteClusterState(String remote, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remote, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 invoked.set(true);
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request request,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request request, ActionListener<Void> listener) {
                 invoked.set(true);
-                successHandler.run();
+                listener.onResponse(null);
             }
 
             @Override
@@ -523,7 +498,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             ClusterState lastFetchedRemoteClusterState;
 
             @Override
-            void getRemoteClusterState(String remote, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remote, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remote, equalTo(remoteCluster));
 
                 // in this test, every time it fetches the remote cluster state new leader indices to follow appears
@@ -564,24 +539,18 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
 
                 countFetches = countFetches + 1;
                 remoteClusterState.set(lastFetchedRemoteClusterState);
-                handler.accept(
-                    new ClusterStateResponse(lastFetchedRemoteClusterState.getClusterName(), lastFetchedRemoteClusterState, false),
-                    null
+                listener.onResponse(
+                    new ClusterStateResponse(lastFetchedRemoteClusterState.getClusterName(), lastFetchedRemoteClusterState, false)
                 );
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request request,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request request, ActionListener<Void> listener) {
                 assertThat(request.getRemoteCluster(), equalTo(remoteCluster));
                 assertThat(request.masterNodeTimeout(), equalTo(TimeValue.MAX_VALUE));
                 assertThat(request.getFollowerIndex(), startsWith("copy-"));
                 followedIndices.add(request.getLeaderIndex());
-                successHandler.run();
+                listener.onResponse(null);
             }
 
             @Override
@@ -674,22 +643,17 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(clusterState), () -> 1L, Runnable::run) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
-                handler.accept(new ClusterStateResponse(new ClusterName("name"), remoteState, false), null);
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
+                listener.onResponse(new ClusterStateResponse(new ClusterName("name"), remoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 assertThat(followRequest.getRemoteCluster(), equalTo("remote"));
                 assertThat(followRequest.masterNodeTimeout(), equalTo(TimeValue.MAX_VALUE));
                 assertThat(followRequest.getLeaderIndex(), equalTo("logs-20190101"));
                 assertThat(followRequest.getFollowerIndex(), equalTo("logs-20190101"));
-                failureHandler.accept(failure);
+                listener.onFailure(failure);
             }
 
             @Override
@@ -1711,20 +1675,15 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             long previousRequestedMetadataVersion = 0;
 
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remoteCluster, equalTo("remote"));
                 assertThat(metadataVersion, greaterThan(previousRequestedMetadataVersion));
-                handler.accept(new ClusterStateResponse(new ClusterName("name"), leaderStates.poll(), false), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("name"), leaderStates.poll(), false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
-                successHandler.run();
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
+                listener.onResponse(null);
             }
 
             @Override
@@ -1769,20 +1728,15 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             long previousRequestedMetadataVersion = 0;
 
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 counter.incrementAndGet();
                 assertThat(remoteCluster, equalTo("remote"));
                 assertThat(metadataVersion, greaterThan(previousRequestedMetadataVersion));
-                handler.accept(new ClusterStateResponse(new ClusterName("name"), null, true), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("name"), null, true));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 fail("should not be invoked");
             }
 
@@ -1818,18 +1772,13 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         Consumer<List<AutoFollowCoordinator.AutoFollowResult>> handler = results::addAll;
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(currentState), () -> 1L, Runnable::run) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remoteCluster, equalTo("remote"));
-                handler.accept(new ClusterStateResponse(new ClusterName("name"), remoteState, false), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("name"), remoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 fail("soft deletes are disabled; index should not be followed");
             }
 
@@ -1900,18 +1849,13 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         Consumer<List<AutoFollowCoordinator.AutoFollowResult>> handler = results -> { resultHolder[0] = results; };
         AutoFollower autoFollower = new AutoFollower("remote", handler, localClusterStateSupplier(currentState), () -> 1L, Runnable::run) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remoteCluster, equalTo("remote"));
-                handler.accept(new ClusterStateResponse(new ClusterName("name"), remoteState, false), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("name"), remoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 fail("this should not be invoked");
             }
 
@@ -1986,7 +1930,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
                 void getRemoteClusterState(
                     final String remoteCluster,
                     final long metadataVersion,
-                    final BiConsumer<ClusterStateResponse, Exception> handler
+                    final ActionListener<ClusterStateResponse> listener
                 ) {
                     counter.incrementAndGet();
                     if (counter.incrementAndGet() > iterations) {
@@ -1999,15 +1943,14 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
                          */
                         return;
                     }
-                    handler.accept(null, new EsRejectedExecutionException());
+                    listener.onFailure(new EsRejectedExecutionException());
                 }
 
                 @Override
                 void createAndFollow(
                     final Map<String, String> headers,
                     final PutFollowAction.Request followRequest,
-                    final Runnable successHandler,
-                    final Consumer<Exception> failureHandler
+                    ActionListener<Void> listener
                 ) {
 
                 }
@@ -2084,20 +2027,15 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             Runnable::run
         ) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remoteCluster, equalTo("remote"));
-                handler.accept(new ClusterStateResponse(new ClusterName("remote"), finalRemoteState, false), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("remote"), finalRemoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 followedIndices.add(followRequest.getLeaderIndex());
-                successHandler.run();
+                listener.onResponse(null);
             }
 
             @Override
@@ -2187,20 +2125,15 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             Runnable::run
         ) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remoteCluster, equalTo("remote"));
-                handler.accept(new ClusterStateResponse(new ClusterName("remote"), finalRemoteState, false), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("remote"), finalRemoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 followedIndices.add(followRequest.getLeaderIndex());
-                successHandler.run();
+                listener.onResponse(null);
             }
 
             @Override
@@ -2454,20 +2387,15 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             Runnable::run
         ) {
             @Override
-            void getRemoteClusterState(String remoteCluster, long metadataVersion, BiConsumer<ClusterStateResponse, Exception> handler) {
+            void getRemoteClusterState(String remoteCluster, long metadataVersion, ActionListener<ClusterStateResponse> listener) {
                 assertThat(remoteCluster, equalTo("remote"));
-                handler.accept(new ClusterStateResponse(new ClusterName("remote"), finalRemoteState, false), null);
+                listener.onResponse(new ClusterStateResponse(new ClusterName("remote"), finalRemoteState, false));
             }
 
             @Override
-            void createAndFollow(
-                Map<String, String> headers,
-                PutFollowAction.Request followRequest,
-                Runnable successHandler,
-                Consumer<Exception> failureHandler
-            ) {
+            void createAndFollow(Map<String, String> headers, PutFollowAction.Request followRequest, ActionListener<Void> listener) {
                 followedIndices.add(followRequest.getLeaderIndex());
-                successHandler.run();
+                listener.onResponse(null);
             }
 
             @Override

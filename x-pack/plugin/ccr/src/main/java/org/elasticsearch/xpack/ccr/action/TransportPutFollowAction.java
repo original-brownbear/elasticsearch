@@ -112,8 +112,7 @@ public final class TransportPutFollowAction extends TransportMasterNodeAction<Pu
             client,
             remoteCluster,
             leaderIndex,
-            listener::onFailure,
-            (historyUUID, tuple) -> createFollowerIndex(tuple.v1(), tuple.v2(), request, listener)
+            listener.delegateFailure((l, response) -> createFollowerIndex(response.v2().v1(), response.v2().v2(), request, l))
         );
     }
 

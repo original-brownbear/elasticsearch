@@ -145,14 +145,13 @@ public class TransportResumeFollowAction extends AcknowledgedTransportMasterNode
             client,
             leaderCluster,
             leaderIndex,
-            listener::onFailure,
-            (leaderHistoryUUID, leaderIndexMetadata) -> {
+            listener.delegateFailure((l, response) -> {
                 try {
-                    start(request, leaderCluster, leaderIndexMetadata.v1(), followerIndexMetadata, leaderHistoryUUID, listener);
+                    start(request, leaderCluster, response.v2().v1(), followerIndexMetadata, response.v1(), l);
                 } catch (final IOException e) {
                     listener.onFailure(e);
                 }
-            }
+            })
         );
     }
 

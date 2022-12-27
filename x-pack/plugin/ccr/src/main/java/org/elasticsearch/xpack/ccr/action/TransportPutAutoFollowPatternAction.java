@@ -8,7 +8,6 @@ package org.elasticsearch.xpack.ccr.action;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.support.master.AcknowledgedTransportMasterNodeAction;
@@ -23,6 +22,7 @@ import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.SuppressForbidden;
@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class TransportPutAutoFollowPatternAction extends AcknowledgedTransportMasterNodeAction<PutAutoFollowPatternAction.Request> {
@@ -100,32 +99,28 @@ public class TransportPutAutoFollowPatternAction extends AcknowledgedTransportMa
             threadPool.getThreadContext(),
             clusterService.state()
         );
-
-        Consumer<ClusterStateResponse> consumer = remoteClusterState -> {
-            String[] indices = request.getLeaderIndexPatterns().toArray(new String[0]);
-            ccrLicenseChecker.hasPrivilegesToFollowIndices(remoteClient, indices, e -> {
-                if (e == null) {
-                    submitUnbatchedTask(
-                        "put-auto-follow-pattern-" + request.getRemoteCluster(),
-                        new AckedClusterStateUpdateTask(request, listener) {
-                            @Override
-                            public ClusterState execute(ClusterState currentState) {
-                                return innerPut(request, filteredHeaders, currentState, remoteClusterState.getState());
-                            }
-                        }
-                    );
-                } else {
-                    listener.onFailure(e);
-                }
-            });
-        };
-
         CcrLicenseChecker.checkRemoteClusterLicenseAndFetchClusterState(
             client,
             request.getRemoteCluster(),
             new ClusterStateRequest().clear().metadata(true),
-            listener::onFailure,
-            consumer
+            listener.delegateFailure((l, remoteClusterState) -> {
+                String[] indices = request.getLeaderIndexPatterns().toArray(Strings.EMPTY_ARRAY);
+                ccrLicenseChecker.hasPrivilegesToFollowIndices(remoteClient, indices, e -> {
+                    if (e == null) {
+                        submitUnbatchedTask(
+                            "put-auto-follow-pattern-" + request.getRemoteCluster(),
+                            new AckedClusterStateUpdateTask(request, l) {
+                                @Override
+                                public ClusterState execute(ClusterState currentState) {
+                                    return innerPut(request, filteredHeaders, currentState, remoteClusterState.getState());
+                                }
+                            }
+                        );
+                    } else {
+                        l.onFailure(e);
+                    }
+                });
+            })
         );
 
     }
