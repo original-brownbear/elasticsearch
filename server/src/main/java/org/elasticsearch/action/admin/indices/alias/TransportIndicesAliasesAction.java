@@ -94,7 +94,7 @@ public class TransportIndicesAliasesAction extends AcknowledgedTransportMasterNo
         for (AliasActions aliasAction : request.aliasActions()) {
             Collections.addAll(indices, aliasAction.indices());
         }
-        return state.blocks().indicesBlockedException(ClusterBlockLevel.METADATA_WRITE, indices.toArray(new String[indices.size()]));
+        return state.blocks().indicesBlockedException(ClusterBlockLevel.METADATA_WRITE, indices.toArray(Strings.EMPTY_ARRAY));
     }
 
     @Override
@@ -117,7 +117,7 @@ public class TransportIndicesAliasesAction extends AcknowledgedTransportMasterNo
                 action.indices()
             );
             final Index[] concreteIndices;
-            if (concreteDataStreams.size() != 0) {
+            if (concreteDataStreams.isEmpty() == false) {
                 Index[] unprocessedConcreteIndices = indexNameExpressionResolver.concreteIndices(
                     state,
                     request.indicesOptions(),
@@ -201,37 +201,34 @@ public class TransportIndicesAliasesAction extends AcknowledgedTransportMasterNo
             long now = System.currentTimeMillis();
             for (final Index index : concreteIndices) {
                 switch (action.actionType()) {
-                    case ADD:
+                    case ADD -> {
                         for (String alias : concreteAliases(action, state.metadata(), index.getName())) {
                             String resolvedName = IndexNameExpressionResolver.resolveDateMathExpression(alias, now);
                             finalActions.add(
-                                new AliasAction.Add(
-                                    index.getName(),
-                                    resolvedName,
-                                    action.filter(),
-                                    action.indexRouting(),
-                                    action.searchRouting(),
-                                    action.writeIndex(),
-                                    systemIndices.isSystemName(resolvedName) ? Boolean.TRUE : action.isHidden()
-                                )
+                                    new AliasAction.Add(
+                                            index.getName(),
+                                            resolvedName,
+                                            action.filter(),
+                                            action.indexRouting(),
+                                            action.searchRouting(),
+                                            action.writeIndex(),
+                                            systemIndices.isSystemName(resolvedName) ? Boolean.TRUE : action.isHidden()
+                                    )
                             );
                         }
-                        break;
-                    case REMOVE:
+                    }
+                    case REMOVE -> {
                         for (String alias : concreteAliases(action, state.metadata(), index.getName())) {
                             finalActions.add(new AliasAction.Remove(index.getName(), alias, action.mustExist()));
                         }
-                        break;
-                    case REMOVE_INDEX:
-                        finalActions.add(new AliasAction.RemoveIndex(index.getName()));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unsupported action [" + action.actionType() + "]");
+                    }
+                    case REMOVE_INDEX -> finalActions.add(new AliasAction.RemoveIndex(index.getName()));
+                    default -> throw new IllegalArgumentException("Unsupported action [" + action.actionType() + "]");
                 }
             }
         }
         if (finalActions.isEmpty() && false == actions.isEmpty()) {
-            throw new AliasesNotFoundException(aliases.toArray(new String[aliases.size()]));
+            throw new AliasesNotFoundException(aliases.toArray(Strings.EMPTY_ARRAY));
         }
         request.aliasActions().clear();
         IndicesAliasesClusterStateUpdateRequest updateRequest = new IndicesAliasesClusterStateUpdateRequest(unmodifiableList(finalActions))
@@ -258,7 +255,7 @@ public class TransportIndicesAliasesAction extends AcknowledgedTransportMasterNo
             if (finalAliases.isEmpty() && action.mustExist() != null && action.mustExist()) {
                 return action.aliases();
             }
-            return finalAliases.toArray(new String[finalAliases.size()]);
+            return finalAliases.toArray(Strings.EMPTY_ARRAY);
         } else {
             // for ADD and REMOVE_INDEX we just return the current aliases
             return action.aliases();
