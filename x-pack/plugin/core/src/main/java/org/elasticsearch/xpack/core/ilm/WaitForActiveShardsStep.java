@@ -81,7 +81,7 @@ public class WaitForActiveShardsStep extends ClusterStateWaitStep {
         final String rolledIndexName;
         final String waitForActiveShardsSettingValue;
         if (indexAbstraction.getParentDataStream() != null) {
-            DataStream dataStream = indexAbstraction.getParentDataStream().getDataStream();
+            DataStream dataStream = indexAbstraction.getParentDataStream().dataStream();
             IndexAbstraction dataStreamAbstraction = metadata.getIndicesLookup().get(dataStream.getName());
             assert dataStreamAbstraction != null : dataStream.getName() + " datastream is not present in the metadata indices lookup";
             if (dataStreamAbstraction.getWriteIndex() == null) {

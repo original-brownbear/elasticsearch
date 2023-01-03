@@ -8,7 +8,6 @@
 
 package org.elasticsearch.cluster.metadata;
 
-import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.cluster.SimpleDiffable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -95,17 +94,6 @@ public record ReservedStateErrorMetadata(Long version, ErrorKind errorKind, List
      */
     public static ReservedStateErrorMetadata fromXContent(final XContentParser parser) {
         return PARSER.apply(parser, null);
-    }
-
-    /**
-     * Reads an {@link ReservedStateErrorMetadata} {@link Diff} from {@link StreamInput}
-     *
-     * @param in the {@link StreamInput} to read the diff from
-     * @return a {@link Diff} of {@link ReservedStateErrorMetadata}
-     * @throws IOException
-     */
-    public static Diff<ReservedStateErrorMetadata> readDiffFrom(StreamInput in) throws IOException {
-        return SimpleDiffable.readDiffFrom(ReservedStateErrorMetadata::readFrom, in);
     }
 
     /**

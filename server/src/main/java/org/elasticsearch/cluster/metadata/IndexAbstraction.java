@@ -315,7 +315,7 @@ public interface IndexAbstraction {
         }
     }
 
-    class DataStream implements IndexAbstraction {
+    record DataStream(org.elasticsearch.cluster.metadata.DataStream dataStream) implements IndexAbstraction {
 
         public static final XContentParserConfiguration TS_EXTRACT_CONFIG = XContentParserConfiguration.EMPTY.withFiltering(
             Set.of(TimestampField.FIXED_TIMESTAMP_FIELD),
@@ -326,12 +326,6 @@ public interface IndexAbstraction {
         public static final DateFormatter TIMESTAMP_FORMATTER = DateFormatter.forPattern(
             "strict_date_optional_time_nanos||strict_date_optional_time||epoch_millis"
         );
-
-        private final org.elasticsearch.cluster.metadata.DataStream dataStream;
-
-        public DataStream(org.elasticsearch.cluster.metadata.DataStream dataStream) {
-            this.dataStream = dataStream;
-        }
 
         @Override
         public String getName() {
@@ -454,23 +448,6 @@ public interface IndexAbstraction {
         @Override
         public boolean isDataStreamRelated() {
             return true;
-        }
-
-        public org.elasticsearch.cluster.metadata.DataStream getDataStream() {
-            return dataStream;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            DataStream that = (DataStream) o;
-            return dataStream.equals(that.dataStream);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(dataStream);
         }
     }
 

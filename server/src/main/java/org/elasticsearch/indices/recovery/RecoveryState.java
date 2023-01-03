@@ -302,7 +302,7 @@ public class RecoveryState implements ToXContentFragment, Writeable {
             toXContentNode(Fields.SOURCE, builder, sourceNode);
         } else {
             builder.startObject(Fields.SOURCE);
-            recoverySource.addAdditionalFields(builder, params);
+            recoverySource.addAdditionalFields(builder);
             builder.endObject();
         }
 

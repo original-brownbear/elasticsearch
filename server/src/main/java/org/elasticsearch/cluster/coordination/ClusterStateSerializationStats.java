@@ -19,8 +19,6 @@ import java.io.IOException;
 
 public class ClusterStateSerializationStats implements Writeable, ToXContentObject {
 
-    public static final ClusterStateSerializationStats EMPTY = new ClusterStateSerializationStats(0L, 0L, 0L, 0L, 0L, 0L);
-
     private final long fullStateCount;
     private final long totalUncompressedFullStateBytes;
     private final long totalCompressedFullStateBytes;

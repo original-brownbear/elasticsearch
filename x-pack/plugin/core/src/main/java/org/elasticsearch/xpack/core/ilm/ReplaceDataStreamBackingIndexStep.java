@@ -114,7 +114,7 @@ public class ReplaceDataStreamBackingIndexStep extends ClusterStateActionStep {
         }
 
         Metadata.Builder newMetaData = Metadata.builder(clusterState.getMetadata())
-            .put(dataStream.getDataStream().replaceBackingIndex(index, targetIndexMetadata.getIndex()));
+            .put(dataStream.dataStream().replaceBackingIndex(index, targetIndexMetadata.getIndex()));
         return ClusterState.builder(clusterState).metadata(newMetaData).build();
     }
 

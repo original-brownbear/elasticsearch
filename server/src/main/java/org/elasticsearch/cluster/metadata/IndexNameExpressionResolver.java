@@ -704,7 +704,7 @@ public class IndexNameExpressionResolver {
 
         IndexAbstraction ia = state.metadata().getIndicesLookup().get(index);
         if (ia.getParentDataStream() != null) {
-            DataStream dataStream = ia.getParentDataStream().getDataStream();
+            DataStream dataStream = ia.getParentDataStream().dataStream();
             Map<String, DataStreamAlias> dataStreamAliases = state.metadata().dataStreamAliases();
             Stream<DataStreamAlias> stream;
             if (iterateIndexAliases(dataStreamAliases.size(), resolvedExpressions.size())) {
@@ -814,7 +814,7 @@ public class IndexNameExpressionResolver {
                 }
             } else if (indexAbstraction != null && indexAbstraction.getType() == Type.DATA_STREAM) {
                 IndexAbstraction.DataStream dataStream = (IndexAbstraction.DataStream) indexAbstraction;
-                if (dataStream.getDataStream().isAllowCustomRouting() == false) {
+                if (dataStream.dataStream().isAllowCustomRouting() == false) {
                     continue;
                 }
                 if (dataStream.getIndices() != null) {
@@ -1255,9 +1255,9 @@ public class IndexNameExpressionResolver {
             final IndexMetadata.State excludeState;
             if (options.expandWildcardsOpen() && options.expandWildcardsClosed()) {
                 excludeState = null;
-            } else if (options.expandWildcardsOpen() && options.expandWildcardsClosed() == false) {
+            } else if (options.expandWildcardsOpen()) {
                 excludeState = IndexMetadata.State.CLOSE;
-            } else if (options.expandWildcardsClosed() && options.expandWildcardsOpen() == false) {
+            } else if (options.expandWildcardsClosed()) {
                 excludeState = IndexMetadata.State.OPEN;
             } else {
                 assert false : "this shouldn't get called if wildcards expand to none";

@@ -1377,7 +1377,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
             ? ChunkedToXContentHelper.wrapWithObject("indices", indices().values().iterator())
             : Collections.emptyIterator();
 
-        return Iterators.concat(start, Iterators.<ToXContent>single((builder, params) -> {
+        return Iterators.concat(start, Iterators.single((builder, params) -> {
             builder.field("cluster_uuid", clusterUUID);
             builder.field("cluster_uuid_committed", clusterUUIDCommitted);
             builder.startObject("cluster_coordination");
@@ -1846,7 +1846,7 @@ public class Metadata extends AbstractCollection<IndexMetadata> implements Diffa
                 for (var key : previous.getAliases().keySet()) {
                     removeAlias(key, previous.getIndex());
                 }
-            } else if (previous != null && current != null) {
+            } else if (previous != null) {
                 if (Objects.equals(previous.getAliases(), current.getAliases())) {
                     return;
                 }

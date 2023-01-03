@@ -139,28 +139,6 @@ public class ClusterStateUpdateStats implements Writeable, ToXContentFragment {
         out.writeVLong(failedNotificationElapsedMillis);
     }
 
-    public static ClusterStateUpdateStats EMPTY = new ClusterStateUpdateStats(
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L,
-        0L
-    );
-
     public long getUnchangedTaskCount() {
         return unchangedTaskCount;
     }

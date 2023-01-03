@@ -204,6 +204,9 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
         private final List<SnapshotId> snapshots;
         private final String repoName;
         private final State state;
+        /**
+         * The start time in milliseconds for deleting the snapshots.
+         */
         private final long startTime;
         private final long repositoryStateId;
         private final String uuid;
@@ -263,13 +266,6 @@ public class SnapshotDeletionsInProgress extends AbstractNamedDiffable<Custom> i
 
         public List<SnapshotId> getSnapshots() {
             return snapshots;
-        }
-
-        /**
-         * The start time in milliseconds for deleting the snapshots.
-         */
-        public long getStartTime() {
-            return startTime;
         }
 
         @Override

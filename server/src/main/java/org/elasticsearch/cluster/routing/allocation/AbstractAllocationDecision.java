@@ -159,7 +159,7 @@ public abstract class AbstractAllocationDecision implements ToXContentFragment, 
         if (this == other) {
             return true;
         }
-        if (other == null || other instanceof AbstractAllocationDecision == false) {
+        if (other instanceof AbstractAllocationDecision == false) {
             return false;
         }
         AbstractAllocationDecision that = (AbstractAllocationDecision) other;

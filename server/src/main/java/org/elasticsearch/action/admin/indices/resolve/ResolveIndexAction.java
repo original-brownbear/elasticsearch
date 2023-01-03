@@ -615,7 +615,7 @@ public class ResolveIndexAction extends ActionType<ResolveIndexAction.Response> 
                             new ResolvedDataStream(
                                 dataStream.getName(),
                                 backingIndices,
-                                dataStream.getDataStream().getTimeStampField().getName()
+                                dataStream.dataStream().getTimeStampField().getName()
                             )
                         );
                     }

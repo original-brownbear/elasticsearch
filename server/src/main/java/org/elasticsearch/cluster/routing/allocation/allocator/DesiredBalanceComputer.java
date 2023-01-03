@@ -73,12 +73,12 @@ public class DesiredBalanceComputer {
     ) {
         this.threadPool = threadPool;
         this.delegateAllocator = delegateAllocator;
-        watchSetting(settings, clusterSettings, PROGRESS_LOG_INTERVAL_SETTING, value -> this.progressLogInterval = value);
+        watchSetting(settings, clusterSettings, value -> this.progressLogInterval = value);
     }
 
-    private <T> void watchSetting(Settings settings, ClusterSettings clusterSettings, Setting<T> setting, Consumer<T> consumer) {
-        consumer.accept(setting.get(settings));
-        clusterSettings.addSettingsUpdateConsumer(setting, consumer);
+    private void watchSetting(Settings settings, ClusterSettings clusterSettings, Consumer<TimeValue> consumer) {
+        consumer.accept((DesiredBalanceComputer.PROGRESS_LOG_INTERVAL_SETTING).get(settings));
+        clusterSettings.addSettingsUpdateConsumer(DesiredBalanceComputer.PROGRESS_LOG_INTERVAL_SETTING, consumer);
     }
 
     public DesiredBalance compute(

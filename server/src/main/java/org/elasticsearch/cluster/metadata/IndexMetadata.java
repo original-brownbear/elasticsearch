@@ -1991,10 +1991,6 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             return this;
         }
 
-        public boolean isSystem() {
-            return isSystem;
-        }
-
         public Builder timestampRange(IndexLongFieldRange timestampRange) {
             this.timestampRange = timestampRange;
             return this;

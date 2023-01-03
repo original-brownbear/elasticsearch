@@ -63,8 +63,7 @@ public class CoordinationMetadata implements Writeable, ToXContentFragment {
 
     @SuppressWarnings("unchecked")
     private static Set<VotingConfigExclusion> votingConfigExclusions(Object[] fields) {
-        Set<VotingConfigExclusion> votingTombstones = new HashSet<>((List<VotingConfigExclusion>) fields[3]);
-        return votingTombstones;
+        return new HashSet<>((List<VotingConfigExclusion>) fields[3]);
     }
 
     private static final ConstructingObjectParser<CoordinationMetadata, Void> PARSER = new ConstructingObjectParser<>(

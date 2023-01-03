@@ -25,7 +25,7 @@ public class ShutdownPersistentTasksStatus implements Writeable, ToXContentObjec
         this.status = SingleNodeShutdownMetadata.Status.COMPLETE;
     }
 
-    public ShutdownPersistentTasksStatus(StreamInput in) throws IOException {
+    public ShutdownPersistentTasksStatus(StreamInput in) {
         this.status = SingleNodeShutdownMetadata.Status.COMPLETE;
     }
 

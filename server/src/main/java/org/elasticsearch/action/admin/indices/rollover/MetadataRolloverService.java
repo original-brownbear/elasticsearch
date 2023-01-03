@@ -175,7 +175,7 @@ public class MetadataRolloverService {
     }
 
     private static NameResolution resolveDataStreamRolloverNames(Metadata metadata, IndexAbstraction.DataStream dataStream) {
-        final DataStream ds = dataStream.getDataStream();
+        final DataStream ds = dataStream.dataStream();
         final IndexMetadata originalWriteIndex = metadata.index(dataStream.getWriteIndex());
         return new NameResolution(originalWriteIndex.getIndex().getName(), null, ds.nextWriteIndexAndGeneration(metadata).v1());
     }
@@ -269,7 +269,7 @@ public class MetadataRolloverService {
             templateV2 = systemDataStreamDescriptor.getComposableIndexTemplate();
         }
 
-        final DataStream ds = dataStream.getDataStream();
+        final DataStream ds = dataStream.dataStream();
         final Index originalWriteIndex = dataStream.getWriteIndex();
         final Tuple<String, Long> nextIndexAndGeneration = ds.nextWriteIndexAndGeneration(currentState.metadata());
         final String newWriteIndexName = nextIndexAndGeneration.v1();

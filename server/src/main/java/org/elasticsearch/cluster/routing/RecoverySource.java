@@ -37,14 +37,14 @@ public abstract class RecoverySource implements Writeable, ToXContentObject {
     public final XContentBuilder toXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
         builder.startObject();
         builder.field("type", getType());
-        addAdditionalFields(builder, params);
+        addAdditionalFields(builder);
         return builder.endObject();
     }
 
     /**
      * to be overridden by subclasses
      */
-    public void addAdditionalFields(XContentBuilder builder, ToXContent.Params params) throws IOException {
+    public void addAdditionalFields(XContentBuilder builder) throws IOException {
 
     }
 
@@ -145,7 +145,7 @@ public abstract class RecoverySource implements Writeable, ToXContentObject {
         }
 
         @Override
-        public void addAdditionalFields(XContentBuilder builder, Params params) throws IOException {
+        public void addAdditionalFields(XContentBuilder builder) throws IOException {
             builder.field("bootstrap_new_history_uuid", bootstrapNewHistoryUUID);
         }
 
@@ -258,7 +258,7 @@ public abstract class RecoverySource implements Writeable, ToXContentObject {
         }
 
         @Override
-        public void addAdditionalFields(XContentBuilder builder, ToXContent.Params params) throws IOException {
+        public void addAdditionalFields(XContentBuilder builder) throws IOException {
             builder.field("repository", snapshot.getRepository())
                 .field("snapshot", snapshot.getSnapshotId().getName())
                 .field("version", version.toString())

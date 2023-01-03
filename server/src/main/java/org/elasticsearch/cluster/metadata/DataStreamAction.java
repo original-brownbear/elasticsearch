@@ -21,7 +21,6 @@ import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import static org.elasticsearch.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
@@ -133,19 +132,21 @@ public class DataStreamAction implements Writeable, ToXContentObject {
         out.writeString(index);
     }
 
-    public static DataStreamAction fromXContent(XContentParser parser) throws IOException {
+    public static DataStreamAction fromXContent(XContentParser parser) {
         return PARSER.apply(parser, null);
     }
 
-    private static final ObjectParser<DataStreamAction, Void> ADD_BACKING_INDEX_PARSER = parser(
-        ADD_BACKING_INDEX.getPreferredName(),
-        () -> new DataStreamAction(Type.ADD_BACKING_INDEX)
-    );
-    private static final ObjectParser<DataStreamAction, Void> REMOVE_BACKING_INDEX_PARSER = parser(
-        REMOVE_BACKING_INDEX.getPreferredName(),
-        () -> new DataStreamAction(Type.REMOVE_BACKING_INDEX)
-    );
+    private static final ObjectParser<DataStreamAction, Void> ADD_BACKING_INDEX_PARSER;
+
     static {
+        String name = ADD_BACKING_INDEX.getPreferredName();
+        ADD_BACKING_INDEX_PARSER = new ObjectParser<>(name, () -> new DataStreamAction(Type.ADD_BACKING_INDEX));
+    }
+
+    private static final ObjectParser<DataStreamAction, Void> REMOVE_BACKING_INDEX_PARSER;
+    static {
+        String name = REMOVE_BACKING_INDEX.getPreferredName();
+        REMOVE_BACKING_INDEX_PARSER = new ObjectParser<>(name, () -> new DataStreamAction(Type.REMOVE_BACKING_INDEX));
         ADD_BACKING_INDEX_PARSER.declareField(
             DataStreamAction::setDataStream,
             XContentParser::text,
@@ -160,11 +161,6 @@ public class DataStreamAction implements Writeable, ToXContentObject {
             ObjectParser.ValueType.STRING
         );
         REMOVE_BACKING_INDEX_PARSER.declareField(DataStreamAction::setIndex, XContentParser::text, INDEX, ObjectParser.ValueType.STRING);
-    }
-
-    private static ObjectParser<DataStreamAction, Void> parser(String name, Supplier<DataStreamAction> supplier) {
-        ObjectParser<DataStreamAction, Void> parser = new ObjectParser<>(name, supplier);
-        return parser;
     }
 
     public static final ConstructingObjectParser<DataStreamAction, Void> PARSER = new ConstructingObjectParser<>(

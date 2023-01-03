@@ -187,7 +187,7 @@ public class MetadataMigrateToDataStreamService {
         String dataStreamName,
         Function<IndexMetadata, MapperService> mapperSupplier,
         boolean removeAlias
-    ) throws IOException {
+    ) {
         MappingMetadata mm = im.mapping();
         if (mm == null) {
             throw new IllegalArgumentException("backing index [" + im.getIndex().getName() + "] must have mappings for a timestamp field");

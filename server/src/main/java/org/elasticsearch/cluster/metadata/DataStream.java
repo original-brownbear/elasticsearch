@@ -414,7 +414,7 @@ public final class DataStream implements SimpleDiffable<DataStream>, ToXContentO
         // validate that index is not part of another data stream
         final var parentDataStream = clusterMetadata.getIndicesLookup().get(index.getName()).getParentDataStream();
         if (parentDataStream != null) {
-            if (parentDataStream.getDataStream().equals(this)) {
+            if (parentDataStream.dataStream().equals(this)) {
                 return this;
             } else {
                 throw new IllegalArgumentException(

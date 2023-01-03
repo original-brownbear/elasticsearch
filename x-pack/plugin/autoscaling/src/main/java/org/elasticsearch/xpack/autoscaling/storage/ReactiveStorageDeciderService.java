@@ -666,7 +666,7 @@ public class ReactiveStorageDeciderService implements AutoscalingDeciderService 
             IndexMetadata writeIndex = metadata.index(stream.getWriteIndex());
 
             Map<IndexMetadata, Long> newIndices = new HashMap<>();
-            DataStream dataStream = stream.getDataStream();
+            DataStream dataStream = stream.dataStream();
             for (int i = 0; i < numberNewIndices; ++i) {
                 final String uuid = UUIDs.randomBase64UUID();
                 final Tuple<String, Long> rolledDataStreamInfo = dataStream.unsafeNextWriteIndexAndGeneration(state.metadata());

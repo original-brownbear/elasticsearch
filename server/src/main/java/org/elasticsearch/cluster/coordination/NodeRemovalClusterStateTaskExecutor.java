@@ -58,7 +58,7 @@ public class NodeRemovalClusterStateTaskExecutor implements ClusterStateTaskExec
             } else {
                 logger.debug("node [{}] does not exist in cluster state, ignoring", task);
             }
-            taskContext.success(task.onClusterStateProcessed::run);
+            taskContext.success(task.onClusterStateProcessed);
         }
 
         if (removed == false) {

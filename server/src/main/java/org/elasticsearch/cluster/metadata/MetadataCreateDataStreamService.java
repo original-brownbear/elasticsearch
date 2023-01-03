@@ -37,7 +37,6 @@ import org.elasticsearch.indices.SystemIndexDescriptor;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -144,10 +143,6 @@ public class MetadataCreateDataStreamService {
             this.performReroute = performReroute;
             masterNodeTimeout(masterNodeTimeout);
             ackTimeout(timeout);
-        }
-
-        public boolean isSystem() {
-            return descriptor != null;
         }
 
         public boolean performReroute() {
@@ -311,7 +306,7 @@ public class MetadataCreateDataStreamService {
         return composableIndexTemplate;
     }
 
-    public static void validateTimestampFieldMapping(MappingLookup mappingLookup) throws IOException {
+    public static void validateTimestampFieldMapping(MappingLookup mappingLookup) {
         MetadataFieldMapper fieldMapper = (MetadataFieldMapper) mappingLookup.getMapper(DataStreamTimestampFieldMapper.NAME);
         assert fieldMapper != null : DataStreamTimestampFieldMapper.NAME + " meta field mapper must exist";
         // Sanity check: if this fails then somehow the mapping for _data_stream_timestamp has been overwritten and

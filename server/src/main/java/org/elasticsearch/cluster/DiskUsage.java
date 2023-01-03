@@ -63,8 +63,7 @@ public record DiskUsage(String nodeId, String nodeName, String path, long totalB
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.field("node_id", this.nodeId);
         builder.field("node_name", this.nodeName);
-        builder = toShortXContent(builder);
-        return builder;
+        return toShortXContent(builder);
     }
 
     public String getNodeId() {

@@ -92,12 +92,12 @@ public class ClusterInfoSimulator {
         // free bytes might go out of range in case when multiple data path are used
         // we might not know exact disk used to allocate a shard and conservatively update
         // most used disk on a target node and least used disk on a source node
-        var freeBytes = withinRange(0, usage.getTotalBytes(), usage.freeBytes() + delta);
+        var freeBytes = withinRange(usage.getTotalBytes(), usage.freeBytes() + delta);
         return usage.copyWithFreeBytes(freeBytes);
     }
 
-    private static long withinRange(long min, long max, long value) {
-        return Math.max(min, Math.min(max, value));
+    private static long withinRange(long max, long value) {
+        return Math.max(0, Math.min(max, value));
     }
 
     public ClusterInfo getClusterInfo() {

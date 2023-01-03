@@ -152,7 +152,7 @@ public class DataStreamsStatsTransportAction extends TransportBroadcastByNodeAct
             long maxTimestamp = 0L;
             try (Engine.Searcher searcher = indexShard.acquireSearcher("data_stream_stats")) {
                 IndexReader indexReader = searcher.getIndexReader();
-                String fieldName = dataStream.getDataStream().getTimeStampField().getName();
+                String fieldName = dataStream.dataStream().getTimeStampField().getName();
                 byte[] maxPackedValue = PointValues.getMaxPackedValue(indexReader, fieldName);
                 if (maxPackedValue != null) {
                     maxTimestamp = LongPoint.decodeDimension(maxPackedValue, 0);

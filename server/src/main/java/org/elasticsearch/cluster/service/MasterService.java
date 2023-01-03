@@ -131,7 +131,7 @@ public class MasterService extends AbstractLifecycleComponent {
         Objects.requireNonNull(clusterStatePublisher, "please set a cluster state publisher before starting");
         Objects.requireNonNull(clusterStateSupplier, "please set a cluster state supplier before starting");
         threadPoolExecutor = createThreadPoolExecutor();
-        taskBatcher = new Batcher(logger, threadPoolExecutor);
+        taskBatcher = new Batcher(threadPoolExecutor);
     }
 
     protected PrioritizedEsThreadPoolExecutor createThreadPoolExecutor() {
@@ -155,8 +155,8 @@ public class MasterService extends AbstractLifecycleComponent {
     @SuppressWarnings("unchecked")
     class Batcher extends TaskBatcher {
 
-        Batcher(Logger logger, PrioritizedEsThreadPoolExecutor threadExecutor) {
-            super(logger, threadExecutor);
+        Batcher(PrioritizedEsThreadPoolExecutor threadExecutor) {
+            super(MasterService.logger, threadExecutor);
         }
 
         @Override

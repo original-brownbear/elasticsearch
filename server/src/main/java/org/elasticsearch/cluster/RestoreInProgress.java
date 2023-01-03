@@ -134,7 +134,7 @@ public class RestoreInProgress extends AbstractNamedDiffable<Custom> implements 
         ) {
             this.snapshot = Objects.requireNonNull(snapshot);
             this.state = Objects.requireNonNull(state);
-            this.quiet = Objects.requireNonNull(quiet);
+            this.quiet = quiet;
             this.indices = Objects.requireNonNull(indices);
             if (shards == null) {
                 this.shards = Map.of();

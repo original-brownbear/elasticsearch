@@ -233,18 +233,6 @@ public abstract class AliasAction {
             this.filter = filter;
         }
 
-        public String getAliasName() {
-            return aliasName;
-        }
-
-        public String getDataStreamName() {
-            return dataStreamName;
-        }
-
-        public Boolean getWriteDataStream() {
-            return isWriteDataStream;
-        }
-
         @Override
         boolean removeIndex() {
             return false;

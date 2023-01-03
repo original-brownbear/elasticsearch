@@ -84,7 +84,7 @@ public class DelayedAllocationService extends AbstractLifecycleComponent impleme
         public void schedule() {
             cancellable = threadPool.schedule(new AbstractRunnable() {
                 @Override
-                protected void doRun() throws Exception {
+                protected void doRun() {
                     if (cancelScheduling.get()) {
                         return;
                     }

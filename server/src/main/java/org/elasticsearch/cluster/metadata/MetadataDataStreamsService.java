@@ -101,25 +101,21 @@ public class MetadataDataStreamsService {
         var dataStream = validateDataStream(metadata, dataStreamName);
         var index = validateIndex(metadata, indexName);
 
-        try {
-            MetadataMigrateToDataStreamService.prepareBackingIndex(
-                builder,
-                metadata.index(index.getWriteIndex()),
-                dataStreamName,
-                mapperSupplier,
-                false
-            );
-        } catch (IOException e) {
-            throw new IllegalArgumentException("unable to prepare backing index", e);
-        }
+        MetadataMigrateToDataStreamService.prepareBackingIndex(
+            builder,
+            metadata.index(index.getWriteIndex()),
+            dataStreamName,
+            mapperSupplier,
+            false
+        );
 
         // add index to data stream
-        builder.put(dataStream.getDataStream().addBackingIndex(metadata, index.getWriteIndex()));
+        builder.put(dataStream.dataStream().addBackingIndex(metadata, index.getWriteIndex()));
     }
 
     private static void removeBackingIndex(Metadata metadata, Metadata.Builder builder, String dataStreamName, String indexName) {
         boolean indexNotRemoved = true;
-        var dataStream = validateDataStream(metadata, dataStreamName).getDataStream();
+        var dataStream = validateDataStream(metadata, dataStreamName).dataStream();
         for (Index backingIndex : dataStream.getIndices()) {
             if (backingIndex.getName().equals(indexName)) {
                 builder.put(dataStream.removeBackingIndex(backingIndex));

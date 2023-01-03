@@ -109,7 +109,7 @@ public class ClusterChangedEvent {
                 created.add(index);
             }
         }
-        return created == null ? Collections.<String>emptyList() : created;
+        return created == null ? Collections.emptyList() : created;
     }
 
     /**
@@ -280,7 +280,7 @@ public class ClusterChangedEvent {
             }
         }
 
-        return deleted == null ? Collections.<Index>emptyList() : new ArrayList<>(deleted);
+        return deleted == null ? Collections.emptyList() : new ArrayList<>(deleted);
     }
 
     private List<Index> indicesDeletedFromTombstones() {

@@ -244,10 +244,6 @@ public class ClusterInfo implements ToXContentFragment, Writeable {
         return dataPath.get(NodeAndShard.from(shardRouting));
     }
 
-    public String getDataPath(NodeAndShard nodeAndShard) {
-        return dataPath.get(nodeAndShard);
-    }
-
     public Optional<Long> getShardDataSetSize(ShardId shardId) {
         return Optional.ofNullable(shardDataSetSizes.get(shardId));
     }

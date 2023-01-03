@@ -130,7 +130,7 @@ public class ClusterBlock implements Writeable, ToXContentFragment {
         builder.field("description", description);
         builder.field("retryable", retryable);
         if (disableStatePersistence) {
-            builder.field("disable_state_persistence", disableStatePersistence);
+            builder.field("disable_state_persistence", true);
         }
         builder.startArray("levels");
         for (ClusterBlockLevel level : levels) {

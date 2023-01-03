@@ -12,7 +12,6 @@ import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.core.Nullable;
 
 import java.util.HashMap;
@@ -77,9 +76,8 @@ public class DiscoveryNodeFilters {
     private static boolean matchByIP(String[] values, @Nullable String hostIp, @Nullable String publishIp) {
         for (String ipOrHost : values) {
             String value = InetAddresses.isInetAddress(ipOrHost) ? NetworkAddress.format(InetAddresses.forString(ipOrHost)) : ipOrHost;
-            boolean matchIp = Regex.simpleMatch(value, hostIp) || Regex.simpleMatch(value, publishIp);
-            if (matchIp) {
-                return matchIp;
+            if (Regex.simpleMatch(value, hostIp) || Regex.simpleMatch(value, publishIp)) {
+                return true;
             }
         }
         return false;
@@ -112,7 +110,7 @@ public class DiscoveryNodeFilters {
             if ("_ip".equals(attr)) {
                 // We check both the host_ip or the publish_ip
                 String publishAddress = null;
-                if (node.getAddress() instanceof TransportAddress) {
+                if (node.getAddress() != null) {
                     publishAddress = NetworkAddress.format(node.getAddress().address().getAddress());
                 }
 
@@ -146,7 +144,7 @@ public class DiscoveryNodeFilters {
             } else if ("_publish_ip".equals(attr)) {
                 // We check explicitly only the publish_ip
                 String address = null;
-                if (node.getAddress() instanceof TransportAddress) {
+                if (node.getAddress() != null) {
                     address = NetworkAddress.format(node.getAddress().address().getAddress());
                 }
 

@@ -109,7 +109,7 @@ public class MetadataDeleteIndexService {
                             + "] and cannot be deleted"
                     );
                 } else {
-                    backingIndices.put(index, parent.getDataStream());
+                    backingIndices.put(index, parent.dataStream());
                 }
             }
             indicesToDelete.add(im.getIndex());

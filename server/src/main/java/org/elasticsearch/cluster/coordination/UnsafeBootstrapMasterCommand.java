@@ -60,8 +60,7 @@ public class UnsafeBootstrapMasterCommand extends ElasticsearchNodeCommand {
     protected boolean validateBeforeLock(Terminal terminal, Environment env) {
         Settings settings = env.settings();
         terminal.println(Terminal.Verbosity.VERBOSE, "Checking node.master setting");
-        Boolean master = DiscoveryNode.isMasterNode(settings);
-        if (master == false) {
+        if (DiscoveryNode.isMasterNode(settings) == false) {
             throw new ElasticsearchException(NOT_MASTER_NODE_MSG);
         }
 
