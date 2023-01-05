@@ -26,7 +26,7 @@ import org.elasticsearch.xpack.searchablesnapshots.AbstractSearchableSnapshotsTe
 import org.elasticsearch.xpack.searchablesnapshots.cache.common.TestUtils;
 import org.elasticsearch.xpack.searchablesnapshots.cache.common.TestUtils.NoopBlobStoreCacheService;
 import org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService;
-import org.elasticsearch.xpack.searchablesnapshots.cache.shared.FrozenCacheService;
+import org.elasticsearch.xpack.searchablesnapshots.store.FullSearchableSnapshotDirectory;
 import org.elasticsearch.xpack.searchablesnapshots.store.SearchableSnapshotDirectory;
 
 import java.io.EOFException;
@@ -102,9 +102,8 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
                 final Path shardDir = randomShardPath(shardId);
                 final ShardPath shardPath = new ShardPath(false, shardDir, shardDir, shardId);
                 final Path cacheDir = Files.createDirectories(resolveSnapshotCache(shardDir).resolve(snapshotId.getUUID()));
-                final FrozenCacheService frozenCacheService = defaultFrozenCacheService();
                 try (
-                    SearchableSnapshotDirectory directory = new SearchableSnapshotDirectory(
+                    SearchableSnapshotDirectory directory = new FullSearchableSnapshotDirectory(
                         () -> blobContainer,
                         () -> snapshot,
                         new NoopBlobStoreCacheService(),
@@ -120,8 +119,7 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
                         cacheService,
                         cacheDir,
                         shardPath,
-                        threadPool,
-                        frozenCacheService
+                        threadPool
                     )
                 ) {
                     RecoveryState recoveryState = createRecoveryState(recoveryFinalizedDone);
@@ -142,8 +140,6 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
                         byte[] output = randomReadAndSlice(indexInput, input.length);
                         assertArrayEquals(input, output);
                     }
-                } finally {
-                    frozenCacheService.close();
                 }
 
                 if (blobContainer instanceof CountingBlobContainer) {
@@ -211,9 +207,8 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
             final Path shardDir = randomShardPath(shardId);
             final ShardPath shardPath = new ShardPath(false, shardDir, shardDir, shardId);
             final Path cacheDir = Files.createDirectories(resolveSnapshotCache(shardDir).resolve(snapshotId.getUUID()));
-            final FrozenCacheService frozenCacheService = defaultFrozenCacheService();
             try (
-                SearchableSnapshotDirectory searchableSnapshotDirectory = new SearchableSnapshotDirectory(
+                SearchableSnapshotDirectory searchableSnapshotDirectory = new FullSearchableSnapshotDirectory(
                     () -> blobContainer,
                     () -> snapshot,
                     new NoopBlobStoreCacheService(),
@@ -226,8 +221,7 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
                     cacheService,
                     cacheDir,
                     shardPath,
-                    threadPool,
-                    frozenCacheService
+                    threadPool
                 )
             ) {
                 RecoveryState recoveryState = createRecoveryState(randomBoolean());
@@ -251,7 +245,6 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
                     }
                 }
             } finally {
-                frozenCacheService.close();
                 assertThreadPoolNotBusy(threadPool);
             }
         }

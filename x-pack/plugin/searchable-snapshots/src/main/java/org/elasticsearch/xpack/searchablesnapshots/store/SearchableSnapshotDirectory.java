@@ -6,8 +6,6 @@
  */
 package org.elasticsearch.xpack.searchablesnapshots.store;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.lucene.index.IndexFileNames;
 import org.apache.lucene.store.BaseDirectory;
 import org.apache.lucene.store.Directory;
@@ -18,9 +16,6 @@ import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.SingleInstanceLockFactory;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.ActionRunnable;
-import org.elasticsearch.action.StepListener;
-import org.elasticsearch.action.support.CountDownActionListener;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.RecoverySource;
 import org.elasticsearch.common.blobstore.BlobContainer;
@@ -31,10 +26,8 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.LazyInitializable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
-import org.elasticsearch.core.CheckedRunnable;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
-import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.ShardPath;
@@ -46,6 +39,7 @@ import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.repositories.Repository;
 import org.elasticsearch.repositories.RepositoryMissingException;
 import org.elasticsearch.repositories.blobstore.BlobStoreRepository;
+import org.elasticsearch.snapshots.SearchableSnapshotsSettings;
 import org.elasticsearch.snapshots.SnapshotId;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots;
@@ -56,12 +50,9 @@ import org.elasticsearch.xpack.searchablesnapshots.cache.common.CacheFile;
 import org.elasticsearch.xpack.searchablesnapshots.cache.common.CacheKey;
 import org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService;
 import org.elasticsearch.xpack.searchablesnapshots.cache.shared.FrozenCacheService;
-import org.elasticsearch.xpack.searchablesnapshots.cache.shared.FrozenCacheService.FrozenCacheFile;
 import org.elasticsearch.xpack.searchablesnapshots.recovery.SearchableSnapshotRecoveryState;
-import org.elasticsearch.xpack.searchablesnapshots.store.input.CachedBlobContainerIndexInput;
 import org.elasticsearch.xpack.searchablesnapshots.store.input.ChecksumBlobContainerIndexInput;
 import org.elasticsearch.xpack.searchablesnapshots.store.input.DirectBlobContainerIndexInput;
-import org.elasticsearch.xpack.searchablesnapshots.store.input.FrozenIndexInput;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -76,23 +67,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
-import static org.elasticsearch.core.Strings.format;
-import static org.elasticsearch.core.TimeValue.timeValueNanos;
 import static org.elasticsearch.index.IndexModule.INDEX_STORE_TYPE_SETTING;
 import static org.elasticsearch.snapshots.SearchableSnapshotsSettings.SEARCHABLE_SNAPSHOT_STORE_TYPE;
-import static org.elasticsearch.snapshots.SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_BLOB_CACHE_METADATA_FILES_MAX_LENGTH_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_CACHE_ENABLED_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_CACHE_EXCLUDED_FILE_TYPES_SETTING;
-import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_CACHE_PREWARM_ENABLED_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_INDEX_ID_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_INDEX_NAME_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_REPOSITORY_NAME_SETTING;
@@ -112,9 +96,7 @@ import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SN
  * shard files and what it stored in the snapshot the {@link BlobStoreIndexShardSnapshot} is used to map a physical file name as expected by
  * Lucene with the one (or the ones) corresponding blob(s) in the snapshot.
  */
-public class SearchableSnapshotDirectory extends BaseDirectory {
-
-    private static final Logger logger = LogManager.getLogger(SearchableSnapshotDirectory.class);
+public abstract class SearchableSnapshotDirectory extends BaseDirectory {
 
     private final Supplier<BlobContainer> blobContainerSupplier;
     private final Supplier<BlobStoreIndexShardSnapshot> snapshotSupplier;
@@ -122,27 +104,26 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
     private final String repository;
     private final SnapshotId snapshotId;
     private final IndexId indexId;
-    private final ShardId shardId;
-    private final LongSupplier statsCurrentTimeNanosSupplier;
+    protected final ShardId shardId;
+    protected final LongSupplier statsCurrentTimeNanosSupplier;
     private final Map<String, IndexInputStats> stats;
-    private final ThreadPool threadPool;
-    private final CacheService cacheService;
-    private final boolean useCache;
-    private final boolean prewarmCache;
+
+    protected final ThreadPool threadPool;
+
+    protected final CacheService cacheService;
+    protected final boolean useCache;
     private final Set<String> excludedFileTypes;
     private final long uncachedChunkSize; // if negative use BlobContainer#readBlobPreferredLength, see #getUncachedChunkSize()
     private final Path cacheDir;
     private final ShardPath shardPath;
     private final AtomicBoolean closed;
-    private final boolean partial;
-    private final FrozenCacheService frozenCacheService;
     private final ByteSizeValue blobStoreCacheMaxLength;
 
     // volatile fields are updated once under `this` lock, all together, iff loaded is not true.
     private volatile BlobStoreIndexShardSnapshot snapshot;
     private volatile BlobContainer blobContainer;
     private volatile boolean loaded;
-    private volatile SearchableSnapshotRecoveryState recoveryState;
+    protected volatile SearchableSnapshotRecoveryState recoveryState;
 
     public SearchableSnapshotDirectory(
         Supplier<BlobContainer> blobContainer,
@@ -157,8 +138,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         CacheService cacheService,
         Path cacheDir,
         ShardPath shardPath,
-        ThreadPool threadPool,
-        FrozenCacheService frozenCacheService
+        ThreadPool threadPool
     ) {
         super(new SingleInstanceLockFactory());
         this.snapshotSupplier = Objects.requireNonNull(snapshot);
@@ -175,14 +155,11 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         this.shardPath = Objects.requireNonNull(shardPath);
         this.closed = new AtomicBoolean(false);
         this.useCache = SNAPSHOT_CACHE_ENABLED_SETTING.get(indexSettings);
-        this.partial = SNAPSHOT_PARTIAL_SETTING.get(indexSettings);
-        this.prewarmCache = partial == false && useCache ? SNAPSHOT_CACHE_PREWARM_ENABLED_SETTING.get(indexSettings) : false;
         this.excludedFileTypes = new HashSet<>(SNAPSHOT_CACHE_EXCLUDED_FILE_TYPES_SETTING.get(indexSettings));
         this.uncachedChunkSize = SNAPSHOT_UNCACHED_CHUNK_SIZE_SETTING.get(indexSettings).getBytes();
         this.blobStoreCacheMaxLength = SNAPSHOT_BLOB_CACHE_METADATA_FILES_MAX_LENGTH_SETTING.get(indexSettings);
         this.threadPool = threadPool;
         this.loaded = false;
-        this.frozenCacheService = frozenCacheService;
         assert invariant();
     }
 
@@ -242,7 +219,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         return snapshot;
     }
 
-    private List<BlobStoreIndexShardSnapshot.FileInfo> files() {
+    protected List<BlobStoreIndexShardSnapshot.FileInfo> files() {
         if (loaded == false) {
             return List.of();
         }
@@ -345,17 +322,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         }
     }
 
-    public void clearCache(boolean clearCacheService, boolean clearFrozenCacheService) {
-        for (BlobStoreIndexShardSnapshot.FileInfo file : files()) {
-            final CacheKey cacheKey = createCacheKey(file.physicalName());
-            if (clearCacheService) {
-                cacheService.removeFromCache(cacheKey);
-            }
-            if (clearFrozenCacheService) {
-                frozenCacheService.removeFromCache(cacheKey);
-            }
-        }
-    }
+    public abstract void clearCache();
 
     protected IndexInputStats createIndexInputStats(long numFiles, long totalSize, long minSize, long maxSize) {
         return new IndexInputStats(numFiles, totalSize, minSize, maxSize, statsCurrentTimeNanosSupplier);
@@ -371,10 +338,6 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
 
     public Executor cacheFetchAsyncExecutor() {
         return threadPool.executor(SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME);
-    }
-
-    public Executor prewarmExecutor() {
-        return threadPool.executor(SearchableSnapshots.CACHE_PREWARMING_THREAD_POOL_NAME);
     }
 
     @Override
@@ -401,31 +364,18 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
             return createIndexInputStats(counter.count(), counter.total(), counter.min(), counter.max());
         });
         if (useCache && isExcludedFromCache(name) == false) {
-            if (partial) {
-                return new FrozenIndexInput(
-                    name,
-                    this,
-                    fileInfo,
-                    context,
-                    inputStats,
-                    frozenCacheService.getRangeSize(),
-                    frozenCacheService.getRecoveryRangeSize()
-                );
-            } else {
-                return new CachedBlobContainerIndexInput(
-                    name,
-                    this,
-                    fileInfo,
-                    context,
-                    inputStats,
-                    cacheService.getRangeSize(),
-                    cacheService.getRecoveryRangeSize()
-                );
-            }
+            return doOpenIndexInput(name, context, fileInfo, inputStats);
         } else {
             return new DirectBlobContainerIndexInput(name, this, fileInfo, context, inputStats, getUncachedChunkSize());
         }
     }
+
+    protected abstract IndexInput doOpenIndexInput(
+        String name,
+        IOContext context,
+        BlobStoreIndexShardSnapshot.FileInfo fileInfo,
+        IndexInputStats inputStats
+    );
 
     static String getNonNullFileExt(String name) {
         final String ext = IndexFileNames.getExtension(name);
@@ -440,7 +390,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         }
     }
 
-    private boolean isExcludedFromCache(String name) {
+    protected boolean isExcludedFromCache(String name) {
         final String ext = IndexFileNames.getExtension(name);
         return ext != null && excludedFileTypes.contains(ext);
     }
@@ -474,109 +424,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         cacheService.waitForCacheFilesEvictionIfNeeded(snapshotId.getUUID(), indexId.getName(), shardId);
     }
 
-    private void prewarmCache(ActionListener<Void> listener) {
-        if (prewarmCache == false) {
-            recoveryState.setPreWarmComplete();
-            listener.onResponse(null);
-            return;
-        }
-
-        final BlockingQueue<Tuple<ActionListener<Void>, CheckedRunnable<Exception>>> queue = new LinkedBlockingQueue<>();
-        final Executor executor = prewarmExecutor();
-
-        final CountDownActionListener completionListener = new CountDownActionListener(
-            snapshot().totalFileCount(),
-            ActionListener.wrap(ignored -> {
-                recoveryState.setPreWarmComplete();
-                listener.onResponse(null);
-            }, listener::onFailure)
-        );
-
-        for (BlobStoreIndexShardSnapshot.FileInfo file : snapshot().indexFiles()) {
-            boolean hashEqualsContents = file.metadata().hashEqualsContents();
-            if (hashEqualsContents || isExcludedFromCache(file.physicalName())) {
-                if (hashEqualsContents) {
-                    recoveryState.getIndex().addFileDetail(file.physicalName(), file.length(), true);
-                } else {
-                    recoveryState.ignoreFile(file.physicalName());
-                }
-                completionListener.onResponse(null);
-                continue;
-            }
-            recoveryState.getIndex().addFileDetail(file.physicalName(), file.length(), false);
-            boolean submitted = false;
-            try {
-                final IndexInput input = openInput(file.physicalName(), CachedBlobContainerIndexInput.CACHE_WARMING_CONTEXT);
-                assert input instanceof CachedBlobContainerIndexInput : "expected cached index input but got " + input.getClass();
-
-                final int numberOfParts = file.numberOfParts();
-                final StepListener<Void> fileCompletionListener = new StepListener<>();
-                fileCompletionListener.addListener(completionListener);
-                fileCompletionListener.whenComplete(ignored -> {
-                    logger.debug("{} file [{}] prewarmed", shardId, file.physicalName());
-                    input.close();
-                }, e -> {
-                    logger.warn(() -> format("%s prewarming failed for file [%s]", shardId, file.physicalName()), e);
-                    IOUtils.closeWhileHandlingException(input);
-                });
-
-                final CountDownActionListener partsListener = new CountDownActionListener(numberOfParts, fileCompletionListener);
-                submitted = true;
-                for (int p = 0; p < numberOfParts; p++) {
-                    final int part = p;
-                    queue.add(Tuple.tuple(partsListener, () -> {
-                        ensureOpen();
-
-                        logger.trace("{} warming cache for [{}] part [{}/{}]", shardId, file.physicalName(), part + 1, numberOfParts);
-                        final long startTimeInNanos = statsCurrentTimeNanosSupplier.getAsLong();
-                        final long persistentCacheLength = ((CachedBlobContainerIndexInput) input).prefetchPart(part).v1();
-                        if (persistentCacheLength == file.length()) {
-                            recoveryState.markIndexFileAsReused(file.physicalName());
-                        } else {
-                            recoveryState.getIndex().addRecoveredBytesToFile(file.physicalName(), file.partBytes(part));
-                        }
-
-                        logger.trace(
-                            () -> format(
-                                "%s part [%s/%s] of [%s] warmed in [%s] ms",
-                                shardId,
-                                part + 1,
-                                numberOfParts,
-                                file.physicalName(),
-                                timeValueNanos(statsCurrentTimeNanosSupplier.getAsLong() - startTimeInNanos).millis()
-                            )
-                        );
-                    }));
-                }
-            } catch (IOException e) {
-                logger.warn(() -> format("%s unable to prewarm file [%s]", shardId, file.physicalName()), e);
-                if (submitted == false) {
-                    completionListener.onFailure(e);
-                }
-            }
-        }
-
-        logger.debug("{} warming shard cache for [{}] files", shardId, queue.size());
-
-        // Start as many workers as fit into the prewarming pool at once at the most
-        final int workers = Math.min(threadPool.info(SearchableSnapshots.CACHE_PREWARMING_THREAD_POOL_NAME).getMax(), queue.size());
-        for (int i = 0; i < workers; ++i) {
-            prewarmNext(executor, queue);
-        }
-    }
-
-    private void prewarmNext(final Executor executor, final BlockingQueue<Tuple<ActionListener<Void>, CheckedRunnable<Exception>>> queue) {
-        try {
-            final Tuple<ActionListener<Void>, CheckedRunnable<Exception>> next = queue.poll(0L, TimeUnit.MILLISECONDS);
-            if (next == null) {
-                return;
-            }
-            executor.execute(ActionRunnable.run(ActionListener.runAfter(next.v1(), () -> prewarmNext(executor, queue)), next.v2()));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.warn(() -> format("%s prewarming worker has been interrupted", shardId), e);
-        }
-    }
+    protected abstract void prewarmCache(ActionListener<Void> listener);
 
     public static Directory create(
         RepositoriesService repositories,
@@ -656,22 +504,39 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         Files.createDirectories(cacheDir);
 
         return new InMemoryNoOpCommitDirectory(
-            new SearchableSnapshotDirectory(
-                lazyBlobContainer::getOrCompute,
-                lazySnapshot::getOrCompute,
-                blobStoreCacheService,
-                repositoryName,
-                snapshotId,
-                indexId,
-                shardPath.getShardId(),
-                indexSettings.getSettings(),
-                currentTimeNanosSupplier,
-                cache,
-                cacheDir,
-                shardPath,
-                threadPool,
-                frozenCacheService
-            )
+            SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING.get(indexSettings.getSettings())
+                ? new PartialSearchableSnapshotDirectory(
+                    lazyBlobContainer::getOrCompute,
+                    lazySnapshot::getOrCompute,
+                    blobStoreCacheService,
+                    repositoryName,
+                    snapshotId,
+                    indexId,
+                    shardPath.getShardId(),
+                    indexSettings.getSettings(),
+                    currentTimeNanosSupplier,
+                    cache,
+                    cacheDir,
+                    shardPath,
+                    threadPool,
+                    frozenCacheService
+                )
+
+                : new FullSearchableSnapshotDirectory(
+                    lazyBlobContainer::getOrCompute,
+                    lazySnapshot::getOrCompute,
+                    blobStoreCacheService,
+                    repositoryName,
+                    snapshotId,
+                    indexId,
+                    shardPath.getShardId(),
+                    indexSettings.getSettings(),
+                    currentTimeNanosSupplier,
+                    cache,
+                    cacheDir,
+                    shardPath,
+                    threadPool
+                )
         );
     }
 
@@ -710,10 +575,6 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
             threadPool.absoluteTimeInMillis(),
             listener
         );
-    }
-
-    public FrozenCacheFile getFrozenCacheFile(String fileName, long length) {
-        return frozenCacheService.getFrozenCacheFile(createCacheKey(fileName), length);
     }
 
     private static Repository repositoryByUuid(Map<String, Repository> repositories, String repositoryUuid, String originalName) {

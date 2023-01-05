@@ -92,7 +92,6 @@ import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xpack.searchablesnapshots.AbstractSearchableSnapshotsTestCase;
 import org.elasticsearch.xpack.searchablesnapshots.cache.common.TestUtils;
 import org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService;
-import org.elasticsearch.xpack.searchablesnapshots.cache.shared.FrozenCacheService;
 import org.elasticsearch.xpack.searchablesnapshots.recovery.SearchableSnapshotRecoveryState;
 import org.elasticsearch.xpack.searchablesnapshots.store.input.ChecksumBlobContainerIndexInput;
 import org.hamcrest.Matcher;
@@ -647,11 +646,8 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                 final CacheService cacheService = defaultCacheService();
                 releasables.add(cacheService);
                 cacheService.start();
-                final FrozenCacheService frozenCacheService = defaultFrozenCacheService();
-                releasables.add(frozenCacheService);
-
                 try (
-                    SearchableSnapshotDirectory snapshotDirectory = new SearchableSnapshotDirectory(
+                    SearchableSnapshotDirectory snapshotDirectory = new FullSearchableSnapshotDirectory(
                         () -> blobContainer,
                         () -> snapshot,
                         new TestUtils.NoopBlobStoreCacheService(),
@@ -668,8 +664,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                         cacheService,
                         cacheDir,
                         shardPath,
-                        threadPool,
-                        frozenCacheService
+                        threadPool
                     )
                 ) {
                     final PlainActionFuture<Void> f = PlainActionFuture.newFuture();
@@ -752,9 +747,8 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
             final Path shardDir = randomShardPath(shardId);
             final ShardPath shardPath = new ShardPath(false, shardDir, shardDir, shardId);
             final Path cacheDir = Files.createDirectories(resolveSnapshotCache(shardDir).resolve(snapshotId.getUUID()));
-            final FrozenCacheService frozenCacheService = defaultFrozenCacheService();
             try (
-                SearchableSnapshotDirectory directory = new SearchableSnapshotDirectory(
+                SearchableSnapshotDirectory directory = new FullSearchableSnapshotDirectory(
                     () -> blobContainer,
                     () -> snapshot,
                     new TestUtils.NoopBlobStoreCacheService(),
@@ -772,8 +766,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                     cacheService,
                     cacheDir,
                     shardPath,
-                    threadPool,
-                    frozenCacheService
+                    threadPool
                 )
             ) {
                 final RecoveryState recoveryState = createRecoveryState(randomBoolean());
@@ -802,12 +795,11 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                     }
                     assertListOfFiles(cacheDir, allOf(greaterThan(0), lessThanOrEqualTo(nbRandomFiles)), greaterThan(0L));
                     if (randomBoolean()) {
-                        directory.clearCache(true, true);
+                        directory.clearCache();
                         assertBusy(() -> assertListOfFiles(cacheDir, equalTo(0), equalTo(0L)));
                     }
                 }
             } finally {
-                frozenCacheService.close();
                 assertThreadPoolNotBusy(threadPool);
             }
         }

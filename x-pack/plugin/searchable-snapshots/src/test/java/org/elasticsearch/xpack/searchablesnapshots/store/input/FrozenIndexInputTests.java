@@ -31,7 +31,7 @@ import org.elasticsearch.xpack.searchablesnapshots.cache.common.TestUtils;
 import org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService;
 import org.elasticsearch.xpack.searchablesnapshots.cache.shared.FrozenCacheService;
 import org.elasticsearch.xpack.searchablesnapshots.cache.shared.SharedBytes;
-import org.elasticsearch.xpack.searchablesnapshots.store.SearchableSnapshotDirectory;
+import org.elasticsearch.xpack.searchablesnapshots.store.PartialSearchableSnapshotDirectory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -124,7 +124,7 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
         }
     }
 
-    private class TestSearchableSnapshotDirectory extends SearchableSnapshotDirectory {
+    private class TestSearchableSnapshotDirectory extends PartialSearchableSnapshotDirectory {
 
         TestSearchableSnapshotDirectory(
             FrozenCacheService service,
@@ -151,7 +151,7 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
                 cacheService,
                 cacheDir,
                 shardPath,
-                threadPool,
+                FrozenIndexInputTests.this.threadPool,
                 service
             );
         }

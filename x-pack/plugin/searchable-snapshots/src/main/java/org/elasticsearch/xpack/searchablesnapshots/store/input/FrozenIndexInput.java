@@ -22,6 +22,7 @@ import org.elasticsearch.xpack.searchablesnapshots.cache.common.ByteRange;
 import org.elasticsearch.xpack.searchablesnapshots.cache.shared.FrozenCacheService.FrozenCacheFile;
 import org.elasticsearch.xpack.searchablesnapshots.cache.shared.SharedBytes;
 import org.elasticsearch.xpack.searchablesnapshots.store.IndexInputStats;
+import org.elasticsearch.xpack.searchablesnapshots.store.PartialSearchableSnapshotDirectory;
 import org.elasticsearch.xpack.searchablesnapshots.store.SearchableSnapshotDirectory;
 
 import java.io.EOFException;
@@ -44,7 +45,7 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
 
     public FrozenIndexInput(
         String name,
-        SearchableSnapshotDirectory directory,
+        PartialSearchableSnapshotDirectory directory,
         FileInfo fileInfo,
         IOContext context,
         IndexInputStats stats,

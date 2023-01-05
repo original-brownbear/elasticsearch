@@ -650,30 +650,54 @@ public class SearchableSnapshotDirectoryStatsTests extends AbstractSearchableSna
         try (
             CacheService ignored = cacheService;
             FrozenCacheService ignored2 = frozenCacheService;
-            SearchableSnapshotDirectory directory = new SearchableSnapshotDirectory(
-                () -> blobContainer,
-                () -> snapshot,
-                new NoopBlobStoreCacheService(),
-                "_repo",
-                snapshotId,
-                indexId,
-                shardId,
-                indexSettings,
-                statsCurrentTimeNanos,
-                cacheService,
-                cacheDir,
-                shardPath,
-                threadPool,
-                frozenCacheService
-            ) {
-                @Override
-                protected IndexInputStats createIndexInputStats(long numFiles, long totalSize, long minSize, long maxSize) {
-                    if (seekingThreshold == null) {
-                        return super.createIndexInputStats(numFiles, totalSize, minSize, maxSize);
+            SearchableSnapshotDirectory directory = SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING.get(indexSettings)
+                ? new PartialSearchableSnapshotDirectory(
+                    () -> blobContainer,
+                    () -> snapshot,
+                    new NoopBlobStoreCacheService(),
+                    "_repo",
+                    snapshotId,
+                    indexId,
+                    shardId,
+                    indexSettings,
+                    statsCurrentTimeNanos,
+                    cacheService,
+                    cacheDir,
+                    shardPath,
+                    threadPool,
+                    frozenCacheService
+                ) {
+                    @Override
+                    protected IndexInputStats createIndexInputStats(long numFiles, long totalSize, long minSize, long maxSize) {
+                        if (seekingThreshold == null) {
+                            return super.createIndexInputStats(numFiles, totalSize, minSize, maxSize);
+                        }
+                        return new IndexInputStats(numFiles, totalSize, minSize, maxSize, seekingThreshold, statsCurrentTimeNanos);
                     }
-                    return new IndexInputStats(numFiles, totalSize, minSize, maxSize, seekingThreshold, statsCurrentTimeNanos);
                 }
-            }
+                : new FullSearchableSnapshotDirectory(
+                    () -> blobContainer,
+                    () -> snapshot,
+                    new NoopBlobStoreCacheService(),
+                    "_repo",
+                    snapshotId,
+                    indexId,
+                    shardId,
+                    indexSettings,
+                    statsCurrentTimeNanos,
+                    cacheService,
+                    cacheDir,
+                    shardPath,
+                    threadPool
+                ) {
+                    @Override
+                    protected IndexInputStats createIndexInputStats(long numFiles, long totalSize, long minSize, long maxSize) {
+                        if (seekingThreshold == null) {
+                            return super.createIndexInputStats(numFiles, totalSize, minSize, maxSize);
+                        }
+                        return new IndexInputStats(numFiles, totalSize, minSize, maxSize, seekingThreshold, statsCurrentTimeNanos);
+                    }
+                }
         ) {
             cacheService.start();
             assertThat(directory.getStats(fileName), nullValue());
