@@ -14,6 +14,10 @@ import org.elasticsearch.aggregations.bucket.histogram.AutoDateHistogramAggregat
 import org.elasticsearch.aggregations.bucket.histogram.InternalAutoDateHistogram;
 import org.elasticsearch.aggregations.bucket.timeseries.InternalTimeSeries;
 import org.elasticsearch.aggregations.bucket.timeseries.TimeSeriesAggregationBuilder;
+import org.elasticsearch.aggregations.metric.InternalMatrixStats;
+import org.elasticsearch.aggregations.metric.MatrixStatsAggregationBuilder;
+import org.elasticsearch.aggregations.metric.MatrixStatsParser;
+import org.elasticsearch.aggregations.pipeline.BucketSelectorPipelineAggregationBuilder;
 import org.elasticsearch.aggregations.pipeline.BucketSortPipelineAggregationBuilder;
 import org.elasticsearch.aggregations.pipeline.Derivative;
 import org.elasticsearch.aggregations.pipeline.DerivativePipelineAggregationBuilder;
@@ -47,6 +51,10 @@ public class AggregationsPlugin extends Plugin implements SearchPlugin, ScriptPl
             ).addResultReader(InternalAutoDateHistogram::new)
                 .setAggregatorRegistrar(AutoDateHistogramAggregationBuilder::registerAggregators)
         );
+        specs.add(
+            new AggregationSpec(MatrixStatsAggregationBuilder.NAME, MatrixStatsAggregationBuilder::new, new MatrixStatsParser())
+                .addResultReader(InternalMatrixStats::new)
+        );
         if (IndexSettings.isTimeSeriesModeEnabled()) {
             specs.add(
                 new AggregationSpec(
@@ -62,6 +70,11 @@ public class AggregationsPlugin extends Plugin implements SearchPlugin, ScriptPl
     @Override
     public List<PipelineAggregationSpec> getPipelineAggregations() {
         return List.of(
+            new PipelineAggregationSpec(
+                BucketSelectorPipelineAggregationBuilder.NAME,
+                BucketSelectorPipelineAggregationBuilder::new,
+                BucketSelectorPipelineAggregationBuilder::parse
+            ),
             new PipelineAggregationSpec(
                 BucketSortPipelineAggregationBuilder.NAME,
                 BucketSortPipelineAggregationBuilder::new,
