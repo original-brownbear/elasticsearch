@@ -359,46 +359,14 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
     }
 
     @Override
-    public IndexInput slice(String sliceName, long sliceOffset, long sliceLength) {
-        if (sliceOffset < 0 || sliceLength < 0 || sliceOffset + sliceLength > length()) {
-            throw new IllegalArgumentException(
-                "slice() "
-                    + sliceName
-                    + " out of bounds: offset="
-                    + sliceOffset
-                    + ",length="
-                    + sliceLength
-                    + ",fileLength="
-                    + length()
-                    + ": "
-                    + this
-            );
-        }
-
-        // Are we creating a slice from a CFS file?
-        final boolean sliceCompoundFile = IndexFileNames.matchesExtension(name, "cfs")
-            && IndexFileNames.getExtension(sliceName) != null
-            && compoundFileOffset == 0L // not already a compound file
-            && isClone == false; // tests aggressively clone and slice
-
-        final ByteRange sliceHeaderByteRange;
-        final ByteRange sliceFooterByteRange;
-        final long sliceCompoundFileOffset;
-
-        if (sliceCompoundFile) {
-            sliceCompoundFileOffset = this.offset + sliceOffset;
-            sliceHeaderByteRange = directory.getBlobCacheByteRange(sliceName, sliceLength).shift(sliceCompoundFileOffset);
-            if (sliceHeaderByteRange.isEmpty() == false && sliceHeaderByteRange.length() < sliceLength) {
-                sliceFooterByteRange = ByteRange.of(sliceLength - CodecUtil.footerLength(), sliceLength).shift(sliceCompoundFileOffset);
-            } else {
-                sliceFooterByteRange = ByteRange.EMPTY;
-            }
-        } else {
-            sliceCompoundFileOffset = this.compoundFileOffset;
-            sliceHeaderByteRange = ByteRange.EMPTY;
-            sliceFooterByteRange = ByteRange.EMPTY;
-        }
-
+    protected IndexInput doSlice(
+        String sliceName,
+        long sliceOffset,
+        long sliceLength,
+        ByteRange sliceHeaderByteRange,
+        ByteRange sliceFooterByteRange,
+        long sliceCompoundFileOffset
+    ) {
         final FrozenIndexInput slice = new FrozenIndexInput(
             sliceName,
             directory,

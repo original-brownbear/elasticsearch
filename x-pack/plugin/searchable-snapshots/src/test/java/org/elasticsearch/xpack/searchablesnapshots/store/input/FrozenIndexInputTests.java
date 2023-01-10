@@ -99,14 +99,24 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
             NodeEnvironment nodeEnvironment = new NodeEnvironment(settings, environment);
             FrozenCacheService frozenCacheService = new FrozenCacheService(nodeEnvironment, settings, threadPool);
             CacheService cacheService = randomCacheService();
-            TestSearchableSnapshotDirectory directory = new TestSearchableSnapshotDirectory(
-                frozenCacheService,
-                cacheService,
-                fileInfo,
+            PartialSearchableSnapshotDirectory directory = new PartialSearchableSnapshotDirectory(
+                () -> TestUtils.singleBlobContainer(fileInfo.partName(0), fileData),
+                () -> new BlobStoreIndexShardSnapshot("_snapshot_id", 0L, List.of(fileInfo), 0L, 0L, 0, 0L),
+                new TestUtils.SimpleBlobStoreCacheService(),
+                "_repository",
                 snapshotId,
-                fileData,
+                new IndexId(SHARD_ID.getIndex().getName(), SHARD_ID.getIndex().getUUID()),
+                SHARD_ID,
+                Settings.builder()
+                    .put(SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING.getKey(), true)
+                    .put(SearchableSnapshots.SNAPSHOT_CACHE_ENABLED_SETTING.getKey(), true)
+                    .build(),
+                System::currentTimeMillis,
+                cacheService,
+                cacheDir,
                 shardPath,
-                cacheDir
+                FrozenIndexInputTests.this.threadPool,
+                frozenCacheService
             )
         ) {
             cacheService.start();
@@ -124,36 +134,4 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
         }
     }
 
-    private class TestSearchableSnapshotDirectory extends PartialSearchableSnapshotDirectory {
-
-        TestSearchableSnapshotDirectory(
-            FrozenCacheService service,
-            CacheService cacheService,
-            FileInfo fileInfo,
-            SnapshotId snapshotId,
-            byte[] fileData,
-            ShardPath shardPath,
-            Path cacheDir
-        ) {
-            super(
-                () -> TestUtils.singleBlobContainer(fileInfo.partName(0), fileData),
-                () -> new BlobStoreIndexShardSnapshot("_snapshot_id", 0L, List.of(fileInfo), 0L, 0L, 0, 0L),
-                new TestUtils.SimpleBlobStoreCacheService(),
-                "_repository",
-                snapshotId,
-                new IndexId(SHARD_ID.getIndex().getName(), SHARD_ID.getIndex().getUUID()),
-                SHARD_ID,
-                Settings.builder()
-                    .put(SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING.getKey(), true)
-                    .put(SearchableSnapshots.SNAPSHOT_CACHE_ENABLED_SETTING.getKey(), true)
-                    .build(),
-                System::currentTimeMillis,
-                cacheService,
-                cacheDir,
-                shardPath,
-                FrozenIndexInputTests.this.threadPool,
-                service
-            );
-        }
-    }
 }

@@ -8,8 +8,11 @@
 package org.elasticsearch.xpack.searchablesnapshots.store.input;
 
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.codecs.CodecUtil;
+import org.apache.lucene.index.IndexFileNames;
 import org.apache.lucene.store.AlreadyClosedException;
 import org.apache.lucene.store.IOContext;
+import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
 import org.elasticsearch.action.ActionListener;
@@ -423,6 +426,59 @@ public abstract class MetadataCachingIndexInput extends BaseSearchableSnapshotIn
         stats.incrementSeeks(lastSeekPosition, position);
         lastSeekPosition = position;
     }
+
+    @Override
+    public IndexInput slice(String sliceName, long sliceOffset, long sliceLength) {
+        if (sliceOffset < 0 || sliceLength < 0 || sliceOffset + sliceLength > length()) {
+            throw new IllegalArgumentException(
+                    "slice() "
+                            + sliceName
+                            + " out of bounds: offset="
+                            + sliceOffset
+                            + ",length="
+                            + sliceLength
+                            + ",fileLength="
+                            + length()
+                            + ": "
+                            + this
+            );
+        }
+
+        // Are we creating a slice from a CFS file?
+        final boolean sliceCompoundFile = IndexFileNames.matchesExtension(name, "cfs")
+                && IndexFileNames.getExtension(sliceName) != null
+                && compoundFileOffset == 0L // not already a compound file
+                && isClone == false; // tests aggressively clone and slice
+
+        final ByteRange sliceHeaderByteRange;
+        final ByteRange sliceFooterByteRange;
+        final long sliceCompoundFileOffset;
+
+        if (sliceCompoundFile) {
+            sliceCompoundFileOffset = this.offset + sliceOffset;
+            sliceHeaderByteRange = directory.getBlobCacheByteRange(sliceName, sliceLength).shift(sliceCompoundFileOffset);
+            if (sliceHeaderByteRange.isEmpty() == false && sliceHeaderByteRange.length() < sliceLength) {
+                sliceFooterByteRange = ByteRange.of(sliceLength - CodecUtil.footerLength(), sliceLength).shift(sliceCompoundFileOffset);
+            } else {
+                sliceFooterByteRange = ByteRange.EMPTY;
+            }
+        } else {
+            sliceCompoundFileOffset = this.compoundFileOffset;
+            sliceHeaderByteRange = ByteRange.EMPTY;
+            sliceFooterByteRange = ByteRange.EMPTY;
+        }
+
+        return doSlice(sliceName, sliceOffset, sliceLength, sliceHeaderByteRange, sliceFooterByteRange, sliceCompoundFileOffset);
+    }
+
+    protected abstract IndexInput doSlice(
+            String sliceName,
+            long sliceOffset,
+            long sliceLength,
+            ByteRange sliceHeaderByteRange,
+            ByteRange sliceFooterByteRange,
+            long sliceCompoundFileOffset
+    );
 
     @Override
     public void doClose() {
