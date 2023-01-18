@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 
 import static org.elasticsearch.blobcache.BlobCacheUtils.toIntBytes;
 import static org.elasticsearch.xpack.searchablesnapshots.store.input.ChecksumBlobContainerIndexInput.checksumToBytesArray;
@@ -198,7 +197,7 @@ public abstract class BaseSearchableSnapshotIndexInput extends BufferedIndexInpu
         return pos;
     }
 
-    protected long getLengthOfPart(int part) {
+    private long getLengthOfPart(int part) {
         return fileInfo.partBytes(part);
     }
 
@@ -244,14 +243,7 @@ public abstract class BaseSearchableSnapshotIndexInput extends BufferedIndexInpu
 
     public abstract void doClose() throws IOException;
 
-    protected void ensureContext(Predicate<IOContext> predicate) throws IOException {
-        if (predicate.test(context) == false) {
-            assert false : "this method should not be used with this context " + context;
-            throw new IOException("Cannot read the index input using context [context=" + context + ", input=" + this + ']');
-        }
-    }
-
-    protected final boolean assertCurrentThreadMayAccessBlobStore() {
+    protected static boolean assertCurrentThreadMayAccessBlobStore() {
         return ThreadPool.assertCurrentThreadPool(
             ThreadPool.Names.SNAPSHOT,
             ThreadPool.Names.GENERIC,
@@ -266,13 +258,9 @@ public abstract class BaseSearchableSnapshotIndexInput extends BufferedIndexInpu
         );
     }
 
-    protected static boolean isCacheFetchAsyncThread(final String threadName) {
-        return threadName.contains('[' + SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME + ']');
-    }
-
-    protected static boolean assertCurrentThreadIsNotCacheFetchAsync() {
+    private static boolean assertCurrentThreadIsNotCacheFetchAsync() {
         final String threadName = Thread.currentThread().getName();
-        assert false == isCacheFetchAsyncThread(threadName)
+        assert false == threadName.contains('[' + SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME + ']')
             : "expected the current thread [" + threadName + "] to belong to the cache fetch async thread pool";
         return true;
     }
