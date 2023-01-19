@@ -31,6 +31,7 @@ import org.elasticsearch.xpack.searchablesnapshots.AbstractSearchableSnapshotsTe
 import org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots;
 import org.elasticsearch.xpack.searchablesnapshots.cache.common.TestUtils;
 import org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService;
+import org.elasticsearch.xpack.searchablesnapshots.store.PartialSearchableSnapshotDirectory;
 import org.elasticsearch.xpack.searchablesnapshots.store.SearchableSnapshotDirectory;
 
 import java.io.IOException;
@@ -99,14 +100,24 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
             NodeEnvironment nodeEnvironment = new NodeEnvironment(settings, environment);
             SharedBlobCacheService sharedBlobCacheService = new SharedBlobCacheService(nodeEnvironment, settings, threadPool);
             CacheService cacheService = randomCacheService();
-            TestSearchableSnapshotDirectory directory = new TestSearchableSnapshotDirectory(
-                sharedBlobCacheService,
-                cacheService,
-                fileInfo,
+            SearchableSnapshotDirectory directory = new PartialSearchableSnapshotDirectory(
+                () -> TestUtils.singleBlobContainer(fileInfo.partName(0), fileData),
+                () -> new BlobStoreIndexShardSnapshot("_snapshot_id", 0L, List.of(fileInfo), 0L, 0L, 0, 0L),
+                new TestUtils.SimpleBlobStoreCacheService(),
+                "_repository",
                 snapshotId,
-                fileData,
+                new IndexId(SHARD_ID.getIndex().getName(), SHARD_ID.getIndex().getUUID()),
+                SHARD_ID,
+                Settings.builder()
+                    .put(SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING.getKey(), true)
+                    .put(SearchableSnapshots.SNAPSHOT_CACHE_ENABLED_SETTING.getKey(), true)
+                    .build(),
+                System::currentTimeMillis,
+                cacheService,
+                cacheDir,
                 shardPath,
-                cacheDir
+                threadPool,
+                sharedBlobCacheService
             )
         ) {
             cacheService.start();
@@ -124,36 +135,4 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
         }
     }
 
-    private class TestSearchableSnapshotDirectory extends SearchableSnapshotDirectory {
-
-        TestSearchableSnapshotDirectory(
-            SharedBlobCacheService service,
-            CacheService cacheService,
-            FileInfo fileInfo,
-            SnapshotId snapshotId,
-            byte[] fileData,
-            ShardPath shardPath,
-            Path cacheDir
-        ) {
-            super(
-                () -> TestUtils.singleBlobContainer(fileInfo.partName(0), fileData),
-                () -> new BlobStoreIndexShardSnapshot("_snapshot_id", 0L, List.of(fileInfo), 0L, 0L, 0, 0L),
-                new TestUtils.SimpleBlobStoreCacheService(),
-                "_repository",
-                snapshotId,
-                new IndexId(SHARD_ID.getIndex().getName(), SHARD_ID.getIndex().getUUID()),
-                SHARD_ID,
-                Settings.builder()
-                    .put(SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING.getKey(), true)
-                    .put(SearchableSnapshots.SNAPSHOT_CACHE_ENABLED_SETTING.getKey(), true)
-                    .build(),
-                System::currentTimeMillis,
-                cacheService,
-                cacheDir,
-                shardPath,
-                threadPool,
-                service
-            );
-        }
-    }
 }

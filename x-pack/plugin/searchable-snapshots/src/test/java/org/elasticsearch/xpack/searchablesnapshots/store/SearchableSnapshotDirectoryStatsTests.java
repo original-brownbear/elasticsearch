@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
 
 import static org.elasticsearch.blobcache.BlobCacheUtils.toIntBytes;
+import static org.elasticsearch.snapshots.SearchableSnapshotsSettings.SNAPSHOT_PARTIAL_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_CACHE_ENABLED_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_CACHE_PREWARM_ENABLED_SETTING;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_UNCACHED_CHUNK_SIZE_SETTING;
@@ -650,30 +651,54 @@ public class SearchableSnapshotDirectoryStatsTests extends AbstractSearchableSna
         try (
             CacheService ignored = cacheService;
             SharedBlobCacheService ignored2 = sharedBlobCacheService;
-            SearchableSnapshotDirectory directory = new SearchableSnapshotDirectory(
-                () -> blobContainer,
-                () -> snapshot,
-                new TestUtils.NoopBlobStoreCacheService(),
-                "_repo",
-                snapshotId,
-                indexId,
-                shardId,
-                indexSettings,
-                statsCurrentTimeNanos,
-                cacheService,
-                cacheDir,
-                shardPath,
-                threadPool,
-                sharedBlobCacheService
-            ) {
-                @Override
-                protected IndexInputStats createIndexInputStats(long numFiles, long totalSize, long minSize, long maxSize) {
-                    if (seekingThreshold == null) {
-                        return super.createIndexInputStats(numFiles, totalSize, minSize, maxSize);
+            SearchableSnapshotDirectory directory = SNAPSHOT_PARTIAL_SETTING.get(indexSettings)
+                ? new PartialSearchableSnapshotDirectory(
+                    () -> blobContainer,
+                    () -> snapshot,
+                    new TestUtils.NoopBlobStoreCacheService(),
+                    "_repo",
+                    snapshotId,
+                    indexId,
+                    shardId,
+                    indexSettings,
+                    statsCurrentTimeNanos,
+                    cacheService,
+                    cacheDir,
+                    shardPath,
+                    threadPool,
+                    sharedBlobCacheService
+                ) {
+                    @Override
+                    protected IndexInputStats createIndexInputStats(long numFiles, long totalSize, long minSize, long maxSize) {
+                        if (seekingThreshold == null) {
+                            return super.createIndexInputStats(numFiles, totalSize, minSize, maxSize);
+                        }
+                        return new IndexInputStats(numFiles, totalSize, minSize, maxSize, seekingThreshold, statsCurrentTimeNanos);
                     }
-                    return new IndexInputStats(numFiles, totalSize, minSize, maxSize, seekingThreshold, statsCurrentTimeNanos);
                 }
-            }
+                : new FullSearchableSnapshotDirectory(
+                    () -> blobContainer,
+                    () -> snapshot,
+                    new TestUtils.NoopBlobStoreCacheService(),
+                    "_repo",
+                    snapshotId,
+                    indexId,
+                    shardId,
+                    indexSettings,
+                    statsCurrentTimeNanos,
+                    cacheService,
+                    cacheDir,
+                    shardPath,
+                    threadPool
+                ) {
+                    @Override
+                    protected IndexInputStats createIndexInputStats(long numFiles, long totalSize, long minSize, long maxSize) {
+                        if (seekingThreshold == null) {
+                            return super.createIndexInputStats(numFiles, totalSize, minSize, maxSize);
+                        }
+                        return new IndexInputStats(numFiles, totalSize, minSize, maxSize, seekingThreshold, statsCurrentTimeNanos);
+                    }
+                }
         ) {
             cacheService.start();
             assertThat(directory.getStats(fileName), nullValue());

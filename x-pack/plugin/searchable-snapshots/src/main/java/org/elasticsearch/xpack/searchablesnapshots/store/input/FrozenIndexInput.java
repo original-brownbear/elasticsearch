@@ -18,6 +18,7 @@ import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot.F
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots;
 import org.elasticsearch.xpack.searchablesnapshots.store.IndexInputStats;
+import org.elasticsearch.xpack.searchablesnapshots.store.PartialSearchableSnapshotDirectory;
 import org.elasticsearch.xpack.searchablesnapshots.store.SearchableSnapshotDirectory;
 
 import java.io.EOFException;
@@ -40,7 +41,7 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
 
     public FrozenIndexInput(
         String name,
-        SearchableSnapshotDirectory directory,
+        PartialSearchableSnapshotDirectory directory,
         FileInfo fileInfo,
         IOContext context,
         IndexInputStats stats,

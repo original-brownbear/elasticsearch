@@ -651,7 +651,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                 releasables.add(sharedBlobCacheService);
 
                 try (
-                    SearchableSnapshotDirectory snapshotDirectory = new SearchableSnapshotDirectory(
+                    SearchableSnapshotDirectory snapshotDirectory = new FullSearchableSnapshotDirectory(
                         () -> blobContainer,
                         () -> snapshot,
                         new TestUtils.NoopBlobStoreCacheService(),
@@ -668,8 +668,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                         cacheService,
                         cacheDir,
                         shardPath,
-                        threadPool,
-                        sharedBlobCacheService
+                        threadPool
                     )
                 ) {
                     final PlainActionFuture<Void> f = PlainActionFuture.newFuture();
@@ -754,7 +753,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
             final Path cacheDir = Files.createDirectories(resolveSnapshotCache(shardDir).resolve(snapshotId.getUUID()));
             final SharedBlobCacheService sharedBlobCacheService = defaultFrozenCacheService();
             try (
-                SearchableSnapshotDirectory directory = new SearchableSnapshotDirectory(
+                SearchableSnapshotDirectory directory = new FullSearchableSnapshotDirectory(
                     () -> blobContainer,
                     () -> snapshot,
                     new TestUtils.NoopBlobStoreCacheService(),
@@ -772,8 +771,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                     cacheService,
                     cacheDir,
                     shardPath,
-                    threadPool,
-                    sharedBlobCacheService
+                    threadPool
                 )
             ) {
                 final RecoveryState recoveryState = createRecoveryState(randomBoolean());
@@ -802,7 +800,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                     }
                     assertListOfFiles(cacheDir, allOf(greaterThan(0), lessThanOrEqualTo(nbRandomFiles)), greaterThan(0L));
                     if (randomBoolean()) {
-                        directory.clearCache(true, true);
+                        directory.clearCache();
                         assertBusy(() -> assertListOfFiles(cacheDir, equalTo(0), equalTo(0L)));
                     }
                 }

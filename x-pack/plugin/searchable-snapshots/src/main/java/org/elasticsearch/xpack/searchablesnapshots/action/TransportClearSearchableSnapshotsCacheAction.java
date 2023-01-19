@@ -79,7 +79,7 @@ public class TransportClearSearchableSnapshotsCacheAction extends AbstractTransp
         ShardRouting shardRouting,
         SearchableSnapshotDirectory directory
     ) {
-        directory.clearCache(false, true);
+        directory.clearCache();
         return EmptyResult.INSTANCE;
     }
 }
