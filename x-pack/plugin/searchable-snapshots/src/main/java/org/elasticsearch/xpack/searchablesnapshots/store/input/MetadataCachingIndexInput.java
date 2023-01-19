@@ -80,7 +80,7 @@ public abstract class MetadataCachingIndexInput extends BaseSearchableSnapshotIn
     /**
      * Range of bytes that should be cached in the blob cache for the current index input's footer. This footer byte range should only be
      * required for slices of CFS files; regular files already have their footers extracted from the
-     * {@link BlobStoreIndexShardSnapshot.FileInfo} (see method {@link BaseSearchableSnapshotIndexInput#maybeReadChecksumFromFileInfo}).
+     * {@link BlobStoreIndexShardSnapshot.FileInfo} (see method {@link FileInfoWrappingIndexInput#maybeReadChecksumFromFileInfo}).
      */
     protected final ByteRange footerBlobCacheByteRange;
 
@@ -447,7 +447,7 @@ public abstract class MetadataCachingIndexInput extends BaseSearchableSnapshotIn
     }
 
     @Override
-    protected void seekInternal(long pos) throws IOException {
+    public void seekInternal(long pos) throws IOException {
         if (pos > length()) {
             throw new EOFException("Reading past end of file [position=" + pos + ", length=" + length() + "] for " + toString());
         } else if (pos < 0L) {

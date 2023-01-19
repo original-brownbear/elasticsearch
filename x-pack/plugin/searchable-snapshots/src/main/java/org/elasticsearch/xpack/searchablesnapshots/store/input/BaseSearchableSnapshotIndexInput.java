@@ -7,7 +7,6 @@
 package org.elasticsearch.xpack.searchablesnapshots.store.input;
 
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.codecs.CodecUtil;
 import org.apache.lucene.store.BufferedIndexInput;
 import org.apache.lucene.store.IOContext;
 import org.elasticsearch.common.blobstore.BlobContainer;
@@ -22,9 +21,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.elasticsearch.blobcache.BlobCacheUtils.toIntBytes;
-import static org.elasticsearch.xpack.searchablesnapshots.store.input.ChecksumBlobContainerIndexInput.checksumToBytesArray;
 
 public abstract class BaseSearchableSnapshotIndexInput extends BufferedIndexInput {
 
@@ -71,7 +67,7 @@ public abstract class BaseSearchableSnapshotIndexInput extends BufferedIndexInpu
         return length;
     }
 
-    protected long getAbsolutePosition() {
+    public long getAbsolutePosition() {
         final long position = getFilePointer() + this.offset;
         assert position >= 0L : "absolute position is negative: " + position;
         assert position <= fileInfo.length() : position + " vs " + fileInfo.length();
@@ -83,56 +79,14 @@ public abstract class BaseSearchableSnapshotIndexInput extends BufferedIndexInpu
         assert assertCurrentThreadIsNotCacheFetchAsync();
 
         final int bytesToRead = b.remaining();
-        // We can detect that we're going to read the last 16 bytes (that contains the footer checksum) of the file. Such reads are often
-        // executed when opening a Directory and since we have the checksum in the snapshot metadata we can use it to fill the ByteBuffer.
-        if (maybeReadChecksumFromFileInfo(b)) {
-            logger.trace("read footer of file [{}], bypassing all caches", fileInfo.physicalName());
-        } else {
-            doReadInternal(b);
-        }
+        doReadInternal(b);
         assert b.remaining() == 0L : b.remaining();
         stats.addLuceneBytesRead(bytesToRead);
     }
 
+    public abstract void seekInternal(long pos) throws IOException;
+
     protected abstract void doReadInternal(ByteBuffer b) throws IOException;
-
-    /**
-     * Detects read operations that are executed on the last 16 bytes of the index input which is where Lucene stores the footer checksum
-     * of Lucene files. If such a read is detected this method tries to complete the read operation by reading the checksum from the
-     * {@link FileInfo} in memory rather than reading the bytes from the {@link BufferedIndexInput} because that could trigger more cache
-     * operations.
-     *
-     * @return true if the footer checksum has been read from the {@link FileInfo}
-     */
-    private boolean maybeReadChecksumFromFileInfo(ByteBuffer b) throws IOException {
-        final int remaining = b.remaining();
-        if (remaining > CodecUtil.footerLength()) {
-            return false;
-        }
-        final long position = getAbsolutePosition();
-        final long checksumPosition = fileInfo.length() - CodecUtil.footerLength();
-        if (position < checksumPosition) {
-            return false;
-        }
-        if (isClone) {
-            return false;
-        }
-        boolean success = false;
-        try {
-            final int checksumOffset = toIntBytes(Math.subtractExact(position, checksumPosition));
-            assert checksumOffset <= CodecUtil.footerLength() : checksumOffset;
-            assert 0 <= checksumOffset : checksumOffset;
-
-            final byte[] checksum = checksumToBytesArray(fileInfo.checksum());
-            b.put(checksum, checksumOffset, remaining);
-            success = true;
-        } catch (NumberFormatException e) {
-            // tests disable this optimisation by passing an invalid checksum
-        } finally {
-            assert b.remaining() == (success ? 0L : remaining) : b.remaining() + " remaining bytes but success is " + success;
-        }
-        return success;
-    }
 
     /**
      * Opens an {@link InputStream} for the given range of bytes which reads the data directly from the blob store. If the requested range

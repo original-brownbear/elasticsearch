@@ -57,9 +57,11 @@ import org.elasticsearch.xpack.searchablesnapshots.cache.blob.BlobStoreCacheServ
 import org.elasticsearch.xpack.searchablesnapshots.cache.blob.CachedBlob;
 import org.elasticsearch.xpack.searchablesnapshots.cache.full.CacheService;
 import org.elasticsearch.xpack.searchablesnapshots.recovery.SearchableSnapshotRecoveryState;
+import org.elasticsearch.xpack.searchablesnapshots.store.input.BaseSearchableSnapshotIndexInput;
 import org.elasticsearch.xpack.searchablesnapshots.store.input.CachedBlobContainerIndexInput;
 import org.elasticsearch.xpack.searchablesnapshots.store.input.ChecksumBlobContainerIndexInput;
 import org.elasticsearch.xpack.searchablesnapshots.store.input.DirectBlobContainerIndexInput;
+import org.elasticsearch.xpack.searchablesnapshots.store.input.FileInfoWrappingIndexInput;
 import org.elasticsearch.xpack.searchablesnapshots.store.input.FrozenIndexInput;
 
 import java.io.FileNotFoundException;
@@ -400,8 +402,9 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
             return createIndexInputStats(counter.count(), counter.total(), counter.min(), counter.max());
         });
         if (useCache && isExcludedFromCache(name) == false) {
+            final BaseSearchableSnapshotIndexInput input;
             if (partial) {
-                return new FrozenIndexInput(
+                input = new FrozenIndexInput(
                     name,
                     this,
                     fileInfo,
@@ -411,7 +414,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
                     sharedBlobCacheService.getRecoveryRangeSize()
                 );
             } else {
-                return new CachedBlobContainerIndexInput(
+                input = new CachedBlobContainerIndexInput(
                     name,
                     this,
                     fileInfo,
@@ -421,6 +424,10 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
                     cacheService.getRecoveryRangeSize()
                 );
             }
+            if (context == CachedBlobContainerIndexInput.CACHE_WARMING_CONTEXT) {
+                return input;
+            }
+            return new FileInfoWrappingIndexInput(name, fileInfo, input);
         } else {
             return new DirectBlobContainerIndexInput(name, blobContainer(), fileInfo, context, inputStats, getUncachedChunkSize());
         }

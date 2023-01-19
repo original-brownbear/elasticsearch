@@ -114,7 +114,7 @@ public class FrozenIndexInputTests extends AbstractSearchableSnapshotsTestCase {
 
             // TODO does not test using the recovery range size
             final IndexInput indexInput = directory.openInput(fileName, randomIOContext());
-            assertThat(indexInput, instanceOf(FrozenIndexInput.class));
+            assertThat(indexInput, instanceOf(FileInfoWrappingIndexInput.class));
             assertEquals(fileData.length, indexInput.length());
             assertEquals(0, indexInput.getFilePointer());
 

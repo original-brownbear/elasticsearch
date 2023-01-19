@@ -136,7 +136,7 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
                     assertThat("BlobContainer should be loaded", directory.blobContainer(), notNullValue());
 
                     try (IndexInput indexInput = directory.openInput(fileName, randomIOContext())) {
-                        assertThat(indexInput, instanceOf(CachedBlobContainerIndexInput.class));
+                        assertThat(indexInput, instanceOf(FileInfoWrappingIndexInput.class));
                         assertEquals(input.length, indexInput.length());
                         assertEquals(0, indexInput.getFilePointer());
                         byte[] output = randomReadAndSlice(indexInput, input.length);
@@ -243,7 +243,7 @@ public class CachedBlobContainerIndexInputTests extends AbstractSearchableSnapsh
                 assertThat("BlobContainer should be loaded", searchableSnapshotDirectory.blobContainer(), notNullValue());
 
                 try (IndexInput indexInput = searchableSnapshotDirectory.openInput(fileName, randomIOContext())) {
-                    assertThat(indexInput, instanceOf(CachedBlobContainerIndexInput.class));
+                    assertThat(indexInput, instanceOf(FileInfoWrappingIndexInput.class));
                     final byte[] buffer = new byte[input.length + 1];
                     final IOException exception = expectThrows(IOException.class, () -> indexInput.readBytes(buffer, 0, buffer.length));
                     if (containsEOFException(exception, new HashSet<>()) == false) {

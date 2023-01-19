@@ -243,7 +243,7 @@ public class DirectBlobContainerIndexInput extends BaseSearchableSnapshotIndexIn
     }
 
     @Override
-    protected void seekInternal(long pos) throws IOException {
+    public void seekInternal(long pos) throws IOException {
         if (pos > length()) {
             throw new EOFException("Reading past end of file [position=" + pos + ", length=" + length() + "] for " + toString());
         } else if (pos < 0L) {
