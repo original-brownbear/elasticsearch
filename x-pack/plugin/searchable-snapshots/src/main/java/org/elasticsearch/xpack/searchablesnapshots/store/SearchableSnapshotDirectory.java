@@ -70,7 +70,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -79,7 +78,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
@@ -132,7 +130,6 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
     private final long uncachedChunkSize; // if negative use BlobContainer#readBlobPreferredLength, see #getUncachedChunkSize()
     private final Path cacheDir;
     private final ShardPath shardPath;
-    private final AtomicBoolean closed;
     private final boolean partial;
     private final SharedBlobCacheService sharedBlobCacheService;
     private final ByteSizeValue blobStoreCacheMaxLength;
@@ -172,11 +169,10 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         this.cacheService = Objects.requireNonNull(cacheService);
         this.cacheDir = Objects.requireNonNull(cacheDir);
         this.shardPath = Objects.requireNonNull(shardPath);
-        this.closed = new AtomicBoolean(false);
         this.useCache = SNAPSHOT_CACHE_ENABLED_SETTING.get(indexSettings);
         this.partial = SNAPSHOT_PARTIAL_SETTING.get(indexSettings);
         this.prewarmCache = partial == false && useCache ? SNAPSHOT_CACHE_PREWARM_ENABLED_SETTING.get(indexSettings) : false;
-        this.excludedFileTypes = new HashSet<>(SNAPSHOT_CACHE_EXCLUDED_FILE_TYPES_SETTING.get(indexSettings));
+        this.excludedFileTypes = Set.copyOf(SNAPSHOT_CACHE_EXCLUDED_FILE_TYPES_SETTING.get(indexSettings));
         this.uncachedChunkSize = SNAPSHOT_UNCACHED_CHUNK_SIZE_SETTING.get(indexSettings).getBytes();
         this.blobStoreCacheMaxLength = SNAPSHOT_BLOB_CACHE_METADATA_FILES_MAX_LENGTH_SETTING.get(indexSettings);
         this.threadPool = threadPool;
@@ -339,9 +335,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
 
     @Override
     public final void close() {
-        if (closed.compareAndSet(false, true)) {
-            isOpen = false;
-        }
+        isOpen = false;
     }
 
     public void clearCache(boolean clearCacheService, boolean clearFrozenCacheService) {
@@ -370,10 +364,6 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
 
     public Executor cacheFetchAsyncExecutor() {
         return threadPool.executor(SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME);
-    }
-
-    public Executor prewarmExecutor() {
-        return threadPool.executor(SearchableSnapshots.CACHE_PREWARMING_THREAD_POOL_NAME);
     }
 
     @Override
@@ -481,7 +471,7 @@ public class SearchableSnapshotDirectory extends BaseDirectory {
         }
 
         final BlockingQueue<Tuple<ActionListener<Void>, CheckedRunnable<Exception>>> queue = new LinkedBlockingQueue<>();
-        final Executor executor = prewarmExecutor();
+        final Executor executor = threadPool.executor(SearchableSnapshots.CACHE_PREWARMING_THREAD_POOL_NAME);
 
         final CountDownActionListener completionListener = new CountDownActionListener(
             snapshot().totalFileCount(),
