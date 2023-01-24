@@ -167,8 +167,8 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
                 // Smoke test - we cannot compare bytes to bytes because some elements might get serialized in different order
                 // however, serialized size should remain the same
                 assertThat(
-                    ClusterState.Builder.toBytes(clusterStateFromDiffs).length,
-                    equalTo(ClusterState.Builder.toBytes(clusterState).length)
+                    ClusterState.Builder.toBytes(clusterStateFromDiffs).length(),
+                    equalTo(ClusterState.Builder.toBytes(clusterState).length())
                 );
             } catch (AssertionError error) {
                 logger.error(

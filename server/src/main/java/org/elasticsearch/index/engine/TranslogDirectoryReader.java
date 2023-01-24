@@ -437,7 +437,7 @@ final class TranslogDirectoryReader extends DirectoryReader {
         private void readStoredFieldsDirectly(StoredFieldVisitor visitor) throws IOException {
             if (visitor.needsField(FAKE_SOURCE_FIELD) == StoredFieldVisitor.Status.YES) {
                 BytesReference sourceBytes = operation.source();
-                assert BytesReference.toBytes(sourceBytes) == sourceBytes.toBytesRef().bytes;
+                assert sourceBytes.hasArray();
                 SourceFieldMapper mapper = mappingLookup.getMapping().getMetadataMapperByClass(SourceFieldMapper.class);
                 if (mapper != null) {
                     try {

@@ -380,9 +380,8 @@ public abstract class StreamInput extends InputStream {
     @Nullable
     public SecureString readOptionalSecureString() throws IOException {
         SecureString value = null;
-        BytesReference bytesRef = readOptionalBytesReference();
-        if (bytesRef != null) {
-            byte[] bytes = BytesReference.toBytes(bytesRef);
+        byte[] bytes = readBoolean() ? readByteArray() : null;
+        if (bytes != null) {
             try {
                 value = new SecureString(CharArrays.utf8BytesToChars(bytes));
             } finally {
@@ -525,8 +524,7 @@ public abstract class StreamInput extends InputStream {
     }
 
     public SecureString readSecureString() throws IOException {
-        BytesReference bytesRef = readBytesReference();
-        byte[] bytes = BytesReference.toBytes(bytesRef);
+        byte[] bytes = readByteArray();
         try {
             return new SecureString(CharArrays.utf8BytesToChars(bytes));
         } finally {
