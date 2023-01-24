@@ -92,7 +92,12 @@ public class CachedBlob implements ToXContent {
             builder.endObject();
             builder.startObject("data");
             {
-                builder.field("content", BytesReference.toBytes(bytes));
+                builder.field("content");
+                if (bytes.hasArray()) {
+                    builder.value(bytes.array(), bytes.arrayOffset(), bytes.length());
+                } else {
+                    builder.value(BytesReference.toBytes(bytes));
+                }
                 builder.field("length", bytes.length());
                 builder.field("from", from);
                 builder.field("to", to);

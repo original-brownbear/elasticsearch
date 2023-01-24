@@ -14,7 +14,6 @@ import joptsimple.OptionSpec;
 import org.elasticsearch.cli.ExitCodes;
 import org.elasticsearch.cli.Terminal;
 import org.elasticsearch.cli.UserException;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.KeyStoreWrapper;
 import org.elasticsearch.env.Environment;
 
@@ -53,9 +52,8 @@ public class ShowKeyStoreCommand extends BaseKeyStoreCommand {
         }
 
         try (InputStream input = keyStore.getFile(settingName)) {
-            final BytesReference bytes = org.elasticsearch.common.io.Streams.readFully(input);
+            byte[] array = input.readAllBytes();
             try {
-                byte[] array = BytesReference.toBytes(bytes);
                 CharBuffer text = StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
@@ -72,7 +70,7 @@ public class ShowKeyStoreCommand extends BaseKeyStoreCommand {
             } catch (CharacterCodingException e) {
                 final OutputStream output = terminal.getOutputStream();
                 if (output != null) {
-                    bytes.writeTo(output);
+                    output.write(array);
                 } else {
                     terminal.errorPrintln(Terminal.Verbosity.VERBOSE, e.toString());
                     terminal.errorPrintln(

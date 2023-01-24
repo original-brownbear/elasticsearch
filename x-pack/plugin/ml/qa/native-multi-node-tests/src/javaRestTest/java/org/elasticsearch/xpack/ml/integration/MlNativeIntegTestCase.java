@@ -354,19 +354,19 @@ abstract class MlNativeIntegTestCase extends ESIntegTestCase {
             );
             final NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(entries);
             ClusterState masterClusterState = client().admin().cluster().prepareState().all().get().getState();
-            byte[] masterClusterStateBytes = ClusterState.Builder.toBytes(masterClusterState);
+            var masterClusterStateBytes = ClusterState.Builder.toBytes(masterClusterState);
             // remove local node reference
             masterClusterState = ClusterState.Builder.fromBytes(masterClusterStateBytes, null, namedWriteableRegistry);
             Map<String, Object> masterStateMap = convertToMap(masterClusterState);
-            int masterClusterStateSize = ClusterState.Builder.toBytes(masterClusterState).length;
+            int masterClusterStateSize = ClusterState.Builder.toBytes(masterClusterState).length();
             String masterId = masterClusterState.nodes().getMasterNodeId();
             for (Client client : cluster().getClients()) {
                 ClusterState localClusterState = client.admin().cluster().prepareState().all().setLocal(true).get().getState();
-                byte[] localClusterStateBytes = ClusterState.Builder.toBytes(localClusterState);
+                var localClusterStateBytes = ClusterState.Builder.toBytes(localClusterState);
                 // remove local node reference
                 localClusterState = ClusterState.Builder.fromBytes(localClusterStateBytes, null, namedWriteableRegistry);
                 final Map<String, Object> localStateMap = convertToMap(localClusterState);
-                final int localClusterStateSize = ClusterState.Builder.toBytes(localClusterState).length;
+                final int localClusterStateSize = ClusterState.Builder.toBytes(localClusterState).length();
                 // Check that the non-master node has the same version of the cluster state as the master and
                 // that the master node matches the master (otherwise there is no requirement for the cluster state to match)
                 if (masterClusterState.version() == localClusterState.version()

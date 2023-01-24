@@ -132,16 +132,7 @@ public final class CompressedXContent {
      * that may already be compressed.
      */
     public CompressedXContent(BytesReference data) throws IOException {
-        Compressor compressor = CompressorFactory.compressor(data);
-        if (compressor != null) {
-            // already compressed...
-            this.bytes = BytesReference.toBytes(data);
-            this.sha256 = sha256FromCompressed(this.bytes);
-        } else {
-            this.bytes = BytesReference.toBytes(CompressorFactory.COMPRESSOR.compress(data));
-            this.sha256 = sha256(data);
-        }
-        assertConsistent();
+        this(BytesReference.toBytes(data));
     }
 
     private void assertConsistent() {
@@ -150,8 +141,18 @@ public final class CompressedXContent {
         assert this.sha256.equals(sha256FromCompressed(bytes));
     }
 
-    public CompressedXContent(byte[] data) throws IOException {
-        this(new BytesArray(data));
+    public CompressedXContent(byte[] bytes) throws IOException {
+        final BytesReference bytesReference = new BytesArray(bytes);
+        Compressor compressor = CompressorFactory.compressor(bytesReference);
+        if (compressor != null) {
+            // already compressed...
+            this.bytes = bytes;
+            this.sha256 = sha256FromCompressed(this.bytes);
+        } else {
+            this.bytes = BytesReference.toBytes(CompressorFactory.COMPRESSOR.compress(bytesReference));
+            this.sha256 = sha256(bytesReference);
+        }
+        assertConsistent();
     }
 
     /**
@@ -176,7 +177,7 @@ public final class CompressedXContent {
     }
 
     public CompressedXContent(String str) throws IOException {
-        this(new BytesArray(str.getBytes(StandardCharsets.UTF_8)));
+        this(str.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Return the compressed bytes. */

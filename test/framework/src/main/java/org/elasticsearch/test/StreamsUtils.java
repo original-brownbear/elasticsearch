@@ -8,8 +8,6 @@
 
 package org.elasticsearch.test;
 
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.core.Streams;
 
 import java.io.FileNotFoundException;
@@ -41,10 +39,7 @@ public class StreamsUtils {
             if (is == null) {
                 throw new FileNotFoundException("Resource [" + path + "] not found in classpath");
             }
-            try (BytesStreamOutput out = new BytesStreamOutput()) {
-                Streams.copy(is, out);
-                return BytesReference.toBytes(out.bytes());
-            }
+            return is.readAllBytes();
         }
     }
 

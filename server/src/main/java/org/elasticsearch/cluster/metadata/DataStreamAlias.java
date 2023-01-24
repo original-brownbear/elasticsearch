@@ -11,7 +11,6 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.Diff;
 import org.elasticsearch.cluster.SimpleDiffable;
 import org.elasticsearch.common.ParsingException;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
@@ -88,8 +87,7 @@ public class DataStreamAlias implements SimpleDiffable<DataStreamAlias>, ToXCont
             if (p.currentToken() == XContentParser.Token.VALUE_EMBEDDED_OBJECT || p.currentToken() == XContentParser.Token.VALUE_STRING) {
                 return new CompressedXContent(p.binaryValue());
             } else if (p.currentToken() == XContentParser.Token.START_OBJECT) {
-                XContentBuilder builder = XContentFactory.jsonBuilder().map(p.mapOrdered());
-                return new CompressedXContent(BytesReference.bytes(builder));
+                return new CompressedXContent((b, params) -> b.mapContents(p.mapOrdered()));
             } else {
                 assert false : "unexpected token [" + p.currentToken() + " ]";
                 return null;
@@ -99,8 +97,7 @@ public class DataStreamAlias implements SimpleDiffable<DataStreamAlias>, ToXCont
             if (p.currentToken() == XContentParser.Token.VALUE_EMBEDDED_OBJECT || p.currentToken() == XContentParser.Token.VALUE_STRING) {
                 return new CompressedXContent(p.binaryValue());
             } else if (p.currentToken() == XContentParser.Token.START_OBJECT) {
-                XContentBuilder builder = XContentFactory.jsonBuilder().map(p.mapOrdered());
-                return new CompressedXContent(BytesReference.bytes(builder));
+                return new CompressedXContent((b, params) -> b.mapContents(p.mapOrdered()));
             } else {
                 assert false : "unexpected token [" + p.currentToken() + " ]";
                 return null;
@@ -151,8 +148,7 @@ public class DataStreamAlias implements SimpleDiffable<DataStreamAlias>, ToXCont
         }
 
         try {
-            XContentBuilder builder = XContentFactory.jsonBuilder().map(filterAsMap);
-            return new CompressedXContent(BytesReference.bytes(builder));
+            return new CompressedXContent((b, params) -> b.mapContents(filterAsMap));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
