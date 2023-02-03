@@ -43,6 +43,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.LongConsumer;
 
+import static org.elasticsearch.blobcache.BlobCacheUtils.throwEOF;
 import static org.elasticsearch.blobcache.BlobCacheUtils.toIntBytes;
 import static org.elasticsearch.core.Strings.format;
 
@@ -273,15 +274,7 @@ public abstract class MetadataCachingIndexInput extends BaseSearchableSnapshotIn
         assert assertFileChannelOpen(fc);
         final int bytesRead = Channels.readFromFileChannel(fc, position, buffer);
         if (bytesRead == -1) {
-            throw new EOFException(
-                String.format(
-                    Locale.ROOT,
-                    "unexpected EOF reading [%d-%d] from %s",
-                    position,
-                    position + buffer.remaining(),
-                    cacheFileReference
-                )
-            );
+            throwEOF(position, position + buffer.remaining(), this.cacheFileReference);
         }
         stats.addCachedBytesRead(bytesRead);
         return bytesRead;

@@ -9,6 +9,10 @@ package org.elasticsearch.blobcache;
 
 import org.elasticsearch.common.unit.ByteSizeUnit;
 
+import java.io.EOFException;
+
+import static org.elasticsearch.core.Strings.format;
+
 public class BlobCacheUtils {
 
     /**
@@ -19,5 +23,16 @@ public class BlobCacheUtils {
      */
     public static int toIntBytes(long l) {
         return ByteSizeUnit.BYTES.toIntBytes(l);
+    }
+
+    public static void throwEOF(long start, long end, Object cacheFile) throws EOFException {
+        throw new EOFException(
+            format(
+                "unexpected EOF reading [%d-%d] from %s",
+                start,
+                end,
+                cacheFile
+            )
+        );
     }
 }

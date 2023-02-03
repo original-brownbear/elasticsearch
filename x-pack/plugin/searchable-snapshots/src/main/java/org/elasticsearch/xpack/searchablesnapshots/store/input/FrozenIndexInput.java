@@ -10,6 +10,7 @@ package org.elasticsearch.xpack.searchablesnapshots.store.input;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.IOContext;
+import org.elasticsearch.blobcache.BlobCacheUtils;
 import org.elasticsearch.blobcache.common.ByteRange;
 import org.elasticsearch.blobcache.shared.SharedBlobCacheService;
 import org.elasticsearch.blobcache.shared.SharedBytes;
@@ -21,11 +22,9 @@ import org.elasticsearch.xpack.searchablesnapshots.cache.common.CacheKey;
 import org.elasticsearch.xpack.searchablesnapshots.store.IndexInputStats;
 import org.elasticsearch.xpack.searchablesnapshots.store.SearchableSnapshotDirectory;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.Locale;
 import java.util.concurrent.Semaphore;
 import java.util.function.LongConsumer;
 
@@ -201,15 +200,7 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
                 final ByteBuffer dup = buffer.slice(buffer.position() + Math.toIntExact(relativePos), Math.toIntExact(length));
                 bytesRead = fc.read(dup, channelPos);
                 if (bytesRead == -1) {
-                    throw new EOFException(
-                        String.format(
-                            Locale.ROOT,
-                            "unexpected EOF reading [%d-%d] from %s",
-                            channelPos,
-                            channelPos + dup.remaining(),
-                            this.cacheFile
-                        )
-                    );
+                    BlobCacheUtils.throwEOF(channelPos, channelPos + dup.remaining(), this.cacheFile);
                 }
             } finally {
                 luceneByteBufPermits.release();
@@ -256,7 +247,7 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
         );
         final long end = relativePos + length;
         final byte[] copyBuffer = new byte[toIntBytes(Math.min(COPY_BUFFER_SIZE, length))];
-        logger.trace(() -> format("writing range [%s-%s] to cache file [%s]", relativePos, end, cacheFile));
+        logger.trace("writing range [{}-{}] to cache file [{}]", relativePos, end, cacheFile);
 
         long bytesCopied = 0L;
         long remaining = length;
