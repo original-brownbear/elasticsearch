@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Semaphore;
-import java.util.function.LongConsumer;
 
 public class FrozenIndexInput extends MetadataCachingIndexInput {
 
@@ -123,28 +122,72 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
                 : "[" + position + "-" + (position + length) + "] vs " + rangeToWrite;
             final ByteRange rangeToRead = ByteRange.of(position, position + length);
 
-            final int bytesRead = cacheFile.populateAndRead(
-                rangeToWrite,
-                rangeToRead,
-                (channel, pos, relativePos, len) -> readCacheFile(
-                    channel,
+            final int bytesRead = cacheFile.populateAndRead(rangeToWrite, rangeToRead, (channel, pos, relativePos, len) -> {
+                assert len > 0 : "len must be positive but saw [" + len + "]";
+                logger.trace(
+                    "{}: reading cached {} logical {} channel {} pos {} length {} (details: {})",
+                    fileInfo.physicalName(),
+                    false,
+                    position,
                     pos,
                     relativePos,
                     len,
-                    b,
-                    rangeToRead.start(),
-                    luceneByteBufPermits
-                ),
-                (channel, channelPos, relativePos, len, progressUpdater) -> {
-                    final long startTimeNanos = stats.currentTimeNanos();
-                    final long streamStartPosition = rangeToWrite.start() + relativePos;
-
-                    try (InputStream input = openInputStreamFromBlobStore(streamStartPosition, len)) {
-                        writeCacheFile(channel, input, channelPos, relativePos, len, progressUpdater, startTimeNanos);
+                    cacheFile
+                );
+                final int read;
+                if (luceneByteBufPermits.tryAcquire()) {
+                    try {
+                        // create slice that is positioned to read the given values
+                        final ByteBuffer dup = b.slice(b.position() + Math.toIntExact(relativePos), Math.toIntExact(len));
+                        read = channel.read(dup, pos);
+                        if (read == -1) {
+                            BlobCacheUtils.throwEOF(pos, dup.remaining(), this.cacheFile);
+                        }
+                    } finally {
+                        luceneByteBufPermits.release();
                     }
-                },
-                SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME
-            );
+                } else {
+                    // return fake response
+                    return Math.toIntExact(len);
+                }
+                stats.addCachedBytesRead(read);
+                return read;
+            }, (channel, channelPos, relativePos, len, progressUpdater) -> {
+                final long startTimeNanos = stats.currentTimeNanos();
+                try (InputStream input = openInputStreamFromBlobStore(rangeToWrite.start() + relativePos, len)) {
+                    assert ThreadPool.assertCurrentThreadPool(SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME);
+                    logger.trace(
+                        "{}: writing channel {} pos {} length {} (details: {})",
+                        fileInfo.physicalName(),
+                        channelPos,
+                        relativePos,
+                        len,
+                        cacheFile
+                    );
+                    long bytesCopied = 0L;
+                    long remaining = len;
+                    final ByteBuffer buf = writeBuffer.get().clear();
+                    while (remaining > 0L) {
+                        remaining -= BlobCacheUtils.readSafe(input, buf, relativePos, remaining, cacheFile);
+                        if (buf.hasRemaining()) {
+                            break;
+                        }
+                        bytesCopied += positionalWrite(channel, channelPos + bytesCopied, buf);
+                        progressUpdater.accept(bytesCopied);
+                    }
+                    // ensure that last write is aligned on 4k boundaries (= page size)
+                    final int remainder = buf.position() % SharedBytes.PAGE_SIZE;
+                    final int adjustment = remainder == 0 ? 0 : SharedBytes.PAGE_SIZE - remainder;
+                    buf.position(buf.position() + adjustment);
+                    long bytesWritten = positionalWrite(channel, channelPos + bytesCopied, buf);
+                    bytesCopied += bytesWritten;
+                    final long adjustedBytesCopied = bytesCopied - adjustment; // adjust to not break RangeFileTracker
+                    assert adjustedBytesCopied == len;
+                    progressUpdater.accept(adjustedBytesCopied);
+                    final long endTimeNanos = stats.currentTimeNanos();
+                    stats.addCachedBytesWritten(adjustedBytesCopied, endTimeNanos - startTimeNanos);
+                }
+            }, SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME);
             assert bytesRead == length : bytesRead + " vs " + length;
             assert luceneByteBufPermits.availablePermits() == Integer.MAX_VALUE;
 
@@ -165,95 +208,6 @@ public class FrozenIndexInput extends MetadataCachingIndexInput {
         assert byteBuffer.hasRemaining() == false;
         byteBuffer.clear();
         return written;
-    }
-
-    private int readCacheFile(
-        final SharedBytes.IO fc,
-        long channelPos,
-        long relativePos,
-        long length,
-        final ByteBuffer buffer,
-        long logicalPos,
-        Semaphore luceneByteBufPermits
-    ) throws IOException {
-        logger.trace(
-            "{}: reading cached {} logical {} channel {} pos {} length {} (details: {})",
-            fileInfo.physicalName(),
-            false,
-            logicalPos,
-            channelPos,
-            relativePos,
-            length,
-            cacheFile
-        );
-        if (length == 0L) {
-            return 0;
-        }
-        final int bytesRead;
-        if (luceneByteBufPermits.tryAcquire()) {
-            try {
-                // create slice that is positioned to read the given values
-                final ByteBuffer dup = buffer.slice(buffer.position() + Math.toIntExact(relativePos), Math.toIntExact(length));
-                bytesRead = fc.read(dup, channelPos);
-                if (bytesRead == -1) {
-                    BlobCacheUtils.throwEOF(channelPos, dup.remaining(), this.cacheFile);
-                }
-            } finally {
-                luceneByteBufPermits.release();
-            }
-        } else {
-            // return fake response
-            return Math.toIntExact(length);
-        }
-        stats.addCachedBytesRead(bytesRead);
-        return bytesRead;
-    }
-
-    private void writeCacheFile(
-        final SharedBytes.IO fc,
-        final InputStream input,
-        final long fileChannelPos,
-        final long relativePos,
-        final long length,
-        final LongConsumer progressUpdater,
-        final long startTimeNanos
-    ) throws IOException {
-        assert ThreadPool.assertCurrentThreadPool(SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME);
-        logger.trace(
-            "{}: writing channel {} pos {} length {} (details: {})",
-            fileInfo.physicalName(),
-            fileChannelPos,
-            relativePos,
-            length,
-            cacheFile
-        );
-        final long end = relativePos + length;
-        logger.trace("writing range [{}-{}] to cache file [{}]", relativePos, end, cacheFile);
-
-        long bytesCopied = 0L;
-        long remaining = length;
-        final ByteBuffer buf = writeBuffer.get().clear();
-        while (remaining > 0L) {
-            final int bytesRead = BlobCacheUtils.readSafe(input, buf, relativePos, remaining, cacheFile);
-            if (buf.hasRemaining()) {
-                break;
-            }
-            long bytesWritten = positionalWrite(fc, fileChannelPos + bytesCopied, buf);
-            bytesCopied += bytesWritten;
-            progressUpdater.accept(bytesCopied);
-            remaining -= bytesRead;
-        }
-        // ensure that last write is aligned on 4k boundaries (= page size)
-        final int remainder = buf.position() % SharedBytes.PAGE_SIZE;
-        final int adjustment = remainder == 0 ? 0 : SharedBytes.PAGE_SIZE - remainder;
-        buf.position(buf.position() + adjustment);
-        long bytesWritten = positionalWrite(fc, fileChannelPos + bytesCopied, buf);
-        bytesCopied += bytesWritten;
-        final long adjustedBytesCopied = bytesCopied - adjustment; // adjust to not break RangeFileTracker
-        assert adjustedBytesCopied == length;
-        progressUpdater.accept(adjustedBytesCopied);
-        final long endTimeNanos = stats.currentTimeNanos();
-        stats.addCachedBytesWritten(adjustedBytesCopied, endTimeNanos - startTimeNanos);
     }
 
     @Override
