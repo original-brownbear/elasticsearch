@@ -35,6 +35,9 @@ dependencies {
 
   implementation project(':libs:elasticsearch-plugin-classloader')
 
+  // sqlite
+  api "org.xerial:sqlite-jdbc:3.40.1.0"
+
   // lucene
   api "org.apache.lucene:lucene-core:${versions.lucene}"
   api "org.apache.lucene:lucene-analysis-common:${versions.lucene}"

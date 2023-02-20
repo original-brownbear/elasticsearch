@@ -33,9 +33,7 @@ import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.Weight;
-import org.apache.lucene.store.AlreadyClosedException;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.NIOFSDirectory;
+import org.apache.lucene.store.*;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.SetOnce;
@@ -47,6 +45,7 @@ import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.common.Randomness;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
@@ -55,6 +54,8 @@ import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.lucene.Lucene;
+import org.elasticsearch.common.lucene.store.ByteArrayIndexInput;
+import org.elasticsearch.common.lucene.store.InputStreamIndexInput;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.unit.ByteSizeUnit;
@@ -85,16 +86,13 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.sql.*;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.LongSupplier;
@@ -278,7 +276,140 @@ public class PersistedClusterStateService {
     Directory createDirectory(Path path) throws IOException {
         // it is possible to disable the use of MMapDirectory for indices, and it may be surprising to users that have done so if we still
         // use a MMapDirectory here, which might happen with FSDirectory.open(path), so we force an NIOFSDirectory to be on the safe side.
-        return new NIOFSDirectory(path);
+        return new BaseDirectory(new SingleInstanceLockFactory()) {
+
+            private final Connection dbc;
+
+            {
+                try {
+                    dbc = DriverManager.getConnection("jdbc:sqlite:" + path + "state.db");
+                    Statement stmt = dbc.createStatement();
+                    stmt.execute("CREATE TABLE IF NOT EXISTS FilesTable( Name VARCHAR(255) UNIQUE PRIMARY KEY NOT NULL , Data BLOB)");
+
+                } catch (SQLException e) {
+                    throw new IOException(e);
+                }
+            }
+
+            @Override
+            public String[] listAll() throws IOException {
+                try {
+                    Statement stmt = dbc.createStatement();
+                    final ResultSet resultSet = stmt.executeQuery("SELECT Name FROM FilesTable");
+                    final List<String> names = new ArrayList<>();
+                    while (resultSet.next()) {
+                        names.add(resultSet.getString(1));
+                    }
+                    return names.toArray(Strings.EMPTY_ARRAY);
+                } catch (SQLException e) {
+                    throw new IOException(e);
+                }
+            }
+
+            @Override
+            public void deleteFile(String name) throws IOException {
+                try {
+                    final var prepared = dbc.prepareStatement("DELETE FROM FilesTable WHERE name = ?");
+                    prepared.setString(1, name);
+                    prepared.execute();
+                } catch (SQLException e) {
+                    throw new IOException(name);
+                }
+            }
+
+            @Override
+            public long fileLength(String name) throws IOException {
+                try {
+                    final var prepared = dbc.prepareStatement("SELECT length(Data) FROM FilesTable WHERE Name = ?");
+                    prepared.setString(1, name);
+                    final var res = prepared.executeQuery();
+                    if (res.next()) {
+                        return res.getLong(1);
+                    }
+                    throw new NoSuchFileException(name);
+                } catch (SQLException e) {
+                    throw new IOException(e);
+                }
+            }
+
+            @Override
+            public IndexOutput createOutput(String name, IOContext context) {
+                final var bytes = new BytesStreamOutput();
+                return new OutputStreamIndexOutput(name, name, bytes, 4096) {
+                    @Override
+                    public void close() throws IOException {
+                        super.close();
+                        try {
+                            PreparedStatement pstmt = dbc.prepareStatement(
+                                "INSERT INTO FilesTable(Name,Data) VALUES (?, ?) ON CONFLICT(Name) DO UPDATE SET Data=excluded.Data"
+                            );
+                            pstmt.setString(1, name);
+                            pstmt.setBytes(2, BytesReference.toBytes(bytes.bytes()));
+                            pstmt.execute();
+                        } catch (SQLException e) {
+                            throw new IOException(e);
+                        }
+                    }
+                };
+            }
+
+            private final AtomicLong nextTempFileCounter = new AtomicLong();
+
+            @Override
+            public IndexOutput createTempOutput(String prefix, String suffix, IOContext context) throws IOException {
+                final String indexFileName = getTempFileName(prefix, suffix, nextTempFileCounter.getAndIncrement());
+                return createOutput(indexFileName, context);
+            }
+
+            @Override
+            public void sync(Collection<String> names) throws IOException {
+            }
+
+            @Override
+            public void syncMetaData() throws IOException {
+            }
+
+            @Override
+            public void rename(String source, String dest) throws IOException {
+                try {
+                    final var prepared = dbc.prepareStatement("UPDATE FilesTable SET name = ? WHERE name = ?");
+                    prepared.setString(1, dest);
+                    prepared.setString(2, source);
+                    prepared.execute();
+                } catch (SQLException e) {
+                    throw new IOException(e);
+                }
+            }
+
+            @Override
+            public IndexInput openInput(String name, IOContext context) throws IOException {
+                try {
+                    final var prepared = dbc.prepareStatement("SELECT Data FROM FilesTable WHERE Name = ?");
+                    prepared.setString(1, name);
+                    final var res = prepared.executeQuery();
+                    if (res.next()) {
+                        return new ByteArrayIndexInput(name, res.getBytes(1));
+                    }
+                    throw new NoSuchFileException(name);
+                } catch (SQLException e) {
+                    throw new IOException(e);
+                }
+            }
+
+            @Override
+            public void close() throws IOException {
+                try {
+                    dbc.close();
+                } catch (SQLException e) {
+                    throw new IOException(e);
+                }
+            }
+
+            @Override
+            public Set<String> getPendingDeletions() throws IOException {
+                return Set.of();
+            }
+        };
     }
 
     public Path[] getDataPaths() {
