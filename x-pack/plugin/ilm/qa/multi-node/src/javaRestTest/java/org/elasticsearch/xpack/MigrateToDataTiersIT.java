@@ -21,6 +21,7 @@ import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.rest.action.admin.indices.RestPutIndexTemplateAction;
+import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.XContentTestUtils;
 import org.elasticsearch.test.XContentTestUtils.JsonMapView;
 import org.elasticsearch.test.rest.ESRestTestCase;
@@ -121,9 +122,7 @@ public class MigrateToDataTiersIT extends ESRestTestCase {
             client(),
             index,
             alias,
-            Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+            ESIntegTestCase.indexSettings(1, 0)
                 .put(LifecycleSettings.LIFECYCLE_NAME, policy)
                 .putNull(DataTier.TIER_PREFERENCE)
                 .put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias)

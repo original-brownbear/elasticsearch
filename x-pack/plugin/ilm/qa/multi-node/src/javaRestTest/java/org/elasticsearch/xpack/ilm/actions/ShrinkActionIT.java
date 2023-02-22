@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.singletonMap;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
+import static org.elasticsearch.test.ESIntegTestCase.indexSettings;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.xpack.TimeSeriesRestDriver.createIndexWithSettings;
 import static org.elasticsearch.xpack.TimeSeriesRestDriver.createNewSingletonPolicy;
@@ -77,12 +78,7 @@ public class ShrinkActionIT extends ESRestTestCase {
         int numShards = 4;
         int divisor = randomFrom(2, 4);
         int expectedFinalShards = numShards / divisor;
-        createIndexWithSettings(
-            client(),
-            index,
-            alias,
-            Settings.builder().put(SETTING_NUMBER_OF_SHARDS, numShards).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-        );
+        createIndexWithSettings(client(), index, alias, indexSettings(numShards, 0));
         createNewSingletonPolicy(client(), policy, "warm", new ShrinkAction(expectedFinalShards, null));
         updatePolicy(client(), index, policy);
 
@@ -103,12 +99,7 @@ public class ShrinkActionIT extends ESRestTestCase {
 
     public void testSkipShrinkSameShardsWithNumberOfShards() throws Exception {
         int numberOfShards = randomFrom(1, 2);
-        createIndexWithSettings(
-            client(),
-            index,
-            alias,
-            Settings.builder().put(SETTING_NUMBER_OF_SHARDS, numberOfShards).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-        );
+        createIndexWithSettings(client(), index, alias, indexSettings(numberOfShards, 0));
         createNewSingletonPolicy(client(), policy, "warm", new ShrinkAction(numberOfShards, null));
         updatePolicy(client(), index, policy);
         assertBusy(() -> {
@@ -128,7 +119,7 @@ public class ShrinkActionIT extends ESRestTestCase {
             client(),
             index,
             alias,
-            Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+            indexSettings(1, 0)
         );
         createNewSingletonPolicy(client(), policy, "warm", new ShrinkAction(null, ByteSizeValue.ofGb(50)));
         updatePolicy(client(), index, policy);
@@ -167,9 +158,7 @@ public class ShrinkActionIT extends ESRestTestCase {
             client(),
             index,
             alias,
-            Settings.builder()
-                .put(SETTING_NUMBER_OF_SHARDS, 2)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+            indexSettings(2, 0)
                 // required so the shrink doesn't wait on SetSingleNodeAllocateStep
                 .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_SETTING.getKey() + "_name", "javaRestTest-0")
         );
@@ -248,15 +237,7 @@ public class ShrinkActionIT extends ESRestTestCase {
     public void testSetSingleNodeAllocationRetriesUntilItSucceeds() throws Exception {
         int numShards = 2;
         int expectedFinalShards = 1;
-        createIndexWithSettings(
-            client(),
-            index,
-            alias,
-            Settings.builder()
-                .put(SETTING_NUMBER_OF_SHARDS, numShards)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .putNull(DataTier.TIER_PREFERENCE)
-        );
+        createIndexWithSettings(client(), index, alias, indexSettings(numShards, 0).putNull(DataTier.TIER_PREFERENCE));
 
         ensureGreen(index);
 
@@ -330,7 +311,7 @@ public class ShrinkActionIT extends ESRestTestCase {
             client(),
             index,
             alias,
-            Settings.builder().put(SETTING_NUMBER_OF_SHARDS, numShards).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+            indexSettings(numShards, 0)
         );
         createNewSingletonPolicy(client(), policy, "warm", new ShrinkAction(numShards + randomIntBetween(1, numShards), null));
         updatePolicy(client(), index, policy);
@@ -374,10 +355,7 @@ public class ShrinkActionIT extends ESRestTestCase {
             client(),
             index,
             alias,
-            Settings.builder()
-                .put(SETTING_NUMBER_OF_SHARDS, numShards)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .put(ShardsLimitAllocationDecider.INDEX_TOTAL_SHARDS_PER_NODE_SETTING.getKey(), numShards - 2)
+            indexSettings(numShards, 0).put(ShardsLimitAllocationDecider.INDEX_TOTAL_SHARDS_PER_NODE_SETTING.getKey(), numShards - 2)
         );
         createNewSingletonPolicy(client(), policy, "warm", new ShrinkAction(expectedFinalShards, null));
         updatePolicy(client(), index, policy);

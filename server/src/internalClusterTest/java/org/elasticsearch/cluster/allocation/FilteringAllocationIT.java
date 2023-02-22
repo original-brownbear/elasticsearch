@@ -157,10 +157,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
         assertThat(cluster().size(), equalTo(2));
 
         logger.info("--> creating an index with no replicas");
-        createIndex(
-            "test",
-            Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 2).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0).build()
-        );
+        createIndex("test", indexSettings(2, 0).build());
         ensureGreen("test");
 
         logger.info("--> index some data");

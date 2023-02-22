@@ -743,6 +743,10 @@ public abstract class ESIntegTestCase extends ESTestCase {
         return builder.build();
     }
 
+    public static Settings.Builder indexSettings(int shards, int replicas) {
+        return Settings.builder().put(SETTING_NUMBER_OF_SHARDS, shards).put(SETTING_NUMBER_OF_REPLICAS, replicas);
+    }
+
     /**
      * Creates one or more indices and asserts that the indices are acknowledged. If one of the indices
      * already exists this method will fail and wipe all the indices created so far.

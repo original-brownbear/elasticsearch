@@ -16,7 +16,6 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
@@ -263,10 +262,6 @@ public class BulkByScrollUsesAllScrollDocumentsAfterConflictsIntegTests extends 
     }
 
     private void createIndexWithSingleShard(String index) throws Exception {
-        final Settings indexSettings = Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-            .build();
         final XContentBuilder mappings = jsonBuilder();
         {
             mappings.startObject();
@@ -294,7 +289,7 @@ public class BulkByScrollUsesAllScrollDocumentsAfterConflictsIntegTests extends 
 
         // Use explicit mappings so we don't have to create those on demands and the task ordering
         // can change to wait for mapping updates
-        assertAcked(prepareCreate(index).setSettings(indexSettings).setMapping(mappings));
+        assertAcked(prepareCreate(index).setSettings(indexSettings(1, 0)).setMapping(mappings));
     }
 
     private IndexRequest createUpdatedIndexRequest(SearchHit searchHit, String targetIndex, boolean useOptimisticUpdate) {

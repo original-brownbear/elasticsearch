@@ -13,9 +13,7 @@ import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.ShardRouting;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xpack.ml.aggs.categorization.CategorizeTextAggregationBuilder;
 import org.elasticsearch.xpack.ml.aggs.categorization.InternalCategorizationAggregation;
 import org.elasticsearch.xpack.ml.support.BaseMlIntegTestCase;
@@ -48,9 +46,7 @@ public class CategorizeTextDistributedIT extends BaseMlIntegTestCase {
         // System indices may affect the distribution of shards of this index,
         // but it has so many that it should have shards on all the nodes
         String indexName = "data";
-        CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(
-            Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, "9").put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "0")
-        );
+        CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName).settings(indexSettings(9, 0));
         client().admin().indices().create(createIndexRequest).actionGet();
 
         // Spread 10000 documents in 4 categories across the shards

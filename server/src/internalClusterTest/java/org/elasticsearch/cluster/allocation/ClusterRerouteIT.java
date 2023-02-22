@@ -231,10 +231,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
             final String indexName = "test" + i;
             createIndex(
                 indexName,
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 5)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-                    .put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), randomIntBetween(250, 1000) + "ms")
+                indexSettings(5, 1).put(UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING.getKey(), randomIntBetween(250, 1000) + "ms")
                     .build()
             );
             if (randomBoolean()) {
@@ -368,10 +365,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
         logger.info("--> create an index with 1 shard");
-        createIndex(
-            "test",
-            Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0).build()
-        );
+        createIndex("test", indexSettings(1, 0).build());
 
         if (randomBoolean()) {
             assertAcked(client().admin().indices().prepareClose("test"));
@@ -500,10 +494,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         List<String> nodesIds = internalCluster().startNodes(2);
 
         logger.info("--> create an index with 1 shard and 0 replicas");
-        createIndex(
-            "test-blocks",
-            Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0).build()
-        );
+        createIndex("test-blocks", indexSettings(1, 0).build());
 
         if (randomBoolean()) {
             assertAcked(client().admin().indices().prepareClose("test-blocks"));

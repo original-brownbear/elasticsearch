@@ -19,7 +19,6 @@ import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.metadata.DataStream;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.allocation.command.AllocateStalePrimaryAllocationCommand;
 import org.elasticsearch.cluster.routing.allocation.command.CancelAllocationCommand;
@@ -71,10 +70,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
     public void testTimestampRangeRecalculatedOnStalePrimaryAllocation() throws IOException {
         final List<String> nodeNames = internalCluster().startNodes(2);
 
-        createIndex(
-            "index",
-            Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1).build()
-        );
+        createIndex("index", indexSettings(1, 1).build());
 
         final IndexResponse indexResponse = client().prepareIndex("index")
             .setSource(DataStream.TimestampField.FIXED_TIMESTAMP_FIELD, "2010-01-06T02:03:04.567Z")
@@ -152,9 +148,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
         }
 
         assertAcked(
-            prepareCreate("index").setSettings(
-                Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-            )
+            prepareCreate("index").setSettings(ESIntegTestCase.indexSettings(1, 1))
                 .setMapping(
                     jsonBuilder().startObject()
                         .startObject("_doc")
@@ -229,11 +223,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
                 .indices()
                 .prepareCreate(indexName)
                 .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 5))
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .put("index.routing.allocation.require._name", assignedNode)
-                        .build()
+                    ESIntegTestCase.indexSettings(between(1, 5), 0).put("index.routing.allocation.require._name", assignedNode).build()
                 )
                 .setMapping("{\"properties\":{\"created_date\":{\"type\": \"date\", \"format\": \"yyyy-MM-dd\"}}}")
         );
