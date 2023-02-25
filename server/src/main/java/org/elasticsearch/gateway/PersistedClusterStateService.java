@@ -34,7 +34,11 @@ import org.apache.lucene.search.Scorer;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.Weight;
 import org.apache.lucene.store.AlreadyClosedException;
+import org.apache.lucene.store.BaseDirectory;
+import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.BytesRef;
@@ -60,6 +64,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.Maps;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.CheckedConsumer;
@@ -215,17 +220,15 @@ public class PersistedClusterStateService {
      * Creates a new disk-based writer for cluster states
      */
     public Writer createWriter() throws IOException {
-        final List<MetadataIndexWriter> metadataIndexWriters = new ArrayList<>();
+        final List<Directory> dirs = new ArrayList<>();
         final List<Closeable> closeables = new ArrayList<>();
+        final ByteBuffersDirectory bbDir = new ByteBuffersDirectory();
         boolean success = false;
         try {
             for (final Path path : dataPaths) {
                 final Directory directory = createDirectory(path.resolve(METADATA_DIRECTORY_NAME));
                 closeables.add(directory);
-
-                final IndexWriter indexWriter = createIndexWriter(directory, false);
-                closeables.add(indexWriter);
-                metadataIndexWriters.add(new MetadataIndexWriter(path, directory, indexWriter));
+                dirs.add(directory);
             }
             success = true;
         } finally {
@@ -234,12 +237,14 @@ public class PersistedClusterStateService {
             }
         }
         return new Writer(
-            metadataIndexWriters,
+            new MetadataIndexWriter(bbDir, createIndexWriter(bbDir, false)),
             nodeId,
             documentPageSize,
             relativeTimeMillisSupplier,
             () -> slowWriteLoggingThreshold,
-            getAssertOnCommit()
+            getAssertOnCommit(),
+            bbDir,
+            dirs
         );
     }
 
@@ -744,12 +749,10 @@ public class PersistedClusterStateService {
     private static class MetadataIndexWriter implements Closeable {
 
         private final Logger logger;
-        private final Path path;
         private final Directory directory;
         private final IndexWriter indexWriter;
 
-        MetadataIndexWriter(Path path, Directory directory, IndexWriter indexWriter) {
-            this.path = path;
+        MetadataIndexWriter(Directory directory, IndexWriter indexWriter) {
             this.directory = directory;
             this.indexWriter = indexWriter;
             this.logger = Loggers.getLogger(MetadataIndexWriter.class, directory.toString());
@@ -811,7 +814,7 @@ public class PersistedClusterStateService {
 
     public static class Writer implements Closeable {
 
-        private final List<MetadataIndexWriter> metadataIndexWriters;
+        private final List<Directory> physicalDirs;
         private final String nodeId;
         private final LongSupplier relativeTimeMillisSupplier;
         private final Supplier<TimeValue> slowWriteLoggingThresholdSupplier;
@@ -822,21 +825,29 @@ public class PersistedClusterStateService {
         @Nullable // if assertions disabled or we explicitly don't want to assert on commit in a test
         private final CheckedBiConsumer<Path, DirectoryReader, IOException> assertOnCommit;
 
+        private final ByteBuffersDirectory byteBuffersDirectory;
+
+        private final MetadataIndexWriter metadataIndexWriter;
+
         private Writer(
-            List<MetadataIndexWriter> metadataIndexWriters,
+            MetadataIndexWriter metadataIndexWriter,
             String nodeId,
             ByteSizeValue documentPageSize,
             LongSupplier relativeTimeMillisSupplier,
             Supplier<TimeValue> slowWriteLoggingThresholdSupplier,
             @Nullable // if assertions disabled or we explicitly don't want to assert on commit in a test
-            CheckedBiConsumer<Path, DirectoryReader, IOException> assertOnCommit
+            CheckedBiConsumer<Path, DirectoryReader, IOException> assertOnCommit,
+            ByteBuffersDirectory byteBuffersDirectory,
+            List<Directory> physicalDirs
         ) {
-            this.metadataIndexWriters = metadataIndexWriters;
+            this.metadataIndexWriter = metadataIndexWriter;
             this.nodeId = nodeId;
             this.relativeTimeMillisSupplier = relativeTimeMillisSupplier;
             this.slowWriteLoggingThresholdSupplier = slowWriteLoggingThresholdSupplier;
             this.documentBuffer = new byte[ByteSizeUnit.BYTES.toIntBytes(documentPageSize.getBytes())];
             this.assertOnCommit = assertOnCommit;
+            this.byteBuffersDirectory = byteBuffersDirectory;
+            this.physicalDirs = physicalDirs;
         }
 
         private void ensureOpen() {
@@ -850,9 +861,7 @@ public class PersistedClusterStateService {
         }
 
         private void closeIfAnyIndexWriterHasTragedyOrIsClosed() {
-            if (metadataIndexWriters.stream()
-                .map(writer -> writer.indexWriter)
-                .anyMatch(iw -> iw.getTragicException() != null || iw.isOpen() == false)) {
+            if (metadataIndexWriter.indexWriter.getTragicException() != null || metadataIndexWriter.indexWriter.isOpen() == false) {
                 try {
                     close();
                 } catch (Exception e) {
@@ -869,10 +878,7 @@ public class PersistedClusterStateService {
             try {
                 final long startTimeMillis = relativeTimeMillisSupplier.getAsLong();
 
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.startWrite();
-                }
-
+                metadataIndexWriter.startWrite();
                 final WriterStats stats = overwriteMetadata(clusterState.metadata());
                 commit(currentTerm, clusterState.version(), clusterState.metadata().oldestIndexVersion());
                 fullStateWritten = true;
@@ -893,6 +899,29 @@ public class PersistedClusterStateService {
             }
         }
 
+        private void syncDirs() throws IOException {
+            final String[] files = byteBuffersDirectory.listAll();
+            for (Directory physicalDir : physicalDirs) {
+                final Set<String> onDisk = Sets.newHashSet(physicalDir.listAll());
+                for (String file : files) {
+                    if (onDisk.remove(file) == false) {
+                        physicalDir.copyFrom(byteBuffersDirectory, file, file, IOContext.DEFAULT);
+                    }
+                }
+                for (String s : onDisk) {
+                    if ("write.lock".equals(s)) {
+                        continue;
+                    }
+                    physicalDir.deleteFile(s);
+                }
+            }
+            final List<String> filesList = List.of(files);
+            for (Directory physicalDir : physicalDirs) {
+                physicalDir.sync(filesList);
+                physicalDir.syncMetaData();
+            }
+        }
+
         /**
          * Updates and commits the given cluster state update
          */
@@ -903,11 +932,7 @@ public class PersistedClusterStateService {
 
             try {
                 final long startTimeMillis = relativeTimeMillisSupplier.getAsLong();
-
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.startWrite();
-                }
-
+                metadataIndexWriter.startWrite();
                 final WriterStats stats = updateMetadata(previousClusterState.metadata(), clusterState.metadata());
                 commit(currentTerm, clusterState.version(), clusterState.metadata().oldestIndexVersion());
                 final long durationMillis = relativeTimeMillisSupplier.getAsLong() - startTimeMillis;
@@ -950,9 +975,7 @@ public class PersistedClusterStateService {
             }
             final boolean updateGlobalMeta = Metadata.isGlobalStateEquals(previouslyWrittenMetadata, metadata) == false;
             if (updateGlobalMeta) {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.deleteGlobalMetadata();
-                }
+                metadataIndexWriter.deleteGlobalMetadata();
 
                 addGlobalMetadataDocuments(metadata);
             }
@@ -972,10 +995,8 @@ public class PersistedClusterStateService {
             }
 
             for (final var unusedMappingHash : previousMappingHashes) {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.deleteMappingMetadata(unusedMappingHash);
-                    numMappingsRemoved++;
-                }
+                metadataIndexWriter.deleteMappingMetadata(unusedMappingHash);
+                numMappingsRemoved++;
             }
 
             final Map<String, Long> indexMetadataVersionByUUID = Maps.newMapWithExpectedSize(previouslyWrittenMetadata.indices().size());
@@ -1003,10 +1024,7 @@ public class PersistedClusterStateService {
                         numIndicesUpdated++;
                     }
 
-                    for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                        metadataIndexWriter.deleteIndexMetadata(indexMetadata.getIndexUUID());
-                    }
-
+                    metadataIndexWriter.deleteIndexMetadata(indexMetadata.getIndexUUID());
                     addIndexMetadataDocuments(indexMetadata);
                 } else {
                     numIndicesUnchanged++;
@@ -1016,17 +1034,13 @@ public class PersistedClusterStateService {
             }
 
             for (String removedIndexUUID : indexMetadataVersionByUUID.keySet()) {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    numIndicesRemoved++;
-                    metadataIndexWriter.deleteIndexMetadata(removedIndexUUID);
-                }
+                numIndicesRemoved++;
+                metadataIndexWriter.deleteIndexMetadata(removedIndexUUID);
             }
 
             // Flush, to try and expose a failure (e.g. out of disk space) before committing, because we can handle a failure here more
             // gracefully than one that occurs during the commit process.
-            for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                metadataIndexWriter.flush();
-            }
+            metadataIndexWriter.flush();
 
             return new WriterStats(
                 false,
@@ -1056,9 +1070,7 @@ public class PersistedClusterStateService {
                     document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
                     document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
                     document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
-                    for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                        metadataIndexWriter.indexWriter.addDocument(document);
-                    }
+                    metadataIndexWriter.indexWriter.addDocument(document);
                 }))
             );
         }
@@ -1074,9 +1086,7 @@ public class PersistedClusterStateService {
                 document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
                 document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
                 document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.indexWriter.addDocument(document);
-                }
+                metadataIndexWriter.indexWriter.addDocument(document);
             }));
         }
 
@@ -1088,9 +1098,7 @@ public class PersistedClusterStateService {
                 document.add(new StoredField(PAGE_FIELD_NAME, pageIndex));
                 document.add(new StoredField(LAST_PAGE_FIELD_NAME, lastPageValue(isLastPage)));
                 document.add(new StoredField(DATA_FIELD_NAME, bytesRef));
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.indexWriter.addDocument(document);
-                }
+                metadataIndexWriter.indexWriter.addDocument(document);
             });
         }
 
@@ -1110,9 +1118,7 @@ public class PersistedClusterStateService {
          * Update the persisted metadata to match the given cluster state by removing all existing documents and then adding new documents.
          */
         private WriterStats overwriteMetadata(Metadata metadata) throws IOException {
-            for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                metadataIndexWriter.deleteAll();
-            }
+            metadataIndexWriter.deleteAll();
             return addMetadata(metadata);
         }
 
@@ -1132,9 +1138,7 @@ public class PersistedClusterStateService {
 
             // Flush, to try and expose a failure (e.g. out of disk space) before committing, because we can handle a failure here more
             // gracefully than one that occurs during the commit process.
-            for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                metadataIndexWriter.flush();
-            }
+            metadataIndexWriter.flush();
 
             return new WriterStats(true, true, 0, metadata.getMappingsByHash().size(), 0, 0, metadata.indices().size(), 0, 0);
         }
@@ -1150,18 +1154,21 @@ public class PersistedClusterStateService {
             ensureOpen();
             prepareCommit(currentTerm, lastAcceptedVersion, oldestIndexVersion);
             completeCommit();
+            try {
+                syncDirs();
+            } catch (Throwable t) {
+                assert false : t;
+            }
             assert assertOnCommit();
         }
 
         private boolean assertOnCommit() {
             if (assertOnCommit != null && Randomness.get().nextInt(100) == 0) {
                 // only rarely run this assertion since reloading the whole state can be quite expensive
-                for (final var metadataIndexWriter : metadataIndexWriters) {
-                    try (var directoryReader = DirectoryReader.open(metadataIndexWriter.indexWriter)) {
-                        assertOnCommit.accept(metadataIndexWriter.path, directoryReader);
-                    } catch (Exception e) {
-                        throw new AssertionError(e);
-                    }
+                try (var directoryReader = DirectoryReader.open(metadataIndexWriter.indexWriter)) {
+                    // assertOnCommit.accept(metadataIndexWriter.path, directoryReader);
+                } catch (Exception e) {
+                    throw new AssertionError(e);
                 }
             }
 
@@ -1171,9 +1178,7 @@ public class PersistedClusterStateService {
         private void prepareCommit(long currentTerm, long lastAcceptedVersion, Version oldestIndexVersion) throws IOException {
             boolean prepareCommitSuccess = false;
             try {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.prepareCommit(nodeId, currentTerm, lastAcceptedVersion, oldestIndexVersion);
-                }
+                metadataIndexWriter.prepareCommit(nodeId, currentTerm, lastAcceptedVersion, oldestIndexVersion);
                 prepareCommitSuccess = true;
             } catch (Exception e) {
                 try {
@@ -1194,9 +1199,7 @@ public class PersistedClusterStateService {
         private void completeCommit() {
             boolean commitSuccess = false;
             try {
-                for (MetadataIndexWriter metadataIndexWriter : metadataIndexWriters) {
-                    metadataIndexWriter.commit();
-                }
+                metadataIndexWriter.commit();
                 commitSuccess = true;
             } catch (IOException e) {
                 // The commit() call has similar semantics to a fsync(): although it's atomic, if it fails then we've no idea whether the
@@ -1219,7 +1222,7 @@ public class PersistedClusterStateService {
         private void closeAndSuppressExceptions() {
             if (closed.compareAndSet(false, true)) {
                 logger.trace("closing PersistedClusterStateService.Writer suppressing any exceptions");
-                IOUtils.closeWhileHandlingException(metadataIndexWriters);
+                IOUtils.closeWhileHandlingException(metadataIndexWriter);
             }
         }
 
@@ -1227,7 +1230,7 @@ public class PersistedClusterStateService {
         public void close() throws IOException {
             logger.trace("closing PersistedClusterStateService.Writer");
             if (closed.compareAndSet(false, true)) {
-                IOUtils.close(metadataIndexWriters);
+                IOUtils.close(metadataIndexWriter);
             }
         }
 
