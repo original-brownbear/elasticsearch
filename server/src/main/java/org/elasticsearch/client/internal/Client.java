@@ -278,7 +278,6 @@ public interface Client extends ElasticsearchClient, Releasable {
      *
      * @param request The search scroll request
      * @return The result future
-     * @see Requests#searchScrollRequest(String)
      */
     ActionFuture<SearchResponse> searchScroll(SearchScrollRequest request);
 
@@ -287,7 +286,6 @@ public interface Client extends ElasticsearchClient, Releasable {
      *
      * @param request  The search scroll request
      * @param listener A listener to be notified of the result
-     * @see Requests#searchScrollRequest(String)
      */
     void searchScroll(SearchScrollRequest request, ActionListener<SearchResponse> listener);
 

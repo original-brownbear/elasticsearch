@@ -46,7 +46,7 @@ public class SimpleNodesInfoIT extends ESIntegTestCase {
         assertThat(response.getNodesMap().get(server1NodeId), notNullValue());
         assertThat(response.getNodesMap().get(server2NodeId), notNullValue());
 
-        response = client().admin().cluster().nodesInfo(nodesInfoRequest()).actionGet();
+        response = client().admin().cluster().prepareNodesInfo().get();
         assertThat(response.getNodes().size(), is(2));
         assertThat(response.getNodesMap().get(server1NodeId), notNullValue());
         assertThat(response.getNodesMap().get(server2NodeId), notNullValue());

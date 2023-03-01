@@ -15,7 +15,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.xcontent.XContentType;
 
-import static org.elasticsearch.client.internal.Requests.flushRequest;
 import static org.elasticsearch.client.internal.Requests.getRequest;
 import static org.elasticsearch.client.internal.Requests.indexRequest;
 import static org.elasticsearch.client.internal.Requests.refreshRequest;
@@ -43,7 +42,7 @@ public class SimpleRecoveryIT extends ESIntegTestCase {
         NumShards numShards = getNumShards("test");
 
         client().index(indexRequest("test").id("1").source(source("1", "test"), XContentType.JSON)).actionGet();
-        FlushResponse flushResponse = client().admin().indices().flush(flushRequest("test")).actionGet();
+        FlushResponse flushResponse = client().admin().indices().prepareFlush("test").get();
         assertThat(flushResponse.getTotalShards(), equalTo(numShards.totalNumShards));
         assertThat(flushResponse.getSuccessfulShards(), equalTo(numShards.numPrimaries));
         assertThat(flushResponse.getFailedShards(), equalTo(0));
