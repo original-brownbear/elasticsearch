@@ -198,7 +198,6 @@ public class CreateIndexIT extends ESIntegTestCase {
             prepareCreate("test").setSettings(
                 Settings.builder()
                     .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS.substring(IndexMetadata.INDEX_SETTING_PREFIX.length()), value)
-                    .build()
             ).get();
             fail("should have thrown an exception about the shard count");
         } catch (IllegalArgumentException e) {
@@ -346,7 +345,10 @@ public class CreateIndexIT extends ESIntegTestCase {
 
             try {
                 response = prepareCreate("test_" + shards + "_" + partitionSize).setSettings(
-                    shardsAndReplicas(shards, shards).put("index.routing_partition_size", partitionSize)
+                    Settings.builder()
+                        .put("index.number_of_shards", shards)
+                        .put("index.number_of_routing_shards", shards)
+                        .put("index.routing_partition_size", partitionSize)
                 ).execute().actionGet();
             } catch (IllegalStateException | IllegalArgumentException e) {
                 return false;

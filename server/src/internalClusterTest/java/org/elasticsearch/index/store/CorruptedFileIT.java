@@ -398,9 +398,7 @@ public class CorruptedFileIT extends ESIntegTestCase {
 
         assertAcked(
             prepareCreate("test").setSettings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "0")
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 4)) // don't go crazy here it must recovery fast
+                shardsAndReplicas(between(1, 4), 0) // don't go crazy here it must recover fast
                     // This does corrupt files on the replica, so we can't check:
                     .put(MockFSIndexStore.INDEX_CHECK_INDEX_ON_CLOSE_SETTING.getKey(), false)
                     .put("index.routing.allocation.include._name", primariesNode.getName())
