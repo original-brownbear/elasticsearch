@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import static org.elasticsearch.common.settings.ClusterSettings.createBuiltInClusterSettings;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 
 public class NodeShutdownAllocationDeciderTests extends ESAllocationTestCase {
@@ -69,12 +70,8 @@ public class NodeShutdownAllocationDeciderTests extends ESAllocationTestCase {
     private final String idxUuid = "test-idx-uuid";
     private final IndexMetadata indexMetadata = IndexMetadata.builder(idxName)
         .settings(
-            Settings.builder()
-                .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+            shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
                 .put(IndexMetadata.SETTING_INDEX_UUID, idxUuid)
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .build()
         )
         .build();
 

@@ -139,6 +139,7 @@ import static java.util.Collections.shuffle;
 import static org.elasticsearch.index.engine.Engine.Operation.Origin.PEER_RECOVERY;
 import static org.elasticsearch.index.engine.Engine.Operation.Origin.PRIMARY;
 import static org.elasticsearch.index.engine.Engine.Operation.Origin.REPLICA;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -1427,12 +1428,7 @@ public abstract class EngineTestCase extends ESTestCase {
 
     public static MapperService createMapperService() throws IOException {
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
-            .settings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-            )
+            .settings(shardsAndReplicas(1, 1).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
             .putMapping("{\"properties\": {}}")
             .build();
         MapperService mapperService = MapperTestUtils.newMapperService(

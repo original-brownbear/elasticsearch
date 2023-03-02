@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.oneOf;
@@ -294,14 +295,7 @@ public class IndexingIT extends ESRestTestCase {
         int numOfReplicas = randomIntBetween(0, nodes.getNewNodes().size() - 1);
         int totalShards = numShards * (numOfReplicas + 1);
         final String index = "test_synced_flush";
-        createIndex(
-            index,
-            Settings.builder()
-                .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), numShards)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, numOfReplicas)
-                .put("index.routing.allocation.include._name", newNodes)
-                .build()
-        );
+        createIndex(index, shardsAndReplicas(numShards, numOfReplicas).put("index.routing.allocation.include._name", newNodes).build());
         ensureGreen(index);
         indexDocs(index, randomIntBetween(0, 100), between(1, 100));
         try (
@@ -373,14 +367,7 @@ public class IndexingIT extends ESRestTestCase {
         int numOfReplicas = randomIntBetween(0, nodes.getNewNodes().size() - 1);
         int totalShards = numShards * (numOfReplicas + 1);
         final String index = "test_flush";
-        createIndex(
-            index,
-            Settings.builder()
-                .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), numShards)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, numOfReplicas)
-                .put("index.routing.allocation.include._name", newNodes)
-                .build()
-        );
+        createIndex(index, shardsAndReplicas(numShards, numOfReplicas).put("index.routing.allocation.include._name", newNodes).build());
         ensureGreen(index);
         indexDocs(index, randomIntBetween(0, 100), between(1, 100));
         try (

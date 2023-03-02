@@ -64,6 +64,7 @@ import static org.elasticsearch.cluster.node.DiscoveryNodeRole.DATA_HOT_NODE_ROL
 import static org.elasticsearch.cluster.node.DiscoveryNodeRole.DATA_WARM_NODE_ROLE;
 import static org.elasticsearch.cluster.node.DiscoveryNodeRole.MASTER_ROLE;
 import static org.elasticsearch.common.settings.ClusterSettings.createBuiltInClusterSettings;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 
 public class ClusterAllocationSimulationTests extends ESAllocationTestCase {
 
@@ -114,10 +115,7 @@ public class ClusterAllocationSimulationTests extends ESAllocationTestCase {
                 metadataBuilder.put(
                     IndexMetadata.builder(indexName)
                         .settings(
-                            Settings.builder()
-                                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, shardCount)
-                                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, replicaCount)
-                                .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+                            shardsAndReplicas(shardCount, replicaCount).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
                                 .put(IndexMetadata.INDEX_ROUTING_REQUIRE_GROUP_PREFIX + ".fake_tier", tier)
                         )
                         .indexWriteLoadForecast(indexWriteLoad)

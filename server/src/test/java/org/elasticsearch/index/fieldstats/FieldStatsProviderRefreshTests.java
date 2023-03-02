@@ -12,13 +12,12 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.indices.IndicesRequestCache;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
 import static org.hamcrest.Matchers.anyOf;
@@ -32,12 +31,7 @@ public class FieldStatsProviderRefreshTests extends ESSingleNodeTestCase {
                 .indices()
                 .prepareCreate("index")
                 .setMapping("s", "type=text")
-                .setSettings(
-                    Settings.builder()
-                        .put(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING.getKey(), true)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                )
+                .setSettings(shardsAndReplicas(1, 0).put(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING.getKey(), true))
                 .get()
         );
 

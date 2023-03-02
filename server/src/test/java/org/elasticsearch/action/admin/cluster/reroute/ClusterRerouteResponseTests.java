@@ -20,7 +20,6 @@ import org.elasticsearch.cluster.routing.allocation.RoutingExplanations;
 import org.elasticsearch.cluster.routing.allocation.command.AllocateReplicaAllocationCommand;
 import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -35,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.elasticsearch.common.util.CollectionUtils.appendToCopy;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 
 public class ClusterRerouteResponseTests extends ESTestCase {
@@ -302,11 +302,8 @@ public class ClusterRerouteResponseTests extends ESTestCase {
                     .put(
                         IndexMetadata.builder("index")
                             .settings(
-                                Settings.builder()
-                                    .put(IndexSettings.INDEX_CHECK_ON_STARTUP.getKey(), true)
+                                shardsAndReplicas(1, 0).put(IndexSettings.INDEX_CHECK_ON_STARTUP.getKey(), true)
                                     .put(IndexSettings.MAX_SCRIPT_FIELDS_SETTING.getKey(), 10)
-                                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                                     .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
                                     .build()
                             )

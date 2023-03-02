@@ -40,6 +40,7 @@ import static com.carrotsearch.randomizedtesting.RandomizedTest.randomAsciiLette
 import static org.elasticsearch.cluster.routing.UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING;
 import static org.elasticsearch.cluster.routing.allocation.decider.EnableAllocationDecider.INDEX_ROUTING_ALLOCATION_ENABLE_SETTING;
 import static org.elasticsearch.cluster.routing.allocation.decider.MaxRetryAllocationDecider.SETTING_ALLOCATION_MAX_RETRY;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.elasticsearch.upgrades.UpgradeWithOldIndexSettingsIT.updateIndexSettingsPermittingSlowlogDeprecationWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -716,14 +717,7 @@ public class RecoveryIT extends AbstractRollingTestCase {
         List<String> nodes = new ArrayList<>(nodeMap.keySet());
 
         if (CLUSTER_TYPE == ClusterType.OLD) {
-            createIndex(
-                indexName,
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, randomInt(2))
-                    .put(IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS, "0-all")
-                    .build()
-            );
+            createIndex(indexName, shardsAndReplicas(1, randomInt(2)).put(IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS, "0-all").build());
             ensureGreen(indexName);
             updateIndexSettings(
                 indexName,

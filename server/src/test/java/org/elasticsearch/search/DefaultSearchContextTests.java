@@ -52,6 +52,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -81,13 +82,10 @@ public class DefaultSearchContextTests extends ESTestCase {
         int maxResultWindow = randomIntBetween(50, 100);
         int maxRescoreWindow = randomIntBetween(50, 100);
         int maxSlicesPerScroll = randomIntBetween(50, 100);
-        Settings settings = Settings.builder()
-            .put("index.max_result_window", maxResultWindow)
+        Settings settings = shardsAndReplicas(2, 1).put("index.max_result_window", maxResultWindow)
             .put("index.max_slices_per_scroll", maxSlicesPerScroll)
             .put("index.max_rescore_window", maxRescoreWindow)
             .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 2)
             .build();
 
         IndexService indexService = mock(IndexService.class);

@@ -46,6 +46,7 @@ import static org.elasticsearch.cluster.routing.ShardRoutingState.INITIALIZING;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.STARTED;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.UNASSIGNED;
 import static org.elasticsearch.common.settings.ClusterSettings.createBuiltInClusterSettings;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 
 public class FilterAllocationDeciderTests extends ESAllocationTestCase {
@@ -297,10 +298,7 @@ public class FilterAllocationDeciderTests extends ESAllocationTestCase {
     public void testGetForcedInitialShardAllocationToNodes() {
         var index = IndexMetadata.builder("index")
             .settings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                    .put("index.routing.allocation.initial_recovery._id", "node-1")
+                shardsAndReplicas(1, 0).put("index.routing.allocation.initial_recovery._id", "node-1")
                     .put(IndexMetadata.SETTING_INDEX_UUID, "uuid")
                     .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             )

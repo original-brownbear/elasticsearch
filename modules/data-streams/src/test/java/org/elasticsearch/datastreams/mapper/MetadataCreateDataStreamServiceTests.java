@@ -23,6 +23,7 @@ import java.util.List;
 
 import static org.elasticsearch.cluster.metadata.DataStreamTestHelper.generateMapping;
 import static org.elasticsearch.cluster.metadata.MetadataCreateDataStreamService.validateTimestampFieldMapping;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 
 public class MetadataCreateDataStreamServiceTests extends ESTestCase {
@@ -68,12 +69,7 @@ public class MetadataCreateDataStreamServiceTests extends ESTestCase {
     MappingLookup createMappingLookup(String mapping) throws IOException {
         String indexName = "test";
         IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-            )
+            .settings(shardsAndReplicas(1, 1).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
             .putMapping(mapping)
             .build();
         IndicesModule indicesModule = new IndicesModule(List.of());

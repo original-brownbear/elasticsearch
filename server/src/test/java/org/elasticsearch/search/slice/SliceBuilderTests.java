@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.elasticsearch.test.EqualsHashCodeTestUtils.checkEqualsAndHashCode;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -90,13 +91,12 @@ public class SliceBuilderTests extends ESTestCase {
     }
 
     private IndexSettings createIndexSettings(Version indexVersionCreated) {
-        Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, indexVersionCreated)
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-            .build();
-        IndexMetadata indexState = IndexMetadata.builder("index").settings(settings).build();
-        return new IndexSettings(indexState, Settings.EMPTY);
+        return new IndexSettings(
+            IndexMetadata.builder("index")
+                .settings(shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, indexVersionCreated))
+                .build(),
+            Settings.EMPTY
+        );
     }
 
     private ShardSearchRequest createPointInTimeRequest(int shardIndex, int numShards) {

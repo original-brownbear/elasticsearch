@@ -68,6 +68,7 @@ import static java.util.stream.Collectors.toList;
 import static org.elasticsearch.cluster.metadata.IndexNameExpressionResolver.SYSTEM_INDEX_ENFORCEMENT_VERSION;
 import static org.elasticsearch.cluster.routing.UnassignedInfo.INDEX_DELAYED_NODE_LEFT_TIMEOUT_SETTING;
 import static org.elasticsearch.cluster.routing.allocation.decider.MaxRetryAllocationDecider.SETTING_ALLOCATION_MAX_RETRY;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.elasticsearch.test.MapMatcher.assertMap;
 import static org.elasticsearch.test.MapMatcher.matchesMap;
 import static org.elasticsearch.transport.RemoteClusterService.REMOTE_CLUSTER_COMPRESS;
@@ -1501,9 +1502,7 @@ public class FullClusterRestartIT extends ParameterizedFullClusterRestartTestCas
      */
     public void testOperationBasedRecovery() throws Exception {
         if (isRunningAgainstOldCluster()) {
-            Settings.Builder settings = Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1);
+            Settings.Builder settings = shardsAndReplicas(1, 1);
             if (minimumNodeVersion().before(Version.V_8_0_0) && randomBoolean()) {
                 settings.put(IndexSettings.INDEX_SOFT_DELETES_SETTING.getKey(), randomBoolean());
             }
@@ -1741,9 +1740,7 @@ public class FullClusterRestartIT extends ParameterizedFullClusterRestartTestCas
         assumeTrue("soft deletes must be enabled on 8.0+", getOldClusterVersion().before(Version.V_8_0_0));
         final String snapshot = "snapshot-" + index;
         if (isRunningAgainstOldCluster()) {
-            final Settings.Builder settings = Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1);
+            final Settings.Builder settings = shardsAndReplicas(1, 1);
             settings.put(IndexSettings.INDEX_SOFT_DELETES_SETTING.getKey(), false);
             createIndex(index, settings.build());
             ensureGreen(index);
@@ -1801,10 +1798,7 @@ public class FullClusterRestartIT extends ParameterizedFullClusterRestartTestCas
     public void testForbidDisableSoftDeletesOnRestore() throws Exception {
         final String snapshot = "snapshot-" + index;
         if (isRunningAgainstOldCluster()) {
-            final Settings.Builder settings = Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1)
-                .put(IndexSettings.INDEX_SOFT_DELETES_SETTING.getKey(), true);
+            final Settings.Builder settings = shardsAndReplicas(1, 1).put(IndexSettings.INDEX_SOFT_DELETES_SETTING.getKey(), true);
             createIndex(index, settings.build());
             ensureGreen(index);
             int numDocs = randomIntBetween(0, 100);

@@ -10,7 +10,6 @@ package org.elasticsearch.indices;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.RoutingNodesHelper;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
@@ -90,11 +89,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
         internalCluster().getInstance(MockIndexEventListener.TestEventListener.class, node2).setNewDelegate(listener);
         internalCluster().getInstance(MockIndexEventListener.TestEventListener.class, node3).setNewDelegate(listener);
 
-        client().admin()
-            .indices()
-            .prepareCreate("test")
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 3).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 1))
-            .get();
+        client().admin().indices().prepareCreate("test").setSettings(shardsAndReplicas(3, 1)).get();
         ensureGreen("test");
         assertThat("beforeIndexAddedToCluster called only once", beforeAddedCount.get(), equalTo(1));
         assertThat("beforeIndexCreated called on each data node", allCreatedCount.get(), greaterThanOrEqualTo(3));

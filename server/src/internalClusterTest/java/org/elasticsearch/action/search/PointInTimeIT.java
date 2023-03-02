@@ -275,12 +275,15 @@ public class PointInTimeIT extends ESIntegTestCase {
     }
 
     public void testCanMatch() throws Exception {
-        final Settings.Builder settings = Settings.builder()
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, randomIntBetween(5, 10))
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-            .put(IndexSettings.INDEX_SEARCH_IDLE_AFTER.getKey(), TimeValue.timeValueMillis(randomIntBetween(50, 100)));
-        assertAcked(prepareCreate("test").setSettings(settings).setMapping("""
-            {"properties":{"created_date":{"type": "date", "format": "yyyy-MM-dd"}}}"""));
+        assertAcked(
+            prepareCreate("test").setSettings(
+                shardsAndReplicas(randomIntBetween(5, 10), 0).put(
+                    IndexSettings.INDEX_SEARCH_IDLE_AFTER.getKey(),
+                    TimeValue.timeValueMillis(randomIntBetween(50, 100))
+                )
+            ).setMapping("""
+                {"properties":{"created_date":{"type": "date", "format": "yyyy-MM-dd"}}}""")
+        );
         ensureGreen("test");
         String pitId = openPointInTime(new String[] { "test*" }, TimeValue.timeValueMinutes(2));
         try {

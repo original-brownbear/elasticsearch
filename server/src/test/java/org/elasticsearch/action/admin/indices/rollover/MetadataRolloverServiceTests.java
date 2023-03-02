@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -178,11 +179,8 @@ public class MetadataRolloverServiceTests extends ESTestCase {
         String index2 = randomAlphaOfLength(10);
         String aliasWithNoWriteIndex = randomAlphaOfLength(10);
         Boolean firstIsWriteIndex = randomFrom(false, null);
-        final Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
             .build();
         Metadata.Builder metadataBuilder = Metadata.builder()
             .put(
@@ -289,11 +287,8 @@ public class MetadataRolloverServiceTests extends ESTestCase {
         final RolloverRequest rolloverRequest = new RolloverRequest(alias, randomAlphaOfLength(10));
         final ActiveShardCount activeShardCount = randomBoolean() ? ActiveShardCount.ALL : ActiveShardCount.ONE;
         rolloverRequest.getCreateIndexRequest().waitForActiveShards(activeShardCount);
-        final Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
             .build();
         rolloverRequest.getCreateIndexRequest().settings(settings);
         final CreateIndexClusterStateUpdateRequest createIndexRequest = MetadataRolloverService.prepareCreateIndexRequest(
@@ -312,11 +307,8 @@ public class MetadataRolloverServiceTests extends ESTestCase {
         final RolloverRequest rolloverRequest = new RolloverRequest(dataStream.getName(), randomAlphaOfLength(10));
         final ActiveShardCount activeShardCount = randomBoolean() ? ActiveShardCount.ALL : ActiveShardCount.ONE;
         rolloverRequest.getCreateIndexRequest().waitForActiveShards(activeShardCount);
-        final Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
             .build();
         rolloverRequest.getCreateIndexRequest().settings(settings);
         final CreateIndexClusterStateUpdateRequest createIndexRequest = MetadataRolloverService.prepareDataStreamCreateIndexRequest(
@@ -748,11 +740,8 @@ public class MetadataRolloverServiceTests extends ESTestCase {
     }
 
     private static IndexMetadata createMetadata(String indexName) {
-        final Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
             .build();
         return IndexMetadata.builder(indexName)
             .creationDate(System.currentTimeMillis() - TimeValue.timeValueHours(3).getMillis())

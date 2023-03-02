@@ -34,6 +34,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.lessThan;
 
@@ -111,13 +112,10 @@ public class ShardSnapshotTaskRunnerTests extends ESTestCase {
     public static SnapshotShardContext dummyContext(final SnapshotId snapshotId, final long startTime) {
         IndexId indexId = new IndexId(randomAlphaOfLength(10), UUIDs.randomBase64UUID());
         ShardId shardId = new ShardId(indexId.getName(), indexId.getId(), 1);
-        Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .build();
         IndexSettings indexSettings = new IndexSettings(
-            IndexMetadata.builder(indexId.getName()).settings(settings).build(),
+            IndexMetadata.builder(indexId.getName())
+                .settings(shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
+                .build(),
             Settings.EMPTY
         );
         Store dummyStore = new Store(shardId, indexSettings, new ByteBuffersDirectory(), new DummyShardLock(shardId));

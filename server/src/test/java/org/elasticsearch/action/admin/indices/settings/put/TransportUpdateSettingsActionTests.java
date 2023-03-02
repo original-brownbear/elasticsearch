@@ -31,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -45,13 +46,7 @@ public class TransportUpdateSettingsActionTests extends ESTestCase {
                 .put(
                     IndexMetadata.builder(".my-system")
                         .system(true)
-                        .settings(
-                            Settings.builder()
-                                .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                                .build()
-                        )
+                        .settings(shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT))
                         .build(),
                     true
                 )

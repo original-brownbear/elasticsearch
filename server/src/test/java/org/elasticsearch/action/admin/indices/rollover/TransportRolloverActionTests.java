@@ -73,6 +73,7 @@ import static java.util.Collections.emptyList;
 import static org.elasticsearch.action.admin.indices.rollover.TransportRolloverAction.buildStats;
 import static org.elasticsearch.action.admin.indices.rollover.TransportRolloverAction.evaluateConditions;
 import static org.elasticsearch.test.ActionListenerUtils.anyActionListener;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -216,12 +217,10 @@ public class TransportRolloverActionTests extends ESTestCase {
             minPrimaryShardDocsCondition
         );
 
-        final Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-            .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, randomIntBetween(1, 1000))
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, randomInt(10))
-            .build();
+        final Settings settings = shardsAndReplicas(randomIntBetween(1, 1000), randomInt(10)).put(
+            IndexMetadata.SETTING_VERSION_CREATED,
+            Version.CURRENT
+        ).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()).build();
 
         final IndexMetadata metadata = IndexMetadata.builder(randomAlphaOfLength(10))
             .creationDate(System.currentTimeMillis() - TimeValue.timeValueHours(randomIntBetween(5, 10)).getMillis())
@@ -285,12 +284,10 @@ public class TransportRolloverActionTests extends ESTestCase {
             minPrimaryShardDocsCondition
         );
 
-        final Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-            .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, randomIntBetween(1, 1000))
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, randomInt(10))
-            .build();
+        final Settings settings = shardsAndReplicas(randomIntBetween(1, 1000), randomInt(10)).put(
+            IndexMetadata.SETTING_VERSION_CREATED,
+            Version.CURRENT
+        ).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()).build();
 
         final IndexMetadata metadata = IndexMetadata.builder(randomAlphaOfLength(10))
             .creationDate(System.currentTimeMillis() - TimeValue.timeValueHours(randomIntBetween(5, 10)).getMillis())
@@ -447,11 +444,8 @@ public class TransportRolloverActionTests extends ESTestCase {
     }
 
     private static IndexMetadata createMetadata(String indexName) {
-        final Settings settings = Settings.builder()
-            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
             .put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID())
-            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
             .build();
         return IndexMetadata.builder(indexName)
             .creationDate(System.currentTimeMillis() - TimeValue.timeValueHours(3).getMillis())
