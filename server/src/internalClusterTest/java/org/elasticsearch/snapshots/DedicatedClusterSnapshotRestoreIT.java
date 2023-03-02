@@ -33,10 +33,10 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.network.CloseableChannel;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.seqno.RetentionLeaseActions;
@@ -532,7 +532,8 @@ public class DedicatedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTest
                 } catch (AssertionError ex) {
                     clusterStateError.set(ex);
                 } finally {
-                    CloseableChannel.closeChannel(clusterStateRequest.getHttpChannel());
+                    org.elasticsearch.http.HttpChannel channel = clusterStateRequest.getHttpChannel();
+                    Releasables.close(channel);
                 }
                 clusterStateLatch.countDown();
             }

@@ -32,6 +32,7 @@ import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.RefCounted;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.tasks.Task;
@@ -219,7 +220,7 @@ public abstract class AbstractHttpServerTransport extends AbstractLifecycleCompo
         synchronized (httpServerChannels) {
             if (httpServerChannels.isEmpty() == false) {
                 try {
-                    CloseableChannel.closeChannels(new ArrayList<>(httpServerChannels), true);
+                    CloseableChannel.closeChannels(new ArrayList<>(httpServerChannels));
                 } catch (Exception e) {
                     logger.warn("exception while closing channels", e);
                 } finally {
@@ -229,7 +230,7 @@ public abstract class AbstractHttpServerTransport extends AbstractLifecycleCompo
         }
         try {
             refCounted.decRef();
-            CloseableChannel.closeChannels(new ArrayList<>(httpChannels), true);
+            CloseableChannel.closeChannels(new ArrayList<>(httpChannels));
         } catch (Exception e) {
             logger.warn("unexpected exception while closing http channels", e);
         }
@@ -319,7 +320,7 @@ public abstract class AbstractHttpServerTransport extends AbstractLifecycleCompo
                 logger.warn(() -> format("caught exception while handling client http traffic, closing connection %s", channel), e);
             }
         } finally {
-            CloseableChannel.closeChannel(channel);
+            Releasables.close(channel);
         }
     }
 
@@ -484,7 +485,7 @@ public abstract class AbstractHttpServerTransport extends AbstractLifecycleCompo
 
     private static ActionListener<Void> earlyResponseListener(HttpRequest request, HttpChannel httpChannel) {
         if (HttpUtils.shouldCloseConnection(request)) {
-            return ActionListener.running(() -> CloseableChannel.closeChannel(httpChannel));
+            return ActionListener.running(() -> Releasables.close(httpChannel));
         } else {
             return ActionListener.noop();
         }

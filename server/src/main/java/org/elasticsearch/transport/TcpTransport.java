@@ -44,6 +44,7 @@ import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.core.Booleans;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.monitor.jvm.JvmInfo;
@@ -310,7 +311,11 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
             if (isClosing.compareAndSet(false, true)) {
                 try {
                     boolean block = lifecycle.stopped() && Transports.isTransportThread(Thread.currentThread()) == false;
-                    CloseableChannel.closeChannels(channels, block);
+                    if (block) {
+                        CloseableChannel.closeChannels(channels);
+                    } else {
+                        Releasables.close(channels);
+                    }
                 } finally {
                     // Call the super method to trigger listeners
                     super.close();
@@ -412,11 +417,11 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
                 }
                 channels.add(channel);
             } catch (ConnectTransportException e) {
-                CloseableChannel.closeChannels(channels, false);
+                Releasables.close(channels);
                 listener.onFailure(e);
                 return;
             } catch (Exception e) {
-                CloseableChannel.closeChannels(channels, false);
+                Releasables.close(channels);
                 listener.onFailure(new ConnectTransportException(node, "general node connection failure", e));
                 return;
             }
@@ -698,12 +703,12 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
                     e -> logger.warn(() -> "Error closing serverChannel for profile [" + profile + "]", e)
                 );
                 channels.forEach(c -> c.addCloseListener(closeFailLogger));
-                CloseableChannel.closeChannels(channels, true);
+                CloseableChannel.closeChannels(channels);
             }
             serverChannels.clear();
 
             // close all of the incoming channels. The closeChannels method takes a list so we must convert the set.
-            CloseableChannel.closeChannels(new ArrayList<>(acceptedChannels), true);
+            CloseableChannel.closeChannels(new ArrayList<>(acceptedChannels));
             acceptedChannels.clear();
 
             stopInternal();
@@ -763,7 +768,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
                     outboundHandler.sendBytes(
                         channel,
                         new BytesArray(e.getMessage().getBytes(StandardCharsets.UTF_8)),
-                        ActionListener.running(() -> CloseableChannel.closeChannel(channel))
+                        ActionListener.running(() -> Releasables.close(channel))
                     );
                     closeChannel = false;
                 }
@@ -776,7 +781,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
             }
         } finally {
             if (closeChannel) {
-                CloseableChannel.closeChannel(channel);
+                Releasables.close(channel);
             }
         }
     }
@@ -1163,7 +1168,7 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
 
         private void closeAndFail(Exception e) {
             try {
-                CloseableChannel.closeChannels(channels, false);
+                Releasables.close(channels);
             } catch (Exception ex) {
                 e.addSuppressed(ex);
             } finally {

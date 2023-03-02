@@ -35,7 +35,6 @@ import io.netty.util.AttributeKey;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.common.network.CloseableChannel;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
@@ -46,6 +45,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Nullable;
+import org.elasticsearch.core.Releasables;
 import org.elasticsearch.http.AbstractHttpServerTransport;
 import org.elasticsearch.http.HttpChannel;
 import org.elasticsearch.http.HttpHandlingSettings;
@@ -305,16 +305,16 @@ public class Netty4HttpServerTransport extends AbstractHttpServerTransport {
 
         if (SSLExceptionHelper.isNotSslRecordException(cause)) {
             logger.warn("received plaintext http traffic on an https channel, closing connection {}", channel);
-            CloseableChannel.closeChannel(channel);
+            Releasables.close(channel);
         } else if (SSLExceptionHelper.isCloseDuringHandshakeException(cause)) {
             logger.debug("connection {} closed during ssl handshake", channel);
-            CloseableChannel.closeChannel(channel);
+            Releasables.close(channel);
         } else if (SSLExceptionHelper.isInsufficientBufferRemainingException(cause)) {
             logger.debug("connection {} closed abruptly", channel);
-            CloseableChannel.closeChannel(channel);
+            Releasables.close(channel);
         } else if (SSLExceptionHelper.isReceivedCertificateUnknownException(cause)) {
             logger.warn("http client did not trust this server's certificate, closing connection {}", channel);
-            CloseableChannel.closeChannel(channel);
+            Releasables.close(channel);
         } else if (cause instanceof ReadTimeoutException) {
             super.onException(channel, new HttpReadTimeoutException(readTimeoutMillis, cause));
         } else {
