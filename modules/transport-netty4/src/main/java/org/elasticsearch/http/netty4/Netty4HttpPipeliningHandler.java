@@ -352,6 +352,7 @@ public class Netty4HttpPipeliningHandler extends ChannelDuplexHandler {
         try {
             promise.setFailure(ex);
         } catch (RuntimeException e) {
+            e.addSuppressed(ex);
             logger.error("unexpected error while releasing pipelined http responses", e);
         }
     }
