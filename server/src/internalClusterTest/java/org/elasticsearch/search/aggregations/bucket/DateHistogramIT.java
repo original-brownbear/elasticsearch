@@ -1046,9 +1046,7 @@ public class DateHistogramIT extends ESIntegTestCase {
         ZonedDateTime baseKey = Instant.ofEpochMilli(intervalMillis * (base.toInstant().toEpochMilli() / intervalMillis))
             .atZone(ZoneOffset.UTC);
 
-        prepareCreate("idx2").setSettings(
-            Settings.builder().put(indexSettings()).put("index.number_of_shards", 1).put("index.number_of_replicas", 0)
-        ).get();
+        prepareCreate("idx2").setSettings(shardsAndReplicas(1, 0)).get();
         int numOfBuckets = randomIntBetween(3, 6);
         int emptyBucketIndex = randomIntBetween(1, numOfBuckets - 2); // should be in the middle
 
@@ -1155,9 +1153,7 @@ public class DateHistogramIT extends ESIntegTestCase {
      */
     public void testSingleValueFieldWithExtendedBoundsTimezone() throws Exception {
         String index = "test12278";
-        prepareCreate(index).setSettings(
-            Settings.builder().put(indexSettings()).put("index.number_of_shards", 1).put("index.number_of_replicas", 0)
-        ).get();
+        prepareCreate(index).setSettings(shardsAndReplicas(1, 0)).get();
 
         DateMathParser parser = DateFormatter.forPattern("yyyy/MM/dd HH:mm:ss||yyyy/MM/dd||epoch_millis").toDateMathParser();
 
@@ -1221,9 +1217,7 @@ public class DateHistogramIT extends ESIntegTestCase {
      */
     public void testSingleValueFieldWithExtendedBoundsOffset() throws Exception {
         String index = "test23776";
-        prepareCreate(index).setSettings(
-            Settings.builder().put(indexSettings()).put("index.number_of_shards", 1).put("index.number_of_replicas", 0)
-        ).get();
+        prepareCreate(index).setSettings(shardsAndReplicas(1, 0)).get();
 
         List<IndexRequestBuilder> builders = new ArrayList<>();
         DateFormatter formatter = DateFormatter.forPattern("date_optional_time");

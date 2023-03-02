@@ -45,6 +45,7 @@ import java.util.Set;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.INDEX_HIDDEN_SETTING;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.parseIndexNameCounter;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -79,13 +80,7 @@ public class IndexMetadataTests extends ESTestCase {
         Double indexWriteLoadForecast = randomBoolean() ? randomDoubleBetween(0.0, 128, true) : null;
         Long shardSizeInBytesForecast = randomBoolean() ? randomLongBetween(1024, 10240) : null;
         IndexMetadata metadata = IndexMetadata.builder("foo")
-            .settings(
-                Settings.builder()
-                    .put("index.version.created", 1)
-                    .put("index.number_of_shards", numShard)
-                    .put("index.number_of_replicas", numberOfReplicas)
-                    .build()
-            )
+            .settings(shardsAndReplicas(numShard, numberOfReplicas).put("index.version.created", 1).build())
             .creationDate(randomLong())
             .primaryTerm(0, 2)
             .setRoutingNumShards(32)
@@ -176,13 +171,7 @@ public class IndexMetadataTests extends ESTestCase {
     public void testSelectShrinkShards() {
         int numberOfReplicas = randomIntBetween(0, 10);
         IndexMetadata metadata = IndexMetadata.builder("foo")
-            .settings(
-                Settings.builder()
-                    .put("index.version.created", 1)
-                    .put("index.number_of_shards", 32)
-                    .put("index.number_of_replicas", numberOfReplicas)
-                    .build()
-            )
+            .settings(shardsAndReplicas(32, numberOfReplicas).put("index.version.created", 1).build())
             .creationDate(randomLong())
             .build();
         Set<ShardId> shardIds = IndexMetadata.selectShrinkShards(0, metadata, 8);
@@ -226,25 +215,13 @@ public class IndexMetadataTests extends ESTestCase {
         int numTargetShards = randomFrom(4, 6, 8, 12);
 
         IndexMetadata split = IndexMetadata.builder("foo")
-            .settings(
-                Settings.builder()
-                    .put("index.version.created", 1)
-                    .put("index.number_of_shards", 2)
-                    .put("index.number_of_replicas", 0)
-                    .build()
-            )
+            .settings(shardsAndReplicas(2, 0).put("index.version.created", 1))
             .creationDate(randomLong())
             .setRoutingNumShards(numTargetShards * 2)
             .build();
 
         IndexMetadata shrink = IndexMetadata.builder("foo")
-            .settings(
-                Settings.builder()
-                    .put("index.version.created", 1)
-                    .put("index.number_of_shards", 32)
-                    .put("index.number_of_replicas", 0)
-                    .build()
-            )
+            .settings(shardsAndReplicas(32, 0).put("index.version.created", 1))
             .creationDate(randomLong())
             .build();
         int shard = randomIntBetween(0, numTargetShards - 1);
@@ -265,13 +242,7 @@ public class IndexMetadataTests extends ESTestCase {
 
     public void testSelectSplitShard() {
         IndexMetadata metadata = IndexMetadata.builder("foo")
-            .settings(
-                Settings.builder()
-                    .put("index.version.created", 1)
-                    .put("index.number_of_shards", 2)
-                    .put("index.number_of_replicas", 0)
-                    .build()
-            )
+            .settings(shardsAndReplicas(2, 0).put("index.version.created", 1))
             .creationDate(randomLong())
             .setRoutingNumShards(4)
             .build();
@@ -301,11 +272,7 @@ public class IndexMetadataTests extends ESTestCase {
     }
 
     public void testIndexFormat() {
-        Settings defaultSettings = Settings.builder()
-            .put("index.version.created", 1)
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 1)
-            .build();
+        Settings defaultSettings = shardsAndReplicas(1, 1).put("index.version.created", 1).build();
 
         // matching version
         {

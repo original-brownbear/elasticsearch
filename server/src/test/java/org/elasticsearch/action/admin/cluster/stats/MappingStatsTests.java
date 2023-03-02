@@ -30,13 +30,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
+
 public class MappingStatsTests extends AbstractWireSerializingTestCase<MappingStats> {
 
-    private static final Settings SINGLE_SHARD_NO_REPLICAS = Settings.builder()
-        .put("index.number_of_replicas", 0)
-        .put("index.number_of_shards", 1)
-        .put("index.version.created", Version.CURRENT)
-        .build();
+    private static final Settings SINGLE_SHARD_NO_REPLICAS = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT).build();
 
     public static final String MAPPING_TEMPLATE = """
         {

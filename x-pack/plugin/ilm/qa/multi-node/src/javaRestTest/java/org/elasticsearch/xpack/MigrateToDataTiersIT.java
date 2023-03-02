@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.singletonMap;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.elasticsearch.xpack.TimeSeriesRestDriver.createIndexWithSettings;
 import static org.elasticsearch.xpack.TimeSeriesRestDriver.createNewSingletonPolicy;
 import static org.elasticsearch.xpack.TimeSeriesRestDriver.createPolicy;
@@ -121,10 +122,7 @@ public class MigrateToDataTiersIT extends ESRestTestCase {
             client(),
             index,
             alias,
-            Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .put(LifecycleSettings.LIFECYCLE_NAME, policy)
+            shardsAndReplicas(1, 0).put(LifecycleSettings.LIFECYCLE_NAME, policy)
                 .putNull(DataTier.TIER_PREFERENCE)
                 .put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias)
         );
@@ -306,7 +304,7 @@ public class MigrateToDataTiersIT extends ESRestTestCase {
         String composableTemplate = "no_need_to_migrate_composable_template";
         {
             Request composableTemplateRequest = new Request("PUT", "/_index_template/" + composableTemplate);
-            Settings indexSettings = Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0).build();
+            Settings indexSettings = shardsAndReplicas(1, 0).build();
             composableTemplateRequest.setJsonEntity(
                 "{\"index_patterns\":  [\"1notreallyimportant-*\"], \"template\":{\"settings\":  " + Strings.toString(indexSettings) + "}}"
             );
@@ -397,10 +395,7 @@ public class MigrateToDataTiersIT extends ESRestTestCase {
             client(),
             index,
             alias,
-            Settings.builder()
-                .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                .put(LifecycleSettings.LIFECYCLE_NAME, policy)
+            shardsAndReplicas(1, 0).put(LifecycleSettings.LIFECYCLE_NAME, policy)
                 .putNull(DataTier.TIER_PREFERENCE) // since we always enforce a tier preference, this will be ignored (i.e. data_content)
                 .put(RolloverAction.LIFECYCLE_ROLLOVER_ALIAS, alias)
         );

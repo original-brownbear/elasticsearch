@@ -24,7 +24,6 @@ import org.elasticsearch.cluster.metadata.IndexAbstraction;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.common.StopWatch;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -702,15 +701,7 @@ public class IndexAliasesIT extends ESIntegTestCase {
 
     public void testWaitForAliasCreationSingleShard() throws Exception {
         logger.info("--> creating index [test]");
-        assertAcked(
-            admin().indices()
-                .create(
-                    createIndexRequest("test").settings(
-                        Settings.builder().put("index.number_of_replicas", 0).put("index.number_of_shards", 1)
-                    )
-                )
-                .get()
-        );
+        assertAcked(admin().indices().create(createIndexRequest("test").settings(shardsAndReplicas(1, 0))).get());
 
         ensureGreen();
 

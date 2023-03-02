@@ -55,6 +55,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.elasticsearch.cluster.metadata.LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.sameInstance;
@@ -105,10 +106,7 @@ public class PolicyStepsRegistryTests extends ESTestCase {
         lifecycleState.setPhaseDefinition(phaseJson);
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
             .settings(
-                Settings.builder()
-                    .put("index.number_of_shards", 1)
-                    .put("index.number_of_replicas", 0)
-                    .put("index.version.created", Version.CURRENT)
+                shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
                     .put(LifecycleSettings.LIFECYCLE_NAME, "policy")
                     .build()
             )
@@ -152,10 +150,7 @@ public class PolicyStepsRegistryTests extends ESTestCase {
         LifecyclePolicyMetadata policyMetadata = new LifecyclePolicyMetadata(policy, Collections.emptyMap(), 1, randomNonNegativeLong());
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
             .settings(
-                Settings.builder()
-                    .put("index.number_of_shards", 1)
-                    .put("index.number_of_replicas", 0)
-                    .put("index.version.created", Version.CURRENT)
+                shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
                     .put(LifecycleSettings.LIFECYCLE_NAME, "policy")
                     .build()
             )
@@ -182,10 +177,7 @@ public class PolicyStepsRegistryTests extends ESTestCase {
         lifecycleState.setPhaseDefinition(phaseJson);
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
             .settings(
-                Settings.builder()
-                    .put("index.number_of_shards", 1)
-                    .put("index.number_of_replicas", 0)
-                    .put("index.version.created", Version.CURRENT)
+                shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
                     .put(LifecycleSettings.LIFECYCLE_NAME, "policy")
                     .build()
             )
@@ -226,10 +218,7 @@ public class PolicyStepsRegistryTests extends ESTestCase {
             .put(
                 IndexMetadata.builder("test")
                     .settings(
-                        Settings.builder()
-                            .put("index.uuid", "uuid")
-                            .put("index.number_of_shards", 1)
-                            .put("index.number_of_replicas", 0)
+                        shardsAndReplicas(1, 0).put("index.uuid", "uuid")
                             .put("index.version.created", Version.CURRENT.id)
                             .put(LifecycleSettings.LIFECYCLE_NAME, policyName)
                     )
@@ -395,10 +384,7 @@ public class PolicyStepsRegistryTests extends ESTestCase {
             .put(
                 IndexMetadata.builder("test")
                     .settings(
-                        Settings.builder()
-                            .put("index.uuid", "uuid")
-                            .put("index.number_of_shards", 1)
-                            .put("index.number_of_replicas", 0)
+                        shardsAndReplicas(1, 0).put("index.uuid", "uuid")
                             .put("index.version.created", Version.CURRENT.id)
                             .put(LifecycleSettings.LIFECYCLE_NAME, policyName)
                     )
@@ -482,10 +468,7 @@ public class PolicyStepsRegistryTests extends ESTestCase {
             .build();
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
             .settings(
-                Settings.builder()
-                    .put("index.number_of_shards", 1)
-                    .put("index.number_of_replicas", 0)
-                    .put("index.version.created", Version.CURRENT)
+                shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
                     .put(LifecycleSettings.LIFECYCLE_NAME, "policy")
                     .build()
             )

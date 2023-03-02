@@ -37,6 +37,7 @@ import java.util.function.IntFunction;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.INITIALIZING;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.STARTED;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.UNASSIGNED;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -503,13 +504,7 @@ public class IndexBalanceTests extends ESAllocationTestCase {
     ) {
         final var inSyncIds = randomList(numberOfShards, numberOfShards, () -> UUIDs.randomBase64UUID(random()));
         final var indexMetadataBuilder = IndexMetadata.builder(indexName)
-            .settings(
-                Settings.builder()
-                    .put("index.number_of_shards", numberOfShards)
-                    .put("index.number_of_replicas", 0)
-                    .put("index.version.created", Version.CURRENT)
-                    .build()
-            );
+            .settings(shardsAndReplicas(numberOfShards, 0).put("index.version.created", Version.CURRENT));
         for (int shardId = 0; shardId < numberOfShards; shardId++) {
             indexMetadataBuilder.putInSyncAllocationIds(shardId, Set.of(inSyncIds.get(shardId)));
         }

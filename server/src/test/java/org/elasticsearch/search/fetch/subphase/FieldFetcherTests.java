@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 import static java.util.Collections.emptyMap;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.elasticsearch.xcontent.ObjectPath.eval;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
@@ -1250,10 +1251,7 @@ public class FieldFetcherTests extends MapperServiceTestCase {
         MapperService mapperService,
         BiFunction<MappedFieldType, FieldDataContext, IndexFieldData<?>> indexFieldDataLookup
     ) {
-        Settings settings = Settings.builder()
-            .put("index.version.created", Version.CURRENT)
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
+        Settings settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
             .put(IndexMetadata.SETTING_INDEX_UUID, "uuid")
             .build();
         IndexMetadata indexMetadata = new IndexMetadata.Builder("test").settings(settings).build();

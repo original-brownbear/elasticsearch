@@ -70,6 +70,7 @@ import static org.elasticsearch.cluster.routing.ShardRoutingState.STARTED;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.UNASSIGNED;
 import static org.elasticsearch.cluster.routing.TestShardRouting.newShardRouting;
 import static org.elasticsearch.common.settings.ClusterSettings.createBuiltInClusterSettings;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
@@ -597,13 +598,7 @@ public class DesiredBalanceComputerTests extends ESTestCase {
             var inSyncIds = randomList(shards * (replicas + 1), shards * (replicas + 1), () -> UUIDs.randomBase64UUID(random()));
 
             var indexMetadataBuilder = IndexMetadata.builder(indexName)
-                .settings(
-                    Settings.builder()
-                        .put("index.number_of_shards", shards)
-                        .put("index.number_of_replicas", replicas)
-                        .put("index.version.created", Version.CURRENT)
-                        .build()
-                );
+                .settings(shardsAndReplicas(shards, replicas).put("index.version.created", Version.CURRENT));
             for (int shard = 0; shard < shards; shard++) {
                 indexMetadataBuilder.putInSyncAllocationIds(
                     shard,
@@ -713,10 +708,7 @@ public class DesiredBalanceComputerTests extends ESTestCase {
             metadataBuilder.put(
                 IndexMetadata.builder(indexName)
                     .settings(
-                        Settings.builder()
-                            .put("index.number_of_shards", 1)
-                            .put("index.number_of_replicas", 1)
-                            .put("index.version.created", Version.CURRENT)
+                        shardsAndReplicas(1, 1).put("index.version.created", Version.CURRENT)
                             .put("index.routing.allocation.exclude._name", "node-2")
                             .build()
                     )
@@ -753,12 +745,8 @@ public class DesiredBalanceComputerTests extends ESTestCase {
             metadataBuilder.put(
                 IndexMetadata.builder(indexName)
                     .settings(
-                        Settings.builder()
-                            .put("index.number_of_shards", 1)
-                            .put("index.number_of_replicas", 0)
-                            .put("index.version.created", Version.CURRENT)
+                        shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
                             .put("index.routing.allocation.exclude._name", "node-2")
-                            .build()
                     )
             );
 

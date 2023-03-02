@@ -32,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
@@ -206,7 +207,7 @@ public class FollowIndexSecurityIT extends ESCCRRestTestCase {
         final String forgetFollower = "forget-follower";
         if ("leader".equals(targetCluster)) {
             logger.info("running against leader cluster");
-            final Settings indexSettings = Settings.builder().put("index.number_of_replicas", 0).put("index.number_of_shards", 1).build();
+            final Settings indexSettings = shardsAndReplicas(1, 0).build();
             createIndex(adminClient(), forgetLeader, indexSettings);
         } else {
             logger.info("running against follower cluster");
@@ -256,11 +257,7 @@ public class FollowIndexSecurityIT extends ESCCRRestTestCase {
         final String cleanFollower = "clean-follower";
         if ("leader".equals(targetCluster)) {
             logger.info("running against leader cluster");
-            final Settings indexSettings = Settings.builder()
-                .put("index.number_of_replicas", 0)
-                .put("index.number_of_shards", 1)
-                .put("index.soft_deletes.enabled", true)
-                .build();
+            final Settings indexSettings = shardsAndReplicas(1, 0).put("index.soft_deletes.enabled", true).build();
             createIndex(adminClient(), cleanLeader, indexSettings);
         } else {
             logger.info("running against follower cluster");

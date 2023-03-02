@@ -136,7 +136,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
 
     public void testNodeReplacementOnlyAllowsShardsFromReplacedNode() throws Exception {
         String nodeA = internalCluster().startNode(Settings.builder().put("node.name", "node-a"));
-        createIndex("myindex", Settings.builder().put("index.number_of_shards", 3).put("index.number_of_replicas", 1).build());
+        createIndex("myindex", shardsAndReplicas(3, 1).build());
         final String nodeAId = getNodeId(nodeA);
         final String nodeB = "node_t1"; // TODO: fix this to so it's actually overrideable
 
@@ -156,7 +156,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
 
         final String nodeC = internalCluster().startNode();
 
-        createIndex("other", Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 1).build());
+        createIndex("other", shardsAndReplicas(1, 1).build());
 
         ensureYellow("other");
 
@@ -201,14 +201,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         String nodeA = internalCluster().startNode(Settings.builder().put("node.name", "node-a"));
         // Create an index and pin it to nodeA, when we replace it with nodeB,
         // it'll move the data, overridding the `_name` allocation filter
-        createIndex(
-            "myindex",
-            Settings.builder()
-                .put("index.routing.allocation.require._name", nodeA)
-                .put("index.number_of_shards", 3)
-                .put("index.number_of_replicas", 0)
-                .build()
-        );
+        createIndex("myindex", shardsAndReplicas(3, 0).put("index.routing.allocation.require._name", nodeA).build());
         final String nodeAId = getNodeId(nodeA);
         final String nodeB = "node_t2"; // TODO: fix this to so it's actually overrideable
 
@@ -226,7 +219,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         assertBusy(() -> assertNodeShutdownStatus(nodeAId, COMPLETE));
         assertIndexSetting("myindex", "index.routing.allocation.require._name", nodeA);
 
-        createIndex("other", Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 1).build());
+        createIndex("other", shardsAndReplicas(1, 1).build());
 
         ensureYellow("other");
 
@@ -271,14 +264,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         String nodeA = internalCluster().startNode(Settings.builder().put("node.name", "node-a"));
         // Create an index on nodeA, then create allocation filter that could not be satisfied.
         // when we replace it with nodeB, it'll move the data, overridding the `_name` allocation filter
-        createIndex(
-            "myindex",
-            Settings.builder()
-                .put("index.routing.allocation.require._name", nodeA)
-                .put("index.number_of_shards", 3)
-                .put("index.number_of_replicas", 0)
-                .build()
-        );
+        createIndex("myindex", shardsAndReplicas(3, 0).put("index.routing.allocation.require._name", nodeA).build());
 
         var fakeNodeName = UUIDs.randomBase64UUID();
         updateIndexSettings(Settings.builder().put("index.routing.allocation.require._name", fakeNodeName), "myindex");
@@ -301,7 +287,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         String nodeA = internalCluster().startNode(
             Settings.builder().put("node.name", "node-a").put("cluster.routing.rebalance.enable", "none")
         );
-        createIndex("myindex", Settings.builder().put("index.number_of_shards", 4).put("index.number_of_replicas", 0).build());
+        createIndex("myindex", shardsAndReplicas(4, 0).build());
         final String nodeAId = getNodeId(nodeA);
         final String nodeB = "node_t1"; // TODO: fix this to so it's actually overrideable
         final String nodeC = "node_t2"; // TODO: fix this to so it's actually overrideable
@@ -326,7 +312,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
     public void testReallocationForReplicaDuringNodeReplace() throws Exception {
         final String nodeA = internalCluster().startNode();
         final String nodeAId = getNodeId(nodeA);
-        createIndex("myindex", Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 1).build());
+        createIndex("myindex", shardsAndReplicas(1, 1).build());
         ensureYellow("myindex");
 
         // Start a second node, so the replica will be on nodeB

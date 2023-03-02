@@ -33,6 +33,7 @@ import org.junit.Before;
 
 import java.io.IOException;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -150,10 +151,7 @@ public class OptOutQueryCacheTests extends ESTestCase {
     }
 
     public void testOptOutQueryCacheNoIndicesPermissions() {
-        final Settings.Builder settings = Settings.builder()
-            .put("index.version.created", Version.CURRENT)
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0);
+        final Settings.Builder settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT);
         final IndexMetadata indexMetadata = IndexMetadata.builder("index").settings(settings).build();
         final IndicesQueryCache indicesQueryCache = mock(IndicesQueryCache.class);
         final ThreadContext threadContext = new ThreadContext(Settings.EMPTY);
@@ -166,10 +164,7 @@ public class OptOutQueryCacheTests extends ESTestCase {
     }
 
     public void testOptOutQueryCacheIndexDoesNotHaveFieldLevelSecurity() {
-        final Settings.Builder settings = Settings.builder()
-            .put("index.version.created", Version.CURRENT)
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0);
+        final Settings.Builder settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT);
         final IndexMetadata indexMetadata = IndexMetadata.builder("index").settings(settings).build();
         final IndicesQueryCache indicesQueryCache = mock(IndicesQueryCache.class);
         final ThreadContext threadContext = new ThreadContext(Settings.EMPTY);

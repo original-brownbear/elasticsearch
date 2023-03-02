@@ -22,17 +22,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 
 public class RetentionLeaseStatsTests extends ESSingleNodeTestCase {
 
     public void testRetentionLeaseStats() throws InterruptedException {
-        final Settings settings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put(IndexSettings.INDEX_SOFT_DELETES_SETTING.getKey(), true)
-            .build();
+        final Settings settings = shardsAndReplicas(1, 0).put(IndexSettings.INDEX_SOFT_DELETES_SETTING.getKey(), true).build();
         createIndex("index", settings);
         ensureGreen("index");
         final IndexShard primary = node().injector()

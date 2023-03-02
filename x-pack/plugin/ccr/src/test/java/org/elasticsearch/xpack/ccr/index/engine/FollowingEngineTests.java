@@ -66,6 +66,7 @@ import java.util.stream.Collectors;
 import static org.elasticsearch.index.engine.EngineTestCase.getDocIds;
 import static org.elasticsearch.index.engine.EngineTestCase.getNumVersionLookups;
 import static org.elasticsearch.index.engine.EngineTestCase.getTranslog;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -109,10 +110,7 @@ public class FollowingEngineTests extends ESTestCase {
     }
 
     public void testFollowingEngineRejectsNonFollowingIndex() throws IOException {
-        final Settings.Builder builder = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT);
+        final Settings.Builder builder = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT);
         if (randomBoolean()) {
             builder.put("index.xpack.ccr.following_index", false);
         }
@@ -140,10 +138,7 @@ public class FollowingEngineTests extends ESTestCase {
      * ensures that these semantics are maintained.
      */
     public void testOutOfOrderDocuments() throws IOException {
-        final Settings settings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
             .put("index.xpack.ccr.following_index", true)
             .build();
         final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
@@ -164,10 +159,7 @@ public class FollowingEngineTests extends ESTestCase {
         final Engine.Operation.Origin origin,
         final CheckedBiConsumer<FollowingEngine, Engine.Index, IOException> consumer
     ) throws IOException {
-        final Settings settings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
             .put("index.xpack.ccr.following_index", true)
             .build();
         final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
@@ -195,10 +187,7 @@ public class FollowingEngineTests extends ESTestCase {
         final Engine.Operation.Origin origin,
         final CheckedBiConsumer<FollowingEngine, Engine.Delete, IOException> consumer
     ) throws IOException {
-        final Settings settings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
             .put("index.xpack.ccr.following_index", true)
             .build();
         final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
@@ -226,10 +215,7 @@ public class FollowingEngineTests extends ESTestCase {
     }
 
     public void testDoNotFillSeqNoGaps() throws Exception {
-        final Settings settings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
             .put("index.xpack.ccr.following_index", true)
             .build();
         final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();
@@ -526,10 +512,7 @@ public class FollowingEngineTests extends ESTestCase {
 
     public void testConcurrentIndexOperationsWithDeletesCanAdvanceMaxSeqNoOfUpdates() throws Exception {
         // See #72527 for more details
-        Settings followerSettings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
+        Settings followerSettings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
             .put("index.xpack.ccr.following_index", true)
             .build();
 
@@ -638,11 +621,7 @@ public class FollowingEngineTests extends ESTestCase {
             }
         };
 
-        Settings leaderSettings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
-            .build();
+        Settings leaderSettings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT).build();
         IndexMetadata leaderIndexMetadata = IndexMetadata.builder(index.getName()).settings(leaderSettings).build();
         IndexSettings leaderIndexSettings = new IndexSettings(leaderIndexMetadata, leaderSettings);
         try (Store leaderStore = createStore(shardId, leaderIndexSettings, newDirectory())) {
@@ -658,10 +637,7 @@ public class FollowingEngineTests extends ESTestCase {
             );
             try (InternalEngine leaderEngine = new InternalEngine(leaderConfig)) {
                 leaderEngine.skipTranslogRecovery();
-                Settings followerSettings = Settings.builder()
-                    .put("index.number_of_shards", 1)
-                    .put("index.number_of_replicas", 0)
-                    .put("index.version.created", Version.CURRENT)
+                Settings followerSettings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
                     .put("index.xpack.ccr.following_index", true)
                     .build();
                 IndexMetadata followerIndexMetadata = IndexMetadata.builder(index.getName()).settings(followerSettings).build();
@@ -739,10 +715,7 @@ public class FollowingEngineTests extends ESTestCase {
     }
 
     public void testProcessOnceOnPrimary() throws Exception {
-        final Settings.Builder settingsBuilder = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
+        final Settings.Builder settingsBuilder = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
             .put("index.xpack.ccr.following_index", true);
         switch (indexMode) {
             case STANDARD:
@@ -875,10 +848,7 @@ public class FollowingEngineTests extends ESTestCase {
     }
 
     public void testMaxSeqNoInCommitUserData() throws Exception {
-        final Settings settings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
+        final Settings settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT)
             .put("index.xpack.ccr.following_index", true)
             .build();
         final IndexMetadata indexMetadata = IndexMetadata.builder(index.getName()).settings(settings).build();

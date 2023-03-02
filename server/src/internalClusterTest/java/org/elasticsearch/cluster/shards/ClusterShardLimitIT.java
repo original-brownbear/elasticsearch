@@ -126,11 +126,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
                 .preparePutTemplate("should-fail")
                 .setPatterns(Collections.singletonList("should-fail"))
                 .setOrder(1)
-                .setSettings(
-                    Settings.builder()
-                        .put(SETTING_NUMBER_OF_SHARDS, counts.getFailingIndexShards())
-                        .put(SETTING_NUMBER_OF_REPLICAS, counts.getFailingIndexReplicas())
-                )
+                .setSettings(shardsAndReplicas(counts.getFailingIndexShards(), counts.getFailingIndexReplicas()))
                 .get()
         );
 
@@ -152,10 +148,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
         int shardsPerNode = firstShardCount - 1;
         setShardsPerNode(shardsPerNode);
 
-        prepareCreate(
-            "growing-should-fail",
-            Settings.builder().put(indexSettings()).put(SETTING_NUMBER_OF_SHARDS, firstShardCount).put(SETTING_NUMBER_OF_REPLICAS, 0)
-        ).get();
+        prepareCreate("growing-should-fail", shardsAndReplicas(firstShardCount, 0)).get();
 
         try {
             client().admin()
@@ -249,10 +242,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
         int shardsPerNode = firstShardCount - 1;
         setShardsPerNode(shardsPerNode);
 
-        prepareCreate(
-            "test-index",
-            Settings.builder().put(indexSettings()).put(SETTING_NUMBER_OF_SHARDS, firstShardCount).put(SETTING_NUMBER_OF_REPLICAS, 0)
-        ).get();
+        prepareCreate("test-index", shardsAndReplicas(firstShardCount, 0)).get();
 
         // Since a request with preserve_existing can't change the number of
         // replicas, we should never get an error here.

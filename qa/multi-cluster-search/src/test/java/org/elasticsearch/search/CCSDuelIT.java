@@ -96,6 +96,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.Matchers.empty;
@@ -173,7 +174,7 @@ public class CCSDuelIT extends ESRestTestCase {
         assertTrue(response.isAcknowledged());
 
         int numShards = randomIntBetween(1, 5);
-        Settings settings = Settings.builder().put("index.number_of_shards", numShards).put("index.number_of_replicas", 0).build();
+        Settings settings = shardsAndReplicas(numShards, 0).build();
         String mapping = """
             {
               "properties": {

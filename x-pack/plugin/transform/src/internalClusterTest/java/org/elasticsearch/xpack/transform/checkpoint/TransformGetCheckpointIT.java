@@ -11,7 +11,6 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xcontent.XContentType;
 import org.elasticsearch.xpack.core.transform.action.GetCheckpointAction;
 import org.elasticsearch.xpack.transform.TransformSingleNodeTestCase;
@@ -19,6 +18,8 @@ import org.elasticsearch.xpack.transform.TransformSingleNodeTestCase;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.stream.Collectors;
+
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 
 /**
  * Test suite for checkpointing using transform getcheckpoint API
@@ -31,11 +32,7 @@ public class TransformGetCheckpointIT extends TransformSingleNodeTestCase {
         final int indices = randomIntBetween(1, 5);
 
         for (int i = 0; i < indices; ++i) {
-            client().admin()
-                .indices()
-                .prepareCreate(indexNamePrefix + i)
-                .setSettings(Settings.builder().put("index.number_of_shards", shards).put("index.number_of_replicas", 1))
-                .get();
+            client().admin().indices().prepareCreate(indexNamePrefix + i).setSettings(shardsAndReplicas(shards, 1)).get();
         }
 
         final GetCheckpointAction.Request request = new GetCheckpointAction.Request(

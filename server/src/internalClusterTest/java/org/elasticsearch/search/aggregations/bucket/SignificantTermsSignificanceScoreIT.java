@@ -52,8 +52,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
-import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
-import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.filter;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.significantTerms;
 import static org.elasticsearch.search.aggregations.AggregationBuilders.significantText;
@@ -436,9 +434,9 @@ public class SignificantTermsSignificanceScoreIT extends ESIntegTestCase {
         }
     }
 
-    private void indexEqualTestData() throws ExecutionException, InterruptedException {
+    private void indexEqualTestData() throws InterruptedException {
         assertAcked(
-            prepareCreate("test").setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0))
+            prepareCreate("test").setSettings(shardsAndReplicas(1, 0))
                 .setMapping("text", "type=text,fielddata=true", "class", "type=keyword")
         );
         createIndex("idx_unmapped");

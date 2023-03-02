@@ -17,14 +17,12 @@ import org.elasticsearch.index.store.StoreStats;
 import org.elasticsearch.test.ESTestCase;
 
 import static org.elasticsearch.action.admin.indices.shrink.ResizeNumberOfShardsCalculator.ShrinkShardsCalculator.calculateAcceptableNumberOfShards;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 
 public class ResizeNumberOfShardsCalculatorTests extends ESTestCase {
 
     public void testShrink() {
-        Settings settings = Settings.builder()
-            .put("index.number_of_shards", randomIntBetween(1, 5))
-            .put("index.number_of_replicas", randomIntBetween(0, 5))
-            .put("index.version.created", Version.CURRENT)
+        Settings settings = shardsAndReplicas(randomIntBetween(1, 5), randomIntBetween(0, 5)).put("index.version.created", Version.CURRENT)
             .build();
         IndexMetadata indexMetadata = IndexMetadata.builder("index").settings(settings).build();
 
@@ -52,10 +50,7 @@ public class ResizeNumberOfShardsCalculatorTests extends ESTestCase {
     }
 
     public void testCloneInputs() {
-        Settings settings = Settings.builder()
-            .put("index.number_of_shards", randomIntBetween(1, 5))
-            .put("index.number_of_replicas", randomIntBetween(0, 5))
-            .put("index.version.created", Version.CURRENT)
+        Settings settings = shardsAndReplicas(randomIntBetween(1, 5), randomIntBetween(0, 5)).put("index.version.created", Version.CURRENT)
             .build();
         IndexMetadata indexMetadata = IndexMetadata.builder("index").settings(settings).build();
 
@@ -73,10 +68,7 @@ public class ResizeNumberOfShardsCalculatorTests extends ESTestCase {
     }
 
     public void testSplitInputs() {
-        Settings settings = Settings.builder()
-            .put("index.number_of_shards", randomIntBetween(2, 5))
-            .put("index.number_of_replicas", randomIntBetween(0, 5))
-            .put("index.version.created", Version.CURRENT)
+        Settings settings = shardsAndReplicas(randomIntBetween(2, 5), randomIntBetween(0, 5)).put("index.version.created", Version.CURRENT)
             .build();
         IndexMetadata indexMetadata = IndexMetadata.builder("index").settings(settings).build();
 

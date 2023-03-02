@@ -34,7 +34,6 @@ import java.util.concurrent.ExecutionException;
 
 import static org.elasticsearch.client.internal.Requests.indexRequest;
 import static org.elasticsearch.client.internal.Requests.refreshRequest;
-import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
 import static org.elasticsearch.index.query.QueryBuilders.moreLikeThisQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
@@ -313,7 +312,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
 
     // Issue #3039
     public void testMoreLikeThisIssueRoutingNotSerialized() throws Exception {
-        assertAcked(prepareCreate("foo", 2, Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 2).put(SETTING_NUMBER_OF_REPLICAS, 0)));
+        assertAcked(prepareCreate("foo", 2, shardsAndReplicas(2, 0)));
         ensureGreen();
 
         client().prepareIndex("foo")

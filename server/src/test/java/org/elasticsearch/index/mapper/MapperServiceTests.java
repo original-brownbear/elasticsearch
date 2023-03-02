@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.not;
@@ -282,12 +283,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
 
         {
             IndexMetadata.Builder builder = new IndexMetadata.Builder("test");
-            Settings settings = Settings.builder()
-                .put("index.number_of_replicas", 0)
-                .put("index.number_of_shards", 1)
-                .put("index.version.created", Version.CURRENT)
-                .build();
-            builder.settings(settings);
+            builder.settings(shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT));
 
             // Text fields are not stored by default, so an incoming update that is identical but
             // just has `stored:false` should not require an update
@@ -298,12 +294,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
 
         {
             IndexMetadata.Builder builder = new IndexMetadata.Builder("test");
-            Settings settings = Settings.builder()
-                .put("index.number_of_replicas", 0)
-                .put("index.number_of_shards", 1)
-                .put("index.version.created", Version.CURRENT)
-                .build();
-            builder.settings(settings);
+            builder.settings(shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT));
 
             // However, an update that really does need a rebuild will throw an exception
             builder.putMapping("""

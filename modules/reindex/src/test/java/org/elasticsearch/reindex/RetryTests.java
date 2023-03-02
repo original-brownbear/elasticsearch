@@ -47,6 +47,7 @@ import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
 import static org.elasticsearch.reindex.ReindexTestCase.matcher;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
@@ -171,11 +172,7 @@ public class RetryTests extends ESIntegTestCase {
             .put("node.attr.color", "blue")
             .build();
         final String node = internalCluster().startDataOnlyNode(nodeSettings);
-        final Settings indexSettings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.routing.allocation.include.color", "blue")
-            .build();
+        final Settings indexSettings = shardsAndReplicas(1, 0).put("index.routing.allocation.include.color", "blue").build();
 
         // Create the source index on the node with small thread pools so we can block them.
         client().admin().indices().prepareCreate("source").setSettings(indexSettings).execute().actionGet();

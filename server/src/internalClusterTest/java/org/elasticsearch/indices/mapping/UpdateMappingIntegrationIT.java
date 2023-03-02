@@ -63,12 +63,7 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
         client().admin()
             .indices()
             .prepareCreate("test")
-            .setSettings(
-                Settings.builder()
-                    .put("index.number_of_shards", 1)
-                    .put("index.number_of_replicas", 0)
-                    .put(MapperService.INDEX_MAPPING_TOTAL_FIELDS_LIMIT_SETTING.getKey(), Long.MAX_VALUE)
-            )
+            .setSettings(shardsAndReplicas(1, 0).put(MapperService.INDEX_MAPPING_TOTAL_FIELDS_LIMIT_SETTING.getKey(), Long.MAX_VALUE))
             .execute()
             .actionGet();
         client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
@@ -108,15 +103,9 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
     }
 
     public void testUpdateMappingWithoutType() {
-        client().admin()
-            .indices()
-            .prepareCreate("test")
-            .setSettings(Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0))
-            .setMapping("""
-                {"properties":{"body":{"type":"text"}}}
-                """)
-            .execute()
-            .actionGet();
+        client().admin().indices().prepareCreate("test").setSettings(shardsAndReplicas(1, 0)).setMapping("""
+            {"properties":{"body":{"type":"text"}}}
+            """).execute().actionGet();
         client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
         AcknowledgedResponse putMappingResponse = client().admin().indices().preparePutMapping("test").setSource("""
@@ -131,12 +120,7 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
     }
 
     public void testUpdateMappingWithoutTypeMultiObjects() {
-        client().admin()
-            .indices()
-            .prepareCreate("test")
-            .setSettings(Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0))
-            .execute()
-            .actionGet();
+        client().admin().indices().prepareCreate("test").setSettings(shardsAndReplicas(1, 0)).execute().actionGet();
         client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
         AcknowledgedResponse putMappingResponse = client().admin().indices().preparePutMapping("test").setSource("""
@@ -150,15 +134,9 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
     }
 
     public void testUpdateMappingWithConflicts() {
-        client().admin()
-            .indices()
-            .prepareCreate("test")
-            .setSettings(Settings.builder().put("index.number_of_shards", 2).put("index.number_of_replicas", 0))
-            .setMapping("""
-                {"properties":{"body":{"type":"text"}}}
-                """)
-            .execute()
-            .actionGet();
+        client().admin().indices().prepareCreate("test").setSettings(shardsAndReplicas(2, 0)).setMapping("""
+            {"properties":{"body":{"type":"text"}}}
+            """).execute().actionGet();
         client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
         try {
@@ -189,14 +167,8 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
     Second regression test for https://github.com/elastic/elasticsearch/issues/3381
      */
     public void testUpdateMappingNoChanges() {
-        client().admin()
-            .indices()
-            .prepareCreate("test")
-            .setSettings(Settings.builder().put("index.number_of_shards", 2).put("index.number_of_replicas", 0))
-            .setMapping("""
-                {"properties":{"body":{"type":"text"}}}""")
-            .execute()
-            .actionGet();
+        client().admin().indices().prepareCreate("test").setSettings(shardsAndReplicas(2, 0)).setMapping("""
+            {"properties":{"body":{"type":"text"}}}""").execute().actionGet();
         client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
         AcknowledgedResponse putMappingResponse = client().admin().indices().preparePutMapping("test").setSource("""

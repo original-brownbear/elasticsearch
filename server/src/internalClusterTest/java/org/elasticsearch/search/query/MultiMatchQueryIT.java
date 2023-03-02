@@ -874,11 +874,9 @@ public class MultiMatchQueryIT extends ESIntegTestCase {
      * same document score if both documents are placed on different shard. This test recreates that scenario
      * and checks that the returned scores are different.
      */
-    public void testFuzzyFieldLevelBoosting() throws InterruptedException, ExecutionException {
+    public void testFuzzyFieldLevelBoosting() throws InterruptedException {
         String idx = "test18710";
-        CreateIndexRequestBuilder builder = prepareCreate(idx).setSettings(
-            Settings.builder().put(indexSettings()).put(SETTING_NUMBER_OF_SHARDS, 3).put(SETTING_NUMBER_OF_REPLICAS, 0)
-        );
+        CreateIndexRequestBuilder builder = prepareCreate(idx).setSettings(shardsAndReplicas(3, 0));
         assertAcked(builder.setMapping("title", "type=text", "body", "type=text"));
         ensureGreen();
         List<IndexRequestBuilder> builders = new ArrayList<>();

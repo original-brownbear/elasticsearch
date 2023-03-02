@@ -254,7 +254,7 @@ public class IndexStatsIT extends ESIntegTestCase {
             client().admin()
                 .indices()
                 .prepareCreate("test")
-                .setSettings(settingsBuilder().put("index.number_of_replicas", 0).put("index.number_of_shards", 2))
+                .setSettings(shardsAndReplicas(2, 0))
                 .setMapping("field", "type=text,fielddata=true")
                 .get()
         );
@@ -1304,9 +1304,7 @@ public class IndexStatsIT extends ESIntegTestCase {
 
     public void testBulkStats() throws Exception {
         final String index = "test";
-        assertAcked(
-            prepareCreate(index).setSettings(settingsBuilder().put("index.number_of_shards", 2).put("index.number_of_replicas", 1))
-        );
+        assertAcked(prepareCreate(index).setSettings(shardsAndReplicas(2, 1)));
         ensureGreen();
         final BulkRequest request1 = new BulkRequest();
         for (int i = 0; i < 20; ++i) {

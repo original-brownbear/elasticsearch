@@ -67,6 +67,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 
 import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
 import static org.hamcrest.Matchers.equalTo;
@@ -522,7 +523,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
 
     public void testFreezeIndexIncreasesIndexSettingsVersion() {
         final String index = "test";
-        createIndex(index, Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0).build());
+        createIndex(index, shardsAndReplicas(1, 0).build());
         client().prepareIndex(index).setSource("field", "value").execute().actionGet();
 
         final long settingsVersion = client().admin()
@@ -544,14 +545,7 @@ public class FrozenIndexTests extends ESSingleNodeTestCase {
 
     public void testFreezeEmptyIndexWithTranslogOps() throws Exception {
         final String indexName = "empty";
-        createIndex(
-            indexName,
-            Settings.builder()
-                .put("index.number_of_shards", 1)
-                .put("index.number_of_replicas", 0)
-                .put("index.refresh_interval", TimeValue.MINUS_ONE)
-                .build()
-        );
+        createIndex(indexName, shardsAndReplicas(1, 0).put("index.refresh_interval", TimeValue.MINUS_ONE).build());
 
         final long nbNoOps = randomIntBetween(1, 10);
         for (long i = 0; i < nbNoOps; i++) {

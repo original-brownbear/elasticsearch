@@ -40,6 +40,7 @@ import java.util.Set;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.INITIALIZING;
 import static org.elasticsearch.cluster.routing.ShardRoutingState.STARTED;
 import static org.elasticsearch.cluster.routing.TestShardRouting.newShardRouting;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 
 public class ClusterInfoSimulatorTests extends ESTestCase {
@@ -329,11 +330,7 @@ public class ClusterInfoSimulatorTests extends ESTestCase {
 
     private static void addIndex(Metadata.Builder metadataBuilder, RoutingTable.Builder routingTableBuilder, ShardRouting shardRouting) {
         var name = shardRouting.getIndexName();
-        var settings = Settings.builder()
-            .put("index.number_of_shards", 1)
-            .put("index.number_of_replicas", 0)
-            .put("index.version.created", Version.CURRENT)
-            .build();
+        var settings = shardsAndReplicas(1, 0).put("index.version.created", Version.CURRENT).build();
         metadataBuilder.put(IndexMetadata.builder(name).settings(settings));
         routingTableBuilder.add(IndexRoutingTable.builder(metadataBuilder.get(name).getIndex()).addShard(shardRouting));
     }

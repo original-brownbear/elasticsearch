@@ -115,11 +115,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
      */
     public void testIndexShardFailedOnRelocation() {
         String node1 = internalCluster().startNode();
-        client().admin()
-            .indices()
-            .prepareCreate("index1")
-            .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0))
-            .get();
+        client().admin().indices().prepareCreate("index1").setSettings(shardsAndReplicas(1, 0)).get();
         ensureGreen("index1");
         String node2 = internalCluster().startNode();
         internalCluster().getInstance(MockIndexEventListener.TestEventListener.class, node2)
@@ -139,11 +135,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
 
     public void testRelocationFailureNotRetriedForever() {
         String node1 = internalCluster().startNode();
-        client().admin()
-            .indices()
-            .prepareCreate("index1")
-            .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 1).put(SETTING_NUMBER_OF_REPLICAS, 0))
-            .get();
+        client().admin().indices().prepareCreate("index1").setSettings(shardsAndReplicas(1, 0)).get();
         ensureGreen("index1");
         for (int i = 0; i < 2; i++) {
             internalCluster().getInstance(MockIndexEventListener.TestEventListener.class, internalCluster().startNode())
@@ -180,12 +172,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
         }
 
         // create an index
-        assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
-                .setSettings(Settings.builder().put(SETTING_NUMBER_OF_SHARDS, 6).put(SETTING_NUMBER_OF_REPLICAS, 0))
-        );
+        assertAcked(client().admin().indices().prepareCreate("test").setSettings(shardsAndReplicas(6, 0)));
         ensureGreen();
         assertThat(stateChangeListenerNode1.creationSettings.getAsInt(SETTING_NUMBER_OF_SHARDS, -1), equalTo(6));
         assertThat(stateChangeListenerNode1.creationSettings.getAsInt(SETTING_NUMBER_OF_REPLICAS, -1), equalTo(0));

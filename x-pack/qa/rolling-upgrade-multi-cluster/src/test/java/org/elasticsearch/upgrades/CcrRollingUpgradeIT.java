@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static org.elasticsearch.rest.action.search.RestSearchAction.TOTAL_HITS_AS_INT_PARAM;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -285,7 +286,7 @@ public class CcrRollingUpgradeIT extends AbstractMultiClusterUpgradeTestCase {
     }
 
     private static void createLeaderIndex(RestClient client, String indexName) throws IOException {
-        Settings.Builder indexSettings = Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0);
+        Settings.Builder indexSettings = shardsAndReplicas(1, 0);
         if (randomBoolean()) {
             indexSettings.put("index.soft_deletes.enabled", true);
         }

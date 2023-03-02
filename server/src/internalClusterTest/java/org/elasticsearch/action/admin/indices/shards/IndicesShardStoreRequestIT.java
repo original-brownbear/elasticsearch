@@ -59,11 +59,7 @@ public class IndicesShardStoreRequestIT extends ESIntegTestCase {
     public void testBasic() throws Exception {
         String index = "test";
         internalCluster().ensureAtLeastNumDataNodes(2);
-        assertAcked(
-            prepareCreate(index).setSettings(
-                Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, "2").put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, "1")
-            )
-        );
+        assertAcked(prepareCreate(index).setSettings(shardsAndReplicas(2, 1)));
         indexRandomData(index);
         ensureGreen(index);
 

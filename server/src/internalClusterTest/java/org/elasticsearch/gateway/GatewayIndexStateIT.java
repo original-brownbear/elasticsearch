@@ -585,10 +585,7 @@ public class GatewayIndexStateIT extends ESIntegTestCase {
         // node won't start.
 
         final String nodeName = internalCluster().startNode();
-        createIndex(
-            "test",
-            Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0).build()
-        );
+        createIndex("test", shardsAndReplicas(1, 0).build());
         ensureGreen("test");
 
         final Metadata metadata = internalCluster().getInstance(ClusterService.class).state().metadata();

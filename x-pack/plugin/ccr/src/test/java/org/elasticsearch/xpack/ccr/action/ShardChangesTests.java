@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -106,10 +107,7 @@ public class ShardChangesTests extends ESSingleNodeTestCase {
             .indices()
             .prepareCreate("index")
             .setSettings(
-                Settings.builder()
-                    .put("index.soft_deletes.retention.operations", 0)
-                    .put("index.number_of_shards", 1)
-                    .put("index.number_of_replicas", 0)
+                shardsAndReplicas(1, 0).put("index.soft_deletes.retention.operations", 0)
                     .put(IndexService.RETENTION_LEASE_SYNC_INTERVAL_SETTING.getKey(), "200ms")
             )
             .get();

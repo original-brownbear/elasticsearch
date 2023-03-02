@@ -54,6 +54,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.elasticsearch.common.UUIDs.randomBase64UUID;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -99,10 +100,7 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
             .metadata(
                 new Metadata.Builder().put(
                     new IndexMetadata.Builder(index1.getName()).settings(
-                        Settings.builder()
-                            .put("index.version.created", Version.CURRENT)
-                            .put("index.number_of_shards", 1)
-                            .put("index.number_of_replicas", 1)
+                        shardsAndReplicas(1, 1).put("index.version.created", Version.CURRENT)
                             .put(IndexMetadata.SETTING_INDEX_UUID, index1.getUUID())
                     )
                         .putMapping(
@@ -124,10 +122,7 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
                 )
                     .put(
                         new IndexMetadata.Builder(index2.getName()).settings(
-                            Settings.builder()
-                                .put("index.version.created", Version.CURRENT)
-                                .put("index.number_of_shards", 1)
-                                .put("index.number_of_replicas", 1)
+                            shardsAndReplicas(1, 1).put("index.version.created", Version.CURRENT)
                                 .put(IndexMetadata.SETTING_INDEX_UUID, index1.getUUID())
                         )
                             .putMapping(

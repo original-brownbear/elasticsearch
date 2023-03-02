@@ -30,6 +30,7 @@ import org.elasticsearch.indices.TestIndexNameExpressionResolver;
 import org.elasticsearch.test.ESTestCase;
 
 import static java.util.Collections.emptyMap;
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.containsString;
 
 /**
@@ -180,12 +181,7 @@ public class ReindexSourceTargetValidationTests extends ESTestCase {
 
     private static IndexMetadata index(String name, @Nullable Boolean writeIndex, String... aliases) {
         IndexMetadata.Builder builder = IndexMetadata.builder(name)
-            .settings(
-                Settings.builder()
-                    .put("index.version.created", Version.CURRENT.id)
-                    .put("index.number_of_shards", 1)
-                    .put("index.number_of_replicas", 1)
-            );
+            .settings(shardsAndReplicas(1, 1).put("index.version.created", Version.CURRENT.id));
         for (String alias : aliases) {
             builder.putAlias(AliasMetadata.builder(alias).writeIndex(writeIndex).build());
         }

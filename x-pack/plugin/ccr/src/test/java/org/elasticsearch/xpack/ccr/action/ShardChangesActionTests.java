@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
+import static org.elasticsearch.test.ESIntegTestCase.shardsAndReplicas;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasToString;
@@ -47,7 +48,7 @@ public class ShardChangesActionTests extends ESSingleNodeTestCase {
     }
 
     public void testGetOperations() throws Exception {
-        final Settings settings = Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0).build();
+        final Settings settings = shardsAndReplicas(1, 0).build();
         final IndexService indexService = createIndex("index", settings);
 
         final int numWrites = randomIntBetween(10, 4096);
@@ -166,7 +167,7 @@ public class ShardChangesActionTests extends ESSingleNodeTestCase {
     }
 
     public void testGetOperationsExceedByteLimit() throws Exception {
-        final Settings settings = Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0).build();
+        final Settings settings = shardsAndReplicas(1, 0).build();
         final IndexService indexService = createIndex("index", settings);
 
         final long numWrites = 32;
@@ -195,7 +196,7 @@ public class ShardChangesActionTests extends ESSingleNodeTestCase {
     }
 
     public void testGetOperationsAlwaysReturnAtLeastOneOp() throws Exception {
-        final Settings settings = Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0).build();
+        final Settings settings = shardsAndReplicas(1, 0).build();
         final IndexService indexService = createIndex("index", settings);
 
         client().prepareIndex("index").setId("0").setSource("{}", XContentType.JSON).get();
