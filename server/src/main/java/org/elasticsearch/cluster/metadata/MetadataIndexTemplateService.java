@@ -1474,7 +1474,6 @@ public class MetadataIndexTemplateService {
             .metadata(
                 Metadata.builder(stateWithTemplate.metadata())
                     .put(IndexMetadata.builder(temporaryIndexName).settings(finalResolvedSettings))
-                    .build()
             )
             .build();
         final IndexMetadata tmpIndexMetadata = stateWithIndex.metadata().index(temporaryIndexName);

@@ -716,7 +716,7 @@ public class TransportMasterNodeActionTests extends ESTestCase {
             .numberOfShards(1)
             .numberOfReplicas(0);
         ClusterState clusterStateWithoutBlocks = ClusterState.builder(ClusterStateCreationUtils.state(localNode, localNode, allNodes))
-            .metadata(Metadata.builder().put(indexMetadataBuilder).build())
+            .metadata(Metadata.builder().put(indexMetadataBuilder))
             .blocks(ClusterBlocks.EMPTY_CLUSTER_BLOCK)
             .build();
         setState(clusterService, clusterStateWithoutBlocks);

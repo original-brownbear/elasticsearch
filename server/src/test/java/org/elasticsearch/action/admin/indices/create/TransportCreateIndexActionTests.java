@@ -40,7 +40,7 @@ import static org.mockito.Mockito.verify;
 public class TransportCreateIndexActionTests extends ESTestCase {
 
     private static final ClusterState CLUSTER_STATE = ClusterState.builder(new ClusterName("test"))
-        .metadata(Metadata.builder().build())
+        .metadata(Metadata.builder())
         .build();
 
     private static final String UNMANAGED_SYSTEM_INDEX_NAME = ".my-system";
@@ -94,7 +94,7 @@ public class TransportCreateIndexActionTests extends ESTestCase {
 
     public void testSystemIndicesCannotBeCreatedUnhidden() {
         CreateIndexRequest request = new CreateIndexRequest();
-        request.settings(Settings.builder().put(IndexMetadata.SETTING_INDEX_HIDDEN, false).build());
+        request.settings(Settings.builder().put(IndexMetadata.SETTING_INDEX_HIDDEN, false));
         request.index(UNMANAGED_SYSTEM_INDEX_NAME);
 
         @SuppressWarnings("unchecked")

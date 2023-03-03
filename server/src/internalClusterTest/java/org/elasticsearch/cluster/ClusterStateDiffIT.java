@@ -428,7 +428,7 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
                 default -> throw new IllegalArgumentException("Shouldn't be here");
             };
         }
-        return ClusterState.builder(clusterState).metadata(Metadata.builder(metadata).version(metadata.version() + 1).build());
+        return ClusterState.builder(clusterState).metadata(Metadata.builder(metadata).version(metadata.version() + 1));
     }
 
     /**

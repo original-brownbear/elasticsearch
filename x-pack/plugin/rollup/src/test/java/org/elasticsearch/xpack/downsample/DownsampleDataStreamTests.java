@@ -90,7 +90,7 @@ public class DownsampleDataStreamTests extends ESSingleNodeTestCase {
             .indices()
             .updateSettings(
                 new UpdateSettingsRequest().indices(rolloverResponse.getOldIndex())
-                    .settings(Settings.builder().put(IndexMetadata.SETTING_BLOCKS_WRITE, true).build())
+                    .settings(Settings.builder().put(IndexMetadata.SETTING_BLOCKS_WRITE, true))
             )
             .actionGet();
 
@@ -115,7 +115,7 @@ public class DownsampleDataStreamTests extends ESSingleNodeTestCase {
             .indices()
             .updateSettings(
                 new UpdateSettingsRequest().indices(downsampleTargetIndex)
-                    .settings(Settings.builder().put(IndexMetadata.SETTING_INDEX_HIDDEN, false).build())
+                    .settings(Settings.builder().put(IndexMetadata.SETTING_INDEX_HIDDEN, false))
             )
             .actionGet();
 

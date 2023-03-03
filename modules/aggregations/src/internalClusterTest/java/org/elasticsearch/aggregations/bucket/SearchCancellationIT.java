@@ -69,7 +69,6 @@ public class SearchCancellationIT extends AbstractSearchCancellationTestCase {
                     .put(IndexMetadata.INDEX_ROUTING_PATH.getKey(), "dim")
                     .put(TIME_SERIES_START_TIME.getKey(), now)
                     .put(TIME_SERIES_END_TIME.getKey(), now + (long) numberOfRefreshes * numberOfDocsPerRefresh + 1)
-                    .build()
             ).setMapping("""
                 {
                   "properties": {

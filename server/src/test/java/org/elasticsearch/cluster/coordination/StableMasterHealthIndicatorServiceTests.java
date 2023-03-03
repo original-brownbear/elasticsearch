@@ -284,7 +284,7 @@ public class StableMasterHealthIndicatorServiceTests extends AbstractCoordinator
         nodesBuilder.add(node3);
         return ClusterState.builder(new ClusterName("test-cluster"))
             .routingTable(routingTableBuilder.build())
-            .metadata(metadataBuilder.build())
+            .metadata(metadataBuilder)
             .nodes(nodesBuilder)
             .build();
     }

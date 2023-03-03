@@ -73,7 +73,7 @@ public class RemoveCustomsCommand extends ElasticsearchNodeCommand {
                 throw new UserException(ExitCodes.USAGE, "No custom metadata matching [" + customToRemove + "] were found on this node");
             }
         }
-        final ClusterState newClusterState = ClusterState.builder(oldClusterState).metadata(metadataBuilder.build()).build();
+        final ClusterState newClusterState = ClusterState.builder(oldClusterState).metadata(metadataBuilder).build();
         terminal.println(
             Terminal.Verbosity.VERBOSE,
             "[old cluster state = " + oldClusterState + ", new cluster state = " + newClusterState + "]"

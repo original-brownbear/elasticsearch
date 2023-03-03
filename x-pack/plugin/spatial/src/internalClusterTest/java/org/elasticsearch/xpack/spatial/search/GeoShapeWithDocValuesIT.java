@@ -63,12 +63,7 @@ public class GeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
         // create index
         Version version = randomSupportedVersion();
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
-                .setSettings(settings(version).build())
-                .setMapping("shape", "type=geo_shape")
-                .get()
+            client().admin().indices().prepareCreate("test").setSettings(settings(version)).setMapping("shape", "type=geo_shape").get()
         );
         ensureGreen();
 

@@ -704,7 +704,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
     }
 
     public void testIndexOptionsEmptyCluster() {
-        ClusterState state = ClusterState.builder(new ClusterName("_name")).metadata(Metadata.builder().build()).build();
+        ClusterState state = ClusterState.builder(new ClusterName("_name")).metadata(Metadata.builder()).build();
 
         IndicesOptions options = IndicesOptions.strictExpandOpen();
         final IndexNameExpressionResolver.Context context = new IndexNameExpressionResolver.Context(
@@ -1321,7 +1321,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             );
 
             {
-                ClusterState state = ClusterState.builder(new ClusterName("_name")).metadata(Metadata.builder().build()).build();
+                ClusterState state = ClusterState.builder(new ClusterName("_name")).metadata(Metadata.builder()).build();
                 IndexNameExpressionResolver.Context context = new IndexNameExpressionResolver.Context(
                     state,
                     indicesOptions,
@@ -3123,7 +3123,6 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
             .metadata(
                 Metadata.builder(state.getMetadata())
                     .put(IndexMetadata.builder(state.getMetadata().index("my-index")).putAlias(new AliasMetadata.Builder("my-alias")))
-                    .build()
             )
             .build();
         Function<String, List<DocWriteRequest<?>>> docWriteRequestsForName = (name) -> List.of(
@@ -3168,7 +3167,6 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
                 Metadata.builder(state1.getMetadata())
                     .put(IndexMetadata.builder(state1.getMetadata().index("my-index")).putAlias(new AliasMetadata.Builder("my-alias")))
                     .put(IndexMetadata.builder(state1.getMetadata().index("my-index2")).putAlias(new AliasMetadata.Builder("my-alias")))
-                    .build()
             )
             .build();
 

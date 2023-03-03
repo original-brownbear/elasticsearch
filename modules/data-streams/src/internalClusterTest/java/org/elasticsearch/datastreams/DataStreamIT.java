@@ -1806,9 +1806,7 @@ public class DataStreamIT extends ESIntegTestCase {
                         original.getLifecycle()
                     );
                     brokenDataStreamHolder.set(broken);
-                    return ClusterState.builder(currentState)
-                        .metadata(Metadata.builder(currentState.getMetadata()).put(broken).build())
-                        .build();
+                    return ClusterState.builder(currentState).metadata(Metadata.builder(currentState.getMetadata()).put(broken)).build();
                 }
 
                 @Override

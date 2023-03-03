@@ -154,7 +154,7 @@ public class TransportDeleteDanglingIndexAction extends AcknowledgedTransportMas
             .build(settings);
         metaDataBuilder.indexGraveyard(newGraveyard);
 
-        return ClusterState.builder(currentState).metadata(metaDataBuilder.build()).build();
+        return ClusterState.builder(currentState).metadata(metaDataBuilder).build();
     }
 
     @Override

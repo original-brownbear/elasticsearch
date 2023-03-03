@@ -206,7 +206,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         client().admin()
             .indices()
             .prepareUpdateSettings(shard.shardId().getIndexName())
-            .setSettings(Settings.builder().put(IndexSettings.INDEX_TRANSLOG_DURABILITY_SETTING.getKey(), durability.name()).build())
+            .setSettings(Settings.builder().put(IndexSettings.INDEX_TRANSLOG_DURABILITY_SETTING.getKey(), durability.name()))
             .get();
         assertEquals(durability, shard.getTranslogDurability());
     }
@@ -220,7 +220,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
         client().admin()
             .indices()
             .prepareUpdateSettings("test")
-            .setSettings(Settings.builder().put(IndexMetadata.SETTING_PRIORITY, 400).build())
+            .setSettings(Settings.builder().put(IndexMetadata.SETTING_PRIORITY, 400))
             .get();
         assertEquals(400, indexService.getIndexSettings().getSettings().getAsInt(IndexMetadata.SETTING_PRIORITY, 0).intValue());
     }
@@ -312,7 +312,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
             client().admin()
                 .indices()
                 .prepareUpdateSettings(index)
-                .setSettings(Settings.builder().put(IndexMetadata.SETTING_DATA_PATH, newIndexDataPath.toAbsolutePath().toString()).build())
+                .setSettings(Settings.builder().put(IndexMetadata.SETTING_DATA_PATH, newIndexDataPath.toAbsolutePath().toString()))
                 .setIndicesOptions(IndicesOptions.fromOptions(true, false, true, true))
         );
 
@@ -347,7 +347,6 @@ public class IndexShardIT extends ESSingleNodeTestCase {
                         IndexSettings.INDEX_TRANSLOG_FLUSH_THRESHOLD_SIZE_SETTING.getKey(),
                         new ByteSizeValue(135 /* size of the operation + one generation header&footer*/, ByteSizeUnit.BYTES)
                     )
-                    .build()
             )
             .get();
         client().prepareIndex("test")
@@ -396,7 +395,6 @@ public class IndexShardIT extends ESSingleNodeTestCase {
             .setSettings(
                 Settings.builder()
                     .put(IndexSettings.INDEX_TRANSLOG_FLUSH_THRESHOLD_SIZE_SETTING.getKey(), new ByteSizeValue(size, ByteSizeUnit.BYTES))
-                    .build()
             )
             .get();
         client().prepareDelete("test", "2").get();

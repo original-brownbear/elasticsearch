@@ -227,7 +227,6 @@ public class NodeJoinExecutorTests extends ESTestCase {
             .metadata(
                 Metadata.builder()
                     .coordinationMetadata(CoordinationMetadata.builder().term(randomLongBetween(executorTerm + 1, Long.MAX_VALUE)).build())
-                    .build()
             )
             .build();
 
@@ -272,9 +271,7 @@ public class NodeJoinExecutorTests extends ESTestCase {
                     .build()
             )
             .metadata(
-                Metadata.builder()
-                    .coordinationMetadata(CoordinationMetadata.builder().term(randomLongBetween(0L, executorTerm)).build())
-                    .build()
+                Metadata.builder().coordinationMetadata(CoordinationMetadata.builder().term(randomLongBetween(0L, executorTerm)).build())
             )
             .build();
 
@@ -311,9 +308,7 @@ public class NodeJoinExecutorTests extends ESTestCase {
         final var clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .nodes(DiscoveryNodes.builder().add(masterNode).localNodeId(masterNode.getId()).build())
             .metadata(
-                Metadata.builder()
-                    .coordinationMetadata(CoordinationMetadata.builder().term(randomLongBetween(0L, executorTerm)).build())
-                    .build()
+                Metadata.builder().coordinationMetadata(CoordinationMetadata.builder().term(randomLongBetween(0L, executorTerm)).build())
             )
             .build();
 
@@ -360,7 +355,6 @@ public class NodeJoinExecutorTests extends ESTestCase {
                 .metadata(
                     Metadata.builder()
                         .coordinationMetadata(CoordinationMetadata.builder().term(randomLongBetween(0, executorTerm - 1)).build())
-                        .build()
                 )
                 .build(),
             executor,
@@ -430,7 +424,6 @@ public class NodeJoinExecutorTests extends ESTestCase {
                             )
                             .build()
                     )
-                    .build()
             )
             .build();
 
@@ -487,7 +480,7 @@ public class NodeJoinExecutorTests extends ESTestCase {
         final var masterNode = new DiscoveryNode(UUIDs.randomBase64UUID(random()), buildNewFakeTransportAddress(), Version.CURRENT);
         final var clusterState = ClusterState.builder(ClusterName.DEFAULT)
             .nodes(DiscoveryNodes.builder().add(masterNode).localNodeId(masterNode.getId()).masterNodeId(masterNode.getId()).build())
-            .metadata(Metadata.builder().coordinationMetadata(CoordinationMetadata.builder().term(currentTerm).build()).build())
+            .metadata(Metadata.builder().coordinationMetadata(CoordinationMetadata.builder().term(currentTerm).build()))
             .build();
 
         var tasks = Stream.concat(

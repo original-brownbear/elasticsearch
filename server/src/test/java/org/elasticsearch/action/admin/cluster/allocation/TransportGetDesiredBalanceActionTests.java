@@ -210,7 +210,7 @@ public class TransportGetDesiredBalanceActionTests extends ESAllocationTestCase 
         when(clusterInfoService.getClusterInfo()).thenReturn(ClusterInfo.EMPTY);
 
         var clusterState = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(metadataBuilder.build())
+            .metadata(metadataBuilder)
             .nodes(discoveryNodes.build())
             .routingTable(routingTable)
             .build();

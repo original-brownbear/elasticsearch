@@ -189,7 +189,7 @@ public class NodeJoinExecutor implements ClusterStateTaskExecutor<JoinTask> {
                         .term(term)
                         .clearVotingConfigExclusions();
                     newVotingConfigExclusions.forEach(coordMetadataBuilder::addVotingConfigExclusion);
-                    newState.metadata(Metadata.builder(initialState.metadata()).coordinationMetadata(coordMetadataBuilder.build()).build());
+                    newState.metadata(Metadata.builder(initialState.metadata()).coordinationMetadata(coordMetadataBuilder.build()));
                 }
             }
 
@@ -250,7 +250,6 @@ public class NodeJoinExecutor implements ClusterStateTaskExecutor<JoinTask> {
             .metadata(
                 Metadata.builder(currentState.metadata())
                     .coordinationMetadata(CoordinationMetadata.builder(currentState.coordinationMetadata()).term(term).build())
-                    .build()
             )
             .build();
         logger.trace("becomeMasterAndTrimConflictingNodes: {}", tmpState.nodes());

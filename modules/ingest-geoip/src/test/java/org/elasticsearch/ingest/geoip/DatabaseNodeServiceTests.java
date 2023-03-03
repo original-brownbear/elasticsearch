@@ -219,7 +219,7 @@ public class DatabaseNodeServiceTests extends ESTestCase {
         PersistentTasksCustomMetadata tasksCustomMetadata = new PersistentTasksCustomMetadata(1L, Map.of(taskId, task));
 
         ClusterState state = ClusterState.builder(new ClusterName("name"))
-            .metadata(Metadata.builder().putCustom(TYPE, tasksCustomMetadata).build())
+            .metadata(Metadata.builder().putCustom(TYPE, tasksCustomMetadata))
             .nodes(
                 new DiscoveryNodes.Builder().add(new DiscoveryNode("_id1", buildNewFakeTransportAddress(), Version.CURRENT))
                     .localNodeId("_id1")

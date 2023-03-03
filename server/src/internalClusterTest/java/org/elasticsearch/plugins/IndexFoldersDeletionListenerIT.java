@@ -313,7 +313,6 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
                         .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                         .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                         .put("index.routing.allocation.enable", EnableAllocationDecider.Allocation.NONE)
-                        .build()
                 )
                 .setWaitForActiveShards(ActiveShardCount.NONE)
         );

@@ -156,7 +156,7 @@ public class SearchableSnapshotDiskThresholdIntegTests extends DiskUsageIntegTes
                 .cluster()
                 .preparePutRepository(name)
                 .setType(type)
-                .setSettings(Settings.builder().put("location", randomRepoPath()).build())
+                .setSettings(Settings.builder().put("location", randomRepoPath()))
         );
     }
 

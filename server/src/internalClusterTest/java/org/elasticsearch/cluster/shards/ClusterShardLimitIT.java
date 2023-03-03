@@ -277,7 +277,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
         repoSettings.put("compress", randomBoolean());
         repoSettings.put("chunk_size", randomIntBetween(100, 1000), ByteSizeUnit.BYTES);
 
-        assertAcked(client.admin().cluster().preparePutRepository("test-repo").setType("fs").setSettings(repoSettings.build()));
+        assertAcked(client.admin().cluster().preparePutRepository("test-repo").setType("fs").setSettings(repoSettings));
 
         int dataNodes = client().admin().cluster().prepareState().get().getState().getNodes().getDataNodes().size();
         ShardCounts counts = ShardCounts.forDataNodeCount(dataNodes);

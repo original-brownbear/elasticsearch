@@ -288,7 +288,6 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
                 .setSettings(
                     Settings.builder()
                         .put(IndexMetadata.INDEX_ROUTING_EXCLUDE_GROUP_SETTING.getConcreteSettingForNamespace("_name").getKey(), "*")
-                        .build()
                 )
                 .setWaitForActiveShards(0)
         );

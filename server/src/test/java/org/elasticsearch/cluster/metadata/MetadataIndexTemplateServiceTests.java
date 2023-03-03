@@ -666,9 +666,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
         IndexTemplateMetadata v1Template = IndexTemplateMetadata.builder("v1-template").patterns(Arrays.asList("fo*", "baz")).build();
         final MetadataIndexTemplateService metadataIndexTemplateService = getMetadataIndexTemplateService();
 
-        ClusterState state = ClusterState.builder(ClusterState.EMPTY_STATE)
-            .metadata(Metadata.builder(Metadata.EMPTY_METADATA).put(v1Template).build())
-            .build();
+        ClusterState state = ClusterState.builder(ClusterState.EMPTY_STATE).metadata(Metadata.builder().put(v1Template)).build();
 
         ComposableIndexTemplate v2Template = new ComposableIndexTemplate(
             Arrays.asList("foo-bar-*", "eggplant"),
@@ -842,9 +840,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
 
         IndexTemplateMetadata v1Template = IndexTemplateMetadata.builder("v1-template").patterns(Arrays.asList("fo*", "baz")).build();
 
-        ClusterState state = ClusterState.builder(ClusterState.EMPTY_STATE)
-            .metadata(Metadata.builder(Metadata.EMPTY_METADATA).put(v1Template).build())
-            .build();
+        ClusterState state = ClusterState.builder(ClusterState.EMPTY_STATE).metadata(Metadata.builder().put(v1Template)).build();
 
         ComposableIndexTemplate v2Template = new ComposableIndexTemplate(
             Arrays.asList("foo-bar-*", "eggplant"),
@@ -891,9 +887,7 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
         final MetadataIndexTemplateService metadataIndexTemplateService = getMetadataIndexTemplateService();
         IndexTemplateMetadata v1Template = IndexTemplateMetadata.builder("v1-template").patterns(Arrays.asList("fo*", "baz")).build();
 
-        ClusterState state = ClusterState.builder(ClusterState.EMPTY_STATE)
-            .metadata(Metadata.builder(Metadata.EMPTY_METADATA).put(v1Template).build())
-            .build();
+        ClusterState state = ClusterState.builder(ClusterState.EMPTY_STATE).metadata(Metadata.builder().put(v1Template)).build();
 
         ComposableIndexTemplate v2Template = new ComposableIndexTemplate(
             Arrays.asList("foo-bar-*", "eggplant"),
@@ -1880,10 +1874,8 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
                                     .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                                     .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                                     .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                                    .build()
                             )
                     )
-                    .build()
             )
             .build();
 
@@ -1917,10 +1909,8 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
                                     .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                                     .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                                     .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                                    .build()
                             )
                     )
-                    .build()
             )
             .build();
 
@@ -2040,10 +2030,8 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
                                     .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                                     .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                                     .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                                    .build()
                             )
                     )
-                    .build()
             )
             .build();
 
@@ -2077,10 +2065,8 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
                                     .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
                                     .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                                     .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT)
-                                    .build()
                             )
                     )
-                    .build()
             )
             .build();
 

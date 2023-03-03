@@ -324,7 +324,6 @@ public class TransportGetAliasesActionTests extends ESTestCase {
                             .numberOfReplicas(0)
                             .putAlias(AliasMetadata.builder("d"))
                     )
-                    .build()
             )
             .build();
     }

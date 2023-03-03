@@ -137,7 +137,6 @@ public class CrossClusterSearchIT extends AbstractMultiClustersTestCase {
                     Settings.builder()
                         .put("index.routing.allocation.require._name", remoteNode)
                         .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
                 )
         );
         indexDocs(client("cluster_a"), "prod");

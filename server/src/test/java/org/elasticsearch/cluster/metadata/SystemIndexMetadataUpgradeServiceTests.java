@@ -205,7 +205,7 @@ public class SystemIndexMetadataUpgradeServiceTests extends ESTestCase {
         clusterMetadata.put(IndexMetadata.builder(hiddenIndexMetadata));
 
         ClusterState clusterState = ClusterState.builder(new ClusterName("system-index-metadata-upgrade-service-tests"))
-            .metadata(clusterMetadata.build())
+            .metadata(clusterMetadata)
             .customs(Map.of())
             .build();
 
@@ -223,7 +223,7 @@ public class SystemIndexMetadataUpgradeServiceTests extends ESTestCase {
         clusterMetadata.put(IndexMetadata.builder(visibleAliasMetadata));
 
         ClusterState clusterState = ClusterState.builder(new ClusterName("system-index-metadata-upgrade-service-tests"))
-            .metadata(clusterMetadata.build())
+            .metadata(clusterMetadata)
             .customs(Map.of())
             .build();
 

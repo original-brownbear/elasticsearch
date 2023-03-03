@@ -55,7 +55,6 @@ public class TransportUpdateSettingsActionTests extends ESTestCase {
                         .build(),
                     true
                 )
-                .build()
         )
         .build();
 

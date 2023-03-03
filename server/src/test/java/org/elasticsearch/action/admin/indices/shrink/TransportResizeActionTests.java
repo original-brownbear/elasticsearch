@@ -178,7 +178,7 @@ public class TransportResizeActionTests extends ESTestCase {
 
         ResizeRequest resizeRequest = new ResizeRequest("target", "source");
         resizeRequest.setResizeType(ResizeType.SPLIT);
-        resizeRequest.getTargetIndexRequest().settings(Settings.builder().put("index.number_of_shards", 2).build());
+        resizeRequest.getTargetIndexRequest().settings(Settings.builder().put("index.number_of_shards", 2));
         IndexMetadata indexMetadata = clusterState.metadata().index("source");
         TransportResizeAction.prepareCreateIndexRequest(
             resizeRequest,
@@ -188,9 +188,7 @@ public class TransportResizeActionTests extends ESTestCase {
         );
 
         resizeRequest.getTargetIndexRequest()
-            .settings(
-                Settings.builder().put("index.number_of_routing_shards", randomIntBetween(2, 10)).put("index.number_of_shards", 2).build()
-            );
+            .settings(Settings.builder().put("index.number_of_routing_shards", randomIntBetween(2, 10)).put("index.number_of_shards", 2));
         TransportResizeAction.prepareCreateIndexRequest(
             resizeRequest,
             indexMetadata,
@@ -221,7 +219,7 @@ public class TransportResizeActionTests extends ESTestCase {
 
         ResizeRequest resizeRequest = new ResizeRequest("target", "source");
         resizeRequest.setResizeType(ResizeType.SPLIT);
-        resizeRequest.getTargetIndexRequest().settings(Settings.builder().put("index.number_of_shards", numShards * 2).build());
+        resizeRequest.getTargetIndexRequest().settings(Settings.builder().put("index.number_of_shards", numShards * 2));
         TransportResizeAction.prepareCreateIndexRequest(
             resizeRequest,
             clusterState.metadata().index("source"),
@@ -297,7 +295,7 @@ public class TransportResizeActionTests extends ESTestCase {
         ).metadata().index("source");
         ResizeRequest resizeRequest = new ResizeRequest("target", "source");
         resizeRequest.setMaxPrimaryShardSize(ByteSizeValue.ofBytes(10));
-        resizeRequest.getTargetIndexRequest().settings(Settings.builder().put("index.number_of_shards", 2).build());
+        resizeRequest.getTargetIndexRequest().settings(Settings.builder().put("index.number_of_shards", 2));
         assertTrue(
             expectThrows(
                 IllegalArgumentException.class,

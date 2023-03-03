@@ -917,7 +917,6 @@ public class CoordinationStateTests extends ESTestCase {
             .metadata(
                 Metadata.builder(clusterState.metadata())
                     .persistentSettings(Settings.builder().put(clusterState.metadata().persistentSettings()).put("value", value).build())
-                    .build()
             )
             .build();
     }

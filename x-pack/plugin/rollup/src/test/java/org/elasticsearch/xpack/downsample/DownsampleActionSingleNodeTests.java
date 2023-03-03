@@ -228,7 +228,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             .endObject();
 
         mapping.endObject().endObject().endObject();
-        assertAcked(client().admin().indices().prepareCreate(sourceIndex).setSettings(settings.build()).setMapping(mapping).get());
+        assertAcked(client().admin().indices().prepareCreate(sourceIndex).setSettings(settings).setMapping(mapping).get());
     }
 
     public void testRollupIndex() throws IOException {
@@ -439,7 +439,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             client().admin()
                 .indices()
                 .prepareCreate(rollupIndex)
-                .setSettings(Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0).build())
+                .setSettings(Settings.builder().put("index.number_of_shards", 1).put("index.number_of_replicas", 0))
                 .get()
         );
         ResourceAlreadyExistsException exception = expectThrows(
@@ -471,7 +471,6 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
                     .putList(IndexMetadata.INDEX_ROUTING_PATH.getKey(), List.of(FIELD_DIMENSION_1))
                     .put(IndexSettings.TIME_SERIES_START_TIME.getKey(), Instant.ofEpochMilli(startTime).toString())
                     .put(IndexSettings.TIME_SERIES_END_TIME.getKey(), "2106-01-08T23:40:53.384Z")
-                    .build()
             )
             .setMapping(
                 FIELD_TIMESTAMP,
@@ -642,7 +641,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
                 .indices()
                 .preparePutTemplate(rollupIndex)
                 .setPatterns(List.of(rollupIndex))
-                .setSettings(Settings.builder().put("index.blocks.write", "true").build())
+                .setSettings(Settings.builder().put("index.blocks.write", "true"))
                 .get()
         );
 
@@ -701,7 +700,7 @@ public class DownsampleActionSingleNodeTests extends ESSingleNodeTestCase {
             client().admin()
                 .indices()
                 .prepareUpdateSettings(sourceIndex)
-                .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), true).build())
+                .setSettings(Settings.builder().put(IndexMetadata.INDEX_BLOCKS_WRITE_SETTING.getKey(), true))
                 .get()
         );
     }

@@ -58,7 +58,7 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
             .build();
         mb.put(indexToAdd, false);
 
-        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb.build()).build();
+        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb).build();
         ClusterState newState = MetadataDataStreamsService.modifyDataStream(
             originalState,
             List.of(DataStreamAction.addBackingIndex(dataStreamName, indexToAdd.getIndex().getName())),
@@ -101,7 +101,7 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
         mb.put(DataStreamTestHelper.newInstance(dataStreamName, Arrays.stream(backingIndices).map(IndexMetadata::getIndex).toList()));
 
         final IndexMetadata indexToRemove = backingIndices[randomIntBetween(0, numBackingIndices - 2)];
-        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb.build()).build();
+        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb).build();
         ClusterState newState = MetadataDataStreamsService.modifyDataStream(
             originalState,
             List.of(DataStreamAction.removeBackingIndex(dataStreamName, indexToRemove.getIndex().getName())),
@@ -144,7 +144,7 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
         mb.put(DataStreamTestHelper.newInstance(dataStreamName, Arrays.stream(backingIndices).map(IndexMetadata::getIndex).toList()));
 
         final IndexMetadata indexToRemove = backingIndices[numBackingIndices - 1];
-        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb.build()).build();
+        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb).build();
 
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
@@ -194,7 +194,7 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
             .build();
         mb.put(indexToAdd, false);
 
-        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb.build()).build();
+        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb).build();
         ClusterState newState = MetadataDataStreamsService.modifyDataStream(
             originalState,
             List.of(
@@ -248,7 +248,7 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
             .build();
         mb.put(indexToAdd, false);
 
-        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb.build()).build();
+        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb).build();
         ClusterState newState = MetadataDataStreamsService.modifyDataStream(
             originalState,
             List.of(DataStreamAction.addBackingIndex(dataStreamName, indexToAdd.getIndex().getName())),
@@ -293,7 +293,7 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
         mb.put(indexToAdd, false);
         final String missingDataStream = randomAlphaOfLength(5);
 
-        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb.build()).build();
+        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb).build();
 
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
@@ -326,7 +326,7 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
         mb.put(DataStreamTestHelper.newInstance(dataStreamName, Arrays.stream(backingIndices).map(IndexMetadata::getIndex).toList()));
 
         final String missingIndex = randomAlphaOfLength(5);
-        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb.build()).build();
+        ClusterState originalState = ClusterState.builder(new ClusterName("dummy")).metadata(mb).build();
         IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
             () -> MetadataDataStreamsService.modifyDataStream(
@@ -355,7 +355,7 @@ public class MetadataDataStreamsServiceTests extends MapperServiceTestCase {
             original.getIndexMode(),
             original.getLifecycle()
         );
-        var brokenState = ClusterState.builder(state).metadata(Metadata.builder(state.getMetadata()).put(broken).build()).build();
+        var brokenState = ClusterState.builder(state).metadata(Metadata.builder(state.getMetadata()).put(broken)).build();
 
         var result = MetadataDataStreamsService.modifyDataStream(
             brokenState,

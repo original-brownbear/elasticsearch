@@ -32,10 +32,7 @@ public class InternalEngineMergeIT extends ESIntegTestCase {
         // some settings to keep num segments low
         assertAcked(
             prepareCreate("test").setSettings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numOfShards)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                    .build()
+                Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numOfShards).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
             )
         );
         long id = 0;

@@ -50,12 +50,7 @@ public abstract class GeoShapeIntegTestCase extends BaseShapeIntegTestCase<GeoSh
 
         // create index
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
-                .setSettings(settings(randomSupportedVersion()).build())
-                .setMapping(mapping)
-                .get()
+            client().admin().indices().prepareCreate("test").setSettings(settings(randomSupportedVersion())).setMapping(mapping).get()
         );
         ensureGreen();
 

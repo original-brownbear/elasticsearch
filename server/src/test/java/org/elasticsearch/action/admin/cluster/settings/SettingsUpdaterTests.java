@@ -219,7 +219,7 @@ public class SettingsUpdaterTests extends ESTestCase {
         clusterSettings.addSettingsUpdateConsumer(deprecatedSetting, s -> {});
         final SettingsUpdater settingsUpdater = new SettingsUpdater(clusterSettings);
         final ClusterState clusterState = ClusterState.builder(new ClusterName("foo"))
-            .metadata(Metadata.builder().persistentSettings(settings).build())
+            .metadata(Metadata.builder().persistentSettings(settings))
             .build();
 
         final Settings toApplyDebug = Settings.builder().put("logger.org.elasticsearch", "debug").build();

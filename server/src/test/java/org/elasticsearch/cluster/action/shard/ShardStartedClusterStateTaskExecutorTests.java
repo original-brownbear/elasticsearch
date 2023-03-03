@@ -236,7 +236,6 @@ public class ShardStartedClusterStateTaskExecutorTests extends ESAllocationTestC
             .metadata(
                 Metadata.builder(clusterState.metadata())
                     .put(IndexMetadata.builder(clusterState.metadata().index(indexName)).primaryTerm(shard, primaryTerm).build(), true)
-                    .build()
             )
             .build();
         final ShardId shardId = new ShardId(clusterState.metadata().index(indexName).getIndex(), shard);
@@ -296,7 +295,6 @@ public class ShardStartedClusterStateTaskExecutorTests extends ESAllocationTestC
             .metadata(
                 Metadata.builder(clusterState.metadata())
                     .put(IndexMetadata.builder(clusterState.metadata().index(indexName)).primaryTerm(shard, primaryTerm).build(), true)
-                    .build()
             )
             .build();
         final ShardId shardId = new ShardId(clusterState.metadata().index(indexName).getIndex(), shard);

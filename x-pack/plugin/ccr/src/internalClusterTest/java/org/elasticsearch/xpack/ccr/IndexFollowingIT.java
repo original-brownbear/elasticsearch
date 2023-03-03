@@ -402,10 +402,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                 .indices()
                 .prepareCreate("index1")
                 .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
+                    Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                 )
         );
         ensureLeaderGreen("index1");
@@ -679,7 +676,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
         followerClient().admin().indices().close(new CloseIndexRequest("index2").masterNodeTimeout(TimeValue.MAX_VALUE)).actionGet();
 
         UpdateSettingsRequest updateSettingsRequest = new UpdateSettingsRequest("index2").masterNodeTimeout(TimeValue.MAX_VALUE);
-        updateSettingsRequest.settings(Settings.builder().put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), false).build());
+        updateSettingsRequest.settings(Settings.builder().put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), false));
         Exception e = expectThrows(
             IllegalArgumentException.class,
             () -> followerClient().admin().indices().updateSettings(updateSettingsRequest).actionGet()
@@ -696,10 +693,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                 .indices()
                 .prepareCreate("index1")
                 .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
+                    Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                 )
         );
 
@@ -742,10 +736,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                 .indices()
                 .prepareCreate("index1")
                 .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
+                    Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                 )
         );
 
@@ -776,10 +767,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                 .indices()
                 .prepareCreate("index1")
                 .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
+                    Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                 )
         );
 
@@ -824,10 +812,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                 .indices()
                 .prepareCreate(leaderIndex)
                 .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
+                    Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                 )
         );
         ensureLeaderGreen(leaderIndex);
@@ -857,10 +842,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                 .indices()
                 .prepareCreate("index1")
                 .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
+                    Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                 )
         );
 
@@ -893,10 +875,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                 .indices()
                 .prepareCreate("leader")
                 .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
+                    Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                 )
         );
         followerClient().execute(PutFollowAction.INSTANCE, putFollow("leader", "follower")).get();
@@ -984,10 +963,7 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                     .prepareCreate("index1")
                     .setWaitForActiveShards(ActiveShardCount.NONE)
                     .setSettings(
-                        Settings.builder()
-                            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                            .build()
+                        Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1).put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                     )
             );
 
@@ -1562,7 +1538,6 @@ public class IndexFollowingIT extends CcrIntegTestCase {
                     Settings.builder()
                         .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numberOfShards)
                         .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, randomIntBetween(0, 1))
-                        .build()
                 )
         );
 

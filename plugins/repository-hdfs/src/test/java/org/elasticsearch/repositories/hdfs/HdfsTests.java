@@ -157,7 +157,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
                 .cluster()
                 .preparePutRepository("test-repo")
                 .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "/path").build())
+                .setSettings(Settings.builder().put("uri", "/path"))
                 .get();
             fail();
         } catch (RepositoryException e) {
@@ -172,7 +172,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
                 .cluster()
                 .preparePutRepository("test-repo")
                 .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "file:///").build())
+                .setSettings(Settings.builder().put("uri", "file:///"))
                 .get();
             fail();
         } catch (RepositoryException e) {
@@ -187,7 +187,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
                 .cluster()
                 .preparePutRepository("test-repo")
                 .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "hdfs:///some/path").build())
+                .setSettings(Settings.builder().put("uri", "hdfs:///some/path"))
                 .get();
             fail();
         } catch (RepositoryException e) {
@@ -202,7 +202,7 @@ public class HdfsTests extends ESSingleNodeTestCase {
                 .cluster()
                 .preparePutRepository("test-repo")
                 .setType("hdfs")
-                .setSettings(Settings.builder().put("uri", "hdfs:///").build())
+                .setSettings(Settings.builder().put("uri", "hdfs:///"))
                 .get();
             fail();
         } catch (RepositoryException e) {

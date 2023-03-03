@@ -79,7 +79,7 @@ public class RemoveSettingsCommand extends ElasticsearchNodeCommand {
             }
         }
         final ClusterState newClusterState = ClusterState.builder(oldClusterState)
-            .metadata(Metadata.builder(oldClusterState.metadata()).persistentSettings(newPersistentSettingsBuilder.build()).build())
+            .metadata(Metadata.builder(oldClusterState.metadata()).persistentSettings(newPersistentSettingsBuilder.build()))
             .build();
         terminal.println(
             Terminal.Verbosity.VERBOSE,

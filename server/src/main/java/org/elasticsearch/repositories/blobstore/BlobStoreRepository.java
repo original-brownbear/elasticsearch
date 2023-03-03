@@ -2075,7 +2075,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                         repoState.pendingGeneration()
                                     )
                                 )
-                                .build()
                         )
                         .build();
                 }
@@ -2226,7 +2225,6 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                                     .<RepositoriesMetadata>custom(RepositoriesMetadata.TYPE)
                                     .withUpdatedGeneration(repoName, safeGeneration, newGen)
                             )
-                            .build()
                     )
                     .build();
             }

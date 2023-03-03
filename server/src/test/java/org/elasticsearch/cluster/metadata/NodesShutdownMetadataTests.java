@@ -84,7 +84,7 @@ public class NodesShutdownMetadataTests extends ChunkedToXContentDiffableSeriali
         ClusterState state = ClusterState.builder(ClusterName.DEFAULT).nodes(nodes).build();
 
         state = ClusterState.builder(state)
-            .metadata(Metadata.builder(state.metadata()).putCustom(NodesShutdownMetadata.TYPE, nodesShutdownMetadata).build())
+            .metadata(Metadata.builder(state.metadata()).putCustom(NodesShutdownMetadata.TYPE, nodesShutdownMetadata))
             .nodes(
                 DiscoveryNodes.builder(state.nodes())
                     .add(new DiscoveryNode("_node_1", buildNewFakeTransportAddress(), Version.CURRENT))

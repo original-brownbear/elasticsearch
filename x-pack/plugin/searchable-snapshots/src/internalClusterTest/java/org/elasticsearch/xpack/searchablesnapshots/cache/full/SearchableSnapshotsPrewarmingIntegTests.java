@@ -148,7 +148,7 @@ public class SearchableSnapshotsPrewarmingIntegTests extends ESSingleNodeTestCas
 
         logger.debug("--> registering repository");
         assertAcked(
-            client().admin().cluster().preparePutRepository("repository").setType(FsRepository.TYPE).setSettings(repositorySettings.build())
+            client().admin().cluster().preparePutRepository("repository").setType(FsRepository.TYPE).setSettings(repositorySettings)
         );
 
         logger.debug("--> snapshotting indices");
@@ -179,7 +179,7 @@ public class SearchableSnapshotsPrewarmingIntegTests extends ESSingleNodeTestCas
                 .preparePutRepository("repository")
                 .setType("tracking")
                 .setVerify(false)
-                .setSettings(repositorySettings.build())
+                .setSettings(repositorySettings)
         );
 
         TrackingRepositoryPlugin tracker = getTrackingRepositoryPlugin();

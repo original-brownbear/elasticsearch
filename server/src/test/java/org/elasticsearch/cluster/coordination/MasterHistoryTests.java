@@ -243,7 +243,7 @@ public class MasterHistoryTests extends ESTestCase {
         }
         return ClusterState.builder(new ClusterName("test-cluster"))
             .routingTable(routingTableBuilder.build())
-            .metadata(metadataBuilder.build())
+            .metadata(metadataBuilder)
             .nodes(nodesBuilder)
             .build();
     }

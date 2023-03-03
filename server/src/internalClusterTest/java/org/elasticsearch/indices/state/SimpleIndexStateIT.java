@@ -92,7 +92,7 @@ public class SimpleIndexStateIT extends ESIntegTestCase {
             .indices()
             .prepareCreate("test")
             .setWaitForActiveShards(ActiveShardCount.NONE)
-            .setSettings(Settings.builder().put("index.routing.allocation.include.tag", "no_such_node").build())
+            .setSettings(Settings.builder().put("index.routing.allocation.include.tag", "no_such_node"))
             .get();
 
         ClusterHealthResponse health = client().admin().cluster().prepareHealth("test").setWaitForNodes(">=2").get();

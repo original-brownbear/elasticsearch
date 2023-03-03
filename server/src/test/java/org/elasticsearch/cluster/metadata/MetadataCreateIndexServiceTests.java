@@ -978,7 +978,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
             .numberOfReplicas(0)
             .build();
         ClusterState currentClusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
-            .metadata(Metadata.builder().put(existingWriteIndex, false).build())
+            .metadata(Metadata.builder().put(existingWriteIndex, false))
             .build();
 
         IndexMetadata newIndex = IndexMetadata.builder("test")

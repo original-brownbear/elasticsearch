@@ -156,7 +156,7 @@ public class AutoCreateSystemIndexIT extends ESIntegTestCase {
 
     public void testSystemIndicesAutoCreateRejectedWhenNotHidden() {
         CreateIndexRequest request = new CreateIndexRequest(UnmanagedSystemIndexTestPlugin.SYSTEM_INDEX_NAME);
-        request.settings(Settings.builder().put(SETTING_INDEX_HIDDEN, false).build());
+        request.settings(Settings.builder().put(SETTING_INDEX_HIDDEN, false));
         ExecutionException exception = expectThrows(
             ExecutionException.class,
             () -> client().execute(AutoCreateAction.INSTANCE, request).get()

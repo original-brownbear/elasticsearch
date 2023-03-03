@@ -313,7 +313,6 @@ public class ClusterRerouteResponseTests extends ESTestCase {
                             .build(),
                         false
                     )
-                    .build()
             )
             .build();
     }

@@ -176,7 +176,7 @@ public class DeleteDataStreamTransportActionTests extends ESTestCase {
                 b.remove(index.getName());
             }
 
-            return ClusterState.builder(currentState).metadata(b.build()).build();
+            return ClusterState.builder(currentState).metadata(b).build();
         });
 
         return s;

@@ -230,7 +230,6 @@ public class CorruptedBlobStoreRepositoryIT extends AbstractSnapshotIntegTestCas
                                 .<RepositoriesMetadata>custom(RepositoriesMetadata.TYPE)
                                 .withUpdatedGeneration(repository.getMetadata().name(), beforeMoveGen, beforeMoveGen + 1)
                         )
-                        .build()
                 )
                 .build()
         );

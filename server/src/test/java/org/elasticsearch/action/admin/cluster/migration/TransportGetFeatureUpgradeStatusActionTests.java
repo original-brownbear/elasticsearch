@@ -90,9 +90,8 @@ public class TransportGetFeatureUpgradeStatusActionTests extends ESTestCase {
             .numberOfReplicas(0)
             .build();
 
-        ClusterState clusterState = new ClusterState.Builder(ClusterState.EMPTY_STATE).metadata(
-            new Metadata.Builder().indices(Map.of(".test-index-1", indexMetadata1, ".test-index-2", indexMetadata2)).build()
+        return new ClusterState.Builder(ClusterState.EMPTY_STATE).metadata(
+            new Metadata.Builder().indices(Map.of(".test-index-1", indexMetadata1, ".test-index-2", indexMetadata2))
         ).build();
-        return clusterState;
     }
 }

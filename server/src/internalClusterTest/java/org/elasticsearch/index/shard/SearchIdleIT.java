@@ -152,7 +152,7 @@ public class SearchIdleIT extends ESSingleNodeTestCase {
         client().admin()
             .indices()
             .prepareUpdateSettings("test")
-            .setSettings(Settings.builder().put(IndexSettings.INDEX_REFRESH_INTERVAL_SETTING.getKey(), -1).build())
+            .setSettings(Settings.builder().put(IndexSettings.INDEX_REFRESH_INTERVAL_SETTING.getKey(), -1))
             .execute(ActionListener.running(updateSettingsLatch::countDown));
         assertHitCount(client().prepareSearch().get(), 2);
         // wait for both to ensure we don't have in-flight operations

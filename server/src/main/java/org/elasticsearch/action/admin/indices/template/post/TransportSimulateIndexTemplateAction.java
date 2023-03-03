@@ -160,9 +160,7 @@ public class TransportSimulateIndexTemplateAction extends TransportMasterNodeRea
      */
     private static ClusterState removeExistingAbstractions(ClusterState state, String indexName) {
         Metadata metadata = state.metadata();
-        return ClusterState.builder(state)
-            .metadata(Metadata.builder(metadata).removeDataStream(indexName).removeAllIndices().build())
-            .build();
+        return ClusterState.builder(state).metadata(Metadata.builder(metadata).removeDataStream(indexName).removeAllIndices()).build();
     }
 
     @Override
@@ -191,9 +189,7 @@ public class TransportSimulateIndexTemplateAction extends TransportMasterNodeRea
             .build();
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName).settings(dummySettings).build();
 
-        return ClusterState.builder(simulatedState)
-            .metadata(Metadata.builder(simulatedState.metadata()).put(indexMetadata, true).build())
-            .build();
+        return ClusterState.builder(simulatedState).metadata(Metadata.builder(simulatedState.metadata()).put(indexMetadata, true)).build();
     }
 
     /**
@@ -256,7 +252,7 @@ public class TransportSimulateIndexTemplateAction extends TransportMasterNodeRea
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName).settings(dummySettings).build();
 
         final ClusterState tempClusterState = ClusterState.builder(simulatedState)
-            .metadata(Metadata.builder(simulatedState.metadata()).put(indexMetadata, true).build())
+            .metadata(Metadata.builder(simulatedState.metadata()).put(indexMetadata, true))
             .build();
 
         List<AliasMetadata> aliases = indicesService.withTempIndexService(
