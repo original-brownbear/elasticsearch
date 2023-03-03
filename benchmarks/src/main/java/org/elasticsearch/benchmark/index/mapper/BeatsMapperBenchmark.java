@@ -34,7 +34,11 @@ import java.util.zip.GZIPInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-@Fork(value = 1)
+@Fork(
+    value = 1,
+    jvmArgsAppend = {
+        "-agentpath:/Users/arminbraun/Downloads/async-profiler-2.9-macos/build/libasyncProfiler.dylib=start,event=cpu,file=profile.html" }
+)
 @Warmup(iterations = 5)
 @Measurement(iterations = 5)
 @BenchmarkMode(Mode.AverageTime)

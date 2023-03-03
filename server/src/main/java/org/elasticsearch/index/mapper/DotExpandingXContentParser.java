@@ -72,13 +72,50 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             }
             XContentParser delegate = delegate();
             String field = delegate.currentName();
-            String[] subpaths = splitAndValidatePath(field);
-            // Corner case: if the input has a single trailing '.', eg 'field.', then we will get a single
-            // subpath due to the way String.split() works. We can only return fast here if this is not
-            // the case
-            // TODO make this case throw an error instead? https://github.com/elastic/elasticsearch/issues/28948
-            if (subpaths.length == 1 && field.endsWith(".") == false) {
+            int length = field.length();
+            int dotCount = 0;
+            int lastIndex = 0;
+            while (lastIndex != length) {
+                int idx = field.indexOf('.', lastIndex);
+                if (idx == -1) {
+                    break;
+                } else if (idx == lastIndex) {
+                    throwCannotContainOnlyWhitespace(field);
+                }
+                dotCount++;
+                lastIndex = idx + 1;
+            }
+            if (dotCount == 0) {
+                if (length == 0) {
+                    throw new IllegalArgumentException("field name cannot be an empty string");
+                }
                 return;
+            }
+            if (dotCount == length) {
+                throw new IllegalArgumentException("field name cannot contain only dots");
+            }
+            boolean endsOnDot = lastIndex == length;
+            if (endsOnDot) {
+                dotCount--;
+            }
+            final String[] parts = new String[dotCount + 1];
+            int start = 0;
+            for (int i = 0; i < dotCount - 1; i++) {
+                int nextDot = field.indexOf('.', start);
+                parts[i] = field.substring(start, nextDot);
+                start = nextDot + 1;
+            }
+            if (endsOnDot) {
+                parts[0] = field.substring(start, lastIndex - 1);
+            } else {
+                parts[dotCount - 1] = field.substring(start, lastIndex - 1);
+                parts[dotCount] = field.substring(lastIndex);
+            }
+            for (String part : parts) {
+                // check if the field name contains only whitespace
+                if (part.isBlank()) {
+                    failOnBlankField(field);
+                }
             }
             XContentLocation location = delegate.getTokenLocation();
             Token token = delegate.nextToken();
@@ -88,8 +125,18 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
                 XContentParser subParser = token == Token.START_OBJECT || token == Token.START_ARRAY
                     ? new XContentSubParser(delegate)
                     : new SingletonValueXContentParser(delegate);
-                parsers.push(new DotExpandingXContentParser(subParser, subpaths, location, isWithinLeafObject));
+                parsers.push(new DotExpandingXContentParser(subParser, parts, location, isWithinLeafObject));
             }
+        }
+
+        private static void failOnBlankField(String field) {
+            throw new IllegalArgumentException(
+                "field name starting or ending with a [.] makes object resolution ambiguous: [" + field + "]"
+            );
+        }
+
+        private static void throwCannotContainOnlyWhitespace(String field) {
+            throw new IllegalArgumentException("field name cannot contain only whitespace: ['" + field + "']");
         }
 
         @Override
@@ -127,32 +174,6 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         public List<Object> listOrderedMap() throws IOException {
             throw new UnsupportedOperationException();
         }
-    }
-
-    private static String[] splitAndValidatePath(String fieldName) {
-        if (fieldName.isEmpty()) {
-            throw new IllegalArgumentException("field name cannot be an empty string");
-        }
-        if (fieldName.contains(".") == false) {
-            return new String[] { fieldName };
-        }
-        String[] parts = fieldName.split("\\.");
-        if (parts.length == 0) {
-            throw new IllegalArgumentException("field name cannot contain only dots");
-        }
-
-        for (String part : parts) {
-            // check if the field name contains only whitespace
-            if (part.isEmpty()) {
-                throw new IllegalArgumentException("field name cannot contain only whitespace: ['" + fieldName + "']");
-            }
-            if (part.isBlank()) {
-                throw new IllegalArgumentException(
-                    "field name starting or ending with a [.] makes object resolution ambiguous: [" + fieldName + "]"
-                );
-            }
-        }
-        return parts;
     }
 
     /**
