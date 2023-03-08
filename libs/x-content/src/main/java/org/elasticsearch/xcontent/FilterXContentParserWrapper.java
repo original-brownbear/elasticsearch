@@ -8,6 +8,8 @@
 
 package org.elasticsearch.xcontent;
 
+import java.io.IOException;
+
 /**
  * Wraps the provided {@link XContentParser} and delegates to it.
  */
@@ -21,5 +23,20 @@ public class FilterXContentParserWrapper extends FilterXContentParser {
     @Override
     protected final XContentParser delegate() {
         return delegate;
+    }
+
+    @Override
+    public long longValue(boolean coerce) throws IOException {
+        return delegate.longValue(coerce);
+    }
+
+    @Override
+    public long longValue() throws IOException {
+        return delegate.longValue();
+    }
+
+    @Override
+    public String textOrNull() throws IOException {
+        return delegate.textOrNull();
     }
 }
