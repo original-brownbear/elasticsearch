@@ -622,28 +622,22 @@ public class CompletionFieldMapper extends FieldMapper {
         private final String textValue;
         private final String fieldName;
         private final XContentLocation locationOffset;
-        private final XContentParser fullObjectParser;
+
         // we assume that the consumer is parsing values, we will switch to exposing the object format if nextToken is called
         private boolean parsingObject = false;
 
         MultiFieldParser(CompletionInputMetadata metadata, String fieldName, XContentLocation locationOffset) {
-            this.fullObjectParser = new MapXContentParser(
-                NamedXContentRegistry.EMPTY,
-                DeprecationHandler.IGNORE_DEPRECATIONS,
-                metadata.toMap(),
-                XContentType.JSON
+            super(
+                new MapXContentParser(
+                    NamedXContentRegistry.EMPTY,
+                    DeprecationHandler.IGNORE_DEPRECATIONS,
+                    metadata.toMap(),
+                    XContentType.JSON
+                )
             );
             this.fieldName = fieldName;
             this.locationOffset = locationOffset;
             this.textValue = metadata.input;
-        }
-
-        @Override
-        protected XContentParser delegate() {
-            // if consumers are only reading values, they should never go through delegate and rather call the
-            // overridden currentToken and textOrNull below that don't call super
-            assert parsingObject;
-            return fullObjectParser;
         }
 
         @Override
@@ -671,7 +665,7 @@ public class CompletionFieldMapper extends FieldMapper {
                 // a completion sub-field is parsing
                 parsingObject = true;
                 // move to START_OBJECT, currentToken has already returned START_OBJECT and we will advance one token further just below
-                this.fullObjectParser.nextToken();
+                this.delegate.nextToken();
             }
             return super.nextToken();
         }

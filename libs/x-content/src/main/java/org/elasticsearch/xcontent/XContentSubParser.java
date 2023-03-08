@@ -17,7 +17,7 @@ import java.io.IOException;
  * as skipping to the end of the object in case of a parsing error. The wrapper is intended to be
  * used for parsing objects that should be ignored if they are malformed.
  */
-public class XContentSubParser extends FilterXContentParserWrapper {
+public class XContentSubParser extends FilterXContentParser {
 
     private int level;
     private boolean closed;

@@ -43,7 +43,7 @@ import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
 import org.elasticsearch.search.lookup.FieldValues;
 import org.elasticsearch.search.lookup.SearchLookup;
 import org.elasticsearch.search.runtime.GeoPointScriptFieldDistanceFeatureQuery;
-import org.elasticsearch.xcontent.FilterXContentParserWrapper;
+import org.elasticsearch.xcontent.FilterXContentParser;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
@@ -308,7 +308,7 @@ public class GeoPointFieldMapper extends AbstractPointGeometryFieldMapper<GeoPoi
      * in the incoming document. We rely on the fact that consumers are only ever call {@link XContentParser#textOrNull()} and never
      * advance tokens, which is explicitly disallowed by this parser.
      */
-    static class GeoHashMultiFieldParser extends FilterXContentParserWrapper {
+    static class GeoHashMultiFieldParser extends FilterXContentParser {
         private final String value;
 
         GeoHashMultiFieldParser(XContentParser innerParser, String value) {

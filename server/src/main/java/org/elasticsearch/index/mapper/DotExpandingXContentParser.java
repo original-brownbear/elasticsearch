@@ -10,7 +10,6 @@ package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.xcontent.FilterXContentParser;
-import org.elasticsearch.xcontent.FilterXContentParserWrapper;
 import org.elasticsearch.xcontent.XContentLocation;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentSubParser;
@@ -31,7 +30,7 @@ import java.util.function.Supplier;
  * lookups will return the same mapper/field type, and we never load incoming documents in a map where duplicate
  * keys would end up overriding each other.
  */
-class DotExpandingXContentParser extends FilterXContentParserWrapper {
+class DotExpandingXContentParser extends FilterXContentParser {
 
     private static final class WrappingParser extends FilterXContentParser {
 
@@ -39,31 +38,30 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         final Deque<XContentParser> parsers = new ArrayDeque<>();
 
         WrappingParser(XContentParser in, ContentPath contentPath) throws IOException {
+            super(in);
             this.contentPath = contentPath;
-            parsers.push(in);
             if (in.currentToken() == Token.FIELD_NAME) {
-                expandDots(in);
+                expandDots();
             }
         }
 
         @Override
         public Token nextToken() throws IOException {
             Token token;
-            XContentParser delegate;
-            while ((token = (delegate = parsers.peek()).nextToken()) == null) {
-                parsers.pop();
-                if (parsers.isEmpty()) {
+            while ((token = delegate.nextToken()) == null) {
+                this.delegate = parsers.pollFirst();
+                if (delegate == null) {
                     return null;
                 }
             }
             if (token != Token.FIELD_NAME) {
                 return token;
             }
-            expandDots(delegate);
+            expandDots();
             return Token.FIELD_NAME;
         }
 
-        private void expandDots(XContentParser delegate) throws IOException {
+        private void expandDots() throws IOException {
             // this handles fields that belong to objects that can't hold subobjects, where the document specifies
             // the object holding the flat fields
             // e.g. { "metrics.service": { "time.max" : 10 } } with service having subobjects set to false
@@ -79,10 +77,10 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             if (dotCount == 0) {
                 return;
             }
-            doExpandDots(delegate, field, dotCount);
+            doExpandDots(field, dotCount);
         }
 
-        private void doExpandDots(XContentParser delegate, String field, int dotCount) throws IOException {
+        private void doExpandDots(String field, int dotCount) throws IOException {
             int next;
             int offset = 0;
             String[] list = new String[dotCount + 1];
@@ -123,10 +121,10 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
                 }
                 subpaths = extractAndValidateResults(field, list, resultSize);
             }
-            pushSubParser(delegate, subpaths);
+            pushSubParser(subpaths);
         }
 
-        private void pushSubParser(XContentParser delegate, String[] subpaths) throws IOException {
+        private void pushSubParser(String[] subpaths) throws IOException {
             XContentLocation location = delegate.getTokenLocation();
             Token token = delegate.nextToken();
             final XContentParser subParser;
@@ -138,7 +136,10 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
                 }
                 subParser = new SingletonValueXContentParser(delegate);
             }
-            parsers.push(new DotExpandingXContentParser(subParser, subpaths, location, contentPath));
+            if (this.delegate != null) {
+                parsers.push(this.delegate);
+            }
+            this.delegate = new DotExpandingXContentParser(subParser, subpaths, location, contentPath);
         }
 
         private static void throwExpectedOpen(Token token) {
@@ -165,11 +166,6 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             throw new IllegalArgumentException(
                 "field name starting or ending with a [.] makes object resolution ambiguous: [" + field + "]"
             );
-        }
-
-        @Override
-        protected XContentParser delegate() {
-            return parsers.peek();
         }
 
         @Override
@@ -246,7 +242,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             assert expandedTokens < subPaths.length * 2;
             if (expandedTokens == subPaths.length * 2 - 1) {
                 state = State.PARSING_ORIGINAL_CONTENT;
-                Token token = delegate().currentToken();
+                Token token = delegate.currentToken();
                 if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
                     innerLevel++;
                 }
@@ -278,7 +274,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             return Token.START_OBJECT;
         }
         if (state == State.PARSING_ORIGINAL_CONTENT) {
-            Token token = delegate().nextToken();
+            Token token = delegate.nextToken();
             if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
                 innerLevel++;
             }
@@ -309,7 +305,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         return switch (state) {
             case EXPANDING_START_OBJECT -> expandedTokens % 2 == 1 ? Token.START_OBJECT : Token.FIELD_NAME;
             case ENDING_EXPANDED_OBJECT -> Token.END_OBJECT;
-            case PARSING_ORIGINAL_CONTENT -> delegate().currentToken();
+            case PARSING_ORIGINAL_CONTENT -> delegate.currentToken();
         };
     }
 
@@ -320,14 +316,14 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             // whenever we are parsing some inner object/array we can easily delegate to the inner parser
             // e.g. field.with.dots: { obj:{ parsing here } }
             if (innerLevel > 0) {
-                return delegate().currentName();
+                return delegate.currentName();
             }
-            Token token = currentToken();
+            Token token = delegate.currentToken();
             // if we are parsing the outer object/array, only at the start object/array we need to return
             // e.g. dots instead of field.with.dots otherwise we can simply delegate to the inner parser
             // which will do the right thing
             if (innerLevel == 0 && token != Token.START_OBJECT && token != Token.START_ARRAY) {
-                return delegate().currentName();
+                return delegate.currentName();
             }
             // note that innerLevel can be -1 if there are no inner object/array e.g. field.with.dots: value
             // as well as while there is and we are parsing their END_OBJECT or END_ARRAY
@@ -338,39 +334,15 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
     @Override
     public void skipChildren() throws IOException {
         if (state == State.EXPANDING_START_OBJECT) {
-            delegate().skipChildren();
+            delegate.skipChildren();
             state = State.ENDING_EXPANDED_OBJECT;
         }
         if (state == State.PARSING_ORIGINAL_CONTENT) {
-            delegate().skipChildren();
+            delegate.skipChildren();
         }
     }
 
-    @Override
-    public String textOrNull() throws IOException {
-        if (state == State.EXPANDING_START_OBJECT) {
-            throw new IllegalStateException("Can't get text on a " + currentToken() + " at " + getTokenLocation());
-        }
-        return super.textOrNull();
-    }
-
-    @Override
-    public Number numberValue() throws IOException {
-        if (state == State.EXPANDING_START_OBJECT) {
-            throw new IllegalStateException("Can't get numeric value on a " + currentToken() + " at " + getTokenLocation());
-        }
-        return super.numberValue();
-    }
-
-    @Override
-    public boolean booleanValue() throws IOException {
-        if (state == State.EXPANDING_START_OBJECT) {
-            throw new IllegalStateException("Can't get boolean value on a " + currentToken() + " at " + getTokenLocation());
-        }
-        return super.booleanValue();
-    }
-
-    private static class SingletonValueXContentParser extends FilterXContentParserWrapper {
+    private static class SingletonValueXContentParser extends FilterXContentParser {
 
         protected SingletonValueXContentParser(XContentParser in) {
             super(in);
