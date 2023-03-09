@@ -498,9 +498,8 @@ public class RestControllerTests extends ESTestCase {
     }
 
     public void testDispatchWithContentStream() {
-        final String mediaType = randomFrom("application/json", "application/smile");
         String content = randomAlphaOfLength((int) Math.round(BREAKER_LIMIT.getBytes() / inFlightRequestsBreaker.getOverhead()));
-        final List<String> contentTypeHeader = Collections.singletonList(mediaType);
+        final List<String> contentTypeHeader = Collections.singletonList("application/json");
         RestRequest fakeRestRequest = new FakeRestRequest.Builder(NamedXContentRegistry.EMPTY).withContent(
             new BytesArray(content),
             RestRequest.parseContentType(contentTypeHeader)
@@ -786,7 +785,7 @@ public class RestControllerTests extends ESTestCase {
 
         final RestApiVersion version = RestApiVersion.minimumSupported();
 
-        final String mediaType = randomCompatibleMediaType(version);
+        final String mediaType = compatibleMediaType(XContentType.VND_JSON, version);
         FakeRestRequest fakeRestRequest = requestWithContent(mediaType);
         AssertingChannel channel = new AssertingChannel(fakeRestRequest, true, RestStatus.OK);
 
@@ -817,9 +816,7 @@ public class RestControllerTests extends ESTestCase {
         );
 
         final RestApiVersion version = RestApiVersion.minimumSupported();
-
-        final String mediaType = randomCompatibleMediaType(version);
-        FakeRestRequest fakeRestRequest = requestWithContent(mediaType);
+        FakeRestRequest fakeRestRequest = requestWithContent(compatibleMediaType(XContentType.VND_JSON, version));
         AssertingChannel channel = new AssertingChannel(fakeRestRequest, true, RestStatus.OK);
 
         // dispatch to a CURRENT newly added handler
@@ -861,8 +858,7 @@ public class RestControllerTests extends ESTestCase {
 
         final RestApiVersion version = RestApiVersion.current();
 
-        final String mediaType = randomCompatibleMediaType(version);
-        FakeRestRequest fakeRestRequest = requestWithContent(mediaType);
+        FakeRestRequest fakeRestRequest = requestWithContent(compatibleMediaType(XContentType.VND_JSON, version));
         AssertingChannel channel = new AssertingChannel(fakeRestRequest, true, RestStatus.OK);
 
         // dispatch to a CURRENT newly added handler

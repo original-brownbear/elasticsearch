@@ -73,7 +73,7 @@ public class XContentHelper {
             final XContentType contentType = XContentFactory.xContentType(compressedInput);
             return XContentFactory.xContent(contentType).createParser(config, compressedInput);
         } else {
-            return XContentFactory.xContent(xContentType(bytes)).createParser(config, bytes.streamInput());
+            return createParserUncompressed(config, bytes, xContentType(bytes));
         }
     }
 
@@ -109,12 +109,19 @@ public class XContentHelper {
             }
             return XContentFactory.xContent(xContentType).createParser(config, compressedInput);
         } else {
-            // TODO now that we have config we make a method on bytes to do this building wihout needing this check everywhere
-            if (bytes.hasArray()) {
-                return xContentType.xContent().createParser(config, bytes.array(), bytes.arrayOffset(), bytes.length());
-            }
-            return xContentType.xContent().createParser(config, bytes.streamInput());
+            return createParserUncompressed(config, bytes, xContentType);
         }
+    }
+
+    public static XContentParser createParserUncompressed(
+        XContentParserConfiguration config,
+        BytesReference bytes,
+        XContentType xContentType
+    ) throws IOException {
+        if (bytes.hasArray()) {
+            return xContentType.xContent().createParser(config, bytes.array(), bytes.arrayOffset(), bytes.length());
+        }
+        return xContentType.xContent().createParser(config, bytes.streamInput());
     }
 
     /**
@@ -306,20 +313,8 @@ public class XContentHelper {
             return bytes.utf8ToString();
         }
 
-        if (bytes.hasArray()) {
-            try (
-                XContentParser parser = XContentFactory.xContent(xContentType)
-                    .createParser(XContentParserConfiguration.EMPTY, bytes.array(), bytes.arrayOffset(), bytes.length())
-            ) {
-                return toJsonString(prettyPrint, parser);
-            }
-        } else {
-            try (
-                InputStream stream = bytes.streamInput();
-                XContentParser parser = XContentFactory.xContent(xContentType).createParser(XContentParserConfiguration.EMPTY, stream)
-            ) {
-                return toJsonString(prettyPrint, parser);
-            }
+        try (XContentParser parser = createParserUncompressed(XContentParserConfiguration.EMPTY, bytes, xContentType)) {
+            return toJsonString(prettyPrint, parser);
         }
     }
 

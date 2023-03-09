@@ -10,6 +10,7 @@ package org.elasticsearch.xcontent.support.filtering;
 
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.support.AbstractFilteringTestCase;
 import org.elasticsearch.xcontent.XContent;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -423,11 +424,11 @@ public abstract class AbstractXContentFilteringTestCase extends AbstractFilterin
         try (XContentBuilder builtSample = sample.apply(createBuilder())) {
             BytesReference sampleBytes = BytesReference.bytes(builtSample);
             try (
-                XContentParser parser = getXContentType().xContent()
-                    .createParser(
-                        XContentParserConfiguration.EMPTY.withFiltering(includes, excludes, matchFieldNamesWithDots),
-                        sampleBytes.streamInput()
-                    )
+                XContentParser parser = XContentHelper.createParserUncompressed(
+                    XContentParserConfiguration.EMPTY.withFiltering(includes, excludes, matchFieldNamesWithDots),
+                    sampleBytes,
+                    getXContentType()
+                )
             ) {
                 XContentBuilder result = createBuilder();
                 if (sampleBytes.get(sampleBytes.length() - 1) == '\n') {
@@ -449,11 +450,16 @@ public abstract class AbstractXContentFilteringTestCase extends AbstractFilterin
     static void assertXContentBuilderAsBytes(final XContentBuilder expected, final XContentBuilder actual) {
         XContent xContent = XContentFactory.xContent(actual.contentType());
         try (
-            XContentParser jsonParser = xContent.createParser(
+            XContentParser jsonParser = XContentHelper.createParserUncompressed(
                 XContentParserConfiguration.EMPTY,
-                BytesReference.bytes(expected).streamInput()
+                BytesReference.bytes(expected),
+                xContent.type()
             );
-            XContentParser testParser = xContent.createParser(XContentParserConfiguration.EMPTY, BytesReference.bytes(actual).streamInput())
+            XContentParser testParser = XContentHelper.createParserUncompressed(
+                XContentParserConfiguration.EMPTY,
+                BytesReference.bytes(actual),
+                xContent.type()
+            );
         ) {
             while (true) {
                 XContentParser.Token token1 = jsonParser.nextToken();

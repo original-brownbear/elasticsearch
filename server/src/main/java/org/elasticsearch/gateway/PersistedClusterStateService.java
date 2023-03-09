@@ -62,6 +62,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.common.xcontent.ChunkedToXContent;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.IOUtils;
@@ -620,7 +621,7 @@ public class PersistedClusterStateService {
     }
 
     private <T> T readXContent(BytesReference bytes, CheckedFunction<XContentParser, T, IOException> reader) throws IOException {
-        final XContentParser parser = XContentFactory.xContent(XContentType.SMILE).createParser(parserConfig, bytes.streamInput());
+        final XContentParser parser = XContentHelper.createParserUncompressed(parserConfig, bytes, XContentType.SMILE);
         try {
             return reader.apply(parser);
         } catch (Exception e) {

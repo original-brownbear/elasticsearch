@@ -24,7 +24,6 @@ import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -140,16 +139,12 @@ public class AliasValidator {
         NamedXContentRegistry xContentRegistry
     ) {
         assert searchExecutionContext != null;
-
         try (
-            InputStream inputStream = filter.streamInput();
-            XContentParser parser = XContentFactory.xContentType(inputStream)
-                .xContent()
-                .createParser(
-                    XContentParserConfiguration.EMPTY.withRegistry(xContentRegistry)
-                        .withDeprecationHandler(LoggingDeprecationHandler.INSTANCE),
-                    filter.streamInput()
-                )
+            XContentParser parser = XContentHelper.createParserUncompressed(
+                XContentParserConfiguration.EMPTY.withRegistry(xContentRegistry).withDeprecationHandler(LoggingDeprecationHandler.INSTANCE),
+                filter,
+                XContentHelper.xContentType(filter)
+            )
         ) {
             validateAliasFilter(parser, searchExecutionContext);
         } catch (Exception e) {

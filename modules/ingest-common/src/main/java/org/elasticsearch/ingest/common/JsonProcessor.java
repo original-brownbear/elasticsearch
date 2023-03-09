@@ -10,6 +10,7 @@ package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
@@ -17,10 +18,9 @@ import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
-import org.elasticsearch.xcontent.json.JsonXContent;
+import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Locale;
 import java.util.Map;
 
@@ -92,8 +92,7 @@ public final class JsonProcessor extends AbstractProcessor {
     public static Object apply(Object fieldValue, boolean allowDuplicateKeys, boolean strictJsonParsing) {
         BytesReference bytesRef = fieldValue == null ? new BytesArray("null") : new BytesArray(fieldValue.toString());
         try (
-            InputStream stream = bytesRef.streamInput();
-            XContentParser parser = JsonXContent.jsonXContent.createParser(XContentParserConfiguration.EMPTY, stream)
+            XContentParser parser = XContentHelper.createParserUncompressed(XContentParserConfiguration.EMPTY, bytesRef, XContentType.JSON)
         ) {
             parser.allowDuplicateKeys(allowDuplicateKeys);
             XContentParser.Token token = parser.nextToken();

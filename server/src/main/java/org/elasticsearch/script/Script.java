@@ -17,6 +17,7 @@ import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.xcontent.AbstractObjectParser;
 import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ObjectParser.ValueType;
@@ -301,11 +302,12 @@ public final class Script implements ToXContentObject, Writeable {
             settings.toXContent(builder, ToXContent.EMPTY_PARAMS);
             builder.endObject();
             try (
-                InputStream stream = BytesReference.bytes(builder).streamInput();
-                XContentParser parser = JsonXContent.jsonXContent.createParser(
+                XContentParser parser = XContentHelper.createParserUncompressed(
                     XContentParserConfiguration.EMPTY.withDeprecationHandler(LoggingDeprecationHandler.INSTANCE),
-                    stream
+                    BytesReference.bytes(builder),
+                    XContentType.JSON
                 )
+
             ) {
                 return parse(parser);
             }
