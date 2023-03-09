@@ -28,7 +28,6 @@ import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -248,8 +247,7 @@ public class IngestFileSettingsIT extends ESIntegTestCase {
             }""";
 
         try (
-            var bis = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
-            var parser = JSON.xContent().createParser(XContentParserConfiguration.EMPTY, bis);
+            var parser = JSON.xContent().createParser(XContentParserConfiguration.EMPTY, json);
             var builder = XContentFactory.contentBuilder(JSON)
         ) {
             builder.map(parser.map());

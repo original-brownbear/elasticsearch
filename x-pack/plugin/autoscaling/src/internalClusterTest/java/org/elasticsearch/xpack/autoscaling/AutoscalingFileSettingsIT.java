@@ -22,7 +22,6 @@ import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xpack.autoscaling.action.PutAutoscalingPolicyAction;
 import org.elasticsearch.xpack.autoscaling.action.ReservedAutoscalingPolicyAction;
 
-import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -220,8 +219,7 @@ public class AutoscalingFileSettingsIT extends AutoscalingIntegTestCase {
             }""";
 
         try (
-            var bis = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
-            var parser = JSON.xContent().createParser(XContentParserConfiguration.EMPTY, bis)
+            var parser = JSON.xContent().createParser(XContentParserConfiguration.EMPTY, json)
         ) {
             return PutAutoscalingPolicyAction.Request.parse(parser, name);
         }

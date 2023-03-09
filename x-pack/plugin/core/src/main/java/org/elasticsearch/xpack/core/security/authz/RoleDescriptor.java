@@ -18,6 +18,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.transport.TcpTransport;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
@@ -540,9 +541,11 @@ public class RoleDescriptor implements ToXContentObject, Writeable {
         XContentType xContentType
     ) throws IOException {
         try (
-            InputStream stream = source.streamInput();
-            XContentParser parser = xContentType.xContent()
-                .createParser(XContentParserConfiguration.EMPTY.withDeprecationHandler(LoggingDeprecationHandler.INSTANCE), stream)
+            XContentParser parser = XContentHelper.createParserUncompressed(
+                XContentParserConfiguration.EMPTY.withDeprecationHandler(LoggingDeprecationHandler.INSTANCE),
+                source,
+                xContentType
+            )
         ) {
             // advance to the START_OBJECT token
             XContentParser.Token token = parser.nextToken();
