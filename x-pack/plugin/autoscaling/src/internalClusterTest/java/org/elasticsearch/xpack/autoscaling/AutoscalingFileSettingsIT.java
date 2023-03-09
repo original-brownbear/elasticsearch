@@ -218,9 +218,7 @@ public class AutoscalingFileSettingsIT extends AutoscalingIntegTestCase {
                 }
             }""";
 
-        try (
-            var parser = JSON.xContent().createParser(XContentParserConfiguration.EMPTY, json)
-        ) {
+        try (var parser = JSON.xContent().createParser(XContentParserConfiguration.EMPTY, json)) {
             return PutAutoscalingPolicyAction.Request.parse(parser, name);
         }
     }
