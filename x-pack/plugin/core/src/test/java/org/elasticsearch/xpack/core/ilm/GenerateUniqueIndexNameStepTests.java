@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -77,9 +76,7 @@ public class GenerateUniqueIndexNameStepTests extends AbstractStepTestCase<Gener
         String indexName = randomAlphaOfLength(10);
         String policyName = "test-ilm-policy";
         IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5));
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName));
 
         final IndexMetadata indexMetadata = indexMetadataBuilder.build();
         ClusterState clusterState = ClusterState.builder(emptyClusterState())
@@ -167,9 +164,7 @@ public class GenerateUniqueIndexNameStepTests extends AbstractStepTestCase<Gener
             // generated index already exists as a standalone index
             String generatedIndexName = generateValidIndexName(randomAlphaOfLengthBetween(5, 10), randomAlphaOfLengthBetween(5, 150));
             IndexMetadata indexMetadata = IndexMetadata.builder(generatedIndexName)
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(1, 5))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(1, 5)))
                 .build();
             ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
                 .metadata(Metadata.builder().put(indexMetadata, false))
@@ -187,9 +182,7 @@ public class GenerateUniqueIndexNameStepTests extends AbstractStepTestCase<Gener
             // generated index name already exists as an index (cluster state routing table is also populated)
             String generatedIndexName = generateValidIndexName(randomAlphaOfLengthBetween(5, 10), randomAlphaOfLengthBetween(5, 150));
             IndexMetadata indexMetadata = IndexMetadata.builder(generatedIndexName)
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(1, 5))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(1, 5)))
                 .build();
             ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
                 .routingTable(RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY).addAsNew(indexMetadata).build())
@@ -209,9 +202,7 @@ public class GenerateUniqueIndexNameStepTests extends AbstractStepTestCase<Gener
             // generated index name already exists as an alias to another index
             String generatedIndexName = generateValidIndexName(randomAlphaOfLengthBetween(5, 10), randomAlphaOfLengthBetween(5, 150));
             IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(10, 30))
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(1, 5))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(1, 5)))
                 .putAlias(AliasMetadata.builder(generatedIndexName).build())
                 .build();
             ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)

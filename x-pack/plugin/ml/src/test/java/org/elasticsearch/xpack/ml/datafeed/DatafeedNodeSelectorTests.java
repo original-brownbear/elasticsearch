@@ -638,11 +638,7 @@ public class DatafeedNodeSelectorTests extends ESTestCase {
     }
 
     private void givenClusterState(String index, int numberOfShards, int numberOfReplicas, List<Tuple<Integer, ShardRoutingState>> states) {
-        IndexMetadata indexMetadata = IndexMetadata.builder(index)
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(numberOfShards)
-            .numberOfReplicas(numberOfReplicas)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder(index).settings(indexSettings(numberOfShards, numberOfReplicas)).build();
 
         clusterState = ClusterState.builder(new ClusterName("cluster_name"))
             .metadata(
@@ -663,9 +659,7 @@ public class DatafeedNodeSelectorTests extends ESTestCase {
     ) {
         Index index = new Index(getDefaultBackingIndexName(dataStreamName, 1), INDEX_UUID_NA_VALUE);
         IndexMetadata indexMetadata = IndexMetadata.builder(index.getName())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(numberOfShards)
-            .numberOfReplicas(numberOfReplicas)
+            .settings(indexSettings(numberOfShards, numberOfReplicas))
             .build();
 
         clusterState = ClusterState.builder(new ClusterName("cluster_name"))

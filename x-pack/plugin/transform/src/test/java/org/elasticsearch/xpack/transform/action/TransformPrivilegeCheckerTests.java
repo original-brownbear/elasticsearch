@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.transform.action;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -174,10 +173,7 @@ public class TransformPrivilegeCheckerTests extends ESTestCase {
 
     public void testCheckPrivileges_CheckDestIndexPrivileges_DestIndexExists() {
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(
-                Metadata.builder()
-                    .put(IndexMetadata.builder(DEST_INDEX_NAME).settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0))
-            )
+            .metadata(Metadata.builder().put(IndexMetadata.builder(DEST_INDEX_NAME).settings(indexSettings(1, 0))))
             .build();
         TransformPrivilegeChecker.checkPrivileges(
             OPERATION_NAME,
@@ -205,10 +201,7 @@ public class TransformPrivilegeCheckerTests extends ESTestCase {
 
     public void testCheckPrivileges_NoLocalIndices_CheckDestIndexPrivileges_DestIndexExists() {
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(
-                Metadata.builder()
-                    .put(IndexMetadata.builder(DEST_INDEX_NAME).settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0))
-            )
+            .metadata(Metadata.builder().put(IndexMetadata.builder(DEST_INDEX_NAME).settings(indexSettings(1, 0))))
             .build();
         TransformConfig config = new TransformConfig.Builder(TRANSFORM_CONFIG).setSource(new SourceConfig(REMOTE_SOURCE_INDEX_NAME))
             .build();
@@ -235,10 +228,7 @@ public class TransformPrivilegeCheckerTests extends ESTestCase {
 
     public void testCheckPrivileges_CheckDestIndexPrivileges_DestIndexExistsWithRetentionPolicy() {
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(
-                Metadata.builder()
-                    .put(IndexMetadata.builder(DEST_INDEX_NAME).settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0))
-            )
+            .metadata(Metadata.builder().put(IndexMetadata.builder(DEST_INDEX_NAME).settings(indexSettings(1, 0))))
             .build();
         TransformConfig config = new TransformConfig.Builder(TRANSFORM_CONFIG).setRetentionPolicyConfig(
             new TimeRetentionPolicyConfig("foo", TimeValue.timeValueDays(1))
@@ -269,10 +259,7 @@ public class TransformPrivilegeCheckerTests extends ESTestCase {
 
     public void testCheckPrivileges_MissingPrivileges() {
         ClusterState clusterState = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(
-                Metadata.builder()
-                    .put(IndexMetadata.builder(DEST_INDEX_NAME_2).settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0))
-            )
+            .metadata(Metadata.builder().put(IndexMetadata.builder(DEST_INDEX_NAME_2).settings(indexSettings(1, 0))))
             .build();
         TransformConfig config = new TransformConfig.Builder(TRANSFORM_CONFIG).setSource(new SourceConfig(SOURCE_INDEX_NAME_2))
             .setDest(new DestConfig(DEST_INDEX_NAME_2, null))

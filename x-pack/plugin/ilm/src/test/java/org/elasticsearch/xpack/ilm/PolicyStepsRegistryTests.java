@@ -65,11 +65,7 @@ public class PolicyStepsRegistryTests extends ESTestCase {
     private static final NamedXContentRegistry REGISTRY = new NamedXContentRegistry(new IndexLifecycle(Settings.EMPTY).getNamedXContent());
 
     private IndexMetadata emptyMetadata(Index index) {
-        return IndexMetadata.builder(index.getName())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
-            .build();
+        return IndexMetadata.builder(index.getName()).settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5))).build();
     }
 
     public void testGetFirstStep() {

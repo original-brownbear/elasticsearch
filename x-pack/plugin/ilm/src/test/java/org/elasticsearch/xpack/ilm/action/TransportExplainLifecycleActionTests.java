@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.ilm.action;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.LifecycleExecutionState;
 import org.elasticsearch.test.ESTestCase;
@@ -71,9 +70,7 @@ public class TransportExplainLifecycleActionTests extends ESTestCase {
                 .setPhaseDefinition(PHASE_DEFINITION);
             String indexInErrorStep = "index_in_error";
             IndexMetadata meta = IndexMetadata.builder(indexInErrorStep)
-                .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, "my-policy"))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(0, 5))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, "my-policy"))
                 .putCustom(ILM_CUSTOM_METADATA_KEY, errorStepState.build().asMap())
                 .build();
 
@@ -102,9 +99,7 @@ public class TransportExplainLifecycleActionTests extends ESTestCase {
 
             String indexInCheckRolloverStep = "index_in_check_rollover";
             IndexMetadata meta = IndexMetadata.builder(indexInCheckRolloverStep)
-                .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, "my-policy"))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(0, 5))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, "my-policy"))
                 .putCustom(ILM_CUSTOM_METADATA_KEY, checkRolloverReadyStepState.build().asMap())
                 .build();
 
@@ -136,9 +131,9 @@ public class TransportExplainLifecycleActionTests extends ESTestCase {
 
             String indexWithMissingPolicy = "index_with_missing_policy";
             IndexMetadata meta = IndexMetadata.builder(indexWithMissingPolicy)
-                .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, "random-policy"))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(0, 5))
+                .settings(
+                    indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, "random-policy")
+                )
                 .build();
 
             IndexLifecycleExplainResponse onlyErrorsResponse = getIndexLifecycleExplainResponse(
@@ -158,9 +153,7 @@ public class TransportExplainLifecycleActionTests extends ESTestCase {
             when(indexLifecycleService.policyExists(anyString())).thenReturn(true);
 
             IndexMetadata meta = IndexMetadata.builder("index")
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(0, 5))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
                 .build();
 
             IndexLifecycleExplainResponse onlyManaged = getIndexLifecycleExplainResponse(
