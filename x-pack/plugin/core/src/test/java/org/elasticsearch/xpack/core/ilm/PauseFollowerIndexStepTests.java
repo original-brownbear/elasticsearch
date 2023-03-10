@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -38,10 +37,8 @@ public class PauseFollowerIndexStepTests extends AbstractUnfollowIndexStepTestCa
 
     public void testPauseFollowingIndex() throws Exception {
         IndexMetadata indexMetadata = IndexMetadata.builder("follower-index")
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
+            .settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
             .putCustom(CCR_METADATA_KEY, Collections.emptyMap())
-            .numberOfShards(1)
-            .numberOfReplicas(0)
             .build();
         ClusterState clusterState = setupClusterStateWithFollowingIndex(indexMetadata);
 
@@ -60,10 +57,8 @@ public class PauseFollowerIndexStepTests extends AbstractUnfollowIndexStepTestCa
 
     public void testRequestNotAcknowledged() {
         IndexMetadata indexMetadata = IndexMetadata.builder("follower-index")
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
+            .settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
             .putCustom(CCR_METADATA_KEY, Collections.emptyMap())
-            .numberOfShards(1)
-            .numberOfReplicas(0)
             .build();
         ClusterState clusterState = setupClusterStateWithFollowingIndex(indexMetadata);
 
@@ -84,10 +79,8 @@ public class PauseFollowerIndexStepTests extends AbstractUnfollowIndexStepTestCa
 
     public void testPauseFollowingIndexFailed() {
         IndexMetadata indexMetadata = IndexMetadata.builder("follower-index")
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
+            .settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
             .putCustom(CCR_METADATA_KEY, Collections.emptyMap())
-            .numberOfShards(1)
-            .numberOfReplicas(0)
             .build();
         ClusterState clusterState = setupClusterStateWithFollowingIndex(indexMetadata);
 
@@ -116,10 +109,8 @@ public class PauseFollowerIndexStepTests extends AbstractUnfollowIndexStepTestCa
 
     public final void testNoShardFollowPersistentTasks() throws Exception {
         IndexMetadata indexMetadata = IndexMetadata.builder("managed-index")
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
+            .settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
             .putCustom(CCR_METADATA_KEY, Collections.emptyMap())
-            .numberOfShards(1)
-            .numberOfReplicas(0)
             .build();
 
         PersistentTasksCustomMetadata.Builder emptyPersistentTasks = PersistentTasksCustomMetadata.builder();
@@ -141,16 +132,12 @@ public class PauseFollowerIndexStepTests extends AbstractUnfollowIndexStepTestCa
 
     public final void testNoShardFollowTasksForManagedIndex() throws Exception {
         IndexMetadata managedIndex = IndexMetadata.builder("managed-index")
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
             .build();
 
         IndexMetadata followerIndex = IndexMetadata.builder("follower-index")
-            .settings(settings(Version.CURRENT))
+            .settings(indexSettings(1, 0))
             .putCustom(CCR_METADATA_KEY, Collections.emptyMap())
-            .numberOfShards(1)
-            .numberOfReplicas(0)
             .build();
         final ClusterState clusterState = ClusterState.builder(setupClusterStateWithFollowingIndex(followerIndex))
             .metadata(Metadata.builder().put(managedIndex, false).build())

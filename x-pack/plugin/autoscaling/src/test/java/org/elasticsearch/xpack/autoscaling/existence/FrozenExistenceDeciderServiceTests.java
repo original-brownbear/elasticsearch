@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.autoscaling.existence;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -37,23 +36,19 @@ public class FrozenExistenceDeciderServiceTests extends AutoscalingTestCase {
     public void testScale() {
         verify(ClusterState.EMPTY_STATE, this::assertZeroCapacity);
 
-        final Settings versionSettings = Settings.builder().put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT).build();
         final int shards = between(1, 3);
         final int replicas = between(0, 2);
-        final Metadata nonFrozenMetadata = Metadata.builder()
-            .put(IndexMetadata.builder("index").settings(versionSettings).numberOfShards(shards).numberOfReplicas(replicas))
-            .build();
+        final Settings indexSettings = indexSettings(shards, replicas).build();
+        final Metadata nonFrozenMetadata = Metadata.builder().put(IndexMetadata.builder("index").settings(indexSettings)).build();
         verify(nonFrozenMetadata, this::assertZeroCapacity);
 
         final Metadata frozenMetadata = (randomBoolean() ? Metadata.builder() : Metadata.builder(nonFrozenMetadata)).put(
             IndexMetadata.builder("index")
-                .settings(versionSettings)
+                .settings(indexSettings)
                 .putCustom(
                     LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY,
                     LifecycleExecutionState.builder().setPhase("frozen").build().asMap()
                 )
-                .numberOfShards(shards)
-                .numberOfReplicas(replicas)
         ).build();
         verify(frozenMetadata, this::assertMinimumCapacity);
     }
@@ -90,9 +85,7 @@ public class FrozenExistenceDeciderServiceTests extends AutoscalingTestCase {
         assertThat(TimeseriesLifecycleType.ORDERED_VALID_PHASES, hasItem(FrozenExistenceDeciderService.FROZEN_PHASE));
 
         IndexMetadata meta0 = IndexMetadata.builder("index")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
             .build();
         assertFalse(isFrozenPhase(meta0));
 
@@ -102,9 +95,7 @@ public class FrozenExistenceDeciderServiceTests extends AutoscalingTestCase {
             .setAction(randomAlphaOfLengthBetween(5, 20));
 
         IndexMetadata meta1 = IndexMetadata.builder("index")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
             .putCustom(ILM_CUSTOM_METADATA_KEY, hot.build().asMap())
             .build();
         assertFalse(isFrozenPhase(meta1));
@@ -115,9 +106,7 @@ public class FrozenExistenceDeciderServiceTests extends AutoscalingTestCase {
             .setAction(randomAlphaOfLengthBetween(5, 20));
 
         IndexMetadata meta2 = IndexMetadata.builder("index")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
             .putCustom(ILM_CUSTOM_METADATA_KEY, frozen.build().asMap())
             .build();
         assertTrue(isFrozenPhase(meta2));
