@@ -420,9 +420,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
             new IndexId(randomAlphaOfLength(5), UUIDs.randomBase64UUID())
         );
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 10))
-            .numberOfReplicas(randomIntBetween(0, 10))
+            .settings(indexSettings(randomIntBetween(1, 10), randomIntBetween(0, 10)))
             .build();
         metaBuilder.put(indexMetadata, true);
         stateBuilder.metadata(metaBuilder);
