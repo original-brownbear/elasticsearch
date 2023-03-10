@@ -40,7 +40,6 @@ import org.elasticsearch.index.shard.ShardId;
 import org.hamcrest.Matchers;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -312,8 +311,7 @@ public class ShardFailedClusterStateTaskExecutorTests extends ESAllocationTestCa
             assertSame(clusterState, resultingState);
         }
 
-        for (Iterator<ShardRouting> iterator = resultingState.getRoutingTable().allShards().iterator(); iterator.hasNext();) {
-            final ShardRouting shard = iterator.next();
+        for (ShardRouting shard : resultingState.getRoutingTable().allShardsIterator()) {
             if (shard.assignedToNode()) {
                 for (final var task : tasks) {
                     assertFalse(
