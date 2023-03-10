@@ -517,11 +517,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
 
         ClusterState.Builder stateBuilder = ClusterState.builder(ClusterName.DEFAULT);
         Metadata.Builder metaBuilder = Metadata.builder();
-        IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(10)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5)).settings(indexSettings(1, 10)).build();
         metaBuilder.put(indexMetadata, true);
         stateBuilder.metadata(metaBuilder);
         ClusterState clusterState = stateBuilder.build();
@@ -575,11 +571,7 @@ public class ReactiveStorageDeciderServiceTests extends AutoscalingTestCase {
         ClusterState.Builder stateBuilder = ClusterState.builder(ClusterName.DEFAULT);
         addNode(stateBuilder);
         Metadata.Builder metaBuilder = Metadata.builder();
-        IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(10)
-            .numberOfReplicas(1)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5)).settings(indexSettings(10, 1)).build();
         metaBuilder.put(indexMetadata, true);
         stateBuilder.metadata(metaBuilder);
         ClusterState clusterState = stateBuilder.build();
