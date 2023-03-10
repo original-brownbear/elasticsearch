@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.support.PlainActionFuture;
@@ -54,9 +53,7 @@ public class DeleteStepTests extends AbstractStepTestCase<DeleteStep> {
 
     private static IndexMetadata getIndexMetadata() {
         return IndexMetadata.builder(randomAlphaOfLength(10))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
             .build();
     }
 
@@ -125,19 +122,14 @@ public class DeleteStepTests extends AbstractStepTestCase<DeleteStep> {
         {
             String indexName = DataStream.getDefaultBackingIndexName(dataStreamName, 1);
             index1 = IndexMetadata.builder(indexName)
-                .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(0, 5))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
                 .build();
         }
         IndexMetadata sourceIndexMetadata;
         {
-
             String indexName = DataStream.getDefaultBackingIndexName(dataStreamName, 2);
             sourceIndexMetadata = IndexMetadata.builder(indexName)
-                .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(0, 5))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
                 .build();
         }
 

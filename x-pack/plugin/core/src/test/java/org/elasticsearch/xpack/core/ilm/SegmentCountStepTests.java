@@ -7,7 +7,6 @@
 package org.elasticsearch.xpack.core.ilm;
 
 import org.apache.lucene.util.SetOnce;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.segments.IndexSegments;
 import org.elasticsearch.action.admin.indices.segments.IndexShardSegments;
@@ -45,7 +44,7 @@ public class SegmentCountStepTests extends AbstractStepTestCase<SegmentCountStep
     }
 
     private IndexMetadata makeMeta(Index index) {
-        return IndexMetadata.builder(index.getName()).settings(indexSettings(Version.CURRENT, 1, 0)).build();
+        return IndexMetadata.builder(index.getName()).settings(indexSettings(1, 0)).build();
     }
 
     @Override

@@ -8,7 +8,6 @@
 package org.elasticsearch.action.admin.cluster.allocation;
 
 import org.elasticsearch.ResourceNotFoundException;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.cluster.ClusterInfo;
@@ -121,7 +120,7 @@ public class TransportGetDesiredBalanceActionTests extends ESAllocationTestCase 
         RoutingTable.Builder routingTableBuilder = RoutingTable.builder();
         for (int i = 0; i < randomInt(8); i++) {
             String indexName = randomAlphaOfLength(8);
-            IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName).settings(indexSettings(Version.CURRENT, 1, 0));
+            IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName).settings(indexSettings(1, 0));
             if (randomBoolean()) {
                 indexMetadataBuilder.indexWriteLoadForecast(randomDoubleBetween(0.0, 8.0, true));
             }

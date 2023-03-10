@@ -65,11 +65,7 @@ public class DataTierMigrationRoutedStepTests extends AbstractStepTestCase<DataT
     }
 
     public void testExecuteWithUnassignedShard() {
-        IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10)).settings(indexSettings(1, 1)).build();
         Index index = indexMetadata.getIndex();
         IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index)
             .addShard(TestShardRouting.newShardRouting(new ShardId(index, 0), "node1", true, ShardRoutingState.STARTED))
@@ -99,9 +95,7 @@ public class DataTierMigrationRoutedStepTests extends AbstractStepTestCase<DataT
 
     public void testExecuteWithPendingShards() {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10))
-            .settings(settings(Version.CURRENT).put(TIER_PREFERENCE, DataTier.DATA_WARM))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(TIER_PREFERENCE, DataTier.DATA_WARM))
             .build();
         Index index = indexMetadata.getIndex();
         IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index)
@@ -139,9 +133,7 @@ public class DataTierMigrationRoutedStepTests extends AbstractStepTestCase<DataT
 
     public void testExecuteWithPendingShardsAndTargetRoleNotPresentInCluster() {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10))
-            .settings(settings(Version.CURRENT).put(TIER_PREFERENCE, DataTier.DATA_WARM))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(TIER_PREFERENCE, DataTier.DATA_WARM))
             .build();
         Index index = indexMetadata.getIndex();
         IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index)
@@ -184,9 +176,7 @@ public class DataTierMigrationRoutedStepTests extends AbstractStepTestCase<DataT
 
     public void testExecuteIsComplete() {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10))
-            .settings(settings(Version.CURRENT).put(TIER_PREFERENCE, DataTier.DATA_WARM))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(TIER_PREFERENCE, DataTier.DATA_WARM))
             .build();
         Index index = indexMetadata.getIndex();
         IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index)
@@ -209,9 +199,7 @@ public class DataTierMigrationRoutedStepTests extends AbstractStepTestCase<DataT
 
     public void testExecuteWithGenericDataNodes() {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10))
-            .settings(settings(Version.CURRENT).put(TIER_PREFERENCE, DataTier.DATA_WARM))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(TIER_PREFERENCE, DataTier.DATA_WARM))
             .build();
         Index index = indexMetadata.getIndex();
         IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index)
@@ -229,11 +217,7 @@ public class DataTierMigrationRoutedStepTests extends AbstractStepTestCase<DataT
     }
 
     public void testExecuteForIndexWithoutTierRoutingInformationWaitsForReplicasToBeActive() {
-        IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLengthBetween(5, 10)).settings(indexSettings(1, 1)).build();
         Index index = indexMetadata.getIndex();
         {
             IndexRoutingTable.Builder indexRoutingTable = IndexRoutingTable.builder(index)

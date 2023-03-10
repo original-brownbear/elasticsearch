@@ -1283,6 +1283,10 @@ public abstract class ESTestCase extends LuceneTestCase {
             .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, replicas);
     }
 
+    public static Settings.Builder indexSettings(int shards, int replicas) {
+        return indexSettings(Version.CURRENT, shards, replicas);
+    }
+
     /**
      * Returns size random values
      */

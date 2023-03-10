@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.enrich;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -35,16 +34,12 @@ public class EnrichCacheTests extends ESTestCase {
         var metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder(EnrichPolicy.getBaseName("policy1") + "-1")
-                    .settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
+                    .settings(indexSettings(1, 0))
                     .putAlias(AliasMetadata.builder(EnrichPolicy.getBaseName("policy1")).build())
             )
             .put(
                 IndexMetadata.builder(EnrichPolicy.getBaseName("policy2") + "-1")
-                    .settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
+                    .settings(indexSettings(1, 0))
                     .putAlias(AliasMetadata.builder(EnrichPolicy.getBaseName("policy2")).build())
             )
             .build();
@@ -98,16 +93,12 @@ public class EnrichCacheTests extends ESTestCase {
         metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder(EnrichPolicy.getBaseName("policy1") + "-2")
-                    .settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
+                    .settings(indexSettings(1, 0))
                     .putAlias(AliasMetadata.builder(EnrichPolicy.getBaseName("policy1")).build())
             )
             .put(
                 IndexMetadata.builder(EnrichPolicy.getBaseName("policy2") + "-2")
-                    .settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
+                    .settings(indexSettings(1, 0))
                     .putAlias(AliasMetadata.builder(EnrichPolicy.getBaseName("policy2")).build())
             )
             .build();

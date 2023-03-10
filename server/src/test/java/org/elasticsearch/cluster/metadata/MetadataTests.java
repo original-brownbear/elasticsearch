@@ -1116,10 +1116,7 @@ public class MetadataTests extends ESTestCase {
         IndexMetadata idx = createFirstBackingIndex(dataStreamName).build();
         Metadata.Builder b = Metadata.builder()
             .put(idx, false)
-            .put(
-                IndexMetadata.builder(dataStreamName).settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(1).build(),
-                false
-            )
+            .put(IndexMetadata.builder(dataStreamName).settings(indexSettings(1, 1)).build(), false)
             .put(newInstance(dataStreamName, List.of(idx.getIndex())));
 
         IllegalStateException e = expectThrows(IllegalStateException.class, b::build);
@@ -1171,9 +1168,7 @@ public class MetadataTests extends ESTestCase {
         for (int k = 1; k <= numBackingIndices; k++) {
             lastBackingIndexNum = randomIntBetween(lastBackingIndexNum + 1, lastBackingIndexNum + 50);
             IndexMetadata im = IndexMetadata.builder(DataStream.getDefaultBackingIndexName(dataStreamName, lastBackingIndexNum))
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(1)
-                .numberOfReplicas(1)
+                .settings(indexSettings(1, 1))
                 .build();
             b.put(im, false);
             backingIndices.add(im.getIndex());
@@ -1378,21 +1373,9 @@ public class MetadataTests extends ESTestCase {
     public void testValidateDataStreamsIgnoresIndicesWithoutCounter() {
         String dataStreamName = "foo-datastream";
         Metadata metadata = Metadata.builder(createIndices(10, 10, dataStreamName).metadata)
-            .put(
-                new IndexMetadata.Builder(dataStreamName + "-index-without-counter").settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(1)
-            )
-            .put(
-                new IndexMetadata.Builder(dataStreamName + randomAlphaOfLength(10)).settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(1)
-
-            )
-            .put(
-                new IndexMetadata.Builder(randomAlphaOfLength(10)).settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(1)
-
-            )
+            .put(new IndexMetadata.Builder(dataStreamName + "-index-without-counter").settings(indexSettings(1, 1)))
+            .put(new IndexMetadata.Builder(dataStreamName + randomAlphaOfLength(10)).settings(indexSettings(1, 1)))
+            .put(new IndexMetadata.Builder(randomAlphaOfLength(10)).settings(indexSettings(1, 1)))
             .build();
         // don't expect any exception when validating against non-backing indices that don't conform to the backing indices naming
         // convention
@@ -1404,8 +1387,8 @@ public class MetadataTests extends ESTestCase {
         Metadata metadata = Metadata.builder(createIndices(10, 10, dataStreamName).metadata)
             .put(
                 new IndexMetadata.Builder(DataStream.BACKING_INDEX_PREFIX + dataStreamName + "-something-100012").settings(
-                    settings(Version.CURRENT)
-                ).numberOfShards(1).numberOfReplicas(1)
+                    indexSettings(1, 1)
+                )
             )
             .build();
         // don't expect any exception when validating against (potentially backing) indices that can't create conflict because of
@@ -1414,9 +1397,7 @@ public class MetadataTests extends ESTestCase {
     }
 
     public void testValidateDataStreamsForNullDataStreamMetadata() {
-        Metadata metadata = Metadata.builder()
-            .put(IndexMetadata.builder("foo-index").settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(1))
-            .build();
+        Metadata metadata = Metadata.builder().put(IndexMetadata.builder("foo-index").settings(indexSettings(1, 1))).build();
 
         try {
             assertDataStreams(metadata.getIndices(), DataStreamMetadata.EMPTY);
@@ -1711,13 +1692,7 @@ public class MetadataTests extends ESTestCase {
         }
         {
             Metadata.Builder builder = Metadata.builder(previous);
-            builder.put(
-                IndexMetadata.builder(indexName)
-                    .settings(settings(Version.CURRENT))
-                    .creationDate(randomNonNegativeLong())
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
-            );
+            builder.put(IndexMetadata.builder(indexName).settings(indexSettings(1, 0)).creationDate(randomNonNegativeLong()));
             Metadata metadata = builder.build();
             assertThat(previous.getIndicesLookup(), not(sameInstance(metadata.getIndicesLookup())));
             previous = metadata;
@@ -1792,12 +1767,7 @@ public class MetadataTests extends ESTestCase {
 
                 String indexName = aliasName + "-" + j;
                 builder.put(
-                    IndexMetadata.builder(indexName)
-                        .settings(settings(Version.CURRENT))
-                        .creationDate(randomNonNegativeLong())
-                        .numberOfShards(1)
-                        .numberOfReplicas(0)
-                        .putAlias(alias)
+                    IndexMetadata.builder(indexName).settings(indexSettings(1, 0)).creationDate(randomNonNegativeLong()).putAlias(alias)
                 );
             }
         }
@@ -1819,10 +1789,8 @@ public class MetadataTests extends ESTestCase {
         {
             builder.put(
                 IndexMetadata.builder(newAliasName + "-1")
-                    .settings(settings(Version.CURRENT))
+                    .settings(indexSettings(1, 0))
                     .creationDate(randomNonNegativeLong())
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
                     .putAlias(new AliasMetadata.Builder(newAliasName).writeIndex(true))
             );
         }
@@ -2105,10 +2073,8 @@ public class MetadataTests extends ESTestCase {
         if (aliasIsHidden != null || randomBoolean()) {
             aliasMetadata.isHidden(aliasIsHidden);
         }
-        return new IndexMetadata.Builder(indexName).settings(settings(indexCreationVersion))
+        return new IndexMetadata.Builder(indexName).settings(indexSettings(indexCreationVersion, 1, 0))
             .system(isSystem)
-            .numberOfShards(1)
-            .numberOfReplicas(0)
             .putAlias(aliasMetadata)
             .build();
     }
@@ -2229,10 +2195,8 @@ public class MetadataTests extends ESTestCase {
         Metadata metadata1 = Metadata.builder(randomMetadata())
             .put(
                 IndexMetadata.builder(indexName)
-                    .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, indexUUID))
+                    .settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, indexUUID))
                     .creationDate(randomNonNegativeLong())
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
             )
             .build();
         IndexMetadata index1 = metadata1.index(indexName);
@@ -2406,9 +2370,7 @@ public class MetadataTests extends ESTestCase {
         Metadata.Builder b = Metadata.builder();
         for (int k = 1; k <= numIndices; k++) {
             IndexMetadata im = IndexMetadata.builder(DataStream.getDefaultBackingIndexName("index", lastIndexNum))
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(1)
-                .numberOfReplicas(1)
+                .settings(indexSettings(1, 1))
                 .build();
             b.put(im, false);
             indices.add(im.getIndex());
@@ -2421,9 +2383,7 @@ public class MetadataTests extends ESTestCase {
         for (int k = 1; k <= numBackingIndices; k++) {
             lastBackingIndexNum = randomIntBetween(lastBackingIndexNum + 1, lastBackingIndexNum + 50);
             IndexMetadata im = IndexMetadata.builder(DataStream.getDefaultBackingIndexName(dataStreamName, lastBackingIndexNum))
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(1)
-                .numberOfReplicas(1)
+                .settings(indexSettings(1, 1))
                 .build();
             b.put(im, false);
             backingIndices.add(im.getIndex());

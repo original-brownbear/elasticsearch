@@ -72,11 +72,7 @@ public class NodeJoinExecutorTests extends ESTestCase {
     public void testPreventJoinClusterWithNewerIndices() {
         Settings.builder().build();
         Metadata.Builder metaBuilder = Metadata.builder();
-        IndexMetadata indexMetadata = IndexMetadata.builder("test")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder("test").settings(indexSettings(1, 1)).build();
         metaBuilder.put(indexMetadata, false);
         Metadata metadata = metaBuilder.build();
         NodeJoinExecutor.ensureIndexCompatibility(Version.CURRENT, metadata);
@@ -91,9 +87,7 @@ public class NodeJoinExecutorTests extends ESTestCase {
         Settings.builder().build();
         Metadata.Builder metaBuilder = Metadata.builder();
         IndexMetadata indexMetadata = IndexMetadata.builder("test")
-            .settings(settings(Version.fromString("6.8.0"))) // latest V6 released version
-            .numberOfShards(1)
-            .numberOfReplicas(1)
+            .settings(indexSettings(Version.fromString("6.8.0"), 1, 1)) // latest V6 released version
             .build();
         metaBuilder.put(indexMetadata, false);
         Metadata metadata = metaBuilder.build();

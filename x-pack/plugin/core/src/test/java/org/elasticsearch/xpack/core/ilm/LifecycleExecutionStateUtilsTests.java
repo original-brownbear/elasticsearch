@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -30,11 +29,8 @@ public class LifecycleExecutionStateUtilsTests extends ESTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder(indexName)
-                    .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, indexUUID))
+                    .settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, indexUUID))
                     .creationDate(randomNonNegativeLong())
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
-
             )
             .build();
 

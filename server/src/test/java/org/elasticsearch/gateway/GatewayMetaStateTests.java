@@ -185,10 +185,7 @@ public class GatewayMetaStateTests extends ESTestCase {
         }
         for (int i = 0; i < randomIntBetween(1, 5); i++) {
             builder.put(
-                IndexMetadata.builder(randomAlphaOfLength(10))
-                    .settings(settings(Version.CURRENT))
-                    .numberOfReplicas(randomIntBetween(0, 3))
-                    .numberOfShards(randomIntBetween(1, 5))
+                IndexMetadata.builder(randomAlphaOfLength(10)).settings(indexSettings(randomIntBetween(1, 3), randomIntBetween(0, 3)))
             );
         }
         return builder.build();
@@ -198,17 +195,14 @@ public class GatewayMetaStateTests extends ESTestCase {
         Metadata.Builder builder = Metadata.builder();
         for (String template : templates) {
             IndexTemplateMetadata templateMetadata = IndexTemplateMetadata.builder(template)
-                .settings(indexSettings(Version.CURRENT, randomIntBetween(1, 5), randomIntBetween(0, 3)))
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 3)))
                 .patterns(randomIndexPatterns())
                 .build();
             builder.put(templateMetadata);
         }
         for (int i = 0; i < randomIntBetween(1, 5); i++) {
             builder.put(
-                IndexMetadata.builder(randomAlphaOfLength(10))
-                    .settings(settings(Version.CURRENT))
-                    .numberOfReplicas(randomIntBetween(0, 3))
-                    .numberOfShards(randomIntBetween(1, 5))
+                IndexMetadata.builder(randomAlphaOfLength(10)).settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 3)))
             );
         }
         return builder.build();

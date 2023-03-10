@@ -7,7 +7,6 @@
  */
 package org.elasticsearch.cluster.health;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -175,10 +174,8 @@ public class ClusterStateHealthTests extends ESTestCase {
         for (int i = randomInt(4); i >= 0; i--) {
             int numberOfShards = randomInt(3) + 1;
             int numberOfReplicas = randomInt(4);
-            IndexMetadata indexMetadata = IndexMetadata.builder("test_" + Integer.toString(i))
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(numberOfShards)
-                .numberOfReplicas(numberOfReplicas)
+            IndexMetadata indexMetadata = IndexMetadata.builder("test_" + i)
+                .settings(indexSettings(numberOfShards, numberOfReplicas))
                 .build();
             IndexRoutingTable indexRoutingTable = routingTableGenerator.genIndexRoutingTable(indexMetadata, counter);
             metadata.put(indexMetadata, true);
@@ -318,9 +315,7 @@ public class ClusterStateHealthTests extends ESTestCase {
         final int numberOfReplicas = randomIntBetween(1, numberOfShards);
         // initial index creation and new routing table info
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
-            .numberOfShards(numberOfShards)
-            .numberOfReplicas(numberOfReplicas)
+            .settings(indexSettings(numberOfShards, numberOfReplicas).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
             .build();
         final Metadata metadata = Metadata.builder().put(indexMetadata, true).build();
         final RoutingTable routingTable = RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY)
@@ -343,9 +338,7 @@ public class ClusterStateHealthTests extends ESTestCase {
         final int numberOfReplicas = randomIntBetween(1, numberOfShards);
         // initial index creation and new routing table info
         IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
-            .numberOfShards(numberOfShards)
-            .numberOfReplicas(numberOfReplicas)
+            .settings(indexSettings(numberOfShards, numberOfReplicas).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
             .state(IndexMetadata.State.OPEN)
             .build();
         if (withPreviousAllocationIds) {

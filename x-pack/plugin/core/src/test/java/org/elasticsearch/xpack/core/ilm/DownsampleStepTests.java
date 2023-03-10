@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -72,9 +71,7 @@ public class DownsampleStepTests extends AbstractStepTestCase<DownsampleStep> {
         lifecycleState.setRollupIndexName("rollup-index");
 
         return IndexMetadata.builder(index)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName))
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
             .build();
     }
@@ -108,9 +105,7 @@ public class DownsampleStepTests extends AbstractStepTestCase<DownsampleStep> {
         lifecycleState.setIndexCreationDate(randomNonNegativeLong());
 
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName))
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
             .build();
 
@@ -166,19 +161,13 @@ public class DownsampleStepTests extends AbstractStepTestCase<DownsampleStep> {
         lifecycleState.setRollupIndexName(rollupIndex);
 
         IndexMetadata sourceIndexMetadata = IndexMetadata.builder(sourceIndexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName))
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
             .build();
 
         // Create a successfully completed rollup index (index.rollup.status: success)
         IndexMetadata indexMetadata = IndexMetadata.builder(rollupIndex)
-            .settings(
-                settings(Version.CURRENT).put(IndexMetadata.INDEX_DOWNSAMPLE_STATUS.getKey(), IndexMetadata.DownsampleTaskStatus.SUCCESS)
-            )
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(IndexMetadata.INDEX_DOWNSAMPLE_STATUS.getKey(), IndexMetadata.DownsampleTaskStatus.SUCCESS))
             .build();
         Map<String, IndexMetadata> indices = Map.of(rollupIndex, indexMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterState.EMPTY_STATE).metadata(Metadata.builder().indices(indices)).build();
@@ -216,19 +205,13 @@ public class DownsampleStepTests extends AbstractStepTestCase<DownsampleStep> {
         lifecycleState.setRollupIndexName(rollupIndex);
 
         IndexMetadata sourceIndexMetadata = IndexMetadata.builder(sourceIndexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName))
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
             .build();
 
         // Create an in-progress rollup index (index.rollup.status: started)
         IndexMetadata indexMetadata = IndexMetadata.builder(rollupIndex)
-            .settings(
-                settings(Version.CURRENT).put(IndexMetadata.INDEX_DOWNSAMPLE_STATUS.getKey(), IndexMetadata.DownsampleTaskStatus.STARTED)
-            )
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(IndexMetadata.INDEX_DOWNSAMPLE_STATUS.getKey(), IndexMetadata.DownsampleTaskStatus.STARTED))
             .build();
         Map<String, IndexMetadata> indices = Map.of(rollupIndex, indexMetadata);
         ClusterState clusterState = ClusterState.builder(ClusterState.EMPTY_STATE).metadata(Metadata.builder().indices(indices)).build();

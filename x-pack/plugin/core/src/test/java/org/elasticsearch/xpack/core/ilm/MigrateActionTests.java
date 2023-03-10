@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -116,11 +115,7 @@ public class MigrateActionTests extends AbstractActionTestCase<MigrateAction> {
 
         // does not skip an ordinary index
         {
-            IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(1)
-                .numberOfReplicas(2)
-                .build();
+            IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5)).settings(indexSettings(1, 2)).build();
 
             ClusterState clusterState = ClusterState.builder(new ClusterName("_name"))
                 .metadata(Metadata.builder().put(indexMetadata, true).build())
@@ -138,11 +133,9 @@ public class MigrateActionTests extends AbstractActionTestCase<MigrateAction> {
         {
             IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
                 .settings(
-                    settings(Version.CURRENT).put(INDEX_STORE_TYPE_SETTING.getKey(), SEARCHABLE_SNAPSHOT_STORE_TYPE)
+                    indexSettings(1, 2).put(INDEX_STORE_TYPE_SETTING.getKey(), SEARCHABLE_SNAPSHOT_STORE_TYPE)
                         .put(SNAPSHOT_PARTIAL_SETTING.getKey(), true)
                 )
-                .numberOfShards(1)
-                .numberOfReplicas(2)
                 .build();
 
             ClusterState clusterState = ClusterState.builder(new ClusterName("_name"))

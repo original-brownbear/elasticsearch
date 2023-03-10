@@ -730,7 +730,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             routingTableBuilder.add(indexRoutingTable);
         }
 
-        imdBuilder.put(IndexMetadata.builder("logs-0").settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0));
+        imdBuilder.put(IndexMetadata.builder("logs-0").settings(indexSettings(1, 0)));
         ShardRouting shardRouting = TestShardRouting.newShardRouting("logs-0", 0, "1", true, ShardRoutingState.INITIALIZING)
             .moveToStarted(ShardRouting.UNAVAILABLE_EXPECTED_SHARD_SIZE);
         IndexRoutingTable indexRoutingTable = IndexRoutingTable.builder(imdBuilder.get("logs-0").getIndex()).addShard(shardRouting).build();
@@ -791,7 +791,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         // 1 shard started and another not started:
         ClusterState remoteState = createRemoteClusterState("index1", true);
         Metadata.Builder mBuilder = Metadata.builder(remoteState.metadata());
-        mBuilder.put(IndexMetadata.builder("index2").settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0));
+        mBuilder.put(IndexMetadata.builder("index2").settings(indexSettings(1, 0)));
         ShardRouting shardRouting = TestShardRouting.newShardRouting("index2", 0, "1", true, ShardRoutingState.INITIALIZING);
         IndexRoutingTable indexRoutingTable = IndexRoutingTable.builder(mBuilder.get("index2").getIndex()).addShard(shardRouting).build();
         remoteState = ClusterState.builder(remoteState.getClusterName())
@@ -885,18 +885,8 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         ).build();
 
         Metadata remoteMetadata = new Metadata.Builder().put(
-            IndexMetadata.builder("index1")
-                .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, "index1"))
-                .numberOfShards(1)
-                .numberOfReplicas(0)
-        )
-            .put(
-                IndexMetadata.builder("index3")
-                    .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, "index3"))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
-            )
-            .build();
+            IndexMetadata.builder("index1").settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, "index1"))
+        ).put(IndexMetadata.builder("index3").settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, "index3"))).build();
 
         Function<ClusterState, ClusterState> function = cleanFollowedRemoteIndices(remoteMetadata, Collections.singletonList("pattern1"));
         AutoFollowMetadata result = function.apply(clusterState).metadata().custom(AutoFollowMetadata.TYPE);
@@ -916,23 +906,10 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         ).build();
 
         Metadata remoteMetadata = new Metadata.Builder().put(
-            IndexMetadata.builder("index1")
-                .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, "index1"))
-                .numberOfShards(1)
-                .numberOfReplicas(0)
+            IndexMetadata.builder("index1").settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, "index1"))
         )
-            .put(
-                IndexMetadata.builder("index2")
-                    .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, "index2"))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
-            )
-            .put(
-                IndexMetadata.builder("index3")
-                    .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, "index3"))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
-            )
+            .put(IndexMetadata.builder("index2").settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, "index2")))
+            .put(IndexMetadata.builder("index3").settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, "index3")))
             .build();
 
         Function<ClusterState, ClusterState> function = cleanFollowedRemoteIndices(remoteMetadata, Collections.singletonList("pattern1"));
@@ -950,9 +927,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
             new Metadata.Builder().putCustom(AutoFollowMetadata.TYPE, autoFollowMetadata)
         ).build();
 
-        Metadata remoteMetadata = new Metadata.Builder().put(
-            IndexMetadata.builder("index1").settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0)
-        ).build();
+        Metadata remoteMetadata = new Metadata.Builder().put(IndexMetadata.builder("index1").settings(indexSettings(1, 0))).build();
 
         Function<ClusterState, ClusterState> function = cleanFollowedRemoteIndices(remoteMetadata, Collections.singletonList("pattern1"));
         ClusterState result = function.apply(clusterState);
@@ -1871,7 +1846,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
                 Metadata.builder()
                     .put(
                         IndexMetadata.builder("logs-20190101")
-                            .settings(settings(Version.CURRENT))
+                            .settings(indexSettings(1, 0))
                             .putCustom(
                                 Ccr.CCR_CUSTOM_METADATA_KEY,
                                 Map.of(
@@ -1879,8 +1854,6 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
                                     remoteState.metadata().index("logs-20190101").getIndexUUID()
                                 )
                             )
-                            .numberOfShards(1)
-                            .numberOfReplicas(0)
                     )
                     .putCustom(AutoFollowMetadata.TYPE, autoFollowMetadata)
             )
@@ -2533,9 +2506,7 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
         final RoutingTable.Builder routingTableBuilder = RoutingTable.builder(previous.routingTable());
         for (String indexName : indices) {
             IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-                .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID(random())))
-                .numberOfShards(1)
-                .numberOfReplicas(0)
+                .settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID(random())))
                 .system(systemIndices)
                 .build();
             metadataBuilder.put(indexMetadata, true);

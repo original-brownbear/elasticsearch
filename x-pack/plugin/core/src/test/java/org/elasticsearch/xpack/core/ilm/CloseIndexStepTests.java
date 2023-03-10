@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.core.ilm;
 
 import org.apache.lucene.util.SetOnce;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexResponse;
@@ -60,9 +59,7 @@ public class CloseIndexStepTests extends AbstractStepTestCase<CloseIndexStep> {
 
     public void testPerformAction() {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
             .build();
 
         CloseIndexStep step = createRandomInstance();
@@ -107,9 +104,7 @@ public class CloseIndexStepTests extends AbstractStepTestCase<CloseIndexStep> {
 
     public void testPerformActionFailure() {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
             .build();
 
         CloseIndexStep step = createRandomInstance();

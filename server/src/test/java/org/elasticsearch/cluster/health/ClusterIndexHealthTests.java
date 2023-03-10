@@ -7,7 +7,6 @@
  */
 package org.elasticsearch.cluster.health;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
@@ -35,11 +34,7 @@ public class ClusterIndexHealthTests extends AbstractXContentSerializingTestCase
         RoutingTableGenerator routingTableGenerator = new RoutingTableGenerator();
         int numberOfShards = randomInt(3) + 1;
         int numberOfReplicas = randomInt(4);
-        IndexMetadata indexMetadata = IndexMetadata.builder("test1")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(numberOfShards)
-            .numberOfReplicas(numberOfReplicas)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder("test1").settings(indexSettings(numberOfShards, numberOfReplicas)).build();
         RoutingTableGenerator.ShardCounter counter = new RoutingTableGenerator.ShardCounter();
         IndexRoutingTable indexRoutingTable = routingTableGenerator.genIndexRoutingTable(indexMetadata, counter);
 

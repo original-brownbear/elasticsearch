@@ -204,11 +204,7 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
 
     public void testCanDeleteShardContent() {
         IndicesService indicesService = getIndicesService();
-        IndexMetadata meta = IndexMetadata.builder("test")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1)
-            .build();
+        IndexMetadata meta = IndexMetadata.builder("test").settings(indexSettings(1, 1)).build();
         IndexSettings indexSettings = IndexSettingsModule.newIndexSettings("test", meta.getSettings());
         ShardId shardId = new ShardId(meta.getIndex(), 0);
         assertEquals(

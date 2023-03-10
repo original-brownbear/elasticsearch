@@ -78,16 +78,13 @@ public class MetadataDataStreamRolloverServiceTests extends ESTestCase {
         builder.put(
             IndexMetadata.builder(dataStream.getWriteIndex().getName())
                 .settings(
-                    ESTestCase.settings(Version.CURRENT)
-                        .put("index.hidden", true)
+                    indexSettings(1, 0).put("index.hidden", true)
                         .put(SETTING_INDEX_UUID, dataStream.getWriteIndex().getUUID())
                         .put("index.mode", "time_series")
                         .put("index.routing_path", "uid")
                         .put("index.time_series.start_time", FORMATTER.format(now.minus(4, ChronoUnit.HOURS)))
                         .put("index.time_series.end_time", FORMATTER.format(now.minus(2, ChronoUnit.HOURS)))
                 )
-                .numberOfShards(1)
-                .numberOfReplicas(0)
         );
         builder.put(dataStream);
         final ClusterState clusterState = ClusterState.builder(new ClusterName("test")).metadata(builder).build();
@@ -271,16 +268,13 @@ public class MetadataDataStreamRolloverServiceTests extends ESTestCase {
         builder.put(
             IndexMetadata.builder(dataStream.getWriteIndex().getName())
                 .settings(
-                    ESTestCase.settings(Version.CURRENT)
-                        .put("index.hidden", true)
+                    indexSettings(1, 0).put("index.hidden", true)
                         .put(SETTING_INDEX_UUID, dataStream.getWriteIndex().getUUID())
                         .put("index.mode", "time_series")
                         .put("index.routing_path", "uid")
                         .put("index.time_series.start_time", FORMATTER.format(now.minus(4, ChronoUnit.HOURS)))
                         .put("index.time_series.end_time", FORMATTER.format(now.minus(2, ChronoUnit.HOURS)))
                 )
-                .numberOfShards(1)
-                .numberOfReplicas(0)
         );
         builder.put(dataStream);
         final ClusterState clusterState = ClusterState.builder(new ClusterName("test")).metadata(builder).build();

@@ -365,11 +365,7 @@ public class RoutingTableTests extends ESAllocationTestCase {
         final String indexName = "test";
         final int numShards = 1;
         final int numReplicas = randomIntBetween(0, 1);
-        IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(numShards)
-            .numberOfReplicas(numReplicas)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder(indexName).settings(indexSettings(numShards, numReplicas)).build();
         final RoutingTableGenerator routingTableGenerator = new RoutingTableGenerator();
         final RoutingTableGenerator.ShardCounter counter = new RoutingTableGenerator.ShardCounter();
         final IndexRoutingTable indexRoutingTable = routingTableGenerator.genIndexRoutingTable(indexMetadata, counter);
@@ -378,27 +374,15 @@ public class RoutingTableTests extends ESAllocationTestCase {
         // test no validation errors
         assertTrue(indexRoutingTable.validate(metadata));
         // test wrong number of shards causes validation errors
-        indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(numShards + 1)
-            .numberOfReplicas(numReplicas)
-            .build();
+        indexMetadata = IndexMetadata.builder(indexName).settings(indexSettings(numShards + 1, numReplicas)).build();
         final Metadata metadata2 = Metadata.builder().put(indexMetadata, true).build();
         expectThrows(IllegalStateException.class, () -> indexRoutingTable.validate(metadata2));
         // test wrong number of replicas causes validation errors
-        indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(numShards)
-            .numberOfReplicas(numReplicas + 1)
-            .build();
+        indexMetadata = IndexMetadata.builder(indexName).settings(indexSettings(numShards, numReplicas + 1)).build();
         final Metadata metadata3 = Metadata.builder().put(indexMetadata, true).build();
         expectThrows(IllegalStateException.class, () -> indexRoutingTable.validate(metadata3));
         // test wrong number of shards and replicas causes validation errors
-        indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(numShards + 1)
-            .numberOfReplicas(numReplicas + 1)
-            .build();
+        indexMetadata = IndexMetadata.builder(indexName).settings(indexSettings(numShards + 1, numReplicas + 1)).build();
         final Metadata metadata4 = Metadata.builder().put(indexMetadata, true).build();
         expectThrows(IllegalStateException.class, () -> indexRoutingTable.validate(metadata4));
     }

@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.ccr.action;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -53,10 +52,7 @@ public class TransportFollowInfoActionTests extends ESTestCase {
             boolean isFollowIndex = followerIndices[i];
             boolean active = statuses[i];
 
-            IndexMetadata.Builder imdBuilder = IndexMetadata.builder(index)
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(1)
-                .numberOfReplicas(0);
+            IndexMetadata.Builder imdBuilder = IndexMetadata.builder(index).settings(indexSettings(1, 0));
 
             if (isFollowIndex) {
                 imdBuilder.putCustom(Ccr.CCR_CUSTOM_METADATA_KEY, new HashMap<>());

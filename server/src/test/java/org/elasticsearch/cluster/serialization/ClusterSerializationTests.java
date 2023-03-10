@@ -9,7 +9,6 @@
 package org.elasticsearch.cluster.serialization;
 
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.AbstractNamedDiffable;
 import org.elasticsearch.cluster.ClusterModule;
@@ -55,9 +54,7 @@ import static org.hamcrest.Matchers.nullValue;
 public class ClusterSerializationTests extends ESAllocationTestCase {
 
     public void testClusterStateSerialization() throws Exception {
-        Metadata metadata = Metadata.builder()
-            .put(IndexMetadata.builder("test").settings(settings(Version.CURRENT)).numberOfShards(10).numberOfReplicas(1))
-            .build();
+        Metadata metadata = Metadata.builder().put(IndexMetadata.builder("test").settings(indexSettings(10, 1))).build();
 
         RoutingTable routingTable = RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY)
             .addAsNew(metadata.index("test"))
@@ -94,9 +91,7 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
     }
 
     public void testRoutingTableSerialization() throws Exception {
-        Metadata metadata = Metadata.builder()
-            .put(IndexMetadata.builder("test").settings(settings(Version.CURRENT)).numberOfShards(10).numberOfReplicas(1))
-            .build();
+        Metadata metadata = Metadata.builder().put(IndexMetadata.builder("test").settings(indexSettings(10, 1))).build();
 
         RoutingTable routingTable = RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY)
             .addAsNew(metadata.index("test"))
@@ -204,11 +199,7 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
     }
 
     public void testObjectReuseWhenApplyingClusterStateDiff() throws Exception {
-        IndexMetadata indexMetadata = IndexMetadata.builder("test")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(10)
-            .numberOfReplicas(1)
-            .build();
+        IndexMetadata indexMetadata = IndexMetadata.builder("test").settings(indexSettings(10, 1)).build();
         IndexTemplateMetadata indexTemplateMetadata = IndexTemplateMetadata.builder("test-template")
             .patterns(Arrays.asList(generateRandomStringArray(10, 100, false, false)))
             .build();

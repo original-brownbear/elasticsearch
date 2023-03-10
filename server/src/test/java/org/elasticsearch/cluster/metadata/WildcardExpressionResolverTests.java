@@ -8,7 +8,6 @@
 
 package org.elasticsearch.cluster.metadata;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -720,8 +719,7 @@ public class WildcardExpressionResolverTests extends ESTestCase {
     }
 
     private static IndexMetadata.Builder indexBuilder(String index, boolean hidden) {
-        return IndexMetadata.builder(index)
-            .settings(indexSettings(Version.CURRENT, 1, 0).put(IndexMetadata.INDEX_HIDDEN_SETTING.getKey(), hidden));
+        return IndexMetadata.builder(index).settings(indexSettings(1, 0).put(IndexMetadata.INDEX_HIDDEN_SETTING.getKey(), hidden));
     }
 
     private static IndexMetadata.Builder indexBuilder(String index) {

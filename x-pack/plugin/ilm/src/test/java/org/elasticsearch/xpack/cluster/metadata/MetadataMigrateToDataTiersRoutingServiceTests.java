@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.cluster.metadata;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -486,10 +485,7 @@ public class MetadataMigrateToDataTiersRoutingServiceTests extends ESTestCase {
     }
 
     private Settings.Builder getBaseIndexSettings() {
-        return indexSettings(Version.CURRENT, randomIntBetween(1, 10), randomIntBetween(0, 5)).put(
-            LifecycleSettings.LIFECYCLE_NAME,
-            lifecycleName
-        );
+        return indexSettings(randomIntBetween(1, 10), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, lifecycleName);
     }
 
     public void testAllocateActionDefinesRoutingRules() {

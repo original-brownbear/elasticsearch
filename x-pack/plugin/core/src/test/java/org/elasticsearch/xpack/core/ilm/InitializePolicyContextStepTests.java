@@ -50,10 +50,8 @@ public class InitializePolicyContextStepTests extends AbstractStepTestCase<Initi
     public void testAddCreationDate() {
         long creationDate = randomNonNegativeLong();
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
-            .settings(settings(Version.CURRENT))
+            .settings(indexSettings(1, 0))
             .creationDate(creationDate)
-            .numberOfShards(1)
-            .numberOfReplicas(0)
             .build();
         Metadata metadata = Metadata.builder()
             .persistentSettings(settings(Version.CURRENT).build())
@@ -71,11 +69,9 @@ public class InitializePolicyContextStepTests extends AbstractStepTestCase<Initi
         LifecycleExecutionState.Builder lifecycleState = LifecycleExecutionState.builder();
         lifecycleState.setIndexCreationDate(creationDate);
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(5))
-            .settings(settings(Version.CURRENT))
+            .settings(indexSettings(1, 0))
             .putCustom(ILM_CUSTOM_METADATA_KEY, lifecycleState.build().asMap())
             .creationDate(creationDate)
-            .numberOfShards(1)
-            .numberOfReplicas(0)
             .build();
         Metadata metadata = Metadata.builder()
             .persistentSettings(settings(Version.CURRENT).build())

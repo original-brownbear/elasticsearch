@@ -44,18 +44,14 @@ import static org.hamcrest.Matchers.nullValue;
 
 public class IndexRoutingTests extends ESTestCase {
     public void testSimpleRoutingRejectsEmptyId() {
-        IndexRouting indexRouting = IndexRouting.fromIndexMetadata(
-            IndexMetadata.builder("test").settings(settings(Version.CURRENT)).numberOfShards(2).numberOfReplicas(1).build()
-        );
+        IndexRouting indexRouting = IndexRouting.fromIndexMetadata(IndexMetadata.builder("test").settings(indexSettings(2, 1)).build());
         IndexRequest req = new IndexRequest().id("");
         Exception e = expectThrows(IllegalArgumentException.class, () -> indexRouting.process(req));
         assertThat(e.getMessage(), equalTo("if _id is specified it must not be empty"));
     }
 
     public void testSimpleRoutingAcceptsId() {
-        IndexRouting indexRouting = IndexRouting.fromIndexMetadata(
-            IndexMetadata.builder("test").settings(settings(Version.CURRENT)).numberOfShards(2).numberOfReplicas(1).build()
-        );
+        IndexRouting indexRouting = IndexRouting.fromIndexMetadata(IndexMetadata.builder("test").settings(indexSettings(2, 1)).build());
         String id = randomAlphaOfLength(10);
         IndexRequest req = new IndexRequest().id(id);
         indexRouting.process(req);
@@ -81,17 +77,11 @@ public class IndexRoutingTests extends ESTestCase {
             int[] shardSplits = randomFrom(possibleValues);
             assertEquals(shardSplits[0], (shardSplits[0] / shardSplits[1]) * shardSplits[1]);
             assertEquals(shardSplits[1], (shardSplits[1] / shardSplits[2]) * shardSplits[2]);
-            IndexMetadata metadata = IndexMetadata.builder("test")
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(shardSplits[0])
-                .numberOfReplicas(1)
-                .build();
+            IndexMetadata metadata = IndexMetadata.builder("test").settings(indexSettings(shardSplits[0], 1)).build();
             String term = randomAlphaOfLength(10);
             final int shard = shardIdFromSimple(IndexRouting.fromIndexMetadata(metadata), term, null);
             IndexMetadata shrunk = IndexMetadata.builder("test")
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(shardSplits[1])
-                .numberOfReplicas(1)
+                .settings(indexSettings(shardSplits[1], 1))
                 .setRoutingNumShards(shardSplits[0])
                 .build();
             int shrunkShard = shardIdFromSimple(IndexRouting.fromIndexMetadata(shrunk), term, null);
@@ -99,12 +89,7 @@ public class IndexRoutingTests extends ESTestCase {
             Set<ShardId> shardIds = IndexMetadata.selectShrinkShards(shrunkShard, metadata, shrunk.getNumberOfShards());
             assertEquals(1, shardIds.stream().filter((sid) -> sid.id() == shard).count());
 
-            shrunk = IndexMetadata.builder("test")
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(shardSplits[2])
-                .numberOfReplicas(1)
-                .setRoutingNumShards(shardSplits[0])
-                .build();
+            shrunk = IndexMetadata.builder("test").settings(indexSettings(shardSplits[2], 1)).setRoutingNumShards(shardSplits[0]).build();
             shrunkShard = shardIdFromSimple(IndexRouting.fromIndexMetadata(shrunk), term, null);
             shardIds = IndexMetadata.selectShrinkShards(shrunkShard, metadata, shrunk.getNumberOfShards());
             assertEquals(Arrays.toString(shardSplits), 1, shardIds.stream().filter((sid) -> sid.id() == shard).count());

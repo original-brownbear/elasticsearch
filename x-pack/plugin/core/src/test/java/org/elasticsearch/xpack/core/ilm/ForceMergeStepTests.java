@@ -8,7 +8,6 @@ package org.elasticsearch.xpack.core.ilm;
 
 import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
@@ -63,9 +62,7 @@ public class ForceMergeStepTests extends AbstractStepTestCase<ForceMergeStep> {
 
     public void testPerformActionComplete() throws Exception {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
             .build();
         Step.StepKey stepKey = randomStepKey();
         StepKey nextStepKey = randomStepKey();
@@ -87,9 +84,7 @@ public class ForceMergeStepTests extends AbstractStepTestCase<ForceMergeStep> {
 
     public void testPerformActionThrowsException() {
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)))
             .build();
         Exception exception = new RuntimeException("error");
         Step.StepKey stepKey = randomStepKey();
@@ -121,9 +116,7 @@ public class ForceMergeStepTests extends AbstractStepTestCase<ForceMergeStep> {
     public void testForcemergeFailsOnSomeShards() {
         int numberOfShards = randomIntBetween(2, 5);
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, "ilmPolicy"))
-            .numberOfShards(numberOfShards)
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(numberOfShards, randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, "ilmPolicy"))
             .build();
         Index index = indexMetadata.getIndex();
         ForceMergeResponse forceMergeResponse = Mockito.mock(ForceMergeResponse.class);

@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -57,9 +56,7 @@ public class CleanupShrinkIndexStepTests extends AbstractStepTestCase<CleanupShr
         String policyName = "test-ilm-policy";
 
         IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5));
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName));
 
         IndexMetadata indexMetadata = indexMetadataBuilder.build();
 
@@ -90,10 +87,8 @@ public class CleanupShrinkIndexStepTests extends AbstractStepTestCase<CleanupShr
         Map<String, String> ilmCustom = Map.of("shrink_index_name", shrinkIndexName);
 
         IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .putCustom(LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY, ilmCustom)
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5));
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
+            .putCustom(LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY, ilmCustom);
         IndexMetadata indexMetadata = indexMetadataBuilder.build();
 
         ClusterState clusterState = ClusterState.builder(emptyClusterState())
@@ -114,12 +109,10 @@ public class CleanupShrinkIndexStepTests extends AbstractStepTestCase<CleanupShr
 
         IndexMetadata.Builder shrunkIndexMetadataBuilder = IndexMetadata.builder(shrinkIndexName)
             .settings(
-                settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName)
+                indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName)
                     .put(IndexMetadata.INDEX_RESIZE_SOURCE_NAME_KEY, sourceIndex)
             )
-            .putCustom(LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY, ilmCustom)
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5));
+            .putCustom(LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY, ilmCustom);
         IndexMetadata shrunkIndexMetadata = shrunkIndexMetadataBuilder.build();
 
         ClusterState clusterState = ClusterState.builder(emptyClusterState())

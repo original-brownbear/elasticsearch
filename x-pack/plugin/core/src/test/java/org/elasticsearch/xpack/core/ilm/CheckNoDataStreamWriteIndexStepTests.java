@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.DataStream;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -49,9 +48,7 @@ public class CheckNoDataStreamWriteIndexStepTests extends AbstractStepTestCase<C
         String indexName = randomAlphaOfLength(10);
         String policyName = "test-ilm-policy";
         IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .build();
 
         ClusterState clusterState = ClusterState.builder(emptyClusterState())
@@ -68,9 +65,7 @@ public class CheckNoDataStreamWriteIndexStepTests extends AbstractStepTestCase<C
         String indexName = DataStream.getDefaultBackingIndexName(dataStreamName, 1);
         String policyName = "test-ilm-policy";
         IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .build();
 
         ClusterState clusterState = ClusterState.builder(emptyClusterState())
@@ -103,16 +98,12 @@ public class CheckNoDataStreamWriteIndexStepTests extends AbstractStepTestCase<C
         String indexName = DataStream.getDefaultBackingIndexName(dataStreamName, 1);
         String policyName = "test-ilm-policy";
         IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .build();
 
         String writeIndexName = DataStream.getDefaultBackingIndexName(dataStreamName, 2);
         IndexMetadata writeIndexMetadata = IndexMetadata.builder(writeIndexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .build();
 
         List<Index> backingIndices = List.of(indexMetadata.getIndex(), writeIndexMetadata.getIndex());

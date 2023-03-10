@@ -24,7 +24,6 @@ import org.elasticsearch.cluster.routing.GroupShardsIterator;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexMode;
 import org.elasticsearch.index.IndexSettings;
@@ -869,12 +868,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 ShardLongFieldRange.of(minTimeStamp, maxTimestamp)
             );
 
-            Settings.Builder indexSettings = settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
-
             IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.getName())
-                .settings(indexSettings)
-                .numberOfShards(1)
-                .numberOfReplicas(0)
+                .settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID()))
                 .timestampRange(timestampRange);
 
             Metadata.Builder metadataBuilder = Metadata.builder(clusterState.metadata()).put(indexMetadataBuilder);
@@ -889,16 +884,20 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 throw new IllegalArgumentException("Min/Max timestamps for " + index + " were already defined");
             }
 
-            Settings.Builder indexSettings = settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
-                .put(IndexSettings.MODE.getKey(), IndexMode.TIME_SERIES)
-                .put(IndexMetadata.INDEX_ROUTING_PATH.getKey(), "a_field")
-                .put(IndexSettings.TIME_SERIES_START_TIME.getKey(), DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.formatMillis(minTimestamp))
-                .put(IndexSettings.TIME_SERIES_END_TIME.getKey(), DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.formatMillis(maxTimestamp));
-
             IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.getName())
-                .settings(indexSettings)
-                .numberOfShards(1)
-                .numberOfReplicas(0);
+                .settings(
+                    indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID())
+                        .put(IndexSettings.MODE.getKey(), IndexMode.TIME_SERIES)
+                        .put(IndexMetadata.INDEX_ROUTING_PATH.getKey(), "a_field")
+                        .put(
+                            IndexSettings.TIME_SERIES_START_TIME.getKey(),
+                            DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.formatMillis(minTimestamp)
+                        )
+                        .put(
+                            IndexSettings.TIME_SERIES_END_TIME.getKey(),
+                            DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.formatMillis(maxTimestamp)
+                        )
+                );
 
             Metadata.Builder metadataBuilder = Metadata.builder(clusterState.metadata()).put(indexMetadataBuilder);
             clusterState = ClusterState.builder(clusterState).metadata(metadataBuilder).build();
@@ -910,11 +909,8 @@ public class CanMatchPreFilterSearchPhaseTests extends ESTestCase {
                 throw new IllegalArgumentException("Min/Max timestamps for " + index + " were already defined");
             }
 
-            Settings.Builder indexSettings = settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID());
             IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(index.getName())
-                .settings(indexSettings)
-                .numberOfShards(1)
-                .numberOfReplicas(0);
+                .settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, index.getUUID()));
 
             Metadata.Builder metadataBuilder = Metadata.builder(clusterState.metadata()).put(indexMetadataBuilder);
             clusterState = ClusterState.builder(clusterState).metadata(metadataBuilder).build();

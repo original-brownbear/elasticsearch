@@ -462,9 +462,7 @@ public class PrimaryShardAllocatorTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder(shardId.getIndexName())
-                    .settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
+                    .settings(indexSettings(1, 0))
                     .putInSyncAllocationIds(0, Sets.newHashSet(allocIds))
             )
             .build();
@@ -502,9 +500,7 @@ public class PrimaryShardAllocatorTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder(shardId.getIndexName())
-                    .settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(0)
+                    .settings(indexSettings(1, 0))
                     .putInSyncAllocationIds(shardId.id(), Sets.newHashSet(activeAllocationIds))
             )
             .build();

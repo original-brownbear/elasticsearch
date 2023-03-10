@@ -202,18 +202,11 @@ public class TransportBulkActionIngestTests extends ESTestCase {
                 Map.of(
                     WITH_DEFAULT_PIPELINE,
                     IndexMetadata.builder(WITH_DEFAULT_PIPELINE)
-                        .settings(settings(Version.CURRENT).put(IndexSettings.DEFAULT_PIPELINE.getKey(), "default_pipeline").build())
+                        .settings(indexSettings(1, 1).put(IndexSettings.DEFAULT_PIPELINE.getKey(), "default_pipeline"))
                         .putAlias(AliasMetadata.builder(WITH_DEFAULT_PIPELINE_ALIAS).build())
-                        .numberOfShards(1)
-                        .numberOfReplicas(1)
                         .build(),
                     ".system",
-                    IndexMetadata.builder(".system")
-                        .settings(settings(Version.CURRENT))
-                        .system(true)
-                        .numberOfShards(1)
-                        .numberOfReplicas(0)
-                        .build()
+                    IndexMetadata.builder(".system").settings(indexSettings(1, 0)).system(true).build()
                 )
             )
             .build();

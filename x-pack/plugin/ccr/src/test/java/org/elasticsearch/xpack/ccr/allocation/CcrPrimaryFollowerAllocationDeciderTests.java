@@ -48,10 +48,7 @@ public class CcrPrimaryFollowerAllocationDeciderTests extends ESAllocationTestCa
 
     public void testRegularIndex() {
         String index = "test-index";
-        IndexMetadata.Builder indexMetadata = IndexMetadata.builder(index)
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+        IndexMetadata.Builder indexMetadata = IndexMetadata.builder(index).settings(indexSettings(1, 1));
         List<DiscoveryNode> nodes = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             final Set<DiscoveryNodeRole> roles = new HashSet<>();
@@ -98,9 +95,7 @@ public class CcrPrimaryFollowerAllocationDeciderTests extends ESAllocationTestCa
     public void testAlreadyBootstrappedFollowerIndex() {
         String index = "test-index";
         IndexMetadata.Builder indexMetadata = IndexMetadata.builder(index)
-            .settings(settings(Version.CURRENT).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true));
         List<DiscoveryNode> nodes = new ArrayList<>();
         for (int i = 0; i < 2; i++) {
             final Set<DiscoveryNodeRole> roles = new HashSet<>();
@@ -142,9 +137,7 @@ public class CcrPrimaryFollowerAllocationDeciderTests extends ESAllocationTestCa
     public void testBootstrappingFollowerIndex() {
         String index = "test-index";
         IndexMetadata.Builder indexMetadata = IndexMetadata.builder(index)
-            .settings(settings(Version.CURRENT).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true));
         DiscoveryNode dataOnlyNode = newNode("d1", Set.of(DiscoveryNodeRole.DATA_ROLE));
         DiscoveryNode dataAndRemoteNode = newNode("dr1", Set.of(DiscoveryNodeRole.DATA_ROLE, DiscoveryNodeRole.REMOTE_CLUSTER_CLIENT_ROLE));
         DiscoveryNodes discoveryNodes = DiscoveryNodes.builder().add(dataOnlyNode).add(dataAndRemoteNode).build();

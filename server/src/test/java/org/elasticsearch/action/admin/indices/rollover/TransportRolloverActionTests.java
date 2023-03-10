@@ -336,14 +336,10 @@ public class TransportRolloverActionTests extends ESTestCase {
 
         final IndexMetadata.Builder indexMetadata = IndexMetadata.builder("logs-index-000001")
             .putAlias(AliasMetadata.builder("logs-alias").writeIndex(false).build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1));
         final IndexMetadata.Builder indexMetadata2 = IndexMetadata.builder("logs-index-000002")
             .putAlias(AliasMetadata.builder("logs-alias").writeIndex(true).build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1));
         final ClusterState stateBefore = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(indexMetadata).put(indexMetadata2))
             .build();

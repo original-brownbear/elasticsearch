@@ -10,7 +10,6 @@ package org.elasticsearch.cluster.routing.allocation;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ESAllocationTestCase;
@@ -42,12 +41,7 @@ public class ShardsLimitAllocationTests extends ESAllocationTestCase {
         Metadata metadata = Metadata.builder()
             .put(
                 IndexMetadata.builder("test")
-                    .settings(
-                        indexSettings(Version.CURRENT, 4, 1).put(
-                            ShardsLimitAllocationDecider.INDEX_TOTAL_SHARDS_PER_NODE_SETTING.getKey(),
-                            2
-                        )
-                    )
+                    .settings(indexSettings(4, 1).put(ShardsLimitAllocationDecider.INDEX_TOTAL_SHARDS_PER_NODE_SETTING.getKey(), 2))
             )
             .build();
 
@@ -90,7 +84,7 @@ public class ShardsLimitAllocationTests extends ESAllocationTestCase {
 
         logger.info("Building initial routing table");
 
-        Metadata metadata = Metadata.builder().put(IndexMetadata.builder("test").settings(indexSettings(Version.CURRENT, 4, 0))).build();
+        Metadata metadata = Metadata.builder().put(IndexMetadata.builder("test").settings(indexSettings(4, 0))).build();
 
         RoutingTable routingTable = RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY)
             .addAsNew(metadata.index("test"))
@@ -150,7 +144,7 @@ public class ShardsLimitAllocationTests extends ESAllocationTestCase {
 
         logger.info("Building initial routing table");
 
-        Metadata metadata = Metadata.builder().put(IndexMetadata.builder("test").settings(indexSettings(Version.CURRENT, 5, 0))).build();
+        Metadata metadata = Metadata.builder().put(IndexMetadata.builder("test").settings(indexSettings(5, 0))).build();
 
         RoutingTable initialRoutingTable = RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY)
             .addAsNew(metadata.index("test"))
@@ -169,9 +163,7 @@ public class ShardsLimitAllocationTests extends ESAllocationTestCase {
         assertThat(numberOfShardsOfType(clusterState.getRoutingNodes(), STARTED), equalTo(5));
 
         logger.info("add another index with 5 shards");
-        metadata = Metadata.builder(clusterState.metadata())
-            .put(IndexMetadata.builder("test1").settings(indexSettings(Version.CURRENT, 5, 0)))
-            .build();
+        metadata = Metadata.builder(clusterState.metadata()).put(IndexMetadata.builder("test1").settings(indexSettings(5, 0))).build();
         RoutingTable updatedRoutingTable = RoutingTable.builder(
             TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY,
             clusterState.routingTable()
@@ -198,12 +190,7 @@ public class ShardsLimitAllocationTests extends ESAllocationTestCase {
         metadata = Metadata.builder(clusterState.metadata())
             .put(
                 IndexMetadata.builder(clusterState.metadata().index("test"))
-                    .settings(
-                        indexSettings(Version.CURRENT, 5, 0).put(
-                            ShardsLimitAllocationDecider.INDEX_TOTAL_SHARDS_PER_NODE_SETTING.getKey(),
-                            3
-                        )
-                    )
+                    .settings(indexSettings(5, 0).put(ShardsLimitAllocationDecider.INDEX_TOTAL_SHARDS_PER_NODE_SETTING.getKey(), 3))
             )
             .build();
 

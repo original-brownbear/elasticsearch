@@ -8,7 +8,6 @@
 
 package org.elasticsearch.index.query;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
@@ -42,7 +41,7 @@ public class SearchIndexNameMatcherTests extends ESTestCase {
     }
 
     private static IndexMetadata.Builder indexBuilder(String index) {
-        return IndexMetadata.builder(index).settings(indexSettings(Version.CURRENT, 1, 0));
+        return IndexMetadata.builder(index).settings(indexSettings(1, 0));
     }
 
     public void testLocalIndex() {

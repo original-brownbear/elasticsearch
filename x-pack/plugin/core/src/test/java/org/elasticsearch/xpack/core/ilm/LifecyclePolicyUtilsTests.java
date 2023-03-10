@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
@@ -78,8 +77,7 @@ public class LifecyclePolicyUtilsTests extends ESTestCase {
                             )
                         )
                         .put(
-                            IndexMetadata.builder("myindex")
-                                .settings(indexSettings(Version.CURRENT, 1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy"))
+                            IndexMetadata.builder("myindex").settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy"))
                         )
                         .build()
                 )
@@ -103,8 +101,7 @@ public class LifecyclePolicyUtilsTests extends ESTestCase {
                             )
                         )
                         .put(
-                            IndexMetadata.builder("myindex")
-                                .settings(indexSettings(Version.CURRENT, 1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy"))
+                            IndexMetadata.builder("myindex").settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy"))
                         )
                         .putCustom(
                             ComposableIndexTemplateMetadata.TYPE,
@@ -145,18 +142,9 @@ public class LifecyclePolicyUtilsTests extends ESTestCase {
                         OperationMode.RUNNING
                     )
                 )
-                .put(
-                    IndexMetadata.builder("myindex")
-                        .settings(indexSettings(Version.CURRENT, 1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy"))
-                )
-                .put(
-                    IndexMetadata.builder("another")
-                        .settings(indexSettings(Version.CURRENT, 1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy"))
-                )
-                .put(
-                    IndexMetadata.builder("other")
-                        .settings(indexSettings(Version.CURRENT, 1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "otherpolicy"))
-                )
+                .put(IndexMetadata.builder("myindex").settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy")))
+                .put(IndexMetadata.builder("another").settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "mypolicy")))
+                .put(IndexMetadata.builder("other").settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_NAME, "otherpolicy")))
 
                 .putCustom(
                     ComposableIndexTemplateMetadata.TYPE,

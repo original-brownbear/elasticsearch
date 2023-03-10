@@ -711,10 +711,7 @@ public class TransportMasterNodeActionTests extends ESTestCase {
         ActionTestUtils.execute(action, null, request, listener);
 
         assertFalse(listener.isDone());
-        IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexRequestName)
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(0);
+        IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexRequestName).settings(indexSettings(1, 0));
         ClusterState clusterStateWithoutBlocks = ClusterState.builder(ClusterStateCreationUtils.state(localNode, localNode, allNodes))
             .metadata(Metadata.builder().put(indexMetadataBuilder).build())
             .blocks(ClusterBlocks.EMPTY_CLUSTER_BLOCK)

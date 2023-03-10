@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.containsString;
 public class ClusterStateToStringTests extends ESAllocationTestCase {
     public void testClusterStateSerialization() throws Exception {
         Metadata metadata = Metadata.builder()
-            .put(IndexMetadata.builder("test_idx").settings(settings(Version.CURRENT)).numberOfShards(10).numberOfReplicas(1))
+            .put(IndexMetadata.builder("test_idx").settings(indexSettings(10, 1)))
             .put(
                 IndexTemplateMetadata.builder("test_template")
                     .patterns(Arrays.asList(generateRandomStringArray(10, 100, false, false)))

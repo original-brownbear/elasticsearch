@@ -972,20 +972,16 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
 
     public void testClusterStateCreateIndexThrowsWriteIndexValidationException() throws Exception {
         IndexMetadata existingWriteIndex = IndexMetadata.builder("test2")
-            .settings(settings(Version.CURRENT))
-            .putAlias(AliasMetadata.builder("alias1").writeIndex(true).build())
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0))
+            .putAlias(AliasMetadata.builder("alias1").writeIndex(true))
             .build();
         ClusterState currentClusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
             .metadata(Metadata.builder().put(existingWriteIndex, false).build())
             .build();
 
         IndexMetadata newIndex = IndexMetadata.builder("test")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
-            .putAlias(AliasMetadata.builder("alias1").writeIndex(true).build())
+            .settings(indexSettings(1, 0))
+            .putAlias(AliasMetadata.builder("alias1").writeIndex(true))
             .build();
 
         assertThat(
@@ -1007,9 +1003,7 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
         ClusterState currentClusterState = ClusterState.builder(ClusterState.EMPTY_STATE).build();
 
         IndexMetadata newIndexMetadata = IndexMetadata.builder("test")
-            .settings(settings(Version.CURRENT).put(SETTING_READ_ONLY, true))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(SETTING_READ_ONLY, true))
             .putAlias(AliasMetadata.builder("alias1").writeIndex(true).build())
             .build();
 
@@ -1034,22 +1028,12 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
 
     public void testClusterStateCreateIndexWithMetadataTransaction() {
         ClusterState currentClusterState = ClusterState.builder(ClusterState.EMPTY_STATE)
-            .metadata(
-                Metadata.builder()
-                    .put(
-                        IndexMetadata.builder("my-index")
-                            .settings(settings(Version.CURRENT).put(SETTING_READ_ONLY, true))
-                            .numberOfShards(1)
-                            .numberOfReplicas(0)
-                    )
-            )
+            .metadata(Metadata.builder().put(IndexMetadata.builder("my-index").settings(indexSettings(1, 0).put(SETTING_READ_ONLY, true))))
             .build();
 
         IndexMetadata newIndexMetadata = IndexMetadata.builder("test")
-            .settings(settings(Version.CURRENT).put(SETTING_READ_ONLY, true))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
-            .putAlias(AliasMetadata.builder("alias1").writeIndex(true).build())
+            .settings(indexSettings(1, 0).put(SETTING_READ_ONLY, true))
+            .putAlias(AliasMetadata.builder("alias1").writeIndex(true))
             .build();
 
         // adds alias from new index to existing index

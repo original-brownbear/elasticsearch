@@ -8,7 +8,6 @@ package org.elasticsearch.xpack.watcher.execution;
 
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshAction;
@@ -94,7 +93,7 @@ import static org.mockito.Mockito.when;
 
 public class TriggeredWatchStoreTests extends ESTestCase {
 
-    private static final Settings indexSettings = indexSettings(Version.CURRENT, 1, 1).build();
+    private static final Settings indexSettings = indexSettings(1, 1).build();
 
     private Client client;
     private TriggeredWatch.Parser parser;
@@ -147,7 +146,7 @@ public class TriggeredWatchStoreTests extends ESTestCase {
 
         int numShards = 2 + randomInt(2);
         int numStartedShards = 1;
-        Settings settings = indexSettings(Version.CURRENT, numShards, 1).build();
+        Settings settings = indexSettings(numShards, 1).build();
         metadataBuilder.put(
             IndexMetadata.builder(TriggeredWatchStoreField.INDEX_NAME).settings(settings).numberOfShards(numShards).numberOfReplicas(1)
         );

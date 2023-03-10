@@ -8,7 +8,6 @@
 
 package org.elasticsearch.action.admin.cluster.health;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -66,9 +65,7 @@ public class TransportClusterHealthActionTests extends ESTestCase {
     }
 
     ClusterState randomClusterStateWithInitializingShards(String index, final int initializingShards) {
-        final IndexMetadata indexMetadata = IndexMetadata.builder(index)
-            .settings(indexSettings(Version.CURRENT, between(1, 10), randomInt(20)))
-            .build();
+        final IndexMetadata indexMetadata = IndexMetadata.builder(index).settings(indexSettings(between(1, 10), randomInt(20))).build();
 
         final List<ShardRoutingState> shardRoutingStates = new ArrayList<>();
         if (initializingShards == 1 && randomBoolean()) {

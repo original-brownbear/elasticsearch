@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -67,9 +66,7 @@ public class CreateSnapshotStepTests extends AbstractStepTestCase<CreateSnapshot
 
         {
             IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName)
-                .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(0, 5));
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName));
             Map<String, String> ilmCustom = new HashMap<>();
             String repository = "repository";
             ilmCustom.put("snapshot_repository", repository);
@@ -91,9 +88,7 @@ public class CreateSnapshotStepTests extends AbstractStepTestCase<CreateSnapshot
 
         {
             IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName)
-                .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-                .numberOfShards(randomIntBetween(1, 5))
-                .numberOfReplicas(randomIntBetween(0, 5));
+                .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName));
             IndexMetadata indexMetadata = indexMetadataBuilder.build();
 
             ClusterState clusterState = ClusterState.builder(emptyClusterState())
@@ -122,10 +117,8 @@ public class CreateSnapshotStepTests extends AbstractStepTestCase<CreateSnapshot
         ilmCustom.put("snapshot_repository", repository);
 
         IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .putCustom(LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY, ilmCustom)
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5));
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
+            .putCustom(LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY, ilmCustom);
         IndexMetadata indexMetadata = indexMetadataBuilder.build();
 
         ClusterState clusterState = ClusterState.builder(emptyClusterState())
@@ -148,10 +141,8 @@ public class CreateSnapshotStepTests extends AbstractStepTestCase<CreateSnapshot
         ilmCustom.put("snapshot_repository", repository);
 
         IndexMetadata.Builder indexMetadataBuilder = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .putCustom(LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY, ilmCustom)
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5));
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
+            .putCustom(LifecycleExecutionState.ILM_CUSTOM_METADATA_KEY, ilmCustom);
         IndexMetadata indexMetadata = indexMetadataBuilder.build();
 
         ClusterState clusterState = ClusterState.builder(emptyClusterState())

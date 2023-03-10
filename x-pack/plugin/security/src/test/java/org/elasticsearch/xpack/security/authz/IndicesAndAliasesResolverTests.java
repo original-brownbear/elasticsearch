@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.security.authz;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesAction;
@@ -127,7 +126,7 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
 
     @Before
     public void setup() {
-        Settings settings = indexSettings(Version.CURRENT, randomIntBetween(1, 2), randomIntBetween(0, 1)).put(
+        Settings settings = indexSettings(randomIntBetween(1, 2), randomIntBetween(0, 1)).put(
             "cluster.remote.remote.seeds",
             "127.0.0.1:" + randomIntBetween(9301, 9350)
         ).put("cluster.remote.other_remote.seeds", "127.0.0.1:" + randomIntBetween(9351, 9399)).build();

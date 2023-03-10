@@ -8,7 +8,6 @@
 
 package org.elasticsearch.action.support;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.ComposableIndexTemplate;
@@ -316,7 +315,7 @@ public class AutoCreateIndexTests extends ESTestCase {
     private static ClusterState buildClusterState(String... indices) {
         Metadata.Builder metadata = Metadata.builder();
         for (String index : indices) {
-            metadata.put(IndexMetadata.builder(index).settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(1));
+            metadata.put(IndexMetadata.builder(index).settings(indexSettings(1, 1)));
         }
         return ClusterState.builder(org.elasticsearch.cluster.ClusterName.CLUSTER_NAME_SETTING.getDefault(Settings.EMPTY))
             .metadata(metadata)

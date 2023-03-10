@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.ccr;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.ClusterName;
@@ -92,9 +91,7 @@ public class CCRInfoTransportActionTests extends ESTestCase {
         int numFollowerIndices = randomIntBetween(0, 32);
         for (int i = 0; i < numFollowerIndices; i++) {
             IndexMetadata.Builder followerIndex = IndexMetadata.builder("follow_index" + i)
-                .settings(settings(Version.CURRENT).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
-                .numberOfShards(1)
-                .numberOfReplicas(0)
+                .settings(indexSettings(1, 0).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
                 .creationDate(i)
                 .putCustom(Ccr.CCR_CUSTOM_METADATA_KEY, new HashMap<>());
             metadata.put(followerIndex);
@@ -102,9 +99,7 @@ public class CCRInfoTransportActionTests extends ESTestCase {
 
         // Add a regular index, to check that we do not take that one into account:
         IndexMetadata.Builder regularIndex = IndexMetadata.builder("my_index")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0))
             .creationDate(numFollowerIndices);
         metadata.put(regularIndex);
 

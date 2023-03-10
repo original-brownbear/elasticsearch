@@ -8,7 +8,6 @@
 
 package org.elasticsearch.action.support;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.TestShardRoutingRoleStrategies;
@@ -254,9 +253,7 @@ public class ActiveShardCountTests extends ESTestCase {
     private ClusterState initializeWithNewIndex(String indexName, int numShards, int numReplicas, ShardRoutingRoleStrategy strategy) {
         // initial index creation and new routing table info
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
-            .numberOfShards(numShards)
-            .numberOfReplicas(numReplicas)
+            .settings(indexSettings(numShards, numReplicas).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
             .build();
         final Metadata metadata = Metadata.builder().put(indexMetadata, true).build();
         final RoutingTable routingTable = RoutingTable.builder(strategy).addAsNew(indexMetadata).build();
@@ -265,9 +262,7 @@ public class ActiveShardCountTests extends ESTestCase {
 
     private ClusterState initializeWithClosedIndex(final String indexName, final int numShards, final int numReplicas) {
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
-            .numberOfShards(numShards)
-            .numberOfReplicas(numReplicas)
+            .settings(indexSettings(numShards, numReplicas).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID()))
             .state(IndexMetadata.State.CLOSE)
             .build();
         final Metadata metadata = Metadata.builder().put(indexMetadata, true).build();

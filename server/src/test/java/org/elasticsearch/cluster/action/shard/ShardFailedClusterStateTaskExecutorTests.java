@@ -9,7 +9,6 @@
 package org.elasticsearch.cluster.action.shard;
 
 import org.apache.lucene.index.CorruptIndexException;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -71,13 +70,7 @@ public class ShardFailedClusterStateTaskExecutorTests extends ESAllocationTestCa
         );
         numberOfReplicas = randomIntBetween(2, 16);
         metadata = Metadata.builder()
-            .put(
-                IndexMetadata.builder(INDEX)
-                    .settings(settings(Version.CURRENT))
-                    .numberOfShards(1)
-                    .numberOfReplicas(numberOfReplicas)
-                    .primaryTerm(0, randomIntBetween(2, 10))
-            )
+            .put(IndexMetadata.builder(INDEX).settings(indexSettings(1, numberOfReplicas)).primaryTerm(0, randomIntBetween(2, 10)))
             .build();
         routingTable = RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY).addAsNew(metadata.index(INDEX)).build();
         clusterState = ClusterState.builder(ClusterName.CLUSTER_NAME_SETTING.getDefault(Settings.EMPTY))

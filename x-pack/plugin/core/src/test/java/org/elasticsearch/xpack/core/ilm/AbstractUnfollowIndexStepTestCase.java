@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.mockito.Mockito;
@@ -41,9 +40,7 @@ public abstract class AbstractUnfollowIndexStepTestCase<T extends AbstractUnfoll
 
     public final void testNotAFollowerIndex() throws Exception {
         IndexMetadata indexMetadata = IndexMetadata.builder("follower-index")
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(LifecycleSettings.LIFECYCLE_INDEXING_COMPLETE, "true"))
             .build();
 
         T step = newInstance(randomStepKey(), randomStepKey());

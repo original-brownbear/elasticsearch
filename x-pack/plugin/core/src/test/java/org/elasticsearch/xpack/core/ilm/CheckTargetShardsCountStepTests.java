@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.Metadata;
@@ -44,9 +43,7 @@ public class CheckTargetShardsCountStepTests extends AbstractStepTestCase<CheckT
     public void testStepCompleteIfTargetShardsCountIsValid() {
         String policyName = "test-ilm-policy";
         IndexMetadata indexMetadata = IndexMetadata.builder(randomAlphaOfLength(10))
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(10)
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(10, randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .build();
 
         ClusterState clusterState = ClusterState.builder(emptyClusterState())
@@ -63,9 +60,7 @@ public class CheckTargetShardsCountStepTests extends AbstractStepTestCase<CheckT
         String indexName = randomAlphaOfLength(10);
         String policyName = "test-ilm-policy";
         IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(10)
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(10, randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .build();
 
         ClusterState clusterState = ClusterState.builder(emptyClusterState())

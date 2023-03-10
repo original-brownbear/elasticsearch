@@ -336,12 +336,7 @@ public class UnassignedInfoTests extends ESAllocationTestCase {
 
     public void testNewIndexRestored() {
         Metadata metadata = Metadata.builder()
-            .put(
-                IndexMetadata.builder("test")
-                    .settings(settings(Version.CURRENT))
-                    .numberOfShards(randomIntBetween(1, 3))
-                    .numberOfReplicas(randomIntBetween(0, 3))
-            )
+            .put(IndexMetadata.builder("test").settings(indexSettings(randomIntBetween(1, 3), randomIntBetween(0, 3))))
             .build();
         ClusterState clusterState = ClusterState.builder(ClusterName.CLUSTER_NAME_SETTING.getDefault(Settings.EMPTY))
             .metadata(metadata)

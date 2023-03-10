@@ -7,7 +7,6 @@
  */
 package org.elasticsearch.action.admin.cluster.reroute;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.ESAllocationTestCase;
@@ -168,7 +167,7 @@ public class ClusterRerouteTests extends ESAllocationTestCase {
 
     private ClusterState createInitialClusterState(AllocationService service) {
         Metadata.Builder metaBuilder = Metadata.builder();
-        metaBuilder.put(IndexMetadata.builder("idx").settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0));
+        metaBuilder.put(IndexMetadata.builder("idx").settings(indexSettings(1, 0)));
         Metadata metadata = metaBuilder.build();
         RoutingTable.Builder routingTableBuilder = RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY);
         routingTableBuilder.addAsNew(metadata.index("idx"));

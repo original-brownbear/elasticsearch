@@ -83,9 +83,7 @@ public class RoutingIteratorTests extends ESAllocationTestCase {
     }
 
     public void testIterator1() {
-        Metadata metadata = Metadata.builder()
-            .put(IndexMetadata.builder("test1").settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(2))
-            .build();
+        Metadata metadata = Metadata.builder().put(IndexMetadata.builder("test1").settings(indexSettings(1, 2))).build();
         RoutingTable routingTable = RoutingTable.builder(TestShardRoutingRoleStrategies.DEFAULT_ROLE_ONLY)
             .addAsNew(metadata.index("test1"))
             .build();

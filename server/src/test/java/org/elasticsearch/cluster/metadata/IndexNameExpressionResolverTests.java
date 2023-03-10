@@ -9,7 +9,6 @@
 package org.elasticsearch.cluster.metadata;
 
 import org.apache.logging.log4j.Level;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
@@ -2943,9 +2942,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         IndexMetadata index1 = createBackingIndex(dataStream1, 1, epochMillis).build();
         IndexMetadata index2 = createBackingIndex(dataStream1, 2, epochMillis).build();
         IndexMetadata justAnIndex = IndexMetadata.builder("logs-foobarbaz-0")
-            .settings(ESTestCase.settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1)
+            .settings(indexSettings(1, 1))
             .putAlias(new AliasMetadata.Builder("logs-foobarbaz"))
             .build();
 
@@ -2972,11 +2969,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         final String dataStream1 = "logs-foobar";
         IndexMetadata index1 = createBackingIndex(dataStream1, 1, epochMillis).build();
         IndexMetadata index2 = createBackingIndex(dataStream1, 2, epochMillis).build();
-        IndexMetadata justAnIndex = IndexMetadata.builder("logs-foobarbaz-0")
-            .settings(ESTestCase.settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1)
-            .build();
+        IndexMetadata justAnIndex = IndexMetadata.builder("logs-foobarbaz-0").settings(indexSettings(1, 1)).build();
 
         ClusterState state = ClusterState.builder(new ClusterName("_name"))
             .metadata(
@@ -3013,9 +3006,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
         IndexMetadata index1 = createBackingIndex(dataStream1, 1).build();
         IndexMetadata index2 = createBackingIndex(dataStream1, 2).build();
         IndexMetadata justAnIndex = IndexMetadata.builder("logs-foobarbaz-0")
-            .settings(ESTestCase.settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1)
+            .settings(indexSettings(1, 1))
             .putAlias(new AliasMetadata.Builder("logs-foobarbaz"))
             .build();
 
@@ -3241,7 +3232,7 @@ public class IndexNameExpressionResolverTests extends ESTestCase {
     }
 
     private static IndexMetadata.Builder indexBuilder(String index, Settings additionalSettings) {
-        return IndexMetadata.builder(index).settings(indexSettings(Version.CURRENT, 1, 0).put(additionalSettings));
+        return IndexMetadata.builder(index).settings(indexSettings(1, 0).put(additionalSettings));
     }
 
 }

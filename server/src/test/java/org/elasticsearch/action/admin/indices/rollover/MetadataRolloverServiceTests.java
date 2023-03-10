@@ -515,9 +515,7 @@ public class MetadataRolloverServiceTests extends ESTestCase {
         String sourceIndexName = indexPrefix + "1";
         final IndexMetadata.Builder indexMetadata = IndexMetadata.builder(sourceIndexName)
             .putAlias(AliasMetadata.builder(aliasName).writeIndex(true).build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1));
         final ClusterState clusterState = ClusterState.builder(new ClusterName("test"))
             .metadata(Metadata.builder().put(indexMetadata))
             .build();
@@ -672,9 +670,7 @@ public class MetadataRolloverServiceTests extends ESTestCase {
             defaultRolloverIndexName = indexPrefix + "2";
             final IndexMetadata.Builder indexMetadata = IndexMetadata.builder(sourceIndexName)
                 .putAlias(AliasMetadata.builder(rolloverTarget).writeIndex(true).build())
-                .settings(settings(Version.CURRENT))
-                .numberOfShards(1)
-                .numberOfReplicas(1);
+                .settings(indexSettings(1, 1));
             builder.put(indexMetadata);
         }
         final ClusterState clusterState = ClusterState.builder(new ClusterName("test")).metadata(builder).build();

@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -63,9 +62,7 @@ public class GenerateSnapshotNameStepTests extends AbstractStepTestCase<Generate
         String indexName = randomAlphaOfLength(10);
         String policyName = "test-ilm-policy";
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .build();
 
         GenerateSnapshotNameStep generateSnapshotNameStep = createRandomInstance();
@@ -109,9 +106,7 @@ public class GenerateSnapshotNameStepTests extends AbstractStepTestCase<Generate
         String indexName = randomAlphaOfLength(10);
         String policyName = "test-ilm-policy";
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .build();
 
         GenerateSnapshotNameStep generateSnapshotNameStep = createRandomInstance();
@@ -147,9 +142,7 @@ public class GenerateSnapshotNameStepTests extends AbstractStepTestCase<Generate
         newCustomData.setSnapshotRepository("snapshot-repository-will-be-reset");
 
         final IndexMetadata indexMetadata = IndexMetadata.builder(indexName)
-            .settings(settings(Version.CURRENT).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
-            .numberOfShards(randomIntBetween(1, 5))
-            .numberOfReplicas(randomIntBetween(0, 5))
+            .settings(indexSettings(randomIntBetween(1, 5), randomIntBetween(0, 5)).put(LifecycleSettings.LIFECYCLE_NAME, policyName))
             .putCustom(ILM_CUSTOM_METADATA_KEY, newCustomData.build().asMap())
             .build();
 

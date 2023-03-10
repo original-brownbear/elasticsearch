@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.core.ilm;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
@@ -25,10 +24,7 @@ public class AsyncBranchingStepTests extends AbstractStepTestCase<AsyncBranching
     public void testPredicateNextStepChange() throws InterruptedException {
         String indexName = randomAlphaOfLength(5);
         ClusterState state = ClusterState.builder(ClusterName.DEFAULT)
-            .metadata(
-                Metadata.builder()
-                    .put(IndexMetadata.builder(indexName).settings(settings(Version.CURRENT)).numberOfShards(1).numberOfReplicas(0))
-            )
+            .metadata(Metadata.builder().put(IndexMetadata.builder(indexName).settings(indexSettings(1, 0))))
             .build();
         StepKey stepKey = new StepKey(randomAlphaOfLength(5), randomAlphaOfLength(5), BranchingStep.NAME);
         StepKey nextStepKey = new StepKey(randomAlphaOfLength(6), randomAlphaOfLength(6), BranchingStep.NAME);

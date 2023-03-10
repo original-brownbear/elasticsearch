@@ -256,10 +256,7 @@ public class SameShardRoutingTests extends ESAllocationTestCase {
         );
 
         final Metadata metadata = Metadata.builder()
-            .put(
-                IndexMetadata.builder("test")
-                    .settings(indexSettings(Version.CURRENT, 1, 99).put(IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS, "0-all"))
-            )
+            .put(IndexMetadata.builder("test").settings(indexSettings(1, 99).put(IndexMetadata.SETTING_AUTO_EXPAND_REPLICAS, "0-all")))
             .build();
 
         final DiscoveryNode node1 = new DiscoveryNode(

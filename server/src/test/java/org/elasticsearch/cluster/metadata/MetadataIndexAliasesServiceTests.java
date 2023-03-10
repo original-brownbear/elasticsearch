@@ -324,15 +324,10 @@ public class MetadataIndexAliasesServiceTests extends ESTestCase {
     }
 
     public void testAddWriteOnlyWithExistingWriteIndex() {
-        IndexMetadata.Builder indexMetadata = IndexMetadata.builder("test")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+        IndexMetadata.Builder indexMetadata = IndexMetadata.builder("test").settings(indexSettings(1, 1));
         IndexMetadata.Builder indexMetadata2 = IndexMetadata.builder("test2")
             .putAlias(AliasMetadata.builder("alias").writeIndex(true).build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1));
         ClusterState before = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(indexMetadata).put(indexMetadata2))
             .build();
@@ -356,13 +351,8 @@ public class MetadataIndexAliasesServiceTests extends ESTestCase {
     public void testSwapWriteOnlyIndex() {
         IndexMetadata.Builder indexMetadata = IndexMetadata.builder("test")
             .putAlias(AliasMetadata.builder("alias").writeIndex(true).build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
-        IndexMetadata.Builder indexMetadata2 = IndexMetadata.builder("test2")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1));
+        IndexMetadata.Builder indexMetadata2 = IndexMetadata.builder("test2").settings(indexSettings(1, 1));
         ClusterState before = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(indexMetadata).put(indexMetadata2))
             .build();
@@ -387,18 +377,11 @@ public class MetadataIndexAliasesServiceTests extends ESTestCase {
     public void testAddWriteOnlyWithExistingNonWriteIndices() {
         IndexMetadata.Builder indexMetadata = IndexMetadata.builder("test")
             .putAlias(AliasMetadata.builder("alias").writeIndex(randomBoolean() ? null : false).build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1));
         IndexMetadata.Builder indexMetadata2 = IndexMetadata.builder("test2")
             .putAlias(AliasMetadata.builder("alias").writeIndex(randomBoolean() ? null : false).build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
-        IndexMetadata.Builder indexMetadata3 = IndexMetadata.builder("test3")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .settings(indexSettings(1, 1));
+        IndexMetadata.Builder indexMetadata3 = IndexMetadata.builder("test3").settings(indexSettings(1, 1));
         ClusterState before = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(indexMetadata).put(indexMetadata2).put(indexMetadata3))
             .build();
@@ -421,15 +404,11 @@ public class MetadataIndexAliasesServiceTests extends ESTestCase {
 
     public void testAddWriteOnlyWithIndexRemoved() {
         IndexMetadata.Builder indexMetadata = IndexMetadata.builder("test")
-            .putAlias(AliasMetadata.builder("alias").build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .putAlias(AliasMetadata.builder("alias"))
+            .settings(indexSettings(1, 1));
         IndexMetadata.Builder indexMetadata2 = IndexMetadata.builder("test2")
-            .putAlias(AliasMetadata.builder("alias").build())
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+            .putAlias(AliasMetadata.builder("alias"))
+            .settings(indexSettings(1, 1));
         ClusterState before = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(indexMetadata).put(indexMetadata2))
             .build();
@@ -448,14 +427,8 @@ public class MetadataIndexAliasesServiceTests extends ESTestCase {
     }
 
     public void testAddWriteOnlyValidatesAgainstMetadataBuilder() {
-        IndexMetadata.Builder indexMetadata = IndexMetadata.builder("test")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
-        IndexMetadata.Builder indexMetadata2 = IndexMetadata.builder("test2")
-            .settings(settings(Version.CURRENT))
-            .numberOfShards(1)
-            .numberOfReplicas(1);
+        IndexMetadata.Builder indexMetadata = IndexMetadata.builder("test").settings(indexSettings(1, 1));
+        IndexMetadata.Builder indexMetadata2 = IndexMetadata.builder("test2").settings(indexSettings(1, 1));
         ClusterState before = ClusterState.builder(ClusterName.DEFAULT)
             .metadata(Metadata.builder().put(indexMetadata).put(indexMetadata2))
             .build();

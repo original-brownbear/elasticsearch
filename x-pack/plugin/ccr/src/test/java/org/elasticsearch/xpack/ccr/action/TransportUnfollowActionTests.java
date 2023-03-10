@@ -54,9 +54,7 @@ public class TransportUnfollowActionTests extends ESTestCase {
 
     public void testUnfollowIndexOpen() {
         IndexMetadata.Builder followerIndex = IndexMetadata.builder("follow_index")
-            .settings(settings(Version.CURRENT).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
             .putCustom(Ccr.CCR_CUSTOM_METADATA_KEY, new HashMap<>());
 
         ClusterState current = ClusterState.builder(new ClusterName("cluster_name"))
@@ -71,9 +69,7 @@ public class TransportUnfollowActionTests extends ESTestCase {
 
     public void testUnfollowRunningShardFollowTasks() {
         IndexMetadata.Builder followerIndex = IndexMetadata.builder("follow_index")
-            .settings(settings(Version.CURRENT).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
             .state(IndexMetadata.State.CLOSE)
             .putCustom(Ccr.CCR_CUSTOM_METADATA_KEY, new HashMap<>());
 
@@ -121,9 +117,7 @@ public class TransportUnfollowActionTests extends ESTestCase {
 
     public void testUnfollowMissingIndex() {
         IndexMetadata.Builder followerIndex = IndexMetadata.builder("follow_index")
-            .settings(settings(Version.CURRENT).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
             .state(IndexMetadata.State.CLOSE)
             .putCustom(Ccr.CCR_CUSTOM_METADATA_KEY, new HashMap<>());
 
@@ -135,9 +129,7 @@ public class TransportUnfollowActionTests extends ESTestCase {
 
     public void testUnfollowNoneFollowIndex() {
         IndexMetadata.Builder followerIndex = IndexMetadata.builder("follow_index")
-            .settings(settings(Version.CURRENT).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
             .state(IndexMetadata.State.CLOSE);
 
         ClusterState current = ClusterState.builder(new ClusterName("cluster_name"))
