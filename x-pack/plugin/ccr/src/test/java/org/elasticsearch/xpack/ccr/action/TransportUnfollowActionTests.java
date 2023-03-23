@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.ccr.action;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -34,7 +33,7 @@ public class TransportUnfollowActionTests extends ESTestCase {
     public void testUnfollow() {
         final long settingsVersion = randomNonNegativeLong();
         IndexMetadata.Builder followerIndex = IndexMetadata.builder("follow_index")
-            .settings(settings(Version.CURRENT).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
+            .settings(indexSettings(1, 0).put(CcrSettings.CCR_FOLLOWING_INDEX_SETTING.getKey(), true))
             .settingsVersion(settingsVersion)
             .numberOfShards(1)
             .numberOfReplicas(0)

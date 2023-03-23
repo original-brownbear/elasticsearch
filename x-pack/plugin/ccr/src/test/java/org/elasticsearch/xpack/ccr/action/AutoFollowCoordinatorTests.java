@@ -2564,14 +2564,8 @@ public class AutoFollowCoordinatorTests extends ESTestCase {
     }
 
     private static ClusterState createRemoteClusterStateWithDataStream(String dataStreamName, boolean system) {
-        Settings.Builder indexSettings = settings(Version.CURRENT);
-        indexSettings.put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID(random()));
-        indexSettings.put("index.hidden", true);
-
         IndexMetadata indexMetadata = IndexMetadata.builder(DataStream.getDefaultBackingIndexName(dataStreamName, 1))
-            .settings(indexSettings)
-            .numberOfShards(1)
-            .numberOfReplicas(0)
+            .settings(indexSettings(1, 0).put(IndexMetadata.SETTING_INDEX_UUID, UUIDs.randomBase64UUID(random())).put("index.hidden", true))
             .system(system)
             .build();
         DataStream dataStream = new DataStream(
