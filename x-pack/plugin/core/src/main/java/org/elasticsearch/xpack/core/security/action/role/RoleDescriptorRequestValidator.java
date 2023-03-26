@@ -8,13 +8,13 @@
 package org.elasticsearch.xpack.core.security.action.role;
 
 import org.elasticsearch.action.ActionRequestValidationException;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.xpack.core.security.authz.RoleDescriptor;
 import org.elasticsearch.xpack.core.security.authz.privilege.ApplicationPrivilege;
 import org.elasticsearch.xpack.core.security.authz.privilege.ClusterPrivilegeResolver;
 import org.elasticsearch.xpack.core.security.authz.privilege.IndexPrivilege;
 import org.elasticsearch.xpack.core.security.support.MetadataUtils;
 
-import java.util.Arrays;
 import java.util.Set;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
@@ -54,7 +54,7 @@ public class RoleDescriptorRequestValidator {
         }
         final RoleDescriptor.RemoteIndicesPrivileges[] remoteIndicesPrivileges = roleDescriptor.getRemoteIndicesPrivileges();
         for (RoleDescriptor.RemoteIndicesPrivileges ridp : remoteIndicesPrivileges) {
-            if (Arrays.asList(ridp.remoteClusters()).contains("")) {
+            if (ArrayUtils.contains(ridp.remoteClusters(), "")) {
                 validationException = addValidationError("remote index cluster alias cannot be an empty string", validationException);
             }
             try {

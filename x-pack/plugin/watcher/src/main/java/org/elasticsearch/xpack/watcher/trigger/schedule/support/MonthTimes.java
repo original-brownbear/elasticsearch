@@ -9,6 +9,7 @@ package org.elasticsearch.xpack.watcher.trigger.schedule.support;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
@@ -103,12 +104,7 @@ public class MonthTimes implements Times {
         if (Arrays.binarySearch(days, day) == -1) { // days are already sorted
             return false;
         }
-        for (DayTimes dayTimes1 : this.times()) {
-            if (dayTimes.equals(dayTimes1)) {
-                return true;
-            }
-        }
-        return false;
+        return ArrayUtils.contains(this.times(), dayTimes);
     }
 
     public boolean intersects(MonthTimes testTimes) {

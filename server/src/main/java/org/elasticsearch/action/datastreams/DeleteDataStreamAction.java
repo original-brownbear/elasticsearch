@@ -17,6 +17,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.core.ArrayUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -48,7 +49,7 @@ public class DeleteDataStreamAction extends ActionType<AcknowledgedResponse> {
 
         public Request(String... names) {
             this.names = Objects.requireNonNull(names);
-            this.wildcardExpressionsOriginallySpecified = Arrays.stream(names).anyMatch(Regex::isSimpleMatchPattern);
+            this.wildcardExpressionsOriginallySpecified = ArrayUtils.anyMatch(names, Regex::isSimpleMatchPattern);
         }
 
         public String[] getNames() {

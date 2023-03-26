@@ -14,6 +14,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -23,7 +24,6 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
 
@@ -153,7 +153,7 @@ public class SecurityIpFilterRule implements IpFilterRule, ToXContentFragment {
     static IpFilterRule getRule(boolean isAllowRule, String value) {
         IpFilterRuleType filterRuleType = isAllowRule ? IpFilterRuleType.ACCEPT : IpFilterRuleType.REJECT;
         String[] values = value.split(",");
-        if (Arrays.stream(values).anyMatch("_all"::equals)) {
+        if (ArrayUtils.contains(values, "_all")) {
             // all rule was found. It should be the only rule!
             if (values.length != 1) {
                 throw new IllegalArgumentException("rules that specify _all may not have other values!");

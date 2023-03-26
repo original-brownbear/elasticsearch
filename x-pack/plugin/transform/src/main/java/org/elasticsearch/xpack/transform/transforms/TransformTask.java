@@ -18,6 +18,7 @@ import org.elasticsearch.client.internal.ParentTaskAssigningClient;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.regex.Regex;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.persistent.AllocatedPersistentTask;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata.PersistentTask;
@@ -42,7 +43,6 @@ import org.elasticsearch.xpack.transform.checkpoint.TransformCheckpointService;
 import org.elasticsearch.xpack.transform.notifications.TransformAuditor;
 import org.elasticsearch.xpack.transform.transforms.scheduling.TransformScheduler;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -245,7 +245,7 @@ public class TransformTask extends AllocatedPersistentTask implements TransformS
                 return;
             }
             final IndexerState newState = getIndexer().start();
-            if (Arrays.stream(RUNNING_STATES).noneMatch(newState::equals)) {
+            if (ArrayUtils.contains(RUNNING_STATES, newState) == false) {
                 listener.onFailure(
                     new ElasticsearchException("Cannot start task for transform [{}], because state was [{}]", transform.getId(), newState)
                 );

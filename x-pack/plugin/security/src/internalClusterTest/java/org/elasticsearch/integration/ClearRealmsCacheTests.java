@@ -14,6 +14,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.SecureString;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.test.SecurityIntegTestCase;
 import org.elasticsearch.test.SecuritySettingsSource;
 import org.elasticsearch.test.SecuritySettingsSourceField;
@@ -78,7 +79,7 @@ public class ClearRealmsCacheTests extends SecurityIntegTestCase {
 
             @Override
             public void assertEviction(User prevUser, User newUser) {
-                if (Arrays.stream(evicted_usernames).anyMatch(prevUser.principal()::equals)) {
+                if (ArrayUtils.contains(evicted_usernames, prevUser.principal())) {
                     assertThat(prevUser, not(sameInstance(newUser)));
                 } else {
                     assertThat(prevUser, sameInstance(newUser));
@@ -116,7 +117,7 @@ public class ClearRealmsCacheTests extends SecurityIntegTestCase {
 
             @Override
             public void assertEviction(User prevUser, User newUser) {
-                if (Arrays.stream(evicted_usernames).anyMatch(prevUser.principal()::equals)) {
+                if (ArrayUtils.contains(evicted_usernames, prevUser.principal())) {
                     assertThat(prevUser, not(sameInstance(newUser)));
                 } else {
                     assertThat(prevUser, sameInstance(newUser));

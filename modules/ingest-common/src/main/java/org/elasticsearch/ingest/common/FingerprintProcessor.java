@@ -11,6 +11,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.hash.Murmur3Hasher;
 import org.elasticsearch.common.util.ByteUtils;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.IngestDocument;
@@ -21,7 +22,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.Date;
@@ -237,7 +237,7 @@ public final class FingerprintProcessor extends AbstractProcessor {
             String salt = ConfigurationUtils.readStringProperty(TYPE, processorTag, config, "salt", DEFAULT_SALT);
             byte[] saltBytes = Strings.hasText(salt) ? toBytes(salt) : new byte[0];
             String method = ConfigurationUtils.readStringProperty(TYPE, processorTag, config, "method", DEFAULT_METHOD);
-            if (Arrays.asList(SUPPORTED_DIGESTS).contains(method) == false) {
+            if (ArrayUtils.contains(SUPPORTED_DIGESTS, method) == false) {
                 throw newConfigurationException(
                     TYPE,
                     processorTag,

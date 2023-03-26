@@ -8,6 +8,7 @@
 package org.elasticsearch.xpack.sql.execution.search;
 
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.search.aggregations.bucket.composite.CompositeAggregation;
 import org.elasticsearch.xpack.ql.execution.search.extractor.BucketExtractor;
 import org.elasticsearch.xpack.ql.type.Schema;
@@ -101,7 +102,7 @@ class PivotRowSet extends SchemaCompositeAggRowSet {
         }
         // c. all the values are initialized (there might be another page but no need to ask for the group again)
         // d. or no data was added (typically because there's a null value such as the group)
-        else if (hasNull(currentRow) == false || data.isEmpty()) {
+        else if (ArrayUtils.contains(currentRow, null) == false || data.isEmpty()) {
             data.add(currentRow);
             afterKey = currentRowGroupKey;
         }
@@ -115,15 +116,6 @@ class PivotRowSet extends SchemaCompositeAggRowSet {
         size = data.size();
         remainingData = remainingData(afterKey != null, size, limit);
         lastAfterKey = currentRowGroupKey;
-    }
-
-    private boolean hasNull(Object[] currentRow) {
-        for (Object object : currentRow) {
-            if (object == null) {
-                return true;
-            }
-        }
-        return false;
     }
 
     // compare the equality of two composite key WITHOUT the last group

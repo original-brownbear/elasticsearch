@@ -44,6 +44,7 @@ import org.apache.lucene.util.FixedBitSet;
 import org.apache.lucene.util.StringHelper;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.lucene.Lucene;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.core.IOUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -283,7 +284,7 @@ public class SourceOnlySnapshot {
             trackingDir.copyFrom(sourceDir, dataFile, dataFile, IOContext.DEFAULT);
             assert targetDirectory.linkedFiles.containsKey(dataFile);
             assert trackingDir.getCreatedFiles().contains(dataFile);
-            if (Arrays.asList(sourceDir.listAll()).contains(metaFile)) { // only exists for Lucene 8.5+ indices
+            if (ArrayUtils.contains(sourceDir.listAll(), metaFile)) { // only exists for Lucene 8.5+ indices
                 trackingDir.copyFrom(sourceDir, metaFile, metaFile, IOContext.DEFAULT);
                 assert targetDirectory.linkedFiles.containsKey(metaFile);
                 assert trackingDir.getCreatedFiles().contains(metaFile);

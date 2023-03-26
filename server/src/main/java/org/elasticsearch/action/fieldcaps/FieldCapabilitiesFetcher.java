@@ -9,6 +9,7 @@
 package org.elasticsearch.action.fieldcaps;
 
 import org.elasticsearch.cluster.metadata.MappingMetadata;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.mapper.MappedFieldType;
@@ -109,7 +110,7 @@ class FieldCapabilitiesFetcher {
             fieldNames.addAll(context.getMatchingFieldNames(pattern));
         }
 
-        boolean includeParentObjects = checkIncludeParents(filters);
+        boolean includeParentObjects = ArrayUtils.contains(filters, "-parent") == false;
 
         Predicate<MappedFieldType> filter = buildFilter(indexFieldfilter, filters, types, context);
         boolean isTimeSeriesIndex = context.getIndexSettings().getTimestampBounds() != null;
@@ -164,15 +165,6 @@ class FieldCapabilitiesFetcher {
             }
         }
         return responseMap;
-    }
-
-    private static boolean checkIncludeParents(String[] filters) {
-        for (String filter : filters) {
-            if ("-parent".equals(filter)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private static boolean canMatchShard(

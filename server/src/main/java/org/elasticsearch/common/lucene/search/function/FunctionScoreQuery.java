@@ -25,6 +25,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.lucene.Lucene;
+import org.elasticsearch.core.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -167,7 +168,7 @@ public class FunctionScoreQuery extends Query {
         Float minScore,
         float maxBoost
     ) {
-        if (Arrays.stream(functions).anyMatch(func -> func == null)) {
+        if (ArrayUtils.contains(functions, null)) {
             throw new IllegalArgumentException("Score function should not be null");
         }
         this.subQuery = subQuery;

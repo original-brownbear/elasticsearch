@@ -10,6 +10,7 @@ package org.elasticsearch.xpack.core.ml.inference.assignment;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
@@ -17,7 +18,6 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -33,7 +33,7 @@ public class AllocationStatus implements Writeable, ToXContentObject {
         }
 
         public boolean isAnyOf(State... candidates) {
-            return Arrays.stream(candidates).anyMatch(candidate -> this == candidate);
+            return ArrayUtils.contains(candidates, this);
         }
 
         @Override

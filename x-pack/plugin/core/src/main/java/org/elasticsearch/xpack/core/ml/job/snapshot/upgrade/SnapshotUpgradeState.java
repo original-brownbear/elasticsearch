@@ -9,10 +9,10 @@ package org.elasticsearch.xpack.core.ml.job.snapshot.upgrade;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.xpack.core.ml.utils.MemoryTrackedTaskState;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Locale;
 
 public enum SnapshotUpgradeState implements Writeable, MemoryTrackedTaskState {
@@ -44,7 +44,7 @@ public enum SnapshotUpgradeState implements Writeable, MemoryTrackedTaskState {
      * @return {@code true} if state matches none of the given {@code candidates}
      */
     public boolean isNoneOf(SnapshotUpgradeState... candidates) {
-        return Arrays.stream(candidates).noneMatch(candidate -> this == candidate);
+        return ArrayUtils.contains(candidates, this) == false;
     }
 
     @Override

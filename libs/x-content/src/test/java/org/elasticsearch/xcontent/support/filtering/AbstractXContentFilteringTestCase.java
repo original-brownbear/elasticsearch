@@ -11,6 +11,7 @@ package org.elasticsearch.xcontent.support.filtering;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.xcontent.support.AbstractFilteringTestCase;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.xcontent.XContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -19,7 +20,6 @@ import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -408,7 +408,7 @@ public abstract class AbstractXContentFilteringTestCase extends AbstractFilterin
         }
         FilterPath[] excludesFilter = FilterPath.compile(excludes);
         if (excludesFilter != null
-            && Arrays.stream(excludesFilter).anyMatch(FilterPath::hasDoubleWildcard)
+            && ArrayUtils.anyMatch(excludesFilter, FilterPath::hasDoubleWildcard)
             && matchFieldNamesWithDots == false) {
             return filterOnBuilder(sample, includes, excludes);
         }

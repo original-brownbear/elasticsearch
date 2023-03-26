@@ -13,6 +13,7 @@ import org.apache.lucene.store.IOContext;
 import org.apache.lucene.store.IndexInput;
 import org.apache.lucene.store.IndexOutput;
 import org.apache.lucene.store.NoLockFactory;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.index.store.ImmutableDirectoryException;
 
@@ -137,7 +138,7 @@ class InMemoryNoOpCommitDirectory extends FilterDirectory {
     }
 
     private boolean notOverwritingRealSegmentsFile(String name) throws IOException {
-        return name.startsWith("segments_") == false || Arrays.stream(realDirectory.listAll()).noneMatch(s -> s.equals(name));
+        return name.startsWith("segments_") == false || ArrayUtils.contains(realDirectory.listAll(), name) == false;
     }
 
     @Override

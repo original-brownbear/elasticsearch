@@ -9,6 +9,7 @@
 package org.elasticsearch.index.mapper;
 
 import org.elasticsearch.common.regex.Regex;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
 
@@ -297,7 +298,7 @@ public class DynamicTemplate implements ToXContentObject {
         if (unmatch != null && matchType.matches(unmatch, fieldName)) {
             return false;
         }
-        if (Arrays.stream(xContentFieldTypes).noneMatch(xcontentFieldType::equals)) {
+        if (ArrayUtils.contains(xContentFieldTypes, xcontentFieldType) == false) {
             return false;
         }
         if (runtimeMapping && xcontentFieldType.supportsRuntimeField() == false) {

@@ -6,6 +6,7 @@
  */
 package org.elasticsearch.xpack.ml.job.process.autodetect;
 
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.xpack.core.ml.calendars.ScheduledEvent;
 import org.elasticsearch.xpack.core.ml.job.config.DetectionRule;
@@ -23,7 +24,6 @@ import org.elasticsearch.xpack.ml.job.results.AutodetectResult;
 import org.elasticsearch.xpack.ml.process.BlackHoleResultIterator;
 
 import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -68,7 +68,7 @@ public class BlackHoleAutodetectProcess implements AutodetectProcess {
 
     @Override
     public void writeRecord(String[] record) {
-        if (Arrays.asList(record).contains(MAGIC_FAILURE_VALUE)) {
+        if (ArrayUtils.contains(record, MAGIC_FAILURE_VALUE)) {
             open = false;
             onProcessCrash.accept("simulated failure");
             AutodetectResult result = new AutodetectResult(null, null, null, null, null, null, null, null, null, null, null, null, null);

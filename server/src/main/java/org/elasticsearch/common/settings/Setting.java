@@ -18,6 +18,7 @@ import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.MemorySizeValue;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.core.Booleans;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
@@ -1302,7 +1303,7 @@ public class Setting<T> implements ToXContentObject {
     }
 
     private static boolean isFiltered(Property[] properties) {
-        return properties != null && Arrays.asList(properties).contains(Property.Filtered);
+        return properties != null && ArrayUtils.contains(properties, Property.Filtered);
     }
 
     public static Setting<Integer> intSetting(String key, int defaultValue, int minValue, int maxValue, Property... properties) {

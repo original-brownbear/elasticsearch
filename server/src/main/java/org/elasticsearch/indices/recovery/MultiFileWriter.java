@@ -17,6 +17,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.AbstractRefCounted;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 import org.elasticsearch.index.store.Store;
@@ -119,7 +120,7 @@ public class MultiFileWriter extends AbstractRefCounted implements Releasable {
 
             if (verifyOutput) {
                 Store.verify(indexOutput);
-                assert Arrays.asList(store.directory().listAll()).contains(tempFileName)
+                assert ArrayUtils.contains(store.directory().listAll(), tempFileName)
                     : "expected: [" + tempFileName + "] in " + Arrays.toString(store.directory().listAll());
             }
             store.directory().sync(Collections.singleton(tempFileName));
@@ -199,7 +200,7 @@ public class MultiFileWriter extends AbstractRefCounted implements Releasable {
                 indexOutput.close();
             }
             final String temporaryFileName = getTempNameForFile(name);
-            assert Arrays.asList(store.directory().listAll()).contains(temporaryFileName)
+            assert ArrayUtils.contains(store.directory().listAll(), temporaryFileName)
                 : "expected: [" + temporaryFileName + "] in " + Arrays.toString(store.directory().listAll());
             store.directory().sync(Collections.singleton(temporaryFileName));
             IndexOutput remove = removeOpenIndexOutputs(name);

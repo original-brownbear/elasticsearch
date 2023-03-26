@@ -15,9 +15,9 @@ import org.elasticsearch.action.support.master.MasterNodeRequest;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.core.ArrayUtils;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Objects;
 
 import static org.elasticsearch.action.ValidateActions.addValidationError;
@@ -50,7 +50,7 @@ public class DeleteComponentTemplateAction extends ActionType<AcknowledgedRespon
         @Override
         public ActionRequestValidationException validate() {
             ActionRequestValidationException validationException = null;
-            if (Arrays.stream(names).anyMatch(Strings::hasLength) == false) {
+            if (ArrayUtils.anyMatch(names, Strings::hasLength) == false) {
                 validationException = addValidationError("no component template names specified", validationException);
             }
             return validationException;

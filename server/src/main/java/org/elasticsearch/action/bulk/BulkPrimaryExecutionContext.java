@@ -14,6 +14,7 @@ import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.action.support.replication.TransportWriteAction;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.translog.Translog;
@@ -289,7 +290,7 @@ class BulkPrimaryExecutionContext {
     }
 
     private boolean assertInvariants(ItemProcessingState... expectedCurrentState) {
-        assert Arrays.asList(expectedCurrentState).contains(currentItemState)
+        assert ArrayUtils.contains(expectedCurrentState, currentItemState)
             : "expected current state [" + currentItemState + "] to be one of " + Arrays.toString(expectedCurrentState);
         assert currentIndex >= 0 : currentIndex;
         assert retryCounter >= 0 : retryCounter;

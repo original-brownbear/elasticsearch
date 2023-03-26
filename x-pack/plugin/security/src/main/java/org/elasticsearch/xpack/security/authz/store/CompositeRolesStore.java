@@ -21,6 +21,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ReleasableLock;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.util.set.Sets;
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.license.XPackLicenseState;
@@ -308,7 +309,7 @@ public class CompositeRolesStore {
 
     private static boolean includesSuperuserRole(RoleReference roleReference) {
         if (roleReference instanceof RoleReference.NamedRoleReference namedRoles) {
-            return Arrays.asList(namedRoles.getRoleNames()).contains(ReservedRolesStore.SUPERUSER_ROLE_DESCRIPTOR.getName());
+            return ArrayUtils.contains(namedRoles.getRoleNames(), ReservedRolesStore.SUPERUSER_ROLE_DESCRIPTOR.getName());
         } else {
             return false;
         }

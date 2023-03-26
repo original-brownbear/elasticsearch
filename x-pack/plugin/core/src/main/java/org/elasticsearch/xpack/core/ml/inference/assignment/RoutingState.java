@@ -7,9 +7,9 @@
 
 package org.elasticsearch.xpack.core.ml.inference.assignment;
 
+import org.elasticsearch.core.ArrayUtils;
 import org.elasticsearch.xpack.core.ml.utils.MemoryTrackedTaskState;
 
-import java.util.Arrays;
 import java.util.Locale;
 
 public enum RoutingState implements MemoryTrackedTaskState {
@@ -28,7 +28,7 @@ public enum RoutingState implements MemoryTrackedTaskState {
      * @return {@code true} if state matches none of the given {@code candidates}
      */
     public boolean isNoneOf(RoutingState... candidates) {
-        return Arrays.stream(candidates).noneMatch(candidate -> this == candidate);
+        return isAnyOf(candidates) == false;
     }
 
     /**
@@ -36,7 +36,7 @@ public enum RoutingState implements MemoryTrackedTaskState {
      * @return {@code true} if state matches one of the given {@code candidates}
      */
     public boolean isAnyOf(RoutingState... candidates) {
-        return Arrays.stream(candidates).anyMatch(candidate -> this == candidate);
+        return ArrayUtils.contains(candidates, this);
     }
 
     @Override

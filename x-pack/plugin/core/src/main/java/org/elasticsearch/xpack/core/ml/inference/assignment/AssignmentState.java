@@ -7,7 +7,8 @@
 
 package org.elasticsearch.xpack.core.ml.inference.assignment;
 
-import java.util.Arrays;
+import org.elasticsearch.core.ArrayUtils;
+
 import java.util.Locale;
 
 public enum AssignmentState {
@@ -21,7 +22,7 @@ public enum AssignmentState {
     }
 
     public boolean isAnyOf(AssignmentState... candidates) {
-        return Arrays.stream(candidates).anyMatch(candidate -> this == candidate);
+        return ArrayUtils.contains(candidates, this);
     }
 
     @Override
