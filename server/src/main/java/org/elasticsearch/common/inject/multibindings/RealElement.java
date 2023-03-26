@@ -26,16 +26,14 @@ class RealElement implements Element {
     private static final AtomicInteger nextUniqueId = new AtomicInteger(1);
 
     private final int uniqueId;
-    private final String setName;
 
-    RealElement(String setName) {
+    RealElement() {
         uniqueId = nextUniqueId.getAndIncrement();
-        this.setName = setName;
     }
 
     @Override
     public String setName() {
-        return setName;
+        return "";
     }
 
     @Override
@@ -50,7 +48,7 @@ class RealElement implements Element {
 
     @Override
     public String toString() {
-        return "@" + Element.class.getName() + "(setName=" + setName + ",uniqueId=" + uniqueId + ")";
+        return "@" + Element.class.getName() + "(setName=" + "" + ",uniqueId=" + uniqueId + ")";
     }
 
     @Override
@@ -60,6 +58,6 @@ class RealElement implements Element {
 
     @Override
     public int hashCode() {
-        return 127 * ("setName".hashCode() ^ setName.hashCode()) + 127 * ("uniqueId".hashCode() ^ uniqueId);
+        return 127 * ("setName".hashCode() ^ "".hashCode()) + 127 * ("uniqueId".hashCode() ^ uniqueId);
     }
 }

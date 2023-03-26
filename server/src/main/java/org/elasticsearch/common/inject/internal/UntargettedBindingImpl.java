@@ -19,9 +19,8 @@ package org.elasticsearch.common.inject.internal;
 import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Key;
 import org.elasticsearch.common.inject.spi.BindingTargetVisitor;
-import org.elasticsearch.common.inject.spi.UntargettedBinding;
 
-public class UntargettedBindingImpl<T> extends BindingImpl<T> implements UntargettedBinding<T> {
+public class UntargettedBindingImpl<T> extends BindingImpl<T> {
 
     public UntargettedBindingImpl(Injector injector, Key<T> key, Object source) {
         super(injector, key, source, (errors, context, dependency) -> { throw new AssertionError(); }, Scoping.UNSCOPED);
@@ -32,8 +31,8 @@ public class UntargettedBindingImpl<T> extends BindingImpl<T> implements Untarge
     }
 
     @Override
-    public <V> V acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor) {
-        return visitor.visit(this);
+    public <V> void acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor) {
+        visitor.visitUntargetted();
     }
 
     @Override
@@ -43,6 +42,6 @@ public class UntargettedBindingImpl<T> extends BindingImpl<T> implements Untarge
 
     @Override
     public String toString() {
-        return new ToStringBuilder(UntargettedBinding.class).add("key", getKey()).add("source", getSource()).toString();
+        return new ToStringBuilder(UntargettedBindingImpl.class).add("key", getKey()).add("source", getSource()).toString();
     }
 }

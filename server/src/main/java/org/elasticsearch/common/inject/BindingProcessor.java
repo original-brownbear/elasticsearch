@@ -34,7 +34,6 @@ import org.elasticsearch.common.inject.spi.InstanceBinding;
 import org.elasticsearch.common.inject.spi.LinkedKeyBinding;
 import org.elasticsearch.common.inject.spi.ProviderInstanceBinding;
 import org.elasticsearch.common.inject.spi.ProviderKeyBinding;
-import org.elasticsearch.common.inject.spi.UntargettedBinding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -137,7 +136,7 @@ class BindingProcessor extends AbstractProcessor {
             }
 
             @Override
-            public Void visit(UntargettedBinding<? extends T> untargetted) {
+            public void visitUntargetted() {
                 // Error: Missing implementation.
                 // Example: bind(Date.class).annotatedWith(Red.class);
                 // We can't assume abstract types aren't injectable. They may have an
@@ -145,7 +144,7 @@ class BindingProcessor extends AbstractProcessor {
                 if (key.hasAnnotationType()) {
                     errors.missingImplementation(key);
                     putBinding(invalidBinding(injector, key, source));
-                    return null;
+                    return;
                 }
 
                 // This cast is safe after the preceding check.
@@ -156,7 +155,7 @@ class BindingProcessor extends AbstractProcessor {
                 } catch (ErrorsException e) {
                     errors.merge(e.getErrors());
                     putBinding(invalidBinding(injector, key, source));
-                    return null;
+                    return;
                 }
 
                 uninitializedBindings.add(() -> {
@@ -167,12 +166,6 @@ class BindingProcessor extends AbstractProcessor {
                     }
                 });
 
-                return null;
-            }
-
-            @Override
-            public Void visit() {
-                throw new IllegalArgumentException("Cannot apply a non-module element");
             }
         });
 

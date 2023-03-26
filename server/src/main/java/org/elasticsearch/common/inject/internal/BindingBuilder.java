@@ -23,8 +23,10 @@ import org.elasticsearch.common.inject.Provider;
 import org.elasticsearch.common.inject.binder.AnnotatedBindingBuilder;
 import org.elasticsearch.common.inject.spi.Element;
 import org.elasticsearch.common.inject.spi.InjectionPoint;
+import org.elasticsearch.common.inject.spi.InstanceBinding;
 import org.elasticsearch.common.inject.spi.Message;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -36,10 +38,25 @@ import static java.util.Collections.emptySet;
  *
  * @author jessewilson@google.com (Jesse Wilson)
  */
-public class BindingBuilder<T> extends AbstractBindingBuilder<T> implements AnnotatedBindingBuilder<T> {
+public class BindingBuilder<T> implements AnnotatedBindingBuilder<T> {
+
+    public static final String IMPLEMENTATION_ALREADY_SET = "Implementation is set more than once.";
+    public static final String SINGLE_INSTANCE_AND_SCOPE = "Setting the scope is not permitted when binding to a single instance.";
+    public static final String SCOPE_ALREADY_SET = "Scope is set more than once.";
+    public static final String BINDING_TO_NULL = "Binding to null instances is not allowed. "
+        + "Use toProvider(Providers.of(null)) if this is your intended behaviour.";
+
+    protected final List<Element> elements;
+    protected final int position;
+    protected final Binder binder;
+    private BindingImpl<T> binding;
 
     public BindingBuilder(Binder binder, List<Element> elements, Object source, Key<T> key) {
-        super(binder, elements, source, key);
+        this.binder = binder;
+        this.elements = elements;
+        this.position = elements.size();
+        this.binding = new UntargettedBindingImpl<>(source, key, Scoping.UNSCOPED);
+        elements.add(position, this.binding);
     }
 
     @Override
@@ -100,5 +117,44 @@ public class BindingBuilder<T> extends AbstractBindingBuilder<T> implements Anno
     @Override
     public String toString() {
         return "BindingBuilder<" + getBinding().getKey().getTypeLiteral() + ">";
+    }
+
+    protected BindingImpl<T> getBinding() {
+        return binding;
+    }
+
+    protected BindingImpl<T> setBinding(BindingImpl<T> binding) {
+        this.binding = binding;
+        elements.set(position, binding);
+        return binding;
+    }
+
+    public void in(final Class<? extends Annotation> scopeAnnotation) {
+        Objects.requireNonNull(scopeAnnotation, "scopeAnnotation");
+        checkNotScoped();
+        setBinding(getBinding().withScoping(Scoping.forAnnotation(scopeAnnotation)));
+    }
+
+    public void asEagerSingleton() {
+        checkNotScoped();
+        setBinding(getBinding().withScoping(Scoping.EAGER_SINGLETON));
+    }
+
+    protected void checkNotTargetted() {
+        if ((binding instanceof UntargettedBindingImpl) == false) {
+            binder.addError(IMPLEMENTATION_ALREADY_SET);
+        }
+    }
+
+    protected void checkNotScoped() {
+        // Scoping isn't allowed when we have only one instance.
+        if (binding instanceof InstanceBinding) {
+            binder.addError(SINGLE_INSTANCE_AND_SCOPE);
+            return;
+        }
+
+        if (binding.getScoping().isExplicitlyScoped()) {
+            binder.addError(SCOPE_ALREADY_SET);
+        }
     }
 }

@@ -28,7 +28,6 @@ import org.elasticsearch.common.inject.Scope;
 import org.elasticsearch.common.inject.Stage;
 import org.elasticsearch.common.inject.TypeLiteral;
 import org.elasticsearch.common.inject.binder.AnnotatedBindingBuilder;
-import org.elasticsearch.common.inject.internal.AbstractBindingBuilder;
 import org.elasticsearch.common.inject.internal.BindingBuilder;
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.ProviderMethodsModule;
@@ -90,7 +89,6 @@ public final class Elements {
                 Elements.class,
                 RecordingBinder.class,
                 AbstractModule.class,
-                AbstractBindingBuilder.class,
                 BindingBuilder.class
             );
             this.parent = null;

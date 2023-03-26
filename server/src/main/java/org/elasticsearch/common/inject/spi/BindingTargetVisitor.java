@@ -54,11 +54,5 @@ public interface BindingTargetVisitor<T, V> {
      * Visit an untargetted binding. This target is found only on module bindings. It indicates
      * that the injector should use its implicit binding strategies to resolve injections.
      */
-    V visit(UntargettedBinding<? extends T> binding);
-
-    /**
-     * Visit a constructor binding. To resolve injections, an instance is instantiated by invoking
-     * {@code constructor}. This target is found only on injector bindings.
-     */
-    V visit();
+    void visitUntargetted();
 }

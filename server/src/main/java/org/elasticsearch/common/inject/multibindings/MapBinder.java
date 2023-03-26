@@ -135,7 +135,7 @@ public abstract class MapBinder<K, V> {
         TypeLiteral<V> valueType,
         Key<Map<K, V>> mapKey,
         Key<Map<K, Provider<V>>> providerMapKey,
-        Multibinder<Entry<K, Provider<V>>> entrySetBinder
+        RealMultibinder<Entry<K, Provider<V>>> entrySetBinder
     ) {
         RealMapBinder<K, V> mapBinder = new RealMapBinder<>(binder, valueType, mapKey, providerMapKey, entrySetBinder);
         binder.install(mapBinder);
@@ -193,12 +193,12 @@ public abstract class MapBinder<K, V> {
             TypeLiteral<V> valueType,
             Key<Map<K, V>> mapKey,
             Key<Map<K, Provider<V>>> providerMapKey,
-            Multibinder<Map.Entry<K, Provider<V>>> entrySetBinder
+            RealMultibinder<Entry<K, Provider<V>>> entrySetBinder
         ) {
             this.valueType = valueType;
             this.mapKey = mapKey;
             this.providerMapKey = providerMapKey;
-            this.entrySetBinder = (RealMultibinder<Entry<K, Provider<V>>>) entrySetBinder;
+            this.entrySetBinder = entrySetBinder;
             this.binder = binder;
         }
 
@@ -211,7 +211,7 @@ public abstract class MapBinder<K, V> {
             Multibinder.checkNotNull(key, "key");
             Multibinder.checkConfiguration(isInitialized() == false, "MapBinder was already initialized");
 
-            Key<V> valueKey = Key.get(valueType, new RealElement(RealMultibinder.getSetName()));
+            Key<V> valueKey = Key.get(valueType, new RealElement());
             entrySetBinder.addBinding().toInstance(new MapEntry<>(key, binder.getProvider(valueKey)));
             return binder.bind(valueKey);
         }

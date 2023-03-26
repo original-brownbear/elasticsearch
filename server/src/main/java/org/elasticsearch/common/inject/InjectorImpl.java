@@ -58,7 +58,7 @@ import static org.elasticsearch.common.inject.internal.Annotations.findScopeAnno
  * @author crazybob@google.com (Bob Lee)
  * @see InjectorBuilder
  */
-class InjectorImpl implements Injector, Lookups {
+final class InjectorImpl implements Injector, Lookups {
     final State state;
     BindingsMultimap bindingsMultimap = new BindingsMultimap();
 
@@ -195,8 +195,8 @@ class InjectorImpl implements Injector, Lookups {
         }
 
         @Override
-        public <V> V acceptTargetVisitor(BindingTargetVisitor<? super Provider<T>, V> visitor) {
-            return visitor.visit();
+        public <V> void acceptTargetVisitor(BindingTargetVisitor<? super Provider<T>, V> visitor) {
+            throw new IllegalArgumentException("Cannot apply a non-module element");
         }
 
         @Override
@@ -270,8 +270,8 @@ class InjectorImpl implements Injector, Lookups {
         }
 
         @Override
-        public <V> V acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor) {
-            return visitor.visit();
+        public <V> void acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor) {
+            throw new IllegalArgumentException("Cannot apply a non-module element");
         }
 
         @Override
@@ -588,7 +588,7 @@ class InjectorImpl implements Injector, Lookups {
      * Invokes a method.
      */
     interface MethodInvoker {
-        Object invoke(Object target, Object... parameters) throws IllegalAccessException, InvocationTargetException;
+        void invoke(Object target, Object... parameters) throws IllegalAccessException, InvocationTargetException;
     }
 
     /**

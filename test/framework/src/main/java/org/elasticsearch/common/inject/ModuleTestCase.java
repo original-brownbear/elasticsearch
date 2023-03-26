@@ -13,7 +13,6 @@ import org.elasticsearch.common.inject.spi.InstanceBinding;
 import org.elasticsearch.common.inject.spi.ProviderInstanceBinding;
 import org.elasticsearch.test.ESTestCase;
 
-import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -26,7 +25,7 @@ public abstract class ModuleTestCase extends ESTestCase {
      * provided tester returns true on the instance.
      */
     public <T> void assertInstanceBinding(Module module, Class<T> to, Predicate<T> tester) {
-        assertInstanceBindingWithAnnotation(module, to, tester, null);
+        assertInstanceBindingWithAnnotation(module, to, tester);
     }
 
     /**
@@ -36,17 +35,14 @@ public abstract class ModuleTestCase extends ESTestCase {
     private <T> void assertInstanceBindingWithAnnotation(
         Module module,
         Class<T> to,
-        Predicate<T> tester,
-        Class<? extends Annotation> annotation
+        Predicate<T> tester
     ) {
         List<Element> elements = Elements.getElements(module);
         for (Element element : elements) {
             if (element instanceof InstanceBinding<?> binding) {
                 if (to.equals(binding.getKey().getTypeLiteral().getType())) {
-                    if (annotation == null || annotation.equals(binding.getKey().getAnnotationType())) {
-                        assertTrue(tester.test(to.cast(binding.getInstance())));
-                        return;
-                    }
+                    assertTrue(tester.test(to.cast(binding.getInstance())));
+                    return;
                 }
             } else if (element instanceof ProviderInstanceBinding<?> binding) {
                 if (to.equals(binding.getKey().getTypeLiteral().getType())) {

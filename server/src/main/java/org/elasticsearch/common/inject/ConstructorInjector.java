@@ -80,7 +80,7 @@ class ConstructorInjector<T> {
             constructionContext.setCurrentReference(t);
 
             membersInjector.injectMembers(t, errors, context);
-            membersInjector.notifyListeners(t, errors);
+            membersInjector.notifyListeners(errors);
 
             return t;
         } catch (InvocationTargetException userException) {

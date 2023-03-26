@@ -85,14 +85,14 @@ import static java.util.Collections.singleton;
  *
  * @author jessewilson@google.com (Jesse Wilson)
  */
-public abstract class Multibinder<T> {
+public abstract class Multibinder {
     private Multibinder() {}
 
     /**
      * Returns a new multibinder that collects instances of {@code type} in a {@link Set} that is
      * itself bound with no binding annotation.
      */
-    public static <T> Multibinder<T> newSetBinder(Binder binder, TypeLiteral<T> type) {
+    public static <T> RealMultibinder<T> newSetBinder(Binder binder, TypeLiteral<T> type) {
         binder = binder.skipSources(RealMultibinder.class, Multibinder.class);
         RealMultibinder<T> result = new RealMultibinder<>(binder, type, Key.get(Multibinder.setOf(type)));
         binder.install(result);
@@ -125,7 +125,7 @@ public abstract class Multibinder<T> {
      * We use a subclass to hide 'implements Module, Provider' from the public
      * API.
      */
-    public static final class RealMultibinder<T> extends Multibinder<T> implements Module, Provider<Set<T>> {
+    public static final class RealMultibinder<T> extends Multibinder implements Module, Provider<Set<T>> {
 
         private final TypeLiteral<T> elementType;
         private final Key<Set<T>> setKey;
@@ -152,7 +152,7 @@ public abstract class Multibinder<T> {
         public LinkedBindingBuilder<T> addBinding() {
             checkConfiguration(isInitialized() == false, "Multibinder was already initialized");
 
-            return binder.bind(Key.get(elementType, new RealElement("")));
+            return binder.bind(Key.get(elementType, new RealElement()));
         }
 
         /**
@@ -190,10 +190,6 @@ public abstract class Multibinder<T> {
                 checkConfiguration(result.add(newValue), "Set injection failed due to duplicated element \"%s\"", newValue);
             }
             return Collections.unmodifiableSet(result);
-        }
-
-        static String getSetName() {
-            return "";
         }
 
         Key<Set<T>> getSetKey() {
