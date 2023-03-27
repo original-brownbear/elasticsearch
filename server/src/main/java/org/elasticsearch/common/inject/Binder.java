@@ -20,8 +20,6 @@ import org.elasticsearch.common.inject.binder.AnnotatedBindingBuilder;
 import org.elasticsearch.common.inject.binder.LinkedBindingBuilder;
 import org.elasticsearch.common.inject.spi.Message;
 
-import java.lang.annotation.Annotation;
-
 /**
  * Collects configuration information (primarily <i>bindings</i>) which will be
  * used to create an {@link Injector}. Guice provides this object to your
@@ -52,11 +50,7 @@ import java.lang.annotation.Annotation;
  *
  * Specifies that a request for a {@code Service} instance with no binding
  * annotations should be treated as if it were a request for a
- * {@code ServiceImpl} instance. This <i>overrides</i> the function of any
- * {@link ImplementedBy @ImplementedBy} or {@link ProvidedBy @ProvidedBy}
- * annotations found on {@code Service}, since Guice will have already
- * "moved on" to {@code ServiceImpl} before it reaches the point when it starts
- * looking for these annotations.
+ * {@code ServiceImpl} instance.
  *
  * <pre>
  *     bind(Service.class).toProvider(ServiceProvider.class);</pre>
@@ -155,13 +149,6 @@ import java.lang.annotation.Annotation;
  *         .annotatedWith(Names.named("blue"))
  *         .to(BlueService.class);</pre>
  *
- * Differentiating by names is a common enough use case that we provided a
- * standard annotation, {@link org.elasticsearch.common.inject.name.Named @Named}.  Because of
- * Guice's library support, binding by name is quite easier than in the
- * arbitrary binding annotation case we just saw.  However, remember that these
- * names will live in a single flat namespace with all the other names used in
- * your application.
- *
  * <p>The above list of examples is far from exhaustive.  If you can think of
  * how the concepts of one example might coexist with the concepts from another,
  * you can most likely weave the two together.  If the two concepts make no
@@ -169,8 +156,7 @@ import java.lang.annotation.Annotation;
  * cases Guice will let something bogus slip by, and will then inform you of
  * the problems at runtime, as soon as you try to create your Injector.
  *
- * <p>The other methods of Binder such as {@link #bindScope},
- * {@link #install}, and {@link #addError} are not part of the Binding EDSL;
+ * <p>The other methods of Binder such as {@link #install} and {@link #addError} are not part of the Binding EDSL;
  * you can learn how to use these in the usual way, from the method
  * documentation.
  *
@@ -183,7 +169,7 @@ public interface Binder {
     /**
      * Binds a scope to an annotation.
      */
-    void bindScope(Class<? extends Annotation> annotationType, Scope scope);
+    void bindScope();
 
     /**
      * See the EDSL examples at {@link Binder}.
@@ -237,12 +223,10 @@ public interface Binder {
      * for {@code .java} source but it could any binding source, such as the
      * path to a {@code .properties} file.
      *
-     * @param source any object representing the source location and has a
-     *               concise {@link Object#toString() toString()} value
      * @return a binder that shares its configuration with this binder
      * @since 2.0
      */
-    Binder withSource(Object source);
+    Binder withSource();
 
     /**
      * Returns a binder that skips {@code classesToSkip} when identify the

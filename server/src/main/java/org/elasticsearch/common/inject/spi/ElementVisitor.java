@@ -16,7 +16,7 @@
 
 package org.elasticsearch.common.inject.spi;
 
-import org.elasticsearch.common.inject.Binding;
+import org.elasticsearch.common.inject.internal.BindingImpl;
 
 /**
  * Visit elements.
@@ -31,7 +31,7 @@ public interface ElementVisitor<V> {
      * Visit a mapping from a key (type and optional annotation) to the strategy for getting
      * instances of the type.
      */
-    <T> V visit(Binding<T> binding);
+    <T> V visit(BindingImpl<T> binding);
 
     /**
      * Visit a registration of a scope annotation with the scope that implements it.

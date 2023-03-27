@@ -80,7 +80,7 @@ class MembersInjectorStore {
         List<SingleMemberInjector> injectors = new ArrayList<>();
         for (InjectionPoint injectionPoint : injectionPoints) {
             try {
-                Errors errorsForMember = injectionPoint.isOptional() ? new Errors(injectionPoint) : errors.withSource(injectionPoint);
+                Errors errorsForMember = errors.withSource(injectionPoint);
                 SingleMemberInjector injector = injectionPoint.getMember() instanceof Field
                     ? new SingleFieldInjector(this.injector, injectionPoint, errorsForMember)
                     : new SingleMethodInjector(this.injector, injectionPoint, errorsForMember);

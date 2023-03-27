@@ -25,28 +25,15 @@ import java.util.Objects;
 /**
  * @author crazybob@google.com (Bob Lee)
  */
-public final class MatcherAndConverter {
+public record MatcherAndConverter(Matcher<? super TypeLiteral<?>> typeMatcher, TypeConverter typeConverter) {
 
-    private final Matcher<? super TypeLiteral<?>> typeMatcher;
-    private final TypeConverter typeConverter;
-    private final Object source;
-
-    public MatcherAndConverter(Matcher<? super TypeLiteral<?>> typeMatcher, TypeConverter typeConverter, Object source) {
+    public MatcherAndConverter(Matcher<? super TypeLiteral<?>> typeMatcher, TypeConverter typeConverter) {
         this.typeMatcher = Objects.requireNonNull(typeMatcher, "type matcher");
         this.typeConverter = Objects.requireNonNull(typeConverter, "converter");
-        this.source = source;
-    }
-
-    public TypeConverter getTypeConverter() {
-        return typeConverter;
-    }
-
-    public Matcher<? super TypeLiteral<?>> getTypeMatcher() {
-        return typeMatcher;
     }
 
     @Override
     public String toString() {
-        return typeConverter + " which matches " + typeMatcher + " (bound at " + source + ")";
+        return typeConverter + " which matches " + typeMatcher + " (bound at " + SourceProvider.UNKNOWN_SOURCE + ")";
     }
 }

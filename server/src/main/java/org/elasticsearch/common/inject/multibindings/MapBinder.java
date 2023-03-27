@@ -24,7 +24,6 @@ import org.elasticsearch.common.inject.Provider;
 import org.elasticsearch.common.inject.TypeLiteral;
 import org.elasticsearch.common.inject.binder.LinkedBindingBuilder;
 import org.elasticsearch.common.inject.multibindings.Multibinder.RealMultibinder;
-import org.elasticsearch.common.inject.spi.ProviderWithDependencies;
 import org.elasticsearch.common.inject.util.Types;
 
 import java.util.Collections;
@@ -211,12 +210,12 @@ public abstract class MapBinder<K, V> {
             Multibinder.checkNotNull(key, "key");
             Multibinder.checkConfiguration(isInitialized() == false, "MapBinder was already initialized");
 
-            Key<V> valueKey = Key.get(valueType, new RealElement(RealMultibinder.getSetName()));
+            Key<V> valueKey = Key.get(valueType, new RealElement());
             entrySetBinder.addBinding().toInstance(new MapEntry<>(key, binder.getProvider(valueKey)));
             return binder.bind(valueKey);
         }
 
-        public static class MapBinderProviderWithDependencies<K, V> implements ProviderWithDependencies<Map<K, Provider<V>>> {
+        public static class MapBinderProviderWithDependencies<K, V> implements Provider<Map<K, Provider<V>>> {
             private Map<K, Provider<V>> providerMap;
 
             @SuppressWarnings("rawtypes") // code is silly stupid with generics
@@ -263,7 +262,7 @@ public abstract class MapBinder<K, V> {
             binder.bind(providerMapKey).toProvider(new MapBinderProviderWithDependencies(RealMapBinder.this, entrySetProvider));
 
             final Provider<Map<K, Provider<V>>> mapProvider = binder.getProvider(providerMapKey);
-            binder.bind(mapKey).toProvider((ProviderWithDependencies<Map<K, V>>) () -> {
+            binder.bind(mapKey).toProvider(() -> {
                 Map<K, V> map = new LinkedHashMap<>();
                 for (Entry<K, Provider<V>> entry : mapProvider.get().entrySet()) {
                     V value = entry.getValue().get();

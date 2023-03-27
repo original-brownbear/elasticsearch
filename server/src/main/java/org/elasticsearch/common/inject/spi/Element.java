@@ -19,8 +19,7 @@ package org.elasticsearch.common.inject.spi;
 /**
  * A core component of a module or injector.
  * <p>
- * The elements of a module can be inspected, validated and rewritten. Use {@link
- * Elements#getElements(org.elasticsearch.common.inject.Module[]) Elements.getElements()} to read the elements
+ * The elements of a module can be inspected, validated and rewritten. Use {@link Elements#getElements} to read the elements
  * from a module to rewrite them.
  * This can be used for static analysis and generation of Guice modules.
  *

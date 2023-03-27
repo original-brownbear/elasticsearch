@@ -17,29 +17,23 @@
 package org.elasticsearch.common.inject;
 
 import org.elasticsearch.common.Classes;
-import org.elasticsearch.common.inject.internal.Annotations;
 import org.elasticsearch.common.inject.internal.BindingImpl;
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.ErrorsException;
 import org.elasticsearch.common.inject.internal.InstanceBindingImpl;
 import org.elasticsearch.common.inject.internal.InternalContext;
 import org.elasticsearch.common.inject.internal.InternalFactory;
-import org.elasticsearch.common.inject.internal.LinkedBindingImpl;
-import org.elasticsearch.common.inject.internal.LinkedProviderBindingImpl;
 import org.elasticsearch.common.inject.internal.MatcherAndConverter;
 import org.elasticsearch.common.inject.internal.Scoping;
 import org.elasticsearch.common.inject.internal.SourceProvider;
 import org.elasticsearch.common.inject.internal.ToStringBuilder;
 import org.elasticsearch.common.inject.spi.BindingTargetVisitor;
-import org.elasticsearch.common.inject.spi.ConvertedConstantBinding;
 import org.elasticsearch.common.inject.spi.Dependency;
 import org.elasticsearch.common.inject.spi.ProviderBinding;
-import org.elasticsearch.common.inject.spi.ProviderKeyBinding;
 import org.elasticsearch.common.inject.util.Providers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -195,13 +189,13 @@ class InjectorImpl implements Injector, Lookups {
         }
 
         @Override
-        public <V> V acceptTargetVisitor(BindingTargetVisitor<? super Provider<T>, V> visitor) {
-            return visitor.visit();
+        public <V> void acceptTargetVisitor(BindingTargetVisitor<? super Provider<T>, V> visitor) {
+            throw new IllegalArgumentException("Cannot apply a non-module element");
         }
 
         @Override
         public String toString() {
-            return new ToStringBuilder(ProviderKeyBinding.class).add("key", getKey())
+            return new ToStringBuilder(ProviderBindingImpl.class).add("key", getKey())
                 .add("providedKey", providedBinding.getKey())
                 .toString();
         }
@@ -236,7 +230,7 @@ class InjectorImpl implements Injector, Lookups {
         // Try to convert the string. A failed conversion results in an error.
         try {
             @SuppressWarnings("unchecked") // This cast is safe because we double check below.
-            T converted = (T) matchingConverter.getTypeConverter().convert(stringValue, type);
+            T converted = (T) matchingConverter.typeConverter().convert(stringValue, type);
 
             if (converted == null) {
                 throw errors.converterReturnedNull(stringValue, source, type, matchingConverter).toException();
@@ -252,7 +246,7 @@ class InjectorImpl implements Injector, Lookups {
         }
     }
 
-    private static class ConvertedConstantBindingImpl<T> extends BindingImpl<T> implements ConvertedConstantBinding<T> {
+    private static class ConvertedConstantBindingImpl<T> extends BindingImpl<T> {
         final T value;
         final Provider<T> provider;
         final Binding<String> originalBinding;
@@ -270,13 +264,13 @@ class InjectorImpl implements Injector, Lookups {
         }
 
         @Override
-        public <V> V acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor) {
-            return visitor.visit();
+        public <V> void acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor) {
+            throw new IllegalArgumentException("Cannot apply a non-module element");
         }
 
         @Override
         public String toString() {
-            return new ToStringBuilder(ConvertedConstantBinding.class).add("key", getKey())
+            return new ToStringBuilder(ConvertedConstantBindingImpl.class).add("key", getKey())
                 .add("sourceKey", originalBinding.getKey())
                 .add("value", value)
                 .toString();
@@ -320,20 +314,6 @@ class InjectorImpl implements Injector, Lookups {
             @SuppressWarnings("unchecked") // we have to fudge the inner type as Object
             BindingImpl<T> binding = (BindingImpl<T>) createTypeLiteralBinding((Key<TypeLiteral<Object>>) key, errors);
             return binding;
-        }
-
-        // Handle @ImplementedBy
-        ImplementedBy implementedBy = rawType.getAnnotation(ImplementedBy.class);
-        if (implementedBy != null) {
-            Annotations.checkForMisplacedScopeAnnotations(rawType, source, errors);
-            return createImplementedByBinding(key, scoping, implementedBy, errors);
-        }
-
-        // Handle @ProvidedBy.
-        ProvidedBy providedBy = rawType.getAnnotation(ProvidedBy.class);
-        if (providedBy != null) {
-            Annotations.checkForMisplacedScopeAnnotations(rawType, source, errors);
-            return createProvidedByBinding(key, scoping, providedBy, errors);
         }
 
         // We can't inject abstract classes.
@@ -383,80 +363,6 @@ class InjectorImpl implements Injector, Lookups {
         TypeLiteral<T> value = (TypeLiteral<T>) TypeLiteral.get(innerType);
         InternalFactory<TypeLiteral<T>> factory = new ConstantFactory<>(Initializables.of(value));
         return new InstanceBindingImpl<>(this, key, SourceProvider.UNKNOWN_SOURCE, factory, emptySet(), value);
-    }
-
-    /**
-     * Creates a binding for a type annotated with @ProvidedBy.
-     */
-    <T> BindingImpl<T> createProvidedByBinding(Key<T> key, Scoping scoping, ProvidedBy providedBy, Errors errors) throws ErrorsException {
-        final Class<?> rawType = key.getTypeLiteral().getRawType();
-        final Class<? extends Provider<?>> providerType = providedBy.value();
-
-        // Make sure it's not the same type. TODO: Can we check for deeper loops?
-        if (providerType == rawType) {
-            throw errors.recursiveProviderType().toException();
-        }
-
-        // Assume the provider provides an appropriate type. We double check at runtime.
-        @SuppressWarnings("unchecked")
-        final Key<? extends Provider<T>> providerKey = (Key<? extends Provider<T>>) Key.get(providerType);
-        final BindingImpl<? extends Provider<?>> providerBinding = getBindingOrThrow(providerKey, errors);
-
-        InternalFactory<T> internalFactory = (errors1, context, dependency) -> {
-            errors1 = errors1.withSource(providerKey);
-            Provider<?> provider = providerBinding.getInternalFactory().get(errors1, context, dependency);
-            try {
-                Object o = provider.get();
-                if (o != null && rawType.isInstance(o) == false) {
-                    throw errors1.subtypeNotProvided(providerType, rawType).toException();
-                }
-                @SuppressWarnings("unchecked") // protected by isInstance() check above
-                T t = (T) o;
-                return t;
-            } catch (RuntimeException e) {
-                throw errors1.errorInProvider(e).toException();
-            }
-        };
-
-        return new LinkedProviderBindingImpl<>(
-            this,
-            key,
-            rawType /* source */,
-            Scopes.scope(this, internalFactory, scoping),
-            scoping,
-            providerKey
-        );
-    }
-
-    /**
-     * Creates a binding for a type annotated with @ImplementedBy.
-     */
-    <T> BindingImpl<T> createImplementedByBinding(Key<T> key, Scoping scoping, ImplementedBy implementedBy, Errors errors)
-        throws ErrorsException {
-        Class<?> rawType = key.getTypeLiteral().getRawType();
-        Class<?> implementationType = implementedBy.value();
-
-        // Make sure it's not the same type. TODO: Can we check for deeper cycles?
-        if (implementationType == rawType) {
-            throw errors.recursiveImplementationType().toException();
-        }
-
-        // Make sure implementationType extends type.
-        if (rawType.isAssignableFrom(implementationType) == false) {
-            throw errors.notASubtype(implementationType, rawType).toException();
-        }
-
-        @SuppressWarnings("unchecked") // After the preceding check, this cast is safe.
-        Class<? extends T> subclass = (Class<? extends T>) implementationType;
-
-        // Look up the target binding.
-        final Key<? extends T> targetKey = Key.get(subclass);
-        final BindingImpl<? extends T> targetBinding = getBindingOrThrow(targetKey, errors);
-
-        InternalFactory<T> internalFactory = (errors1, context, dependency) -> targetBinding.getInternalFactory()
-            .get(errors1.withSource(targetKey), context, dependency);
-
-        return new LinkedBindingImpl<>(this, key, rawType /* source */, Scopes.scope(this, internalFactory, scoping), scoping, targetKey);
     }
 
     /**
@@ -585,13 +491,6 @@ class InjectorImpl implements Injector, Lookups {
     }
 
     /**
-     * Invokes a method.
-     */
-    interface MethodInvoker {
-        Object invoke(Object target, Object... parameters) throws IllegalAccessException, InvocationTargetException;
-    }
-
-    /**
      * Cached constructor injectors for each type
      */
     ConstructorInjectorStore constructors = new ConstructorInjectorStore(this);
@@ -609,16 +508,8 @@ class InjectorImpl implements Injector, Lookups {
         final InternalFactory<? extends T> factory = getInternalFactory(key, errors);
         // ES: optimize for a common case of read only instance getting from the parent...
         if (factory instanceof InternalFactory.Instance) {
-            return () -> {
-                try {
-                    return factory.get(null, null, null);
-                } catch (ErrorsException e) {
-                    // ignore
-                }
-                // should never happen...
-                assert false;
-                return null;
-            };
+            T instance = factory.get(null, null, null);
+            return () -> instance;
         }
 
         final Dependency<T> dependency = Dependency.get(key);
@@ -659,11 +550,6 @@ class InjectorImpl implements Injector, Lookups {
         } catch (ErrorsException e) {
             throw new ConfigurationException(errors.merge(e.getErrors()).getMessages());
         }
-    }
-
-    @Override
-    public <T> T getInstance(Key<T> key) {
-        return getProvider(key).get();
     }
 
     @Override

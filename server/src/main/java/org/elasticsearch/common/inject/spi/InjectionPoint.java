@@ -56,30 +56,22 @@ import static org.elasticsearch.common.inject.internal.MoreTypes.getRawType;
 @SuppressWarnings("rawtypes")
 public final class InjectionPoint {
 
-    private final boolean optional;
     private final Member member;
     private final List<Dependency<?>> dependencies;
 
     InjectionPoint(TypeLiteral<?> type, Method method) {
         this.member = method;
 
-        Inject inject = method.getAnnotation(Inject.class);
-        this.optional = inject.optional();
-
         this.dependencies = forMember(method, type, method.getParameterAnnotations());
     }
 
     InjectionPoint(TypeLiteral<?> type, Constructor<?> constructor) {
         this.member = constructor;
-        this.optional = false;
         this.dependencies = forMember(constructor, type, constructor.getParameterAnnotations());
     }
 
     InjectionPoint(TypeLiteral<?> type, Field field) {
         this.member = field;
-
-        Inject inject = field.getAnnotation(Inject.class);
-        this.optional = inject.optional();
 
         Annotation[] annotations = field.getAnnotations();
 
@@ -140,16 +132,6 @@ public final class InjectionPoint {
         return dependencies;
     }
 
-    /**
-     * Returns true if this injection point shall be skipped if the injector cannot resolve bindings
-     * for all required dependencies. Both explicit bindings (as specified in a module), and implicit
-     * bindings ({@literal @}{@link org.elasticsearch.common.inject.ImplementedBy ImplementedBy}, default
-     * constructors etc.) may be used to satisfy optional injection points.
-     */
-    public boolean isOptional() {
-        return optional;
-    }
-
     @Override
     public boolean equals(Object o) {
         return o instanceof InjectionPoint && member.equals(((InjectionPoint) o).member);
@@ -182,10 +164,6 @@ public final class InjectionPoint {
         for (Constructor<?> constructor : rawType.getConstructors()) {
             Inject inject = constructor.getAnnotation(Inject.class);
             if (inject != null) {
-                if (inject.optional()) {
-                    errors.optionalConstructor(constructor);
-                }
-
                 if (injectableConstructor != null) {
                     errors.tooManyConstructors(rawType);
                 }
@@ -322,9 +300,7 @@ public final class InjectionPoint {
             try {
                 injectionPoints.add(factory.create(typeLiteral, member, errors));
             } catch (ConfigurationException ignorable) {
-                if (inject.optional() == false) {
-                    errors.merge(ignorable.getErrorMessages());
-                }
+                errors.merge(ignorable.getErrorMessages());
             }
         }
     }

@@ -23,9 +23,7 @@ import org.elasticsearch.common.inject.internal.ErrorsException;
 import org.elasticsearch.common.inject.internal.InstanceBindingImpl;
 import org.elasticsearch.common.inject.internal.InternalFactory;
 import org.elasticsearch.common.inject.internal.LinkedBindingImpl;
-import org.elasticsearch.common.inject.internal.LinkedProviderBindingImpl;
 import org.elasticsearch.common.inject.internal.ProviderInstanceBindingImpl;
-import org.elasticsearch.common.inject.internal.ProviderMethod;
 import org.elasticsearch.common.inject.internal.Scoping;
 import org.elasticsearch.common.inject.internal.UntargettedBindingImpl;
 import org.elasticsearch.common.inject.spi.BindingTargetVisitor;
@@ -33,8 +31,6 @@ import org.elasticsearch.common.inject.spi.InjectionPoint;
 import org.elasticsearch.common.inject.spi.InstanceBinding;
 import org.elasticsearch.common.inject.spi.LinkedKeyBinding;
 import org.elasticsearch.common.inject.spi.ProviderInstanceBinding;
-import org.elasticsearch.common.inject.spi.ProviderKeyBinding;
-import org.elasticsearch.common.inject.spi.UntargettedBinding;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,16 +54,11 @@ class BindingProcessor extends AbstractProcessor {
     }
 
     @Override
-    public <T> Boolean visit(Binding<T> command) {
+    public <T> Boolean visit(BindingImpl<T> command) {
         final Object source = command.getSource();
 
         if (Void.class.equals(command.getKey().getRawType())) {
-            if (command instanceof ProviderInstanceBinding
-                && ((ProviderInstanceBinding<?>) command).getProviderInstance() instanceof ProviderMethod) {
-                errors.voidProviderMethod();
-            } else {
-                errors.missingConstantValues();
-            }
+            errors.missingConstantValues();
             return true;
         }
 
@@ -81,7 +72,7 @@ class BindingProcessor extends AbstractProcessor {
 
         validateKey(command.getSource(), command.getKey());
 
-        final Scoping scoping = Scopes.makeInjectable(((BindingImpl<?>) command).getScoping(), injector, errors);
+        final Scoping scoping = Scopes.makeInjectable(command.getScoping(), injector, errors);
 
         command.acceptTargetVisitor(new BindingTargetVisitor<T, Void>() {
 
@@ -113,16 +104,6 @@ class BindingProcessor extends AbstractProcessor {
             }
 
             @Override
-            public Void visit(ProviderKeyBinding<? extends T> binding) {
-                Key<? extends Provider<? extends T>> providerKey = binding.getProviderKey();
-                BoundProviderFactory<T> boundProviderFactory = new BoundProviderFactory<>(injector, providerKey, source);
-                creationListeners.add(boundProviderFactory);
-                InternalFactory<? extends T> scopedFactory = Scopes.scope(injector, boundProviderFactory, scoping);
-                putBinding(new LinkedProviderBindingImpl<>(injector, key, source, scopedFactory, scoping, providerKey));
-                return null;
-            }
-
-            @Override
             public Void visit(LinkedKeyBinding<? extends T> binding) {
                 Key<? extends T> linkedKey = binding.getLinkedKey();
                 if (key.equals(linkedKey)) {
@@ -137,7 +118,7 @@ class BindingProcessor extends AbstractProcessor {
             }
 
             @Override
-            public Void visit(UntargettedBinding<? extends T> untargetted) {
+            public void visitUntargeted() {
                 // Error: Missing implementation.
                 // Example: bind(Date.class).annotatedWith(Red.class);
                 // We can't assume abstract types aren't injectable. They may have an
@@ -145,7 +126,7 @@ class BindingProcessor extends AbstractProcessor {
                 if (key.hasAnnotationType()) {
                     errors.missingImplementation(key);
                     putBinding(invalidBinding(injector, key, source));
-                    return null;
+                    return;
                 }
 
                 // This cast is safe after the preceding check.
@@ -156,7 +137,7 @@ class BindingProcessor extends AbstractProcessor {
                 } catch (ErrorsException e) {
                     errors.merge(e.getErrors());
                     putBinding(invalidBinding(injector, key, source));
-                    return null;
+                    return;
                 }
 
                 uninitializedBindings.add(() -> {
@@ -167,13 +148,8 @@ class BindingProcessor extends AbstractProcessor {
                     }
                 });
 
-                return null;
             }
 
-            @Override
-            public Void visit() {
-                throw new IllegalArgumentException("Cannot apply a non-module element");
-            }
         });
 
         return true;

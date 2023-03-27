@@ -98,7 +98,7 @@ class InheritingState implements State {
         MatcherAndConverter matchingConverter = null;
         for (State s = this; s != State.NONE; s = s.parent()) {
             for (MatcherAndConverter converter : s.getConvertersThisLevel()) {
-                if (converter.getTypeMatcher().matches(type)) {
+                if (converter.typeMatcher().matches(type)) {
                     if (matchingConverter != null) {
                         errors.ambiguousTypeConversion(stringValue, source, type, matchingConverter, converter);
                     }

@@ -1136,8 +1136,8 @@ public class Node implements Closeable {
             // to resort to some evil casting.
             @SuppressWarnings("rawtypes")
             Map<ActionType<? extends ActionResponse>, TransportAction<? extends ActionRequest, ? extends ActionResponse>> actions =
-                forciblyCast(injector.getInstance(new Key<Map<ActionType, TransportAction>>() {
-                }));
+                forciblyCast(injector.getProvider(new Key<Map<ActionType, TransportAction>>() {
+                }).get());
 
             client.initialize(
                 actions,

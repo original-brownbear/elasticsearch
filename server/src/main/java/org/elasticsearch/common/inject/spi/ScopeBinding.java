@@ -16,14 +16,11 @@
 
 package org.elasticsearch.common.inject.spi;
 
-import org.elasticsearch.common.inject.Scope;
-
-import java.lang.annotation.Annotation;
 import java.util.Objects;
 
 /**
  * Registration of a scope annotation with the scope that implements it. Instances are created
- * explicitly in a module using {@link org.elasticsearch.common.inject.Binder#bindScope(Class, Scope) bindScope()}
+ * explicitly in a module using {@link org.elasticsearch.common.inject.Binder#bindScope() bindScope()}
  * statements:
  * <pre>
  *     Scope recordScope = new RecordScope();
@@ -34,26 +31,14 @@ import java.util.Objects;
  */
 public final class ScopeBinding implements Element {
     private final Object source;
-    private final Class<? extends Annotation> annotationType;
-    private final Scope scope;
 
-    ScopeBinding(Object source, Class<? extends Annotation> annotationType, Scope scope) {
+    ScopeBinding(Object source) {
         this.source = Objects.requireNonNull(source, "source");
-        this.annotationType = Objects.requireNonNull(annotationType, "annotationType");
-        this.scope = Objects.requireNonNull(scope, "scope");
     }
 
     @Override
     public Object getSource() {
         return source;
-    }
-
-    public Class<? extends Annotation> getAnnotationType() {
-        return annotationType;
-    }
-
-    public Scope getScope() {
-        return scope;
     }
 
     @Override

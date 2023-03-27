@@ -16,7 +16,6 @@
 
 package org.elasticsearch.common.inject;
 
-import org.elasticsearch.common.inject.spi.BindingTargetVisitor;
 import org.elasticsearch.common.inject.spi.Element;
 
 /**
@@ -31,9 +30,7 @@ import org.elasticsearch.common.inject.spi.Element;
  * <pre>
  *     bind(Service.class).annotatedWith(Red.class).to(ServiceImpl.class);
  *     bindConstant().annotatedWith(ServerHost.class).to(args[0]);</pre></li>
- * <li>Implicitly by the Injector by following a type's {@link ImplementedBy
- * pointer} {@link ProvidedBy annotations} or by using its {@link Inject annotated} or
- * default constructor.</li>
+ * <li>Implicitly by the Injector by using its {@link Inject annotated} or default constructor.</li>
  * <li>By converting a bound instance to a different type.</li>
  * <li>For {@link Provider providers}, by delegating to the binding for the provided type.</li>
  * </ul>
@@ -70,13 +67,4 @@ public interface Binding<T> extends Element {
      *                                       method is only supported on {@link Binding}s returned from an injector.
      */
     Provider<T> getProvider();
-
-    /**
-     * Accepts a target visitor. Invokes the visitor method specific to this binding's target.
-     *
-     * @param visitor to call back on
-     * @since 2.0
-     */
-    <V> V acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor);
-
 }

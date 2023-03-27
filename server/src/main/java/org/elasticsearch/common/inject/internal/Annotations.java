@@ -68,10 +68,6 @@ public class Annotations {
         return found;
     }
 
-    public static boolean isScopeAnnotation(Class<? extends Annotation> annotationType) {
-        return annotationType.getAnnotation(ScopeAnnotation.class) != null;
-    }
-
     /**
      * Adds an error if there is a misplaced annotations on {@code type}. Scoping
      * annotations are not allowed on abstract classes or interfaces.

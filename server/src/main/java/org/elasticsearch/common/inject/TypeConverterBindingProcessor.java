@@ -18,7 +18,6 @@ package org.elasticsearch.common.inject;
 
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.MatcherAndConverter;
-import org.elasticsearch.common.inject.internal.SourceProvider;
 import org.elasticsearch.common.inject.internal.Strings;
 import org.elasticsearch.common.inject.matcher.AbstractMatcher;
 import org.elasticsearch.common.inject.matcher.Matcher;
@@ -165,7 +164,7 @@ class TypeConverterBindingProcessor extends AbstractProcessor {
     }
 
     private void internalConvertToTypes(Matcher<? super TypeLiteral<?>> typeMatcher, TypeConverter converter) {
-        injector.state.addConverter(new MatcherAndConverter(typeMatcher, converter, SourceProvider.UNKNOWN_SOURCE));
+        injector.state.addConverter(new MatcherAndConverter(typeMatcher, converter));
     }
 
 }

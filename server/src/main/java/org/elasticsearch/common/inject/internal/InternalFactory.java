@@ -29,7 +29,7 @@ public interface InternalFactory<T> {
      * ES:
      * An factory that returns a pre created instance.
      */
-    class Instance<T> implements InternalFactory<T> {
+    final class Instance<T> implements InternalFactory<T> {
 
         private final T object;
 

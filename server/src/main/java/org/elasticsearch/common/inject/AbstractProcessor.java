@@ -16,6 +16,7 @@
 
 package org.elasticsearch.common.inject;
 
+import org.elasticsearch.common.inject.internal.BindingImpl;
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.spi.Element;
 import org.elasticsearch.common.inject.spi.ElementVisitor;
@@ -79,7 +80,7 @@ abstract class AbstractProcessor implements ElementVisitor<Boolean> {
     }
 
     @Override
-    public <T> Boolean visit(Binding<T> binding) {
+    public <T> Boolean visit(BindingImpl<T> binding) {
         return false;
     }
 

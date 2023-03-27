@@ -38,13 +38,6 @@ public interface BindingTargetVisitor<T, V> {
     V visit(ProviderInstanceBinding<? extends T> binding);
 
     /**
-     * Visit a provider key binding. To resolve injections, the provider key is first resolved, then
-     * that provider's {@code get} method is invoked. This target is found in both module and injector
-     * bindings.
-     */
-    V visit(ProviderKeyBinding<? extends T> binding);
-
-    /**
      * Visit a linked key binding. The other key's binding is used to resolve injections. This
      * target is found in both module and injector bindings.
      */
@@ -54,11 +47,6 @@ public interface BindingTargetVisitor<T, V> {
      * Visit an untargetted binding. This target is found only on module bindings. It indicates
      * that the injector should use its implicit binding strategies to resolve injections.
      */
-    V visit(UntargettedBinding<? extends T> binding);
+    void visitUntargeted();
 
-    /**
-     * Visit a constructor binding. To resolve injections, an instance is instantiated by invoking
-     * {@code constructor}. This target is found only on injector bindings.
-     */
-    V visit();
 }

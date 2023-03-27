@@ -16,7 +16,6 @@
 
 package org.elasticsearch.common.inject;
 
-import org.elasticsearch.common.inject.InjectorImpl.MethodInvoker;
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.internal.ErrorsException;
 import org.elasticsearch.common.inject.internal.InternalContext;
@@ -29,14 +28,13 @@ import java.lang.reflect.Method;
  * Invokes an injectable method.
  */
 class SingleMethodInjector implements SingleMemberInjector {
-    final MethodInvoker methodInvoker;
-    final SingleParameterInjector<?>[] parameterInjectors;
-    final InjectionPoint injectionPoint;
+    private final Method method;
+    private final SingleParameterInjector<?>[] parameterInjectors;
+    private final InjectionPoint injectionPoint;
 
     SingleMethodInjector(InjectorImpl injector, InjectionPoint injectionPoint, Errors errors) throws ErrorsException {
         this.injectionPoint = injectionPoint;
-        final Method method = (Method) injectionPoint.getMember();
-        methodInvoker = method::invoke;
+        this.method = (Method) injectionPoint.getMember();
         parameterInjectors = injector.getParametersInjectors(injectionPoint.getDependencies(), errors);
     }
 
@@ -51,7 +49,7 @@ class SingleMethodInjector implements SingleMemberInjector {
         }
 
         try {
-            methodInvoker.invoke(o, parameters);
+            method.invoke(o, parameters);
         } catch (IllegalAccessException e) {
             throw new AssertionError(e); // a security manager is blocking us, we're hosed
         } catch (InvocationTargetException userException) {

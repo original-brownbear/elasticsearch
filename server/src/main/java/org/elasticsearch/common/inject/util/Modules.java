@@ -27,6 +27,4 @@ import org.elasticsearch.common.inject.Module;
 public final class Modules {
     private Modules() {}
 
-    public static final Module EMPTY_MODULE = binder -> {};
-
 }

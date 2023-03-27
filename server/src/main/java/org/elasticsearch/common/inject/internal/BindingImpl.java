@@ -20,6 +20,7 @@ import org.elasticsearch.common.inject.Binding;
 import org.elasticsearch.common.inject.Injector;
 import org.elasticsearch.common.inject.Key;
 import org.elasticsearch.common.inject.Provider;
+import org.elasticsearch.common.inject.spi.BindingTargetVisitor;
 import org.elasticsearch.common.inject.spi.ElementVisitor;
 import org.elasticsearch.common.inject.spi.InstanceBinding;
 
@@ -95,7 +96,7 @@ public abstract class BindingImpl<T> implements Binding<T> {
         return visitor.visit(this);
     }
 
-    protected BindingImpl<T> withScoping(Scoping scoping) {
+    protected BindingImpl<T> withScoping() {
         throw new AssertionError();
     }
 
@@ -107,4 +108,12 @@ public abstract class BindingImpl<T> implements Binding<T> {
     public Injector getInjector() {
         return injector;
     }
+
+    /**
+     * Accepts a target visitor. Invokes the visitor method specific to this binding's target.
+     *
+     * @param visitor to call back on
+     * @since 2.0
+     */
+    public abstract <V> void acceptTargetVisitor(BindingTargetVisitor<? super T, V> visitor);
 }

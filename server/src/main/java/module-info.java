@@ -189,7 +189,6 @@ module org.elasticsearch.server {
     exports org.elasticsearch.common.inject.internal;
     exports org.elasticsearch.common.inject.matcher;
     exports org.elasticsearch.common.inject.multibindings;
-    exports org.elasticsearch.common.inject.name;
     exports org.elasticsearch.common.inject.spi;
     exports org.elasticsearch.common.inject.util;
     exports org.elasticsearch.common.io;

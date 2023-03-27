@@ -19,7 +19,6 @@ package org.elasticsearch.common.inject.internal;
 import org.elasticsearch.common.inject.Scope;
 import org.elasticsearch.common.inject.Scopes;
 import org.elasticsearch.common.inject.Singleton;
-import org.elasticsearch.common.inject.Stage;
 
 import java.lang.annotation.Annotation;
 
@@ -150,16 +149,8 @@ public abstract class Scoping {
     /**
      * Returns true if this scope is a singleton that should be loaded eagerly in {@code stage}.
      */
-    public boolean isEagerSingleton(Stage stage) {
-        if (this == EAGER_SINGLETON) {
-            return true;
-        }
-
-        if (stage == Stage.PRODUCTION) {
-            return this == SINGLETON_ANNOTATION || this == SINGLETON_INSTANCE;
-        }
-
-        return false;
+    public boolean isEagerSingleton() {
+        return this == EAGER_SINGLETON;
     }
 
     /**

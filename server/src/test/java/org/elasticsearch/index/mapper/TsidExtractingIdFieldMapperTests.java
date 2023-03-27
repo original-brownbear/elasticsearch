@@ -14,7 +14,6 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.routing.IndexRouting;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.inject.name.Named;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.Nullable;
@@ -474,7 +473,7 @@ public class TsidExtractingIdFieldMapperTests extends MetadataMapperTestCase {
 
     private final TestCase testCase;
 
-    public TsidExtractingIdFieldMapperTests(@Named("testCase") TestCase testCase) {
+    public TsidExtractingIdFieldMapperTests(TestCase testCase) {
         this.testCase = testCase;
     }
 

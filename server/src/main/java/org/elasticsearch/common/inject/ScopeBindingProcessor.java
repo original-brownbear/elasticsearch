@@ -16,12 +16,8 @@
 
 package org.elasticsearch.common.inject;
 
-import org.elasticsearch.common.inject.internal.Annotations;
 import org.elasticsearch.common.inject.internal.Errors;
 import org.elasticsearch.common.inject.spi.ScopeBinding;
-
-import java.lang.annotation.Annotation;
-import java.util.Objects;
 
 /**
  * Handles {@link Binder#bindScope} commands.
@@ -37,24 +33,11 @@ class ScopeBindingProcessor extends AbstractProcessor {
 
     @Override
     public Boolean visit(ScopeBinding command) {
-        Scope scope = command.getScope();
-        Class<? extends Annotation> annotationType = command.getAnnotationType();
-
-        if (Annotations.isScopeAnnotation(annotationType) == false) {
-            errors.withSource(annotationType).missingScopeAnnotation();
-            // Go ahead and bind anyway so we don't get collateral errors.
-        }
-
-        if (Annotations.isRetainedAtRuntime(annotationType) == false) {
-            errors.withSource(annotationType).missingRuntimeRetention(command.getSource());
-            // Go ahead and bind anyway so we don't get collateral errors.
-        }
-
-        Scope existing = injector.state.getScope(Objects.requireNonNull(annotationType, "annotation type"));
+        Scope existing = injector.state.getScope(Singleton.class);
         if (existing != null) {
-            errors.duplicateScopes(existing, annotationType, scope);
+            errors.duplicateScopes(existing, Singleton.class, Scopes.SINGLETON);
         } else {
-            injector.state.putAnnotation(annotationType, Objects.requireNonNull(scope, "scope"));
+            injector.state.putAnnotation(Singleton.class, Scopes.SINGLETON);
         }
 
         return true;
