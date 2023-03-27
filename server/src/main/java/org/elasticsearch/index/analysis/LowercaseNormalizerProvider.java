@@ -15,17 +15,9 @@ import org.elasticsearch.index.IndexSettings;
 /**
  * Builds an analyzer for normalization that lowercases terms.
  */
-public class LowercaseNormalizerProvider extends AbstractIndexAnalyzerProvider<LowercaseNormalizer> {
-
-    private final LowercaseNormalizer analyzer;
+public class LowercaseNormalizerProvider extends AbstractConstantAnalyzerProvider<LowercaseNormalizer> {
 
     public LowercaseNormalizerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        this.analyzer = new LowercaseNormalizer();
-    }
-
-    @Override
-    public LowercaseNormalizer get() {
-        return analyzer;
+        super(name, settings, new LowercaseNormalizer());
     }
 }

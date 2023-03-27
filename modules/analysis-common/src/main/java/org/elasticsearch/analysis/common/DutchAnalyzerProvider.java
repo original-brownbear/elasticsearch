@@ -13,23 +13,19 @@ import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class DutchAnalyzerProvider extends AbstractIndexAnalyzerProvider<DutchAnalyzer> {
-
-    private final DutchAnalyzer analyzer;
+public class DutchAnalyzerProvider extends AbstractConstantAnalyzerProvider<DutchAnalyzer> {
 
     DutchAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        analyzer = new DutchAnalyzer(
-            Analysis.parseStopWords(env, settings, DutchAnalyzer.getDefaultStopSet()),
-            Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+        super(
+            name,
+            settings,
+            new DutchAnalyzer(
+                Analysis.parseStopWords(env, settings, DutchAnalyzer.getDefaultStopSet()),
+                Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+            )
         );
-    }
-
-    @Override
-    public DutchAnalyzer get() {
-        return this.analyzer;
     }
 }

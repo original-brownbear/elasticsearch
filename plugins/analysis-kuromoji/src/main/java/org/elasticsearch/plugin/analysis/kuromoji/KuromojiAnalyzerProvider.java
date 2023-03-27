@@ -10,31 +10,25 @@ package org.elasticsearch.plugin.analysis.kuromoji;
 
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.ja.JapaneseAnalyzer;
-import org.apache.lucene.analysis.ja.JapaneseTokenizer;
-import org.apache.lucene.analysis.ja.dict.UserDictionary;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-import java.util.Set;
-
-public class KuromojiAnalyzerProvider extends AbstractIndexAnalyzerProvider<JapaneseAnalyzer> {
-
-    private final JapaneseAnalyzer analyzer;
+public class KuromojiAnalyzerProvider extends AbstractConstantAnalyzerProvider<JapaneseAnalyzer> {
 
     public KuromojiAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        final Set<?> stopWords = Analysis.parseStopWords(env, settings, JapaneseAnalyzer.getDefaultStopSet());
-        final JapaneseTokenizer.Mode mode = KuromojiTokenizerFactory.getMode(settings);
-        final UserDictionary userDictionary = KuromojiTokenizerFactory.getUserDictionary(env, settings);
-        analyzer = new JapaneseAnalyzer(userDictionary, mode, CharArraySet.copy(stopWords), JapaneseAnalyzer.getDefaultStopTags());
-    }
-
-    @Override
-    public JapaneseAnalyzer get() {
-        return this.analyzer;
+        super(
+            name,
+            settings,
+            new JapaneseAnalyzer(
+                KuromojiTokenizerFactory.getUserDictionary(env, settings),
+                KuromojiTokenizerFactory.getMode(settings),
+                CharArraySet.copy(Analysis.parseStopWords(env, settings, JapaneseAnalyzer.getDefaultStopSet())),
+                JapaneseAnalyzer.getDefaultStopTags()
+            )
+        );
     }
 
 }

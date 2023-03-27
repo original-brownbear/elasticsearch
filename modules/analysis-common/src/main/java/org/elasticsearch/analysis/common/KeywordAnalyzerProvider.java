@@ -12,19 +12,11 @@ import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 
-public class KeywordAnalyzerProvider extends AbstractIndexAnalyzerProvider<KeywordAnalyzer> {
-
-    private final KeywordAnalyzer keywordAnalyzer;
+public class KeywordAnalyzerProvider extends AbstractConstantAnalyzerProvider<KeywordAnalyzer> {
 
     public KeywordAnalyzerProvider(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(name, settings);
-        this.keywordAnalyzer = new KeywordAnalyzer();
-    }
-
-    @Override
-    public KeywordAnalyzer get() {
-        return this.keywordAnalyzer;
+        super(name, settings, new KeywordAnalyzer());
     }
 }

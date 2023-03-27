@@ -9,26 +9,21 @@
 package org.elasticsearch.plugin.analysis.kuromoji;
 
 import org.apache.lucene.analysis.ja.JapaneseCompletionAnalyzer;
-import org.apache.lucene.analysis.ja.JapaneseCompletionFilter.Mode;
-import org.apache.lucene.analysis.ja.dict.UserDictionary;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 
-public class KuromojiCompletionAnalyzerProvider extends AbstractIndexAnalyzerProvider<JapaneseCompletionAnalyzer> {
-
-    private final JapaneseCompletionAnalyzer analyzer;
+public class KuromojiCompletionAnalyzerProvider extends AbstractConstantAnalyzerProvider<JapaneseCompletionAnalyzer> {
 
     public KuromojiCompletionAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        final UserDictionary userDictionary = KuromojiTokenizerFactory.getUserDictionary(env, settings);
-        final Mode mode = KuromojiCompletionFilterFactory.getMode(settings);
-        analyzer = new JapaneseCompletionAnalyzer(userDictionary, mode);
-    }
-
-    @Override
-    public JapaneseCompletionAnalyzer get() {
-        return analyzer;
+        super(
+            name,
+            settings,
+            new JapaneseCompletionAnalyzer(
+                KuromojiTokenizerFactory.getUserDictionary(env, settings),
+                KuromojiCompletionFilterFactory.getMode(settings)
+            )
+        );
     }
 }

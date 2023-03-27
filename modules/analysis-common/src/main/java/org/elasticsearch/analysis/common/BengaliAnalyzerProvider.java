@@ -13,23 +13,19 @@ import org.apache.lucene.analysis.bn.BengaliAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class BengaliAnalyzerProvider extends AbstractIndexAnalyzerProvider<BengaliAnalyzer> {
-
-    private final BengaliAnalyzer analyzer;
+public class BengaliAnalyzerProvider extends AbstractConstantAnalyzerProvider<BengaliAnalyzer> {
 
     BengaliAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        analyzer = new BengaliAnalyzer(
-            Analysis.parseStopWords(env, settings, BengaliAnalyzer.getDefaultStopSet()),
-            Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+        super(
+            name,
+            settings,
+            new BengaliAnalyzer(
+                Analysis.parseStopWords(env, settings, BengaliAnalyzer.getDefaultStopSet()),
+                Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+            )
         );
-    }
-
-    @Override
-    public BengaliAnalyzer get() {
-        return this.analyzer;
     }
 }

@@ -13,23 +13,18 @@ import org.apache.lucene.analysis.da.DanishAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class DanishAnalyzerProvider extends AbstractIndexAnalyzerProvider<DanishAnalyzer> {
-
-    private final DanishAnalyzer analyzer;
-
+public class DanishAnalyzerProvider extends AbstractConstantAnalyzerProvider<DanishAnalyzer> {
     DanishAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        analyzer = new DanishAnalyzer(
-            Analysis.parseStopWords(env, settings, DanishAnalyzer.getDefaultStopSet()),
-            Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+        super(
+            name,
+            settings,
+            new DanishAnalyzer(
+                Analysis.parseStopWords(env, settings, DanishAnalyzer.getDefaultStopSet()),
+                Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+            )
         );
-    }
-
-    @Override
-    public DanishAnalyzer get() {
-        return this.analyzer;
     }
 }

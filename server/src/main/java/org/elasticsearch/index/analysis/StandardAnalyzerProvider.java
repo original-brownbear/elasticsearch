@@ -14,21 +14,11 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
 
-public class StandardAnalyzerProvider extends AbstractIndexAnalyzerProvider<StandardAnalyzer> {
-
-    private final StandardAnalyzer standardAnalyzer;
+public class StandardAnalyzerProvider extends AbstractConstantAnalyzerProvider<StandardAnalyzer> {
 
     public StandardAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        final CharArraySet defaultStopwords = CharArraySet.EMPTY_SET;
-        CharArraySet stopWords = Analysis.parseStopWords(env, settings, defaultStopwords);
+        super(name, settings, new StandardAnalyzer(Analysis.parseStopWords(env, settings, CharArraySet.EMPTY_SET)));
         int maxTokenLength = settings.getAsInt("max_token_length", StandardAnalyzer.DEFAULT_MAX_TOKEN_LENGTH);
-        standardAnalyzer = new StandardAnalyzer(stopWords);
-        standardAnalyzer.setMaxTokenLength(maxTokenLength);
-    }
-
-    @Override
-    public StandardAnalyzer get() {
-        return this.standardAnalyzer;
+        get().setMaxTokenLength(maxTokenLength);
     }
 }

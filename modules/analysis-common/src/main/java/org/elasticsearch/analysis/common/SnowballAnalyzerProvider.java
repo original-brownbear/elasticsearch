@@ -15,7 +15,7 @@ import org.apache.lucene.analysis.nl.DutchAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
 import java.util.Map;
@@ -33,7 +33,7 @@ import java.util.Map;
  *
  *
  */
-public class SnowballAnalyzerProvider extends AbstractIndexAnalyzerProvider<SnowballAnalyzer> {
+public class SnowballAnalyzerProvider extends AbstractConstantAnalyzerProvider<SnowballAnalyzer> {
     private static final Map<String, CharArraySet> DEFAULT_LANGUAGE_STOP_WORDS = Map.of(
         "English",
         EnglishAnalyzer.ENGLISH_STOP_WORDS_SET,
@@ -47,20 +47,15 @@ public class SnowballAnalyzerProvider extends AbstractIndexAnalyzerProvider<Snow
         FrenchAnalyzer.getDefaultStopSet()
     );
 
-    private final SnowballAnalyzer analyzer;
-
     SnowballAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-
-        String language = settings.get("language", settings.get("name", "English"));
-        CharArraySet defaultStopwords = DEFAULT_LANGUAGE_STOP_WORDS.getOrDefault(language, CharArraySet.EMPTY_SET);
-        CharArraySet stopWords = Analysis.parseStopWords(env, settings, defaultStopwords);
-
-        analyzer = new SnowballAnalyzer(language, stopWords);
+        super(name, settings, makeAnalyzer(env, settings));
     }
 
-    @Override
-    public SnowballAnalyzer get() {
-        return this.analyzer;
+    private static SnowballAnalyzer makeAnalyzer(Environment env, Settings settings) {
+        final String language = settings.get("language", settings.get("name", "English"));
+        return new SnowballAnalyzer(
+            language,
+            Analysis.parseStopWords(env, settings, DEFAULT_LANGUAGE_STOP_WORDS.getOrDefault(language, CharArraySet.EMPTY_SET))
+        );
     }
 }

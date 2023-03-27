@@ -13,23 +13,19 @@ import org.apache.lucene.analysis.es.SpanishAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class SpanishAnalyzerProvider extends AbstractIndexAnalyzerProvider<SpanishAnalyzer> {
-
-    private final SpanishAnalyzer analyzer;
+public class SpanishAnalyzerProvider extends AbstractConstantAnalyzerProvider<SpanishAnalyzer> {
 
     SpanishAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        analyzer = new SpanishAnalyzer(
-            Analysis.parseStopWords(env, settings, SpanishAnalyzer.getDefaultStopSet()),
-            Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+        super(
+            name,
+            settings,
+            new SpanishAnalyzer(
+                Analysis.parseStopWords(env, settings, SpanishAnalyzer.getDefaultStopSet()),
+                Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+            )
         );
-    }
-
-    @Override
-    public SpanishAnalyzer get() {
-        return this.analyzer;
     }
 }

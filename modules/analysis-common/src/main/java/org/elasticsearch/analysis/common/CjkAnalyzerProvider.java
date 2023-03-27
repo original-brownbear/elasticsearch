@@ -8,27 +8,16 @@
 
 package org.elasticsearch.analysis.common;
 
-import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.cjk.CJKAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class CjkAnalyzerProvider extends AbstractIndexAnalyzerProvider<CJKAnalyzer> {
-
-    private final CJKAnalyzer analyzer;
+public class CjkAnalyzerProvider extends AbstractConstantAnalyzerProvider<CJKAnalyzer> {
 
     CjkAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        CharArraySet stopWords = Analysis.parseStopWords(env, settings, CJKAnalyzer.getDefaultStopSet());
-
-        analyzer = new CJKAnalyzer(stopWords);
-    }
-
-    @Override
-    public CJKAnalyzer get() {
-        return this.analyzer;
+        super(name, settings, new CJKAnalyzer(Analysis.parseStopWords(env, settings, CJKAnalyzer.getDefaultStopSet())));
     }
 }

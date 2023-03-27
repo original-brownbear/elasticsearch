@@ -13,23 +13,19 @@ import org.apache.lucene.analysis.fi.FinnishAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class FinnishAnalyzerProvider extends AbstractIndexAnalyzerProvider<FinnishAnalyzer> {
-
-    private final FinnishAnalyzer analyzer;
+public class FinnishAnalyzerProvider extends AbstractConstantAnalyzerProvider<FinnishAnalyzer> {
 
     FinnishAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        analyzer = new FinnishAnalyzer(
-            Analysis.parseStopWords(env, settings, FinnishAnalyzer.getDefaultStopSet()),
-            Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+        super(
+            name,
+            settings,
+            new FinnishAnalyzer(
+                Analysis.parseStopWords(env, settings, FinnishAnalyzer.getDefaultStopSet()),
+                Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+            )
         );
-    }
-
-    @Override
-    public FinnishAnalyzer get() {
-        return this.analyzer;
     }
 }

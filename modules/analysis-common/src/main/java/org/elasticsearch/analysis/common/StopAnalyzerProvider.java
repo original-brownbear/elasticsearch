@@ -8,27 +8,17 @@
 
 package org.elasticsearch.analysis.common;
 
-import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class StopAnalyzerProvider extends AbstractIndexAnalyzerProvider<StopAnalyzer> {
-
-    private final StopAnalyzer stopAnalyzer;
+public class StopAnalyzerProvider extends AbstractConstantAnalyzerProvider<StopAnalyzer> {
 
     public StopAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        CharArraySet stopWords = Analysis.parseStopWords(env, settings, EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
-        this.stopAnalyzer = new StopAnalyzer(stopWords);
-    }
-
-    @Override
-    public StopAnalyzer get() {
-        return this.stopAnalyzer;
+        super(name, settings, new StopAnalyzer(Analysis.parseStopWords(env, settings, EnglishAnalyzer.ENGLISH_STOP_WORDS_SET)));
     }
 }

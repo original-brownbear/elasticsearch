@@ -13,24 +13,15 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 
 /**
  * Only for old indexes
  */
-public class ChineseAnalyzerProvider extends AbstractIndexAnalyzerProvider<StandardAnalyzer> {
-
-    private final StandardAnalyzer analyzer;
+public class ChineseAnalyzerProvider extends AbstractConstantAnalyzerProvider<StandardAnalyzer> {
 
     ChineseAnalyzerProvider(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(name, settings);
         // old index: best effort
-        analyzer = new StandardAnalyzer(EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
-
-    }
-
-    @Override
-    public StandardAnalyzer get() {
-        return this.analyzer;
+        super(name, settings, new StandardAnalyzer(EnglishAnalyzer.ENGLISH_STOP_WORDS_SET));
     }
 }

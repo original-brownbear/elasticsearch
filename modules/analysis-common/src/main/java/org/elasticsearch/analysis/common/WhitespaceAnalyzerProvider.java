@@ -12,19 +12,11 @@ import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 
-public class WhitespaceAnalyzerProvider extends AbstractIndexAnalyzerProvider<WhitespaceAnalyzer> {
-
-    private final WhitespaceAnalyzer analyzer;
+public class WhitespaceAnalyzerProvider extends AbstractConstantAnalyzerProvider<WhitespaceAnalyzer> {
 
     public WhitespaceAnalyzerProvider(IndexSettings indexSettings, Environment environment, String name, Settings settings) {
-        super(name, settings);
-        this.analyzer = new WhitespaceAnalyzer();
-    }
-
-    @Override
-    public WhitespaceAnalyzer get() {
-        return this.analyzer;
+        super(name, settings, new WhitespaceAnalyzer());
     }
 }

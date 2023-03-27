@@ -13,23 +13,19 @@ import org.apache.lucene.analysis.bg.BulgarianAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class BulgarianAnalyzerProvider extends AbstractIndexAnalyzerProvider<BulgarianAnalyzer> {
-
-    private final BulgarianAnalyzer analyzer;
+public class BulgarianAnalyzerProvider extends AbstractConstantAnalyzerProvider<BulgarianAnalyzer> {
 
     BulgarianAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        analyzer = new BulgarianAnalyzer(
-            Analysis.parseStopWords(env, settings, BulgarianAnalyzer.getDefaultStopSet()),
-            Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+        super(
+            name,
+            settings,
+            new BulgarianAnalyzer(
+                Analysis.parseStopWords(env, settings, BulgarianAnalyzer.getDefaultStopSet()),
+                Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+            )
         );
-    }
-
-    @Override
-    public BulgarianAnalyzer get() {
-        return this.analyzer;
     }
 }

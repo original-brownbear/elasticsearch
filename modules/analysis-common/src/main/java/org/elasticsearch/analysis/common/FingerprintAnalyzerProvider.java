@@ -13,7 +13,7 @@ import org.apache.lucene.analysis.CharArraySet;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 import org.elasticsearch.xcontent.ParseField;
 
@@ -21,7 +21,7 @@ import org.elasticsearch.xcontent.ParseField;
  * Builds an OpenRefine Fingerprint analyzer.  Uses the default settings from the various components
  * (Standard Tokenizer and lowercase + stop + fingerprint + ascii-folding filters)
  */
-public class FingerprintAnalyzerProvider extends AbstractIndexAnalyzerProvider<Analyzer> {
+public class FingerprintAnalyzerProvider extends AbstractConstantAnalyzerProvider<Analyzer> {
 
     public static ParseField SEPARATOR = new ParseField("separator");
     public static ParseField MAX_OUTPUT_SIZE = new ParseField("max_output_size");
@@ -30,21 +30,16 @@ public class FingerprintAnalyzerProvider extends AbstractIndexAnalyzerProvider<A
     public static CharArraySet DEFAULT_STOP_WORDS = CharArraySet.EMPTY_SET;
     public static final char DEFAULT_SEPARATOR = ' ';
 
-    private final FingerprintAnalyzer analyzer;
-
     FingerprintAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-
-        char separator = parseSeparator(settings);
-        int maxOutputSize = settings.getAsInt(MAX_OUTPUT_SIZE.getPreferredName(), DEFAULT_MAX_OUTPUT_SIZE);
-        CharArraySet stopWords = Analysis.parseStopWords(env, settings, DEFAULT_STOP_WORDS);
-
-        this.analyzer = new FingerprintAnalyzer(stopWords, separator, maxOutputSize);
-    }
-
-    @Override
-    public FingerprintAnalyzer get() {
-        return analyzer;
+        super(
+            name,
+            settings,
+            new FingerprintAnalyzer(
+                Analysis.parseStopWords(env, settings, DEFAULT_STOP_WORDS),
+                parseSeparator(settings),
+                settings.getAsInt(MAX_OUTPUT_SIZE.getPreferredName(), DEFAULT_MAX_OUTPUT_SIZE)
+            )
+        );
     }
 
     public static char parseSeparator(Settings settings) throws IllegalArgumentException {

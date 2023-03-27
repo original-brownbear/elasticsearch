@@ -13,23 +13,19 @@ import org.apache.lucene.analysis.ar.ArabicAnalyzer;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
-import org.elasticsearch.index.analysis.AbstractIndexAnalyzerProvider;
+import org.elasticsearch.index.analysis.AbstractConstantAnalyzerProvider;
 import org.elasticsearch.index.analysis.Analysis;
 
-public class ArabicAnalyzerProvider extends AbstractIndexAnalyzerProvider<ArabicAnalyzer> {
-
-    private final ArabicAnalyzer arabicAnalyzer;
+public class ArabicAnalyzerProvider extends AbstractConstantAnalyzerProvider<ArabicAnalyzer> {
 
     ArabicAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {
-        super(name, settings);
-        arabicAnalyzer = new ArabicAnalyzer(
-            Analysis.parseStopWords(env, settings, ArabicAnalyzer.getDefaultStopSet()),
-            Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+        super(
+            name,
+            settings,
+            new ArabicAnalyzer(
+                Analysis.parseStopWords(env, settings, ArabicAnalyzer.getDefaultStopSet()),
+                Analysis.parseStemExclusion(settings, CharArraySet.EMPTY_SET)
+            )
         );
-    }
-
-    @Override
-    public ArabicAnalyzer get() {
-        return this.arabicAnalyzer;
     }
 }
