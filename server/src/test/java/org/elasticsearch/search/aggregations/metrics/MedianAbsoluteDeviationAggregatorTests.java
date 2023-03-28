@@ -196,8 +196,6 @@ public class MedianAbsoluteDeviationAggregatorTests extends AggregatorTestCase {
 
         MappedFieldType fieldType = new NumberFieldMapper.NumberFieldType(FIELD_NAME, NumberFieldMapper.NumberType.LONG);
 
-        final int size = randomIntBetween(100, 1000);
-        final List<Long> sample = new ArrayList<>(size);
         testAggregation(aggregationBuilder, new MatchAllDocsQuery(), iw -> {
             for (int i = 0; i < 10; i++) {
                 iw.addDocument(singleton(new NumericDocValuesField(FIELD_NAME, i + 1)));

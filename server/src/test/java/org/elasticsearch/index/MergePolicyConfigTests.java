@@ -22,7 +22,6 @@ import org.apache.lucene.store.Directory;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.test.ESTestCase;
 import org.hamcrest.Matchers;
 
@@ -33,7 +32,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
 public class MergePolicyConfigTests extends ESTestCase {
-    protected final ShardId shardId = new ShardId("index", "_na_", 1);
 
     public void testCompoundFileSettings() throws IOException {
         assertCompoundThreshold(Settings.EMPTY, 1.0, ByteSizeValue.ofGb(1));
@@ -350,10 +348,6 @@ public class MergePolicyConfigTests extends ESTestCase {
     }
 
     public Settings build(boolean value) {
-        return Settings.builder().put(MergePolicyConfig.INDEX_COMPOUND_FORMAT_SETTING.getKey(), value).build();
-    }
-
-    private Settings build(ByteSizeValue value) {
         return Settings.builder().put(MergePolicyConfig.INDEX_COMPOUND_FORMAT_SETTING.getKey(), value).build();
     }
 

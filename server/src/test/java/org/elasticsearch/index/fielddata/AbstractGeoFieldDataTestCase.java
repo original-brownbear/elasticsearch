@@ -26,7 +26,7 @@ public abstract class AbstractGeoFieldDataTestCase extends AbstractFieldDataImpl
     @Override
     protected abstract String getFieldDataType();
 
-    protected Field randomGeoPointField(String fieldName, Field.Store store) {
+    protected Field randomGeoPointField(String fieldName) {
         Point point = GeometryTestUtils.randomPoint();
         return new LatLonDocValuesField(fieldName, point.getLat(), point.getLon());
     }

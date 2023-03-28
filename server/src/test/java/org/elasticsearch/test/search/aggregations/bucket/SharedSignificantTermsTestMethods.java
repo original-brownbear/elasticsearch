@@ -33,7 +33,6 @@ import static org.hamcrest.Matchers.equalTo;
 
 public class SharedSignificantTermsTestMethods {
     public static final String INDEX_NAME = "testidx";
-    public static final String DOC_TYPE = "_doc";
     public static final String TEXT_FIELD = "text";
     public static final String CLASS_FIELD = "class";
 

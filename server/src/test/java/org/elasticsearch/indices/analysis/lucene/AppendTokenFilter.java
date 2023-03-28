@@ -11,25 +11,11 @@ package org.elasticsearch.indices.analysis.lucene;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.elasticsearch.index.analysis.TokenFilterFactory;
 
 import java.io.IOException;
 
 // Simple token filter that appends text to the term
 public final class AppendTokenFilter extends TokenFilter {
-    public static TokenFilterFactory factoryForSuffix(String suffix) {
-        return new TokenFilterFactory() {
-            @Override
-            public String name() {
-                return suffix;
-            }
-
-            @Override
-            public TokenStream create(TokenStream tokenStream) {
-                return new AppendTokenFilter(tokenStream, suffix);
-            }
-        };
-    }
 
     private final CharTermAttribute term = addAttribute(CharTermAttribute.class);
     private final char[] appendMe;

@@ -131,7 +131,7 @@ public class RepositoriesFileSettingsIT extends ESIntegTestCase {
         return new Tuple<>(savedClusterState, metadataVersion);
     }
 
-    private void assertClusterStateSaveOK(CountDownLatch savedClusterState, AtomicLong metadataVersion) throws Exception {
+    private void assertClusterStateSaveOK(CountDownLatch savedClusterState) throws Exception {
         boolean awaitSuccessful = savedClusterState.await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
@@ -170,7 +170,7 @@ public class RepositoriesFileSettingsIT extends ESIntegTestCase {
         final String masterNode = internalCluster().startMasterOnlyNode();
         assertMasterNode(internalCluster().nonMasterClient(), masterNode);
 
-        assertClusterStateSaveOK(savedClusterState.v1(), savedClusterState.v2());
+        assertClusterStateSaveOK(savedClusterState.v1());
     }
 
     private Tuple<CountDownLatch, AtomicLong> setupClusterStateListenerForError(String node) {
@@ -198,7 +198,7 @@ public class RepositoriesFileSettingsIT extends ESIntegTestCase {
         return new Tuple<>(savedClusterState, metadataVersion);
     }
 
-    private void assertClusterStateNotSaved(CountDownLatch savedClusterState, AtomicLong metadataVersion) throws Exception {
+    private void assertClusterStateNotSaved(CountDownLatch savedClusterState) throws Exception {
         boolean awaitSuccessful = savedClusterState.await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
@@ -225,7 +225,7 @@ public class RepositoriesFileSettingsIT extends ESIntegTestCase {
         var savedClusterState = setupClusterStateListenerForError(masterNode);
 
         writeJSONFile(masterNode, testErrorJSON);
-        assertClusterStateNotSaved(savedClusterState.v1(), savedClusterState.v2());
+        assertClusterStateNotSaved(savedClusterState.v1());
     }
 
     private PutRepositoryRequest sampleRestRequest(String name) throws Exception {

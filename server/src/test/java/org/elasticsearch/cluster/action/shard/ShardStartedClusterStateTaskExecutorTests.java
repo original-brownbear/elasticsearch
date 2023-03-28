@@ -174,7 +174,6 @@ public class ShardStartedClusterStateTaskExecutorTests extends ESAllocationTestC
         final IndexMetadata indexMetadata = clusterState.metadata().index(indexName);
         final ShardId shardId = new ShardId(indexMetadata.getIndex(), 0);
         final long primaryTerm = indexMetadata.primaryTerm(shardId.id());
-        final ShardRouting primaryShard = clusterState.routingTable().shardRoutingTable(shardId).primaryShard();
 
         final ShardRouting replicaShard = clusterState.routingTable().shardRoutingTable(shardId).replicaShards().iterator().next();
         final String replicaAllocationId = replicaShard.allocationId().getId();

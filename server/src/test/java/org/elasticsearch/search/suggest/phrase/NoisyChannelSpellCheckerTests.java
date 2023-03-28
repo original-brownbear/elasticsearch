@@ -24,7 +24,6 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.MultiTerms;
@@ -117,14 +116,14 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             0.95,
             5
         );
-        Result result = getCorrections(suggester, wrapper, new BytesRef("american ame"), generator, 1, 1, ir, "body", wordScorer, 1, 2);
+        Result result = getCorrections(suggester, wrapper, new BytesRef("american ame"), generator, 1, 1, "body", wordScorer, 1, 2);
         Correction[] corrections = result.corrections;
         assertThat(corrections.length, equalTo(1));
         assertThat(corrections[0].join(space).utf8ToString(), equalTo("american ace"));
         assertThat(corrections[0].join(space, preTag, postTag).utf8ToString(), equalTo("american <em>ace</em>"));
         assertThat(result.cutoffScore, greaterThan(0d));
 
-        result = getCorrections(suggester, wrapper, new BytesRef("american ame"), generator, 1, 1, ir, "body", wordScorer, 0, 1);
+        result = getCorrections(suggester, wrapper, new BytesRef("american ame"), generator, 1, 1, "body", wordScorer, 0, 1);
         corrections = result.corrections;
         assertThat(corrections.length, equalTo(1));
         assertThat(corrections[0].join(space).utf8ToString(), equalTo("american ame"));
@@ -140,7 +139,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             4,
-            ir,
             "body",
             wordScorer,
             0,
@@ -163,7 +161,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             4,
-            ir,
             "body",
             wordScorer,
             1,
@@ -185,7 +182,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             4f,
             4,
-            ir,
             "body",
             wordScorer,
             1,
@@ -232,7 +228,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             2,
             4,
-            ir,
             "body",
             wordScorer,
             1,
@@ -259,7 +254,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             2,
             4,
-            ir,
             "body",
             wordScorer,
             1,
@@ -287,7 +281,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             2,
             4,
-            ir,
             "body",
             wordScorer,
             1,
@@ -389,7 +382,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             1,
             1,
-            ir,
             "body",
             wordScorer,
             1,
@@ -406,7 +398,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             1,
             1,
-            ir,
             "body",
             wordScorer,
             1,
@@ -415,19 +406,7 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
         assertThat(corrections.length, equalTo(1));
         assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("american ace"));
 
-        corrections = getCorrections(
-            suggester,
-            wrapper,
-            new BytesRef("american cae"),
-            forward,
-            1,
-            1,
-            ir,
-            "body",
-            wordScorer,
-            1,
-            2
-        ).corrections;
+        corrections = getCorrections(suggester, wrapper, new BytesRef("american cae"), forward, 1, 1, "body", wordScorer, 1, 2).corrections;
         assertThat(corrections.length, equalTo(0)); // only use forward with constant prefix
 
         corrections = getCorrections(
@@ -437,7 +416,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             2,
             1,
-            ir,
             "body",
             wordScorer,
             1,
@@ -453,7 +431,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             4,
-            ir,
             "body",
             wordScorer,
             0,
@@ -471,7 +448,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             1,
-            ir,
             "body",
             wordScorer,
             1.5f,
@@ -487,7 +463,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             1,
-            ir,
             "body",
             wordScorer,
             1.5f,
@@ -497,19 +472,7 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
         assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("xorr the god jewel"));
 
         // Test a special case where one of the suggest term is unchanged by the postFilter, 'II' here is unchanged by the reverse analyzer.
-        corrections = getCorrections(
-            suggester,
-            wrapper,
-            new BytesRef("Quazar II"),
-            generator,
-            1,
-            1,
-            ir,
-            "body",
-            wordScorer,
-            1,
-            2
-        ).corrections;
+        corrections = getCorrections(suggester, wrapper, new BytesRef("Quazar II"), generator, 1, 1, "body", wordScorer, 1, 2).corrections;
         assertThat(corrections.length, equalTo(1));
         assertThat(corrections[0].join(new BytesRef(" ")).utf8ToString(), equalTo("quasar ii"));
     }
@@ -594,7 +557,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             1,
             1,
-            ir,
             "body",
             wordScorer,
             1,
@@ -610,7 +572,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             1,
             1,
-            ir,
             "body",
             wordScorer,
             1,
@@ -636,7 +597,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             4,
-            ir,
             "body",
             wordScorer,
             0,
@@ -655,7 +615,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             4,
-            ir,
             "body",
             wordScorer,
             1,
@@ -674,7 +633,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             1,
-            ir,
             "body",
             wordScorer,
             100,
@@ -723,7 +681,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             2,
             4,
-            ir,
             "body",
             wordScorer,
             1,
@@ -749,7 +706,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             2,
             4,
-            ir,
             "body",
             wordScorer,
             1,
@@ -765,7 +721,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
             generator,
             0.5f,
             2,
-            ir,
             "body",
             wordScorer,
             0,
@@ -814,7 +769,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
                     generator,
                     1,
                     1,
-                    ir,
                     "field",
                     wordScorer,
                     1,
@@ -833,7 +787,6 @@ public class NoisyChannelSpellCheckerTests extends ESTestCase {
         CandidateGenerator generator,
         float maxErrors,
         int numCorrections,
-        IndexReader reader,
         String analysisField,
         WordScorer scorer,
         float confidence,

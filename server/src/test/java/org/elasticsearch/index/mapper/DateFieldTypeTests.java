@@ -42,7 +42,6 @@ import org.elasticsearch.script.field.DateNanosDocValuesField;
 import org.elasticsearch.search.aggregations.support.CoreValuesSourceType;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -98,10 +97,10 @@ public class DateFieldTypeTests extends FieldTypeTestCase {
         DirectoryReader reader = DirectoryReader.open(w);
 
         DateMathParser alternateFormat = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.toDateMathParser();
-        doTestIsFieldWithinQuery(ft, reader, null, null);
-        doTestIsFieldWithinQuery(ft, reader, null, alternateFormat);
-        doTestIsFieldWithinQuery(ft, reader, ZoneOffset.UTC, null);
-        doTestIsFieldWithinQuery(ft, reader, ZoneOffset.UTC, alternateFormat);
+        doTestIsFieldWithinQuery(ft, reader, null);
+        doTestIsFieldWithinQuery(ft, reader, null);
+        doTestIsFieldWithinQuery(ft, reader, ZoneOffset.UTC);
+        doTestIsFieldWithinQuery(ft, reader, ZoneOffset.UTC);
 
         QueryRewriteContext context = new QueryRewriteContext(parserConfig(), writableRegistry(), null, () -> nowInMillis);
 
@@ -113,8 +112,7 @@ public class DateFieldTypeTests extends FieldTypeTestCase {
         IOUtils.close(reader, w, dir);
     }
 
-    private void doTestIsFieldWithinQuery(DateFieldType ft, DirectoryReader reader, ZoneId zone, DateMathParser alternateFormat)
-        throws IOException {
+    private void doTestIsFieldWithinQuery(DateFieldType ft, DirectoryReader reader, ZoneId zone) throws IOException {
         QueryRewriteContext context = new QueryRewriteContext(parserConfig(), writableRegistry(), null, () -> nowInMillis);
         assertEquals(
             Relation.INTERSECTS,
@@ -378,10 +376,6 @@ public class DateFieldTypeTests extends FieldTypeTestCase {
         reader.close();
         w.close();
         dir.close();
-    }
-
-    private Instant instant(String str) {
-        return DateFormatters.from(DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.parse(str)).toInstant();
     }
 
     private static DateFieldType fieldType(Resolution resolution, String format, String nullValue) {

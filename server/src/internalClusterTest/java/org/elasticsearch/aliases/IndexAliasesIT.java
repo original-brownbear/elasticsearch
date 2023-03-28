@@ -1388,12 +1388,6 @@ public class IndexAliasesIT extends ESIntegTestCase {
         assertEquals("alias name [" + indexName + "] self-conflicts with index name", iae.getMessage());
     }
 
-    public void testGetAliasAndAliasExistsForHiddenAliases() {
-        final String writeIndex = randomAlphaOfLength(5).toLowerCase(Locale.ROOT);
-        final String nonWriteIndex = randomAlphaOfLength(6).toLowerCase(Locale.ROOT);
-        final String alias = "alias-" + randomAlphaOfLength(7).toLowerCase(Locale.ROOT);
-    }
-
     private void checkAliases() {
         GetAliasesResponse getAliasesResponse = admin().indices().prepareGetAliases("alias1").get();
         assertThat(getAliasesResponse.getAliases().get("test").size(), equalTo(1));

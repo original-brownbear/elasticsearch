@@ -571,15 +571,6 @@ public class HighlightBuilderTests extends ESTestCase {
         assertWarnings("Deprecated field [force_source] used, this field is unused and will be removed entirely");
     }
 
-    protected static XContentBuilder toXContent(HighlightBuilder highlight, XContentType contentType) throws IOException {
-        XContentBuilder builder = XContentFactory.contentBuilder(contentType);
-        if (randomBoolean()) {
-            builder.prettyPrint();
-        }
-        highlight.toXContent(builder, ToXContent.EMPTY_PARAMS);
-        return builder;
-    }
-
     /**
      * create random highlight builder that is put under test
      */

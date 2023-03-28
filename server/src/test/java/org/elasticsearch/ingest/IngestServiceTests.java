@@ -86,7 +86,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.function.LongSupplier;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.cluster.service.ClusterStateTaskExecutorUtils.executeAndAssertSuccessful;
@@ -544,7 +543,6 @@ public class IngestServiceTests extends ESTestCase {
     }
 
     public void testGetProcessorsInPipelineComplexConditional() throws Exception {
-        LongSupplier relativeTimeProvider = mock(LongSupplier.class);
         String scriptName = "conditionalScript";
         ScriptService scriptService = new ScriptService(
             Settings.builder().build(),
@@ -2341,11 +2339,11 @@ public class IngestServiceTests extends ESTestCase {
     }
 
     private IngestDocument eqIndexTypeId(final Map<String, Object> source) {
-        return argThat(new IngestDocumentMatcher("_index", "_type", "_id", -3L, VersionType.INTERNAL, source));
+        return argThat(new IngestDocumentMatcher("_index", "_id", -3L, VersionType.INTERNAL, source));
     }
 
     private IngestDocument eqIndexTypeId(final long version, final VersionType versionType, final Map<String, Object> source) {
-        return argThat(new IngestDocumentMatcher("_index", "_type", "_id", version, versionType, source));
+        return argThat(new IngestDocumentMatcher("_index", "_id", version, versionType, source));
     }
 
     private static IngestService createWithProcessors() {
@@ -2392,11 +2390,7 @@ public class IngestServiceTests extends ESTestCase {
 
         private final IngestDocument ingestDocument;
 
-        IngestDocumentMatcher(String index, String type, String id, Map<String, Object> source) {
-            this.ingestDocument = new IngestDocument(index, id, 1, null, null, source);
-        }
-
-        IngestDocumentMatcher(String index, String type, String id, long version, VersionType versionType, Map<String, Object> source) {
+        IngestDocumentMatcher(String index, String id, long version, VersionType versionType, Map<String, Object> source) {
             this.ingestDocument = new IngestDocument(index, id, version, null, versionType, source);
         }
 

@@ -53,13 +53,13 @@ public class RandomQueryGenerator {
 
     private static QueryBuilder randomTerminalQuery(List<String> stringFields, List<String> numericFields, int numDocs) {
         return switch (randomIntBetween(0, 5)) {
-            case 0 -> randomTermQuery(stringFields, numDocs);
+            case 0 -> randomTermQuery(stringFields);
             case 1 -> randomTermsQuery(stringFields, numDocs);
             case 2 -> randomRangeQuery(numericFields, numDocs);
             case 3 -> QueryBuilders.matchAllQuery();
             case 4 -> randomFuzzyQuery(stringFields);
             case 5 -> randomIDsQuery();
-            default -> randomTermQuery(stringFields, numDocs);
+            default -> randomTermQuery(stringFields);
         };
     }
 
@@ -78,7 +78,7 @@ public class RandomQueryGenerator {
         return fields.get(randomInt(fields.size() - 1));
     }
 
-    private static QueryBuilder randomTermQuery(List<String> fields, int numDocs) {
+    private static QueryBuilder randomTermQuery(List<String> fields) {
         return QueryBuilders.termQuery(randomField(fields), randomQueryString(1));
     }
 

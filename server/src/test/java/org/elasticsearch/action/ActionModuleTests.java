@@ -294,16 +294,6 @@ public class ActionModuleTests extends ESTestCase {
         }
     }
 
-    class FakeHandler implements RestHandler {
-        @Override
-        public List<Route> routes() {
-            return singletonList(new Route(GET, "/_dummy"));
-        }
-
-        @Override
-        public void handleRequest(RestRequest request, RestChannel channel, NodeClient client) throws Exception {}
-    }
-
     class SecPlugin implements ActionPlugin, RestInterceptorActionPlugin {
         @Override
         public UnaryOperator<RestHandler> getRestHandlerInterceptor(ThreadContext threadContext) {

@@ -35,12 +35,6 @@ public class RegexOptionsTests extends ESTestCase {
         return builder.build();
     }
 
-    protected RegexOptions createMutation(RegexOptions original) throws IOException {
-        final RegexOptions.Builder builder = RegexOptions.builder();
-        builder.setMaxDeterminizedStates(randomValueOtherThan(original.getMaxDeterminizedStates(), () -> randomIntBetween(1, 10)));
-        return builder.build();
-    }
-
     /**
      * Test serialization and deserialization
      */

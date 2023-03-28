@@ -457,7 +457,7 @@ public class ComponentTemplatesFileSettingsIT extends ESIntegTestCase {
         return new Tuple<>(savedClusterState, metadataVersion);
     }
 
-    private void assertComponentAndIndexTemplateDelete(CountDownLatch savedClusterState, AtomicLong metadataVersion) throws Exception {
+    private void assertComponentAndIndexTemplateDelete(CountDownLatch savedClusterState) throws Exception {
         boolean awaitSuccessful = savedClusterState.await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
@@ -557,7 +557,7 @@ public class ComponentTemplatesFileSettingsIT extends ESIntegTestCase {
         logger.info("--> write the reduced JSON, so we delete template_other and other_component_template");
         writeJSONFile(internalCluster().getMasterName(), testJSONLess);
 
-        assertComponentAndIndexTemplateDelete(savedClusterState.v1(), savedClusterState.v2());
+        assertComponentAndIndexTemplateDelete(savedClusterState.v1());
 
         logger.info("---> cleanup file based settings...");
         // if clean-up doesn't succeed correctly, TestCluster.wipeAllComposableIndexTemplates will fail
@@ -595,7 +595,7 @@ public class ComponentTemplatesFileSettingsIT extends ESIntegTestCase {
         return new Tuple<>(savedClusterState, metadataVersion);
     }
 
-    private void assertClusterStateNotSaved(CountDownLatch savedClusterState, AtomicLong metadataVersion) throws Exception {
+    private void assertClusterStateNotSaved(CountDownLatch savedClusterState) throws Exception {
         boolean awaitSuccessful = savedClusterState.await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
@@ -621,7 +621,7 @@ public class ComponentTemplatesFileSettingsIT extends ESIntegTestCase {
         var savedClusterState = setupClusterStateListenerForError(masterNode);
 
         writeJSONFile(masterNode, testErrorJSON);
-        assertClusterStateNotSaved(savedClusterState.v1(), savedClusterState.v2());
+        assertClusterStateNotSaved(savedClusterState.v1());
     }
 
     private PutComponentTemplateAction.Request sampleComponentRestRequest(String name) throws Exception {

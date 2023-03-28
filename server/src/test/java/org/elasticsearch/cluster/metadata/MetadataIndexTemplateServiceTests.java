@@ -2290,8 +2290,6 @@ public class MetadataIndexTemplateServiceTests extends ESSingleNodeTestCase {
      */
     public void testAddInvalidTemplateIgnoreService() throws Exception {
 
-        String indexTemplateName = "metric-test";
-
         List<String> componentTemplates = new ArrayList<>();
         componentTemplates.add("foo");
         componentTemplates.add("fail");

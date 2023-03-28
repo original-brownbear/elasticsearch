@@ -67,7 +67,6 @@ public class BalanceConfigurationTests extends ESAllocationTestCase {
             clusterState.getRoutingTable(),
             clusterState.getRoutingNodes(),
             numberOfNodes,
-            numberOfIndices,
             numberOfReplicas,
             numberOfShards,
             balanceThreshold
@@ -78,7 +77,6 @@ public class BalanceConfigurationTests extends ESAllocationTestCase {
             clusterState.getRoutingTable(),
             clusterState.getRoutingNodes(),
             numberOfNodes + 1,
-            numberOfIndices,
             numberOfReplicas,
             numberOfShards,
             balanceThreshold
@@ -89,7 +87,6 @@ public class BalanceConfigurationTests extends ESAllocationTestCase {
             clusterState.getRoutingTable(),
             clusterState.getRoutingNodes(),
             (numberOfNodes + 1) - (numberOfNodes + 1) / 2,
-            numberOfIndices,
             numberOfReplicas,
             numberOfShards,
             balanceThreshold
@@ -260,7 +257,6 @@ public class BalanceConfigurationTests extends ESAllocationTestCase {
         RoutingTable routingTable,
         RoutingNodes nodes,
         int numberOfNodes,
-        int numberOfIndices,
         int numberOfReplicas,
         int numberOfShards,
         float threshold

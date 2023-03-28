@@ -278,7 +278,6 @@ public class TransportBroadcastUnpromotableActionTests extends ESTestCase {
         }
         IndexShardRoutingTable wrongRoutingTable = wrongRoutingTableBuilder.build();
 
-        PlainActionFuture<ActionResponse.Empty> response = PlainActionFuture.newFuture();
         logger.debug("--> executing for wrong shard routing table: {}", wrongRoutingTable);
         assertThat(
             expectThrows(
@@ -299,7 +298,6 @@ public class TransportBroadcastUnpromotableActionTests extends ESTestCase {
     }
 
     public void testNullIndexShardRoutingTable() throws Exception {
-        PlainActionFuture<ActionResponse.Empty> response = PlainActionFuture.newFuture();
         IndexShardRoutingTable shardRoutingTable = null;
         assertThat(
             expectThrows(

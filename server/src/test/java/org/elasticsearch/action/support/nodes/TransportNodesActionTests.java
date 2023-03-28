@@ -321,7 +321,7 @@ public class TransportNodesActionTests extends ESTestCase {
             List<TestNodeResponse> responses,
             List<FailedNodeException> failures
         ) {
-            return new TestNodesResponse(clusterService.getClusterName(), request, responses, failures);
+            return new TestNodesResponse(clusterService.getClusterName(), responses, failures);
         }
 
         @Override
@@ -373,16 +373,8 @@ public class TransportNodesActionTests extends ESTestCase {
 
     private static class TestNodesResponse extends BaseNodesResponse<TestNodeResponse> {
 
-        private final TestNodesRequest request;
-
-        TestNodesResponse(
-            ClusterName clusterName,
-            TestNodesRequest request,
-            List<TestNodeResponse> nodeResponses,
-            List<FailedNodeException> failures
-        ) {
+        TestNodesResponse(ClusterName clusterName, List<TestNodeResponse> nodeResponses, List<FailedNodeException> failures) {
             super(clusterName, nodeResponses, failures);
-            this.request = request;
         }
 
         @Override
@@ -414,16 +406,6 @@ public class TransportNodesActionTests extends ESTestCase {
         }
 
         protected TestNodeResponse(StreamInput in) throws IOException {
-            super(in);
-        }
-    }
-
-    private static class OtherNodeResponse extends BaseNodeResponse {
-        OtherNodeResponse() {
-            super(mock(DiscoveryNode.class));
-        }
-
-        protected OtherNodeResponse(StreamInput in) throws IOException {
             super(in);
         }
     }

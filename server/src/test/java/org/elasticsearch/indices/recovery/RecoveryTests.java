@@ -132,7 +132,6 @@ public class RecoveryTests extends ESIndexLevelReplicationTestCase {
             shards.startAll();
             // create out of order delete and index op on replica
             final IndexShard orgReplica = shards.getReplicas().get(0);
-            final String indexName = orgReplica.shardId().getIndexName();
             final long primaryTerm = orgReplica.getOperationPrimaryTerm();
 
             // delete #1

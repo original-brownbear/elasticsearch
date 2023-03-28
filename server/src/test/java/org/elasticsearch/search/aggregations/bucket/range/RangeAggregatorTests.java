@@ -540,7 +540,7 @@ public class RangeAggregatorTests extends AggregatorTestCase {
             .addRange(0d, 10d)
             .subAggregation(aggCardinalityUpperBound("c"));
 
-        simpleTestCase(aggregationBuilder, new MatchAllDocsQuery(), range -> {
+        simpleTestCase(aggregationBuilder, range -> {
             List<? extends InternalRange.Bucket> ranges = range.getBuckets();
             InternalAggCardinalityUpperBound pc = ranges.get(0).getAggregations().get("c");
             assertThat(pc.cardinality(), equalTo(CardinalityUpperBound.ONE));
@@ -553,7 +553,7 @@ public class RangeAggregatorTests extends AggregatorTestCase {
             .addRange(10d, 100d)
             .subAggregation(aggCardinalityUpperBound("c"));
 
-        simpleTestCase(aggregationBuilder, new MatchAllDocsQuery(), range -> {
+        simpleTestCase(aggregationBuilder, range -> {
             List<? extends InternalRange.Bucket> ranges = range.getBuckets();
             InternalAggCardinalityUpperBound pc = ranges.get(0).getAggregations().get("c");
             assertThat(pc.cardinality().map(i -> i), equalTo(2));
@@ -722,7 +722,6 @@ public class RangeAggregatorTests extends AggregatorTestCase {
 
     private void simpleTestCase(
         RangeAggregationBuilder aggregationBuilder,
-        Query query,
         Consumer<InternalRange<? extends InternalRange.Bucket, ? extends InternalRange<?, ?>>> verify
     ) throws IOException {
         MappedFieldType fieldType = new NumberFieldMapper.NumberFieldType(NUMBER_FIELD_NAME, NumberFieldMapper.NumberType.INTEGER);

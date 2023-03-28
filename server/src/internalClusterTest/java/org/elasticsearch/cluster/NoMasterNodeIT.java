@@ -139,7 +139,6 @@ public class NoMasterNodeIT extends ESIntegTestCase {
 
         checkUpdateAction(
             false,
-            timeout,
             clientToMasterlessNode.prepareUpdate("test", "1")
                 .setScript(new Script(ScriptType.INLINE, Script.DEFAULT_SCRIPT_LANG, "test script", Collections.emptyMap()))
                 .setTimeout(timeout)
@@ -147,7 +146,6 @@ public class NoMasterNodeIT extends ESIntegTestCase {
 
         checkUpdateAction(
             true,
-            timeout,
             clientToMasterlessNode.prepareUpdate("no_index", "1")
                 .setScript(new Script(ScriptType.INLINE, Script.DEFAULT_SCRIPT_LANG, "test script", Collections.emptyMap()))
                 .setTimeout(timeout)
@@ -190,7 +188,7 @@ public class NoMasterNodeIT extends ESIntegTestCase {
         internalCluster().clearDisruptionScheme(true);
     }
 
-    void checkUpdateAction(boolean autoCreateIndex, TimeValue timeout, ActionRequestBuilder<?, ?> builder) {
+    void checkUpdateAction(boolean autoCreateIndex, ActionRequestBuilder<?, ?> builder) {
         // we clean the metadata when loosing a master, therefore all operations on indices will auto create it, if allowed
         try {
             builder.get();

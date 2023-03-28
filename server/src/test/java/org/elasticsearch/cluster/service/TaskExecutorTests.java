@@ -78,17 +78,6 @@ public class TaskExecutorTests extends ESTestCase {
     protected interface TestExecutor<T> {
         void execute(List<T> tasks);
 
-        default String describeTasks(List<T> tasks) {
-            return tasks.stream().map(T::toString).reduce((s1, s2) -> {
-                if (s1.isEmpty()) {
-                    return s2;
-                } else if (s2.isEmpty()) {
-                    return s1;
-                } else {
-                    return s1 + ", " + s2;
-                }
-            }).orElse("");
-        }
     }
 
     protected abstract static class TestTask implements TestExecutor<TestTask>, TestListener {
@@ -245,15 +234,6 @@ public class TaskExecutorTests extends ESTestCase {
         submitTask("block-task", test3);
         allProcessed.await(); // executed another task to double check that execute on the timed out update task is not called...
         assertThat(executeCalled.get(), equalTo(false));
-    }
-
-    static class TaskExecutor implements TestExecutor<Integer> {
-        List<Integer> tasks = new ArrayList<>();
-
-        @Override
-        public void execute(List<Integer> tasks) {
-            this.tasks.addAll(tasks);
-        }
     }
 
     /**

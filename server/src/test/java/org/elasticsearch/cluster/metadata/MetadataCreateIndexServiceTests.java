@@ -44,7 +44,6 @@ import org.elasticsearch.index.IndexSettingProviders;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.mapper.MapperService;
 import org.elasticsearch.index.query.SearchExecutionContext;
-import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.InvalidAliasNameException;
 import org.elasticsearch.indices.InvalidIndexNameException;
 import org.elasticsearch.indices.ShardLimitValidator;
@@ -393,7 +392,6 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
         final List<Version> versions = Arrays.asList(VersionUtils.randomVersion(random()), VersionUtils.randomVersion(random()));
         versions.sort(Comparator.comparingLong(l -> l.id));
         final Version version = versions.get(0);
-        final Version upgraded = versions.get(1);
         final Settings.Builder indexSettingsBuilder = Settings.builder()
             .put("index.version.created", version)
             .put("index.similarity.default.type", "BM25")
@@ -564,37 +562,23 @@ public class MetadataCreateIndexServiceTests extends ESTestCase {
 
     public void testValidateIndexName() throws Exception {
         withTemporaryClusterService(((clusterService, threadPool) -> {
-            MetadataCreateIndexService checkerService = new MetadataCreateIndexService(
-                Settings.EMPTY,
-                clusterService,
-                null,
-                null,
-                createTestShardLimitService(randomIntBetween(1, 1000), clusterService),
-                null,
-                null,
-                threadPool,
-                null,
-                EmptySystemIndices.INSTANCE,
-                false,
-                new IndexSettingProviders(Set.of())
-            );
-            validateIndexName(checkerService, "index?name", "must not contain the following characters " + Strings.INVALID_FILENAME_CHARS);
+            validateIndexName("index?name", "must not contain the following characters " + Strings.INVALID_FILENAME_CHARS);
 
-            validateIndexName(checkerService, "index#name", "must not contain '#'");
+            validateIndexName("index#name", "must not contain '#'");
 
-            validateIndexName(checkerService, "_indexname", "must not start with '_', '-', or '+'");
-            validateIndexName(checkerService, "-indexname", "must not start with '_', '-', or '+'");
-            validateIndexName(checkerService, "+indexname", "must not start with '_', '-', or '+'");
+            validateIndexName("_indexname", "must not start with '_', '-', or '+'");
+            validateIndexName("-indexname", "must not start with '_', '-', or '+'");
+            validateIndexName("+indexname", "must not start with '_', '-', or '+'");
 
-            validateIndexName(checkerService, "INDEXNAME", "must be lowercase");
+            validateIndexName("INDEXNAME", "must be lowercase");
 
-            validateIndexName(checkerService, "..", "must not be '.' or '..'");
+            validateIndexName("..", "must not be '.' or '..'");
 
-            validateIndexName(checkerService, "foo:bar", "must not contain ':'");
+            validateIndexName("foo:bar", "must not contain ':'");
         }));
     }
 
-    private static void validateIndexName(MetadataCreateIndexService metadataCreateIndexService, String indexName, String errorMessage) {
+    private static void validateIndexName(String indexName, String errorMessage) {
         InvalidIndexNameException e = expectThrows(
             InvalidIndexNameException.class,
             () -> MetadataCreateIndexService.validateIndexName(

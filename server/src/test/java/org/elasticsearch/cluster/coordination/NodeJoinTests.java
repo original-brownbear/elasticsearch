@@ -237,10 +237,6 @@ public class NodeJoinTests extends ESTestCase {
         coordinator.startInitialJoin();
     }
 
-    protected DiscoveryNode newNode(int i) {
-        return newNode(i, randomBoolean());
-    }
-
     protected DiscoveryNode newNode(int i, boolean master) {
         final Set<DiscoveryNodeRole> roles;
         if (master) {

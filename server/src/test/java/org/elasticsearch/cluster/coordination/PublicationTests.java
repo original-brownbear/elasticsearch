@@ -15,7 +15,6 @@ import org.elasticsearch.cluster.coordination.CoordinationMetadata.VotingConfigu
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
@@ -57,7 +56,7 @@ public class PublicationTests extends ESTestCase {
 
     class MockNode {
 
-        MockNode(Settings settings, DiscoveryNode localNode) {
+        MockNode(DiscoveryNode localNode) {
             this.localNode = localNode;
             ClusterState initialState = CoordinationStateTests.clusterState(
                 0L,
@@ -179,9 +178,9 @@ public class PublicationTests extends ESTestCase {
     DiscoveryNode n3 = CoordinationStateTests.createNode("node3");
     Set<DiscoveryNode> discoNodes = Sets.newHashSet(n1, n2, n3);
 
-    MockNode node1 = new MockNode(Settings.EMPTY, n1);
-    MockNode node2 = new MockNode(Settings.EMPTY, n2);
-    MockNode node3 = new MockNode(Settings.EMPTY, n3);
+    MockNode node1 = new MockNode(n1);
+    MockNode node2 = new MockNode(n2);
+    MockNode node3 = new MockNode(n3);
     List<MockNode> nodes = Arrays.asList(node1, node2, node3);
 
     Function<DiscoveryNode, MockNode> nodeResolver = dn -> nodes.stream().filter(mn -> mn.localNode.equals(dn)).findFirst().get();

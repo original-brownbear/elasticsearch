@@ -584,7 +584,6 @@ public class MetadataStateFormatTests extends ESTestCase {
         static final String FAIL_FSYNC_STATE_DIRECTORY = "syncMetaData";
         static final String FAIL_DELETE_TMP_FILE = "deleteFile";
         static final String FAIL_OPEN_STATE_FILE_WHEN_COPYING = "openInput";
-        static final String FAIL_LIST_ALL = "listAll";
 
         /**
          * Constructs a MetadataStateFormat object for storing/retrieving DummyState.

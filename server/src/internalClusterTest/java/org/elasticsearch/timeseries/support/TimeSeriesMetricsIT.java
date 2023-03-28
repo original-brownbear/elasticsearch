@@ -449,10 +449,6 @@ public class TimeSeriesMetricsIT extends ESIntegTestCase {
         return new TimeSeriesMetrics.TimeSeriesMetricSelector(TimeSeriesMetrics.TimeSeriesSelectorMatcher.EQUAL, metric);
     }
 
-    private static TimeSeriesMetrics.TimeSeriesMetricSelector ne(String metric) {
-        return new TimeSeriesMetrics.TimeSeriesMetricSelector(TimeSeriesMetrics.TimeSeriesSelectorMatcher.NOT_EQUAL, metric);
-    }
-
     private static TimeSeriesMetrics.TimeSeriesMetricSelector re(String metric) {
         return new TimeSeriesMetrics.TimeSeriesMetricSelector(TimeSeriesMetrics.TimeSeriesSelectorMatcher.RE_EQUAL, metric);
     }

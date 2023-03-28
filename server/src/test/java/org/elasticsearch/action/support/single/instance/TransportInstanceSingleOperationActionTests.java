@@ -48,9 +48,7 @@ import org.junit.BeforeClass;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -89,7 +87,6 @@ public class TransportInstanceSingleOperationActionTests extends ESTestCase {
     }
 
     class TestTransportInstanceSingleOperationAction extends TransportInstanceSingleOperationAction<Request, Response> {
-        private final Map<ShardId, Object> shards = new HashMap<>();
 
         TestTransportInstanceSingleOperationAction(
             String actionName,
@@ -107,10 +104,6 @@ public class TransportInstanceSingleOperationActionTests extends ESTestCase {
                 indexNameExpressionResolver,
                 request
             );
-        }
-
-        public Map<ShardId, Object> getResults() {
-            return shards;
         }
 
         @Override

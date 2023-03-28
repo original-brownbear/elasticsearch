@@ -96,7 +96,6 @@ public class GroupShardsIteratorTests extends ESTestCase {
 
         Collections.shuffle(list, random());
         {
-            GroupShardsIterator<ShardIterator> unsorted = new GroupShardsIterator<>(list);
             GroupShardsIterator<ShardIterator> iter = new GroupShardsIterator<>(list);
             List<ShardIterator> actualIterators = new ArrayList<>();
             for (ShardIterator shardsIterator : iter) {

@@ -89,7 +89,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
         assertTrue(bulkResponse.hasFailures());
     }
 
-    private static void assertMappingsHaveField(GetMappingsResponse mappings, String index, String field) throws IOException {
+    private static void assertMappingsHaveField(GetMappingsResponse mappings, String field) {
         MappingMetadata indexMappings = mappings.getMappings().get("index");
         assertNotNull(indexMappings);
         Map<String, Object> typeMappingsMap = indexMappings.getSourceAsMap();
@@ -131,7 +131,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
         Thread.sleep(2000);
         GetMappingsResponse mappings = client().admin().indices().prepareGetMappings("index").get();
         for (int i = 0; i < indexThreads.length; ++i) {
-            assertMappingsHaveField(mappings, "index", "field" + i);
+            assertMappingsHaveField(mappings, "field" + i);
         }
         for (int i = 0; i < indexThreads.length; ++i) {
             assertTrue(client().prepareGet("index", Integer.toString(i)).get().isExists());

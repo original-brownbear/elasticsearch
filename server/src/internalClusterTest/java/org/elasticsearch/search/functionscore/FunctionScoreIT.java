@@ -47,7 +47,6 @@ import static org.hamcrest.Matchers.is;
 
 public class FunctionScoreIT extends ESIntegTestCase {
 
-    static final String TYPE = "type";
     static final String INDEX = "index";
 
     @Override

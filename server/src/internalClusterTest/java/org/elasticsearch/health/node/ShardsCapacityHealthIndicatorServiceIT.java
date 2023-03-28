@@ -17,11 +17,9 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.health.HealthIndicatorResult;
 import org.elasticsearch.health.HealthService;
 import org.elasticsearch.health.HealthStatus;
-import org.elasticsearch.health.metadata.HealthMetadata;
 import org.elasticsearch.health.node.selection.HealthNode;
 import org.elasticsearch.test.ESIntegTestCase;
 import org.elasticsearch.test.InternalTestCluster;
-import org.elasticsearch.test.NodeRoles;
 import org.junit.After;
 import org.junit.Before;
 
@@ -31,7 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_REPLICAS;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_NUMBER_OF_SHARDS;
-import static org.elasticsearch.cluster.node.DiscoveryNodeRole.DATA_FROZEN_NODE_ROLE;
 import static org.elasticsearch.indices.ShardLimitValidator.SETTING_CLUSTER_MAX_SHARDS_PER_NODE;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
@@ -105,14 +102,6 @@ public class ShardsCapacityHealthIndicatorServiceIT extends ESIntegTestCase {
         return healthIndicatorResults.get(0);
     }
 
-    private void setUpCluster(InternalTestCluster internalCluster) throws Exception {
-        internalCluster.startMasterOnlyNode();
-        internalCluster.startDataOnlyNode();
-        internalCluster.startNode(NodeRoles.onlyRole(DATA_FROZEN_NODE_ROLE));
-        ensureStableCluster(internalCluster.getNodeNames().length);
-        waitForHealthMetadata();
-    }
-
     private List<HealthIndicatorResult> getHealthServiceResults(HealthService healthService, String node) throws Exception {
         AtomicReference<List<HealthIndicatorResult>> resultListReference = new AtomicReference<>();
         ActionListener<List<HealthIndicatorResult>> listener = new ActionListener<>() {
@@ -129,23 +118,6 @@ public class ShardsCapacityHealthIndicatorServiceIT extends ESIntegTestCase {
         healthService.getHealth(internalCluster().client(node), ShardsCapacityHealthIndicatorService.NAME, true, 1000, listener);
         assertBusy(() -> assertNotNull(resultListReference.get()));
         return resultListReference.get();
-    }
-
-    private void waitForHealthMetadata() throws Exception {
-        assertBusy(() -> {
-            var healthMetadata = HealthMetadata.getFromClusterState(internalCluster().clusterService().state());
-
-            assertNotNull(healthMetadata);
-            assertNotNull(healthMetadata.getShardLimitsMetadata());
-            assertTrue(
-                "max_shards_per_node setting must be greater than 0",
-                healthMetadata.getShardLimitsMetadata().maxShardsPerNode() > 0
-            );
-            assertTrue(
-                "max_shards_per_node.frozen setting must be greater than 0",
-                healthMetadata.getShardLimitsMetadata().maxShardsPerNodeFrozen() > 0
-            );
-        });
     }
 
     private static DiscoveryNode findHealthNode() {

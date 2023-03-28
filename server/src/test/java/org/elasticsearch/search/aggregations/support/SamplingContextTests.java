@@ -14,7 +14,6 @@ import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 
 public class SamplingContextTests extends ESTestCase {
-    protected static final int NUMBER_OF_TEST_RUNS = 20;
 
     private static SamplingContext randomContext() {
         return new SamplingContext(randomDoubleBetween(1e-6, 0.1, false), randomInt());

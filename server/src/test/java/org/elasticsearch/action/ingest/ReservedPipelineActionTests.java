@@ -8,28 +8,16 @@
 
 package org.elasticsearch.action.ingest;
 
-import org.elasticsearch.Build;
-import org.elasticsearch.TransportVersion;
-import org.elasticsearch.Version;
-import org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
-import org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.settings.ClusterSettings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.ingest.FakeProcessor;
-import org.elasticsearch.ingest.IngestInfo;
 import org.elasticsearch.ingest.IngestService;
 import org.elasticsearch.ingest.Processor;
-import org.elasticsearch.ingest.ProcessorInfo;
 import org.elasticsearch.plugins.IngestPlugin;
 import org.elasticsearch.reservedstate.TransformState;
-import org.elasticsearch.reservedstate.service.FileSettingsService;
-import org.elasticsearch.reservedstate.service.ReservedClusterStateService;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentParser;
@@ -39,16 +27,12 @@ import org.junit.Before;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -69,18 +53,14 @@ public class ReservedPipelineActionTests extends ESTestCase {
         }
     };
 
-    private ThreadPool threadPool;
-    private IngestService ingestService;
-    private FileSettingsService fileSettingsService;
-
     @Before
     public void setup() {
-        threadPool = mock(ThreadPool.class);
+        ThreadPool threadPool = mock(ThreadPool.class);
         when(threadPool.generic()).thenReturn(EsExecutors.DIRECT_EXECUTOR_SERVICE);
         when(threadPool.executor(anyString())).thenReturn(EsExecutors.DIRECT_EXECUTOR_SERVICE);
 
         Client client = mock(Client.class);
-        ingestService = new IngestService(
+        IngestService ingestService = new IngestService(
             mock(ClusterService.class),
             threadPool,
             null,
@@ -92,47 +72,6 @@ public class ReservedPipelineActionTests extends ESTestCase {
         Map<String, Processor.Factory> factories = ingestService.getProcessorFactories();
         assertTrue(factories.containsKey("set"));
         assertEquals(1, factories.size());
-
-        DiscoveryNode discoveryNode = new DiscoveryNode(
-            "_node_id",
-            buildNewFakeTransportAddress(),
-            emptyMap(),
-            emptySet(),
-            Version.CURRENT
-        );
-
-        NodeInfo nodeInfo = new NodeInfo(
-            Version.CURRENT,
-            TransportVersion.CURRENT,
-            Build.CURRENT,
-            discoveryNode,
-            Settings.EMPTY,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            new IngestInfo(Collections.singletonList(new ProcessorInfo("set"))),
-            null,
-            null
-        );
-        NodesInfoResponse response = new NodesInfoResponse(new ClusterName("elasticsearch"), List.of(nodeInfo), List.of());
-
-        var clusterService = spy(
-            new ClusterService(
-                Settings.EMPTY,
-                new ClusterSettings(Settings.EMPTY, ClusterSettings.BUILT_IN_CLUSTER_SETTINGS),
-                threadPool,
-                null
-            )
-        );
-
-        fileSettingsService = spy(
-            new FileSettingsService(clusterService, mock(ReservedClusterStateService.class), newEnvironment(Settings.EMPTY))
-        );
     }
 
     private TransformState processJSON(ReservedPipelineAction action, TransformState prevState, String json) throws Exception {

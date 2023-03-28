@@ -456,7 +456,6 @@ public class RequestDispatcherTests extends ESAllocationTestCase {
             );
             final RequestTracker requestTracker = new RequestTracker(dispatcher, clusterState.routingTable(), withFilter);
             transportService.requestTracker.set(requestTracker);
-            final AtomicInteger failedTimes = new AtomicInteger();
             final Set<ShardId> allUnmatchedShardIds = new HashSet<>();
             for (String index : indices) {
                 final Set<ShardId> shardIds = new HashSet<>();
@@ -519,7 +518,6 @@ public class RequestDispatcherTests extends ESAllocationTestCase {
     public void testStopAfterAllShardsUnmatched() throws Exception {
         final List<String> allIndices = IntStream.rangeClosed(1, 5).mapToObj(n -> "index_" + n).toList();
         final ClusterState clusterState;
-        final boolean newVersionOnly = randomBoolean();
         {
             DiscoveryNodes.Builder discoNodes = DiscoveryNodes.builder();
             int numNodes = randomIntBetween(1, 10);
@@ -556,7 +554,6 @@ public class RequestDispatcherTests extends ESAllocationTestCase {
             );
             final RequestTracker requestTracker = new RequestTracker(dispatcher, clusterState.routingTable(), withFilter);
             transportService.requestTracker.set(requestTracker);
-            final AtomicInteger failedTimes = new AtomicInteger();
             final List<String> unmatchedIndices = randomSubsetOf(between(1, indices.size()), indices);
             transportService.setTransportInterceptor(new TransportInterceptor.AsyncSender() {
                 @Override

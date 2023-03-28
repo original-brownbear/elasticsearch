@@ -156,14 +156,6 @@ public abstract class AbstractClientHeadersTestCase extends ESTestCase {
         }
     }
 
-    protected static void assertHeaders(ThreadPool pool) {
-        Settings asSettings = HEADER_SETTINGS.getAsSettings(ThreadContext.PREFIX);
-        assertHeaders(
-            pool.getThreadContext().getHeaders(),
-            asSettings.keySet().stream().collect(Collectors.toMap(Function.identity(), k -> asSettings.get(k)))
-        );
-    }
-
     public static class InternalException extends Exception {
 
         private final String action;

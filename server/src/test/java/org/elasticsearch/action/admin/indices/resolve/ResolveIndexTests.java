@@ -194,7 +194,7 @@ public class ResolveIndexTests extends ESTestCase {
         Metadata.Builder builder = Metadata.builder();
         String dataStreamName = "my-data-stream";
         String[] names = { "not-in-order-2", "not-in-order-1", DataStream.getDefaultBackingIndexName(dataStreamName, 3, epochMillis) };
-        List<IndexMetadata> backingIndices = Arrays.stream(names).map(n -> createIndexMetadata(n, true)).toList();
+        List<IndexMetadata> backingIndices = Arrays.stream(names).map(n -> createIndexMetadata(n)).toList();
         for (IndexMetadata index : backingIndices) {
             builder.put(index, false);
         }
@@ -386,7 +386,7 @@ public class ResolveIndexTests extends ESTestCase {
             List<IndexMetadata> backingIndices = new ArrayList<>();
             for (int backingIndexNumber = 1; backingIndexNumber <= numBackingIndices; backingIndexNumber++) {
                 backingIndices.add(
-                    createIndexMetadata(DataStream.getDefaultBackingIndexName(dataStreamName, backingIndexNumber, epochMillis), true)
+                    createIndexMetadata(DataStream.getDefaultBackingIndexName(dataStreamName, backingIndexNumber, epochMillis))
                 );
             }
             allIndices.addAll(backingIndices);
@@ -439,7 +439,7 @@ public class ResolveIndexTests extends ESTestCase {
         return indexBuilder.build();
     }
 
-    private static IndexMetadata createIndexMetadata(String name, boolean hidden) {
+    private static IndexMetadata createIndexMetadata(String name) {
         return createIndexMetadata(name, Strings.EMPTY_ARRAY, false, true, false, false);
     }
 

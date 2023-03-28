@@ -35,12 +35,12 @@ public class GeoFieldDataTests extends AbstractGeoFieldDataTestCase {
         Document d = new Document();
 
         d.add(new StringField("_id", "1", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.YES));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
 
         d = new Document();
         d.add(new StringField("_id", "2", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
 
         writer.commit();
@@ -52,8 +52,8 @@ public class GeoFieldDataTests extends AbstractGeoFieldDataTestCase {
     protected void fillMultiValueWithMissing() throws Exception {
         Document d = new Document();
         d.add(new StringField("_id", "1", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
 
         // missing
@@ -63,7 +63,7 @@ public class GeoFieldDataTests extends AbstractGeoFieldDataTestCase {
 
         d = new Document();
         d.add(new StringField("_id", "3", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
     }
 
@@ -71,17 +71,17 @@ public class GeoFieldDataTests extends AbstractGeoFieldDataTestCase {
     protected void fillSingleValueAllSet() throws Exception {
         Document d = new Document();
         d.add(new StringField("_id", "1", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
 
         d = new Document();
         d.add(new StringField("_id", "2", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
 
         d = new Document();
         d.add(new StringField("_id", "3", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
     }
 
@@ -89,7 +89,7 @@ public class GeoFieldDataTests extends AbstractGeoFieldDataTestCase {
     protected void fillSingleValueWithMissing() throws Exception {
         Document d = new Document();
         d.add(new StringField("_id", "1", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
 
         d = new Document();
@@ -99,7 +99,7 @@ public class GeoFieldDataTests extends AbstractGeoFieldDataTestCase {
 
         d = new Document();
         d.add(new StringField("_id", "3", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
     }
 
@@ -107,18 +107,18 @@ public class GeoFieldDataTests extends AbstractGeoFieldDataTestCase {
     protected void fillMultiValueAllSet() throws Exception {
         Document d = new Document();
         d.add(new StringField("_id", "1", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
 
         d = new Document();
         d.add(new StringField("_id", "2", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
 
         d = new Document();
         d.add(new StringField("_id", "3", Field.Store.NO));
-        d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+        d.add(randomGeoPointField(FIELD_NAME));
         writer.addDocument(d);
     }
 
@@ -131,7 +131,7 @@ public class GeoFieldDataTests extends AbstractGeoFieldDataTestCase {
             d.add(new StringField("_id", i + "", Field.Store.NO));
             int maxVals = randomInt(5);
             for (int v = 0; v < maxVals; ++v) {
-                d.add(randomGeoPointField(FIELD_NAME, Field.Store.NO));
+                d.add(randomGeoPointField(FIELD_NAME));
             }
             writer.addDocument(d);
             if (randomBoolean()) {

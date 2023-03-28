@@ -221,8 +221,7 @@ public class FsHealthServiceTests extends ESTestCase {
         TestThreadPool testThreadPool = new TestThreadPool(getClass().getName(), settings);
         FileSystemUnexpectedLockFileSizeProvider unexpectedLockFileSizeFileSystemProvider = new FileSystemUnexpectedLockFileSizeProvider(
             fileSystem,
-            1,
-            testThreadPool
+            1
         );
         fileSystem = unexpectedLockFileSizeFileSystemProvider.getFileSystem(null);
         PathUtilsForTesting.installMock(fileSystem);
@@ -366,12 +365,10 @@ public class FsHealthServiceTests extends ESTestCase {
         AtomicInteger injectedPaths = new AtomicInteger();
 
         private final long size;
-        private final ThreadPool threadPool;
 
-        FileSystemUnexpectedLockFileSizeProvider(FileSystem inner, long size, ThreadPool threadPool) {
+        FileSystemUnexpectedLockFileSizeProvider(FileSystem inner, long size) {
             super("disrupt_fs_health://", inner);
             this.size = size;
-            this.threadPool = threadPool;
         }
 
         public int getInjectedPathCount() {

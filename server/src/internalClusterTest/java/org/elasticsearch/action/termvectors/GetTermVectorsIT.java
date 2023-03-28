@@ -228,7 +228,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
             assertThat("doc id: " + i + " doesn't exists but should", response.isExists(), equalTo(true));
             Fields fields = response.getFields();
             assertThat(fields.size(), equalTo(1));
-            checkBrownFoxTermVector(fields, "field", true);
+            checkBrownFoxTermVector(fields, "field");
         }
     }
 
@@ -481,12 +481,12 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
             assertThat(fields.size(), equalTo(fieldNames.length));
             for (String fieldName : fieldNames) {
                 // MemoryIndex does not support payloads
-                checkBrownFoxTermVector(fields, fieldName, false);
+                checkBrownFoxTermVector(fields, fieldName);
             }
         }
     }
 
-    private void checkBrownFoxTermVector(Fields fields, String fieldName, boolean withPayloads) throws IOException {
+    private void checkBrownFoxTermVector(Fields fields, String fieldName) throws IOException {
         String[] values = { "brown", "dog", "fox", "jumps", "lazy", "over", "quick", "the" };
         int[] freq = { 1, 1, 1, 1, 1, 1, 1, 2 };
         int[][] pos = { { 2 }, { 8 }, { 3 }, { 4 }, { 7 }, { 5 }, { 1 }, { 0, 6 } };
@@ -694,7 +694,7 @@ public class GetTermVectorsIT extends AbstractTermVectorsTestCase {
             .setTermStatistics(true)
             .get();
         assertThat(resp.isExists(), equalTo(true));
-        checkBrownFoxTermVector(resp.getFields(), "field1", false);
+        checkBrownFoxTermVector(resp.getFields(), "field1");
 
         // Since the index is empty, all of artificial document's "term_statistics" should be 0/absent
         Terms terms = resp.getFields().terms("field1");

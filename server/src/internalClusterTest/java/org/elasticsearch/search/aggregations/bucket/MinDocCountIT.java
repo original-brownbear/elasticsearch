@@ -221,19 +221,19 @@ public class MinDocCountIT extends AbstractTermsTestCase {
     }
 
     public void testStringCountAscWithInclude() throws Exception {
-        testMinDocCountOnTerms("s", Script.NO, BucketOrder.count(true), ".*a.*", true);
+        testMinDocCountOnTerms("s", Script.NO, BucketOrder.count(true), ".*a.*");
     }
 
     public void testStringScriptCountAscWithInclude() throws Exception {
-        testMinDocCountOnTerms("s", Script.YES, BucketOrder.count(true), ".*a.*", true);
+        testMinDocCountOnTerms("s", Script.YES, BucketOrder.count(true), ".*a.*");
     }
 
     public void testStringCountDescWithInclude() throws Exception {
-        testMinDocCountOnTerms("s", Script.NO, BucketOrder.count(false), ".*a.*", true);
+        testMinDocCountOnTerms("s", Script.NO, BucketOrder.count(false), ".*a.*");
     }
 
     public void testStringScriptCountDescWithInclude() throws Exception {
-        testMinDocCountOnTerms("s", Script.YES, BucketOrder.count(false), ".*a.*", true);
+        testMinDocCountOnTerms("s", Script.YES, BucketOrder.count(false), ".*a.*");
     }
 
     public void testLongTermAsc() throws Exception {
@@ -301,10 +301,10 @@ public class MinDocCountIT extends AbstractTermsTestCase {
     }
 
     private void testMinDocCountOnTerms(String field, Script script, BucketOrder order) throws Exception {
-        testMinDocCountOnTerms(field, script, order, null, true);
+        testMinDocCountOnTerms(field, script, order, null);
     }
 
-    private void testMinDocCountOnTerms(String field, Script script, BucketOrder order, String include, boolean retry) throws Exception {
+    private void testMinDocCountOnTerms(String field, Script script, BucketOrder order, String include) throws Exception {
         // all terms
         final SearchResponse allTermsResponse = client().prepareSearch("idx")
             .setSize(0)

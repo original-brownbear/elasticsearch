@@ -217,7 +217,7 @@ public class IngestFileSettingsIT extends ESIntegTestCase {
         return new Tuple<>(savedClusterState, metadataVersion);
     }
 
-    private void assertPipelinesNotSaved(CountDownLatch savedClusterState, AtomicLong metadataVersion) throws Exception {
+    private void assertPipelinesNotSaved(CountDownLatch savedClusterState) throws Exception {
         boolean awaitSuccessful = savedClusterState.await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
@@ -230,7 +230,7 @@ public class IngestFileSettingsIT extends ESIntegTestCase {
         var savedClusterState = setupClusterStateListenerForError(internalCluster().getMasterName());
 
         writeJSONFile(internalCluster().getMasterName(), testErrorJSON);
-        assertPipelinesNotSaved(savedClusterState.v1(), savedClusterState.v2());
+        assertPipelinesNotSaved(savedClusterState.v1());
     }
 
     private PutPipelineRequest sampleRestRequest(String id) throws Exception {
