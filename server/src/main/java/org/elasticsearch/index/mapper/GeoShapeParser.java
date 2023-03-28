@@ -51,7 +51,7 @@ public class GeoShapeParser extends AbstractGeometryFieldMapper.Parser<Geometry>
         // so it needs to be run always at indexing time. When run over source we can skip
         // the validation, and we run normalization (which is expensive) only when we need
         // to split geometries around the dateline.
-        if (GeometryNormalizer.needsNormalize(orientation, geometry)) {
+        if (GeometryNormalizer.needsNormalize(geometry)) {
             return GeometryNormalizer.apply(orientation, geometry);
         } else {
             return geometry;

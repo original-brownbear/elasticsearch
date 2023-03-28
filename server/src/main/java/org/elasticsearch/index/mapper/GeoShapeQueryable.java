@@ -91,7 +91,7 @@ public interface GeoShapeQueryable {
         if (geometry == null) {
             return new LatLonGeometry[0];
         }
-        if (GeometryNormalizer.needsNormalize(Orientation.CCW, geometry)) {
+        if (GeometryNormalizer.needsNormalize(geometry)) {
             // make geometry lucene friendly
             geometry = GeometryNormalizer.apply(Orientation.CCW, geometry);
         }

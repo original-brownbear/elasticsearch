@@ -56,10 +56,6 @@ public final class CleanupRepositoryResponse extends ActionResponse implements T
         result.writeTo(out);
     }
 
-    public static CleanupRepositoryResponse fromXContent(XContentParser parser) {
-        return PARSER.apply(parser, null);
-    }
-
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject().field("results");

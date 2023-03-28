@@ -38,28 +38,6 @@ public class CreateSnapshotRequestBuilder extends MasterNodeOperationRequestBuil
     }
 
     /**
-     * Sets the snapshot name
-     *
-     * @param snapshot snapshot name
-     * @return this builder
-     */
-    public CreateSnapshotRequestBuilder setSnapshot(String snapshot) {
-        request.snapshot(snapshot);
-        return this;
-    }
-
-    /**
-     * Sets the repository name
-     *
-     * @param repository repository name
-     * @return this builder
-     */
-    public CreateSnapshotRequestBuilder setRepository(String repository) {
-        request.repository(repository);
-        return this;
-    }
-
-    /**
      * Sets a list of indices that should be included into the snapshot
      * <p>
      * The list of indices supports multi-index syntax. For example: "+test*" ,"-test42" will index all indices with

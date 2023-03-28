@@ -110,14 +110,6 @@ public class ClusterStatsIndices implements ToXContentFragment {
         return fieldData;
     }
 
-    public QueryCacheStats getQueryCache() {
-        return queryCache;
-    }
-
-    public CompletionStats getCompletion() {
-        return completion;
-    }
-
     public SegmentsStats getSegments() {
         return segments;
     }

@@ -191,10 +191,6 @@ public record NodesRemovalPrevalidation(boolean isSafe, String message, List<Nod
             this.reason = reason;
         }
 
-        public String reason() {
-            return reason;
-        }
-
         public static Reason readFrom(final StreamInput in) throws IOException {
             return fromString(in.readString());
         }

@@ -286,10 +286,6 @@ public class ClusterStatsNodes implements ToXContentFragment {
             this.mem = new org.elasticsearch.monitor.os.OsStats.Mem(totalMemory, adjustedTotalMemory, freeMemory);
         }
 
-        public int getAvailableProcessors() {
-            return availableProcessors;
-        }
-
         public int getAllocatedProcessors() {
             return allocatedProcessors;
         }
@@ -397,13 +393,6 @@ public class ClusterStatsNodes implements ToXContentFragment {
             this.maxOpenFileDescriptors = maxOpenFileDescriptors;
         }
 
-        /**
-         * Cpu usage in percentages - 100 is 1 core.
-         */
-        public int getCpuPercent() {
-            return cpuPercent;
-        }
-
         public long getAvgOpenFileDescriptors() {
             if (count == 0) {
                 return -1;
@@ -491,20 +480,6 @@ public class ClusterStatsNodes implements ToXContentFragment {
 
         public Map<JvmVersion, Integer> getVersions() {
             return versions;
-        }
-
-        /**
-         * The total number of threads in the cluster
-         */
-        public long getThreads() {
-            return threads;
-        }
-
-        /**
-         * The maximum uptime of a node in the cluster
-         */
-        public TimeValue getMaxUpTime() {
-            return new TimeValue(maxUptime);
         }
 
         /**

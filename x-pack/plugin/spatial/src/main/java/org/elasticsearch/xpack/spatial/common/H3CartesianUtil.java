@@ -203,7 +203,7 @@ public final class H3CartesianUtil {
             computePoints(h3, boundary, xs, ys);
         }
         final Polygon polygon = new Polygon(new LinearRing(xs, ys));
-        if (isPolar(h3) || GeometryNormalizer.needsNormalize(Orientation.CCW, polygon) == false) {
+        if (isPolar(h3) || GeometryNormalizer.needsNormalize(polygon) == false) {
             return polygon;
         }
         final Geometry geometry = GeometryNormalizer.apply(Orientation.CCW, polygon);

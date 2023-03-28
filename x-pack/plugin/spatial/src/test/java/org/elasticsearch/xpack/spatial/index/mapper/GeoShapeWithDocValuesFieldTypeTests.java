@@ -184,7 +184,7 @@ public class GeoShapeWithDocValuesFieldTypeTests extends FieldTypeTestCase {
     }
 
     private Geometry normalize(Geometry geometry) {
-        if (GeometryNormalizer.needsNormalize(Orientation.CCW, geometry)) {
+        if (GeometryNormalizer.needsNormalize(geometry)) {
             return GeometryNormalizer.apply(Orientation.CCW, geometry);
         } else {
             return geometry;

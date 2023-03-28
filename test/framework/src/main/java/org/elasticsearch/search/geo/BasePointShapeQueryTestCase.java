@@ -17,7 +17,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.geo.GeoJson;
 import org.elasticsearch.common.geo.GeometryNormalizer;
-import org.elasticsearch.common.geo.Orientation;
 import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.geo.GeometryTestUtils;
@@ -601,7 +600,7 @@ public abstract class BasePointShapeQueryTestCase<T extends AbstractGeometryQuer
         ensureGreen();
 
         Line line = randomValueOtherThanMany(
-            l -> GeometryNormalizer.needsNormalize(Orientation.CCW, l) || ignoreLons(l.getLons()),
+            l -> GeometryNormalizer.needsNormalize(l) || ignoreLons(l.getLons()),
             () -> GeometryTestUtils.randomLine(false)
         );
         for (int i = 0; i < line.length(); i++) {
@@ -626,7 +625,7 @@ public abstract class BasePointShapeQueryTestCase<T extends AbstractGeometryQuer
         ensureGreen();
 
         Polygon polygon = randomValueOtherThanMany(
-            p -> GeometryNormalizer.needsNormalize(Orientation.CCW, p) || ignoreLons(p.getPolygon().getLons()),
+            p -> GeometryNormalizer.needsNormalize(p) || ignoreLons(p.getPolygon().getLons()),
             () -> GeometryTestUtils.randomPolygon(false)
         );
         LinearRing linearRing = polygon.getPolygon();

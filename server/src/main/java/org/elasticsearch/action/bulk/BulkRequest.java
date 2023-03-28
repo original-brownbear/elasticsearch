@@ -217,13 +217,6 @@ public class BulkRequest extends ActionRequest
     /**
      * Adds a framed data in binary format
      */
-    public BulkRequest add(byte[] data, int from, int length, XContentType xContentType) throws IOException {
-        return add(data, from, length, null, xContentType);
-    }
-
-    /**
-     * Adds a framed data in binary format
-     */
     public BulkRequest add(byte[] data, int from, int length, @Nullable String defaultIndex, XContentType xContentType) throws IOException {
         return add(new BytesArray(data, from, length), defaultIndex, xContentType);
     }
@@ -281,15 +274,6 @@ public class BulkRequest extends ActionRequest
     public BulkRequest waitForActiveShards(ActiveShardCount waitForActiveShards) {
         this.waitForActiveShards = waitForActiveShards;
         return this;
-    }
-
-    /**
-     * A shortcut for {@link #waitForActiveShards(ActiveShardCount)} where the numerical
-     * shard count is passed in, instead of having to first call {@link ActiveShardCount#from(int)}
-     * to get the ActiveShardCount.
-     */
-    public BulkRequest waitForActiveShards(final int waitForActiveShards) {
-        return waitForActiveShards(ActiveShardCount.from(waitForActiveShards));
     }
 
     public ActiveShardCount waitForActiveShards() {
@@ -366,10 +350,6 @@ public class BulkRequest extends ActionRequest
 
     public String routing() {
         return globalRouting;
-    }
-
-    public Boolean requireAlias() {
-        return globalRequireAlias;
     }
 
     /**

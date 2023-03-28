@@ -14,7 +14,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.geo.GeoJson;
 import org.elasticsearch.common.geo.GeometryNormalizer;
-import org.elasticsearch.common.geo.Orientation;
 import org.elasticsearch.common.geo.ShapeRelation;
 import org.elasticsearch.geo.GeometryTestUtils;
 import org.elasticsearch.geometry.Geometry;
@@ -169,14 +168,14 @@ public abstract class GeoShapeQueryTestCase extends BaseShapeQueryTestCase<GeoSh
 
     protected Line makeRandomLine() {
         return randomValueOtherThanMany(
-            l -> GeometryNormalizer.needsNormalize(Orientation.CCW, l),
+            l -> GeometryNormalizer.needsNormalize(l),
             () -> GeometryTestUtils.randomLine(false)
         );
     }
 
     protected Polygon makeRandomPolygon() {
         return randomValueOtherThanMany(
-            p -> GeometryNormalizer.needsNormalize(Orientation.CCW, p),
+            p -> GeometryNormalizer.needsNormalize(p),
             () -> GeometryTestUtils.randomPolygon(false)
         );
     }

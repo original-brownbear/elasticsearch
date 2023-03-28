@@ -90,14 +90,6 @@ public class BulkRequestBuilder extends ActionRequestBuilder<BulkRequest, BulkRe
     /**
      * Adds a framed data in binary format
      */
-    public BulkRequestBuilder add(byte[] data, int from, int length, XContentType xContentType) throws Exception {
-        request.add(data, from, length, null, xContentType);
-        return this;
-    }
-
-    /**
-     * Adds a framed data in binary format
-     */
     public BulkRequestBuilder add(byte[] data, int from, int length, @Nullable String defaultIndex, XContentType xContentType)
         throws Exception {
         request.add(data, from, length, defaultIndex, xContentType);
@@ -114,26 +106,9 @@ public class BulkRequestBuilder extends ActionRequestBuilder<BulkRequest, BulkRe
     }
 
     /**
-     * A shortcut for {@link #setWaitForActiveShards(ActiveShardCount)} where the numerical
-     * shard count is passed in, instead of having to first call {@link ActiveShardCount#from(int)}
-     * to get the ActiveShardCount.
-     */
-    public BulkRequestBuilder setWaitForActiveShards(final int waitForActiveShards) {
-        return setWaitForActiveShards(ActiveShardCount.from(waitForActiveShards));
-    }
-
-    /**
      * A timeout to wait if the index operation can't be performed immediately. Defaults to {@code 1m}.
      */
     public final BulkRequestBuilder setTimeout(TimeValue timeout) {
-        request.timeout(timeout);
-        return this;
-    }
-
-    /**
-     * A timeout to wait if the index operation can't be performed immediately. Defaults to {@code 1m}.
-     */
-    public final BulkRequestBuilder setTimeout(String timeout) {
         request.timeout(timeout);
         return this;
     }

@@ -62,8 +62,4 @@ public class GetRepositoriesResponse extends ActionResponse implements ToXConten
         return builder;
     }
 
-    public static GetRepositoriesResponse fromXContent(XContentParser parser) throws IOException {
-        ensureExpectedToken(XContentParser.Token.START_OBJECT, parser.nextToken(), parser);
-        return new GetRepositoriesResponse(RepositoriesMetadata.fromXContent(parser));
-    }
 }

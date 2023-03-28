@@ -8,7 +8,6 @@
 package org.elasticsearch.xpack.spatial.search;
 
 import org.elasticsearch.common.geo.GeometryNormalizer;
-import org.elasticsearch.common.geo.Orientation;
 import org.elasticsearch.geometry.Geometry;
 import org.elasticsearch.geometry.GeometryCollection;
 import org.elasticsearch.geometry.Line;
@@ -38,12 +37,12 @@ public abstract class CartesianShapeQueryTestCase extends BaseShapeQueryTestCase
     }
 
     protected Line makeRandomLine() {
-        return randomValueOtherThanMany(l -> GeometryNormalizer.needsNormalize(Orientation.CCW, l), () -> ShapeTestUtils.randomLine(false));
+        return randomValueOtherThanMany(l -> GeometryNormalizer.needsNormalize(l), () -> ShapeTestUtils.randomLine(false));
     }
 
     protected Polygon makeRandomPolygon() {
         return randomValueOtherThanMany(
-            p -> GeometryNormalizer.needsNormalize(Orientation.CCW, p),
+            p -> GeometryNormalizer.needsNormalize(p),
             () -> ShapeTestUtils.randomPolygon(false)
         );
     }

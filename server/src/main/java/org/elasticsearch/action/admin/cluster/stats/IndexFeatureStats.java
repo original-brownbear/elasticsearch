@@ -57,13 +57,6 @@ public class IndexFeatureStats implements ToXContentObject, Writeable {
         return count;
     }
 
-    /**
-     * Return the number of indices that use this feature across the cluster.
-     */
-    public int getIndexCount() {
-        return indexCount;
-    }
-
     @Override
     public boolean equals(Object other) {
         if (other instanceof IndexFeatureStats == false) {

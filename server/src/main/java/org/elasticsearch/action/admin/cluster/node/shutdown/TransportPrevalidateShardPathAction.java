@@ -100,7 +100,6 @@ public class TransportPrevalidateShardPathAction extends TransportNodesAction<
     @Override
     protected NodePrevalidateShardPathResponse nodeOperation(NodePrevalidateShardPathRequest request, Task task) {
         Set<ShardId> localShards = new HashSet<>();
-        ShardPath shardPath = null;
         // For each shard we only check whether the shard path exists, regardless of whether the content is a valid index or not.
         for (ShardId shardId : request.getShardIds()) {
             try {
@@ -112,12 +111,11 @@ public class TransportPrevalidateShardPathAction extends TransportNodesAction<
                     // The index is not known to this node. This shouldn't happen, but it can be safely ignored for this operation.
                     logger.warn("node doesn't have metadata for the index [{}]", shardId.getIndex());
                 }
-                shardPath = ShardPath.loadShardPath(logger, nodeEnv, shardId, customDataPath);
+                ShardPath shardPath = ShardPath.loadShardPath(logger, nodeEnv, shardId, customDataPath);
                 if (shardPath != null) {
                     localShards.add(shardId);
                 }
             } catch (IOException e) {
-                final String path = shardPath != null ? shardPath.resolveIndex().toString() : "";
                 logger.error(() -> String.format(Locale.ROOT, "error loading shard path for shard [%s]", shardId), e);
             }
         }

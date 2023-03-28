@@ -405,12 +405,6 @@ public class CorsHandler {
         }
     }
 
-    public static CorsHandler disabled() {
-        Config.Builder builder = new Config.Builder();
-        builder.enabled = false;
-        return new CorsHandler(new Config(builder));
-    }
-
     public static Config buildConfig(Settings settings) {
         if (SETTING_CORS_ENABLED.get(settings) == false) {
             Config.Builder builder = new Config.Builder();

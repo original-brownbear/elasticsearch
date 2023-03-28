@@ -167,7 +167,7 @@ public final class GeometryNormalizer {
      * Return false if the provided {@link Geometry} is already Lucene friendly,
      * else return false.
      */
-    public static boolean needsNormalize(Orientation orientation, Geometry geometry) {
+    public static boolean needsNormalize(Geometry geometry) {
         if (geometry == null) {
             return false;
         }

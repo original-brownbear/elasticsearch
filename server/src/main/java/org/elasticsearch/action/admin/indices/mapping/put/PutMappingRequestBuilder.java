@@ -41,28 +41,10 @@ public class PutMappingRequestBuilder extends AcknowledgedRequestBuilder<
     }
 
     /**
-     * Specifies what type of requested indices to ignore and wildcard indices expressions.
-     * <p>
-     * For example indices that don't exist.
-     */
-    public PutMappingRequestBuilder setIndicesOptions(IndicesOptions options) {
-        request.indicesOptions(options);
-        return this;
-    }
-
-    /**
      * The mapping source definition.
      */
     public PutMappingRequestBuilder setSource(XContentBuilder mappingBuilder) {
         request.source(mappingBuilder);
-        return this;
-    }
-
-    /**
-     * The mapping source definition.
-     */
-    public PutMappingRequestBuilder setSource(Map<String, ?> mappingSource) {
-        request.source(mappingSource);
         return this;
     }
 

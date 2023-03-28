@@ -38,14 +38,6 @@ public class ClusterSearchShardsRequestBuilder extends MasterNodeReadOperationRe
     }
 
     /**
-     * The routing values to control the shards that the search will be executed on.
-     */
-    public ClusterSearchShardsRequestBuilder setRouting(String... routing) {
-        request.routing(routing);
-        return this;
-    }
-
-    /**
      * Sets the preference to execute the search. Defaults to randomize across shards. Can be set to
      * {@code _local} to prefer local shards or a custom value, which guarantees that the same order
      * will be used across different requests.
@@ -55,12 +47,4 @@ public class ClusterSearchShardsRequestBuilder extends MasterNodeReadOperationRe
         return this;
     }
 
-    /**
-     * Specifies what type of requested indices to ignore and how to deal indices wildcard expressions.
-     * For example indices that don't exist.
-     */
-    public ClusterSearchShardsRequestBuilder setIndicesOptions(IndicesOptions indicesOptions) {
-        request().indicesOptions(indicesOptions);
-        return this;
-    }
 }

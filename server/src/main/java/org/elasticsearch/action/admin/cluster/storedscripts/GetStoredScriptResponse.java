@@ -54,8 +54,8 @@ public class GetStoredScriptResponse extends ActionResponse implements StatusToX
         );
     }
 
-    private String id;
-    private StoredScriptSource source;
+    private final String id;
+    private final StoredScriptSource source;
 
     public GetStoredScriptResponse(StreamInput in) throws IOException {
         super(in);
@@ -71,10 +71,6 @@ public class GetStoredScriptResponse extends ActionResponse implements StatusToX
     GetStoredScriptResponse(String id, StoredScriptSource source) {
         this.id = id;
         this.source = source;
-    }
-
-    public String getId() {
-        return id;
     }
 
     /**
