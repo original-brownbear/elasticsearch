@@ -43,7 +43,7 @@ public final class ScopeBinding implements Element {
 
     @Override
     public <T> T acceptVisitor(ElementVisitor<T> visitor) {
-        return visitor.visit(this);
+        return visitor.visitScope();
     }
 
 }

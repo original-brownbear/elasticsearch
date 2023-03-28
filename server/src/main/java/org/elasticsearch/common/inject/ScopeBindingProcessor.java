@@ -17,7 +17,6 @@
 package org.elasticsearch.common.inject;
 
 import org.elasticsearch.common.inject.internal.Errors;
-import org.elasticsearch.common.inject.spi.ScopeBinding;
 
 /**
  * Handles {@link Binder#bindScope} commands.
@@ -32,7 +31,7 @@ class ScopeBindingProcessor extends AbstractProcessor {
     }
 
     @Override
-    public Boolean visit(ScopeBinding command) {
+    public Boolean visitScope() {
         Scope existing = injector.state.getScope(Singleton.class);
         if (existing != null) {
             errors.duplicateScopes(existing, Singleton.class, Scopes.SINGLETON);

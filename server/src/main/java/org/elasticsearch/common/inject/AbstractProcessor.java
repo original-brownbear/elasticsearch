@@ -22,7 +22,6 @@ import org.elasticsearch.common.inject.spi.Element;
 import org.elasticsearch.common.inject.spi.ElementVisitor;
 import org.elasticsearch.common.inject.spi.Message;
 import org.elasticsearch.common.inject.spi.ProviderLookup;
-import org.elasticsearch.common.inject.spi.ScopeBinding;
 
 import java.util.Iterator;
 import java.util.List;
@@ -75,7 +74,7 @@ abstract class AbstractProcessor implements ElementVisitor<Boolean> {
     }
 
     @Override
-    public Boolean visit(ScopeBinding scopeBinding) {
+    public Boolean visitScope() {
         return false;
     }
 
