@@ -582,7 +582,6 @@ public final class IndexSettings {
 
     private final Index index;
     private final Version version;
-    private final Logger logger;
     private final String nodeName;
     private final Settings nodeSettings;
     private final int numberOfShards;
@@ -735,7 +734,7 @@ public final class IndexSettings {
         this.settings = Settings.builder().put(nodeSettings).put(indexMetadata.getSettings()).build();
         this.index = indexMetadata.getIndex();
         version = IndexMetadata.SETTING_INDEX_VERSION_CREATED.get(settings);
-        logger = Loggers.getLogger(getClass(), index);
+        Logger logger = Loggers.getLogger(getClass(), index);
         nodeName = Node.NODE_NAME_SETTING.get(settings);
         this.indexMetadata = indexMetadata;
         numberOfShards = settings.getAsInt(IndexMetadata.SETTING_NUMBER_OF_SHARDS, null);
