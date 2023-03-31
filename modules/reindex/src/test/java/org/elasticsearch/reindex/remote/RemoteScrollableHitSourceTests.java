@@ -38,6 +38,7 @@ import org.elasticsearch.common.io.FileSystemUtils;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.ArrayUtils;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
 import org.elasticsearch.core.TimeValue;
@@ -67,7 +68,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import static org.elasticsearch.core.TimeValue.timeValueMillis;
 import static org.elasticsearch.core.TimeValue.timeValueMinutes;
@@ -347,7 +347,7 @@ public class RemoteScrollableHitSourceTests extends ESTestCase {
         assertTrue(responseQueue.isEmpty());
         assertEquals(retriesAllowed, retries);
         retries = 0;
-        String[] searchOKPaths = Stream.concat(Stream.of("start_ok.json"), Stream.of(paths)).toArray(String[]::new);
+        String[] searchOKPaths = ArrayUtils.prepend("start_ok.json", paths);
         sourceWithMockedRemoteCall(searchOKPaths).start();
         ScrollableHitSource.AsyncResponse response = responseQueue.poll();
         assertNotNull(response);

@@ -13,6 +13,7 @@ import org.elasticsearch.action.search.SearchAction;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.internal.Client;
+import org.elasticsearch.common.util.ArrayUtils;
 import org.elasticsearch.common.util.CachedSupplier;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -42,8 +43,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.xpack.ml.dataframe.DestinationIndex.INCREMENTAL_ID;
@@ -360,7 +359,7 @@ public class DataFrameDataExtractor {
     }
 
     public List<String> getFieldNames() {
-        return Stream.concat(Arrays.stream(organicFeatures), Arrays.stream(processedFeatures)).collect(Collectors.toList());
+        return List.of(ArrayUtils.concat(organicFeatures, processedFeatures));
     }
 
     public ExtractedFields getExtractedFields() {

@@ -49,6 +49,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.ArrayUtils;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.Environment;
@@ -80,7 +81,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.apache.lucene.index.IndexWriter.WRITE_LOCK_NAME;
@@ -281,7 +281,7 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
 
         NodeMetadata.FORMAT.cleanupOldFiles(Long.MAX_VALUE, dataPaths2);
 
-        final Path[] combinedPaths = Stream.concat(Arrays.stream(dataPaths1), Arrays.stream(dataPaths2)).toArray(Path[]::new);
+        final Path[] combinedPaths = ArrayUtils.concat(dataPaths1, dataPaths2, Path.class);
 
         final String failure = expectThrows(CorruptStateException.class, () -> newNodeEnvironment(combinedPaths)).getMessage();
         assertThat(
@@ -314,7 +314,7 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
     public void testFailsOnMismatchedCommittedClusterUUIDs() throws IOException {
         final Path[] dataPaths1 = createDataPaths();
         final Path[] dataPaths2 = createDataPaths();
-        final Path[] combinedPaths = Stream.concat(Arrays.stream(dataPaths1), Arrays.stream(dataPaths2)).toArray(Path[]::new);
+        final Path[] combinedPaths = ArrayUtils.concat(dataPaths1, dataPaths2, Path.class);
 
         final String clusterUUID1 = UUIDs.randomBase64UUID(random());
         final String clusterUUID2 = UUIDs.randomBase64UUID(random());
@@ -379,7 +379,7 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
     public void testFailsIfFreshestStateIsInStaleTerm() throws IOException {
         final Path[] dataPaths1 = createDataPaths();
         final Path[] dataPaths2 = createDataPaths();
-        final Path[] combinedPaths = Stream.concat(Arrays.stream(dataPaths1), Arrays.stream(dataPaths2)).toArray(Path[]::new);
+        final Path[] combinedPaths = ArrayUtils.concat(dataPaths1, dataPaths2, Path.class);
 
         final long staleCurrentTerm = randomLongBetween(1L, Long.MAX_VALUE - 1);
         final long freshCurrentTerm = randomLongBetween(staleCurrentTerm + 1, Long.MAX_VALUE);
@@ -649,7 +649,7 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
 
         final Path[] dataPaths1 = createDataPaths();
         final Path[] dataPaths2 = createDataPaths();
-        final Path[] combinedPaths = Stream.concat(Arrays.stream(dataPaths1), Arrays.stream(dataPaths2)).toArray(Path[]::new);
+        final Path[] combinedPaths = ArrayUtils.concat(dataPaths1, dataPaths2, Path.class);
 
         try (NodeEnvironment nodeEnvironment = newNodeEnvironment(combinedPaths)) {
             try (Writer writer = newPersistedClusterStateService(nodeEnvironment).createWriter()) {
@@ -688,7 +688,7 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
 
         final Path[] dataPaths1 = createDataPaths();
         final Path[] dataPaths2 = createDataPaths();
-        final Path[] combinedPaths = Stream.concat(Arrays.stream(dataPaths1), Arrays.stream(dataPaths2)).toArray(Path[]::new);
+        final Path[] combinedPaths = ArrayUtils.concat(dataPaths1, dataPaths2, Path.class);
 
         try (NodeEnvironment nodeEnvironment = newNodeEnvironment(combinedPaths)) {
             final String indexUUID = UUIDs.randomBase64UUID(random());
@@ -1472,7 +1472,7 @@ public class PersistedClusterStateServiceTests extends ESTestCase {
     public void testOldestIndexVersionIsCorrectlySerialized() throws IOException {
         final Path[] dataPaths1 = createDataPaths();
         final Path[] dataPaths2 = createDataPaths();
-        final Path[] combinedPaths = Stream.concat(Arrays.stream(dataPaths1), Arrays.stream(dataPaths2)).toArray(Path[]::new);
+        final Path[] combinedPaths = ArrayUtils.concat(dataPaths1, dataPaths2, Path.class);
 
         Version oldVersion = Version.fromId(Version.CURRENT.minimumIndexCompatibilityVersion().id - 1);
 

@@ -78,6 +78,16 @@ public class ArrayUtils {
     /**
      * Concat a string to a string array.
      */
+    public static String[] prepend(String added, String[] array) {
+        final String[] updated = new String[array.length + 1];
+        updated[0] = added;
+        System.arraycopy(array, 0, updated, 1, array.length);
+        return updated;
+    }
+
+    /**
+     * Concat a string to a string array.
+     */
     public static String[] append(String[] array, String added) {
         final String[] updated = new String[array.length + 1];
         System.arraycopy(array, 0, updated, 0, array.length);

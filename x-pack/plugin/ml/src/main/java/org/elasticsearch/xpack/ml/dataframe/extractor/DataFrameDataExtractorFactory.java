@@ -8,6 +8,7 @@ package org.elasticsearch.xpack.ml.dataframe.extractor;
 
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.internal.Client;
+import org.elasticsearch.common.util.ArrayUtils;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -21,8 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class DataFrameDataExtractorFactory {
 
@@ -125,10 +124,7 @@ public class DataFrameDataExtractorFactory {
         return new TrainTestSplitterFactory(
             client,
             config,
-            Stream.concat(
-                Arrays.stream(extractedFields.extractOrganicFeatureNames()),
-                Arrays.stream(extractedFields.extractProcessedFeatureNames())
-            ).collect(Collectors.toList())
+            List.of(ArrayUtils.concat(extractedFields.extractOrganicFeatureNames(), extractedFields.extractProcessedFeatureNames()))
         );
     }
 
