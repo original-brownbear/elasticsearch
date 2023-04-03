@@ -23,6 +23,38 @@ public final class Uid {
     private static final int NUMERIC = 0xfe;
     private static final int BASE64_ESCAPE = 0xfd;
 
+    private static final byte[] lookup = new byte[123];
+
+    static {
+        for (int c = '0'; c <= '9'; c++) {
+            lookup[c] = 1;
+        }
+        for (int c = 'a'; c <= 'z'; c++) {
+            lookup[c] = 1;
+        }
+        for (int c = 'A'; c <= 'Z'; c++) {
+            lookup[c] = 1;
+        }
+        lookup['-'] = 1;
+        lookup['_'] = 1;
+        lookup['A'] = 3;
+        lookup['E'] = 2;
+        lookup['I'] = 2;
+        lookup['M'] = 2;
+        lookup['Q'] = 3;
+        lookup['U'] = 2;
+        lookup['Y'] = 2;
+        lookup['c'] = 2;
+        lookup['g'] = 3;
+        lookup['k'] = 2;
+        lookup['o'] = 2;
+        lookup['s'] = 2;
+        lookup['w'] = 3;
+        lookup['0'] = 2;
+        lookup['4'] = 2;
+        lookup['8'] = 2;
+    }
+
     private Uid() {}
 
     static boolean isURLBase64WithoutPadding(String id) {
@@ -30,49 +62,31 @@ public final class Uid {
         // 'xxx=' and 'xxx' could be considered the same id
         final int length = id.length();
         switch (length & 0x03) {
-            case 0:
-                break;
-            case 1:
+            case 1 -> {
                 return false;
-            case 2:
+            }
+            case 2 -> {
                 // the last 2 symbols (12 bits) are encoding 1 byte (8 bits)
                 // so the last symbol only actually uses 8-6=2 bits and can only take 4 values
-                char last = id.charAt(length - 1);
-                if (last != 'A' && last != 'Q' && last != 'g' && last != 'w') {
+                char last2 = id.charAt(length - 1);
+                if (last2 >= lookup.length || lookup[last2] < 3) {
                     return false;
                 }
-                break;
-            case 3:
+            }
+            case 3 -> {
                 // The last 3 symbols (18 bits) are encoding 2 bytes (16 bits)
                 // so the last symbol only actually uses 16-12=4 bits and can only take 16 values
-                last = id.charAt(length - 1);
-                if (last != 'A'
-                    && last != 'E'
-                    && last != 'I'
-                    && last != 'M'
-                    && last != 'Q'
-                    && last != 'U'
-                    && last != 'Y'
-                    && last != 'c'
-                    && last != 'g'
-                    && last != 'k'
-                    && last != 'o'
-                    && last != 's'
-                    && last != 'w'
-                    && last != '0'
-                    && last != '4'
-                    && last != '8') {
+                final char last = id.charAt(length - 1);
+                if (last >= lookup.length || lookup[last] < 2) {
                     return false;
                 }
-                break;
-            default:
-                // number & 0x03 is always in [0,3]
-                throw new AssertionError("Impossible case");
+            }
+            default -> {
+            }
         }
         for (int i = 0; i < length; ++i) {
             final char c = id.charAt(i);
-            final boolean allowed = (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '_';
-            if (allowed == false) {
+            if (c >= lookup.length || lookup[c] == 0) {
                 return false;
             }
         }
