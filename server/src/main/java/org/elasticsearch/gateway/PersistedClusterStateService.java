@@ -88,6 +88,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -277,7 +278,16 @@ public class PersistedClusterStateService {
     protected Directory createDirectory(Path path) throws IOException {
         // it is possible to disable the use of MMapDirectory for indices, and it may be surprising to users that have done so if we still
         // use a MMapDirectory here, which might happen with FSDirectory.open(path), so we force an NIOFSDirectory to be on the safe side.
-        return new NIOFSDirectory(path);
+        return new NIOFSDirectory(path) {
+            @Override
+            public void sync(Collection<String> names) {}
+
+            @Override
+            public void syncMetaData() {}
+
+            @Override
+            protected void fsync(String name) {}
+        };
     }
 
     public Path[] getDataPaths() {
