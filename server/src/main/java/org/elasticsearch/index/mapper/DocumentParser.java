@@ -246,9 +246,8 @@ public final class DocumentParser {
             return;
         }
 
-        String currentFieldName = parser.currentName();
         if (token.isValue()) {
-            throwOnConcreteValue(mapper, currentFieldName, context);
+            throwOnConcreteValue(mapper, context);
         }
 
         if (mapper.isNested()) {
@@ -271,13 +270,13 @@ public final class DocumentParser {
         }
     }
 
-    private static void throwOnConcreteValue(ObjectMapper mapper, String currentFieldName, DocumentParserContext context) {
+    private static void throwOnConcreteValue(ObjectMapper mapper, DocumentParserContext context) throws IOException {
         throw new DocumentParsingException(
             context.parser().getTokenLocation(),
             "object mapping for ["
                 + mapper.name()
                 + "] tried to parse field ["
-                + currentFieldName
+                + context.parser().currentName()
                 + "] as object, but found a concrete value"
         );
     }
@@ -286,43 +285,40 @@ public final class DocumentParser {
 
         final XContentParser parser = context.parser();
         XContentParser.Token token = parser.currentToken();
-        String currentFieldName = null;
-        assert token == XContentParser.Token.FIELD_NAME || token == XContentParser.Token.END_OBJECT;
+        String currentFieldName;
+        if (token == XContentParser.Token.FIELD_NAME) {
+            currentFieldName = parser.currentName();
+        } else {
+            assert token == XContentParser.Token.END_OBJECT;
+            currentFieldName = null;
+        }
 
-        while (token != XContentParser.Token.END_OBJECT) {
+        while (currentFieldName != null) {
+            if (currentFieldName.isBlank()) {
+                throwFieldNameBlank(context, currentFieldName);
+            }
+            token = parser.nextToken();
             if (token == null) {
                 throwEOF(mapper, context);
             }
             switch (token) {
-                case FIELD_NAME:
-                    currentFieldName = parser.currentName();
-                    if (currentFieldName.isEmpty()) {
-                        throw new IllegalArgumentException("Field name cannot be an empty string");
-                    }
-                    if (currentFieldName.isBlank()) {
-                        throwFieldNameBlank(context, currentFieldName);
-                    }
-                    break;
-                case START_OBJECT:
-                    parseObject(context, mapper, currentFieldName);
-                    break;
-                case START_ARRAY:
-                    parseArray(context, mapper, currentFieldName);
-                    break;
-                case VALUE_NULL:
-                    parseNullValue(context, mapper, currentFieldName);
-                    break;
-                default:
+                case START_OBJECT -> parseObject(context, mapper, currentFieldName);
+                case START_ARRAY -> parseArray(context, mapper, currentFieldName);
+                case VALUE_NULL -> parseNullValue(context, mapper, currentFieldName);
+                default -> {
                     if (token.isValue()) {
                         parseValue(context, mapper, currentFieldName);
                     }
-                    break;
+                }
             }
-            token = parser.nextToken();
+            currentFieldName = parser.nextFieldName();
         }
     }
 
     private static void throwFieldNameBlank(DocumentParserContext context, String currentFieldName) {
+        if (currentFieldName.isEmpty()) {
+            throw new IllegalArgumentException("Field name cannot be an empty string");
+        }
         throw new DocumentParsingException(
             context.parser().getTokenLocation(),
             "Field name cannot contain only whitespace: [" + context.path().pathAsText(currentFieldName) + "]"
