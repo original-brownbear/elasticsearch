@@ -235,20 +235,19 @@ public final class DocumentParser {
     }
 
     static void parseObjectOrNested(DocumentParserContext context, ObjectMapper mapper) throws IOException {
+        XContentParser parser = context.parser();
         if (mapper.isEnabled() == false) {
-            context.parser().skipChildren();
+            parser.skipChildren();
             return;
         }
-        XContentParser parser = context.parser();
         XContentParser.Token token = parser.currentToken();
         if (token == XContentParser.Token.VALUE_NULL) {
             // the object is null ("obj1" : null), simply bail
             return;
         }
 
-        String currentFieldName = parser.currentName();
         if (token.isValue()) {
-            throwOnConcreteValue(mapper, currentFieldName, context);
+            throwOnConcreteValue(mapper, context);
         }
 
         if (mapper.isNested()) {
@@ -271,13 +270,13 @@ public final class DocumentParser {
         }
     }
 
-    private static void throwOnConcreteValue(ObjectMapper mapper, String currentFieldName, DocumentParserContext context) {
+    private static void throwOnConcreteValue(ObjectMapper mapper, DocumentParserContext context) throws IOException {
         throw new DocumentParsingException(
             context.parser().getTokenLocation(),
             "object mapping for ["
                 + mapper.name()
                 + "] tried to parse field ["
-                + currentFieldName
+                +  context.parser().currentName()
                 + "] as object, but found a concrete value"
         );
     }
@@ -294,35 +293,29 @@ public final class DocumentParser {
                 throwEOF(mapper, context);
             }
             switch (token) {
-                case FIELD_NAME:
+                case FIELD_NAME -> {
                     currentFieldName = parser.currentName();
-                    if (currentFieldName.isEmpty()) {
-                        throw new IllegalArgumentException("Field name cannot be an empty string");
-                    }
                     if (currentFieldName.isBlank()) {
                         throwFieldNameBlank(context, currentFieldName);
                     }
-                    break;
-                case START_OBJECT:
-                    parseObject(context, mapper, currentFieldName);
-                    break;
-                case START_ARRAY:
-                    parseArray(context, mapper, currentFieldName);
-                    break;
-                case VALUE_NULL:
-                    parseNullValue(context, mapper, currentFieldName);
-                    break;
-                default:
+                }
+                case START_OBJECT -> parseObject(context, mapper, currentFieldName);
+                case START_ARRAY -> parseArray(context, mapper, currentFieldName);
+                case VALUE_NULL -> parseNullValue(context, mapper, currentFieldName);
+                default -> {
                     if (token.isValue()) {
                         parseValue(context, mapper, currentFieldName);
                     }
-                    break;
+                }
             }
             token = parser.nextToken();
         }
     }
 
     private static void throwFieldNameBlank(DocumentParserContext context, String currentFieldName) {
+        if (currentFieldName.isEmpty()) {
+            throw new IllegalArgumentException("Field name cannot be an empty string");
+        }
         throw new DocumentParsingException(
             context.parser().getTokenLocation(),
             "Field name cannot contain only whitespace: [" + context.path().pathAsText(currentFieldName) + "]"
@@ -378,20 +371,24 @@ public final class DocumentParser {
         } else if (mapper instanceof FieldMapper fieldMapper) {
             fieldMapper.parse(context);
             if (context.isWithinCopyTo() == false) {
-                List<String> copyToFields = fieldMapper.copyTo().copyToFields();
-                if (copyToFields.isEmpty() == false) {
-                    XContentParser.Token currentToken = context.parser().currentToken();
-                    if (currentToken.isValue() == false && currentToken != XContentParser.Token.VALUE_NULL) {
-                        // sanity check, we currently support copy-to only for value-type field, not objects
-                        throwOnCopyToOnObject(mapper, copyToFields, context);
-                    }
-                    parseCopyFields(context, copyToFields);
-                }
+                parseCopyTo(context, fieldMapper);
             }
         } else if (mapper instanceof FieldAliasMapper) {
             throwOnCopyToOnFieldAlias(context, mapper);
         } else {
             throwOnUnrecognizedMapperType(mapper);
+        }
+    }
+
+    private static void parseCopyTo(DocumentParserContext context, FieldMapper fieldMapper) throws IOException {
+        List<String> copyToFields = fieldMapper.copyTo().copyToFields();
+        if (copyToFields.isEmpty() == false) {
+            XContentParser.Token currentToken = context.parser().currentToken();
+            if (currentToken.isValue() == false && currentToken != XContentParser.Token.VALUE_NULL) {
+                // sanity check, we currently support copy-to only for value-type field, not objects
+                throwOnCopyToOnObject(fieldMapper, copyToFields, context);
+            }
+            parseCopyFields(context, copyToFields);
         }
     }
 
@@ -424,15 +421,18 @@ public final class DocumentParser {
         assert currentFieldName != null;
         Mapper objectMapper = getMapper(context, parentObjectMapper, currentFieldName);
         if (objectMapper != null) {
-            context.path().add(currentFieldName);
+            final var path = context.path();
+            path.add(currentFieldName);
             if (objectMapper instanceof ObjectMapper objMapper) {
                 if (objMapper.subobjects() == false) {
-                    context.path().setWithinLeafObject(true);
+                    path.setWithinLeafObject(true);
                 }
+                parseObjectOrNested(context, objMapper);
+            } else {
+                parseObjectOrField(context, objectMapper);
             }
-            parseObjectOrField(context, objectMapper);
-            context.path().setWithinLeafObject(false);
-            context.path().remove();
+            path.setWithinLeafObject(false);
+            path.remove();
         } else {
             parseObjectDynamic(context, parentObjectMapper, currentFieldName);
         }
