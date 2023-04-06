@@ -47,6 +47,23 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         }
 
         @Override
+        public String nextFieldName() throws IOException {
+            Token token;
+            XContentParser delegate;
+            while ((token = (delegate = parsers.peek()).nextToken()) == null) {
+                parsers.pop();
+                if (parsers.isEmpty()) {
+                    return null;
+                }
+            }
+            if (token != Token.FIELD_NAME) {
+                return null;
+            }
+            expandDots(delegate);
+            return currentName();
+        }
+
+        @Override
         public Token nextToken() throws IOException {
             Token token;
             XContentParser delegate;
