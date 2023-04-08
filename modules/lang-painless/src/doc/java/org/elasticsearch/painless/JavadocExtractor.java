@@ -271,10 +271,6 @@ public class JavadocExtractor {
             return builder;
         }
 
-        @Override
-        public boolean isFragment() {
-            return true;
-        }
     }
 
     public static ParsedJavadoc clean(Javadoc javadoc) {

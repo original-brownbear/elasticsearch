@@ -36,7 +36,6 @@ import org.elasticsearch.indices.EmptySystemIndices;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.tasks.TaskId;
-import org.elasticsearch.tasks.TaskManager;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -68,7 +67,6 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
     private static TransportService transportService;
     private static ClusterService clusterService;
     private static TransportMultiTermVectorsAction transportAction;
-    private static TransportShardMultiTermsVectorAction shardAction;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -86,12 +84,7 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
             ),
             null,
             emptySet()
-        ) {
-            @Override
-            public TaskManager getTaskManager() {
-                return taskManager;
-            }
-        };
+        );
 
         final Index index1 = new Index("index1", randomBase64UUID());
         final Index index2 = new Index("index2", randomBase64UUID());
@@ -175,7 +168,7 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
         when(clusterService.state()).thenReturn(clusterState);
         when(clusterService.operationRouting()).thenReturn(operationRouting);
 
-        shardAction = new TransportShardMultiTermsVectorAction(
+        new TransportShardMultiTermsVectorAction(
             clusterService,
             transportService,
             mock(IndicesService.class),
@@ -199,7 +192,6 @@ public class TransportMultiTermVectorsActionTests extends ESTestCase {
         transportService = null;
         clusterService = null;
         transportAction = null;
-        shardAction = null;
     }
 
     public void testTransportMultiGetAction() {

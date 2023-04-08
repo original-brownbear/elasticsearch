@@ -33,16 +33,6 @@ public class GeoBoundingBox extends BoundingBox<GeoPoint> {
     }
 
     @Override
-    public GeoPoint topLeft() {
-        return topLeft;
-    }
-
-    @Override
-    public GeoPoint bottomRight() {
-        return bottomRight;
-    }
-
-    @Override
     public XContentBuilder toXContentFragment(XContentBuilder builder) throws IOException {
         builder.startObject(TOP_LEFT_FIELD.getPreferredName());
         builder.field(LAT_FIELD.getPreferredName(), topLeft.getY());

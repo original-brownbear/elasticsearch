@@ -36,11 +36,6 @@ public class WeightedSumTests extends WeightedAggregatorTests<WeightedSum> {
     }
 
     @Override
-    protected WeightedSum mutateInstance(WeightedSum instance) {
-        return null;// TODO implement https://github.com/elastic/elasticsearch/issues/25929
-    }
-
-    @Override
     protected Writeable.Reader<WeightedSum> instanceReader() {
         return WeightedSum::new;
     }

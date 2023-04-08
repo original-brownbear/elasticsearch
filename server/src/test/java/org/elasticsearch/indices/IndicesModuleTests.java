@@ -236,10 +236,6 @@ public class IndicesModuleTests extends ESTestCase {
 
     public void testGetFieldFilter() {
         List<MapperPlugin> mapperPlugins = Arrays.asList(new MapperPlugin() {
-            @Override
-            public Function<String, Predicate<String>> getFieldFilter() {
-                return MapperPlugin.NOOP_FIELD_FILTER;
-            }
         }, new MapperPlugin() {
             @Override
             public Function<String, Predicate<String>> getFieldFilter() {
@@ -288,10 +284,6 @@ public class IndicesModuleTests extends ESTestCase {
 
     public void testNoOpFieldPredicate() {
         List<MapperPlugin> mapperPlugins = Arrays.asList(new MapperPlugin() {
-            @Override
-            public Function<String, Predicate<String>> getFieldFilter() {
-                return MapperPlugin.NOOP_FIELD_FILTER;
-            }
         }, new MapperPlugin() {
             @Override
             public Function<String, Predicate<String>> getFieldFilter() {

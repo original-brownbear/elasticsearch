@@ -63,8 +63,4 @@ public class InjectAllowedWarningsRegexTests extends InjectFeatureTests {
         return Collections.singletonList(new InjectAllowedWarnings(true, new ArrayList<>(addWarnings)));
     }
 
-    @Override
-    protected boolean getHumanDebug() {
-        return false;
-    }
 }

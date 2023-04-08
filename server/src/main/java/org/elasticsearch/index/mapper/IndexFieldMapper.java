@@ -94,10 +94,6 @@ public class IndexFieldMapper extends MetadataFieldMapper {
             };
         }
 
-        @Override
-        public boolean eagerGlobalOrdinals() {
-            return false;
-        }
     }
 
     public IndexFieldMapper() {

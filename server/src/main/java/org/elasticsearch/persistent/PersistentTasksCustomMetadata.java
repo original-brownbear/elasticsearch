@@ -475,10 +475,6 @@ public final class PersistentTasksCustomMetadata extends AbstractNamedDiffable<M
             return builder;
         }
 
-        @Override
-        public boolean isFragment() {
-            return false;
-        }
     }
 
     private static class TaskBuilder<Params extends PersistentTaskParams> {

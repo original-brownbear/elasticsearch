@@ -105,8 +105,4 @@ public class AddMatchTests extends TransformTests {
         }
     }
 
-    @Override
-    protected boolean getHumanDebug() {
-        return false;
-    }
 }

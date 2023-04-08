@@ -18,14 +18,4 @@ public class RpmElasticsearchDistributionType implements ElasticsearchDistributi
     public String getName() {
         return "rpm";
     }
-
-    @Override
-    public boolean shouldExtract() {
-        return false;
-    }
-
-    @Override
-    public boolean isDocker() {
-        return false;
-    }
 }

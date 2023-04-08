@@ -664,7 +664,7 @@ public class SetupPasswordToolTests extends CommandTestCase {
         return new URL(url, (url.toURI().getPath() + "/_xpack").replaceAll("/+", "/") + "?categories=features&human=false&pretty");
     }
 
-    private HttpResponse createHttpResponse(final int httpStatus, final String responseJson) throws IOException {
+    private HttpResponse createHttpResponse(final int httpStatus, final String responseJson) {
         HttpResponseBuilder builder = new HttpResponseBuilder();
         builder.withHttpStatus(httpStatus);
         builder.withResponseBody(responseJson);
@@ -672,19 +672,7 @@ public class SetupPasswordToolTests extends CommandTestCase {
     }
 
     private Command getSetupPasswordCommandWithKeyStore(KeyStoreWrapper keyStore) {
-        return new SetupPasswordTool(env -> httpClient, (e) -> keyStore) {
-
-            @Override
-            protected AutoSetup newAutoSetup() {
-                return new AutoSetup();
-            }
-
-            @Override
-            protected InteractiveSetup newInteractiveSetup() {
-                return new InteractiveSetup();
-            }
-
-        };
+        return new SetupPasswordTool(env -> httpClient, (e) -> keyStore);
 
     }
 

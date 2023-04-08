@@ -98,8 +98,4 @@ public class InjectHeaderTests extends InjectFeatureTests {
         return Collections.singletonList(new InjectHeaders(headers, Collections.emptySet()));
     }
 
-    @Override
-    protected boolean getHumanDebug() {
-        return false;
-    }
 }

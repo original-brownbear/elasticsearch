@@ -483,9 +483,6 @@ public class MasterServiceTests extends ESTestCase {
                 }
 
                 @Override
-                public void clusterStateProcessed(ClusterState oldState, ClusterState newState) {}
-
-                @Override
                 public void onFailure(Exception e) {
                     fail();
                 }
@@ -527,9 +524,6 @@ public class MasterServiceTests extends ESTestCase {
                 public ClusterState execute(ClusterState currentState) {
                     return currentState;
                 }
-
-                @Override
-                public void clusterStateProcessed(ClusterState oldState, ClusterState newState) {}
 
                 @Override
                 public void onFailure(Exception e) {

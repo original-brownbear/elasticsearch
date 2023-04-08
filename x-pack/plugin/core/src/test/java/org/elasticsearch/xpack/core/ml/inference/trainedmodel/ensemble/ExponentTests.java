@@ -36,11 +36,6 @@ public class ExponentTests extends WeightedAggregatorTests<Exponent> {
     }
 
     @Override
-    protected Exponent mutateInstance(Exponent instance) {
-        return null;// TODO implement https://github.com/elastic/elasticsearch/issues/25929
-    }
-
-    @Override
     protected Writeable.Reader<Exponent> instanceReader() {
         return Exponent::new;
     }

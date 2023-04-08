@@ -138,8 +138,4 @@ public class RemoveMatchTests extends TransformTests {
         }
     }
 
-    @Override
-    protected boolean getHumanDebug() {
-        return false;
-    }
 }

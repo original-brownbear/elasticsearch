@@ -89,8 +89,4 @@ public class RemoveWarningsTests extends TransformTests {
         return Collections.singletonList(new RemoveWarnings(Set.of("a")));
     }
 
-    @Override
-    protected boolean getHumanDebug() {
-        return false;
-    }
 }

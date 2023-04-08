@@ -168,8 +168,6 @@ public class MonitoringServiceTests extends ESTestCase {
         @Override
         protected void doStop() {}
 
-        @Override
-        protected void doClose() {}
     }
 
     class BlockingExporter extends CountingExporter {
@@ -192,14 +190,5 @@ public class MonitoringServiceTests extends ESTestCase {
             }, listener::onFailure));
 
         }
-
-        @Override
-        protected void doStart() {}
-
-        @Override
-        protected void doStop() {}
-
-        @Override
-        protected void doClose() {}
     }
 }

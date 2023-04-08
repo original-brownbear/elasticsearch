@@ -11,8 +11,6 @@ package org.elasticsearch.search;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryRewriteContext;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
@@ -47,8 +45,4 @@ public class FailBeforeCurrentVersionQueryBuilder extends DummyQueryBuilder {
         return NAME;
     }
 
-    @Override
-    protected QueryBuilder doRewrite(QueryRewriteContext queryRewriteContext) throws IOException {
-        return this;
-    }
 }
