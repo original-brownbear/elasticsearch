@@ -53,15 +53,6 @@ public class RestoreInfo implements ToXContentObject, Writeable {
     }
 
     /**
-     * Snapshot name
-     *
-     * @return snapshot name
-     */
-    public String name() {
-        return name;
-    }
-
-    /**
      * List of restored indices
      *
      * @return list of restored indices

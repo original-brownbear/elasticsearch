@@ -68,17 +68,4 @@ public class GetRepositoriesRequest extends MasterNodeReadRequest<GetRepositorie
         return this.repositories;
     }
 
-    /**
-     * Sets the list or repositories.
-     * <p>
-     * If the list of repositories is empty or it contains a single element "_all", all registered repositories
-     * are returned.
-     *
-     * @param repositories list of repositories
-     * @return this request
-     */
-    public GetRepositoriesRequest repositories(String[] repositories) {
-        this.repositories = repositories;
-        return this;
-    }
 }

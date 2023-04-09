@@ -52,7 +52,6 @@ public abstract class TransportNodesAction<
     protected final ThreadPool threadPool;
     protected final ClusterService clusterService;
     protected final TransportService transportService;
-    protected final Class<NodeResponse> nodeResponseClass;
     protected final String transportNodeAction;
 
     private final String finalExecutor;
@@ -85,7 +84,6 @@ public abstract class TransportNodesAction<
         this.threadPool = threadPool;
         this.clusterService = Objects.requireNonNull(clusterService);
         this.transportService = Objects.requireNonNull(transportService);
-        this.nodeResponseClass = Objects.requireNonNull(nodeResponseClass);
 
         this.transportNodeAction = actionName + "[n]";
         this.finalExecutor = finalExecutor.equals(ThreadPool.Names.SAME) ? ThreadPool.Names.GENERIC : finalExecutor;

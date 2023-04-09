@@ -99,10 +99,6 @@ final class TranslogDirectoryReader extends DirectoryReader {
         return new UnsupportedOperationException();
     }
 
-    public TranslogLeafReader getLeafReader() {
-        return leafReader;
-    }
-
     @Override
     protected DirectoryReader doOpenIfChanged() {
         throw unsupported();

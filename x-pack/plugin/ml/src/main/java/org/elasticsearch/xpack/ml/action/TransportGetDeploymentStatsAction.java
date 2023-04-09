@@ -63,7 +63,6 @@ public class TransportGetDeploymentStatsAction extends TransportTasksAction<
             transportService,
             actionFilters,
             GetDeploymentStatsAction.Request::new,
-            GetDeploymentStatsAction.Response::new,
             AssignmentStats::new,
             ThreadPool.Names.MANAGEMENT
         );

@@ -52,10 +52,6 @@ public final class IndexMetaDataGenerations {
         this.identifiers = Map.copyOf(identifiers);
     }
 
-    public boolean isEmpty() {
-        return identifiers.isEmpty();
-    }
-
     /**
      * Gets the blob id by the identifier of {@link org.elasticsearch.cluster.metadata.IndexMetadata}
      * (computed via {@link #buildUniqueIdentifier}) or {@code null} if none is tracked for the identifier.

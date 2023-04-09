@@ -47,15 +47,6 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
         this.snapshots = snapshots;
     }
 
-    /**
-     * Constructs a new delete snapshots request with repository name
-     *
-     * @param repository repository name
-     */
-    public DeleteSnapshotRequest(String repository) {
-        this.repository = repository;
-    }
-
     public DeleteSnapshotRequest(StreamInput in) throws IOException {
         super(in);
         repository = in.readString();
@@ -79,11 +70,6 @@ public class DeleteSnapshotRequest extends MasterNodeRequest<DeleteSnapshotReque
             validationException = addValidationError("snapshots are missing", validationException);
         }
         return validationException;
-    }
-
-    public DeleteSnapshotRequest repository(String repository) {
-        this.repository = repository;
-        return this;
     }
 
     /**

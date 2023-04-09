@@ -15,7 +15,6 @@ import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
-import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 
@@ -54,10 +53,6 @@ public final class CleanupRepositoryResponse extends ActionResponse implements T
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         result.writeTo(out);
-    }
-
-    public static CleanupRepositoryResponse fromXContent(XContentParser parser) {
-        return PARSER.apply(parser, null);
     }
 
     @Override

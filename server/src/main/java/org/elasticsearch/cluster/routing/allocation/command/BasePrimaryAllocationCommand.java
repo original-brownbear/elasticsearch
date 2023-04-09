@@ -50,15 +50,6 @@ public abstract class BasePrimaryAllocationCommand extends AbstractAllocateAlloc
         out.writeBoolean(acceptDataLoss);
     }
 
-    /**
-     * The operation only executes if the user explicitly agrees to possible data loss
-     *
-     * @return whether data loss is acceptable
-     */
-    public boolean acceptDataLoss() {
-        return acceptDataLoss;
-    }
-
     protected abstract static class Builder<T extends BasePrimaryAllocationCommand> extends AbstractAllocateAllocationCommand.Builder<T> {
         protected boolean acceptDataLoss;
 

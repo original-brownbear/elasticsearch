@@ -601,15 +601,6 @@ public class UpdateRequest extends InstanceShardOperationRequest<UpdateRequest>
     }
 
     /**
-     * A shortcut for {@link #waitForActiveShards(ActiveShardCount)} where the numerical
-     * shard count is passed in, instead of having to first call {@link ActiveShardCount#from(int)}
-     * to get the ActiveShardCount.
-     */
-    public UpdateRequest waitForActiveShards(final int waitForActiveShards) {
-        return waitForActiveShards(ActiveShardCount.from(waitForActiveShards));
-    }
-
-    /**
      * Sets the doc to use for updates when a script is not specified.
      */
     public UpdateRequest doc(IndexRequest doc) {

@@ -153,31 +153,10 @@ public class MergeStats implements Writeable, ToXContentFragment {
     }
 
     /**
-     * The total time merges have been executed (in milliseconds).
-     */
-    public long getTotalTimeInMillis() {
-        return this.totalTimeInMillis;
-    }
-
-    /**
-     * The total time large merges were stopped so smaller merges could finish.
-     */
-    public long getTotalStoppedTimeInMillis() {
-        return this.totalStoppedTimeInMillis;
-    }
-
-    /**
      * The total time large merges were stopped so smaller merges could finish.
      */
     public TimeValue getTotalStoppedTime() {
         return new TimeValue(totalStoppedTimeInMillis);
-    }
-
-    /**
-     * The total time merge IO writes were throttled.
-     */
-    public long getTotalThrottledTimeInMillis() {
-        return this.totalThrottledTimeInMillis;
     }
 
     /**
@@ -198,16 +177,8 @@ public class MergeStats implements Writeable, ToXContentFragment {
         return this.totalNumDocs;
     }
 
-    public long getTotalSizeInBytes() {
-        return this.totalSizeInBytes;
-    }
-
     public ByteSizeValue getTotalSize() {
         return ByteSizeValue.ofBytes(totalSizeInBytes);
-    }
-
-    public long getTotalBytesPerSecAutoThrottle() {
-        return totalBytesPerSecAutoThrottle;
     }
 
     /**
@@ -219,10 +190,6 @@ public class MergeStats implements Writeable, ToXContentFragment {
 
     public long getCurrentNumDocs() {
         return this.currentNumDocs;
-    }
-
-    public long getCurrentSizeInBytes() {
-        return this.currentSizeInBytes;
     }
 
     public ByteSizeValue getCurrentSize() {

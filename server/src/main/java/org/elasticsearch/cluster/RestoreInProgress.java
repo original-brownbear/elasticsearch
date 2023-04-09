@@ -197,24 +197,6 @@ public class RestoreInProgress extends AbstractNamedDiffable<Custom> implements 
         }
 
         /**
-         * Returns node id of the node where shared is getting restored
-         *
-         * @return node id
-         */
-        public String nodeId() {
-            return nodeId;
-        }
-
-        /**
-         * Returns failure reason
-         *
-         * @return failure reason
-         */
-        public String reason() {
-            return reason;
-        }
-
-        /**
          * Reads restore status from stream input
          *
          * @param in stream input

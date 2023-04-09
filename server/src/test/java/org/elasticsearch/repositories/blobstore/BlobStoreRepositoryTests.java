@@ -276,7 +276,6 @@ public class BlobStoreRepositoryTests extends ESSingleNodeTestCase {
     public void testRepositoryDataDetails() throws Exception {
         final BlobStoreRepository repository = setupRepo();
         final String repositoryName = repository.getMetadata().name();
-        final Settings repositorySettings = repository.getMetadata().settings();
 
         createIndex("green-index");
         ensureGreen("green-index");

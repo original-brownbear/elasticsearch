@@ -52,7 +52,6 @@ public class TransportInferTrainedModelDeploymentAction extends TransportTasksAc
             actionFilters,
             InferTrainedModelDeploymentAction.Request::new,
             InferTrainedModelDeploymentAction.Response::new,
-            InferTrainedModelDeploymentAction.Response::new,
             ThreadPool.Names.SAME
         );
     }

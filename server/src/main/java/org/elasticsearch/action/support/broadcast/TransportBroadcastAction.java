@@ -238,10 +238,6 @@ public abstract class TransportBroadcastAction<
             }
         }
 
-        protected AtomicReferenceArray<Object> shardsResponses() {
-            return shardsResponses;
-        }
-
         protected void finishHim() {
             ActionListener.completeWith(listener, () -> newResponse(request, shardsResponses, clusterState));
         }

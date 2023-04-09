@@ -85,7 +85,6 @@ public class TransportStopTransformAction extends TransportTasksAction<Transform
             actionFilters,
             Request::new,
             Response::new,
-            Response::new,
             ThreadPool.Names.SAME
         );
         this.threadPool = threadPool;

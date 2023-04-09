@@ -547,9 +547,6 @@ public class IndicesServiceTests extends ESSingleNodeTestCase {
         when(indexService.iterator()).thenReturn(shards.iterator());
         when(indexService.index()).thenReturn(index);
 
-        // real one, which has a logger defined
-        final IndicesService indicesService = getIndicesService();
-
         final Map<Index, List<IndexShardStats>> indexStats = IndicesService.statsByShard(mockIndicesService, CommonStatsFlags.ALL);
 
         assertThat(indexStats.isEmpty(), equalTo(false));

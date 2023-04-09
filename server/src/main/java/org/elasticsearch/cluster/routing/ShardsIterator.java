@@ -17,11 +17,6 @@ import java.util.List;
 public interface ShardsIterator extends Iterable<ShardRouting>, Countable {
 
     /**
-     * Resets the iterator to its initial state.
-     */
-    void reset();
-
-    /**
      * The number of shard routing instances.
      *
      * @return number of shard routing instances in this iterator

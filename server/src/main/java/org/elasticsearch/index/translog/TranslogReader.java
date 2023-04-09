@@ -142,12 +142,6 @@ public class TranslogReader extends BaseTranslogReader implements Closeable {
         return closed.get();
     }
 
-    protected void ensureOpen() {
-        if (isClosed()) {
-            throw new AlreadyClosedException(toString() + " is already closed");
-        }
-    }
-
     @Override
     public long getLastModifiedTime() throws IOException {
         long modified = this.lastModifiedTime;

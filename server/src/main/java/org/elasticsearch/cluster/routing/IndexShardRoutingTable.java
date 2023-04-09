@@ -501,13 +501,6 @@ public class IndexShardRoutingTable {
         return activeSearchShardCount;
     }
 
-    /**
-     * @return the total count of searchable shards
-     */
-    public int getTotalSearchShardCount() {
-        return totalSearchShardCount;
-    }
-
     public boolean hasSearchShards() {
         return totalSearchShardCount > 0;
     }
