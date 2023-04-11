@@ -76,7 +76,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         assertEquals(0, out.size());
 
         int expectedSize = 1;
-        byte[] expectedData = randomizedByteArrayWithSize(expectedSize);
+        byte[] expectedData = randomByteArrayOfLength(expectedSize);
 
         // write single byte
         out.writeByte(expectedData[0]);
@@ -90,7 +90,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler);
 
         int expectedSize = 10;
-        byte[] expectedData = randomizedByteArrayWithSize(expectedSize);
+        byte[] expectedData = randomByteArrayOfLength(expectedSize);
 
         // write byte-by-byte
         for (int i = 0; i < expectedSize; i++) {
@@ -116,14 +116,14 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
 
         // first bulk-write empty array: should not change anything
         int expectedSize = 0;
-        byte[] expectedData = randomizedByteArrayWithSize(expectedSize);
+        byte[] expectedData = randomByteArrayOfLength(expectedSize);
         out.writeBytes(expectedData);
         assertEquals(expectedSize, out.size());
         assertArrayEquals(expectedData, BytesReference.toBytes(out.bytes()));
 
         // bulk-write again with actual bytes
         expectedSize = 10;
-        expectedData = randomizedByteArrayWithSize(expectedSize);
+        expectedData = randomByteArrayOfLength(expectedSize);
         out.writeBytes(expectedData);
         assertEquals(expectedSize, out.size());
         assertArrayEquals(expectedData, BytesReference.toBytes(out.bytes()));
@@ -135,7 +135,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler);
 
         int expectedSize = PageCacheRecycler.BYTE_PAGE_SIZE;
-        byte[] expectedData = randomizedByteArrayWithSize(expectedSize);
+        byte[] expectedData = randomByteArrayOfLength(expectedSize);
 
         // write in bulk
         out.writeBytes(expectedData);
@@ -151,7 +151,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
 
         int initialOffset = 10;
         int additionalLength = PageCacheRecycler.BYTE_PAGE_SIZE;
-        byte[] expectedData = randomizedByteArrayWithSize(initialOffset + additionalLength);
+        byte[] expectedData = randomByteArrayOfLength(initialOffset + additionalLength);
 
         // first create initial offset
         out.writeBytes(expectedData, 0, initialOffset);
@@ -170,7 +170,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
 
         int initialOffset = 10;
         int additionalLength = PageCacheRecycler.BYTE_PAGE_SIZE * 2;
-        byte[] expectedData = randomizedByteArrayWithSize(initialOffset + additionalLength);
+        byte[] expectedData = randomByteArrayOfLength(initialOffset + additionalLength);
         out.writeBytes(expectedData, 0, initialOffset);
         assertEquals(initialOffset, out.size());
 
@@ -188,7 +188,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler);
 
         int expectedSize = PageCacheRecycler.BYTE_PAGE_SIZE;
-        byte[] expectedData = randomizedByteArrayWithSize(expectedSize);
+        byte[] expectedData = randomByteArrayOfLength(expectedSize);
 
         // write byte-by-byte
         for (int i = 0; i < expectedSize; i++) {
@@ -205,7 +205,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler);
 
         int expectedSize = PageCacheRecycler.BYTE_PAGE_SIZE + 10;
-        byte[] expectedData = randomizedByteArrayWithSize(expectedSize);
+        byte[] expectedData = randomByteArrayOfLength(expectedSize);
 
         // write byte-by-byte
         for (int i = 0; i < expectedSize; i++) {
@@ -222,7 +222,7 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler);
 
         int expectedSize = (PageCacheRecycler.BYTE_PAGE_SIZE * 2) + 1;
-        byte[] expectedData = randomizedByteArrayWithSize(expectedSize);
+        byte[] expectedData = randomByteArrayOfLength(expectedSize);
 
         // write byte-by-byte
         for (int i = 0; i < expectedSize; i++) {
@@ -687,13 +687,6 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         }
     }
 
-    // create & fill byte[] with randomized data
-    protected byte[] randomizedByteArrayWithSize(int size) {
-        byte[] data = new byte[size];
-        random().nextBytes(data);
-        return data;
-    }
-
     public void testReadWriteGeoPoint() throws IOException {
         try (RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler)) {
             GeoPoint geoPoint = new GeoPoint(randomDouble(), randomDouble());
@@ -1057,5 +1050,12 @@ public class RecyclerBytesStreamOutputTests extends ESTestCase {
         byte b = randomByte();
         out.writeByte(b);
         assertEquals(b, out.bytes().get(PageCacheRecycler.BYTE_PAGE_SIZE));
+    }
+
+    public void testSeekBeyondLastPage() {
+        RecyclerBytesStreamOutput out = new RecyclerBytesStreamOutput(recycler);
+        int maxSize = Integer.MAX_VALUE - Integer.MAX_VALUE % PageCacheRecycler.BYTE_PAGE_SIZE;
+        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () -> out.seek(maxSize));
+        assertEquals("RecyclerBytesStreamOutput cannot hold more than 2GB of data", iae.getMessage());
     }
 }
