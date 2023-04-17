@@ -12,6 +12,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.script.StoredScriptSource;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.ToXContent;
@@ -33,15 +34,11 @@ public class PutStoredScriptRequestTests extends ESTestCase {
         );
 
         assertEquals(XContentType.JSON, storedScriptRequest.xContentType());
-        try (BytesStreamOutput output = new BytesStreamOutput()) {
-            storedScriptRequest.writeTo(output);
-
-            try (StreamInput in = output.bytes().streamInput()) {
-                PutStoredScriptRequest serialized = new PutStoredScriptRequest(in);
-                assertEquals(XContentType.JSON, serialized.xContentType());
-                assertEquals(storedScriptRequest.id(), serialized.id());
-                assertEquals(storedScriptRequest.context(), serialized.context());
-            }
+        try (StreamInput in = Writeable.toBytes(storedScriptRequest).streamInput()) {
+            PutStoredScriptRequest serialized = new PutStoredScriptRequest(in);
+            assertEquals(XContentType.JSON, serialized.xContentType());
+            assertEquals(storedScriptRequest.id(), serialized.id());
+            assertEquals(storedScriptRequest.context(), serialized.context());
         }
     }
 

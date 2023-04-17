@@ -30,11 +30,7 @@ import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.collect.Iterators;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
-import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.io.stream.StreamInput;
-import org.elasticsearch.common.io.stream.StreamOutput;
+import org.elasticsearch.common.io.stream.*;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.snapshots.Snapshot;
 import org.elasticsearch.snapshots.SnapshotId;
@@ -83,7 +79,7 @@ public class ClusterSerializationTests extends ESAllocationTestCase {
             .build();
 
         ClusterState serializedClusterState = ClusterState.Builder.fromBytes(
-            ClusterState.Builder.toBytes(clusterState),
+                Writeable.toBytes(clusterState),
             newNode("node1"),
             new NamedWriteableRegistry(ClusterModule.getNamedWriteables())
         );

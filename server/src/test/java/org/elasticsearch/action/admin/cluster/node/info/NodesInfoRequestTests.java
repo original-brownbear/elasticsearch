@@ -8,8 +8,7 @@
 
 package org.elasticsearch.action.admin.cluster.node.info;
 
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.HashSet;
@@ -125,11 +124,6 @@ public class NodesInfoRequestTests extends ESTestCase {
      * @return The deserialized, "round-tripped" request.
      */
     private static NodesInfoRequest roundTripRequest(NodesInfoRequest request) throws Exception {
-        try (BytesStreamOutput out = new BytesStreamOutput()) {
-            request.writeTo(out);
-            try (StreamInput in = out.bytes().streamInput()) {
-                return new NodesInfoRequest(in);
-            }
-        }
+        return new NodesInfoRequest(Writeable.toBytes(request).streamInput());
     }
 }

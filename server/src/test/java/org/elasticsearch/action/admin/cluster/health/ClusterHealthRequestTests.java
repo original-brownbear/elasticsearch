@@ -12,8 +12,8 @@ import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.Locale;
@@ -25,11 +25,8 @@ public class ClusterHealthRequestTests extends ESTestCase {
     public void testSerialize() throws Exception {
         final ClusterHealthRequest originalRequest = randomRequest();
         final ClusterHealthRequest cloneRequest;
-        try (BytesStreamOutput out = new BytesStreamOutput()) {
-            originalRequest.writeTo(out);
-            try (StreamInput in = out.bytes().streamInput()) {
-                cloneRequest = new ClusterHealthRequest(in);
-            }
+        try (StreamInput in = Writeable.toBytes(originalRequest).streamInput()) {
+            cloneRequest = new ClusterHealthRequest(in);
         }
         assertThat(cloneRequest.waitForStatus(), equalTo(originalRequest.waitForStatus()));
         assertThat(cloneRequest.waitForNodes(), equalTo(originalRequest.waitForNodes()));

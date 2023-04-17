@@ -11,8 +11,8 @@ package org.elasticsearch.action.admin.indices.alias;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.index.alias.RandomAliasActionsGenerator;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.ToXContent;
@@ -343,12 +343,9 @@ public class AliasActionsTests extends ESTestCase {
                 }
             }
         }
-        try (BytesStreamOutput out = new BytesStreamOutput()) {
-            action.writeTo(out);
-            try (StreamInput in = out.bytes().streamInput()) {
-                AliasActions read = new AliasActions(in);
-                assertEquals(action, read);
-            }
+        try (StreamInput in = Writeable.toBytes(action).streamInput()) {
+            AliasActions read = new AliasActions(in);
+            assertEquals(action, read);
         }
     }
 

@@ -33,8 +33,7 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.support.DefaultShardOperationFailedException;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.IndexModule;
@@ -905,11 +904,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         assertThat(flags.anySet(), equalTo(true));
 
         {
-            BytesStreamOutput out = new BytesStreamOutput();
-            flags.writeTo(out);
-            out.close();
-            BytesReference bytes = out.bytes();
-            CommonStatsFlags readStats = new CommonStatsFlags(bytes.streamInput());
+            CommonStatsFlags readStats = new CommonStatsFlags(Writeable.toBytes(flags).streamInput());
             for (Flag flag : values) {
                 assertThat(flags.isSet(flag), equalTo(readStats.isSet(flag)));
             }
@@ -919,11 +914,7 @@ public class IndexStatsIT extends ESIntegTestCase {
             for (Flag flag : values) {
                 flags.set(flag, random.nextBoolean());
             }
-            BytesStreamOutput out = new BytesStreamOutput();
-            flags.writeTo(out);
-            out.close();
-            BytesReference bytes = out.bytes();
-            CommonStatsFlags readStats = new CommonStatsFlags(bytes.streamInput());
+            CommonStatsFlags readStats = new CommonStatsFlags(Writeable.toBytes(flags).streamInput());
             for (Flag flag : values) {
                 assertThat(flags.isSet(flag), equalTo(readStats.isSet(flag)));
             }

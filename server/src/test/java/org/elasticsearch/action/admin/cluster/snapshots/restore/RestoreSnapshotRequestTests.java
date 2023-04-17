@@ -10,7 +10,6 @@ package org.elasticsearch.action.admin.cluster.snapshots.restore;
 
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.test.AbstractWireSerializingTestCase;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
@@ -161,9 +160,7 @@ public class RestoreSnapshotRequestTests extends AbstractWireSerializingTestCase
         assertEquals(map, convertRequestToMap(original));
 
         // Nor does it serialise to streamInput
-        final BytesStreamOutput streamOutput = new BytesStreamOutput();
-        original.writeTo(streamOutput);
-        final RestoreSnapshotRequest deserialized = new RestoreSnapshotRequest(streamOutput.bytes().streamInput());
+        final RestoreSnapshotRequest deserialized = new RestoreSnapshotRequest(Writeable.toBytes(original).streamInput());
         assertFalse(deserialized.skipOperatorOnlyState());
     }
 

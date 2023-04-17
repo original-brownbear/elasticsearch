@@ -17,10 +17,10 @@ import org.elasticsearch.cluster.routing.allocation.command.AllocationCommand;
 import org.elasticsearch.cluster.routing.allocation.command.CancelAllocationCommand;
 import org.elasticsearch.cluster.routing.allocation.command.MoveAllocationCommand;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.action.admin.cluster.RestClusterRerouteAction;
@@ -165,11 +165,8 @@ public class ClusterRerouteRequestTests extends ESTestCase {
     }
 
     private ClusterRerouteRequest roundTripThroughBytes(ClusterRerouteRequest original) throws IOException {
-        try (BytesStreamOutput output = new BytesStreamOutput()) {
-            original.writeTo(output);
-            try (StreamInput in = new NamedWriteableAwareStreamInput(output.bytes().streamInput(), namedWriteableRegistry)) {
-                return new ClusterRerouteRequest(in);
-            }
+        try (StreamInput in = new NamedWriteableAwareStreamInput(Writeable.toBytes(original).streamInput(), namedWriteableRegistry)) {
+            return new ClusterRerouteRequest(in);
         }
     }
 

@@ -8,7 +8,7 @@
 
 package org.elasticsearch.action.admin.cluster.allocation;
 
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.test.ESTestCase;
 
 public class ClusterAllocationExplainRequestTests extends ESTestCase {
@@ -22,10 +22,8 @@ public class ClusterAllocationExplainRequestTests extends ESTestCase {
         );
         request.includeYesDecisions(randomBoolean());
         request.includeDiskInfo(randomBoolean());
-        BytesStreamOutput output = new BytesStreamOutput();
-        request.writeTo(output);
 
-        ClusterAllocationExplainRequest actual = new ClusterAllocationExplainRequest(output.bytes().streamInput());
+        ClusterAllocationExplainRequest actual = new ClusterAllocationExplainRequest(Writeable.toBytes(request).streamInput());
         assertEquals(request.getIndex(), actual.getIndex());
         assertEquals(request.getShard(), actual.getShard());
         assertEquals(request.isPrimary(), actual.isPrimary());

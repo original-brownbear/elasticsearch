@@ -23,8 +23,8 @@ import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.service.ClusterApplierRecordingService;
 import org.elasticsearch.cluster.service.ClusterApplierRecordingService.Stats.Recording;
 import org.elasticsearch.cluster.service.ClusterStateUpdateStats;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.network.HandlingTimeTracker;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Nullable;
@@ -93,464 +93,445 @@ import static java.util.Collections.emptySet;
 public class NodeStatsTests extends ESTestCase {
     public void testSerialization() throws IOException {
         NodeStats nodeStats = createNodeStats();
-        try (BytesStreamOutput out = new BytesStreamOutput()) {
-            nodeStats.writeTo(out);
-            try (StreamInput in = out.bytes().streamInput()) {
-                NodeStats deserializedNodeStats = new NodeStats(in);
-                assertEquals(nodeStats.getNode(), deserializedNodeStats.getNode());
-                assertEquals(nodeStats.getTimestamp(), deserializedNodeStats.getTimestamp());
-                if (nodeStats.getIndices() == null) {
-                    assertNull(deserializedNodeStats.getIndices());
-                } else {
-                    NodeIndicesStats indicesStats = nodeStats.getIndices();
-                    NodeIndicesStats deserializedIndicesStats = deserializedNodeStats.getIndices();
-                    assertEquals(indicesStats, deserializedIndicesStats);
+        try (StreamInput in = Writeable.toBytes(nodeStats).streamInput()) {
+            NodeStats deserializedNodeStats = new NodeStats(in);
+            assertEquals(nodeStats.getNode(), deserializedNodeStats.getNode());
+            assertEquals(nodeStats.getTimestamp(), deserializedNodeStats.getTimestamp());
+            if (nodeStats.getIndices() == null) {
+                assertNull(deserializedNodeStats.getIndices());
+            } else {
+                NodeIndicesStats indicesStats = nodeStats.getIndices();
+                NodeIndicesStats deserializedIndicesStats = deserializedNodeStats.getIndices();
+                assertEquals(indicesStats, deserializedIndicesStats);
+            }
+            if (nodeStats.getOs() == null) {
+                assertNull(deserializedNodeStats.getOs());
+            } else {
+                assertEquals(nodeStats.getOs().getTimestamp(), deserializedNodeStats.getOs().getTimestamp());
+                assertEquals(nodeStats.getOs().getSwap().getFree(), deserializedNodeStats.getOs().getSwap().getFree());
+                assertEquals(nodeStats.getOs().getSwap().getTotal(), deserializedNodeStats.getOs().getSwap().getTotal());
+                assertEquals(nodeStats.getOs().getSwap().getUsed(), deserializedNodeStats.getOs().getSwap().getUsed());
+                assertEquals(nodeStats.getOs().getMem().getFree(), deserializedNodeStats.getOs().getMem().getFree());
+                assertEquals(nodeStats.getOs().getMem().getTotal(), deserializedNodeStats.getOs().getMem().getTotal());
+                assertEquals(nodeStats.getOs().getMem().getUsed(), deserializedNodeStats.getOs().getMem().getUsed());
+                assertEquals(nodeStats.getOs().getMem().getFreePercent(), deserializedNodeStats.getOs().getMem().getFreePercent());
+                assertEquals(nodeStats.getOs().getMem().getUsedPercent(), deserializedNodeStats.getOs().getMem().getUsedPercent());
+                assertEquals(nodeStats.getOs().getCpu().getPercent(), deserializedNodeStats.getOs().getCpu().getPercent());
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getCpuAcctControlGroup(),
+                    deserializedNodeStats.getOs().getCgroup().getCpuAcctControlGroup()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getCpuAcctUsageNanos(),
+                    deserializedNodeStats.getOs().getCgroup().getCpuAcctUsageNanos()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getCpuControlGroup(),
+                    deserializedNodeStats.getOs().getCgroup().getCpuControlGroup()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getCpuCfsPeriodMicros(),
+                    deserializedNodeStats.getOs().getCgroup().getCpuCfsPeriodMicros()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getCpuCfsQuotaMicros(),
+                    deserializedNodeStats.getOs().getCgroup().getCpuCfsQuotaMicros()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getCpuStat().getNumberOfElapsedPeriods(),
+                    deserializedNodeStats.getOs().getCgroup().getCpuStat().getNumberOfElapsedPeriods()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getCpuStat().getNumberOfTimesThrottled(),
+                    deserializedNodeStats.getOs().getCgroup().getCpuStat().getNumberOfTimesThrottled()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getCpuStat().getTimeThrottledNanos(),
+                    deserializedNodeStats.getOs().getCgroup().getCpuStat().getTimeThrottledNanos()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getMemoryLimitInBytes(),
+                    deserializedNodeStats.getOs().getCgroup().getMemoryLimitInBytes()
+                );
+                assertEquals(
+                    nodeStats.getOs().getCgroup().getMemoryUsageInBytes(),
+                    deserializedNodeStats.getOs().getCgroup().getMemoryUsageInBytes()
+                );
+                assertArrayEquals(nodeStats.getOs().getCpu().getLoadAverage(), deserializedNodeStats.getOs().getCpu().getLoadAverage(), 0);
+            }
+            if (nodeStats.getProcess() == null) {
+                assertNull(deserializedNodeStats.getProcess());
+            } else {
+                assertEquals(nodeStats.getProcess().getTimestamp(), deserializedNodeStats.getProcess().getTimestamp());
+                assertEquals(nodeStats.getProcess().getCpu().getTotal(), deserializedNodeStats.getProcess().getCpu().getTotal());
+                assertEquals(nodeStats.getProcess().getCpu().getPercent(), deserializedNodeStats.getProcess().getCpu().getPercent());
+                assertEquals(
+                    nodeStats.getProcess().getMem().getTotalVirtual(),
+                    deserializedNodeStats.getProcess().getMem().getTotalVirtual()
+                );
+                assertEquals(nodeStats.getProcess().getMaxFileDescriptors(), deserializedNodeStats.getProcess().getMaxFileDescriptors());
+                assertEquals(nodeStats.getProcess().getOpenFileDescriptors(), deserializedNodeStats.getProcess().getOpenFileDescriptors());
+            }
+            JvmStats jvm = nodeStats.getJvm();
+            JvmStats deserializedJvm = deserializedNodeStats.getJvm();
+            if (jvm == null) {
+                assertNull(deserializedJvm);
+            } else {
+                JvmStats.Mem mem = jvm.getMem();
+                JvmStats.Mem deserializedMem = deserializedJvm.getMem();
+                assertEquals(jvm.getTimestamp(), deserializedJvm.getTimestamp());
+                assertEquals(mem.getHeapUsedPercent(), deserializedMem.getHeapUsedPercent());
+                assertEquals(mem.getHeapUsed(), deserializedMem.getHeapUsed());
+                assertEquals(mem.getHeapCommitted(), deserializedMem.getHeapCommitted());
+                assertEquals(mem.getNonHeapCommitted(), deserializedMem.getNonHeapCommitted());
+                assertEquals(mem.getNonHeapUsed(), deserializedMem.getNonHeapUsed());
+                assertEquals(mem.getHeapMax(), deserializedMem.getHeapMax());
+                JvmStats.Classes classes = jvm.getClasses();
+                assertEquals(classes.getLoadedClassCount(), deserializedJvm.getClasses().getLoadedClassCount());
+                assertEquals(classes.getTotalLoadedClassCount(), deserializedJvm.getClasses().getTotalLoadedClassCount());
+                assertEquals(classes.getUnloadedClassCount(), deserializedJvm.getClasses().getUnloadedClassCount());
+                assertEquals(jvm.getGc().getCollectors().length, deserializedJvm.getGc().getCollectors().length);
+                for (int i = 0; i < jvm.getGc().getCollectors().length; i++) {
+                    JvmStats.GarbageCollector garbageCollector = jvm.getGc().getCollectors()[i];
+                    JvmStats.GarbageCollector deserializedGarbageCollector = deserializedJvm.getGc().getCollectors()[i];
+                    assertEquals(garbageCollector.getName(), deserializedGarbageCollector.getName());
+                    assertEquals(garbageCollector.getCollectionCount(), deserializedGarbageCollector.getCollectionCount());
+                    assertEquals(garbageCollector.getCollectionTime(), deserializedGarbageCollector.getCollectionTime());
                 }
-                if (nodeStats.getOs() == null) {
-                    assertNull(deserializedNodeStats.getOs());
+                assertEquals(jvm.getThreads().getCount(), deserializedJvm.getThreads().getCount());
+                assertEquals(jvm.getThreads().getPeakCount(), deserializedJvm.getThreads().getPeakCount());
+                assertEquals(jvm.getUptime(), deserializedJvm.getUptime());
+                if (jvm.getBufferPools() == null) {
+                    assertNull(deserializedJvm.getBufferPools());
                 } else {
-                    assertEquals(nodeStats.getOs().getTimestamp(), deserializedNodeStats.getOs().getTimestamp());
-                    assertEquals(nodeStats.getOs().getSwap().getFree(), deserializedNodeStats.getOs().getSwap().getFree());
-                    assertEquals(nodeStats.getOs().getSwap().getTotal(), deserializedNodeStats.getOs().getSwap().getTotal());
-                    assertEquals(nodeStats.getOs().getSwap().getUsed(), deserializedNodeStats.getOs().getSwap().getUsed());
-                    assertEquals(nodeStats.getOs().getMem().getFree(), deserializedNodeStats.getOs().getMem().getFree());
-                    assertEquals(nodeStats.getOs().getMem().getTotal(), deserializedNodeStats.getOs().getMem().getTotal());
-                    assertEquals(nodeStats.getOs().getMem().getUsed(), deserializedNodeStats.getOs().getMem().getUsed());
-                    assertEquals(nodeStats.getOs().getMem().getFreePercent(), deserializedNodeStats.getOs().getMem().getFreePercent());
-                    assertEquals(nodeStats.getOs().getMem().getUsedPercent(), deserializedNodeStats.getOs().getMem().getUsedPercent());
-                    assertEquals(nodeStats.getOs().getCpu().getPercent(), deserializedNodeStats.getOs().getCpu().getPercent());
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getCpuAcctControlGroup(),
-                        deserializedNodeStats.getOs().getCgroup().getCpuAcctControlGroup()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getCpuAcctUsageNanos(),
-                        deserializedNodeStats.getOs().getCgroup().getCpuAcctUsageNanos()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getCpuControlGroup(),
-                        deserializedNodeStats.getOs().getCgroup().getCpuControlGroup()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getCpuCfsPeriodMicros(),
-                        deserializedNodeStats.getOs().getCgroup().getCpuCfsPeriodMicros()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getCpuCfsQuotaMicros(),
-                        deserializedNodeStats.getOs().getCgroup().getCpuCfsQuotaMicros()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getCpuStat().getNumberOfElapsedPeriods(),
-                        deserializedNodeStats.getOs().getCgroup().getCpuStat().getNumberOfElapsedPeriods()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getCpuStat().getNumberOfTimesThrottled(),
-                        deserializedNodeStats.getOs().getCgroup().getCpuStat().getNumberOfTimesThrottled()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getCpuStat().getTimeThrottledNanos(),
-                        deserializedNodeStats.getOs().getCgroup().getCpuStat().getTimeThrottledNanos()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getMemoryLimitInBytes(),
-                        deserializedNodeStats.getOs().getCgroup().getMemoryLimitInBytes()
-                    );
-                    assertEquals(
-                        nodeStats.getOs().getCgroup().getMemoryUsageInBytes(),
-                        deserializedNodeStats.getOs().getCgroup().getMemoryUsageInBytes()
-                    );
-                    assertArrayEquals(
-                        nodeStats.getOs().getCpu().getLoadAverage(),
-                        deserializedNodeStats.getOs().getCpu().getLoadAverage(),
-                        0
-                    );
-                }
-                if (nodeStats.getProcess() == null) {
-                    assertNull(deserializedNodeStats.getProcess());
-                } else {
-                    assertEquals(nodeStats.getProcess().getTimestamp(), deserializedNodeStats.getProcess().getTimestamp());
-                    assertEquals(nodeStats.getProcess().getCpu().getTotal(), deserializedNodeStats.getProcess().getCpu().getTotal());
-                    assertEquals(nodeStats.getProcess().getCpu().getPercent(), deserializedNodeStats.getProcess().getCpu().getPercent());
-                    assertEquals(
-                        nodeStats.getProcess().getMem().getTotalVirtual(),
-                        deserializedNodeStats.getProcess().getMem().getTotalVirtual()
-                    );
-                    assertEquals(
-                        nodeStats.getProcess().getMaxFileDescriptors(),
-                        deserializedNodeStats.getProcess().getMaxFileDescriptors()
-                    );
-                    assertEquals(
-                        nodeStats.getProcess().getOpenFileDescriptors(),
-                        deserializedNodeStats.getProcess().getOpenFileDescriptors()
-                    );
-                }
-                JvmStats jvm = nodeStats.getJvm();
-                JvmStats deserializedJvm = deserializedNodeStats.getJvm();
-                if (jvm == null) {
-                    assertNull(deserializedJvm);
-                } else {
-                    JvmStats.Mem mem = jvm.getMem();
-                    JvmStats.Mem deserializedMem = deserializedJvm.getMem();
-                    assertEquals(jvm.getTimestamp(), deserializedJvm.getTimestamp());
-                    assertEquals(mem.getHeapUsedPercent(), deserializedMem.getHeapUsedPercent());
-                    assertEquals(mem.getHeapUsed(), deserializedMem.getHeapUsed());
-                    assertEquals(mem.getHeapCommitted(), deserializedMem.getHeapCommitted());
-                    assertEquals(mem.getNonHeapCommitted(), deserializedMem.getNonHeapCommitted());
-                    assertEquals(mem.getNonHeapUsed(), deserializedMem.getNonHeapUsed());
-                    assertEquals(mem.getHeapMax(), deserializedMem.getHeapMax());
-                    JvmStats.Classes classes = jvm.getClasses();
-                    assertEquals(classes.getLoadedClassCount(), deserializedJvm.getClasses().getLoadedClassCount());
-                    assertEquals(classes.getTotalLoadedClassCount(), deserializedJvm.getClasses().getTotalLoadedClassCount());
-                    assertEquals(classes.getUnloadedClassCount(), deserializedJvm.getClasses().getUnloadedClassCount());
-                    assertEquals(jvm.getGc().getCollectors().length, deserializedJvm.getGc().getCollectors().length);
-                    for (int i = 0; i < jvm.getGc().getCollectors().length; i++) {
-                        JvmStats.GarbageCollector garbageCollector = jvm.getGc().getCollectors()[i];
-                        JvmStats.GarbageCollector deserializedGarbageCollector = deserializedJvm.getGc().getCollectors()[i];
-                        assertEquals(garbageCollector.getName(), deserializedGarbageCollector.getName());
-                        assertEquals(garbageCollector.getCollectionCount(), deserializedGarbageCollector.getCollectionCount());
-                        assertEquals(garbageCollector.getCollectionTime(), deserializedGarbageCollector.getCollectionTime());
-                    }
-                    assertEquals(jvm.getThreads().getCount(), deserializedJvm.getThreads().getCount());
-                    assertEquals(jvm.getThreads().getPeakCount(), deserializedJvm.getThreads().getPeakCount());
-                    assertEquals(jvm.getUptime(), deserializedJvm.getUptime());
-                    if (jvm.getBufferPools() == null) {
-                        assertNull(deserializedJvm.getBufferPools());
-                    } else {
-                        assertEquals(jvm.getBufferPools().size(), deserializedJvm.getBufferPools().size());
-                        for (int i = 0; i < jvm.getBufferPools().size(); i++) {
-                            JvmStats.BufferPool bufferPool = jvm.getBufferPools().get(i);
-                            JvmStats.BufferPool deserializedBufferPool = deserializedJvm.getBufferPools().get(i);
-                            assertEquals(bufferPool.getName(), deserializedBufferPool.getName());
-                            assertEquals(bufferPool.getCount(), deserializedBufferPool.getCount());
-                            assertEquals(bufferPool.getTotalCapacity(), deserializedBufferPool.getTotalCapacity());
-                            assertEquals(bufferPool.getUsed(), deserializedBufferPool.getUsed());
-                        }
+                    assertEquals(jvm.getBufferPools().size(), deserializedJvm.getBufferPools().size());
+                    for (int i = 0; i < jvm.getBufferPools().size(); i++) {
+                        JvmStats.BufferPool bufferPool = jvm.getBufferPools().get(i);
+                        JvmStats.BufferPool deserializedBufferPool = deserializedJvm.getBufferPools().get(i);
+                        assertEquals(bufferPool.getName(), deserializedBufferPool.getName());
+                        assertEquals(bufferPool.getCount(), deserializedBufferPool.getCount());
+                        assertEquals(bufferPool.getTotalCapacity(), deserializedBufferPool.getTotalCapacity());
+                        assertEquals(bufferPool.getUsed(), deserializedBufferPool.getUsed());
                     }
                 }
-                if (nodeStats.getThreadPool() == null) {
-                    assertNull(deserializedNodeStats.getThreadPool());
-                } else {
-                    Iterator<ThreadPoolStats.Stats> threadPoolIterator = nodeStats.getThreadPool().iterator();
-                    Iterator<ThreadPoolStats.Stats> deserializedThreadPoolIterator = deserializedNodeStats.getThreadPool().iterator();
-                    while (threadPoolIterator.hasNext()) {
-                        ThreadPoolStats.Stats stats = threadPoolIterator.next();
-                        ThreadPoolStats.Stats deserializedStats = deserializedThreadPoolIterator.next();
-                        assertEquals(stats.getName(), deserializedStats.getName());
-                        assertEquals(stats.getThreads(), deserializedStats.getThreads());
-                        assertEquals(stats.getActive(), deserializedStats.getActive());
-                        assertEquals(stats.getLargest(), deserializedStats.getLargest());
-                        assertEquals(stats.getCompleted(), deserializedStats.getCompleted());
-                        assertEquals(stats.getQueue(), deserializedStats.getQueue());
-                        assertEquals(stats.getRejected(), deserializedStats.getRejected());
-                    }
+            }
+            if (nodeStats.getThreadPool() == null) {
+                assertNull(deserializedNodeStats.getThreadPool());
+            } else {
+                Iterator<ThreadPoolStats.Stats> threadPoolIterator = nodeStats.getThreadPool().iterator();
+                Iterator<ThreadPoolStats.Stats> deserializedThreadPoolIterator = deserializedNodeStats.getThreadPool().iterator();
+                while (threadPoolIterator.hasNext()) {
+                    ThreadPoolStats.Stats stats = threadPoolIterator.next();
+                    ThreadPoolStats.Stats deserializedStats = deserializedThreadPoolIterator.next();
+                    assertEquals(stats.getName(), deserializedStats.getName());
+                    assertEquals(stats.getThreads(), deserializedStats.getThreads());
+                    assertEquals(stats.getActive(), deserializedStats.getActive());
+                    assertEquals(stats.getLargest(), deserializedStats.getLargest());
+                    assertEquals(stats.getCompleted(), deserializedStats.getCompleted());
+                    assertEquals(stats.getQueue(), deserializedStats.getQueue());
+                    assertEquals(stats.getRejected(), deserializedStats.getRejected());
                 }
-                FsInfo fs = nodeStats.getFs();
-                FsInfo deserializedFs = deserializedNodeStats.getFs();
-                if (fs == null) {
-                    assertNull(deserializedFs);
-                } else {
-                    assertEquals(fs.getTimestamp(), deserializedFs.getTimestamp());
-                    assertEquals(fs.getTotal().getAvailable(), deserializedFs.getTotal().getAvailable());
-                    assertEquals(fs.getTotal().getTotal(), deserializedFs.getTotal().getTotal());
-                    assertEquals(fs.getTotal().getFree(), deserializedFs.getTotal().getFree());
-                    assertEquals(fs.getTotal().getMount(), deserializedFs.getTotal().getMount());
-                    assertEquals(fs.getTotal().getPath(), deserializedFs.getTotal().getPath());
-                    assertEquals(fs.getTotal().getType(), deserializedFs.getTotal().getType());
-                    FsInfo.IoStats ioStats = fs.getIoStats();
-                    FsInfo.IoStats deserializedIoStats = deserializedFs.getIoStats();
-                    assertEquals(ioStats.getTotalOperations(), deserializedIoStats.getTotalOperations());
-                    assertEquals(ioStats.getTotalReadKilobytes(), deserializedIoStats.getTotalReadKilobytes());
-                    assertEquals(ioStats.getTotalReadOperations(), deserializedIoStats.getTotalReadOperations());
-                    assertEquals(ioStats.getTotalWriteKilobytes(), deserializedIoStats.getTotalWriteKilobytes());
-                    assertEquals(ioStats.getTotalWriteOperations(), deserializedIoStats.getTotalWriteOperations());
-                    assertEquals(ioStats.getTotalIOTimeMillis(), deserializedIoStats.getTotalIOTimeMillis());
-                    assertEquals(ioStats.getDevicesStats().length, deserializedIoStats.getDevicesStats().length);
-                    for (int i = 0; i < ioStats.getDevicesStats().length; i++) {
-                        FsInfo.DeviceStats deviceStats = ioStats.getDevicesStats()[i];
-                        FsInfo.DeviceStats deserializedDeviceStats = deserializedIoStats.getDevicesStats()[i];
-                        assertEquals(deviceStats.operations(), deserializedDeviceStats.operations());
-                        assertEquals(deviceStats.readKilobytes(), deserializedDeviceStats.readKilobytes());
-                        assertEquals(deviceStats.readOperations(), deserializedDeviceStats.readOperations());
-                        assertEquals(deviceStats.writeKilobytes(), deserializedDeviceStats.writeKilobytes());
-                        assertEquals(deviceStats.writeOperations(), deserializedDeviceStats.writeOperations());
-                        assertEquals(deviceStats.ioTimeInMillis(), deserializedDeviceStats.ioTimeInMillis());
-                    }
+            }
+            FsInfo fs = nodeStats.getFs();
+            FsInfo deserializedFs = deserializedNodeStats.getFs();
+            if (fs == null) {
+                assertNull(deserializedFs);
+            } else {
+                assertEquals(fs.getTimestamp(), deserializedFs.getTimestamp());
+                assertEquals(fs.getTotal().getAvailable(), deserializedFs.getTotal().getAvailable());
+                assertEquals(fs.getTotal().getTotal(), deserializedFs.getTotal().getTotal());
+                assertEquals(fs.getTotal().getFree(), deserializedFs.getTotal().getFree());
+                assertEquals(fs.getTotal().getMount(), deserializedFs.getTotal().getMount());
+                assertEquals(fs.getTotal().getPath(), deserializedFs.getTotal().getPath());
+                assertEquals(fs.getTotal().getType(), deserializedFs.getTotal().getType());
+                FsInfo.IoStats ioStats = fs.getIoStats();
+                FsInfo.IoStats deserializedIoStats = deserializedFs.getIoStats();
+                assertEquals(ioStats.getTotalOperations(), deserializedIoStats.getTotalOperations());
+                assertEquals(ioStats.getTotalReadKilobytes(), deserializedIoStats.getTotalReadKilobytes());
+                assertEquals(ioStats.getTotalReadOperations(), deserializedIoStats.getTotalReadOperations());
+                assertEquals(ioStats.getTotalWriteKilobytes(), deserializedIoStats.getTotalWriteKilobytes());
+                assertEquals(ioStats.getTotalWriteOperations(), deserializedIoStats.getTotalWriteOperations());
+                assertEquals(ioStats.getTotalIOTimeMillis(), deserializedIoStats.getTotalIOTimeMillis());
+                assertEquals(ioStats.getDevicesStats().length, deserializedIoStats.getDevicesStats().length);
+                for (int i = 0; i < ioStats.getDevicesStats().length; i++) {
+                    FsInfo.DeviceStats deviceStats = ioStats.getDevicesStats()[i];
+                    FsInfo.DeviceStats deserializedDeviceStats = deserializedIoStats.getDevicesStats()[i];
+                    assertEquals(deviceStats.operations(), deserializedDeviceStats.operations());
+                    assertEquals(deviceStats.readKilobytes(), deserializedDeviceStats.readKilobytes());
+                    assertEquals(deviceStats.readOperations(), deserializedDeviceStats.readOperations());
+                    assertEquals(deviceStats.writeKilobytes(), deserializedDeviceStats.writeKilobytes());
+                    assertEquals(deviceStats.writeOperations(), deserializedDeviceStats.writeOperations());
+                    assertEquals(deviceStats.ioTimeInMillis(), deserializedDeviceStats.ioTimeInMillis());
                 }
-                if (nodeStats.getTransport() == null) {
-                    assertNull(deserializedNodeStats.getTransport());
-                } else {
-                    assertEquals(nodeStats.getTransport().getRxCount(), deserializedNodeStats.getTransport().getRxCount());
-                    assertEquals(nodeStats.getTransport().getRxSize(), deserializedNodeStats.getTransport().getRxSize());
-                    assertEquals(nodeStats.getTransport().getServerOpen(), deserializedNodeStats.getTransport().getServerOpen());
-                    assertEquals(nodeStats.getTransport().getTxCount(), deserializedNodeStats.getTransport().getTxCount());
-                    assertEquals(nodeStats.getTransport().getTxSize(), deserializedNodeStats.getTransport().getTxSize());
-                    assertArrayEquals(
-                        nodeStats.getTransport().getInboundHandlingTimeBucketFrequencies(),
-                        deserializedNodeStats.getTransport().getInboundHandlingTimeBucketFrequencies()
-                    );
-                    assertArrayEquals(
-                        nodeStats.getTransport().getOutboundHandlingTimeBucketFrequencies(),
-                        deserializedNodeStats.getTransport().getOutboundHandlingTimeBucketFrequencies()
-                    );
+            }
+            if (nodeStats.getTransport() == null) {
+                assertNull(deserializedNodeStats.getTransport());
+            } else {
+                assertEquals(nodeStats.getTransport().getRxCount(), deserializedNodeStats.getTransport().getRxCount());
+                assertEquals(nodeStats.getTransport().getRxSize(), deserializedNodeStats.getTransport().getRxSize());
+                assertEquals(nodeStats.getTransport().getServerOpen(), deserializedNodeStats.getTransport().getServerOpen());
+                assertEquals(nodeStats.getTransport().getTxCount(), deserializedNodeStats.getTransport().getTxCount());
+                assertEquals(nodeStats.getTransport().getTxSize(), deserializedNodeStats.getTransport().getTxSize());
+                assertArrayEquals(
+                    nodeStats.getTransport().getInboundHandlingTimeBucketFrequencies(),
+                    deserializedNodeStats.getTransport().getInboundHandlingTimeBucketFrequencies()
+                );
+                assertArrayEquals(
+                    nodeStats.getTransport().getOutboundHandlingTimeBucketFrequencies(),
+                    deserializedNodeStats.getTransport().getOutboundHandlingTimeBucketFrequencies()
+                );
+            }
+            if (nodeStats.getHttp() == null) {
+                assertNull(deserializedNodeStats.getHttp());
+            } else {
+                assertEquals(nodeStats.getHttp().getServerOpen(), deserializedNodeStats.getHttp().getServerOpen());
+                assertEquals(nodeStats.getHttp().getTotalOpen(), deserializedNodeStats.getHttp().getTotalOpen());
+            }
+            if (nodeStats.getBreaker() == null) {
+                assertNull(deserializedNodeStats.getBreaker());
+            } else {
+                assertEquals(nodeStats.getBreaker().getAllStats().length, deserializedNodeStats.getBreaker().getAllStats().length);
+                for (int i = 0; i < nodeStats.getBreaker().getAllStats().length; i++) {
+                    CircuitBreakerStats circuitBreakerStats = nodeStats.getBreaker().getAllStats()[i];
+                    CircuitBreakerStats deserializedCircuitBreakerStats = deserializedNodeStats.getBreaker().getAllStats()[i];
+                    assertEquals(circuitBreakerStats.getEstimated(), deserializedCircuitBreakerStats.getEstimated());
+                    assertEquals(circuitBreakerStats.getLimit(), deserializedCircuitBreakerStats.getLimit());
+                    assertEquals(circuitBreakerStats.getName(), deserializedCircuitBreakerStats.getName());
+                    assertEquals(circuitBreakerStats.getOverhead(), deserializedCircuitBreakerStats.getOverhead(), 0);
+                    assertEquals(circuitBreakerStats.getTrippedCount(), deserializedCircuitBreakerStats.getTrippedCount(), 0);
                 }
-                if (nodeStats.getHttp() == null) {
-                    assertNull(deserializedNodeStats.getHttp());
-                } else {
-                    assertEquals(nodeStats.getHttp().getServerOpen(), deserializedNodeStats.getHttp().getServerOpen());
-                    assertEquals(nodeStats.getHttp().getTotalOpen(), deserializedNodeStats.getHttp().getTotalOpen());
-                }
-                if (nodeStats.getBreaker() == null) {
-                    assertNull(deserializedNodeStats.getBreaker());
-                } else {
-                    assertEquals(nodeStats.getBreaker().getAllStats().length, deserializedNodeStats.getBreaker().getAllStats().length);
-                    for (int i = 0; i < nodeStats.getBreaker().getAllStats().length; i++) {
-                        CircuitBreakerStats circuitBreakerStats = nodeStats.getBreaker().getAllStats()[i];
-                        CircuitBreakerStats deserializedCircuitBreakerStats = deserializedNodeStats.getBreaker().getAllStats()[i];
-                        assertEquals(circuitBreakerStats.getEstimated(), deserializedCircuitBreakerStats.getEstimated());
-                        assertEquals(circuitBreakerStats.getLimit(), deserializedCircuitBreakerStats.getLimit());
-                        assertEquals(circuitBreakerStats.getName(), deserializedCircuitBreakerStats.getName());
-                        assertEquals(circuitBreakerStats.getOverhead(), deserializedCircuitBreakerStats.getOverhead(), 0);
-                        assertEquals(circuitBreakerStats.getTrippedCount(), deserializedCircuitBreakerStats.getTrippedCount(), 0);
-                    }
-                }
-                ScriptStats scriptStats = nodeStats.getScriptStats();
-                ScriptStats deserializedScriptStats = deserializedNodeStats.getScriptStats();
-                if (scriptStats == null) {
-                    assertNull(deserializedScriptStats);
-                } else {
-                    List<ScriptContextStats> deserialized = deserializedScriptStats.getContextStats();
-                    long evictions = 0;
-                    long limited = 0;
-                    long compilations = 0;
-                    List<ScriptContextStats> stats = scriptStats.getContextStats();
-                    for (ScriptContextStats generatedStats : stats) {
-                        List<ScriptContextStats> maybeDeserStats = deserialized.stream()
-                            .filter(s -> s.getContext().equals(generatedStats.getContext()))
-                            .toList();
+            }
+            ScriptStats scriptStats = nodeStats.getScriptStats();
+            ScriptStats deserializedScriptStats = deserializedNodeStats.getScriptStats();
+            if (scriptStats == null) {
+                assertNull(deserializedScriptStats);
+            } else {
+                List<ScriptContextStats> deserialized = deserializedScriptStats.getContextStats();
+                long evictions = 0;
+                long limited = 0;
+                long compilations = 0;
+                List<ScriptContextStats> stats = scriptStats.getContextStats();
+                for (ScriptContextStats generatedStats : stats) {
+                    List<ScriptContextStats> maybeDeserStats = deserialized.stream()
+                        .filter(s -> s.getContext().equals(generatedStats.getContext()))
+                        .toList();
 
-                        assertEquals(1, maybeDeserStats.size());
-                        ScriptContextStats deserStats = maybeDeserStats.get(0);
+                    assertEquals(1, maybeDeserStats.size());
+                    ScriptContextStats deserStats = maybeDeserStats.get(0);
 
-                        evictions += generatedStats.getCacheEvictions();
-                        assertEquals(generatedStats.getCacheEvictions(), deserStats.getCacheEvictions());
+                    evictions += generatedStats.getCacheEvictions();
+                    assertEquals(generatedStats.getCacheEvictions(), deserStats.getCacheEvictions());
 
-                        limited += generatedStats.getCompilationLimitTriggered();
-                        assertEquals(generatedStats.getCompilationLimitTriggered(), deserStats.getCompilationLimitTriggered());
+                    limited += generatedStats.getCompilationLimitTriggered();
+                    assertEquals(generatedStats.getCompilationLimitTriggered(), deserStats.getCompilationLimitTriggered());
 
-                        compilations += generatedStats.getCompilations();
-                        assertEquals(generatedStats.getCompilations(), deserStats.getCompilations());
+                    compilations += generatedStats.getCompilations();
+                    assertEquals(generatedStats.getCompilations(), deserStats.getCompilations());
 
-                        assertEquals(generatedStats.getCacheEvictions(), deserStats.getCacheEvictions());
-                        assertEquals(generatedStats.getCompilations(), deserStats.getCompilations());
-                    }
-                    assertEquals(evictions, scriptStats.getCacheEvictions());
-                    assertEquals(limited, scriptStats.getCompilationLimitTriggered());
-                    assertEquals(compilations, scriptStats.getCompilations());
+                    assertEquals(generatedStats.getCacheEvictions(), deserStats.getCacheEvictions());
+                    assertEquals(generatedStats.getCompilations(), deserStats.getCompilations());
                 }
-                DiscoveryStats discoveryStats = nodeStats.getDiscoveryStats();
-                DiscoveryStats deserializedDiscoveryStats = deserializedNodeStats.getDiscoveryStats();
-                if (discoveryStats == null) {
-                    assertNull(deserializedDiscoveryStats);
+                assertEquals(evictions, scriptStats.getCacheEvictions());
+                assertEquals(limited, scriptStats.getCompilationLimitTriggered());
+                assertEquals(compilations, scriptStats.getCompilations());
+            }
+            DiscoveryStats discoveryStats = nodeStats.getDiscoveryStats();
+            DiscoveryStats deserializedDiscoveryStats = deserializedNodeStats.getDiscoveryStats();
+            if (discoveryStats == null) {
+                assertNull(deserializedDiscoveryStats);
+            } else {
+                PendingClusterStateStats queueStats = discoveryStats.getQueueStats();
+                if (queueStats == null) {
+                    assertNull(deserializedDiscoveryStats.getQueueStats());
                 } else {
-                    PendingClusterStateStats queueStats = discoveryStats.getQueueStats();
-                    if (queueStats == null) {
-                        assertNull(deserializedDiscoveryStats.getQueueStats());
-                    } else {
-                        assertEquals(queueStats.getCommitted(), deserializedDiscoveryStats.getQueueStats().getCommitted());
-                        assertEquals(queueStats.getTotal(), deserializedDiscoveryStats.getQueueStats().getTotal());
-                        assertEquals(queueStats.getPending(), deserializedDiscoveryStats.getQueueStats().getPending());
-                    }
-
-                    final PublishClusterStateStats publishStats = discoveryStats.getPublishStats();
-                    if (publishStats == null) {
-                        assertNull(deserializedDiscoveryStats.getPublishStats());
-                    } else {
-                        final PublishClusterStateStats deserializedPublishStats = deserializedDiscoveryStats.getPublishStats();
-                        assertEquals(
-                            publishStats.getFullClusterStateReceivedCount(),
-                            deserializedPublishStats.getFullClusterStateReceivedCount()
-                        );
-                        assertEquals(
-                            publishStats.getCompatibleClusterStateDiffReceivedCount(),
-                            deserializedPublishStats.getCompatibleClusterStateDiffReceivedCount()
-                        );
-                        assertEquals(
-                            publishStats.getIncompatibleClusterStateDiffReceivedCount(),
-                            deserializedPublishStats.getIncompatibleClusterStateDiffReceivedCount()
-                        );
-                    }
-
-                    final ClusterStateUpdateStats clusterStateUpdateStats = discoveryStats.getClusterStateUpdateStats();
-                    if (clusterStateUpdateStats == null) {
-                        assertNull(deserializedDiscoveryStats.getClusterStateUpdateStats());
-                    } else {
-                        final ClusterStateUpdateStats deserializedClusterStateUpdateStats = deserializedDiscoveryStats
-                            .getClusterStateUpdateStats();
-                        assertEquals(
-                            clusterStateUpdateStats.getUnchangedTaskCount(),
-                            deserializedClusterStateUpdateStats.getUnchangedTaskCount()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getPublicationSuccessCount(),
-                            deserializedClusterStateUpdateStats.getPublicationSuccessCount()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getPublicationFailureCount(),
-                            deserializedClusterStateUpdateStats.getPublicationFailureCount()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getUnchangedComputationElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getUnchangedComputationElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getUnchangedNotificationElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getUnchangedNotificationElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getSuccessfulComputationElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getSuccessfulComputationElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getSuccessfulPublicationElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getSuccessfulPublicationElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getSuccessfulContextConstructionElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getSuccessfulContextConstructionElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getSuccessfulCommitElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getSuccessfulCommitElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getSuccessfulCompletionElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getSuccessfulCompletionElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getSuccessfulMasterApplyElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getSuccessfulMasterApplyElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getSuccessfulNotificationElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getSuccessfulNotificationElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getFailedComputationElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getFailedComputationElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getFailedPublicationElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getFailedPublicationElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getFailedContextConstructionElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getFailedContextConstructionElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getFailedCommitElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getFailedCommitElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getFailedCompletionElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getFailedCompletionElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getFailedMasterApplyElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getFailedMasterApplyElapsedMillis()
-                        );
-                        assertEquals(
-                            clusterStateUpdateStats.getFailedNotificationElapsedMillis(),
-                            deserializedClusterStateUpdateStats.getFailedNotificationElapsedMillis()
-                        );
-                    }
+                    assertEquals(queueStats.getCommitted(), deserializedDiscoveryStats.getQueueStats().getCommitted());
+                    assertEquals(queueStats.getTotal(), deserializedDiscoveryStats.getQueueStats().getTotal());
+                    assertEquals(queueStats.getPending(), deserializedDiscoveryStats.getQueueStats().getPending());
                 }
-                IngestStats ingestStats = nodeStats.getIngestStats();
-                IngestStats deserializedIngestStats = deserializedNodeStats.getIngestStats();
-                if (ingestStats == null) {
-                    assertNull(deserializedIngestStats);
+
+                final PublishClusterStateStats publishStats = discoveryStats.getPublishStats();
+                if (publishStats == null) {
+                    assertNull(deserializedDiscoveryStats.getPublishStats());
                 } else {
-                    IngestStats.Stats totalStats = ingestStats.getTotalStats();
-                    assertEquals(totalStats.getIngestCount(), deserializedIngestStats.getTotalStats().getIngestCount());
-                    assertEquals(totalStats.getIngestCurrent(), deserializedIngestStats.getTotalStats().getIngestCurrent());
-                    assertEquals(totalStats.getIngestFailedCount(), deserializedIngestStats.getTotalStats().getIngestFailedCount());
-                    assertEquals(totalStats.getIngestTimeInMillis(), deserializedIngestStats.getTotalStats().getIngestTimeInMillis());
-                    assertEquals(ingestStats.getPipelineStats().size(), deserializedIngestStats.getPipelineStats().size());
-                    for (IngestStats.PipelineStat pipelineStat : ingestStats.getPipelineStats()) {
-                        String pipelineId = pipelineStat.getPipelineId();
-                        IngestStats.Stats deserializedPipelineStats = getPipelineStats(
-                            deserializedIngestStats.getPipelineStats(),
-                            pipelineId
-                        );
-                        assertEquals(pipelineStat.getStats().getIngestFailedCount(), deserializedPipelineStats.getIngestFailedCount());
-                        assertEquals(pipelineStat.getStats().getIngestTimeInMillis(), deserializedPipelineStats.getIngestTimeInMillis());
-                        assertEquals(pipelineStat.getStats().getIngestCurrent(), deserializedPipelineStats.getIngestCurrent());
-                        assertEquals(pipelineStat.getStats().getIngestCount(), deserializedPipelineStats.getIngestCount());
-                        List<IngestStats.ProcessorStat> processorStats = ingestStats.getProcessorStats().get(pipelineId);
-                        // intentionally validating identical order
-                        Iterator<IngestStats.ProcessorStat> it = deserializedIngestStats.getProcessorStats().get(pipelineId).iterator();
-                        for (IngestStats.ProcessorStat processorStat : processorStats) {
-                            IngestStats.ProcessorStat deserializedProcessorStat = it.next();
-                            assertEquals(
-                                processorStat.getStats().getIngestFailedCount(),
-                                deserializedProcessorStat.getStats().getIngestFailedCount()
-                            );
-                            assertEquals(
-                                processorStat.getStats().getIngestTimeInMillis(),
-                                deserializedProcessorStat.getStats().getIngestTimeInMillis()
-                            );
-                            assertEquals(
-                                processorStat.getStats().getIngestCurrent(),
-                                deserializedProcessorStat.getStats().getIngestCurrent()
-                            );
-                            assertEquals(processorStat.getStats().getIngestCount(), deserializedProcessorStat.getStats().getIngestCount());
-                        }
-                        assertFalse(it.hasNext());
-                    }
+                    final PublishClusterStateStats deserializedPublishStats = deserializedDiscoveryStats.getPublishStats();
+                    assertEquals(
+                        publishStats.getFullClusterStateReceivedCount(),
+                        deserializedPublishStats.getFullClusterStateReceivedCount()
+                    );
+                    assertEquals(
+                        publishStats.getCompatibleClusterStateDiffReceivedCount(),
+                        deserializedPublishStats.getCompatibleClusterStateDiffReceivedCount()
+                    );
+                    assertEquals(
+                        publishStats.getIncompatibleClusterStateDiffReceivedCount(),
+                        deserializedPublishStats.getIncompatibleClusterStateDiffReceivedCount()
+                    );
                 }
-                AdaptiveSelectionStats adaptiveStats = nodeStats.getAdaptiveSelectionStats();
-                AdaptiveSelectionStats deserializedAdaptiveStats = deserializedNodeStats.getAdaptiveSelectionStats();
-                if (adaptiveStats == null) {
-                    assertNull(deserializedAdaptiveStats);
+
+                final ClusterStateUpdateStats clusterStateUpdateStats = discoveryStats.getClusterStateUpdateStats();
+                if (clusterStateUpdateStats == null) {
+                    assertNull(deserializedDiscoveryStats.getClusterStateUpdateStats());
                 } else {
-                    assertEquals(adaptiveStats.getOutgoingConnections(), deserializedAdaptiveStats.getOutgoingConnections());
-                    assertEquals(adaptiveStats.getRanks(), deserializedAdaptiveStats.getRanks());
-                    adaptiveStats.getComputedStats().forEach((k, v) -> {
-                        ResponseCollectorService.ComputedNodeStats aStats = adaptiveStats.getComputedStats().get(k);
-                        ResponseCollectorService.ComputedNodeStats bStats = deserializedAdaptiveStats.getComputedStats().get(k);
-                        assertEquals(aStats.nodeId, bStats.nodeId);
-                        assertEquals(aStats.queueSize, bStats.queueSize, 0.01);
-                        assertEquals(aStats.serviceTime, bStats.serviceTime, 0.01);
-                        assertEquals(aStats.responseTime, bStats.responseTime, 0.01);
-                    });
+                    final ClusterStateUpdateStats deserializedClusterStateUpdateStats = deserializedDiscoveryStats
+                        .getClusterStateUpdateStats();
+                    assertEquals(
+                        clusterStateUpdateStats.getUnchangedTaskCount(),
+                        deserializedClusterStateUpdateStats.getUnchangedTaskCount()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getPublicationSuccessCount(),
+                        deserializedClusterStateUpdateStats.getPublicationSuccessCount()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getPublicationFailureCount(),
+                        deserializedClusterStateUpdateStats.getPublicationFailureCount()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getUnchangedComputationElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getUnchangedComputationElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getUnchangedNotificationElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getUnchangedNotificationElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getSuccessfulComputationElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getSuccessfulComputationElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getSuccessfulPublicationElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getSuccessfulPublicationElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getSuccessfulContextConstructionElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getSuccessfulContextConstructionElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getSuccessfulCommitElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getSuccessfulCommitElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getSuccessfulCompletionElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getSuccessfulCompletionElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getSuccessfulMasterApplyElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getSuccessfulMasterApplyElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getSuccessfulNotificationElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getSuccessfulNotificationElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getFailedComputationElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getFailedComputationElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getFailedPublicationElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getFailedPublicationElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getFailedContextConstructionElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getFailedContextConstructionElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getFailedCommitElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getFailedCommitElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getFailedCompletionElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getFailedCompletionElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getFailedMasterApplyElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getFailedMasterApplyElapsedMillis()
+                    );
+                    assertEquals(
+                        clusterStateUpdateStats.getFailedNotificationElapsedMillis(),
+                        deserializedClusterStateUpdateStats.getFailedNotificationElapsedMillis()
+                    );
                 }
-                ScriptCacheStats scriptCacheStats = nodeStats.getScriptCacheStats();
-                ScriptCacheStats deserializedScriptCacheStats = deserializedNodeStats.getScriptCacheStats();
-                if (scriptCacheStats == null) {
-                    assertNull(deserializedScriptCacheStats);
-                } else if (deserializedScriptCacheStats.getContextStats() != null) {
-                    Map<String, ScriptStats> deserialized = deserializedScriptCacheStats.getContextStats();
-                    long evictions = 0;
-                    long limited = 0;
-                    long compilations = 0;
-                    Map<String, ScriptStats> stats = scriptCacheStats.getContextStats();
-                    for (String context : stats.keySet()) {
-                        ScriptStats deserStats = deserialized.get(context);
-                        ScriptStats generatedStats = stats.get(context);
-
-                        evictions += generatedStats.getCacheEvictions();
-                        assertEquals(generatedStats.getCacheEvictions(), deserStats.getCacheEvictions());
-
-                        limited += generatedStats.getCompilationLimitTriggered();
-                        assertEquals(generatedStats.getCompilationLimitTriggered(), deserStats.getCompilationLimitTriggered());
-
-                        compilations += generatedStats.getCompilations();
-                        assertEquals(generatedStats.getCompilations(), deserStats.getCompilations());
+            }
+            IngestStats ingestStats = nodeStats.getIngestStats();
+            IngestStats deserializedIngestStats = deserializedNodeStats.getIngestStats();
+            if (ingestStats == null) {
+                assertNull(deserializedIngestStats);
+            } else {
+                IngestStats.Stats totalStats = ingestStats.getTotalStats();
+                assertEquals(totalStats.getIngestCount(), deserializedIngestStats.getTotalStats().getIngestCount());
+                assertEquals(totalStats.getIngestCurrent(), deserializedIngestStats.getTotalStats().getIngestCurrent());
+                assertEquals(totalStats.getIngestFailedCount(), deserializedIngestStats.getTotalStats().getIngestFailedCount());
+                assertEquals(totalStats.getIngestTimeInMillis(), deserializedIngestStats.getTotalStats().getIngestTimeInMillis());
+                assertEquals(ingestStats.getPipelineStats().size(), deserializedIngestStats.getPipelineStats().size());
+                for (IngestStats.PipelineStat pipelineStat : ingestStats.getPipelineStats()) {
+                    String pipelineId = pipelineStat.getPipelineId();
+                    IngestStats.Stats deserializedPipelineStats = getPipelineStats(deserializedIngestStats.getPipelineStats(), pipelineId);
+                    assertEquals(pipelineStat.getStats().getIngestFailedCount(), deserializedPipelineStats.getIngestFailedCount());
+                    assertEquals(pipelineStat.getStats().getIngestTimeInMillis(), deserializedPipelineStats.getIngestTimeInMillis());
+                    assertEquals(pipelineStat.getStats().getIngestCurrent(), deserializedPipelineStats.getIngestCurrent());
+                    assertEquals(pipelineStat.getStats().getIngestCount(), deserializedPipelineStats.getIngestCount());
+                    List<IngestStats.ProcessorStat> processorStats = ingestStats.getProcessorStats().get(pipelineId);
+                    // intentionally validating identical order
+                    Iterator<IngestStats.ProcessorStat> it = deserializedIngestStats.getProcessorStats().get(pipelineId).iterator();
+                    for (IngestStats.ProcessorStat processorStat : processorStats) {
+                        IngestStats.ProcessorStat deserializedProcessorStat = it.next();
+                        assertEquals(
+                            processorStat.getStats().getIngestFailedCount(),
+                            deserializedProcessorStat.getStats().getIngestFailedCount()
+                        );
+                        assertEquals(
+                            processorStat.getStats().getIngestTimeInMillis(),
+                            deserializedProcessorStat.getStats().getIngestTimeInMillis()
+                        );
+                        assertEquals(processorStat.getStats().getIngestCurrent(), deserializedProcessorStat.getStats().getIngestCurrent());
+                        assertEquals(processorStat.getStats().getIngestCount(), deserializedProcessorStat.getStats().getIngestCount());
                     }
-                    ScriptStats sum = deserializedScriptCacheStats.sum();
-                    assertEquals(evictions, sum.getCacheEvictions());
-                    assertEquals(limited, sum.getCompilationLimitTriggered());
-                    assertEquals(compilations, sum.getCompilations());
+                    assertFalse(it.hasNext());
                 }
+            }
+            AdaptiveSelectionStats adaptiveStats = nodeStats.getAdaptiveSelectionStats();
+            AdaptiveSelectionStats deserializedAdaptiveStats = deserializedNodeStats.getAdaptiveSelectionStats();
+            if (adaptiveStats == null) {
+                assertNull(deserializedAdaptiveStats);
+            } else {
+                assertEquals(adaptiveStats.getOutgoingConnections(), deserializedAdaptiveStats.getOutgoingConnections());
+                assertEquals(adaptiveStats.getRanks(), deserializedAdaptiveStats.getRanks());
+                adaptiveStats.getComputedStats().forEach((k, v) -> {
+                    ResponseCollectorService.ComputedNodeStats aStats = adaptiveStats.getComputedStats().get(k);
+                    ResponseCollectorService.ComputedNodeStats bStats = deserializedAdaptiveStats.getComputedStats().get(k);
+                    assertEquals(aStats.nodeId, bStats.nodeId);
+                    assertEquals(aStats.queueSize, bStats.queueSize, 0.01);
+                    assertEquals(aStats.serviceTime, bStats.serviceTime, 0.01);
+                    assertEquals(aStats.responseTime, bStats.responseTime, 0.01);
+                });
+            }
+            ScriptCacheStats scriptCacheStats = nodeStats.getScriptCacheStats();
+            ScriptCacheStats deserializedScriptCacheStats = deserializedNodeStats.getScriptCacheStats();
+            if (scriptCacheStats == null) {
+                assertNull(deserializedScriptCacheStats);
+            } else if (deserializedScriptCacheStats.getContextStats() != null) {
+                Map<String, ScriptStats> deserialized = deserializedScriptCacheStats.getContextStats();
+                long evictions = 0;
+                long limited = 0;
+                long compilations = 0;
+                Map<String, ScriptStats> stats = scriptCacheStats.getContextStats();
+                for (String context : stats.keySet()) {
+                    ScriptStats deserStats = deserialized.get(context);
+                    ScriptStats generatedStats = stats.get(context);
+
+                    evictions += generatedStats.getCacheEvictions();
+                    assertEquals(generatedStats.getCacheEvictions(), deserStats.getCacheEvictions());
+
+                    limited += generatedStats.getCompilationLimitTriggered();
+                    assertEquals(generatedStats.getCompilationLimitTriggered(), deserStats.getCompilationLimitTriggered());
+
+                    compilations += generatedStats.getCompilations();
+                    assertEquals(generatedStats.getCompilations(), deserStats.getCompilations());
+                }
+                ScriptStats sum = deserializedScriptCacheStats.sum();
+                assertEquals(evictions, sum.getCacheEvictions());
+                assertEquals(limited, sum.getCompilationLimitTriggered());
+                assertEquals(compilations, sum.getCompilations());
             }
         }
     }

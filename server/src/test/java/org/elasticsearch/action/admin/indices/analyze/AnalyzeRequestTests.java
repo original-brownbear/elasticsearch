@@ -9,8 +9,8 @@
 package org.elasticsearch.action.admin.indices.analyze;
 
 import org.elasticsearch.action.ActionRequestValidationException;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.test.ESTestCase;
 
 import java.io.IOException;
@@ -95,16 +95,13 @@ public class AnalyzeRequestTests extends ESTestCase {
         request.addCharFilter("charfilter");
         request.normalizer("normalizer");
 
-        try (BytesStreamOutput output = new BytesStreamOutput()) {
-            request.writeTo(output);
-            try (StreamInput in = output.bytes().streamInput()) {
-                AnalyzeAction.Request serialized = new AnalyzeAction.Request(in);
-                assertArrayEquals(request.text(), serialized.text());
-                assertEquals(request.tokenizer().name, serialized.tokenizer().name);
-                assertEquals(request.tokenFilters().get(0).name, serialized.tokenFilters().get(0).name);
-                assertEquals(request.charFilters().get(0).name, serialized.charFilters().get(0).name);
-                assertEquals(request.normalizer(), serialized.normalizer());
-            }
+        try (StreamInput in = Writeable.toBytes(request).streamInput()) {
+            AnalyzeAction.Request serialized = new AnalyzeAction.Request(in);
+            assertArrayEquals(request.text(), serialized.text());
+            assertEquals(request.tokenizer().name, serialized.tokenizer().name);
+            assertEquals(request.tokenFilters().get(0).name, serialized.tokenFilters().get(0).name);
+            assertEquals(request.charFilters().get(0).name, serialized.charFilters().get(0).name);
+            assertEquals(request.normalizer(), serialized.normalizer());
         }
     }
 }

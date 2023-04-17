@@ -25,11 +25,10 @@ import org.elasticsearch.cluster.routing.allocation.allocator.BalancedShardsAllo
 import org.elasticsearch.cluster.routing.allocation.command.AllocateEmptyPrimaryAllocationCommand;
 import org.elasticsearch.cluster.routing.allocation.decider.AllocationDeciders;
 import org.elasticsearch.cluster.routing.allocation.decider.MaxRetryAllocationDecider;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -55,11 +54,8 @@ public class ClusterRerouteTests extends ESAllocationTestCase {
         req.explain(randomBoolean());
         req.add(new AllocateEmptyPrimaryAllocationCommand("foo", 1, "bar", randomBoolean()));
         req.timeout(TimeValue.timeValueMillis(randomIntBetween(0, 100)));
-        BytesStreamOutput out = new BytesStreamOutput();
-        req.writeTo(out);
-        BytesReference bytes = out.bytes();
         NamedWriteableRegistry namedWriteableRegistry = new NamedWriteableRegistry(NetworkModule.getNamedWriteables());
-        StreamInput wrap = new NamedWriteableAwareStreamInput(bytes.streamInput(), namedWriteableRegistry);
+        StreamInput wrap = new NamedWriteableAwareStreamInput(Writeable.toBytes(req).streamInput(), namedWriteableRegistry);
         ClusterRerouteRequest deserializedReq = new ClusterRerouteRequest(wrap);
 
         assertEquals(req.isRetryFailed(), deserializedReq.isRetryFailed());

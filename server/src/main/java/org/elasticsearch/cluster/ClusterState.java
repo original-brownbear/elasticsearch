@@ -34,7 +34,6 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.collect.Iterators;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -874,20 +873,14 @@ public class ClusterState implements ChunkedToXContent, Diffable<ClusterState> {
             );
         }
 
-        public static byte[] toBytes(ClusterState state) throws IOException {
-            BytesStreamOutput os = new BytesStreamOutput();
-            state.writeTo(os);
-            return BytesReference.toBytes(os.bytes());
-        }
-
         /**
          * @param data      input bytes
          * @param localNode used to set the local node in the cluster state.
          */
-        public static ClusterState fromBytes(byte[] data, DiscoveryNode localNode, NamedWriteableRegistry registry) throws IOException {
-            StreamInput in = new NamedWriteableAwareStreamInput(StreamInput.wrap(data), registry);
+        public static ClusterState fromBytes(BytesReference data, DiscoveryNode localNode, NamedWriteableRegistry registry)
+            throws IOException {
+            StreamInput in = new NamedWriteableAwareStreamInput(data.streamInput(), registry);
             return readFrom(in, localNode);
-
         }
     }
 

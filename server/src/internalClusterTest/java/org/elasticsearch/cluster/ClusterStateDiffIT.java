@@ -30,12 +30,11 @@ import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.elasticsearch.cluster.routing.TestShardRouting;
 import org.elasticsearch.common.UUIDs;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.gateway.GatewayService;
@@ -80,7 +79,7 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
             .putTransportVersion("other", TransportVersionUtils.randomVersion(random()))
             .build();
         ClusterState clusterStateFromDiffs = ClusterState.Builder.fromBytes(
-            ClusterState.Builder.toBytes(clusterState),
+                Writeable.toBytes(clusterState),
             otherNode,
             namedWriteableRegistry
         );
@@ -110,18 +109,15 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
             if (randomIntBetween(0, 10) < 1) {
                 // Update cluster state via full serialization from time to time
                 clusterStateFromDiffs = ClusterState.Builder.fromBytes(
-                    ClusterState.Builder.toBytes(clusterState),
+                    Writeable.toBytes(clusterState),
                     previousClusterStateFromDiffs.nodes().getLocalNode(),
                     namedWriteableRegistry
                 );
             } else {
                 // Update cluster states using diffs
                 Diff<ClusterState> diffBeforeSerialization = clusterState.diff(previousClusterState);
-                BytesStreamOutput os = new BytesStreamOutput();
-                diffBeforeSerialization.writeTo(os);
-                byte[] diffBytes = BytesReference.toBytes(os.bytes());
                 Diff<ClusterState> diff;
-                try (StreamInput input = StreamInput.wrap(diffBytes)) {
+                try (StreamInput input = Writeable.toBytes(diffBeforeSerialization).streamInput()) {
                     StreamInput namedInput = new NamedWriteableAwareStreamInput(input, namedWriteableRegistry);
                     diff = ClusterState.readDiffFrom(namedInput, previousClusterStateFromDiffs.nodes().getLocalNode());
                     clusterStateFromDiffs = diff.apply(previousClusterStateFromDiffs);
@@ -173,8 +169,8 @@ public class ClusterStateDiffIT extends ESIntegTestCase {
                 // Smoke test - we cannot compare bytes to bytes because some elements might get serialized in different order
                 // however, serialized size should remain the same
                 assertThat(
-                    ClusterState.Builder.toBytes(clusterStateFromDiffs).length,
-                    equalTo(ClusterState.Builder.toBytes(clusterState).length)
+                    Writeable.toBytes(clusterStateFromDiffs).length(),
+                    equalTo(Writeable.toBytes(clusterState).length())
                 );
             } catch (AssertionError error) {
                 logger.error(

@@ -16,7 +16,6 @@ import org.elasticsearch.cluster.health.ClusterIndexHealth;
 import org.elasticsearch.cluster.health.ClusterIndexHealthTests;
 import org.elasticsearch.cluster.health.ClusterStateHealth;
 import org.elasticsearch.cluster.metadata.Metadata;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.settings.Settings;
@@ -93,9 +92,7 @@ public class ClusterHealthResponsesTests extends AbstractXContentSerializingTest
 
     ClusterHealthResponse maybeSerialize(ClusterHealthResponse clusterHealth) throws IOException {
         if (randomBoolean()) {
-            BytesStreamOutput out = new BytesStreamOutput();
-            clusterHealth.writeTo(out);
-            StreamInput in = out.bytes().streamInput();
+            StreamInput in = Writeable.toBytes(clusterHealth).streamInput();
             clusterHealth = ClusterHealthResponse.readResponseFrom(in);
         }
         return clusterHealth;

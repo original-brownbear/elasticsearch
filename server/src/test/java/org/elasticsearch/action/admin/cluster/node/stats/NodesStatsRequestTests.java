@@ -9,8 +9,7 @@
 package org.elasticsearch.action.admin.cluster.node.stats;
 
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
-import org.elasticsearch.common.io.stream.BytesStreamOutput;
-import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.HashSet;
@@ -125,12 +124,7 @@ public class NodesStatsRequestTests extends ESTestCase {
      * @return The deserialized, "round-tripped" request.
      */
     private static NodesStatsRequest roundTripRequest(NodesStatsRequest request) throws Exception {
-        try (BytesStreamOutput out = new BytesStreamOutput()) {
-            request.writeTo(out);
-            try (StreamInput in = out.bytes().streamInput()) {
-                return new NodesStatsRequest(in);
-            }
-        }
+        return new NodesStatsRequest(Writeable.toBytes(request).streamInput());
     }
 
     private static void assertRequestsEqual(NodesStatsRequest request1, NodesStatsRequest request2) {

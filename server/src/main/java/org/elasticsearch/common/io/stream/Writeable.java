@@ -8,6 +8,8 @@
 
 package org.elasticsearch.common.io.stream;
 
+import org.elasticsearch.common.bytes.BytesReference;
+
 import java.io.IOException;
 
 /**
@@ -21,6 +23,12 @@ public interface Writeable {
      * Write this into the {@linkplain StreamOutput}.
      */
     void writeTo(StreamOutput out) throws IOException;
+
+    static BytesReference toBytes(Writeable writeable) throws IOException {
+        BytesStreamOutput tmp = new BytesStreamOutput();
+        writeable.writeTo(tmp);
+        return tmp.bytes();
+    }
 
     /**
      * Reference to a method that can write some object to a {@link StreamOutput}.
