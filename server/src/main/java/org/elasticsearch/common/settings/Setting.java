@@ -14,7 +14,6 @@ import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.DeprecationCategory;
-import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.MemorySizeValue;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
@@ -36,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -223,7 +223,7 @@ public class Setting<T> implements ToXContentObject {
      * @param parser a parser that parses the string rep into a complex datatype.
      * @param properties properties for this setting like scope, filtering...
      */
-    public Setting(Key key, Function<Settings, String> defaultValue, Function<String, T> parser, Property... properties) {
+    private Setting(Key key, Function<Settings, String> defaultValue, Function<String, T> parser, Property... properties) {
         this(key, defaultValue, parser, v -> {}, properties);
     }
 
@@ -236,7 +236,7 @@ public class Setting<T> implements ToXContentObject {
      * @param validator    a {@link Validator} for validating this setting
      * @param properties   properties for this setting
      */
-    public Setting(
+    private Setting(
         Key key,
         Function<Settings, String> defaultValue,
         Function<String, T> parser,
@@ -267,7 +267,7 @@ public class Setting<T> implements ToXContentObject {
      * @param properties   properties for this setting
      */
     public Setting(String key, String defaultValue, Function<String, T> parser, Validator<T> validator, Property... properties) {
-        this(new SimpleKey(key), s -> defaultValue, parser, validator, properties);
+        this(key, s -> defaultValue, parser, validator, properties);
     }
 
     /**
@@ -278,7 +278,7 @@ public class Setting<T> implements ToXContentObject {
      * @param properties properties for this setting like scope, filtering...
      */
     public Setting(String key, Function<Settings, String> defaultValue, Function<String, T> parser, Property... properties) {
-        this(new SimpleKey(key), defaultValue, parser, properties);
+        this(new Key(key), defaultValue, parser, properties);
     }
 
     /**
@@ -296,7 +296,7 @@ public class Setting<T> implements ToXContentObject {
         Validator<T> validator,
         Property... properties
     ) {
-        this(new SimpleKey(key), defaultValue, parser, validator, properties);
+        this(new Key(key), defaultValue, parser, validator, properties);
     }
 
     /**
@@ -308,18 +308,7 @@ public class Setting<T> implements ToXContentObject {
      * @param properties properties for this setting like scope, filtering...
      */
     public Setting(String key, Setting<T> fallbackSetting, Function<String, T> parser, Validator<T> validator, Property... properties) {
-        this(new SimpleKey(key), fallbackSetting, fallbackSetting::getRaw, parser, validator, properties);
-    }
-
-    /**
-     * Creates a new Setting instance
-     * @param key the settings key for this setting.
-     * @param fallbackSetting a setting who's value to fallback on if this setting is not defined
-     * @param parser a parser that parses the string rep into a complex datatype.
-     * @param properties properties for this setting like scope, filtering...
-     */
-    public Setting(Key key, Setting<T> fallbackSetting, Function<String, T> parser, Property... properties) {
-        this(key, fallbackSetting, fallbackSetting::getRaw, parser, v -> {}, properties);
+        this(new Key(key), fallbackSetting, fallbackSetting::getRaw, parser, validator, properties);
     }
 
     /**
@@ -330,7 +319,7 @@ public class Setting<T> implements ToXContentObject {
      * @param properties properties for this setting like scope, filtering...
      */
     public Setting(String key, Setting<T> fallBackSetting, Function<String, T> parser, Property... properties) {
-        this(new SimpleKey(key), fallBackSetting, parser, properties);
+        this(key, fallBackSetting, parser,  v -> {}, properties);
     }
 
     /**
@@ -1049,11 +1038,17 @@ public class Setting<T> implements ToXContentObject {
          */
         public Map<String, T> getAsMap(Settings settings) {
             Map<String, T> map = new HashMap<>();
-            matchStream(settings).distinct().forEach(key -> {
-                String namespace = this.key.getNamespace(key);
-                Setting<T> concreteSetting = getConcreteSetting(namespace, key);
-                map.put(namespace, concreteSetting.get(settings));
-            });
+            Set<String> uniqueValues = new HashSet<>();
+            for (String s : settings.keySet()) {
+                if (match(s)) {
+                    String concreteString = key.getConcreteString(s);
+                    if (uniqueValues.add(concreteString)) {
+                        String namespace = this.key.getNamespace(concreteString);
+                        Setting<T> concreteSetting = getConcreteSetting(namespace, concreteString);
+                        map.put(namespace, concreteSetting.get(settings));
+                    }
+                }
+            }
             return Collections.unmodifiableMap(map);
         }
     }
@@ -1114,7 +1109,7 @@ public class Setting<T> implements ToXContentObject {
         private final Consumer<Settings> validator;
 
         private GroupSetting(String key, Consumer<Settings> validator, Property... properties) {
-            super(new GroupKey(key), (s) -> "", (s) -> null, properties);
+            super(new PatternMatchingKey(key, Pattern.quote(key) + "(?:.*)"), (s) -> "", (s) -> null, properties);
             this.key = key;
             this.validator = validator;
         }
@@ -1315,7 +1310,23 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<Integer> intSetting(String key, int defaultValue, int minValue, Property... properties) {
-        return new Setting<>(key, Integer.toString(defaultValue), (s) -> parseInt(s, minValue, key, isFiltered(properties)), properties);
+        return new Setting<>(
+            key,
+            Integer.toString(defaultValue),
+            intParser(key, minValue, properties),
+            properties
+        );
+    }
+
+    private static Function<String, Integer> intParser(String key, int minValue, Property... properties) {
+        return isFiltered(properties) ? s -> {
+            int value = Integer.parseInt(s);
+            if (value < minValue) {
+                String err = "Failed to parse value for setting [" + key + "] must be >= " + minValue;
+                throw new IllegalArgumentException(err);
+            }
+            return value;
+        } : s -> parseInt(s, minValue, key);
     }
 
     public static Setting<Integer> intSetting(
@@ -1328,14 +1339,14 @@ public class Setting<T> implements ToXContentObject {
         return new Setting<>(
             key,
             Integer.toString(defaultValue),
-            (s) -> parseInt(s, minValue, key, isFiltered(properties)),
+            intParser(key, minValue, properties),
             validator,
             properties
         );
     }
 
     public static Setting<Integer> intSetting(String key, Setting<Integer> fallbackSetting, int minValue, Property... properties) {
-        return new Setting<>(key, fallbackSetting, (s) -> parseInt(s, minValue, key, isFiltered(properties)), properties);
+        return new Setting<>(key, fallbackSetting, intParser(key, minValue, properties), properties);
     }
 
     public static Setting<Integer> intSetting(
@@ -1356,17 +1367,32 @@ public class Setting<T> implements ToXContentObject {
         Property... properties
     ) {
         return new Setting<>(
-            new SimpleKey(key),
+            new Key(key),
             fallbackSetting,
             fallbackSetting::getRaw,
-            (s) -> parseInt(s, minValue, key, isFiltered(properties)),
+            intParser(key, minValue, properties),
             validator,
             properties
         );
     }
 
     public static Setting<Long> longSetting(String key, long defaultValue, long minValue, Property... properties) {
-        return new Setting<>(key, Long.toString(defaultValue), (s) -> parseLong(s, minValue, key, isFiltered(properties)), properties);
+        boolean isFiltered = isFiltered(properties);
+        return new Setting<>(key, Long.toString(defaultValue), isFiltered ? s -> {
+            long value = Long.parseLong(s);
+            if (value < minValue) {
+                String err = "Failed to parse value" + " for setting [" + key + "] must be >= " + minValue;
+                throw new IllegalArgumentException(err);
+            }
+            return value;
+        } : s -> {
+            long value = Long.parseLong(s);
+            if (value < minValue) {
+                String err = "Failed to parse value [" + s + "]" + " for setting [" + key + "] must be >= " + minValue;
+                throw new IllegalArgumentException(err);
+            }
+            return value;
+        }, properties);
     }
 
     public static Setting<Instant> dateSetting(String key, Instant defaultValue, Validator<Instant> validator, Property... properties) {
@@ -1419,11 +1445,12 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static int parseInt(String s, int minValue, String key) {
-        return parseInt(s, minValue, Integer.MAX_VALUE, key, false);
-    }
-
-    public static int parseInt(String s, int minValue, String key, boolean isFiltered) {
-        return parseInt(s, minValue, Integer.MAX_VALUE, key, isFiltered);
+        int value = Integer.parseInt(s);
+        if (value < minValue) {
+            String err = "Failed to parse value" + " [" + s + "]" + " for setting [" + key + "] must be >= " + minValue;
+            throw new IllegalArgumentException(err);
+        }
+        return value;
     }
 
     public static int parseInt(String s, int minValue, int maxValue, String key) {
@@ -1443,45 +1470,34 @@ public class Setting<T> implements ToXContentObject {
         return value;
     }
 
-    static long parseLong(String s, long minValue, String key, boolean isFiltered) {
-        long value = Long.parseLong(s);
-        if (value < minValue) {
-            String err = "Failed to parse value" + (isFiltered ? "" : " [" + s + "]") + " for setting [" + key + "] must be >= " + minValue;
-            throw new IllegalArgumentException(err);
-        }
-        return value;
-    }
-
     public static Setting<Integer> intSetting(String key, int defaultValue, Property... properties) {
         return intSetting(key, defaultValue, Integer.MIN_VALUE, properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, boolean defaultValue, Property... properties) {
-        return new Setting<>(key, Boolean.toString(defaultValue), b -> parseBoolean(b, key, isFiltered(properties)), properties);
+        return new Setting<>(key, Boolean.toString(defaultValue), booleanParser(key, properties), properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, Setting<Boolean> fallbackSetting, Property... properties) {
-        return new Setting<>(key, fallbackSetting, b -> parseBoolean(b, key, isFiltered(properties)), properties);
+        return new Setting<>(key, fallbackSetting, booleanParser(key, properties), properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, boolean defaultValue, Validator<Boolean> validator, Property... properties) {
-        return new Setting<>(key, Boolean.toString(defaultValue), b -> parseBoolean(b, key, isFiltered(properties)), validator, properties);
+        return new Setting<>(key, Boolean.toString(defaultValue), booleanParser(key, properties), validator, properties);
     }
 
     public static Setting<Boolean> boolSetting(String key, Function<Settings, String> defaultValueFn, Property... properties) {
-        return new Setting<>(key, defaultValueFn, b -> parseBoolean(b, key, isFiltered(properties)), properties);
+        return new Setting<>(key, defaultValueFn, booleanParser(key, properties), properties);
     }
 
-    static boolean parseBoolean(String b, String key, boolean isFiltered) {
-        try {
-            return Booleans.parseBoolean(b);
-        } catch (IllegalArgumentException ex) {
-            if (isFiltered) {
+    private static Function<String, Boolean> booleanParser(String key, Property[] properties) {
+        return isFiltered(properties) ? b -> {
+            try {
+                return Booleans.parseBoolean(b);
+            } catch (IllegalArgumentException ex) {
                 throw new IllegalArgumentException("Failed to parse value for setting [" + key + "]");
-            } else {
-                throw ex;
             }
-        }
+        } : Booleans::parseBoolean;
     }
 
     public static Setting<ByteSizeValue> byteSizeSetting(String key, ByteSizeValue value, Property... properties) {
@@ -1585,7 +1601,7 @@ public class Setting<T> implements ToXContentObject {
         Property... properties
     ) {
         return new Setting<>(
-            new SimpleKey(key),
+            new Key(key),
             fallbackSetting,
             fallbackSetting::getRaw,
             e -> Enum.valueOf(clazz, e.toUpperCase(Locale.ROOT)),
@@ -1754,7 +1770,7 @@ public class Setting<T> implements ToXContentObject {
             final Property... properties
         ) {
             super(
-                new ListKey(key),
+                new PatternMatchingKey(key, Pattern.quote(key) + "(\\.\\d+)?"),
                 fallbackSetting,
                 s -> Setting.arrayToParsableString(defaultStringValue.apply(s)),
                 parser,
@@ -1803,6 +1819,9 @@ public class Setting<T> implements ToXContentObject {
     }
 
     public static Setting<Settings> groupSetting(String key, Consumer<Settings> validator, Property... properties) {
+        if (key.endsWith(".") == false) {
+            throw new IllegalArgumentException("key must end with a '.'");
+        }
         return new GroupSetting(key, validator, properties);
     }
 
@@ -1812,9 +1831,8 @@ public class Setting<T> implements ToXContentObject {
         final TimeValue minValue,
         final Property... properties
     ) {
-        final SimpleKey simpleKey = new SimpleKey(key);
         return new Setting<>(
-            simpleKey,
+            new Key(key),
             fallbackSetting,
             fallbackSetting::getRaw,
             minTimeValueParser(key, minValue, isFiltered(properties)),
@@ -1829,9 +1847,8 @@ public class Setting<T> implements ToXContentObject {
         final TimeValue minValue,
         final Property... properties
     ) {
-        final SimpleKey simpleKey = new SimpleKey(key);
         return new Setting<>(
-            simpleKey,
+            key,
             s -> defaultValue.apply(s).getStringRep(),
             minTimeValueParser(key, minValue, isFiltered(properties)),
             properties
@@ -1929,7 +1946,7 @@ public class Setting<T> implements ToXContentObject {
         Property... properties
     ) {
         return new Setting<>(
-            new SimpleKey(key),
+            new Key(key),
             fallBackSetting,
             fallBackSetting::getRaw,
             (s) -> TimeValue.parseTimeValue(s, key),
@@ -2048,24 +2065,19 @@ public class Setting<T> implements ToXContentObject {
         return new AffixSetting<>(key, delegate, delegateFactory, dependencies);
     }
 
-    public interface Key {
-        boolean match(String key);
-    }
-
-    public static class SimpleKey implements Key {
+    public static class Key {
         protected final String key;
 
-        public SimpleKey(String key) {
+        public Key(String key) {
             this.key = Settings.internKeyOrValue(key);
         }
 
-        @Override
         public boolean match(String key) {
             return this.key.equals(key);
         }
 
         @Override
-        public String toString() {
+        public final String toString() {
             return key;
         }
 
@@ -2073,7 +2085,7 @@ public class Setting<T> implements ToXContentObject {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            SimpleKey simpleKey = (SimpleKey) o;
+            Key simpleKey = (Key) o;
             return Objects.equals(key, simpleKey.key);
         }
 
@@ -2083,30 +2095,17 @@ public class Setting<T> implements ToXContentObject {
         }
     }
 
-    public static final class GroupKey extends SimpleKey {
-        public GroupKey(String key) {
+    private static class PatternMatchingKey extends Key {
+
+        protected final Pattern pattern;
+
+        protected PatternMatchingKey(String key, String pattern) {
             super(key);
-            if (key.endsWith(".") == false) {
-                throw new IllegalArgumentException("key must end with a '.'");
-            }
+            this.pattern = Pattern.compile(pattern);
         }
 
         @Override
-        public boolean match(String toTest) {
-            return Regex.simpleMatch(key + "*", toTest);
-        }
-    }
-
-    public static final class ListKey extends SimpleKey {
-        private final Pattern pattern;
-
-        public ListKey(String key) {
-            super(key);
-            this.pattern = Pattern.compile(Pattern.quote(key) + "(\\.\\d+)?");
-        }
-
-        @Override
-        public boolean match(String toTest) {
+        public final boolean match(String toTest) {
             return pattern.matcher(toTest).matches();
         }
     }
@@ -2115,18 +2114,16 @@ public class Setting<T> implements ToXContentObject {
      * A key that allows for static pre and suffix. This is used for settings
      * that have dynamic namespaces like for different accounts etc.
      */
-    public static final class AffixKey implements Key {
-        private final Pattern pattern;
+    public static final class AffixKey extends PatternMatchingKey {
         private final String prefix;
         private final String suffix;
-
-        private final String keyString;
 
         AffixKey(String prefix) {
             this(prefix, null);
         }
 
         AffixKey(String prefix, String suffix) {
+            super(Settings.internKeyOrValue(prefix + (suffix != null ? "*." + suffix : "")), buildPattern(prefix, suffix));
             assert prefix != null || suffix != null : "Either prefix or suffix must be non-null";
 
             this.prefix = prefix;
@@ -2134,25 +2131,15 @@ public class Setting<T> implements ToXContentObject {
                 throw new IllegalArgumentException("prefix must end with a '.'");
             }
             this.suffix = suffix;
-            if (suffix == null) {
-                pattern = Pattern.compile("(" + Pattern.quote(prefix) + "((?:[-\\w]+[.])*[-\\w]+$))");
-            } else {
-                // the last part of this regexp is to support both list and group keys
-                pattern = Pattern.compile("(" + Pattern.quote(prefix) + "([-\\w]+)\\." + Pattern.quote(suffix) + ")(?:\\..*)?");
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append(prefix);
-            if (suffix != null) {
-                sb.append('*');
-                sb.append('.');
-                sb.append(suffix);
-            }
-            keyString = Settings.internKeyOrValue(sb.toString());
         }
 
-        @Override
-        public boolean match(String key) {
-            return pattern.matcher(key).matches();
+        private static String buildPattern(String prefix, String suffix) {
+            if (suffix == null) {
+                return "(" + Pattern.quote(prefix) + "((?:[-\\w]+[.])*[-\\w]+$))";
+            } else {
+                // the last part of this regexp is to support both list and group keys
+                return "(" + Pattern.quote(prefix) + "([-\\w]+)\\." + Pattern.quote(suffix) + ")(?:\\..*)?";
+            }
         }
 
         /**
@@ -2177,7 +2164,7 @@ public class Setting<T> implements ToXContentObject {
             return Settings.internKeyOrValue(matcher.group(2));
         }
 
-        public SimpleKey toConcreteKey(String missingPart) {
+        public Key toConcreteKey(String missingPart) {
             StringBuilder key = new StringBuilder();
             if (prefix != null) {
                 key.append(prefix);
@@ -2187,12 +2174,7 @@ public class Setting<T> implements ToXContentObject {
                 key.append(".");
                 key.append(suffix);
             }
-            return new SimpleKey(key.toString());
-        }
-
-        @Override
-        public String toString() {
-            return keyString;
+            return new Key(key.toString());
         }
 
         @Override

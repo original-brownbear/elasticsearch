@@ -107,7 +107,7 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
     }
 
     public static final Setting<RelativeByteSizeValue> SHARED_CACHE_SIZE_SETTING = new Setting<>(
-        new Setting.SimpleKey(SHARED_CACHE_SETTINGS_PREFIX + "size"),
+        SHARED_CACHE_SETTINGS_PREFIX + "size",
         (settings) -> {
             if (DiscoveryNode.isDedicatedFrozenNode(settings) || DiscoveryNode.hasRole(settings, DiscoveryNodeRole.SEARCH_ROLE)) {
                 return "90%";
@@ -165,7 +165,7 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
     );
 
     public static final Setting<ByteSizeValue> SHARED_CACHE_SIZE_MAX_HEADROOM_SETTING = new Setting<>(
-        new Setting.SimpleKey(SHARED_CACHE_SETTINGS_PREFIX + "size.max_headroom"),
+        SHARED_CACHE_SETTINGS_PREFIX + "size.max_headroom",
         (settings) -> {
             if (SHARED_CACHE_SIZE_SETTING.exists(settings) == false
                 && (DiscoveryNode.isDedicatedFrozenNode(settings) || DiscoveryNode.hasRole(settings, DiscoveryNodeRole.SEARCH_ROLE))) {

@@ -1258,14 +1258,14 @@ public class SettingTests extends ESTestCase {
         Setting<String> current = Setting.simpleString("fallback0", Property.NodeScope);
         for (int i = 1; i < count; i++) {
             final Setting<String> next = new Setting<>(
-                new Setting.SimpleKey("fallback" + i),
+                "fallback" + i,
                 current,
                 Function.identity(),
                 Property.NodeScope
             );
             current = next;
         }
-        final Setting<String> fooSetting = new Setting<>(new Setting.SimpleKey("foo"), current, Function.identity(), Property.NodeScope);
+        final Setting<String> fooSetting = new Setting<>("foo", current, Function.identity(), Property.NodeScope);
         assertFalse(fooSetting.exists(Settings.EMPTY));
         if (randomBoolean()) {
             assertTrue(fooSetting.exists(Settings.builder().put("foo", "bar").build()));
