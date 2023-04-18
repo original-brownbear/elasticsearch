@@ -14,7 +14,6 @@ import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.Version;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.logging.DeprecationCategory;
-import org.elasticsearch.common.regex.Regex;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.MemorySizeValue;
 import org.elasticsearch.common.xcontent.XContentParserUtils;
@@ -1754,7 +1753,7 @@ public class Setting<T> implements ToXContentObject {
             final Property... properties
         ) {
             super(
-                new ListKey(key),
+                new PrefixKey(key, Pattern.compile(Pattern.quote(key) + "(\\.\\d+)?")),
                 fallbackSetting,
                 s -> Setting.arrayToParsableString(defaultStringValue.apply(s)),
                 parser,
@@ -2065,7 +2064,7 @@ public class Setting<T> implements ToXContentObject {
         }
 
         @Override
-        public String toString() {
+        public final String toString() {
             return key;
         }
 
@@ -2079,7 +2078,7 @@ public class Setting<T> implements ToXContentObject {
 
         @Override
         public int hashCode() {
-            return Objects.hash(key);
+            return key.hashCode();
         }
     }
 
@@ -2093,21 +2092,31 @@ public class Setting<T> implements ToXContentObject {
 
         @Override
         public boolean match(String toTest) {
-            return Regex.simpleMatch(key + "*", toTest);
+            return toTest.startsWith(key);
         }
     }
 
-    public static final class ListKey extends SimpleKey {
-        private final Pattern pattern;
+    private static class PrefixKey extends SimpleKey {
 
-        public ListKey(String key) {
+        protected final Pattern pattern;
+
+        protected final String prefix;
+
+        private PrefixKey(String key, Pattern pattern) {
             super(key);
-            this.pattern = Pattern.compile(Pattern.quote(key) + "(\\.\\d+)?");
+            this.prefix = this.key;
+            this.pattern = pattern;
+        }
+
+        private PrefixKey(String key, String prefix, Pattern pattern) {
+            super(key);
+            this.prefix = Settings.internKeyOrValue(prefix);
+            this.pattern = pattern;
         }
 
         @Override
-        public boolean match(String toTest) {
-            return pattern.matcher(toTest).matches();
+        public final boolean match(String toTest) {
+            return toTest.startsWith(prefix) && pattern.matcher(toTest).matches();
         }
     }
 
@@ -2115,44 +2124,26 @@ public class Setting<T> implements ToXContentObject {
      * A key that allows for static pre and suffix. This is used for settings
      * that have dynamic namespaces like for different accounts etc.
      */
-    public static final class AffixKey implements Key {
-        private final Pattern pattern;
-        private final String prefix;
+    public static final class AffixKey extends PrefixKey {
         private final String suffix;
-
-        private final String keyString;
 
         AffixKey(String prefix) {
             this(prefix, null);
         }
 
         AffixKey(String prefix, String suffix) {
-            assert prefix != null || suffix != null : "Either prefix or suffix must be non-null";
-
-            this.prefix = prefix;
+            // the last part of this regexp is to support both list and group keys
+            super(
+                prefix + (suffix != null ? "*." + suffix : ""),
+                prefix,
+                suffix == null
+                    ? Pattern.compile("(.{" + prefix.length() + "}((?:[-\\w]+[.])*[-\\w]+$))")
+                    : Pattern.compile("(.{" + prefix.length() + "}([-\\w]+)\\." + Pattern.quote(suffix) + ")(?:\\..*)?")
+            );
             if (prefix.endsWith(".") == false) {
                 throw new IllegalArgumentException("prefix must end with a '.'");
             }
             this.suffix = suffix;
-            if (suffix == null) {
-                pattern = Pattern.compile("(" + Pattern.quote(prefix) + "((?:[-\\w]+[.])*[-\\w]+$))");
-            } else {
-                // the last part of this regexp is to support both list and group keys
-                pattern = Pattern.compile("(" + Pattern.quote(prefix) + "([-\\w]+)\\." + Pattern.quote(suffix) + ")(?:\\..*)?");
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append(prefix);
-            if (suffix != null) {
-                sb.append('*');
-                sb.append('.');
-                sb.append(suffix);
-            }
-            keyString = Settings.internKeyOrValue(sb.toString());
-        }
-
-        @Override
-        public boolean match(String key) {
-            return pattern.matcher(key).matches();
         }
 
         /**
@@ -2188,24 +2179,6 @@ public class Setting<T> implements ToXContentObject {
                 key.append(suffix);
             }
             return new SimpleKey(key.toString());
-        }
-
-        @Override
-        public String toString() {
-            return keyString;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            AffixKey that = (AffixKey) o;
-            return Objects.equals(prefix, that.prefix) && Objects.equals(suffix, that.suffix);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(prefix, suffix);
         }
     }
 }
