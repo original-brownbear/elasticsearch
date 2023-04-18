@@ -107,7 +107,7 @@ public abstract class PeerFinder {
 
         transportService.registerRequestHandler(
             REQUEST_PEERS_ACTION_NAME,
-            Names.GENERIC,
+            Names.CLUSTER_COORDINATION,
             false,
             false,
             PeersRequest::new,
@@ -287,7 +287,7 @@ public abstract class PeerFinder {
             }
         });
 
-        transportService.getThreadPool().scheduleUnlessShuttingDown(findPeersInterval, Names.GENERIC, new AbstractRunnable() {
+        transportService.getThreadPool().scheduleUnlessShuttingDown(findPeersInterval, Names.CLUSTER_COORDINATION, new AbstractRunnable() {
             @Override
             public boolean isForceExecution() {
                 return true;
@@ -469,7 +469,7 @@ public abstract class PeerFinder {
 
             final List<DiscoveryNode> knownNodes = List.copyOf(getFoundPeersUnderLock());
 
-            final TransportResponseHandler<PeersResponse> peersResponseHandler = new TransportResponseHandler<PeersResponse>() {
+            final TransportResponseHandler<PeersResponse> peersResponseHandler = new TransportResponseHandler<>() {
 
                 @Override
                 public PeersResponse read(StreamInput in) throws IOException {
@@ -507,7 +507,7 @@ public abstract class PeerFinder {
 
                 @Override
                 public String executor() {
-                    return Names.GENERIC;
+                    return Names.CLUSTER_COORDINATION;
                 }
             };
             transportService.sendRequest(
