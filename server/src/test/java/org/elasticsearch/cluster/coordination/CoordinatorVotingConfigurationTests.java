@@ -428,8 +428,7 @@ public class CoordinatorVotingConfigurationTests extends AbstractCoordinatorTest
                     clusterNode.coordinator.getLastAcceptedState().getLastCommittedConfiguration().isEmpty()
                 );
 
-                final Set<DiscoveryNode> foundPeers = new HashSet<>();
-                clusterNode.coordinator.getFoundPeers().forEach(foundPeers::add);
+                final Set<DiscoveryNode> foundPeers = new HashSet<>(clusterNode.coordinator.getFoundPeers());
                 assertTrue(nodeId + " should not have discovered itself", foundPeers.add(clusterNode.getLocalNode()));
                 assertThat(nodeId + " should have found all peers", foundPeers, hasSize(cluster.size()));
             }

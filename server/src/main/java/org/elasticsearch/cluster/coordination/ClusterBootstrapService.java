@@ -16,6 +16,7 @@ import org.elasticsearch.common.ReferenceDocs;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
@@ -25,6 +26,7 @@ import org.elasticsearch.threadpool.ThreadPool.Names;
 import org.elasticsearch.transport.TransportService;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -37,7 +39,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableSet;
@@ -67,7 +68,7 @@ public class ClusterBootstrapService implements Coordinator.PeerFinderListener {
     @Nullable // null if discoveryIsConfigured()
     private final TimeValue unconfiguredBootstrapTimeout;
     private final TransportService transportService;
-    private final Supplier<Iterable<DiscoveryNode>> discoveredNodesSupplier;
+    private final Supplier<Collection<DiscoveryNode>> discoveredNodesSupplier;
     private final BooleanSupplier isBootstrappedSupplier;
     private final Consumer<VotingConfiguration> votingConfigurationConsumer;
     private final AtomicBoolean bootstrappingPermitted = new AtomicBoolean(true);
@@ -75,7 +76,7 @@ public class ClusterBootstrapService implements Coordinator.PeerFinderListener {
     public ClusterBootstrapService(
         Settings settings,
         TransportService transportService,
-        Supplier<Iterable<DiscoveryNode>> discoveredNodesSupplier,
+        Supplier<Collection<DiscoveryNode>> discoveredNodesSupplier,
         BooleanSupplier isBootstrappedSupplier,
         Consumer<VotingConfiguration> votingConfigurationConsumer
     ) {
@@ -228,10 +229,7 @@ public class ClusterBootstrapService implements Coordinator.PeerFinderListener {
     }
 
     private Set<DiscoveryNode> getDiscoveredNodes() {
-        return Stream.concat(
-            Stream.of(transportService.getLocalNode()),
-            StreamSupport.stream(discoveredNodesSupplier.get().spliterator(), false)
-        ).collect(Collectors.toSet());
+        return Sets.addToCopy(discoveredNodesSupplier.get(), transportService.getLocalNode());
     }
 
     private void startBootstrap(Set<DiscoveryNode> discoveryNodes, List<String> unsatisfiedRequirements) {

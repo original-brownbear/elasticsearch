@@ -48,6 +48,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.concurrent.ListenableFuture;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -94,7 +95,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.cluster.coordination.NoMasterBlockService.NO_MASTER_BLOCK_ID;
 import static org.elasticsearch.core.Strings.format;
@@ -321,7 +321,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
             settings,
             getStateForMasterService(),
             peerFinder.getLastResolvedAddresses(),
-            Stream.concat(Stream.of(getLocalNode()), StreamSupport.stream(peerFinder.getFoundPeers().spliterator(), false)).toList(),
+            CollectionUtils.concatLists(List.of(getLocalNode()), peerFinder.getFoundPeers()),
             getCurrentTerm(),
             electionStrategy,
             nodeHealthService.getHealth(),
@@ -1231,7 +1231,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
 
             final List<DiscoveryNode> knownNodes = new ArrayList<>();
             knownNodes.add(getLocalNode());
-            peerFinder.getFoundPeers().forEach(knownNodes::add);
+            knownNodes.addAll(peerFinder.getFoundPeers());
 
             if (votingConfiguration.hasQuorum(knownNodes.stream().map(DiscoveryNode::getId).toList()) == false) {
                 logger.debug(
@@ -1438,7 +1438,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
     private List<DiscoveryNode> getDiscoveredNodes() {
         final List<DiscoveryNode> nodes = new ArrayList<>();
         nodes.add(getLocalNode());
-        peerFinder.getFoundPeers().forEach(nodes::add);
+        nodes.addAll(peerFinder.getFoundPeers());
         return nodes;
     }
 
@@ -1710,7 +1710,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
         });
     }
 
-    public Iterable<DiscoveryNode> getFoundPeers() {
+    public Collection<DiscoveryNode> getFoundPeers() {
         return peerFinder.getFoundPeers();
     }
 

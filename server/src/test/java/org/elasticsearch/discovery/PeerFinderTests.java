@@ -41,6 +41,7 @@ import org.junit.Before;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,8 +54,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -85,7 +84,7 @@ public class PeerFinderTests extends ESTestCase {
     private final Set<DiscoveryNode> connectedNodes = new HashSet<>();
     private DiscoveryNodes lastAcceptedNodes;
     private TransportService transportService;
-    private Iterable<DiscoveryNode> foundPeersFromNotification;
+    private Collection<DiscoveryNode> foundPeersFromNotification;
 
     private static final long CONNECTION_TIMEOUT_MILLIS = 30000;
 
@@ -897,18 +896,15 @@ public class PeerFinderTests extends ESTestCase {
 
     private void assertFoundPeers(DiscoveryNode... expectedNodesArray) {
         final Set<DiscoveryNode> expectedNodes = Arrays.stream(expectedNodesArray).collect(Collectors.toSet());
-        final List<DiscoveryNode> actualNodesList = StreamSupport.stream(peerFinder.getFoundPeers().spliterator(), false).toList();
-        final HashSet<DiscoveryNode> actualNodesSet = new HashSet<>(actualNodesList);
+        final Collection<DiscoveryNode> actualNodesCollection = peerFinder.getFoundPeers();
+        final HashSet<DiscoveryNode> actualNodesSet = new HashSet<>(actualNodesCollection);
         assertThat(actualNodesSet, equalTo(expectedNodes));
-        assertTrue("no duplicates in " + actualNodesList, actualNodesSet.size() == actualNodesList.size());
+        assertTrue("no duplicates in " + actualNodesCollection, actualNodesSet.size() == actualNodesCollection.size());
         assertNotifiedOfAllUpdates();
     }
 
     private void assertNotifiedOfAllUpdates() {
-        final Stream<DiscoveryNode> actualNodes = StreamSupport.stream(peerFinder.getFoundPeers().spliterator(), false);
-        final Stream<DiscoveryNode> notifiedNodes = StreamSupport.stream(foundPeersFromNotification.spliterator(), false);
-        assertThat(notifiedNodes.collect(Collectors.toSet()), equalTo(actualNodes.collect(Collectors.toSet())));
-    }
+        assertEquals(peerFinder.getFoundPeers(), foundPeersFromNotification);}
 
     private DiscoveryNode newDiscoveryNode(String nodeId) {
         return new DiscoveryNode(nodeId, buildNewFakeTransportAddress(), Version.CURRENT);

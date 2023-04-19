@@ -243,7 +243,7 @@ public abstract class PeerFinder {
         return lastResolvedAddresses;
     }
 
-    public Iterable<DiscoveryNode> getFoundPeers() {
+    public Collection<DiscoveryNode> getFoundPeers() {
         synchronized (mutex) {
             return getFoundPeersUnderLock();
         }

@@ -25,6 +25,7 @@ import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportService;
 import org.junit.Before;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -109,7 +110,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
             settings.put(UNCONFIGURED_BOOTSTRAP_TIMEOUT_SETTING.getKey(), timeout + "ms");
         }
 
-        final AtomicReference<Supplier<Iterable<DiscoveryNode>>> discoveredNodesSupplier = new AtomicReference<>(() -> {
+        final AtomicReference<Supplier<Collection<DiscoveryNode>>> discoveredNodesSupplier = new AtomicReference<>(() -> {
             throw new AssertionError("should not be called yet");
         });
 
@@ -467,7 +468,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
     }
 
     public void testCancelsBootstrapIfRequirementMatchesMultipleNodes() {
-        AtomicReference<Iterable<DiscoveryNode>> discoveredNodes = new AtomicReference<>(Stream.of(otherNode1, otherNode2).toList());
+        AtomicReference<Collection<DiscoveryNode>> discoveredNodes = new AtomicReference<>(List.of(otherNode1, otherNode2));
         ClusterBootstrapService clusterBootstrapService = new ClusterBootstrapService(
             Settings.builder().putList(INITIAL_MASTER_NODES_SETTING.getKey(), localNode.getAddress().getAddress()).build(),
             transportService,
@@ -488,7 +489,7 @@ public class ClusterBootstrapServiceTests extends ESTestCase {
     }
 
     public void testCancelsBootstrapIfNodeMatchesMultipleRequirements() {
-        AtomicReference<Iterable<DiscoveryNode>> discoveredNodes = new AtomicReference<>(Stream.of(otherNode1, otherNode2).toList());
+        AtomicReference<Collection<DiscoveryNode>> discoveredNodes = new AtomicReference<>(List.of(otherNode1, otherNode2));
         ClusterBootstrapService clusterBootstrapService = new ClusterBootstrapService(
             Settings.builder()
                 .putList(INITIAL_MASTER_NODES_SETTING.getKey(), otherNode1.getAddress().toString(), otherNode1.getName())
