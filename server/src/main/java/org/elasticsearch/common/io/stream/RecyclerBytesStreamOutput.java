@@ -13,14 +13,12 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
 import org.elasticsearch.common.recycler.Recycler;
+import org.elasticsearch.common.util.ByteUtils;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -30,9 +28,6 @@ import java.util.Objects;
  * the bytes will be released.
  */
 public class RecyclerBytesStreamOutput extends BytesStream implements Releasable {
-
-    static final VarHandle VH_BE_INT = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.BIG_ENDIAN);
-    static final VarHandle VH_BE_LONG = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
 
     private final ArrayList<Recycler.V<BytesRef>> pages = new ArrayList<>();
     private final Recycler<BytesRef> recycler;
@@ -103,7 +98,7 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
             super.writeInt(i);
         } else {
             BytesRef currentPage = pages.get(pageIndex).v();
-            VH_BE_INT.set(currentPage.bytes, currentPage.offset + currentPageOffset, i);
+            ByteUtils.writeIntBE(i, currentPage.bytes, currentPage.offset + currentPageOffset);
             currentPageOffset += 4;
         }
     }
@@ -114,7 +109,7 @@ public class RecyclerBytesStreamOutput extends BytesStream implements Releasable
             super.writeLong(i);
         } else {
             BytesRef currentPage = pages.get(pageIndex).v();
-            VH_BE_LONG.set(currentPage.bytes, currentPage.offset + currentPageOffset, i);
+            ByteUtils.writeLongBE(i, currentPage.bytes, currentPage.offset + currentPageOffset);
             currentPageOffset += 8;
         }
     }
