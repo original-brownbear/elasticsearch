@@ -22,6 +22,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.CountDown;
+import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
@@ -177,6 +178,7 @@ public class ProxyConnectionStrategy extends RemoteConnectionStrategy {
                 ),
                 actualProfile.getHandshakeTimeout(),
                 cn -> true,
+                ThreadPool.Names.GENERIC,
                 listener.map(resp -> {
                     ClusterName remote = resp.getClusterName();
                     if (remoteClusterName.compareAndSet(null, remote)) {

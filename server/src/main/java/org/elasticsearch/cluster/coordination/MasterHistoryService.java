@@ -125,6 +125,7 @@ public class MasterHistoryService {
         transportService.connectToNode(
             // Note: This connection must be explicitly closed below
             node,
+            ThreadPool.Names.CLUSTER_COORDINATION,
             new ActionListener<>() {
                 @Override
                 public void onResponse(Releasable releasable) {

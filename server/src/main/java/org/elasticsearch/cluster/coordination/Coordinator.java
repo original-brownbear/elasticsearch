@@ -619,7 +619,7 @@ public class Coordinator extends AbstractLifecycleComponent implements ClusterSt
             return;
         }
 
-        transportService.connectToNode(joinRequest.getSourceNode(), new ActionListener<>() {
+        transportService.connectToNode(joinRequest.getSourceNode(), Names.CLUSTER_COORDINATION, new ActionListener<>() {
             @Override
             public void onResponse(Releasable response) {
                 boolean retainConnection = false;

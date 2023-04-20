@@ -261,6 +261,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
                     connection,
                     connectionProfile.getHandshakeTimeout(),
                     getRemoteClusterNamePredicate(),
+                    ThreadPool.Names.GENERIC,
                     handshakeStep
                 );
             }, onFailure);
@@ -355,7 +356,7 @@ public class SniffConnectionStrategy extends RemoteConnectionStrategy {
         return (connection, profile, listener) -> {
             assert profile.getTransportProfile().equals(connectionManager.getConnectionProfile().getTransportProfile())
                 : "transport profile must be consistent between the connection manager and the actual profile";
-            transportService.connectionValidator(node)
+            transportService.connectionValidator(node, ThreadPool.Names.GENERIC)
                 .validate(
                     RemoteConnectionManager.wrapConnectionWithRemoteClusterInfo(connection, clusterAlias, profile.getTransportProfile()),
                     profile,

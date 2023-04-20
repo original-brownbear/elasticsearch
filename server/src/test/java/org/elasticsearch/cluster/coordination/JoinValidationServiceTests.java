@@ -160,7 +160,7 @@ public class JoinValidationServiceTests extends ESTestCase {
             for (int i = 0; i < otherNodes.length; i++) {
                 otherNodes[i] = new DiscoveryNode("other-" + i, buildNewFakeTransportAddress(), Version.CURRENT);
                 final var connectionListener = new PlainActionFuture<Releasable>();
-                transportService.connectToNode(otherNodes[i], connectionListener);
+                transportService.connectToNode(otherNodes[i], ThreadPool.Names.GENERIC, connectionListener);
                 releasables.add(connectionListener.get(10, TimeUnit.SECONDS));
             }
 

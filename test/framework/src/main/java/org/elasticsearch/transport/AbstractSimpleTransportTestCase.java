@@ -3224,21 +3224,17 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
             MockTransportService serviceC = buildService("TS_C", version0, transportVersion0, null, Settings.EMPTY, true, true, interceptor)
         ) {
             final CountDownLatch latch = new CountDownLatch(1);
-            serviceC.connectToNode(
-                serviceA.getLocalDiscoNode(),
-                ConnectionProfile.buildDefaultConnectionProfile(Settings.EMPTY),
-                new ActionListener<>() {
-                    @Override
-                    public void onResponse(final Releasable ignored) {
-                        latch.countDown();
-                    }
-
-                    @Override
-                    public void onFailure(final Exception e) {
-                        fail(e.getMessage());
-                    }
+            serviceC.connectToNode(serviceA.getLocalDiscoNode(), ThreadPool.Names.GENERIC, new ActionListener<>() {
+                @Override
+                public void onResponse(final Releasable ignored) {
+                    latch.countDown();
                 }
-            );
+
+                @Override
+                public void onFailure(final Exception e) {
+                    fail(e.getMessage());
+                }
+            });
             latch.await();
             final AtomicReference<TransportException> te = new AtomicReference<>();
             final Transport.Connection connection = serviceC.getConnection(nodeA);
@@ -3297,7 +3293,7 @@ public abstract class AbstractSimpleTransportTestCase extends ESTestCase {
      * @param connectionProfile the connection profile to use when connecting to this node
      */
     public static void connectToNode(TransportService service, DiscoveryNode node, ConnectionProfile connectionProfile) {
-        PlainActionFuture.get(fut -> service.connectToNode(node, connectionProfile, fut.map(x -> null)));
+        PlainActionFuture.get(fut -> service.connectToNode(node, connectionProfile, ThreadPool.Names.GENERIC, fut.map(x -> null)));
     }
 
     /**
