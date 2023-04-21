@@ -212,23 +212,23 @@ public abstract class StreamInput extends InputStream {
 
     protected final int readVIntSlow() throws IOException {
         byte b = readByte();
-        int i = b & 0x7F;
-        if ((b & 0x80) == 0) {
-            return i;
+        if (b >= 0) {
+            return b;
         }
+        int i = b & 0x7F;
         b = readByte();
         i |= (b & 0x7F) << 7;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= (b & 0x7F) << 14;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= (b & 0x7F) << 21;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
@@ -259,48 +259,48 @@ public abstract class StreamInput extends InputStream {
 
     protected final long readVLongSlow() throws IOException {
         byte b = readByte();
-        long i = b & 0x7FL;
-        if ((b & 0x80) == 0) {
-            return i;
+        if (b >= 0) {
+            return b;
         }
+        long i = b & 0x7FL;
         b = readByte();
         i |= (b & 0x7FL) << 7;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= (b & 0x7FL) << 14;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= (b & 0x7FL) << 21;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= (b & 0x7FL) << 28;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= (b & 0x7FL) << 35;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= (b & 0x7FL) << 42;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= (b & 0x7FL) << 49;
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();
         i |= ((b & 0x7FL) << 56);
-        if ((b & 0x80) == 0) {
+        if (b >= 0) {
             return i;
         }
         b = readByte();

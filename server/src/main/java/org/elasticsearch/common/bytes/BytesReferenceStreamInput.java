@@ -85,94 +85,93 @@ class BytesReferenceStreamInput extends StreamInput {
 
     @Override
     public int readVInt() throws IOException {
-        if (slice.remaining() >= 5) {
-            byte b = slice.get();
-            if (b >= 0) {
-                return b;
-            }
-            int i = b & 0x7F;
-            b = slice.get();
-            i |= (b & 0x7F) << 7;
-            if (b >= 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7F) << 14;
-            if (b >= 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7F) << 21;
-            if (b >= 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x0F) << 28;
-            if ((b & 0xF0) == 0) {
-                return i;
-            }
+        if (slice.remaining() < 5) {
+            return super.readVInt();
+        }
+        byte b = slice.get();
+        if (b >= 0) {
+            return b;
+        }
+        int i = b & 0x7F;
+        b = slice.get();
+        i |= (b & 0x7F) << 7;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x7F) << 14;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x7F) << 21;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x0F) << 28;
+        if ((b & 0xF0) != 0) {
             throwOnBrokenVInt(b, i);
         }
-        return super.readVInt();
+        return i;
     }
 
     @Override
     public long readVLong() throws IOException {
-        if (slice.remaining() >= 10) {
-            byte b = slice.get();
-            long i = b & 0x7FL;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7FL) << 7;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7FL) << 14;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7FL) << 21;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7FL) << 28;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7FL) << 35;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7FL) << 42;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= (b & 0x7FL) << 49;
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            i |= ((b & 0x7FL) << 56);
-            if ((b & 0x80) == 0) {
-                return i;
-            }
-            b = slice.get();
-            if (b != 0 && b != 1) {
-                throwOnBrokenVLong(b, i);
-            }
-            i |= ((long) b) << 63;
-            return i;
-        } else {
+        if (slice.remaining() < 10) {
             return super.readVLong();
         }
+        byte b = slice.get();
+        if (b >= 0) {
+            return b;
+        }
+        long i = b & 0x7FL;
+        b = slice.get();
+        i |= (b & 0x7FL) << 7;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x7FL) << 14;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x7FL) << 21;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x7FL) << 28;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x7FL) << 35;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x7FL) << 42;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= (b & 0x7FL) << 49;
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        i |= ((b & 0x7FL) << 56);
+        if (b >= 0) {
+            return i;
+        }
+        b = slice.get();
+        if (b != 0 && b != 1) {
+            throwOnBrokenVLong(b, i);
+        }
+        i |= ((long) b) << 63;
+        return i;
     }
 
     protected int offset() {
