@@ -271,7 +271,7 @@ public class EqlSearchResponse extends ActionResponse implements ToXContentObjec
             if (out.getTransportVersion().onOrAfter(TransportVersion.V_7_13_0)) {
                 out.writeBoolean(fetchFields != null);
                 if (fetchFields != null) {
-                    out.writeMap(fetchFields, StreamOutput::writeString, (stream, documentField) -> documentField.writeTo(stream));
+                    out.writeMapStringKeys(fetchFields);
                 }
             }
         }

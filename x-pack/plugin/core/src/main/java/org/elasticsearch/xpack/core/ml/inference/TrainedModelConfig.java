@@ -419,7 +419,7 @@ public class TrainedModelConfig implements ToXContentObject, Writeable {
         out.writeString(licenseLevel.description());
         if (defaultFieldMap != null) {
             out.writeBoolean(true);
-            out.writeMap(defaultFieldMap, StreamOutput::writeString, StreamOutput::writeString);
+            out.writeMap(defaultFieldMap, StreamOutput::writeString);
         } else {
             out.writeBoolean(false);
         }

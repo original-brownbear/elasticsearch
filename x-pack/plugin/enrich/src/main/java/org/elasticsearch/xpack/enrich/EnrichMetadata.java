@@ -94,7 +94,7 @@ public final class EnrichMetadata extends AbstractNamedDiffable<Metadata.Custom>
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(policies, StreamOutput::writeString, (out1, value) -> value.writeTo(out1));
+        out.writeMapStringKeys(policies);
     }
 
     @Override

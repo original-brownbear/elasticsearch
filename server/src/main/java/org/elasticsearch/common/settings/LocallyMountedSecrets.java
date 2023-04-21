@@ -179,7 +179,7 @@ public class LocallyMountedSecrets implements SecureSettings {
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap((map == null) ? Map.of() : map, StreamOutput::writeString, StreamOutput::writeString);
+            out.writeMap((map == null) ? Map.of() : map, StreamOutput::writeString);
             metadata.writeTo(out);
         }
     }

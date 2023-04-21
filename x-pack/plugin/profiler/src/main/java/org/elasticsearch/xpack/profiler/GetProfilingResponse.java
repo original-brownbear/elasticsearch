@@ -99,7 +99,7 @@ public class GetProfilingResponse extends ActionResponse implements StatusToXCon
     public void writeTo(StreamOutput out) throws IOException {
         if (stackTraces != null) {
             out.writeBoolean(true);
-            out.writeMap(stackTraces, StreamOutput::writeString, (o, v) -> {
+            out.writeMap(stackTraces, (o, v) -> {
                 o.writeCollection(v.addressOrLines, StreamOutput::writeInt);
                 o.writeCollection(v.fileIds, StreamOutput::writeString);
                 o.writeCollection(v.frameIds, StreamOutput::writeString);
@@ -110,7 +110,7 @@ public class GetProfilingResponse extends ActionResponse implements StatusToXCon
         }
         if (stackFrames != null) {
             out.writeBoolean(true);
-            out.writeMap(stackFrames, StreamOutput::writeString, (o, v) -> {
+            out.writeMap(stackFrames, (o, v) -> {
                 o.writeCollection(v.fileName, StreamOutput::writeString);
                 o.writeCollection(v.functionName, StreamOutput::writeString);
                 o.writeCollection(v.functionOffset, StreamOutput::writeInt);
@@ -122,13 +122,13 @@ public class GetProfilingResponse extends ActionResponse implements StatusToXCon
         }
         if (executables != null) {
             out.writeBoolean(true);
-            out.writeMap(executables, StreamOutput::writeString, StreamOutput::writeString);
+            out.writeMap(executables, StreamOutput::writeString);
         } else {
             out.writeBoolean(false);
         }
         if (stackTraceEvents != null) {
             out.writeBoolean(true);
-            out.writeMap(stackTraceEvents, StreamOutput::writeString, StreamOutput::writeInt);
+            out.writeMap(stackTraceEvents, StreamOutput::writeInt);
         } else {
             out.writeBoolean(false);
         }

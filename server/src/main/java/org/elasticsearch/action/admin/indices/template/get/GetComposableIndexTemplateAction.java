@@ -147,7 +147,7 @@ public class GetComposableIndexTemplateAction extends ActionType<GetComposableIn
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap(indexTemplates, StreamOutput::writeString, (o, v) -> v.writeTo(o));
+            out.writeMapStringKeys(indexTemplates);
             if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_8_0) && DataLifecycle.isEnabled()) {
                 out.writeOptionalWriteable(rolloverConfiguration);
             }

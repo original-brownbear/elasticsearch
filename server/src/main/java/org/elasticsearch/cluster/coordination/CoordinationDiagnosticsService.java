@@ -1328,7 +1328,7 @@ public class CoordinationDiagnosticsService implements ClusterStateListener {
                 out.writeBoolean(false);
             } else {
                 out.writeBoolean(true);
-                out.writeMap(nodeToClusterFormationDescriptionMap, StreamOutput::writeString, StreamOutput::writeString);
+                out.writeMap(nodeToClusterFormationDescriptionMap, StreamOutput::writeString);
             }
         }
 

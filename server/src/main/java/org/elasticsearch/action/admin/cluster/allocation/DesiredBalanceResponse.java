@@ -74,7 +74,6 @@ public class DesiredBalanceResponse extends ActionResponse implements ChunkedToX
         }
         out.writeMap(
             routingTable,
-            StreamOutput::writeString,
             (shardsOut, shards) -> shardsOut.writeMap(
                 shards,
                 StreamOutput::writeVInt,

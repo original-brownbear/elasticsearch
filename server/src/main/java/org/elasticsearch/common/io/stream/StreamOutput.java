@@ -606,6 +606,18 @@ public abstract class StreamOutput extends OutputStream {
         writeMap(map, (o, k) -> k.writeTo(o), (o, v) -> v.writeTo(o));
     }
 
+    public final <V extends Writeable> void writeMapStringKeys(final Map<String, V> map) throws IOException {
+        writeMap(map, (o, v) -> v.writeTo(o));
+    }
+
+    public final <V> void writeMap(final Map<String, V> map, final Writer<V> valueWriter) throws IOException {
+        writeVInt(map.size());
+        for (final Map.Entry<String, V> entry : map.entrySet()) {
+            writeString(entry.getKey());
+            valueWriter.write(this, entry.getValue());
+        }
+    }
+
     /**
      * Write a {@link Map} of {@code K}-type keys to {@code V}-type.
      * <pre><code>
@@ -693,7 +705,7 @@ public abstract class StreamOutput extends OutputStream {
             } else {
                 @SuppressWarnings("unchecked")
                 final Map<String, ?> map = (Map<String, ?>) v;
-                o.writeMap(map, StreamOutput::writeString, StreamOutput::writeGenericValue);
+                o.writeMap(map, StreamOutput::writeGenericValue);
             }
         }),
         entry(Byte.class, (o, v) -> {

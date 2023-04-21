@@ -1047,7 +1047,7 @@ public final class SnapshotInfo implements Comparable<SnapshotInfo>, ToXContentF
         out.writeStringCollection(dataStreams);
         out.writeList(featureStates);
 
-        out.writeMap(indexSnapshotDetails, StreamOutput::writeString, (stream, value) -> value.writeTo(stream));
+        out.writeMapStringKeys(indexSnapshotDetails);
     }
 
     private static SnapshotState snapshotState(final String reason, final List<SnapshotShardFailure> shardFailures) {

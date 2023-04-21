@@ -177,7 +177,7 @@ public class Template implements SimpleDiffable<Template>, ToXContentObject {
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
-            out.writeMap(this.aliases, StreamOutput::writeString, (stream, aliasMetadata) -> aliasMetadata.writeTo(stream));
+            out.writeMapStringKeys(this.aliases);
         }
         if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_8_0) && DataLifecycle.isEnabled()) {
             out.writeOptionalWriteable(lifecycle);

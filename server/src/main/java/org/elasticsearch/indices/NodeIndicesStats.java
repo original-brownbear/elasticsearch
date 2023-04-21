@@ -202,7 +202,7 @@ public class NodeIndicesStats implements Writeable, ChunkedToXContent {
         stats.writeTo(out);
         out.writeMap(statsByShard, (o, k) -> k.writeTo(o), StreamOutput::writeList);
         if (out.getTransportVersion().onOrAfter(VERSION_SUPPORTING_STATS_BY_INDEX)) {
-            out.writeMap(statsByIndex, (o, k) -> k.writeTo(o), (o, v) -> v.writeTo(o));
+            out.writeMap(statsByIndex);
         }
     }
 

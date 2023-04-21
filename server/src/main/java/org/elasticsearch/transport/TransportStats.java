@@ -109,7 +109,7 @@ public class TransportStats implements Writeable, ChunkedToXContent {
             }
         }
         if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_8_0)) {
-            out.writeMap(transportActionStats, StreamOutput::writeString, StreamOutput::writeWriteable);
+            out.writeMapStringKeys(transportActionStats);
         } // else just drop these stats
     }
 

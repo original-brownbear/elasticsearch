@@ -145,7 +145,7 @@ public class GetComponentTemplateAction extends ActionType<GetComponentTemplateA
 
         @Override
         public void writeTo(StreamOutput out) throws IOException {
-            out.writeMap(componentTemplates, StreamOutput::writeString, (o, v) -> v.writeTo(o));
+            out.writeMapStringKeys(componentTemplates);
             if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_8_0) && DataLifecycle.isEnabled()) {
                 out.writeOptionalWriteable(rolloverConfiguration);
             }

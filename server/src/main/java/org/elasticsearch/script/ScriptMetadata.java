@@ -257,7 +257,7 @@ public final class ScriptMetadata implements Metadata.Custom, Writeable {
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        out.writeMap(scripts, StreamOutput::writeString, (o, v) -> v.writeTo(o));
+        out.writeMapStringKeys(scripts);
     }
 
     @Override
