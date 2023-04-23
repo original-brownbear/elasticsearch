@@ -100,6 +100,10 @@ public final class CompositeBytesReference extends AbstractBytesReference {
         this.ramBytesUsed = ramBytesUsed;
     }
 
+    public BytesReference[] references() {
+        return references;
+    }
+
     @Override
     public byte get(int index) {
         final int i = getOffsetIndex(index);

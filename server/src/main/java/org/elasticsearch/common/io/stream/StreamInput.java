@@ -16,6 +16,7 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.geo.GeoPoint;
@@ -110,7 +111,7 @@ public abstract class StreamInput extends InputStream {
      * bytes in a pooled buffer and must be explicitly released via {@link ReleasableBytesReference#close()} once no longer used.
      * Prefer this method over {@link #readBytesReference()} when reading large bytes references to avoid allocations and copying.
      */
-    public ReleasableBytesReference readReleasableBytesReference() throws IOException {
+    public ReleasableBytes readReleasableBytesReference() throws IOException {
         return ReleasableBytesReference.wrap(readBytesReference());
     }
 
@@ -129,7 +130,7 @@ public abstract class StreamInput extends InputStream {
      * <p>
      * NOTE: Always check {@link #supportReadAllToReleasableBytesReference()} before calling this method.
      */
-    public ReleasableBytesReference readAllToReleasableBytesReference() throws IOException {
+    public ReleasableBytes readAllToReleasableBytesReference() throws IOException {
         assert false : "This InputStream doesn't support readAllToReleasableBytesReference";
         throw new UnsupportedOperationException("This InputStream doesn't support readAllToReleasableBytesReference");
     }

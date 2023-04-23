@@ -14,14 +14,10 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.component.LifecycleListener;
-import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
-import org.elasticsearch.common.util.MockPageCacheRecycler;
-import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.tasks.Task;
-import org.elasticsearch.transport.BytesRefRecycler;
 import org.elasticsearch.transport.ConnectionProfile;
 import org.elasticsearch.transport.RequestHandlerRegistry;
 import org.elasticsearch.transport.Transport;
@@ -50,7 +46,6 @@ public class StubbableTransport implements Transport {
     private volatile SendRequestBehavior defaultSendRequest = null;
     private volatile OpenConnectionBehavior defaultConnectBehavior = null;
     private final Transport delegate;
-    private final PageCacheRecycler recycler = new MockPageCacheRecycler(Settings.EMPTY);
 
     public StubbableTransport(Transport transport) {
         this.delegate = transport;
@@ -355,7 +350,7 @@ public class StubbableTransport implements Transport {
     }
 
     @Override
-    public RecyclerBytesStreamOutput newNetworkBytesStream() {
-        return new RecyclerBytesStreamOutput(new BytesRefRecycler(recycler));
+    public BytesStream newNetworkBytesStream() {
+        return delegate.newNetworkBytesStream();
     }
 }

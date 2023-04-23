@@ -18,7 +18,7 @@ import org.elasticsearch.action.ActionListenerResponseHandler;
 import org.elasticsearch.action.ActionRunnable;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.Streams;
 import org.elasticsearch.common.io.stream.OutputStreamStreamOutput;
@@ -98,7 +98,7 @@ public class JoinValidationService {
     private final Supplier<ClusterState> clusterStateSupplier;
     private final AtomicInteger queueSize = new AtomicInteger();
     private final Queue<AbstractRunnable> queue = new ConcurrentLinkedQueue<>();
-    private final Map<TransportVersion, ReleasableBytesReference> statesByVersion = new HashMap<>();
+    private final Map<TransportVersion, ReleasableBytes> statesByVersion = new HashMap<>();
     private final RefCounted executeRefs;
 
     public JoinValidationService(
@@ -349,7 +349,7 @@ public class JoinValidationService {
         }
     }
 
-    private ReleasableBytesReference serializeClusterState(DiscoveryNode discoveryNode, TransportVersion version) {
+    private ReleasableBytes serializeClusterState(DiscoveryNode discoveryNode, TransportVersion version) {
         final var bytesStream = transportService.newNetworkBytesStream();
         var success = false;
         try {
@@ -364,7 +364,7 @@ public class JoinValidationService {
             } catch (IOException e) {
                 throw new ElasticsearchException("failed to serialize cluster state for publishing to node {}", e, discoveryNode);
             }
-            final var newBytes = new ReleasableBytesReference(bytesStream.bytes(), bytesStream);
+            final ReleasableBytes newBytes = PublicationTransportHandler.toBytes(bytesStream);
             logger.trace(
                 "serialized join validation cluster state version [{}] for transport version [{}] with size [{}]",
                 clusterState.version(),

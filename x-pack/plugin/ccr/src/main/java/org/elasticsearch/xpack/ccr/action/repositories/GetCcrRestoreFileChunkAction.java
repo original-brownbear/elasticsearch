@@ -13,6 +13,7 @@ import org.elasticsearch.action.ActionType;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
@@ -82,7 +83,7 @@ public class GetCcrRestoreFileChunkAction extends ActionType<GetCcrRestoreFileCh
     public static class GetCcrRestoreFileChunkResponse extends ActionResponse {
 
         private final long offset;
-        private final ReleasableBytesReference chunk;
+        private final ReleasableBytes chunk;
 
         GetCcrRestoreFileChunkResponse(StreamInput streamInput) throws IOException {
             super(streamInput);
@@ -99,7 +100,7 @@ public class GetCcrRestoreFileChunkAction extends ActionType<GetCcrRestoreFileCh
             return offset;
         }
 
-        public ReleasableBytesReference getChunk() {
+        public ReleasableBytes getChunk() {
             return chunk;
         }
 

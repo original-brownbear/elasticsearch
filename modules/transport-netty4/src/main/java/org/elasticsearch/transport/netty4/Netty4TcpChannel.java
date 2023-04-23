@@ -162,7 +162,7 @@ public class Netty4TcpChannel implements TcpChannel {
 
     @Override
     public void sendMessage(BytesReference reference, ActionListener<Void> listener) {
-        channel.writeAndFlush(Netty4Utils.toByteBuf(reference), addPromise(listener, channel));
+        channel.writeAndFlush(Netty4Utils.toByteBuf(reference).retain(), addPromise(listener, channel));
 
         if (channel.eventLoop().isShutdown()) {
             listener.onFailure(new TransportException("Cannot send message, event loop is shutting down."));

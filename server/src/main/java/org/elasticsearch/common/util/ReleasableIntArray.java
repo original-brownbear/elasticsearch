@@ -9,7 +9,7 @@
 package org.elasticsearch.common.util;
 
 import org.apache.lucene.util.RamUsageEstimator;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
@@ -18,7 +18,7 @@ import java.io.IOException;
 class ReleasableIntArray implements IntArray {
     private static final long SHALLOW_SIZE = RamUsageEstimator.shallowSizeOfInstance(ReleasableIntArray.class);
 
-    private final ReleasableBytesReference ref;
+    private final ReleasableBytes ref;
 
     ReleasableIntArray(StreamInput in) throws IOException {
         ref = in.readReleasableBytesReference();

@@ -21,15 +21,17 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.CheckedSupplier;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.compress.Compressor;
 import org.elasticsearch.common.compress.CompressorFactory;
 import org.elasticsearch.common.io.Streams;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.InputStreamStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.io.stream.PositionTrackingOutputStreamStreamOutput;
-import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.LazyInitializable;
@@ -227,8 +229,8 @@ public class PublicationTransportHandler {
         }
     }
 
-    private ReleasableBytesReference serializeFullClusterState(ClusterState clusterState, DiscoveryNode node, TransportVersion version) {
-        final RecyclerBytesStreamOutput bytesStream = transportService.newNetworkBytesStream();
+    private ReleasableBytes serializeFullClusterState(ClusterState clusterState, DiscoveryNode node, TransportVersion version) {
+        final BytesStream bytesStream = transportService.newNetworkBytesStream();
         boolean success = false;
         try {
             final long uncompressedBytes;
@@ -244,7 +246,7 @@ public class PublicationTransportHandler {
             } catch (IOException e) {
                 throw new ElasticsearchException("failed to serialize cluster state for publishing to node {}", e, node);
             }
-            final ReleasableBytesReference result = new ReleasableBytesReference(bytesStream.bytes(), bytesStream);
+            final ReleasableBytes result = toBytes(bytesStream);
             serializationStatsTracker.serializedFullState(uncompressedBytes, result.length());
             logger.trace(
                 "serialized full cluster state version [{}] using transport version [{}] with size [{}]",
@@ -261,14 +263,25 @@ public class PublicationTransportHandler {
         }
     }
 
-    private ReleasableBytesReference serializeDiffClusterState(
+    public static ReleasableBytes toBytes(BytesStream bytesStream) {
+        final ReleasableBytes result;
+        final BytesReference bytesReference = bytesStream.bytes();
+        if (bytesReference instanceof ReleasableBytes releasableBytes) {
+            result = releasableBytes;
+        } else {
+            result = new ReleasableBytesReference(bytesReference, bytesStream);
+        }
+        return result;
+    }
+
+    private ReleasableBytes serializeDiffClusterState(
         ClusterState newState,
         Diff<ClusterState> diff,
         DiscoveryNode node,
         TransportVersion version
     ) {
         final long clusterStateVersion = newState.version();
-        final RecyclerBytesStreamOutput bytesStream = transportService.newNetworkBytesStream();
+        final BytesStream bytesStream = transportService.newNetworkBytesStream();
         boolean success = false;
         try {
             final long uncompressedBytes;
@@ -288,7 +301,7 @@ public class PublicationTransportHandler {
             } catch (IOException e) {
                 throw new ElasticsearchException("failed to serialize cluster state diff for publishing to node {}", e, node);
             }
-            final ReleasableBytesReference result = new ReleasableBytesReference(bytesStream.bytes(), bytesStream);
+            final ReleasableBytes result = toBytes(bytesStream);
             serializationStatsTracker.serializedDiff(uncompressedBytes, result.length());
             logger.trace(
                 "serialized cluster state diff for version [{}] using transport version [{}] with size [{}]",
@@ -322,8 +335,8 @@ public class PublicationTransportHandler {
 
         private final Map<DiscoveryNode, Transport.Connection> nodeConnections = new HashMap<>();
         // All the values of these maps have one ref for the context (while it's open) and one for each in-flight message.
-        private final Map<TransportVersion, ReleasableBytesReference> serializedStates = new ConcurrentHashMap<>();
-        private final Map<TransportVersion, ReleasableBytesReference> serializedDiffs = new HashMap<>();
+        private final Map<TransportVersion, ReleasableBytes> serializedStates = new ConcurrentHashMap<>();
+        private final Map<TransportVersion, ReleasableBytes> serializedDiffs = new HashMap<>();
 
         PublicationContext(ClusterStatePublicationEvent clusterStatePublicationEvent) {
             discoveryNodes = clusterStatePublicationEvent.getNewState().nodes();
@@ -430,7 +443,7 @@ public class PublicationTransportHandler {
             }
 
             var version = connection.getTransportVersion();
-            ReleasableBytesReference bytes = serializedStates.get(version);
+            ReleasableBytes bytes = serializedStates.get(version);
             if (bytes == null) {
                 try {
                     bytes = serializedStates.computeIfAbsent(version, v -> serializeFullClusterState(newState, destination, v));
@@ -451,7 +464,7 @@ public class PublicationTransportHandler {
                 return;
             }
 
-            final ReleasableBytesReference bytes = serializedDiffs.get(connection.getTransportVersion());
+            final ReleasableBytes bytes = serializedDiffs.get(connection.getTransportVersion());
             assert bytes != null
                 : "failed to find serialized diff for node " + destination + " of version [" + connection.getTransportVersion() + "]";
 
@@ -483,7 +496,7 @@ public class PublicationTransportHandler {
 
         private void sendClusterState(
             Transport.Connection connection,
-            ReleasableBytesReference bytes,
+            ReleasableBytes bytes,
             ActionListener<PublishWithJoinResponse> listener
         ) {
             assert refCount() > 0;

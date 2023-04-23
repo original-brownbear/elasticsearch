@@ -10,6 +10,7 @@ package org.elasticsearch.common.io.stream;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.Releasable;
 
@@ -53,7 +54,7 @@ public abstract class DelayableWriteable<T extends Writeable> implements Writeab
     }
 
     public static <T extends Writeable> DelayableWriteable<T> referencing(Writeable.Reader<T> reader, StreamInput in) throws IOException {
-        try (ReleasableBytesReference serialized = in.readReleasableBytesReference()) {
+        try (ReleasableBytes serialized = in.readReleasableBytesReference()) {
             return new Referencing<>(deserialize(reader, in.getTransportVersion(), in.namedWriteableRegistry(), serialized));
         }
     }
@@ -143,13 +144,13 @@ public abstract class DelayableWriteable<T extends Writeable> implements Writeab
         private final Writeable.Reader<T> reader;
         private final TransportVersion serializedAtVersion;
         private final NamedWriteableRegistry registry;
-        private final ReleasableBytesReference serialized;
+        private final ReleasableBytes serialized;
 
         private Serialized(
             Writeable.Reader<T> reader,
             TransportVersion serializedAtVersion,
             NamedWriteableRegistry registry,
-            ReleasableBytesReference serialized
+            ReleasableBytes serialized
         ) {
             this.reader = reader;
             this.serializedAtVersion = serializedAtVersion;

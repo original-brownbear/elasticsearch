@@ -9,7 +9,7 @@
 package org.elasticsearch.transport;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.core.AbstractRefCounted;
 import org.elasticsearch.core.IOUtils;
@@ -21,13 +21,13 @@ import java.util.Objects;
 public class InboundMessage extends AbstractRefCounted {
 
     private final Header header;
-    private final ReleasableBytesReference content;
+    private final ReleasableBytes content;
     private final Exception exception;
     private final boolean isPing;
     private Releasable breakerRelease;
     private StreamInput streamInput;
 
-    public InboundMessage(Header header, ReleasableBytesReference content, Releasable breakerRelease) {
+    public InboundMessage(Header header, ReleasableBytes content, Releasable breakerRelease) {
         this.header = header;
         this.content = content;
         this.breakerRelease = breakerRelease;

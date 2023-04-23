@@ -168,7 +168,6 @@ public class PublicationTransportHandlerTests extends ESTestCase {
                 Set.of(DiscoveryNodeRole.MASTER_ROLE),
                 Version.CURRENT
             );
-            final BytesRefRecycler recycler = new BytesRefRecycler(new MockPageCacheRecycler(Settings.EMPTY));
             final MockTransport mockTransport = new MockTransport() {
 
                 @Nullable
@@ -205,11 +204,6 @@ public class PublicationTransportHandlerTests extends ESTestCase {
                     } else {
                         handleError(requestId, new RemoteTransportException(node.getName(), node.getAddress(), action, exception));
                     }
-                }
-
-                @Override
-                public RecyclerBytesStreamOutput newNetworkBytesStream() {
-                    return new RecyclerBytesStreamOutput(recycler);
                 }
             };
 

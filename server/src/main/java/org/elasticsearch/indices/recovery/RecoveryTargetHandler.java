@@ -8,7 +8,7 @@
 package org.elasticsearch.indices.recovery;
 
 import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.index.seqno.ReplicationTracker;
 import org.elasticsearch.index.seqno.RetentionLeases;
 import org.elasticsearch.index.snapshots.blobstore.BlobStoreIndexShardSnapshot;
@@ -114,7 +114,7 @@ public interface RecoveryTargetHandler {
     void writeFileChunk(
         StoreFileMetadata fileMetadata,
         long position,
-        ReleasableBytesReference content,
+        ReleasableBytes content,
         boolean lastChunk,
         int totalTranslogOps,
         ActionListener<Void> listener

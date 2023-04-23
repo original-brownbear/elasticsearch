@@ -23,6 +23,7 @@ import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
+import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.HandlingTimeTracker;
 import org.elasticsearch.common.network.NetworkAddress;
@@ -78,7 +79,7 @@ public class OutboundHandlerTests extends ESTestCase {
             TransportVersion.CURRENT,
             statsTracker,
             threadPool,
-            recycler,
+            () -> new RecyclerBytesStreamOutput(recycler),
             new HandlingTimeTracker(),
             false
         );

@@ -6,17 +6,14 @@
  * Side Public License, v 1.
  */
 
-package org.elasticsearch.common.io.stream;
+package org.elasticsearch.common.bytes;
 
-import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasable;
 
-public abstract class BytesStream extends StreamOutput implements Releasable {
+public interface ReleasableBytes extends BytesReference, Releasable, RefCounted {
 
-    public abstract BytesReference bytes();
+    ReleasableBytes retainedSlice(int from, int length);
 
-    @Override
-    public abstract void close();
-
-    public abstract void seek(long position);
+    ReleasableBytes retain();
 }

@@ -14,8 +14,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ExceptionsHelper;
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.core.RefCounted;
 import org.elasticsearch.core.Releasables;
@@ -58,9 +56,10 @@ public class Netty4MessageInboundHandler extends ChannelInboundHandlerAdapter {
 
         final ByteBuf buffer = (ByteBuf) msg;
         Netty4TcpChannel channel = ctx.channel().attr(Netty4Transport.CHANNEL_KEY).get();
-        final BytesReference wrapped = Netty4Utils.toBytesReference(buffer);
-        try (ReleasableBytesReference reference = new ReleasableBytesReference(wrapped, new ByteBufRefCounted(buffer))) {
-            pipeline.handleBytes(channel, reference);
+        try {
+            pipeline.handleBytes(channel, Netty4Utils.toBytesReference(buffer));
+        } finally {
+            buffer.release();
         }
     }
 

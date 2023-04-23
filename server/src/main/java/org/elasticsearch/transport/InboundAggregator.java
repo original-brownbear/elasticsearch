@@ -12,6 +12,7 @@ import org.elasticsearch.common.breaker.CircuitBreaker;
 import org.elasticsearch.common.breaker.CircuitBreakingException;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.bytes.CompositeBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.core.Releasables;
@@ -28,8 +29,8 @@ public class InboundAggregator implements Releasable {
     private final Supplier<CircuitBreaker> circuitBreaker;
     private final Predicate<String> requestCanTripBreaker;
 
-    private ReleasableBytesReference firstContent;
-    private ArrayList<ReleasableBytesReference> contentAggregation;
+    private ReleasableBytes firstContent;
+    private ArrayList<ReleasableBytes> contentAggregation;
     private Header currentHeader;
     private Exception aggregationException;
     private boolean canTripBreaker = true;
@@ -74,7 +75,7 @@ public class InboundAggregator implements Releasable {
         currentHeader.setCompressionScheme(compressionScheme);
     }
 
-    public void aggregate(ReleasableBytesReference content) {
+    public void aggregate(ReleasableBytes content) {
         ensureOpen();
         assert isAggregating();
         if (isShortCircuited() == false) {
@@ -94,13 +95,13 @@ public class InboundAggregator implements Releasable {
 
     public InboundMessage finishAggregation() throws IOException {
         ensureOpen();
-        final ReleasableBytesReference releasableContent;
+        final ReleasableBytes releasableContent;
         if (isFirstContent()) {
             releasableContent = ReleasableBytesReference.empty();
         } else if (contentAggregation == null) {
             releasableContent = firstContent;
         } else {
-            final ReleasableBytesReference[] references = contentAggregation.toArray(new ReleasableBytesReference[0]);
+            final ReleasableBytes[] references = contentAggregation.toArray(new ReleasableBytes[0]);
             final BytesReference content = CompositeBytesReference.of(references);
             releasableContent = new ReleasableBytesReference(content, () -> Releasables.close(references));
         }

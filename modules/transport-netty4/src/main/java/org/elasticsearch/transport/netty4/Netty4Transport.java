@@ -9,6 +9,7 @@ package org.elasticsearch.transport.netty4;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.AdaptiveRecvByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -28,6 +29,8 @@ import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.recycler.Recycler;
@@ -98,6 +101,9 @@ public class Netty4Transport extends TcpTransport {
     private final ByteSizeValue receivePredictorMin;
     private final ByteSizeValue receivePredictorMax;
     private final Map<String, ServerBootstrap> serverBootstraps = newConcurrentMap();
+
+    private final Recycler<BytesRef> recycler;
+
     private volatile Bootstrap clientBootstrap;
     private volatile SharedGroupFactory.SharedGroup sharedGroup;
 
@@ -115,7 +121,7 @@ public class Netty4Transport extends TcpTransport {
         Netty4Utils.setAvailableProcessors(EsExecutors.allocatedProcessors(settings));
         NettyAllocator.logAllocatorDescriptionIfNeeded();
         this.sharedGroupFactory = sharedGroupFactory;
-
+        this.recycler = Netty4Utils.createRecycler(settings);
         // See AdaptiveReceiveBufferSizePredictor#DEFAULT_XXX for default values in netty..., we can use higher ones for us, even fixed one
         this.receivePredictorMin = NETTY_RECEIVE_PREDICTOR_MIN.get(settings);
         this.receivePredictorMax = NETTY_RECEIVE_PREDICTOR_MAX.get(settings);
@@ -131,8 +137,49 @@ public class Netty4Transport extends TcpTransport {
     }
 
     @Override
-    protected Recycler<BytesRef> createRecycler(Settings settings, PageCacheRecycler pageCacheRecycler) {
-        return Netty4Utils.createRecycler(settings);
+    public BytesStream newNetworkBytesStream() {
+        final ByteBuf buffer = NettyAllocator.getAllocator().heapBuffer();
+        return new BytesStream() {
+            @Override
+            public BytesReference bytes() {
+                return Netty4Utils.toBytesReference(buffer.duplicate());
+            }
+
+            @Override
+            public void close() {
+                buffer.release();
+            }
+
+            @Override
+            public void seek(long position) {
+                buffer.writerIndex(Math.toIntExact(position));
+            }
+
+            @Override
+            public long position() {
+                return buffer.writerIndex();
+            }
+
+            @Override
+            public void writeByte(byte b) {
+                buffer.writeByte(b);
+            }
+
+            @Override
+            public void writeInt(int i) {
+                buffer.writeInt(i);
+            }
+
+            @Override
+            public void writeBytes(byte[] b, int offset, int length) {
+                buffer.writeBytes(b, offset, length);
+            }
+
+            @Override
+            public void flush() {
+
+            }
+        };
     }
 
     @Override

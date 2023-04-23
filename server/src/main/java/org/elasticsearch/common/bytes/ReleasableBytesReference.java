@@ -24,7 +24,7 @@ import java.io.OutputStream;
  * An extension to {@link BytesReference} that requires releasing its content. This
  * class exists to make it explicit when a bytes reference needs to be released, and when not.
  */
-public final class ReleasableBytesReference implements RefCounted, Releasable, BytesReference {
+public final class ReleasableBytesReference implements ReleasableBytes {
 
     public static final Releasable NO_OP = () -> {};
 
@@ -73,12 +73,14 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
         return refCounted.hasReferences();
     }
 
-    public ReleasableBytesReference retain() {
+    @Override
+    public ReleasableBytes retain() {
         refCounted.incRef();
         return this;
     }
 
-    public ReleasableBytesReference retainedSlice(int from, int length) {
+    @Override
+    public ReleasableBytes retainedSlice(int from, int length) {
         if (from == 0 && length() == length) {
             return retain();
         }
@@ -148,22 +150,22 @@ public final class ReleasableBytesReference implements RefCounted, Releasable, B
     public StreamInput streamInput() throws IOException {
         assert hasReferences();
         return new BytesReferenceStreamInput(this) {
-            private ReleasableBytesReference retainAndSkip(int len) throws IOException {
+            private ReleasableBytes retainAndSkip(int len) throws IOException {
                 // instead of reading the bytes from a stream we just create a slice of the underlying bytes
-                final ReleasableBytesReference result = retainedSlice(offset(), len);
+                final ReleasableBytes result = retainedSlice(offset(), len);
                 // move the stream manually since creating the slice didn't move it
                 skip(len);
                 return result;
             }
 
             @Override
-            public ReleasableBytesReference readReleasableBytesReference() throws IOException {
+            public ReleasableBytes readReleasableBytesReference() throws IOException {
                 final int len = readArraySize();
                 return retainAndSkip(len);
             }
 
             @Override
-            public ReleasableBytesReference readAllToReleasableBytesReference() throws IOException {
+            public ReleasableBytes readAllToReleasableBytesReference() throws IOException {
                 return retainAndSkip(length() - offset());
             }
 

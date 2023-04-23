@@ -11,6 +11,7 @@ package org.elasticsearch.transport;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.recycler.Recycler;
@@ -38,7 +39,7 @@ public class InboundDecoder implements Releasable {
         this.recycler = recycler;
     }
 
-    public int decode(ReleasableBytesReference reference, Consumer<Object> fragmentConsumer) throws IOException {
+    public int decode(ReleasableBytes reference, Consumer<Object> fragmentConsumer) throws IOException {
         ensureOpen();
         try {
             return internalDecode(reference, fragmentConsumer);
@@ -48,7 +49,7 @@ public class InboundDecoder implements Releasable {
         }
     }
 
-    public int internalDecode(ReleasableBytesReference reference, Consumer<Object> fragmentConsumer) throws IOException {
+    public int internalDecode(ReleasableBytes reference, Consumer<Object> fragmentConsumer) throws IOException {
         if (isOnHeader()) {
             int messageLength = TcpTransport.readMessageLength(reference);
             if (messageLength == -1) {
@@ -89,7 +90,7 @@ public class InboundDecoder implements Releasable {
             }
             int remainingToConsume = totalNetworkSize - bytesConsumed;
             int maxBytesToConsume = Math.min(reference.length(), remainingToConsume);
-            ReleasableBytesReference retainedContent;
+            ReleasableBytes retainedContent;
             if (maxBytesToConsume == remainingToConsume) {
                 retainedContent = reference.retainedSlice(0, maxBytesToConsume);
             } else {
@@ -139,7 +140,7 @@ public class InboundDecoder implements Releasable {
         }
     }
 
-    private int decompress(ReleasableBytesReference content) throws IOException {
+    private int decompress(ReleasableBytes content) throws IOException {
         try (content) {
             return decompressor.decompress(content);
         }

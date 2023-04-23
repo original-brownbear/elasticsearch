@@ -11,7 +11,7 @@ package org.elasticsearch.common.util;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 
@@ -23,7 +23,7 @@ public class ReleasableByteArray implements ByteArray {
 
     private static final long SHALLOW_SIZE = RamUsageEstimator.shallowSizeOfInstance(ReleasableByteArray.class);
 
-    private final ReleasableBytesReference ref;
+    private final ReleasableBytes ref;
 
     ReleasableByteArray(StreamInput in) throws IOException {
         this.ref = in.readReleasableBytesReference();

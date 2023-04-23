@@ -10,7 +10,7 @@ package org.elasticsearch.transport;
 
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.bytes.ReleasableBytesReference;
+import org.elasticsearch.common.bytes.ReleasableBytes;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.core.RefCounted;
@@ -23,7 +23,7 @@ import java.io.IOException;
  */
 public class BytesTransportRequest extends TransportRequest implements RefCounted {
 
-    final ReleasableBytesReference bytes;
+    final ReleasableBytes bytes;
     private final TransportVersion version;
 
     public BytesTransportRequest(StreamInput in) throws IOException {
@@ -32,7 +32,7 @@ public class BytesTransportRequest extends TransportRequest implements RefCounte
         version = in.getTransportVersion();
     }
 
-    public BytesTransportRequest(ReleasableBytesReference bytes, TransportVersion version) {
+    public BytesTransportRequest(ReleasableBytes bytes, TransportVersion version) {
         this.bytes = bytes;
         this.version = version;
     }

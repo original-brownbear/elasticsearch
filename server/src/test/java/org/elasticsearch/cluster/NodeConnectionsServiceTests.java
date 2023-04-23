@@ -21,6 +21,8 @@ import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.component.LifecycleListener;
+import org.elasticsearch.common.io.stream.BytesStream;
+import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -725,6 +727,11 @@ public class NodeConnectionsServiceTests extends ESTestCase {
         @Override
         public RequestHandlers getRequestHandlers() {
             return requestHandlers;
+        }
+
+        @Override
+        public BytesStream newNetworkBytesStream() {
+            return new BytesStreamOutput();
         }
     }
 

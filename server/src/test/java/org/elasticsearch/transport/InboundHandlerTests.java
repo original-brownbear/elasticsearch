@@ -73,12 +73,13 @@ public class InboundHandlerTests extends ESTestCase {
             ignoreDeserializationErrors
         );
         TransportKeepAlive keepAlive = new TransportKeepAlive(threadPool, TcpChannel::sendMessage);
+        var recycler = new BytesRefRecycler(PageCacheRecycler.NON_RECYCLING_INSTANCE);
         OutboundHandler outboundHandler = new OutboundHandler(
             "node",
             TransportVersion.CURRENT,
             new StatsTracker(),
             threadPool,
-            new BytesRefRecycler(PageCacheRecycler.NON_RECYCLING_INSTANCE),
+            () -> new RecyclerBytesStreamOutput(recycler),
             new HandlingTimeTracker(),
             false
         );
