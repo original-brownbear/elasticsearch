@@ -12,8 +12,15 @@ import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
+import org.elasticsearch.common.io.stream.BytesStream;
+import org.elasticsearch.common.io.stream.ReleasableBytesStreamOutput;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.BoundTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.util.MockBigArrays;
+import org.elasticsearch.common.util.MockPageCacheRecycler;
+import org.elasticsearch.indices.breaker.NoneCircuitBreakerService;
 import org.elasticsearch.transport.CloseableConnection;
 import org.elasticsearch.transport.ConnectionProfile;
 import org.elasticsearch.transport.Transport;
@@ -34,6 +41,8 @@ public class FakeTransport extends AbstractLifecycleComponent implements Transpo
     private final RequestHandlers requestHandlers = new RequestHandlers();
     private final ResponseHandlers responseHandlers = new ResponseHandlers();
     private TransportMessageListener listener;
+
+    private final BigArrays bigArrays = new MockBigArrays(new MockPageCacheRecycler(Settings.EMPTY), new NoneCircuitBreakerService());
 
     @Override
     public void setMessageListener(TransportMessageListener messageListener) {
@@ -101,6 +110,11 @@ public class FakeTransport extends AbstractLifecycleComponent implements Transpo
     @Override
     public RequestHandlers getRequestHandlers() {
         return requestHandlers;
+    }
+
+    @Override
+    public BytesStream newNetworkBytesStream() {
+        return new ReleasableBytesStreamOutput(bigArrays);
     }
 
     @Override

@@ -10,7 +10,6 @@ package org.elasticsearch.transport;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
@@ -24,14 +23,12 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.component.Lifecycle;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
-import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.network.CloseableChannel;
 import org.elasticsearch.common.network.HandlingTimeTracker;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.network.NetworkUtils;
-import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.BoundTransportAddress;
@@ -117,7 +114,6 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
 
     protected final Settings settings;
     protected final ThreadPool threadPool;
-    protected final Recycler<BytesRef> recycler;
     protected final NetworkService networkService;
     protected final Set<ProfileSettings> profileSettingsSet;
     protected final boolean rstOnClose;
@@ -162,13 +158,12 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
 
         this.rstOnClose = TransportSettings.RST_ON_CLOSE.get(settings);
 
-        this.recycler = createRecycler(settings, pageCacheRecycler);
         this.outboundHandler = new OutboundHandler(
             nodeName,
             version,
             statsTracker,
             threadPool,
-            recycler,
+            this::newNetworkBytesStream,
             outboundHandlingTimeTracker,
             rstOnClose
         );
@@ -360,10 +355,6 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
     // primarily exists for the test implementations.
     protected static ConnectionProfile maybeOverrideConnectionProfile(ConnectionProfile connectionProfile) {
         return connectionProfile;
-    }
-
-    protected Recycler<BytesRef> createRecycler(Settings settings, PageCacheRecycler pageCacheRecycler) {
-        return new BytesRefRecycler(pageCacheRecycler);
     }
 
     @Override
@@ -970,11 +961,6 @@ public abstract class TcpTransport extends AbstractLifecycleComponent implements
 
     final Set<TcpChannel> getAcceptedChannels() {
         return Collections.unmodifiableSet(acceptedChannels);
-    }
-
-    @Override
-    public RecyclerBytesStreamOutput newNetworkBytesStream() {
-        return new RecyclerBytesStreamOutput(recycler);
     }
 
     /**

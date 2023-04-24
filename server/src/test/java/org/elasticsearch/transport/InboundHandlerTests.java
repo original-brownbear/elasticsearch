@@ -78,7 +78,7 @@ public class InboundHandlerTests extends ESTestCase {
             TransportVersion.CURRENT,
             new StatsTracker(),
             threadPool,
-            new BytesRefRecycler(PageCacheRecycler.NON_RECYCLING_INSTANCE),
+            BytesStreamOutput::new,
             new HandlingTimeTracker(),
             false
         );

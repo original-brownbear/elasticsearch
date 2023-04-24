@@ -9,8 +9,14 @@
 package org.elasticsearch.common.io.stream;
 
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.core.Releasable;
 
-public abstract class BytesStream extends StreamOutput {
+public abstract class BytesStream extends StreamOutput implements Releasable {
 
     public abstract BytesReference bytes();
+
+    @Override
+    public abstract void close();
+
+    public abstract void seek(long position);
 }

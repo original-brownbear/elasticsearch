@@ -12,15 +12,13 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.store.AlreadyClosedException;
-import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.io.stream.RecyclerBytesStreamOutput;
+import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.network.CloseableChannel;
 import org.elasticsearch.common.network.HandlingTimeTracker;
-import org.elasticsearch.common.recycler.Recycler;
 import org.elasticsearch.common.transport.NetworkExceptionHelper;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.core.Nullable;
@@ -30,6 +28,7 @@ import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
 final class OutboundHandler {
 
@@ -39,7 +38,7 @@ final class OutboundHandler {
     private final TransportVersion version;
     private final StatsTracker statsTracker;
     private final ThreadPool threadPool;
-    private final Recycler<BytesRef> recycler;
+    private final Supplier<BytesStream> recycler;
     private final HandlingTimeTracker handlingTimeTracker;
     private final boolean rstOnClose;
 
@@ -52,7 +51,7 @@ final class OutboundHandler {
         TransportVersion version,
         StatsTracker statsTracker,
         ThreadPool threadPool,
-        Recycler<BytesRef> recycler,
+        Supplier<BytesStream> recycler,
         HandlingTimeTracker handlingTimeTracker,
         boolean rstOnClose
     ) {
@@ -168,10 +167,10 @@ final class OutboundHandler {
         ResponseStatsConsumer responseStatsConsumer,
         Releasable onAfter
     ) throws IOException {
-        final RecyclerBytesStreamOutput byteStreamOutput;
+        final BytesStream byteStreamOutput;
         boolean bufferSuccess = false;
         try {
-            byteStreamOutput = new RecyclerBytesStreamOutput(recycler);
+            byteStreamOutput = recycler.get();
             bufferSuccess = true;
         } finally {
             if (bufferSuccess == false) {

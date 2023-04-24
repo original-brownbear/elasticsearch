@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -226,8 +227,18 @@ public abstract class Streams {
         }
 
         @Override
-        public void close() throws IOException {
-            flush();
+        public void close() {
+            try {
+                flush();
+            } catch (IOException e) {
+                assert false : e;
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public void seek(long position) {
+            delegate.seek(position);
         }
 
         @Override
