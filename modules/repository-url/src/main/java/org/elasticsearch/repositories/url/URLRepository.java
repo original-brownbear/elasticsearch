@@ -35,7 +35,6 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * Read-only URL-based implementation of the BlobStoreRepository
@@ -56,10 +55,9 @@ public class URLRepository extends BlobStoreRepository {
         assert TYPE.equals(BlobStoreRepository.URL_REPOSITORY_TYPE);
     }
 
-    public static final Setting<List<String>> SUPPORTED_PROTOCOLS_SETTING = Setting.listSetting(
+    public static final Setting<List<String>> SUPPORTED_PROTOCOLS_SETTING = Setting.stringListSetting(
         "repositories.url.supported_protocols",
         Arrays.asList("http", "https", "ftp", "file", "jar"),
-        Function.identity(),
         Property.NodeScope
     );
 
