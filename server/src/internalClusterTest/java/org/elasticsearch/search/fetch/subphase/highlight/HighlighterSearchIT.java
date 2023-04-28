@@ -1857,7 +1857,7 @@ public class HighlighterSearchIT extends ESIntegTestCase {
     public void testResetTwice() throws Exception {
         assertAcked(
             prepareCreate("test").setSettings(
-                Settings.builder().put(indexSettings()).put("analysis.analyzer.my_analyzer.type", "mock_whitespace").build()
+                Settings.builder().put(indexSettings()).put("analysis.analyzer.my_analyzer.type", "mock_whitespace")
             ).setMapping("text", "type=text,analyzer=my_analyzer")
         );
         ensureGreen();

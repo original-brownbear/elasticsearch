@@ -480,7 +480,6 @@ public class IndicesRequestCacheIT extends ESIntegTestCase {
                 .setMapping("created_at", "type=date")
                 .setSettings(settings)
                 .addAlias(new Alias("last_week").filter(QueryBuilders.rangeQuery("created_at").gte("now-7d/d")))
-                .get()
         );
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
         client.prepareIndex("index").setId("1").setRouting("1").setSource("created_at", DateTimeFormatter.ISO_LOCAL_DATE.format(now)).get();

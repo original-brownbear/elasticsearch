@@ -44,7 +44,7 @@ public class RetrySearchIntegTests extends BaseSearchableSnapshotsIntegTestCase 
             client().admin()
                 .indices()
                 .prepareCreate(indexName)
-                .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numberOfShards).build())
+                .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numberOfShards))
                 .setMapping("""
                     {"properties":{"created_date":{"type": "date", "format": "yyyy-MM-dd"}}}""")
         );
@@ -113,7 +113,7 @@ public class RetrySearchIntegTests extends BaseSearchableSnapshotsIntegTestCase 
             client().admin()
                 .indices()
                 .prepareCreate(indexName)
-                .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 5)).build())
+                .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 5)))
                 .setMapping("""
                     {"properties":{"created_date":{"type": "date", "format": "yyyy-MM-dd"}}}""")
         );

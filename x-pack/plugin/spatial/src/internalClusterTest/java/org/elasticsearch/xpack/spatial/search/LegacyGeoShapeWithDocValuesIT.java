@@ -57,9 +57,8 @@ public class LegacyGeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
             client().admin()
                 .indices()
                 .prepareCreate("test")
-                .setSettings(settings(randomSupportedVersion()).build())
+                .setSettings(settings(randomSupportedVersion()))
                 .setMapping("shape", "type=geo_shape,strategy=recursive")
-                .get()
         );
         ensureGreen();
 
@@ -85,9 +84,8 @@ public class LegacyGeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
     public void testLegacyCircle() throws Exception {
         // create index
         assertAcked(
-            prepareCreate("test").setSettings(settings(randomSupportedVersion()).build())
+            prepareCreate("test").setSettings(settings(randomSupportedVersion()))
                 .setMapping("shape", "type=geo_shape,strategy=recursive,tree=geohash")
-                .get()
         );
         ensureGreen();
 

@@ -105,9 +105,7 @@ public class SettingsListenerIT extends ESIntegTestCase {
     }
 
     public void testListener() {
-        assertAcked(
-            client().admin().indices().prepareCreate("test").setSettings(Settings.builder().put("index.test.new.setting", 21).build()).get()
-        );
+        assertAcked(client().admin().indices().prepareCreate("test").setSettings(Settings.builder().put("index.test.new.setting", 21)));
 
         for (SettingsTestingService instance : internalCluster().getDataNodeInstances(SettingsTestingService.class)) {
             assertEquals(21, instance.value);
@@ -118,13 +116,7 @@ public class SettingsListenerIT extends ESIntegTestCase {
             assertEquals(42, instance.value);
         }
 
-        assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("other")
-                .setSettings(Settings.builder().put("index.test.new.setting", 21).build())
-                .get()
-        );
+        assertAcked(client().admin().indices().prepareCreate("other").setSettings(Settings.builder().put("index.test.new.setting", 21)));
 
         for (SettingsTestingService instance : internalCluster().getDataNodeInstances(SettingsTestingService.class)) {
             assertEquals(42, instance.value);

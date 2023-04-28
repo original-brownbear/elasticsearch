@@ -124,8 +124,7 @@ public class TimeSeriesAggregationsIT extends AggregationIntegTestCase {
                         .put("index.number_of_shards", randomIntBetween(1, 10))
                         .put("time_series.start_time", boundaries[i])
                         .put("time_series.end_time", boundaries[i + 1])
-                        .build()
-                ).setMapping(builder).addAlias(new Alias("index")).get()
+                ).setMapping(builder).addAlias(new Alias("index"))
             );
         }
 
@@ -489,8 +488,7 @@ public class TimeSeriesAggregationsIT extends AggregationIntegTestCase {
                     .put("time_series.start_time", "2021-01-01T00:00:00Z")
                     .put("time_series.end_time", "2022-01-01T00:00:00Z")
                     .put("number_of_shards", 1)
-                    .build()
-            ).setMapping("key", "type=keyword,time_series_dimension=true", "val", "type=double").get()
+            ).setMapping("key", "type=keyword,time_series_dimension=true", "val", "type=double")
         );
 
         client().prepareBulk()

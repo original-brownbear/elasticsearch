@@ -230,14 +230,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
         mapping.endObject().endObject().endObject();
 
         // create index
-        assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
-                .setSettings(settings(randomSupportedVersion()).build())
-                .setMapping(mapping)
-                .get()
-        );
+        assertAcked(client().admin().indices().prepareCreate("test").setSettings(settings(randomSupportedVersion())).setMapping(mapping));
         ensureGreen();
 
         String source = """
@@ -290,7 +283,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
             .indices()
             .prepareCreate("shapes")
             .setMapping(mapping)
-            .setSettings(settings(version).build());
+            .setSettings(settings(version));
         mappingRequest.get();
         client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().get();
 

@@ -304,7 +304,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
                 .indices()
                 .prepareCreate("test")
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
-                .setSettings(Settings.builder().put("refresh_interval", "-1").build())
+                .setSettings(Settings.builder().put("refresh_interval", "-1"))
         );
         final boolean realtime = true;
         final boolean refresh = false;

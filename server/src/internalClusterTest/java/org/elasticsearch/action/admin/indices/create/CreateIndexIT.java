@@ -185,9 +185,7 @@ public class CreateIndexIT extends ESIntegTestCase {
         int value = randomIntBetween(-10, 0);
         try {
             prepareCreate("test").setSettings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS.substring(IndexMetadata.INDEX_SETTING_PREFIX.length()), value)
-                    .build()
+                Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS.substring(IndexMetadata.INDEX_SETTING_PREFIX.length()), value)
             ).get();
             fail("should have thrown an exception about the shard count");
         } catch (IllegalArgumentException e) {
@@ -198,7 +196,6 @@ public class CreateIndexIT extends ESIntegTestCase {
             prepareCreate("test").setSettings(
                 Settings.builder()
                     .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS.substring(IndexMetadata.INDEX_SETTING_PREFIX.length()), value)
-                    .build()
             ).get();
             fail("should have thrown an exception about the shard count");
         } catch (IllegalArgumentException e) {
@@ -296,12 +293,7 @@ public class CreateIndexIT extends ESIntegTestCase {
             .put(IndexMetadata.INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), numReplicas)
             .build();
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test-idx-1")
-                .setSettings(settings)
-                .addAlias(new Alias("alias1").writeIndex(true))
-                .get()
+            client().admin().indices().prepareCreate("test-idx-1").setSettings(settings).addAlias(new Alias("alias1").writeIndex(true))
         );
 
         assertRequestBuilderThrows(

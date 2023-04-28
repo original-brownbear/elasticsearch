@@ -228,7 +228,6 @@ public class FrozenIndexIT extends ESIntegTestCase {
                         .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 5))
                         .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                         .put("index.routing.allocation.require._name", assignedNode)
-                        .build()
                 )
                 .setMapping("{\"properties\":{\"created_date\":{\"type\": \"date\", \"format\": \"yyyy-MM-dd\"}}}")
         );

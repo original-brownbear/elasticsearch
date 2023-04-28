@@ -285,7 +285,7 @@ public class IndexFoldersDeletionListenerIT extends ESIntegTestCase {
             client().admin()
                 .indices()
                 .prepareCreate(indexName)
-                .setSettings(indexSettings(1, 0).put("index.routing.allocation.enable", EnableAllocationDecider.Allocation.NONE).build())
+                .setSettings(indexSettings(1, 0).put("index.routing.allocation.enable", EnableAllocationDecider.Allocation.NONE))
                 .setWaitForActiveShards(ActiveShardCount.NONE)
         );
 

@@ -193,15 +193,15 @@ public class HighlighterWithAnalyzersTests extends ESIntegTestCase {
     }
 
     public void testSynonyms() throws IOException {
-        Settings.Builder builder = Settings.builder()
-            .put(indexSettings())
-            .put("index.analysis.analyzer.synonym.tokenizer", "standard")
-            .putList("index.analysis.analyzer.synonym.filter", "synonym", "lowercase")
-            .put("index.analysis.filter.synonym.type", "synonym")
-            .putList("index.analysis.filter.synonym.synonyms", "fast,quick");
-
         assertAcked(
-            prepareCreate("test").setSettings(builder.build())
+            prepareCreate("test").setSettings(
+                Settings.builder()
+                    .put(indexSettings())
+                    .put("index.analysis.analyzer.synonym.tokenizer", "standard")
+                    .putList("index.analysis.analyzer.synonym.filter", "synonym", "lowercase")
+                    .put("index.analysis.filter.synonym.type", "synonym")
+                    .putList("index.analysis.filter.synonym.synonyms", "fast,quick")
+            )
                 .setMapping(
                     "field1",
                     "type=text,term_vector=with_positions_offsets,search_analyzer=synonym," + "analyzer=standard,index_options=offsets"

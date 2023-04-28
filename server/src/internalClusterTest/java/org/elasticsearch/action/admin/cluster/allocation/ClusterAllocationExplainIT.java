@@ -1215,7 +1215,6 @@ public final class ClusterAllocationExplainIT extends ESIntegTestCase {
                 .prepareCreate("idx")
                 .setSettings(indexSettings(numPrimaries, numReplicas).put(settings))
                 .setWaitForActiveShards(activeShardCount)
-                .get()
         );
 
         if (activeShardCount != ActiveShardCount.NONE) {

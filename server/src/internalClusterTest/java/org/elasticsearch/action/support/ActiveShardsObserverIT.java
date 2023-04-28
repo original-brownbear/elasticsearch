@@ -86,9 +86,7 @@ public class ActiveShardsObserverIT extends ESIntegTestCase {
             .put(INDEX_NUMBER_OF_REPLICAS_SETTING.getKey(), internalCluster().numDataNodes() + randomIntBetween(0, 3))
             .build();
         assertAcked(
-            prepareCreate(indexName).setSettings(settings)
-                .setWaitForActiveShards(randomIntBetween(0, internalCluster().numDataNodes()))
-                .get()
+            prepareCreate(indexName).setSettings(settings).setWaitForActiveShards(randomIntBetween(0, internalCluster().numDataNodes()))
         );
     }
 

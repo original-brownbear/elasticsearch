@@ -151,12 +151,8 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         assertAcked(
             prepareCreate(indexName).setSettings(
-                Settings.builder()
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 6)
-                    .put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
+                indexSettings(6, 0).put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
                     .put(DataTier.TIER_PREFERENCE, allocatable ? "data_hot" : "data_content")
-                    .build()
             ).setWaitForActiveShards(allocatable ? ActiveShardCount.DEFAULT : ActiveShardCount.NONE)
         );
         if (allocatable) {
@@ -194,26 +190,18 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         // add an index using `_id` allocation to check that it does not trigger spinning up the tier.
         assertAcked(
             prepareCreate(randomAlphaOfLength(10).toLowerCase(Locale.ROOT)).setSettings(
-                Settings.builder()
-                    // more than 0 replica provokes the same shard decider to say no.
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, between(0, 5))
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 6)
+                indexSettings(6, between(0, 5))                     // more than 0 replica provokes the same shard decider to say no.
                     .put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
                     .put(IndexMetadata.INDEX_ROUTING_INCLUDE_GROUP_SETTING.getKey() + "_id", randomAlphaOfLength(5))
-                    .build()
             ).setWaitForActiveShards(ActiveShardCount.NONE)
         );
 
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         assertAcked(
             prepareCreate(indexName).setSettings(
-                Settings.builder()
-                    // more than 0 replica provokes the same shard decider to say no.
-                    .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, between(0, 5))
-                    .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 6)
+                indexSettings(6, between(0, 5))// more than 0 replica provokes the same shard decider to say no.
                     .put(INDEX_STORE_STATS_REFRESH_INTERVAL_SETTING.getKey(), "0ms")
                     .put(IndexMetadata.INDEX_ROUTING_INCLUDE_GROUP_SETTING.getKey() + "data_tier", "hot")
-                    .build()
             ).setWaitForActiveShards(ActiveShardCount.NONE)
         );
 

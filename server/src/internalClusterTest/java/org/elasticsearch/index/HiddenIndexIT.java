@@ -36,9 +36,7 @@ import static org.hamcrest.Matchers.nullValue;
 public class HiddenIndexIT extends ESIntegTestCase {
 
     public void testHiddenIndexSearch() {
-        assertAcked(
-            client().admin().indices().prepareCreate("hidden-index").setSettings(Settings.builder().put("index.hidden", true).build()).get()
-        );
+        assertAcked(client().admin().indices().prepareCreate("hidden-index").setSettings(Settings.builder().put("index.hidden", true)));
         client().prepareIndex("hidden-index").setSource("foo", "bar").setRefreshPolicy(RefreshPolicy.IMMEDIATE).get();
 
         // default not visible to wildcard expansion
@@ -64,13 +62,7 @@ public class HiddenIndexIT extends ESIntegTestCase {
         assertTrue(matchedHidden);
 
         // implicit based on use of pattern starting with . and a wildcard
-        assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate(".hidden-index")
-                .setSettings(Settings.builder().put("index.hidden", true).build())
-                .get()
-        );
+        assertAcked(client().admin().indices().prepareCreate(".hidden-index").setSettings(Settings.builder().put("index.hidden", true)));
         client().prepareIndex(".hidden-index").setSource("foo", "bar").setRefreshPolicy(RefreshPolicy.IMMEDIATE).get();
         searchResponse = client().prepareSearch(randomFrom(".*", ".hidden-*")).setSize(1000).setQuery(QueryBuilders.matchAllQuery()).get();
         matchedHidden = Arrays.stream(searchResponse.getHits().getHits()).anyMatch(hit -> ".hidden-index".equals(hit.getIndex()));
@@ -120,13 +112,7 @@ public class HiddenIndexIT extends ESIntegTestCase {
                 .get()
         );
 
-        assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("a_hidden_index")
-                .setSettings(Settings.builder().put("index.hidden", true).build())
-                .get()
-        );
+        assertAcked(client().admin().indices().prepareCreate("a_hidden_index").setSettings(Settings.builder().put("index.hidden", true)));
 
         GetMappingsResponse mappingsResponse = client().admin().indices().prepareGetMappings("a_hidden_index").get();
         assertThat(mappingsResponse.mappings().size(), is(1));
@@ -180,9 +166,7 @@ public class HiddenIndexIT extends ESIntegTestCase {
         final String hiddenAlias = "alias-hidden";
         final String dotHiddenAlias = ".alias-hidden";
 
-        assertAcked(
-            client().admin().indices().prepareCreate(hiddenIndex).setSettings(Settings.builder().put("index.hidden", true).build()).get()
-        );
+        assertAcked(client().admin().indices().prepareCreate(hiddenIndex).setSettings(Settings.builder().put("index.hidden", true)));
 
         assertAcked(
             admin().indices()

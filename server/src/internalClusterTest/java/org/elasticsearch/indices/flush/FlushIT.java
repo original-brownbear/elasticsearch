@@ -124,7 +124,6 @@ public class FlushIT extends ESIntegTestCase {
                     indexSettings(1, 1).put(IndexSettings.INDEX_TRANSLOG_SYNC_INTERVAL_SETTING.getKey(), randomTimeValue(200, 500, "ms"))
                         .put(IndexService.GLOBAL_CHECKPOINT_SYNC_INTERVAL_SETTING.getKey(), randomTimeValue(50, 200, "ms"))
                         .put("index.routing.allocation.include._name", String.join(",", dataNodes))
-                        .build()
                 )
         );
         ensureGreen(indexName);

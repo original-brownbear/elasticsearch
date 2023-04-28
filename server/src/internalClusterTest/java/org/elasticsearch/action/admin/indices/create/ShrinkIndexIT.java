@@ -106,7 +106,6 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .indices()
                 .prepareResizeIndex("source", "first_shrink")
                 .setSettings(indexSettings(shardSplits[1], 0).putNull("index.blocks.write").build())
-                .get()
         );
         ensureGreen();
         assertHitCount(client().prepareSearch("first_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")).get(), 20);
@@ -135,7 +134,6 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .setSettings(
                     indexSettings(shardSplits[2], 0).putNull("index.blocks.write").putNull("index.routing.allocation.require._name").build()
                 )
-                .get()
         );
         ensureGreen();
         assertHitCount(client().prepareSearch("second_shrink").setSize(100).setQuery(new TermsQueryBuilder("foo", "bar")).get(), 20);
@@ -268,8 +266,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
         // now merge source into a single shard index
         final boolean createWithReplicas = randomBoolean();
         assertAcked(
-            client().admin()
-                .indices()
+            admin().indices()
                 .prepareResizeIndex("source", "target")
                 .setSettings(
                     Settings.builder()
@@ -278,7 +275,6 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                         .putNull("index.routing.allocation.require._name")
                         .build()
                 )
-                .get()
         );
         ensureGreen();
 
@@ -473,7 +469,6 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .indices()
                 .prepareResizeIndex("source", "target")
                 .setSettings(indexSettings(2, 0).putNull("index.blocks.write").build())
-                .get()
         );
         ensureGreen();
         assertNoResizeSourceIndexSettings("target");
@@ -524,7 +519,6 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                     .indices()
                     .prepareResizeIndex("source", "target")
                     .setSettings(Settings.builder().put("index.number_of_replicas", 0).build())
-                    .get()
             );
             ensureGreen();
             assertNoResizeSourceIndexSettings("target");
@@ -599,7 +593,6 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                     ).build()
                 )
                 .setResizeType(ResizeType.SHRINK)
-                .get()
         );
         ensureGreen();
 
