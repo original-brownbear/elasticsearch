@@ -68,7 +68,7 @@ public class FunctionScorePluginIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        client().admin().cluster().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForYellowStatus().get();
+        clusterAdmin().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForYellowStatus().get();
 
         client().index(
             new IndexRequest("test").id("1")

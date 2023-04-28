@@ -105,8 +105,7 @@ public class IndexDiskUsageAnalyzerIT extends ESIntegTestCase {
         mapping.endObject();
 
         final String index = "test-index";
-        client().admin()
-            .indices()
+        admin().indices()
             .prepareCreate(index)
             .setMapping(mapping)
             .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 5)))
@@ -191,8 +190,7 @@ public class IndexDiskUsageAnalyzerIT extends ESIntegTestCase {
         int totalShards = 0;
         for (String indexName : indices) {
             int numberOfShards = between(10, 30);
-            client().admin()
-                .indices()
+            admin().indices()
                 .prepareCreate(indexName)
                 .setSettings(
                     indexSettings(numberOfShards, between(0, 1)).put("index.shard.check_on_startup", false)
@@ -231,8 +229,7 @@ public class IndexDiskUsageAnalyzerIT extends ESIntegTestCase {
         internalCluster().ensureAtLeastNumDataNodes(2);
         final String indexName = "test-index";
         int numberOfShards = between(1, 5);
-        client().admin()
-            .indices()
+        admin().indices()
             .prepareCreate(indexName)
             .setSettings(indexSettings(numberOfShards, 0).put("index.routing.rebalance.enable", "none"))
             .get();

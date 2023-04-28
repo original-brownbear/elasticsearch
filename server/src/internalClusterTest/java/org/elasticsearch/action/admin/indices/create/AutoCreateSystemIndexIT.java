@@ -62,15 +62,15 @@ public class AutoCreateSystemIndexIT extends ESIntegTestCase {
 
     @After
     public void afterEach() {
-        assertAcked(client().admin().indices().prepareDeleteTemplate("*").get());
-        client().admin().indices().prepareDelete(PRIMARY_INDEX_NAME);
+        assertAcked(admin().indices().prepareDeleteTemplate("*").get());
+        admin().indices().prepareDelete(PRIMARY_INDEX_NAME);
     }
 
     public void testAutoCreatePrimaryIndex() throws Exception {
         CreateIndexRequest request = new CreateIndexRequest(PRIMARY_INDEX_NAME);
         client().execute(AutoCreateAction.INSTANCE, request).get();
 
-        GetIndexResponse response = client().admin().indices().prepareGetIndex().addIndices(PRIMARY_INDEX_NAME).get();
+        GetIndexResponse response = admin().indices().prepareGetIndex().addIndices(PRIMARY_INDEX_NAME).get();
         assertThat(response.indices().length, is(1));
         assertThat(response.aliases().size(), is(1));
         assertThat(response.aliases().get(PRIMARY_INDEX_NAME).size(), is(1));
@@ -84,7 +84,7 @@ public class AutoCreateSystemIndexIT extends ESIntegTestCase {
         CreateIndexRequest request = new CreateIndexRequest(INDEX_NAME);
         client().execute(AutoCreateAction.INSTANCE, request).get();
 
-        GetIndexResponse response = client().admin().indices().prepareGetIndex().addIndices(PRIMARY_INDEX_NAME).get();
+        GetIndexResponse response = admin().indices().prepareGetIndex().addIndices(PRIMARY_INDEX_NAME).get();
         assertThat(response.indices().length, is(1));
         assertThat(response.aliases().size(), is(1));
         assertThat(response.aliases().get(PRIMARY_INDEX_NAME).size(), is(1));
@@ -98,7 +98,7 @@ public class AutoCreateSystemIndexIT extends ESIntegTestCase {
         CreateIndexRequest request = new CreateIndexRequest(INDEX_NAME + "-2");
         client().execute(AutoCreateAction.INSTANCE, request).get();
 
-        GetIndexResponse response = client().admin().indices().prepareGetIndex().addIndices(INDEX_NAME + "-2").get();
+        GetIndexResponse response = admin().indices().prepareGetIndex().addIndices(INDEX_NAME + "-2").get();
         assertThat(response.indices().length, is(1));
         assertThat(response.aliases().size(), is(1));
         assertThat(response.aliases().get(INDEX_NAME + "-2").size(), is(1));
@@ -143,11 +143,7 @@ public class AutoCreateSystemIndexIT extends ESIntegTestCase {
         CreateIndexRequest request = new CreateIndexRequest(UnmanagedSystemIndexTestPlugin.SYSTEM_INDEX_NAME);
         client().execute(AutoCreateAction.INSTANCE, request).get();
 
-        GetIndexResponse response = client().admin()
-            .indices()
-            .prepareGetIndex()
-            .addIndices(UnmanagedSystemIndexTestPlugin.SYSTEM_INDEX_NAME)
-            .get();
+        GetIndexResponse response = admin().indices().prepareGetIndex().addIndices(UnmanagedSystemIndexTestPlugin.SYSTEM_INDEX_NAME).get();
         assertThat(response.indices().length, is(1));
         Settings settings = response.settings().get(UnmanagedSystemIndexTestPlugin.SYSTEM_INDEX_NAME);
         assertThat(settings, notNullValue());
@@ -170,8 +166,7 @@ public class AutoCreateSystemIndexIT extends ESIntegTestCase {
 
     private String autoCreateSystemAliasViaV1Template(String indexName) throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
+            admin().indices()
                 .preparePutTemplate("test-template")
                 .setPatterns(List.of(indexName + "*"))
                 .addAlias(new Alias(indexName + "-legacy-alias"))
@@ -281,8 +276,7 @@ public class AutoCreateSystemIndexIT extends ESIntegTestCase {
 
     private void assertAliasesHidden(String nonPrimaryIndex, Set<String> aliasNames, int aliasCount) throws InterruptedException,
         ExecutionException {
-        final GetAliasesResponse getAliasesResponse = client().admin()
-            .indices()
+        final GetAliasesResponse getAliasesResponse = admin().indices()
             .getAliases(new GetAliasesRequest().indicesOptions(IndicesOptions.strictExpandHidden()))
             .get();
 
