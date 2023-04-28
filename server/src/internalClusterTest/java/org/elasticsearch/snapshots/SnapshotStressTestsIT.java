@@ -504,7 +504,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
                         snapshotInfo.repository(),
                         snapshotInfo.snapshotId().getName()
                     );
-                    client().admin().indices().prepareClose(indicesToClose).execute(mustSucceed(closeIndexResponse -> {
+                    indicesAdmin().prepareClose(indicesToClose).execute(mustSucceed(closeIndexResponse -> {
                         logger.info(
                             "--> finished closing indices {} in preparation for restoring from [{}:{}]",
                             indicesToRestoreList,
@@ -526,7 +526,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
                         snapshotInfo.repository(),
                         snapshotInfo.snapshotId().getName()
                     );
-                    client().admin().indices().prepareDelete(indicesToDelete).execute(mustSucceed(deleteIndicesResponse -> {
+                    indicesAdmin().prepareDelete(indicesToDelete).execute(mustSucceed(deleteIndicesResponse -> {
                         logger.info(
                             "--> finished deleting indices {} in preparation for restoring from [{}:{}]",
                             indicesToRestoreList,
@@ -1293,9 +1293,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
                 shardCount = between(1, 5);
                 docPermits = new Semaphore(between(1000, 3000));
                 logger.info("--> create index [{}] with max [{}] docs", indexName, docPermits.availablePermits());
-                client().admin()
-                    .indices()
-                    .prepareCreate(indexName)
+                indicesAdmin().prepareCreate(indexName)
                     .setSettings(
                         Settings.builder()
                             .put(IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.getKey(), shardCount)
@@ -1387,7 +1385,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
 
                             logger.info("--> deleting index [{}]", indexName);
 
-                            client().admin().indices().prepareDelete(indexName).execute(mustSucceed(acknowledgedResponse -> {
+                            indicesAdmin().prepareDelete(indexName).execute(mustSucceed(acknowledgedResponse -> {
                                 logger.info("--> deleting index [{}] finished", indexName);
                                 assertTrue(acknowledgedResponse.isAcknowledged());
                                 createIndexAndContinue(releaseAll);

@@ -2975,7 +2975,7 @@ public class HighlighterSearchIT extends ESIntegTestCase {
             .endObject()
             .endObject();
         assertAcked(prepareCreate("test").setMapping(mapping));
-        assertAcked(client().admin().indices().prepareAliases().addAlias("test", "filtered_alias", matchQuery("foo", "japanese")));
+        assertAcked(indicesAdmin().prepareAliases().addAlias("test", "filtered_alias", matchQuery("foo", "japanese")));
         ensureGreen();
 
         indexRandom(true, client().prepareIndex("test").setSource("foo", "test japanese"));
@@ -3325,12 +3325,9 @@ public class HighlighterSearchIT extends ESIntegTestCase {
 
     public void testHighlightQueryRewriteDatesWithNow() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("index-1")
+            indicesAdmin().prepareCreate("index-1")
                 .setMapping("d", "type=date", "field", "type=text,store=true,term_vector=with_positions_offsets")
                 .setSettings(indexSettings(2, 0))
-                .get()
         );
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
         DateFormatter formatter = DateFormatter.forPattern("strict_date_optional_time");

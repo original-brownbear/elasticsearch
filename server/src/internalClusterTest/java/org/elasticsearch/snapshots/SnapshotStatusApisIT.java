@@ -305,8 +305,6 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
     }
 
     public void testGetSnapshotsMultipleRepos() throws Exception {
-        final Client client = client();
-
         List<String> snapshotList = new ArrayList<>();
         List<String> repoList = new ArrayList<>();
         Map<String, List<String>> repo2SnapshotNames = new HashMap<>();
@@ -315,7 +313,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
         final String indexName = "test-idx";
         createIndexWithRandomDocs(indexName, 10);
         final int numberOfShards = IndexMetadata.INDEX_NUMBER_OF_SHARDS_SETTING.get(
-            client.admin().indices().prepareGetSettings(indexName).get().getIndexToSettings().get(indexName)
+            indicesAdmin().prepareGetSettings(indexName).get().getIndexToSettings().get(indexName)
         );
 
         for (int repoIndex = 0; repoIndex < randomIntBetween(2, 5); repoIndex++) {
@@ -324,9 +322,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
             final Path repoPath = randomRepoPath();
             logger.info("--> create repository with name " + repoName);
             assertAcked(
-                client.admin()
-                    .cluster()
-                    .preparePutRepository(repoName)
+                clusterAdmin().preparePutRepository(repoName)
                     .setType("fs")
                     .setSettings(Settings.builder().put("location", repoPath).build())
             );
@@ -342,9 +338,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
                     assertBusy(() -> assertThat(threadPool.absoluteTimeInMillis(), greaterThan(startMillis)));
                 }
                 logger.info("--> create snapshot with index {} and name {} in repository {}", snapshotIndex, snapshotName, repoName);
-                CreateSnapshotResponse createSnapshotResponse = client.admin()
-                    .cluster()
-                    .prepareCreateSnapshot(repoName, snapshotName)
+                CreateSnapshotResponse createSnapshotResponse = clusterAdmin().prepareCreateSnapshot(repoName, snapshotName)
                     .setWaitForCompletion(true)
                     .setIndices(indexName)
                     .get();
@@ -360,11 +354,9 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
         }
 
         logger.info("--> get and verify snapshots");
-        GetSnapshotsResponse getSnapshotsResponse = client.admin()
-            .cluster()
-            .prepareGetSnapshots(randomFrom(new String[] { "_all" }, new String[] { "repo*" }, repoList.toArray(new String[0])))
-            .setSnapshots(randomFrom("_all", "*"))
-            .get();
+        GetSnapshotsResponse getSnapshotsResponse = clusterAdmin().prepareGetSnapshots(
+            randomFrom(new String[] { "_all" }, new String[] { "repo*" }, repoList.toArray(new String[0]))
+        ).setSnapshots(randomFrom("_all", "*")).get();
 
         for (Map.Entry<String, List<String>> repo2Names : repo2SnapshotNames.entrySet()) {
             String repo = repo2Names.getKey();
@@ -377,9 +369,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
         }
 
         logger.info("--> specify all snapshot names with ignoreUnavailable=false");
-        GetSnapshotsResponse getSnapshotsResponse2 = client.admin()
-            .cluster()
-            .prepareGetSnapshots(randomFrom("_all", "repo*"))
+        GetSnapshotsResponse getSnapshotsResponse2 = clusterAdmin().prepareGetSnapshots(randomFrom("_all", "repo*"))
             .setIgnoreUnavailable(false)
             .setSnapshots(snapshotList.toArray(new String[0]))
             .get();
@@ -389,9 +379,7 @@ public class SnapshotStatusApisIT extends AbstractSnapshotIntegTestCase {
         }
 
         logger.info("--> specify all snapshot names with ignoreUnavailable=true");
-        GetSnapshotsResponse getSnapshotsResponse3 = client.admin()
-            .cluster()
-            .prepareGetSnapshots(randomFrom("_all", "repo*"))
+        GetSnapshotsResponse getSnapshotsResponse3 = clusterAdmin().prepareGetSnapshots(randomFrom("_all", "repo*"))
             .setIgnoreUnavailable(true)
             .setSnapshots(snapshotList.toArray(new String[0]))
             .get();
