@@ -65,8 +65,7 @@ public class SearchSliceIT extends ESIntegTestCase {
                 .endObject()
         );
         assertAcked(
-            client().admin()
-                .indices()
+            admin().indices()
                 .prepareCreate("test")
                 .setSettings(Settings.builder().put("number_of_shards", numberOfShards).put("index.max_slices_per_scroll", 10000))
                 .setMapping(mapping)
@@ -143,8 +142,7 @@ public class SearchSliceIT extends ESIntegTestCase {
         }
         {
             assertAcked(
-                client().admin()
-                    .indices()
+                admin().indices()
                     .prepareAliases()
                     .addAliasAction(IndicesAliasesRequest.AliasActions.add().index("test").alias("alias1").routing("foo"))
                     .addAliasAction(IndicesAliasesRequest.AliasActions.add().index("test").alias("alias2").routing("bar"))

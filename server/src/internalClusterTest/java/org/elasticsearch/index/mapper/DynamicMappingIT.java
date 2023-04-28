@@ -129,7 +129,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
             throw error.get();
         }
         Thread.sleep(2000);
-        GetMappingsResponse mappings = client().admin().indices().prepareGetMappings("index").get();
+        GetMappingsResponse mappings = admin().indices().prepareGetMappings("index").get();
         for (int i = 0; i < indexThreads.length; ++i) {
             assertMappingsHaveField(mappings, "index", "field" + i);
         }
@@ -143,8 +143,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
         // checked at parse time, see testTotalFieldsLimitForDynamicMappingsUpdateCheckedAtDocumentParseTime
         createIndex("index", Settings.builder().put(INDEX_MAPPING_NESTED_FIELDS_LIMIT_SETTING.getKey(), 2).build());
         ensureGreen("index");
-        client().admin()
-            .indices()
+        admin().indices()
             .preparePutMapping("index")
             .setSource(
                 Strings.toString(
@@ -262,7 +261,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
                 }
             """;
 
-        client().admin().indices().prepareCreate("index1").setSettings(indexSettings).setMapping(mapping).get();
+        admin().indices().prepareCreate("index1").setSettings(indexSettings).setMapping(mapping).get();
         ensureGreen("index1");
 
         {
@@ -286,7 +285,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
 
         {
             // remove 2 runtime field mappings
-            assertAcked(client().admin().indices().preparePutMapping("index1").setSource("""
+            assertAcked(admin().indices().preparePutMapping("index1").setSource("""
                     {
                       "runtime": {
                         "my_object.rfield1": null,
@@ -337,7 +336,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
             mappings.endArray();
         }
         mappings.endObject();
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping(mappings));
+        assertAcked(admin().indices().prepareCreate("test").setMapping(mappings));
         List<IndexRequest> requests = new ArrayList<>();
         requests.add(
             new IndexRequest("test").id("1").source("location", "41.12,-71.34").setDynamicTemplates(Map.of("location", "location"))
@@ -384,7 +383,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
     }
 
     public void testBulkRequestWithNotFoundDynamicTemplate() throws Exception {
-        assertAcked(client().admin().indices().prepareCreate("test"));
+        assertAcked(admin().indices().prepareCreate("test"));
         final XContentBuilder mappings = XContentFactory.jsonBuilder();
         mappings.startObject();
         {
@@ -438,7 +437,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
     }
 
     public void testDynamicRuntimeNoConflicts() {
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping("""
+        assertAcked(admin().indices().prepareCreate("test").setMapping("""
             {"_doc":{"dynamic":"runtime"}}""").get());
 
         List<IndexRequest> docs = new ArrayList<>();
@@ -472,7 +471,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
     }
 
     public void testDynamicRuntimeObjectFields() {
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping("""
+        assertAcked(admin().indices().prepareCreate("test").setMapping("""
             {
               "_doc": {
                 "properties": {
@@ -533,7 +532,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
             containsString("object mapping for [obj.runtime] tried to parse field [runtime] as object, but found a concrete value")
         );
 
-        assertAcked(client().admin().indices().preparePutMapping("test").setSource("""
+        assertAcked(admin().indices().preparePutMapping("test").setSource("""
             {
               "_doc": {
                 "properties": {
@@ -588,7 +587,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
     }
 
     public void testSubobjectsFalseAtRoot() throws Exception {
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping("""
+        assertAcked(admin().indices().prepareCreate("test").setMapping("""
             {
               "_doc": {
                 "subobjects" : false,
@@ -606,7 +605,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
         assertEquals(RestStatus.CREATED, indexResponse.status());
 
         assertBusy(() -> {
-            Map<String, Object> mappings = client().admin().indices().prepareGetMappings("test").get().mappings().get("test").sourceAsMap();
+            Map<String, Object> mappings = admin().indices().prepareGetMappings("test").get().mappings().get("test").sourceAsMap();
             @SuppressWarnings("unchecked")
             Map<String, Object> properties = (Map<String, Object>) mappings.get("properties");
             assertEquals(4, properties.size());
@@ -620,7 +619,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
 
     @SuppressWarnings("unchecked")
     public void testSubobjectsFalse() throws Exception {
-        assertAcked(client().admin().indices().prepareCreate("test").setMapping("""
+        assertAcked(admin().indices().prepareCreate("test").setMapping("""
             {
               "_doc": {
                 "properties": {
@@ -651,7 +650,7 @@ public class DynamicMappingIT extends ESIntegTestCase {
         assertEquals(RestStatus.CREATED, indexResponse.status());
 
         assertBusy(() -> {
-            Map<String, Object> mappings = client().admin().indices().prepareGetMappings("test").get().mappings().get("test").sourceAsMap();
+            Map<String, Object> mappings = admin().indices().prepareGetMappings("test").get().mappings().get("test").sourceAsMap();
             Map<String, Object> properties = (Map<String, Object>) mappings.get("properties");
             Map<String, Object> foo = (Map<String, Object>) properties.get("foo");
             properties = (Map<String, Object>) foo.get("properties");

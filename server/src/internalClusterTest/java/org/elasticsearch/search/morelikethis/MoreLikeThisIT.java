@@ -80,7 +80,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .actionGet();
         client().index(new IndexRequest("test").id("2").source(jsonBuilder().startObject().field("text", "lucene release").endObject()))
             .actionGet();
-        client().admin().indices().refresh(new RefreshRequest()).actionGet();
+        admin().indices().refresh(new RefreshRequest()).actionGet();
 
         logger.info("Running moreLikeThis");
         SearchResponse response = client().prepareSearch()
@@ -113,7 +113,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .actionGet();
         client().index(new IndexRequest("test").id("2").source(jsonBuilder().startObject().field("text", "lucene release").endObject()))
             .actionGet();
-        client().admin().indices().refresh(new RefreshRequest()).actionGet();
+        admin().indices().refresh(new RefreshRequest()).actionGet();
 
         logger.info("Running moreLikeThis");
         SearchResponse response = client().prepareSearch()
@@ -150,7 +150,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             new IndexRequest("test").id("2").source(jsonBuilder().startObject().field("myField", "and_foo").field("empty", "").endObject())
         ).actionGet();
 
-        client().admin().indices().refresh(new RefreshRequest()).actionGet();
+        admin().indices().refresh(new RefreshRequest()).actionGet();
 
         SearchResponse searchResponse = client().prepareSearch()
             .setQuery(
@@ -175,7 +175,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         client().index(new IndexRequest("test").id("3").source(jsonBuilder().startObject().field("some_long", -666).endObject()))
             .actionGet();
 
-        client().admin().indices().refresh(new RefreshRequest()).actionGet();
+        admin().indices().refresh(new RefreshRequest()).actionGet();
 
         logger.info("Running moreLikeThis");
         SearchResponse response = client().prepareSearch()
@@ -200,8 +200,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             )
         );
         logger.info("Creating aliases alias release");
-        client().admin()
-            .indices()
+        admin().indices()
             .prepareAliases()
             .addAlias("test", "release", termQuery("text", "release"))
             .addAlias("test", "beta", termQuery("text", "beta"))
@@ -220,7 +219,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         client().index(
             new IndexRequest("test").id("4").source(jsonBuilder().startObject().field("text", "elasticsearch release").endObject())
         ).actionGet();
-        client().admin().indices().refresh(new RefreshRequest()).actionGet();
+        admin().indices().refresh(new RefreshRequest()).actionGet();
 
         logger.info("Running moreLikeThis on index");
         SearchResponse response = client().prepareSearch()
@@ -256,8 +255,8 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         String indexName = "foo";
         String aliasName = "foo_name";
 
-        client().admin().indices().prepareCreate(indexName).get();
-        client().admin().indices().prepareAliases().addAlias(indexName, aliasName).get();
+        admin().indices().prepareCreate(indexName).get();
+        admin().indices().prepareAliases().addAlias(indexName, aliasName).get();
 
         assertThat(ensureGreen(), equalTo(ClusterHealthStatus.GREEN));
 
@@ -279,12 +278,12 @@ public class MoreLikeThisIT extends ESIntegTestCase {
     }
 
     public void testMoreLikeThisIssue2197() throws Exception {
-        client().admin().indices().prepareCreate("foo").get();
+        admin().indices().prepareCreate("foo").get();
         client().prepareIndex("foo")
             .setId("1")
             .setSource(jsonBuilder().startObject().startObject("foo").field("bar", "boz").endObject().endObject())
             .get();
-        client().admin().indices().prepareRefresh("foo").get();
+        admin().indices().prepareRefresh("foo").get();
         assertThat(ensureGreen(), equalTo(ClusterHealthStatus.GREEN));
 
         SearchResponse response = client().prepareSearch()
@@ -299,7 +298,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
 
     // Issue #2489
     public void testMoreLikeWithCustomRouting() throws Exception {
-        client().admin().indices().prepareCreate("foo").get();
+        admin().indices().prepareCreate("foo").get();
         ensureGreen();
 
         client().prepareIndex("foo")
@@ -307,7 +306,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().startObject("foo").field("bar", "boz").endObject().endObject())
             .setRouting("2")
             .get();
-        client().admin().indices().prepareRefresh("foo").get();
+        admin().indices().prepareRefresh("foo").get();
 
         SearchResponse response = client().prepareSearch()
             .setQuery(new MoreLikeThisQueryBuilder(null, new Item[] { new Item("foo", "1").routing("2") }))
@@ -326,7 +325,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().startObject("foo").field("bar", "boz").endObject().endObject())
             .setRouting("4000")
             .get();
-        client().admin().indices().prepareRefresh("foo").get();
+        admin().indices().prepareRefresh("foo").get();
         SearchResponse response = client().prepareSearch()
             .setQuery(new MoreLikeThisQueryBuilder(null, new Item[] { new Item("foo", "1").routing("4000") }))
             .get();
@@ -512,7 +511,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             new IndexRequest("test").id("2")
                 .source(jsonBuilder().startObject().field("text", "Lucene has been ported to other programming languages").endObject())
         ).actionGet();
-        client().admin().indices().refresh(new RefreshRequest()).actionGet();
+        admin().indices().refresh(new RefreshRequest()).actionGet();
 
         logger.info("Running More Like This with include true");
         SearchResponse response = client().prepareSearch()

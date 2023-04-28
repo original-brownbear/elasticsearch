@@ -195,15 +195,14 @@ public class GetActionIT extends ESIntegTestCase {
     }
 
     public void testGetWithAliasPointingToMultipleIndices() {
-        client().admin().indices().prepareCreate("index1").addAlias(new Alias("alias1").indexRouting("0")).get();
+        admin().indices().prepareCreate("index1").addAlias(new Alias("alias1").indexRouting("0")).get();
         if (randomBoolean()) {
-            client().admin()
-                .indices()
+            admin().indices()
                 .prepareCreate("index2")
                 .addAlias(new Alias("alias1").indexRouting("0").writeIndex(randomFrom(false, null)))
                 .get();
         } else {
-            client().admin().indices().prepareCreate("index3").addAlias(new Alias("alias1").indexRouting("1").writeIndex(true)).get();
+            admin().indices().prepareCreate("index3").addAlias(new Alias("alias1").indexRouting("1").writeIndex(true)).get();
         }
         IndexResponse indexResponse = client().prepareIndex("index1").setId("id").setSource(Collections.singletonMap("foo", "bar")).get();
         assertThat(indexResponse.status().getStatus(), equalTo(RestStatus.CREATED.getStatus()));
@@ -648,7 +647,7 @@ public class GetActionIT extends ESIntegTestCase {
         ensureGreen();
 
         logger.info("flushing");
-        FlushResponse flushResponse = client().admin().indices().prepareFlush("my-index").setForce(true).get();
+        FlushResponse flushResponse = admin().indices().prepareFlush("my-index").setForce(true).get();
         if (flushResponse.getSuccessfulShards() == 0) {
             StringBuilder sb = new StringBuilder("failed to flush at least one shard. total shards [").append(
                 flushResponse.getTotalShards()

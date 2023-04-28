@@ -187,7 +187,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
         // not cause the deleted dangling index to be considered "live" again, just because its
         // tombstone has been pushed out of the graveyard.
         createIndex("additional");
-        assertAcked(client().admin().indices().prepareDelete("additional"));
+        assertAcked(indicesAdmin().prepareDelete("additional"));
         assertThat(listDanglingIndices(), is(empty()));
     }
 
@@ -212,8 +212,8 @@ public class DanglingIndicesIT extends ESIntegTestCase {
                     @Override
                     public Settings onNodeStopped(String nodeName) throws Exception {
                         internalCluster().validateClusterFormed();
-                        assertAcked(client().admin().indices().prepareDelete(INDEX_NAME));
-                        assertAcked(client().admin().indices().prepareDelete(OTHER_INDEX_NAME));
+                        assertAcked(indicesAdmin().prepareDelete(INDEX_NAME));
+                        assertAcked(indicesAdmin().prepareDelete(OTHER_INDEX_NAME));
                         return super.onNodeStopped(nodeName);
                     }
                 });
@@ -238,7 +238,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
         // not cause the deleted dangling index to be considered "live" again, just because its
         // tombstone has been pushed out of the graveyard.
         createIndex("additional");
-        assertAcked(client().admin().indices().prepareDelete("additional"));
+        assertAcked(indicesAdmin().prepareDelete("additional"));
         assertBusy(() -> assertThat(listDanglingIndices(), empty()));
     }
 
@@ -299,7 +299,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
         final long endTimeMillis = System.currentTimeMillis() + timeout.millis();
         while (isImporting.get() && System.currentTimeMillis() < endTimeMillis) {
             try {
-                client().admin().indices().prepareDelete(INDEX_NAME).get(timeout);
+                indicesAdmin().prepareDelete(INDEX_NAME).get(timeout);
                 isImporting.set(false);
             } catch (Exception e) {
                 // failures are expected
@@ -310,7 +310,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
             if (isImporting.get()) {
                 isImporting.set(false);
                 try {
-                    client().admin().indices().prepareDelete(INDEX_NAME).get(timeout);
+                    indicesAdmin().prepareDelete(INDEX_NAME).get(timeout);
                 } catch (Exception e) {
                     throw new AssertionError("delete index never succeeded", e);
                 }
@@ -382,7 +382,7 @@ public class DanglingIndicesIT extends ESIntegTestCase {
                 internalCluster().validateClusterFormed();
                 stoppedNodeName.set(nodeName);
                 for (String index : indices) {
-                    assertAcked(client().admin().indices().prepareDelete(index));
+                    assertAcked(indicesAdmin().prepareDelete(index));
                 }
                 return super.onNodeStopped(nodeName);
             }

@@ -33,8 +33,8 @@ public class AliasResolveRoutingIT extends ESIntegTestCase {
         createIndex("test-0");
         createIndex("test-1");
         ensureGreen();
-        client().admin().indices().prepareAliases().addAlias("test-0", "alias-0").addAlias("test-1", "alias-1").get();
-        client().admin().indices().prepareClose("test-1").get();
+        indicesAdmin().prepareAliases().addAlias("test-0", "alias-0").addAlias("test-1", "alias-1").get();
+        indicesAdmin().prepareClose("test-1").get();
         indexRandom(
             true,
             client().prepareIndex("test-0").setId("1").setSource("field1", "the quick brown fox jumps"),
@@ -57,9 +57,7 @@ public class AliasResolveRoutingIT extends ESIntegTestCase {
         createIndex("test2");
         clusterAdmin().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
-        client().admin()
-            .indices()
-            .prepareAliases()
+        indicesAdmin().prepareAliases()
             .addAliasAction(AliasActions.add().index("test1").alias("alias"))
             .addAliasAction(AliasActions.add().index("test1").alias("alias10").routing("0"))
             .addAliasAction(AliasActions.add().index("test1").alias("alias110").searchRouting("1,0"))
@@ -101,9 +99,7 @@ public class AliasResolveRoutingIT extends ESIntegTestCase {
         createIndex("test3");
         clusterAdmin().prepareHealth().setWaitForEvents(Priority.LANGUID).setWaitForGreenStatus().execute().actionGet();
 
-        client().admin()
-            .indices()
-            .prepareAliases()
+        indicesAdmin().prepareAliases()
             .addAliasAction(AliasActions.add().index("test1").alias("alias"))
             .addAliasAction(AliasActions.add().index("test1").alias("alias10").routing("0"))
             .addAliasAction(AliasActions.add().index("test2").alias("alias20").routing("0"))

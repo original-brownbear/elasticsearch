@@ -178,7 +178,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         assertThat(clusterHealth.getIndices().get("test").getActiveShards(), equalTo(numShards.numPrimaries * 2));
 
         if (randomBoolean()) {
-            assertAcked(client().admin().indices().prepareClose("test").setWaitForActiveShards(ActiveShardCount.ALL));
+            assertAcked(indicesAdmin().prepareClose("test").setWaitForActiveShards(ActiveShardCount.ALL));
 
             clusterHealth = clusterAdmin().prepareHealth()
                 .setWaitForEvents(Priority.LANGUID)
@@ -299,7 +299,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         assertThat(clusterHealth.getIndices().get("test").getActiveShards(), equalTo(numShards.numPrimaries * 2));
 
         if (randomBoolean()) {
-            assertAcked(client().admin().indices().prepareClose("test").setWaitForActiveShards(ActiveShardCount.ALL));
+            assertAcked(indicesAdmin().prepareClose("test").setWaitForActiveShards(ActiveShardCount.ALL));
 
             clusterHealth = clusterAdmin().prepareHealth()
                 .setWaitForEvents(Priority.LANGUID)
@@ -445,9 +445,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         final long settingsVersion = clusterAdmin().prepareState().get().getState().metadata().index("test").getSettingsVersion();
         final int value = randomIntBetween(-10, -1);
         try {
-            client().admin()
-                .indices()
-                .prepareUpdateSettings("test")
+            indicesAdmin().prepareUpdateSettings("test")
                 .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, value))
                 .execute()
                 .actionGet();
@@ -468,15 +466,13 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
             EnumSet.of(IndicesOptions.WildcardStates.OPEN)
         );
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareUpdateSettings("non-existent-*")
+            indicesAdmin().prepareUpdateSettings("non-existent-*")
                 .setSettings(Settings.builder().put("index.number_of_replicas", 1))
                 .setIndicesOptions(options)
                 .get()
         );
         final int numberOfReplicas = Integer.parseInt(
-            client().admin().indices().prepareGetSettings("test-index").get().getSetting("test-index", "index.number_of_replicas")
+            indicesAdmin().prepareGetSettings("test-index").get().getSetting("test-index", "index.number_of_replicas")
         );
         assertThat(numberOfReplicas, equalTo(0));
     }

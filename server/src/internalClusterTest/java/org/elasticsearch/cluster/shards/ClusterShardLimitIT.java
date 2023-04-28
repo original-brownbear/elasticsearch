@@ -117,8 +117,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
         }
 
         assertAcked(
-            client().admin()
-                .indices()
+            admin().indices()
                 .preparePutTemplate("should-fail")
                 .setPatterns(Collections.singletonList("should-fail"))
                 .setOrder(1)
@@ -128,7 +127,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
 
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> client().admin().indices().prepareCreate("should-fail").get()
+            () -> admin().indices().prepareCreate("should-fail").get()
         );
         verifyException(dataNodes, counts, e);
         ClusterState clusterState = clusterAdmin().prepareState().get().getState();
@@ -147,8 +146,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
         prepareCreate("growing-should-fail", indexSettings(firstShardCount, 0)).get();
 
         try {
-            client().admin()
-                .indices()
+            admin().indices()
                 .prepareUpdateSettings("growing-should-fail")
                 .setSettings(Settings.builder().put("number_of_replicas", dataNodes))
                 .get();
@@ -204,8 +202,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
                 .build()
         );
         try {
-            client().admin()
-                .indices()
+            admin().indices()
                 .prepareUpdateSettings(randomFrom("_all", "test-*", "*-index"))
                 .setSettings(Settings.builder().put("number_of_replicas", dataNodes - 1))
                 .get();
@@ -246,8 +243,7 @@ public class ClusterShardLimitIT extends ESIntegTestCase {
         // Since a request with preserve_existing can't change the number of
         // replicas, we should never get an error here.
         assertAcked(
-            client().admin()
-                .indices()
+            admin().indices()
                 .prepareUpdateSettings("test-index")
                 .setPreserveExisting(true)
                 .setSettings(Settings.builder().put("number_of_replicas", dataNodes))

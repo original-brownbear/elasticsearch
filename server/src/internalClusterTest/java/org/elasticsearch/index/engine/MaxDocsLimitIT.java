@@ -88,8 +88,7 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
     public void testMaxDocsLimit() throws Exception {
         internalCluster().ensureAtLeastNumDataNodes(1);
         assertAcked(
-            client().admin()
-                .indices()
+            admin().indices()
                 .prepareCreate("test")
                 .setSettings(
                     Settings.builder()
@@ -109,7 +108,7 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
             () -> client().prepareDelete("test", "any-id").get()
         );
         assertThat(deleteError.getMessage(), containsString("Number of documents in the index can't exceed [" + maxDocs.get() + "]"));
-        client().admin().indices().prepareRefresh("test").get();
+        admin().indices().prepareRefresh("test").get();
         SearchResponse searchResponse = client().prepareSearch("test")
             .setQuery(new MatchAllQueryBuilder())
             .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
@@ -118,7 +117,7 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
         ElasticsearchAssertions.assertNoFailures(searchResponse);
         assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) maxDocs.get()));
         if (randomBoolean()) {
-            client().admin().indices().prepareFlush("test").get();
+            admin().indices().prepareFlush("test").get();
         }
         internalCluster().fullRestart();
         internalCluster().ensureAtLeastNumDataNodes(2);
@@ -134,13 +133,11 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
 
     public void testMaxDocsLimitConcurrently() throws Exception {
         internalCluster().ensureAtLeastNumDataNodes(1);
-        assertAcked(
-            client().admin().indices().prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1))
-        );
+        assertAcked(admin().indices().prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)));
         IndexingResult indexingResult = indexDocs(between(maxDocs.get() + 1, maxDocs.get() * 2), between(2, 8));
         assertThat(indexingResult.numFailures, greaterThan(0));
         assertThat(indexingResult.numSuccess, both(greaterThan(0)).and(lessThanOrEqualTo(maxDocs.get())));
-        client().admin().indices().prepareRefresh("test").get();
+        admin().indices().prepareRefresh("test").get();
         SearchResponse searchResponse = client().prepareSearch("test")
             .setQuery(new MatchAllQueryBuilder())
             .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
@@ -158,7 +155,7 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
             indexingResult = indexDocs(between(1, 10), between(1, 8));
             assertThat(indexingResult.numSuccess, equalTo(0));
         }
-        client().admin().indices().prepareRefresh("test").get();
+        admin().indices().prepareRefresh("test").get();
         searchResponse = client().prepareSearch("test")
             .setQuery(new MatchAllQueryBuilder())
             .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
