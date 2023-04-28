@@ -32,45 +32,39 @@ public class AutoExpandReplicasIT extends ESIntegTestCase {
 
         final int initialReplicas = autoExpandValue.equals("0-1") ? 1 : internalCluster().numDataNodes() - 1;
 
-        assertBusy(() -> {
-            assertThat(
-                client().admin()
-                    .indices()
-                    .prepareGetSettings(indexName)
+        assertBusy(
+            () -> assertThat(
+                indicesAdmin().prepareGetSettings(indexName)
                     .setNames("index.number_of_replicas")
                     .get()
                     .getSetting(indexName, "index.number_of_replicas"),
                 equalTo(String.valueOf(initialReplicas))
-            );
-        });
+            )
+        );
 
         updateIndexSettings(Settings.builder().put("index.routing.allocation.require._id", "non-existing-node"), indexName);
 
-        assertBusy(() -> {
-            assertThat(
-                client().admin()
-                    .indices()
-                    .prepareGetSettings(indexName)
+        assertBusy(
+            () -> assertThat(
+                indicesAdmin().prepareGetSettings(indexName)
                     .setNames("index.number_of_replicas")
                     .get()
                     .getSetting(indexName, "index.number_of_replicas"),
                 equalTo("0")
-            );
-        });
+            )
+        );
 
         // Remove the setting
         updateIndexSettings(Settings.builder().put("index.routing.allocation.require._id", ""), indexName);
 
-        assertBusy(() -> {
-            assertThat(
-                client().admin()
-                    .indices()
-                    .prepareGetSettings(indexName)
+        assertBusy(
+            () -> assertThat(
+                indicesAdmin().prepareGetSettings(indexName)
                     .setNames("index.number_of_replicas")
                     .get()
                     .getSetting(indexName, "index.number_of_replicas"),
                 equalTo(String.valueOf(initialReplicas))
-            );
-        });
+            )
+        );
     }
 }

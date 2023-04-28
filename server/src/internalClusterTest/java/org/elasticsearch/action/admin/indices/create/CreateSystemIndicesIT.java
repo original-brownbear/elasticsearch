@@ -67,7 +67,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
 
     @After
     public void afterEach() throws Exception {
-        assertAcked(admin().indices().prepareDeleteTemplate("*").get());
+        assertAcked(indicesAdmin().prepareDeleteTemplate("*").get());
         assertAcked(
             client().execute(DeleteComposableIndexTemplateAction.INSTANCE, new DeleteComposableIndexTemplateAction.Request("*")).get()
         );
@@ -112,9 +112,9 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
         assertTrue(indexExists(INDEX_NAME + "-2"));
 
         // Check that a non-primary system index is not assigned as the write index for the alias
-        final GetAliasesResponse getAliasesResponse = admin().indices()
-            .getAliases(new GetAliasesRequest().indicesOptions(IndicesOptions.strictExpandHidden()))
-            .actionGet();
+        final GetAliasesResponse getAliasesResponse = indicesAdmin().getAliases(
+            new GetAliasesRequest().indicesOptions(IndicesOptions.strictExpandHidden())
+        ).actionGet();
 
         assertThat(getAliasesResponse.getAliases().size(), equalTo(1));
         assertThat(getAliasesResponse.getAliases().get(nonPrimarySystemIndex).size(), equalTo(1));
@@ -159,8 +159,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
 
     private void createSystemAliasViaV1Template(String indexName, String primaryIndexName) throws Exception {
         assertAcked(
-            admin().indices()
-                .preparePutTemplate("test-template")
+            indicesAdmin().preparePutTemplate("test-template")
                 .setPatterns(List.of(indexName + "*"))
                 .addAlias(new Alias(indexName + "-legacy-alias"))
                 .get()
@@ -276,8 +275,8 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
         assertMappingsAndSettings(TestSystemIndexDescriptor.getOldMappings(), concreteIndex);
 
         // Remove the index and alias...
-        assertAcked(admin().indices().prepareAliases().removeAlias(concreteIndex, INDEX_NAME).get());
-        assertAcked(admin().indices().prepareDelete(concreteIndex));
+        assertAcked(indicesAdmin().prepareAliases().removeAlias(concreteIndex, INDEX_NAME).get());
+        assertAcked(indicesAdmin().prepareDelete(concreteIndex));
 
         // ...so that we can check that the they will still be auto-created again,
         // but this time with updated settings
@@ -319,9 +318,9 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
      * Make sure that aliases are created hidden
      */
     private void assertAliases(String concreteIndex) {
-        final GetAliasesResponse getAliasesResponse = admin().indices()
-            .getAliases(new GetAliasesRequest().indicesOptions(IndicesOptions.strictExpandHidden()))
-            .actionGet();
+        final GetAliasesResponse getAliasesResponse = indicesAdmin().getAliases(
+            new GetAliasesRequest().indicesOptions(IndicesOptions.strictExpandHidden())
+        ).actionGet();
 
         assertThat(getAliasesResponse.getAliases().size(), equalTo(1));
         assertThat(getAliasesResponse.getAliases().get(concreteIndex).size(), equalTo(1));
@@ -331,9 +330,9 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
 
     private void assertHasAliases(Set<String> aliasNames, String name, String primaryName, int aliasCount) throws InterruptedException,
         java.util.concurrent.ExecutionException {
-        final GetAliasesResponse getAliasesResponse = admin().indices()
-            .getAliases(new GetAliasesRequest().indicesOptions(IndicesOptions.strictExpandHidden()))
-            .get();
+        final GetAliasesResponse getAliasesResponse = indicesAdmin().getAliases(
+            new GetAliasesRequest().indicesOptions(IndicesOptions.strictExpandHidden())
+        ).get();
 
         assertThat(getAliasesResponse.getAliases().size(), equalTo(1));
         assertThat(getAliasesResponse.getAliases().get(primaryName).size(), equalTo(aliasCount));
@@ -356,8 +355,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
      * Note that in the case of the mappings, this is just a dumb string comparison, so order of keys matters.
      */
     private void assertMappingsAndSettings(String expectedMappings, String concreteIndex) {
-        final GetMappingsResponse getMappingsResponse = admin().indices()
-            .getMappings(new GetMappingsRequest().indices(INDEX_NAME))
+        final GetMappingsResponse getMappingsResponse = indicesAdmin().getMappings(new GetMappingsRequest().indices(INDEX_NAME))
             .actionGet();
 
         final Map<String, MappingMetadata> mappings = getMappingsResponse.getMappings();
@@ -374,8 +372,7 @@ public class CreateSystemIndicesIT extends ESIntegTestCase {
             throw new UncheckedIOException(e);
         }
 
-        final GetSettingsResponse getSettingsResponse = admin().indices()
-            .getSettings(new GetSettingsRequest().indices(INDEX_NAME))
+        final GetSettingsResponse getSettingsResponse = indicesAdmin().getSettings(new GetSettingsRequest().indices(INDEX_NAME))
             .actionGet();
 
         final Settings actual = getSettingsResponse.getIndexToSettings().get(concreteIndex);

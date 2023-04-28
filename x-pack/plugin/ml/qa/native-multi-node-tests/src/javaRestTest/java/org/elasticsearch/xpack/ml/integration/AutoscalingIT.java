@@ -124,8 +124,7 @@ public class AutoscalingIT extends MlNativeAutodetectIntegTestCase {
         openJob("bigjob1");
         openJob("bigjob2");
 
-        long lowestMlMemory = admin().cluster()
-            .prepareNodesInfo()
+        long lowestMlMemory = clusterAdmin().prepareNodesInfo()
             .all()
             .get()
             .getNodes()
@@ -221,8 +220,7 @@ public class AutoscalingIT extends MlNativeAutodetectIntegTestCase {
         long modelSize = ByteSizeValue.ofMb(50_000).getBytes();
         putAndStartModelDeployment(modelId, deploymentId, modelSize, AllocationStatus.State.STARTING);
 
-        long lowestMlMemory = admin().cluster()
-            .prepareNodesInfo()
+        long lowestMlMemory = clusterAdmin().prepareNodesInfo()
             .all()
             .get()
             .getNodes()

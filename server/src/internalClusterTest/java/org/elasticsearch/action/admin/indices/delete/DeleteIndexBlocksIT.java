@@ -35,7 +35,7 @@ public class DeleteIndexBlocksIT extends ESIntegTestCase {
         ensureGreen("test");
         try {
             setClusterReadOnly(true);
-            assertBlocked(admin().indices().prepareDelete("test"), Metadata.CLUSTER_READ_ONLY_BLOCK);
+            assertBlocked(indicesAdmin().prepareDelete("test"), Metadata.CLUSTER_READ_ONLY_BLOCK);
         } finally {
             setClusterReadOnly(false);
         }
@@ -54,12 +54,11 @@ public class DeleteIndexBlocksIT extends ESIntegTestCase {
                 IndexMetadata.INDEX_READ_ONLY_ALLOW_DELETE_BLOCK
             );
             assertSearchHits(client().prepareSearch().get(), "1");
-            assertAcked(admin().indices().prepareDelete("test"));
+            assertAcked(indicesAdmin().prepareDelete("test"));
         } finally {
             Settings settings = Settings.builder().putNull(IndexMetadata.SETTING_READ_ONLY_ALLOW_DELETE).build();
             assertAcked(
-                admin().indices()
-                    .prepareUpdateSettings("test")
+                indicesAdmin().prepareUpdateSettings("test")
                     .setIndicesOptions(IndicesOptions.lenientExpandOpen())
                     .setSettings(settings)
                     .get()
@@ -99,11 +98,11 @@ public class DeleteIndexBlocksIT extends ESIntegTestCase {
                 Metadata.CLUSTER_READ_ONLY_ALLOW_DELETE_BLOCK
             );
             assertBlocked(
-                admin().indices().prepareUpdateSettings("test").setSettings(Settings.builder().put("index.number_of_replicas", 2)),
+                indicesAdmin().prepareUpdateSettings("test").setSettings(Settings.builder().put("index.number_of_replicas", 2)),
                 Metadata.CLUSTER_READ_ONLY_ALLOW_DELETE_BLOCK
             );
             assertSearchHits(client().prepareSearch().get(), "1");
-            assertAcked(admin().indices().prepareDelete("test"));
+            assertAcked(indicesAdmin().prepareDelete("test"));
         } finally {
             updateClusterSettings(Settings.builder().putNull(Metadata.SETTING_READ_ONLY_ALLOW_DELETE_SETTING.getKey()));
         }

@@ -89,15 +89,14 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         final String node_2 = nodesIds.get(1);
 
         logger.info("--> create an index with 1 shard, 1 replica, nothing should allocate");
-        admin().indices()
-            .prepareCreate("test")
+        indicesAdmin().prepareCreate("test")
             .setWaitForActiveShards(ActiveShardCount.NONE)
             .setSettings(Settings.builder().put("index.number_of_shards", 1))
             .execute()
             .actionGet();
 
         if (randomBoolean()) {
-            admin().indices().prepareClose("test").setWaitForActiveShards(ActiveShardCount.NONE).get();
+            indicesAdmin().prepareClose("test").setWaitForActiveShards(ActiveShardCount.NONE).get();
         }
 
         ClusterState state = clusterAdmin().prepareState().execute().actionGet().getState();
@@ -224,7 +223,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
                     .build()
             );
             if (randomBoolean()) {
-                assertAcked(admin().indices().prepareClose(indexName));
+                assertAcked(indicesAdmin().prepareClose(indexName));
             }
         }
 
@@ -246,8 +245,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
         logger.info("--> create an index with 1 shard, 1 replica, nothing should allocate");
-        admin().indices()
-            .prepareCreate("test")
+        indicesAdmin().prepareCreate("test")
             .setWaitForActiveShards(ActiveShardCount.NONE)
             .setSettings(Settings.builder().put("index.number_of_shards", 1))
             .execute()
@@ -255,7 +253,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
 
         final boolean closed = randomBoolean();
         if (closed) {
-            admin().indices().prepareClose("test").setWaitForActiveShards(ActiveShardCount.NONE).get();
+            indicesAdmin().prepareClose("test").setWaitForActiveShards(ActiveShardCount.NONE).get();
         }
 
         ClusterState state = clusterAdmin().prepareState().execute().actionGet().getState();
@@ -350,7 +348,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         createIndex("test", 1, 0);
 
         if (randomBoolean()) {
-            assertAcked(admin().indices().prepareClose("test"));
+            assertAcked(indicesAdmin().prepareClose("test"));
         }
         ensureGreen("test");
 
@@ -393,8 +391,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
         final String indexName = "test_index";
-        admin().indices()
-            .prepareCreate(indexName)
+        indicesAdmin().prepareCreate(indexName)
             .setWaitForActiveShards(ActiveShardCount.NONE)
             .setSettings(
                 Settings.builder()
@@ -473,7 +470,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         createIndex("test-blocks", 1, 0);
 
         if (randomBoolean()) {
-            assertAcked(admin().indices().prepareClose("test-blocks"));
+            assertAcked(indicesAdmin().prepareClose("test-blocks"));
         }
         ensureGreen("test-blocks");
 

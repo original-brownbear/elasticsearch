@@ -322,8 +322,7 @@ public class SimpleRoutingIT extends ESIntegTestCase {
     }
 
     public void testRequiredRoutingCrudApis() throws Exception {
-        admin().indices()
-            .prepareCreate("test")
+        indicesAdmin().prepareCreate("test")
             .addAlias(new Alias("alias"))
             .setMapping(
                 XContentFactory.jsonBuilder()

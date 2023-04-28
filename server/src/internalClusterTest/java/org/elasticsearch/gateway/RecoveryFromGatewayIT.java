@@ -422,8 +422,7 @@ public class RecoveryFromGatewayIT extends ESIntegTestCase {
         }
 
         logger.info("--> add some metadata and additional template");
-        indicesAdmin()
-            .preparePutTemplate("template_1")
+        indicesAdmin().preparePutTemplate("template_1")
             .setPatterns(Collections.singletonList("te*"))
             .setOrder(0)
             .setMapping(
@@ -544,10 +543,7 @@ public class RecoveryFromGatewayIT extends ESIntegTestCase {
                     .get();
                 assertBusy(
                     () -> assertThat(
-                        indicesAdmin().prepareStats("test").get().getShards()[0].getRetentionLeaseStats()
-                            .retentionLeases()
-                            .leases()
-                            .size(),
+                        indicesAdmin().prepareStats("test").get().getShards()[0].getRetentionLeaseStats().retentionLeases().leases().size(),
                         equalTo(1)
                     )
                 );

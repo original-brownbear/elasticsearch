@@ -70,8 +70,7 @@ public class SettingsFilteringIT extends ESIntegTestCase {
 
     public void testSettingsFiltering() {
         assertAcked(
-            admin().indices()
-                .prepareCreate("test-idx")
+            indicesAdmin().prepareCreate("test-idx")
                 .setSettings(
                     Settings.builder()
                         .put("filter_test.foo", "test")
@@ -83,7 +82,7 @@ public class SettingsFilteringIT extends ESIntegTestCase {
                 )
                 .get()
         );
-        GetSettingsResponse response = admin().indices().prepareGetSettings("test-idx").get();
+        GetSettingsResponse response = indicesAdmin().prepareGetSettings("test-idx").get();
         Settings settings = response.getIndexToSettings().get("test-idx");
 
         assertThat(settings.get("index.filter_test.foo"), nullValue());

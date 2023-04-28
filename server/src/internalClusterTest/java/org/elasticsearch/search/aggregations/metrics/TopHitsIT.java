@@ -1120,11 +1120,11 @@ public class TopHitsIT extends ESIntegTestCase {
 
             // Make sure we are starting with a clear cache
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
                 equalTo(0L)
             );
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
                 equalTo(0L)
             );
 
@@ -1141,11 +1141,11 @@ public class TopHitsIT extends ESIntegTestCase {
             assertSearchResponse(r);
 
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
                 equalTo(0L)
             );
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
                 equalTo(0L)
             );
 
@@ -1164,11 +1164,11 @@ public class TopHitsIT extends ESIntegTestCase {
             assertSearchResponse(r);
 
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
                 equalTo(0L)
             );
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
                 equalTo(0L)
             );
 
@@ -1182,11 +1182,11 @@ public class TopHitsIT extends ESIntegTestCase {
             assertSearchResponse(r);
 
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
                 equalTo(0L)
             );
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
                 equalTo(1L)
             );
 
@@ -1205,11 +1205,11 @@ public class TopHitsIT extends ESIntegTestCase {
             assertSearchResponse(r);
 
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
                 equalTo(0L)
             );
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
                 equalTo(2L)
             );
 
@@ -1218,15 +1218,15 @@ public class TopHitsIT extends ESIntegTestCase {
             assertSearchResponse(r);
 
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getHitCount(),
                 equalTo(0L)
             );
             assertThat(
-                admin().indices().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
+                indicesAdmin().prepareStats("cache_test_idx").setRequestCache(true).get().getTotal().getRequestCache().getMissCount(),
                 equalTo(3L)
             );
         } finally {
-            assertAcked(admin().indices().prepareDelete("cache_test_idx")); // delete this - if we use tests.iters it would fail
+            assertAcked(indicesAdmin().prepareDelete("cache_test_idx")); // delete this - if we use tests.iters it would fail
         }
     }
 

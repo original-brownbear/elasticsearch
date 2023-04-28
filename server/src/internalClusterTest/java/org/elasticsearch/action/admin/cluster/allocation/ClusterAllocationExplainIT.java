@@ -1170,8 +1170,7 @@ public final class ClusterAllocationExplainIT extends ESIntegTestCase {
     private ClusterAllocationExplanation runExplain(boolean primary, String nodeId, boolean includeYesDecisions, boolean includeDiskInfo)
         throws Exception {
 
-        ClusterAllocationExplanation explanation = admin().cluster()
-            .prepareAllocationExplain()
+        ClusterAllocationExplanation explanation = clusterAdmin().prepareAllocationExplain()
             .setIndex("idx")
             .setShard(0)
             .setPrimary(primary)
@@ -1236,13 +1235,13 @@ public final class ClusterAllocationExplainIT extends ESIntegTestCase {
     }
 
     private String primaryNodeName() {
-        ClusterState clusterState = admin().cluster().prepareState().get().getState();
+        ClusterState clusterState = clusterAdmin().prepareState().get().getState();
         String nodeId = clusterState.getRoutingTable().index("idx").shard(0).primaryShard().currentNodeId();
         return clusterState.getRoutingNodes().node(nodeId).node().getName();
     }
 
     private DiscoveryNode replicaNode() {
-        ClusterState clusterState = admin().cluster().prepareState().get().getState();
+        ClusterState clusterState = clusterAdmin().prepareState().get().getState();
         String nodeId = clusterState.getRoutingTable().index("idx").shard(0).replicaShards().get(0).currentNodeId();
         return clusterState.getRoutingNodes().node(nodeId).node();
     }

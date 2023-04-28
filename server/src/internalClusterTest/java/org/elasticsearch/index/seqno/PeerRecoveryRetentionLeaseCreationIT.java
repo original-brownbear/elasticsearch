@@ -57,8 +57,7 @@ public class PeerRecoveryRetentionLeaseCreationIT extends ESIntegTestCase {
         ensureGreen(INDEX_NAME);
 
         IndicesService service = internalCluster().getInstance(IndicesService.class, dataNode);
-        String uuid = admin().indices()
-            .getIndex(new GetIndexRequest().indices(INDEX_NAME))
+        String uuid = indicesAdmin().getIndex(new GetIndexRequest().indices(INDEX_NAME))
             .actionGet()
             .getSetting(INDEX_NAME, IndexMetadata.SETTING_INDEX_UUID);
         Path path = service.indexService(new Index(INDEX_NAME, uuid)).getShard(0).shardPath().getShardStatePath();
@@ -84,7 +83,7 @@ public class PeerRecoveryRetentionLeaseCreationIT extends ESIntegTestCase {
     }
 
     public RetentionLeases getRetentionLeases() {
-        return admin().indices().prepareStats(INDEX_NAME).get().getShards()[0].getRetentionLeaseStats().retentionLeases();
+        return indicesAdmin().prepareStats(INDEX_NAME).get().getShards()[0].getRetentionLeaseStats().retentionLeases();
     }
 
 }

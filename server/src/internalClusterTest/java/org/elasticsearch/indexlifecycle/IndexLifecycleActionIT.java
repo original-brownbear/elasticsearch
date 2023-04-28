@@ -54,7 +54,7 @@ public class IndexLifecycleActionIT extends ESIntegTestCase {
         final String node1 = getLocalNodeId(server_1);
 
         logger.info("Creating index [test]");
-        CreateIndexResponse createIndexResponse = admin().indices().create(new CreateIndexRequest("test").settings(settings)).actionGet();
+        CreateIndexResponse createIndexResponse = indicesAdmin().create(new CreateIndexRequest("test").settings(settings)).actionGet();
         assertAcked(createIndexResponse);
 
         ClusterState clusterState = clusterAdmin().prepareState().get().getState();
@@ -203,7 +203,7 @@ public class IndexLifecycleActionIT extends ESIntegTestCase {
 
         logger.info("Deleting index [test]");
         // last, lets delete the index
-        AcknowledgedResponse deleteIndexResponse = admin().indices().prepareDelete("test").execute().actionGet();
+        AcknowledgedResponse deleteIndexResponse = indicesAdmin().prepareDelete("test").execute().actionGet();
         assertThat(deleteIndexResponse.isAcknowledged(), equalTo(true));
 
         clusterState = clusterAdmin().prepareState().get().getState();

@@ -256,7 +256,7 @@ public class SLMFileSettingsIT extends AbstractSnapshotIntegTestCase {
 
         logger.info("--> create snapshot manually");
         var request = new CreateSnapshotRequest("repo", "file-snap").waitForCompletion(true);
-        var response = admin().cluster().createSnapshot(request).get();
+        var response = clusterAdmin().createSnapshot(request).get();
         RestStatus status = response.getSnapshotInfo().status();
         assertEquals(RestStatus.OK, status);
 

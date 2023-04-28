@@ -111,7 +111,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             VersionConflictEngineException.class
         );
 
-        client().admin().indices().prepareRefresh().execute().actionGet();
+        indicesAdmin().prepareRefresh().execute().actionGet();
         if (randomBoolean()) {
             refresh();
         }
@@ -248,7 +248,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
         HashMap<String, Object> newSettings = new HashMap<>();
         newSettings.put("index.gc_deletes", "42");
         try {
-            client().admin().indices().prepareUpdateSettings("test").setSettings(newSettings).execute().actionGet();
+            indicesAdmin().prepareUpdateSettings("test").setSettings(newSettings).execute().actionGet();
             fail("did not hit expected exception");
         } catch (IllegalArgumentException iae) {
             // expected
@@ -317,7 +317,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             VersionConflictEngineException.class
         );
 
-        client().admin().indices().prepareRefresh().execute().actionGet();
+        indicesAdmin().prepareRefresh().execute().actionGet();
         for (int i = 0; i < 10; i++) {
             final GetResponse response = client().prepareGet("test", "1").get();
             assertThat(response.getSeqNo(), equalTo(1L));
@@ -369,11 +369,11 @@ public class SimpleVersioningIT extends ESIntegTestCase {
         IndexResponse indexResponse = client().prepareIndex("test").setId("1").setSource("field1", "value1_1").get();
         assertThat(indexResponse.getSeqNo(), equalTo(0L));
 
-        client().admin().indices().prepareFlush().execute().actionGet();
+        indicesAdmin().prepareFlush().execute().actionGet();
         indexResponse = client().prepareIndex("test").setId("1").setSource("field1", "value1_2").setIfSeqNo(0).setIfPrimaryTerm(1).get();
         assertThat(indexResponse.getSeqNo(), equalTo(1L));
 
-        client().admin().indices().prepareFlush().execute().actionGet();
+        indicesAdmin().prepareFlush().execute().actionGet();
         assertRequestBuilderThrows(
             client().prepareIndex("test").setId("1").setSource("field1", "value1_1").setIfSeqNo(0).setIfPrimaryTerm(1),
             VersionConflictEngineException.class
@@ -393,7 +393,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             assertThat(client().prepareGet("test", "1").execute().actionGet().getVersion(), equalTo(2L));
         }
 
-        client().admin().indices().prepareRefresh().execute().actionGet();
+        indicesAdmin().prepareRefresh().execute().actionGet();
 
         for (int i = 0; i < 10; i++) {
             SearchResponse searchResponse = client().prepareSearch()
@@ -765,12 +765,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
     public void testDeleteNotLost() throws Exception {
 
         // We require only one shard for this test, so that the 2nd delete provokes pruning the deletes map:
-        client().admin()
-            .indices()
-            .prepareCreate("test")
-            .setSettings(Settings.builder().put("index.number_of_shards", 1))
-            .execute()
-            .actionGet();
+        indicesAdmin().prepareCreate("test").setSettings(Settings.builder().put("index.number_of_shards", 1)).execute().actionGet();
 
         ensureGreen();
 

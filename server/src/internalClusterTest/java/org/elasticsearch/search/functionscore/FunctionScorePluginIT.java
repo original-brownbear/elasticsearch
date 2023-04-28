@@ -50,9 +50,7 @@ public class FunctionScorePluginIT extends ESIntegTestCase {
     }
 
     public void testPlugin() throws Exception {
-        client().admin()
-            .indices()
-            .prepareCreate("test")
+        indicesAdmin().prepareCreate("test")
             .setMapping(
                 jsonBuilder().startObject()
                     .startObject("_doc")
@@ -79,7 +77,7 @@ public class FunctionScorePluginIT extends ESIntegTestCase {
                 .source(jsonBuilder().startObject().field("test", "value").field("num1", "2013-05-27").endObject())
         ).actionGet();
 
-        client().admin().indices().prepareRefresh().get();
+        indicesAdmin().prepareRefresh().get();
         DecayFunctionBuilder<?> gfb = new CustomDistanceScoreBuilder("num1", "2013-05-28", "+1d");
 
         ActionFuture<SearchResponse> response = client().search(

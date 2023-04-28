@@ -82,7 +82,7 @@ public class NestedWithMinScoreIT extends ESIntegTestCase {
         mapping.endObject();
         mapping.endObject();
 
-        admin().indices().prepareCreate("test").setMapping(mapping).get();
+        indicesAdmin().prepareCreate("test").setMapping(mapping).get();
 
         XContentBuilder doc = XContentFactory.jsonBuilder();
         doc.startObject();

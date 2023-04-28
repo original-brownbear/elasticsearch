@@ -399,7 +399,7 @@ public class IndexingPressureIT extends ESIntegTestCase {
     }
 
     private Tuple<String, String> getPrimaryReplicaNodeNames() {
-        IndicesStatsResponse response = admin().indices().prepareStats(INDEX_NAME).get();
+        IndicesStatsResponse response = indicesAdmin().prepareStats(INDEX_NAME).get();
         String primaryId = Stream.of(response.getShards())
             .map(ShardStats::getShardRouting)
             .filter(ShardRouting::primary)

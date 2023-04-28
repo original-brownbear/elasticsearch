@@ -34,9 +34,9 @@ import static org.hamcrest.Matchers.nullValue;
 public class MultiFieldsIntegrationIT extends ESIntegTestCase {
     @SuppressWarnings("unchecked")
     public void testMultiFields() throws Exception {
-        assertAcked(admin().indices().prepareCreate("my-index").setMapping(createTypeSource()));
+        assertAcked(indicesAdmin().prepareCreate("my-index").setMapping(createTypeSource()));
 
-        GetMappingsResponse getMappingsResponse = admin().indices().prepareGetMappings("my-index").get();
+        GetMappingsResponse getMappingsResponse = indicesAdmin().prepareGetMappings("my-index").get();
         MappingMetadata mappingMetadata = getMappingsResponse.mappings().get("my-index");
         assertThat(mappingMetadata, not(nullValue()));
         Map<String, Object> mappingSource = mappingMetadata.sourceAsMap();
@@ -52,9 +52,9 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
         searchResponse = client().prepareSearch("my-index").setQuery(matchQuery("title.not_analyzed", "Multi fields")).get();
         assertThat(searchResponse.getHits().getTotalHits().value, equalTo(1L));
 
-        assertAcked(admin().indices().preparePutMapping("my-index").setSource(createPutMappingSource()));
+        assertAcked(indicesAdmin().preparePutMapping("my-index").setSource(createPutMappingSource()));
 
-        getMappingsResponse = admin().indices().prepareGetMappings("my-index").get();
+        getMappingsResponse = indicesAdmin().prepareGetMappings("my-index").get();
         mappingMetadata = getMappingsResponse.mappings().get("my-index");
         assertThat(mappingMetadata, not(nullValue()));
         mappingSource = mappingMetadata.sourceAsMap();
@@ -74,9 +74,9 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
 
     @SuppressWarnings("unchecked")
     public void testGeoPointMultiField() throws Exception {
-        assertAcked(admin().indices().prepareCreate("my-index").setMapping(createMappingSource("geo_point")));
+        assertAcked(indicesAdmin().prepareCreate("my-index").setMapping(createMappingSource("geo_point")));
 
-        GetMappingsResponse getMappingsResponse = admin().indices().prepareGetMappings("my-index").get();
+        GetMappingsResponse getMappingsResponse = indicesAdmin().prepareGetMappings("my-index").get();
         MappingMetadata mappingMetadata = getMappingsResponse.mappings().get("my-index");
         assertThat(mappingMetadata, not(nullValue()));
         Map<String, Object> mappingSource = mappingMetadata.sourceAsMap();
@@ -103,9 +103,9 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
 
     @SuppressWarnings("unchecked")
     public void testCompletionMultiField() throws Exception {
-        assertAcked(admin().indices().prepareCreate("my-index").setMapping(createMappingSource("completion")));
+        assertAcked(indicesAdmin().prepareCreate("my-index").setMapping(createMappingSource("completion")));
 
-        GetMappingsResponse getMappingsResponse = admin().indices().prepareGetMappings("my-index").get();
+        GetMappingsResponse getMappingsResponse = indicesAdmin().prepareGetMappings("my-index").get();
         MappingMetadata mappingMetadata = getMappingsResponse.mappings().get("my-index");
         assertThat(mappingMetadata, not(nullValue()));
         Map<String, Object> mappingSource = mappingMetadata.sourceAsMap();
@@ -125,9 +125,9 @@ public class MultiFieldsIntegrationIT extends ESIntegTestCase {
 
     @SuppressWarnings("unchecked")
     public void testIpMultiField() throws Exception {
-        assertAcked(admin().indices().prepareCreate("my-index").setMapping(createMappingSource("ip")));
+        assertAcked(indicesAdmin().prepareCreate("my-index").setMapping(createMappingSource("ip")));
 
-        GetMappingsResponse getMappingsResponse = admin().indices().prepareGetMappings("my-index").get();
+        GetMappingsResponse getMappingsResponse = indicesAdmin().prepareGetMappings("my-index").get();
         MappingMetadata mappingMetadata = getMappingsResponse.mappings().get("my-index");
         assertThat(mappingMetadata, not(nullValue()));
         Map<String, Object> mappingSource = mappingMetadata.sourceAsMap();

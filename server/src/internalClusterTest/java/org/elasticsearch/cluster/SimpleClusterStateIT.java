@@ -139,9 +139,7 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
     }
 
     public void testIndexTemplates() throws Exception {
-        client().admin()
-            .indices()
-            .preparePutTemplate("foo_template")
+        indicesAdmin().preparePutTemplate("foo_template")
             .setPatterns(Collections.singletonList("te*"))
             .setOrder(0)
             .setMapping(
@@ -163,9 +161,7 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
             )
             .get();
 
-        client().admin()
-            .indices()
-            .preparePutTemplate("fuu_template")
+        indicesAdmin().preparePutTemplate("fuu_template")
             .setPatterns(Collections.singletonList("test*"))
             .setOrder(1)
             .setMapping(
@@ -186,7 +182,7 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
         ClusterStateResponse clusterStateResponseUnfiltered = clusterAdmin().prepareState().get();
         assertThat(clusterStateResponseUnfiltered.getState().metadata().templates().size(), is(greaterThanOrEqualTo(2)));
 
-        GetIndexTemplatesResponse getIndexTemplatesResponse = client().admin().indices().prepareGetTemplates("foo_template").get();
+        GetIndexTemplatesResponse getIndexTemplatesResponse = indicesAdmin().prepareGetTemplates("foo_template").get();
         assertIndexTemplateExists(getIndexTemplatesResponse, "foo_template");
     }
 
@@ -252,9 +248,7 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
         int numberOfShards = scaledRandomIntBetween(1, cluster().numDataNodes());
         // if the create index is ack'ed, then all nodes have successfully processed the cluster state
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(
                     indexSettings(numberOfShards, 0).put(MapperService.INDEX_MAPPING_TOTAL_FIELDS_LIMIT_SETTING.getKey(), Long.MAX_VALUE)
                 )
@@ -263,7 +257,7 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
                 .get()
         );
         ensureGreen(); // wait for green state, so its both green, and there are no more pending events
-        MappingMetadata masterMappingMetadata = client().admin().indices().prepareGetMappings("test").get().getMappings().get("test");
+        MappingMetadata masterMappingMetadata = indicesAdmin().prepareGetMappings("test").get().getMappings().get("test");
         for (Client client : clients()) {
             MappingMetadata mappingMetadata = client.admin()
                 .indices()
@@ -283,7 +277,7 @@ public class SimpleClusterStateIT extends ESIntegTestCase {
         ensureGreen("fuu");
 
         // close one index
-        assertAcked(client().admin().indices().close(new CloseIndexRequest("fuu")).get());
+        assertAcked(indicesAdmin().close(new CloseIndexRequest("fuu")).get());
         clusterStateResponse = clusterAdmin().prepareState().clear().setMetadata(true).setIndices("f*").get();
         assertThat(clusterStateResponse.getState().metadata().indices().size(), is(1));
         assertThat(clusterStateResponse.getState().metadata().index("foo").getState(), equalTo(IndexMetadata.State.OPEN));
