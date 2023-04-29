@@ -152,10 +152,6 @@ public final class AnalysisModule {
                 };
             }
 
-            @Override
-            public boolean requiresAnalysisSettings() {
-                return false;
-            }
         });
         tokenFilters.register("shingle", ShingleTokenFilterFactory::new);
         tokenFilters.register(
