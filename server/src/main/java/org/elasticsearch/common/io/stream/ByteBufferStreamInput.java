@@ -11,6 +11,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 public class ByteBufferStreamInput extends StreamInput {
 
@@ -93,6 +94,34 @@ public class ByteBufferStreamInput extends StreamInput {
         } catch (BufferUnderflowException ex) {
             throw newEOFException(ex);
         }
+    }
+
+    @Override
+    public String readString() throws IOException {
+        try {
+            final int charCount = readArraySize();
+            final char[] charBuffer = charCount > SMALL_STRING_LIMIT ? ensureLargeSpare(charCount) : smallSpare.get();
+            return doReadString(charCount, charBuffer, buffer);
+        } catch (BufferUnderflowException ex) {
+            throw newEOFException(ex);
+        }
+    }
+
+    public static String doReadString(int charCount, char[] charBuffer, ByteBuffer byteBuffer) throws IOException {
+        byte[] arr = byteBuffer.array();
+        final int arrOffset = byteBuffer.arrayOffset();
+        int off = arrOffset + byteBuffer.position();
+        for (int i = 0; i < charCount; i++) {
+            final int c = arr[off++] & 0xff;
+            switch (c >> 4) {
+                case 0, 1, 2, 3, 4, 5, 6, 7 -> charBuffer[i] = (char) c;
+                case 12, 13 -> charBuffer[i] = ((char) ((c & 0x1F) << 6 | arr[off++] & 0x3F));
+                case 14 -> charBuffer[i] = ((char) ((c & 0x0F) << 12 | (arr[off++] & 0x3F) << 6 | (arr[off++] & 0x3F)));
+                default -> throwOnBrokenChar(c);
+            }
+        }
+        byteBuffer.position(off - arrOffset);
+        return new String(charBuffer, 0, charCount);
     }
 
     private static EOFException newEOFException(RuntimeException ex) {

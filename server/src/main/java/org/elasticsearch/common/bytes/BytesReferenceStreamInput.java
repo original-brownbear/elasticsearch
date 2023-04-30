@@ -8,8 +8,11 @@
 
 package org.elasticsearch.common.bytes;
 
+import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.BytesRefIterator;
+import org.apache.lucene.util.CharsRef;
+import org.elasticsearch.common.io.stream.ByteBufferStreamInput;
 import org.elasticsearch.common.io.stream.StreamInput;
 
 import java.io.EOFException;
@@ -172,6 +175,32 @@ class BytesReferenceStreamInput extends StreamInput {
             return i;
         } else {
             return super.readVLong();
+        }
+    }
+
+    @Override
+    public String readString() throws IOException {
+        final int charCount = readArraySize();
+        final char[] charBuffer = charCount > SMALL_STRING_LIMIT ? ensureLargeSpare(charCount) : smallSpare.get();
+
+        int remaining = slice.remaining();
+        if (remaining >= charCount * 3 || remaining == available()) {
+            return ByteBufferStreamInput.doReadString(charCount, charBuffer, slice);
+        }
+
+        readStringSlowPath(charCount, charBuffer);
+        return new String(charBuffer, 0, charCount);
+    }
+
+    private void readStringSlowPath(int charCount, char[] charBuffer) throws IOException {
+        for (int i = 0; i < charCount; i++) {
+            final int c = readByte() & 0xff;
+            switch (c >> 4) {
+                case 0, 1, 2, 3, 4, 5, 6, 7 -> charBuffer[i] = (char) c;
+                case 12, 13 -> charBuffer[i] = ((char) ((c & 0x1F) << 6 | readByte() & 0x3F));
+                case 14 -> charBuffer[i] = ((char) ((c & 0x0F) << 12 | (readByte() & 0x3F) << 6 | (readByte() & 0x3F)));
+                default -> throwOnBrokenChar(c);
+            }
         }
     }
 
