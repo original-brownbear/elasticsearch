@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -213,6 +214,70 @@ class BytesReferenceStreamInput extends StreamInput {
             return -1;
         }
         return Byte.toUnsignedInt(readByte());
+    }
+
+    @Override
+    public String readString() throws IOException {
+        final int charCount = readVInt();
+        int sliceRemaining = slice.remaining();
+        if (sliceRemaining >= charCount * 3 || sliceRemaining == available()) {
+            byte[] arr = slice.array();
+            final int arrOffset = slice.arrayOffset();
+            int offset = arrOffset + slice.position();
+            if (allAscii(arr, offset, charCount)) {
+                slice.position(offset + charCount - arrOffset);
+                return new String(arr, offset, charCount, StandardCharsets.US_ASCII);
+            }
+            final char[] charBuffer = charCount > SMALL_STRING_LIMIT ? ensureLargeSpare(charCount) : smallSpare.get();
+            slice.position(fastCharsLoop(arr, offset, charCount, charBuffer) - arrOffset);
+            return new String(charBuffer, 0, charCount);
+        } else {
+            final char[] charBuffer = charCount > SMALL_STRING_LIMIT ? ensureLargeSpare(charCount) : smallSpare.get();
+            slowCharsLoop(charCount, charBuffer);
+            return new String(charBuffer, 0, charCount);
+        }
+    }
+
+    private void slowCharsLoop(int charCount, char[] charBuffer) throws IOException {
+        for (int i = 0; i < charCount; i++) {
+            final int c = readByte() & 0xff;
+            switch (c >> 4) {
+                case 0, 1, 2, 3, 4, 5, 6, 7 -> charBuffer[i] = (char) c;
+                case 12, 13 -> charBuffer[i] = ((char) ((c & 0x1F) << 6 | readByte() & 0x3F));
+                case 14 -> charBuffer[i] = ((char) ((c & 0x0F) << 12 | (readByte() & 0x3F) << 6 | (readByte() & 0x3F)));
+                default -> throwOnBrokenChar(c);
+            }
+        }
+    }
+
+    private static boolean allAscii(byte[] bytes, int offset, int len) {
+        for (int i = 0; i < len; i++) {
+            if (((bytes[offset + i] & 0xff) & 0x80) != 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static int fastCharsLoop(byte[] arr, int offset, int charCount, char[] charBuffer) throws IOException {
+        for (int i = 0; i < charCount; i++) {
+            final int c = arr[offset++] & 0xff;
+            switch (c >> 4) {
+                case 0, 1, 2, 3, 4, 5, 6, 7 -> charBuffer[i] = (char) c;
+                case 12, 13 -> charBuffer[i] = twoBytes(c, arr[offset++]);
+                case 14 -> charBuffer[i] = threeBytes(c, arr[offset++], arr[offset++]);
+                default -> throwOnBrokenChar(c);
+            }
+        }
+        return offset;
+    }
+
+    private static char twoBytes(int first, int second) {
+        return ((char) ((first & 0x1F) << 6 | second & 0x3F));
+    }
+
+    private static char threeBytes(int first, int second, int third) {
+        return ((char) ((first & 0x0F) << 12 | (second & 0x3F) << 6 | (third & 0x3F)));
     }
 
     @Override

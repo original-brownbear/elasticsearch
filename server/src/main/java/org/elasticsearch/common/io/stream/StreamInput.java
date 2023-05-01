@@ -404,20 +404,20 @@ public abstract class StreamInput extends InputStream {
     }
 
     // Maximum char-count to de-serialize via the thread-local CharsRef buffer
-    private static final int SMALL_STRING_LIMIT = 1024;
+    protected static final int SMALL_STRING_LIMIT = 1024;
 
     // Reusable bytes for deserializing strings
     private static final ThreadLocal<byte[]> stringReadBuffer = ThreadLocal.withInitial(() -> new byte[1024]);
 
     // Thread-local buffer for smaller strings
-    private static final ThreadLocal<char[]> smallSpare = ThreadLocal.withInitial(() -> new char[SMALL_STRING_LIMIT]);
+    protected static final ThreadLocal<char[]> smallSpare = ThreadLocal.withInitial(() -> new char[SMALL_STRING_LIMIT]);
 
     // Larger buffer used for long strings that can't fit into the thread-local buffer
     // We don't use a CharsRefBuilder since we exactly know the size of the character array up front
     // this prevents calling grow for every character since we don't need this
     private char[] largeSpare;
 
-    private char[] ensureLargeSpare(int charCount) {
+    protected char[] ensureLargeSpare(int charCount) {
         char[] spare = largeSpare;
         if (spare == null || spare.length < charCount) {
             // we don't use ArrayUtils.grow since there is no need to copy the array
@@ -515,7 +515,7 @@ public abstract class StreamInput extends InputStream {
         return new String(charBuffer, 0, charCount);
     }
 
-    private static void throwOnBrokenChar(int c) throws IOException {
+    protected static void throwOnBrokenChar(int c) throws IOException {
         throw new IOException("Invalid string; unexpected character: " + c + " hex: " + Integer.toHexString(c));
     }
 
