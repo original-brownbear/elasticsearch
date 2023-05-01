@@ -428,7 +428,7 @@ public abstract class StreamInput extends InputStream {
     }
 
     public String readString() throws IOException {
-        final int charCount = readArraySize();
+        final int charCount = readVInt();
 
         final char[] charBuffer = charCount > SMALL_STRING_LIMIT ? ensureLargeSpare(charCount) : smallSpare.get();
 
@@ -437,7 +437,7 @@ public abstract class StreamInput extends InputStream {
         int sizeByteArray = 0;
         int missingFromPartial = 0;
         final byte[] byteBuffer = stringReadBuffer.get();
-        for (; charsOffset < charCount;) {
+        while (charsOffset < charCount) {
             final int charsLeft = charCount - charsOffset;
             int bufferFree = byteBuffer.length - sizeByteArray;
             // Determine the minimum amount of bytes that are left in the string
@@ -457,14 +457,7 @@ public abstract class StreamInput extends InputStream {
                 // if there are any
                 if (offsetByteArray > 0) {
                     sizeByteArray = sizeByteArray - offsetByteArray;
-                    switch (sizeByteArray) { // We only have 0, 1 or 2 => no need to bother with a native call to System#arrayCopy
-                        case 1 -> byteBuffer[0] = byteBuffer[offsetByteArray];
-                        case 2 -> {
-                            byteBuffer[0] = byteBuffer[offsetByteArray];
-                            byteBuffer[1] = byteBuffer[offsetByteArray + 1];
-                        }
-                    }
-                    assert sizeByteArray <= 2 : "We never copy more than 2 bytes here since a char is 3 bytes max";
+                    compact(offsetByteArray, sizeByteArray, byteBuffer);
                     toRead = Math.min(bufferFree + offsetByteArray, minRemainingBytes);
                     offsetByteArray = 0;
                 } else {
@@ -481,9 +474,8 @@ public abstract class StreamInput extends InputStream {
                 final int c = byteBuffer[offsetByteArray] & 0xff;
                 switch (c >> 4) {
                     case 0, 1, 2, 3, 4, 5, 6, 7 -> charBuffer[charsOffset++] = (char) c;
-                    case 12, 13 -> charBuffer[charsOffset++] = (char) ((c & 0x1F) << 6 | byteBuffer[++offsetByteArray] & 0x3F);
-                    case 14 -> charBuffer[charsOffset++] = (char) ((c & 0x0F) << 12 | (byteBuffer[++offsetByteArray] & 0x3F) << 6
-                        | (byteBuffer[++offsetByteArray] & 0x3F));
+                    case 12, 13 -> charBuffer[charsOffset++] = twoBytes(c, byteBuffer[++offsetByteArray]);
+                    case 14 -> charBuffer[charsOffset++] = threeBytes(c, byteBuffer[++offsetByteArray], byteBuffer[++offsetByteArray]);
                     default -> throwOnBrokenChar(c);
                 }
             }
@@ -500,7 +492,7 @@ public abstract class StreamInput extends InputStream {
                         missingFromPartial = 2 - (bufferedBytesRemaining - i);
                         if (missingFromPartial == 0) {
                             offsetByteArray++;
-                            charBuffer[charsOffset++] = (char) ((c & 0x1F) << 6 | byteBuffer[offsetByteArray++] & 0x3F);
+                            charBuffer[charsOffset++] = twoBytes(c, byteBuffer[offsetByteArray++]);
                         }
                         ++i;
                     }
@@ -513,6 +505,25 @@ public abstract class StreamInput extends InputStream {
             }
         }
         return new String(charBuffer, 0, charCount);
+    }
+
+    private static void compact(int offsetByteArray, int sizeByteArray, byte[] byteBuffer) {
+        switch (sizeByteArray) { // We only have 0, 1 or 2 => no need to bother with a native call to System#arrayCopy
+            case 1 -> byteBuffer[0] = byteBuffer[offsetByteArray];
+            case 2 -> {
+                byteBuffer[0] = byteBuffer[offsetByteArray];
+                byteBuffer[1] = byteBuffer[offsetByteArray + 1];
+            }
+        }
+        assert sizeByteArray <= 2 : "We never copy more than 2 bytes here since a char is 3 bytes max";
+    }
+
+    private static char twoBytes(int first, int second) {
+        return ((char) ((first & 0x1F) << 6 | second & 0x3F));
+    }
+
+    private static char threeBytes(int first, int second, int third) {
+        return ((char) ((first & 0x0F) << 12 | (second & 0x3F) << 6 | (third & 0x3F)));
     }
 
     protected static void throwOnBrokenChar(int c) throws IOException {
