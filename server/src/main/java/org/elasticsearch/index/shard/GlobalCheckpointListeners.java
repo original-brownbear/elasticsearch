@@ -134,9 +134,7 @@ public class GlobalCheckpointListeners implements Closeable {
 
     @Override
     public synchronized void close() throws IOException {
-        if (closed) {
-            assert listeners.isEmpty() : listeners;
-        }
+        assert closed == false || listeners.isEmpty() : listeners;
         closed = true;
         notifyListeners(UNASSIGNED_SEQ_NO, new IndexShardClosedException(shardId));
     }

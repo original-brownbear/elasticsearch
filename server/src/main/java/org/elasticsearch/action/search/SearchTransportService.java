@@ -355,7 +355,7 @@ public class SearchTransportService {
     }
 
     static class ScrollFreeContextRequest extends TransportRequest {
-        private ShardSearchContextId contextId;
+        private final ShardSearchContextId contextId;
 
         ScrollFreeContextRequest(ShardSearchContextId contextId) {
             this.contextId = Objects.requireNonNull(contextId);
@@ -379,7 +379,7 @@ public class SearchTransportService {
     }
 
     static class SearchFreeContextRequest extends ScrollFreeContextRequest implements IndicesRequest {
-        private OriginalIndices originalIndices;
+        private final OriginalIndices originalIndices;
 
         SearchFreeContextRequest(OriginalIndices originalIndices, ShardSearchContextId id) {
             super(id);
@@ -417,7 +417,7 @@ public class SearchTransportService {
 
     public static class SearchFreeContextResponse extends TransportResponse {
 
-        private boolean freed;
+        private final boolean freed;
 
         SearchFreeContextResponse(StreamInput in) throws IOException {
             freed = in.readBoolean();

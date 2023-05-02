@@ -283,7 +283,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
     private final AtomicReference<Translog.Location> pendingRefreshLocation = new AtomicReference<>();
     private final RefreshPendingLocationListener refreshPendingLocationListener;
     private volatile boolean useRetentionLeasesInPeerRecovery;
-    private final boolean isDataStreamIndex; // if a shard is a part of data stream
     private final LongSupplier relativeTimeInNanosSupplier;
     private volatile long startedRelativeTimeInNanos;
     private volatile long indexingTimeBeforeShardStartedInNanos;
@@ -389,7 +388,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         persistMetadata(path, indexSettings, shardRouting, null, logger);
         this.useRetentionLeasesInPeerRecovery = replicationTracker.hasAllPeerRecoveryRetentionLeases();
         this.refreshPendingLocationListener = new RefreshPendingLocationListener();
-        this.isDataStreamIndex = mapperService == null ? false : mapperService.mappingLookup().isDataStreamTimestampFieldEnabled();
+        // if a shard is a part of data stream
         this.relativeTimeInNanosSupplier = relativeTimeInNanosSupplier;
         this.indexCommitListener = indexCommitListener;
     }
@@ -407,14 +406,6 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
      */
     public Sort getIndexSort() {
         return indexSortSupplier.get();
-    }
-
-    /**
-     * Returns if this shard is a part of datastream
-     * @return {@code true} if this shard is a part of datastream, {@code false} otherwise
-     */
-    public boolean isDataStreamIndex() {
-        return isDataStreamIndex;
     }
 
     public ShardGetService getService() {
@@ -3919,7 +3910,7 @@ public class IndexShard extends AbstractIndexShardComponent implements IndicesCl
         }
 
         @Override
-        public void beforeRefresh() throws IOException {
+        public void beforeRefresh() {
             if (Assertions.ENABLED) {
                 assert callingThread == null
                     : "beforeRefresh was called by " + callingThread.getName() + " without a corresponding call to afterRefresh";
