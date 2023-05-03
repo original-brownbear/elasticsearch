@@ -91,9 +91,7 @@ public class SearchableSnapshotsRelocationIntegTests extends BaseSearchableSnaps
         latch.countDown();
 
         assertFalse(
-            client().admin()
-                .cluster()
-                .prepareHealth(restoredIndex)
+            clusterAdmin().prepareHealth(restoredIndex)
                 .setWaitForNoRelocatingShards(true)
                 .setWaitForEvents(Priority.LANGUID)
                 .get()

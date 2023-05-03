@@ -362,9 +362,7 @@ public class SourceOnlySnapshotIT extends AbstractSnapshotIntegTestCase {
         assertFalse(client().admin().cluster().prepareHealth().setTimeout("30s").setWaitForNodes("2").get().isTimedOut());
 
         logger.info("--> restore the index and ensure all shards are allocated");
-        RestoreSnapshotResponse restoreResponse = client().admin()
-            .cluster()
-            .prepareRestoreSnapshot(repo, snapshot)
+        RestoreSnapshotResponse restoreResponse = clusterAdmin().prepareRestoreSnapshot(repo, snapshot)
             .setWaitForCompletion(true)
             .setIndices(sourceIdx)
             .get();

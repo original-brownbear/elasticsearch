@@ -392,11 +392,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
             docCounts[i] = (int) client().prepareSearch(indexName).setSize(0).get().getHits().getTotalHits().value;
             logger.info("-->  create snapshot {}:{} with {} documents", repoName, snapshotName + "-" + i, docCounts[i]);
             assertSuccessfulSnapshot(
-                client().admin()
-                    .cluster()
-                    .prepareCreateSnapshot(repoName, snapshotName + "-" + i)
-                    .setWaitForCompletion(true)
-                    .setIndices(indexName)
+                clusterAdmin().prepareCreateSnapshot(repoName, snapshotName + "-" + i).setWaitForCompletion(true).setIndices(indexName)
             );
         }
 
@@ -412,10 +408,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
 
             logger.info("--> restore index from the snapshot");
             assertSuccessfulRestore(
-                client().admin()
-                    .cluster()
-                    .prepareRestoreSnapshot(repoName, snapshotName + "-" + iterationToRestore)
-                    .setWaitForCompletion(true)
+                clusterAdmin().prepareRestoreSnapshot(repoName, snapshotName + "-" + iterationToRestore).setWaitForCompletion(true)
             );
 
             ensureGreen();

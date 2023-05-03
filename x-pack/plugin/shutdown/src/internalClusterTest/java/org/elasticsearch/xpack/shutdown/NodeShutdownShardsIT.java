@@ -157,9 +157,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         ensureYellow("other");
 
         // Explain the replica for the "other" index
-        ClusterAllocationExplainResponse explainResponse = client().admin()
-            .cluster()
-            .prepareAllocationExplain()
+        ClusterAllocationExplainResponse explainResponse = clusterAdmin().prepareAllocationExplain()
             .setIndex("other")
             .setShard(0)
             .setPrimary(false)
@@ -220,9 +218,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         ensureYellow("other");
 
         // Explain the replica for the "other" index
-        ClusterAllocationExplainResponse explainResponse = client().admin()
-            .cluster()
-            .prepareAllocationExplain()
+        ClusterAllocationExplainResponse explainResponse = clusterAdmin().prepareAllocationExplain()
             .setIndex("other")
             .setShard(0)
             .setPrimary(false)

@@ -191,9 +191,7 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
         assertThat(indexLifecycleService.getScheduler().jobCount(), equalTo(1));
         assertNotNull(indexLifecycleService.getScheduledJob());
         assertBusy(() -> {
-            LifecycleExecutionState lifecycleState = client().admin()
-                .cluster()
-                .prepareState()
+            LifecycleExecutionState lifecycleState = clusterAdmin().prepareState()
                 .execute()
                 .actionGet()
                 .getState()
@@ -434,9 +432,7 @@ public class IndexLifecycleInitialisationTests extends ESIntegTestCase {
 
         assertBusy(() -> assertTrue(indexExists("test")));
         assertBusy(() -> {
-            LifecycleExecutionState lifecycleState = client().admin()
-                .cluster()
-                .prepareState()
+            LifecycleExecutionState lifecycleState = clusterAdmin().prepareState()
                 .execute()
                 .actionGet()
                 .getState()

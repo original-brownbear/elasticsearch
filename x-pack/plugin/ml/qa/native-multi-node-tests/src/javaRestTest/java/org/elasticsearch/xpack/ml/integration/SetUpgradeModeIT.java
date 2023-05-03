@@ -55,9 +55,7 @@ public class SetUpgradeModeIT extends MlNativeAutodetectIntegTestCase {
 
         // Assert appropriate task state and assignment numbers
         assertThat(
-            client().admin()
-                .cluster()
-                .prepareListTasks()
+            clusterAdmin().prepareListTasks()
                 .setActions(MlTasks.JOB_TASK_NAME + "[c]", MlTasks.DATAFEED_TASK_NAME + "[c]")
                 .get()
                 .getTasks(),
@@ -81,9 +79,7 @@ public class SetUpgradeModeIT extends MlNativeAutodetectIntegTestCase {
         assertThat(persistentTasks.findTasks(MlTasks.JOB_TASK_NAME, task -> true), hasSize(1));
 
         assertThat(
-            client().admin()
-                .cluster()
-                .prepareListTasks()
+            clusterAdmin().prepareListTasks()
                 .setActions(MlTasks.JOB_TASK_NAME + "[c]", MlTasks.DATAFEED_TASK_NAME + "[c]")
                 .get()
                 .getTasks(),
@@ -103,7 +99,7 @@ public class SetUpgradeModeIT extends MlNativeAutodetectIntegTestCase {
         // Disable the setting
         setUpgradeModeTo(false);
 
-        masterClusterState = client().admin().cluster().prepareState().all().get().getState();
+        masterClusterState = clusterAdmin().prepareState().all().get().getState();
 
         persistentTasks = masterClusterState.getMetadata().custom(PersistentTasksCustomMetadata.TYPE);
         assertThat(persistentTasks.findTasks(MlTasks.DATAFEED_TASK_NAME, task -> true), hasSize(1));
@@ -111,9 +107,7 @@ public class SetUpgradeModeIT extends MlNativeAutodetectIntegTestCase {
 
         assertBusy(
             () -> assertThat(
-                client().admin()
-                    .cluster()
-                    .prepareListTasks()
+                clusterAdmin().prepareListTasks()
                     .setActions(MlTasks.JOB_TASK_NAME + "[c]", MlTasks.DATAFEED_TASK_NAME + "[c]")
                     .get()
                     .getTasks(),

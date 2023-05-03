@@ -82,9 +82,7 @@ public class SearchableSnapshotShutdownIntegTests extends BaseSearchableSnapshot
                 @Override
                 public Settings onNodeStopped(String nodeName) throws Exception {
                     assertBusy(() -> {
-                        ClusterHealthResponse response = client().admin()
-                            .cluster()
-                            .health(new ClusterHealthRequest(restoredIndexNamesArray))
+                        ClusterHealthResponse response = clusterAdmin().health(new ClusterHealthRequest(restoredIndexNamesArray))
                             .actionGet();
                         assertThat(response.getUnassignedShards(), Matchers.equalTo(shards));
                     });

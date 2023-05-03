@@ -132,9 +132,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
         assertShardFolders(indexName, false);
 
         assertThat(
-            client().admin()
-                .cluster()
-                .prepareState()
+            clusterAdmin().prepareState()
                 .clear()
                 .setMetadata(true)
                 .setIndices(indexName)
@@ -307,9 +305,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
         assertBusy(() -> assertShardFolders(restoredIndexName, true), 30, TimeUnit.SECONDS);
 
         assertThat(
-            client().admin()
-                .cluster()
-                .prepareState()
+            clusterAdmin().prepareState()
                 .clear()
                 .setMetadata(true)
                 .setIndices(restoredIndexName)
@@ -337,9 +333,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
         assertThat(client().admin().indices().prepareGetAliases(aliasName).get().getAliases().size(), equalTo(1));
         assertTotalHits(aliasName, originalAllHits, originalBarHits);
 
-        final Decision diskDeciderDecision = client().admin()
-            .cluster()
-            .prepareAllocationExplain()
+        final Decision diskDeciderDecision = clusterAdmin().prepareAllocationExplain()
             .setIndex(restoredIndexName)
             .setShard(0)
             .setPrimary(true)
@@ -384,9 +378,7 @@ public class FrozenSearchableSnapshotsIntegTests extends BaseFrozenSearchableSna
         );
 
         assertFalse(
-            client().admin()
-                .cluster()
-                .prepareHealth(restoredIndexName)
+            clusterAdmin().prepareHealth(restoredIndexName)
                 .setWaitForNoRelocatingShards(true)
                 .setWaitForEvents(Priority.LANGUID)
                 .get()

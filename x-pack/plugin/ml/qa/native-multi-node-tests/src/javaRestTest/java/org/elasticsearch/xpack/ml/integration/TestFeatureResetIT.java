@@ -171,9 +171,7 @@ public class TestFeatureResetIT extends MlNativeAutodetectIntegTestCase {
             assertThat(indices.toString(), indices, is(empty()));
         });
         assertThat(isResetMode(), is(false));
-        List<String> tasksNames = client().admin()
-            .cluster()
-            .prepareListTasks()
+        List<String> tasksNames = clusterAdmin().prepareListTasks()
             .setActions("xpack/ml/*")
             .get()
             .getTasks()

@@ -960,11 +960,9 @@ public abstract class ESIntegTestCase extends ESTestCase {
             // been removed by the master so that the health check applies to the set of nodes we expect to be part of the cluster.
             .waitForNodes(Integer.toString(cluster().size()));
 
-        ClusterHealthResponse actionGet = client().admin().cluster().health(healthRequest).actionGet();
+        ClusterHealthResponse actionGet = clusterAdmin().health(healthRequest).actionGet();
         if (actionGet.isTimedOut()) {
-            final String hotThreads = client().admin()
-                .cluster()
-                .prepareNodesHotThreads()
+            final String hotThreads = clusterAdmin().prepareNodesHotThreads()
                 .setThreads(99999)
                 .setIgnoreIdleThreads(false)
                 .get()

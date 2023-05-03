@@ -80,9 +80,7 @@ public class VotingOnlyNodePluginTests extends ESIntegTestCase {
             )
         );
         assertThat(
-            client().admin()
-                .cluster()
-                .prepareClusterStats()
+            clusterAdmin().prepareClusterStats()
                 .get()
                 .getNodesStats()
                 .getCounts()
@@ -166,15 +164,7 @@ public class VotingOnlyNodePluginTests extends ESIntegTestCase {
         expectThrows(
             MasterNotDiscoveredException.class,
             () -> assertThat(
-                client().admin()
-                    .cluster()
-                    .prepareState()
-                    .setMasterNodeTimeout("100ms")
-                    .execute()
-                    .actionGet()
-                    .getState()
-                    .nodes()
-                    .getMasterNodeId(),
+                clusterAdmin().prepareState().setMasterNodeTimeout("100ms").execute().actionGet().getState().nodes().getMasterNodeId(),
                 nullValue()
             )
         );
@@ -201,9 +191,7 @@ public class VotingOnlyNodePluginTests extends ESIntegTestCase {
         final String nonDedicatedVotingOnlyNode = internalCluster().startNode(dataContainingVotingOnlyNodeSettings);
 
         assertAcked(
-            client().admin()
-                .cluster()
-                .preparePutRepository("test-repo")
+            clusterAdmin().preparePutRepository("test-repo")
                 .setType("verifyaccess-fs")
                 .setSettings(Settings.builder().put("location", randomRepoPath()).put("compress", randomBoolean()))
         );

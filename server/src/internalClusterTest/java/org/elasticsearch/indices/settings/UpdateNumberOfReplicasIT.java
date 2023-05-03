@@ -180,9 +180,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         if (randomBoolean()) {
             assertAcked(client().admin().indices().prepareClose("test").setWaitForActiveShards(ActiveShardCount.ALL));
 
-            clusterHealth = client().admin()
-                .cluster()
-                .prepareHealth()
+            clusterHealth = clusterAdmin().prepareHealth()
                 .setWaitForEvents(Priority.LANGUID)
                 .setWaitForGreenStatus()
                 .setWaitForActiveShards(numShards.numPrimaries * 2)
@@ -303,9 +301,7 @@ public class UpdateNumberOfReplicasIT extends ESIntegTestCase {
         if (randomBoolean()) {
             assertAcked(client().admin().indices().prepareClose("test").setWaitForActiveShards(ActiveShardCount.ALL));
 
-            clusterHealth = client().admin()
-                .cluster()
-                .prepareHealth()
+            clusterHealth = clusterAdmin().prepareHealth()
                 .setWaitForEvents(Priority.LANGUID)
                 .setWaitForGreenStatus()
                 .setWaitForActiveShards(numShards.numPrimaries * 2)

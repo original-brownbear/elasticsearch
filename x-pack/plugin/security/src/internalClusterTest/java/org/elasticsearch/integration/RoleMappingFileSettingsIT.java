@@ -205,10 +205,9 @@ public class RoleMappingFileSettingsIT extends NativeRealmIntegTestCase {
         boolean awaitSuccessful = savedClusterState.await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
-        final ClusterStateResponse clusterStateResponse = client().admin()
-            .cluster()
-            .state(new ClusterStateRequest().waitForMetadataVersion(metadataVersion.get()))
-            .get();
+        final ClusterStateResponse clusterStateResponse = clusterAdmin().state(
+            new ClusterStateRequest().waitForMetadataVersion(metadataVersion.get())
+        ).get();
 
         ReservedStateMetadata reservedState = clusterStateResponse.getState()
             .metadata()
@@ -285,10 +284,9 @@ public class RoleMappingFileSettingsIT extends NativeRealmIntegTestCase {
         boolean awaitSuccessful = savedClusterState.v1().await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
-        final ClusterStateResponse clusterStateResponse = client().admin()
-            .cluster()
-            .state(new ClusterStateRequest().waitForMetadataVersion(savedClusterState.v2().get()))
-            .get();
+        final ClusterStateResponse clusterStateResponse = clusterAdmin().state(
+            new ClusterStateRequest().waitForMetadataVersion(savedClusterState.v2().get())
+        ).get();
 
         assertNull(
             clusterStateResponse.getState().metadata().persistentSettings().get(INDICES_RECOVERY_MAX_BYTES_PER_SEC_SETTING.getKey())
@@ -346,10 +344,9 @@ public class RoleMappingFileSettingsIT extends NativeRealmIntegTestCase {
         boolean awaitSuccessful = savedClusterState.v1().await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
-        final ClusterStateResponse clusterStateResponse = client().admin()
-            .cluster()
-            .state(new ClusterStateRequest().waitForMetadataVersion(savedClusterState.v2().get()))
-            .get();
+        final ClusterStateResponse clusterStateResponse = clusterAdmin().state(
+            new ClusterStateRequest().waitForMetadataVersion(savedClusterState.v2().get())
+        ).get();
 
         assertNull(
             clusterStateResponse.getState().metadata().persistentSettings().get(INDICES_RECOVERY_MAX_BYTES_PER_SEC_SETTING.getKey())
@@ -407,10 +404,9 @@ public class RoleMappingFileSettingsIT extends NativeRealmIntegTestCase {
         var response = client().execute(GetRoleMappingsAction.INSTANCE, request).get();
         assertFalse(response.hasMappings());
 
-        final ClusterStateResponse clusterStateResponse = client().admin()
-            .cluster()
-            .state(new ClusterStateRequest().waitForMetadataVersion(savedClusterState.v2().get()))
-            .get();
+        final ClusterStateResponse clusterStateResponse = clusterAdmin().state(
+            new ClusterStateRequest().waitForMetadataVersion(savedClusterState.v2().get())
+        ).get();
 
         assertNull(
             clusterStateResponse.getState().metadata().persistentSettings().get(INDICES_RECOVERY_MAX_BYTES_PER_SEC_SETTING.getKey())

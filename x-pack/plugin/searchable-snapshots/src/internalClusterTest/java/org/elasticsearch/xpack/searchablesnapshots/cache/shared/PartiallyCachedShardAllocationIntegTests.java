@@ -111,9 +111,7 @@ public class PartiallyCachedShardAllocationIntegTests extends BaseFrozenSearchab
         final ClusterState state = client().admin().cluster().prepareState().clear().setRoutingTable(true).get().getState();
         assertTrue(state.toString(), state.routingTable().index(req.mountedIndexName()).allPrimaryShardsUnassigned());
 
-        final ClusterAllocationExplanation explanation = client().admin()
-            .cluster()
-            .prepareAllocationExplain()
+        final ClusterAllocationExplanation explanation = clusterAdmin().prepareAllocationExplain()
             .setPrimary(true)
             .setIndex(req.mountedIndexName())
             .setShard(0)
@@ -168,9 +166,7 @@ public class PartiallyCachedShardAllocationIntegTests extends BaseFrozenSearchab
 
         createIndex("other-index", Settings.builder().putNull(TIER_PREFERENCE).build());
         ensureGreen("other-index");
-        final RoutingNodes routingNodes = client().admin()
-            .cluster()
-            .prepareState()
+        final RoutingNodes routingNodes = clusterAdmin().prepareState()
             .clear()
             .setRoutingTable(true)
             .setNodes(true)
@@ -250,9 +246,7 @@ public class PartiallyCachedShardAllocationIntegTests extends BaseFrozenSearchab
 
         assertBusy(() -> {
             try {
-                final ClusterAllocationExplanation explanation = client().admin()
-                    .cluster()
-                    .prepareAllocationExplain()
+                final ClusterAllocationExplanation explanation = clusterAdmin().prepareAllocationExplain()
                     .setPrimary(true)
                     .setIndex(req.mountedIndexName())
                     .setShard(0)
@@ -277,9 +271,7 @@ public class PartiallyCachedShardAllocationIntegTests extends BaseFrozenSearchab
 
         // Still won't be allocated
         assertFalse(responseFuture.isDone());
-        final ClusterAllocationExplanation explanation = client().admin()
-            .cluster()
-            .prepareAllocationExplain()
+        final ClusterAllocationExplanation explanation = clusterAdmin().prepareAllocationExplain()
             .setPrimary(true)
             .setIndex(req.mountedIndexName())
             .setShard(0)

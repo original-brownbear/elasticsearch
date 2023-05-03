@@ -109,9 +109,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
 
         ensureYellowAndNoInitializingShards("index");
 
-        final IndexLongFieldRange timestampFieldRange = client().admin()
-            .cluster()
-            .prepareState()
+        final IndexLongFieldRange timestampFieldRange = clusterAdmin().prepareState()
             .get()
             .getState()
             .metadata()
@@ -165,9 +163,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
                 )
         );
 
-        final Index index = client().admin()
-            .cluster()
-            .prepareState()
+        final Index index = clusterAdmin().prepareState()
             .clear()
             .setIndices("index")
             .setMetadata(true)

@@ -79,12 +79,7 @@ public class SystemDataStreamSnapshotIT extends AbstractSnapshotIntegTestCase {
         }
 
         assertSuccessful(
-            client().admin()
-                .cluster()
-                .prepareCreateSnapshot(REPO, SNAPSHOT)
-                .setWaitForCompletion(true)
-                .setIncludeGlobalState(true)
-                .execute()
+            clusterAdmin().prepareCreateSnapshot(REPO, SNAPSHOT).setWaitForCompletion(true).setIncludeGlobalState(true).execute()
         );
 
         // We have to delete the data stream directly, as the feature reset API doesn't clean up system data streams yet
@@ -104,9 +99,7 @@ public class SystemDataStreamSnapshotIT extends AbstractSnapshotIntegTestCase {
         // Make sure requesting the data stream by name throws.
         // For some reason, expectThrows() isn't working for me here, hence the try/catch.
         try {
-            client().admin()
-                .cluster()
-                .prepareRestoreSnapshot(REPO, SNAPSHOT)
+            clusterAdmin().prepareRestoreSnapshot(REPO, SNAPSHOT)
                 .setIndices(".test-data-stream")
                 .setWaitForCompletion(true)
                 .setRestoreGlobalState(randomBoolean()) // this shouldn't matter
@@ -196,9 +189,7 @@ public class SystemDataStreamSnapshotIT extends AbstractSnapshotIntegTestCase {
         }
 
         SnapshotInfo snapshotInfo = assertSuccessful(
-            client().admin()
-                .cluster()
-                .prepareCreateSnapshot(REPO, SNAPSHOT)
+            clusterAdmin().prepareCreateSnapshot(REPO, SNAPSHOT)
                 .setIndices("my-index")
                 .setFeatureStates(SystemDataStreamTestPlugin.class.getSimpleName())
                 .setWaitForCompletion(true)
@@ -223,9 +214,7 @@ public class SystemDataStreamSnapshotIT extends AbstractSnapshotIntegTestCase {
             assertThat(indicesRemaining.indices(), arrayWithSize(0));
         }
 
-        RestoreSnapshotResponse restoreSnapshotResponse = client().admin()
-            .cluster()
-            .prepareRestoreSnapshot(REPO, SNAPSHOT)
+        RestoreSnapshotResponse restoreSnapshotResponse = clusterAdmin().prepareRestoreSnapshot(REPO, SNAPSHOT)
             .setWaitForCompletion(true)
             .setIndices("my-index")
             .setFeatureStates(SystemDataStreamTestPlugin.class.getSimpleName())

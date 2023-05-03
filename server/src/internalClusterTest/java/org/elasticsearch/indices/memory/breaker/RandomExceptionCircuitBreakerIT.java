@@ -187,13 +187,7 @@ public class RandomExceptionCircuitBreakerIT extends ESIntegTestCase {
                     // Clean up the cache, ensuring that entries' listeners have been called
                     fdCache.getCache().refresh();
                 }
-                NodesStatsResponse nodeStats = client().admin()
-                    .cluster()
-                    .prepareNodesStats()
-                    .clear()
-                    .setBreaker(true)
-                    .execute()
-                    .actionGet();
+                NodesStatsResponse nodeStats = clusterAdmin().prepareNodesStats().clear().setBreaker(true).execute().actionGet();
                 for (NodeStats stats : nodeStats.getNodes()) {
                     assertThat(
                         "Breaker reset to 0 last search success: " + success + " mapping: " + mapping,
