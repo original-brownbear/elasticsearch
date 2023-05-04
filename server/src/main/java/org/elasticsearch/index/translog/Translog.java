@@ -43,7 +43,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,7 +62,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.index.translog.TranslogConfig.EMPTY_TRANSLOG_BUFFER_SIZE;
 
 /**
@@ -290,7 +288,13 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
                     );
                 }
             } else {
-                Checkpoint.write(getChannelFactory(), commitCheckpoint, checkpoint);
+                Checkpoint.write(
+                    getChannelFactory(),
+                    commitCheckpoint,
+                    checkpoint,
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE_NEW
+                );
             }
             success = true;
         } finally {
@@ -299,31 +303,6 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
             }
         }
         return foundTranslogs;
-    }
-
-    private void copyCheckpointTo(Path targetPath) throws IOException {
-        // a temp file to copy checkpoint to - note it must be in on the same FS otherwise atomic move won't work
-        final Path tempFile = Files.createTempFile(location, TRANSLOG_FILE_PREFIX, CHECKPOINT_SUFFIX);
-        boolean tempFileRenamed = false;
-
-        try {
-            // we first copy this into the temp-file and then fsync it followed by an atomic move into the target file
-            // that way if we hit a disk-full here we are still in an consistent state.
-            Files.copy(location.resolve(CHECKPOINT_FILE_NAME), tempFile, StandardCopyOption.REPLACE_EXISTING);
-            IOUtils.fsync(tempFile, false);
-            Files.move(tempFile, targetPath, StandardCopyOption.ATOMIC_MOVE);
-            tempFileRenamed = true;
-            // we only fsync the directory the tempFile was already fsynced
-            IOUtils.fsync(targetPath.getParent(), true);
-        } finally {
-            if (tempFileRenamed == false) {
-                try {
-                    Files.delete(tempFile);
-                } catch (IOException ex) {
-                    logger.warn(() -> format("failed to delete temp file %s", tempFile), ex);
-                }
-            }
-        }
     }
 
     TranslogReader openReader(Path path, Checkpoint checkpoint) throws IOException {
@@ -1653,7 +1632,9 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
                 Checkpoint.write(
                     getChannelFactory(),
                     location.resolve(getCommitCheckpointFileName(current.getGeneration())),
-                    reader.getCheckpoint()
+                    reader.getCheckpoint(),
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.CREATE_NEW
                 );
                 // create a new translog file; this will sync it and update the checkpoint data;
                 current = createWriter(current.getGeneration() + 1);
