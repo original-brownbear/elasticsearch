@@ -235,4 +235,10 @@ public interface BlobContainer {
         compareAndExchangeRegister(key, 0, 0, listener);
     }
 
+
+    default void copy(BlobContainer container, String source, String target, long size) throws IOException {
+        try (InputStream inputStream = container.readBlob(source)) {
+            writeBlob(target, inputStream, size, true);
+        }
+    }
 }

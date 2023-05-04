@@ -290,7 +290,7 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
                     );
                 }
             } else {
-                copyCheckpointTo(commitCheckpoint);
+                Checkpoint.write(getChannelFactory(), commitCheckpoint, checkpoint);
             }
             success = true;
         } finally {
@@ -1650,7 +1650,11 @@ public class Translog extends AbstractIndexShardComponent implements IndexShardC
                 final TranslogReader reader = current.closeIntoReader();
                 readers.add(reader);
                 assert Checkpoint.read(location.resolve(CHECKPOINT_FILE_NAME)).generation == current.getGeneration();
-                copyCheckpointTo(location.resolve(getCommitCheckpointFileName(current.getGeneration())));
+                Checkpoint.write(
+                    getChannelFactory(),
+                    location.resolve(getCommitCheckpointFileName(current.getGeneration())),
+                    reader.getCheckpoint()
+                );
                 // create a new translog file; this will sync it and update the checkpoint data;
                 current = createWriter(current.getGeneration() + 1);
                 logger.trace("current translog set to [{}]", current.getGeneration());
