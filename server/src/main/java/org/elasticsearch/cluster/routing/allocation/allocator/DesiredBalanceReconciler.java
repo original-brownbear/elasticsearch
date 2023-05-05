@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.routing.UnassignedInfo;
 import org.elasticsearch.cluster.routing.allocation.RoutingAllocation;
 import org.elasticsearch.cluster.routing.allocation.decider.Decision;
 import org.elasticsearch.cluster.routing.allocation.decider.DiskThresholdDecider;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.gateway.PriorityComparator;
 import org.elasticsearch.index.shard.ShardId;
@@ -294,7 +295,7 @@ public class DesiredBalanceReconciler {
     private Iterable<String> getFallbackNodeIds(ShardRouting shard, AtomicBoolean isThrottled) {
         return () -> {
             if (shard.primary() && isThrottled.get() == false) {
-                var fallbackNodeIds = allocation.routingNodes().stream().map(RoutingNode::nodeId).toList();
+                var fallbackNodeIds = Iterables.toStream(allocation.routingNodes()).map(RoutingNode::nodeId).toList();
                 if (logger.isDebugEnabled()) {
                     logger.trace("Shard [{}] assignment is temporary not possible. Falling back to {}", shard.shardId(), fallbackNodeIds);
                 }

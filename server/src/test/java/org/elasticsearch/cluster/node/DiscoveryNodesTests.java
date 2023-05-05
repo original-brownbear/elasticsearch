@@ -12,6 +12,7 @@ import com.carrotsearch.randomizedtesting.generators.RandomPicks;
 
 import org.elasticsearch.Version;
 import org.elasticsearch.common.transport.TransportAddress;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.ArrayList;
@@ -25,7 +26,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -75,9 +75,7 @@ public class DiscoveryNodesTests extends ESTestCase {
     public void testAll() {
         final DiscoveryNodes discoveryNodes = buildDiscoveryNodes();
 
-        final String[] allNodes = StreamSupport.stream(discoveryNodes.spliterator(), false)
-            .map(DiscoveryNode::getId)
-            .toArray(String[]::new);
+        final String[] allNodes = Iterables.toStream(discoveryNodes).map(DiscoveryNode::getId).toArray(String[]::new);
         assertThat(discoveryNodes.resolveNodes(), arrayContainingInAnyOrder(allNodes));
         assertThat(discoveryNodes.resolveNodes(new String[0]), arrayContainingInAnyOrder(allNodes));
         assertThat(discoveryNodes.resolveNodes("_all"), arrayContainingInAnyOrder(allNodes));

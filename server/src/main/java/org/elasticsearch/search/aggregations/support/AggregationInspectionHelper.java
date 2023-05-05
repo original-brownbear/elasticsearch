@@ -7,6 +7,7 @@
  */
 package org.elasticsearch.search.aggregations.support;
 
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.composite.InternalComposite;
 import org.elasticsearch.search.aggregations.bucket.filter.InternalFilter;
@@ -48,8 +49,6 @@ import org.elasticsearch.search.aggregations.metrics.Sum;
 import org.elasticsearch.search.aggregations.pipeline.InternalBucketMetricValue;
 import org.elasticsearch.search.aggregations.pipeline.InternalPercentilesBucket;
 import org.elasticsearch.search.aggregations.pipeline.InternalSimpleValue;
-
-import java.util.stream.StreamSupport;
 
 /**
  * Provides a set of static helpers to determine if a particular type of InternalAggregation "has a value"
@@ -224,7 +223,7 @@ public class AggregationInspectionHelper {
     }
 
     public static boolean hasValue(InternalPercentilesBucket agg) {
-        return StreamSupport.stream(agg.spliterator(), false).allMatch(p -> Double.isNaN(p.getValue())) == false;
+        return Iterables.toStream(agg).allMatch(p -> Double.isNaN(p.getValue())) == false;
     }
 
 }

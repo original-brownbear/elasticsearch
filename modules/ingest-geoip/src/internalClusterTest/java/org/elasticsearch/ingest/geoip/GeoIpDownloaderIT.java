@@ -19,6 +19,7 @@ import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.TimeValue;
@@ -62,7 +63,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
@@ -556,7 +556,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
     }
 
     private void setupDatabasesInConfigDirectory() throws Exception {
-        StreamSupport.stream(internalCluster().getInstances(Environment.class).spliterator(), false)
+        Iterables.toStream(internalCluster().getInstances(Environment.class))
             .map(Environment::configFile)
             .map(path -> path.resolve("ingest-geoip"))
             .distinct()
@@ -595,7 +595,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
     }
 
     private void deleteDatabasesInConfigDirectory() throws Exception {
-        StreamSupport.stream(internalCluster().getInstances(Environment.class).spliterator(), false)
+        Iterables.toStream(internalCluster().getInstances(Environment.class))
             .map(Environment::configFile)
             .map(path -> path.resolve("ingest-geoip"))
             .distinct()

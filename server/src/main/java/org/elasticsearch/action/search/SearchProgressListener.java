@@ -13,13 +13,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchResponse.Clusters;
 import org.elasticsearch.cluster.routing.GroupShardsIterator;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.search.SearchPhaseResult;
 import org.elasticsearch.search.SearchShardTarget;
 import org.elasticsearch.search.aggregations.InternalAggregations;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.StreamSupport;
 
 /**
  * A listener that allows to track progress of the {@link SearchAction}.
@@ -161,6 +161,6 @@ public abstract class SearchProgressListener {
     }
 
     static List<SearchShard> buildSearchShards(GroupShardsIterator<SearchShardIterator> its) {
-        return StreamSupport.stream(its.spliterator(), false).map(e -> new SearchShard(e.getClusterAlias(), e.shardId())).toList();
+        return Iterables.toStream(its).map(e -> new SearchShard(e.getClusterAlias(), e.shardId())).toList();
     }
 }

@@ -16,6 +16,7 @@ import org.elasticsearch.common.ReferenceDocs;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
@@ -37,7 +38,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableSet;
@@ -228,10 +228,8 @@ public class ClusterBootstrapService implements Coordinator.PeerFinderListener {
     }
 
     private Set<DiscoveryNode> getDiscoveredNodes() {
-        return Stream.concat(
-            Stream.of(transportService.getLocalNode()),
-            StreamSupport.stream(discoveredNodesSupplier.get().spliterator(), false)
-        ).collect(Collectors.toSet());
+        return Stream.concat(Stream.of(transportService.getLocalNode()), Iterables.toStream(discoveredNodesSupplier.get()))
+            .collect(Collectors.toSet());
     }
 
     private void startBootstrap(Set<DiscoveryNode> discoveryNodes, List<String> unsatisfiedRequirements) {

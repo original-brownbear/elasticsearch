@@ -16,6 +16,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.index.store.StoreStats;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class MockInternalClusterInfoService extends InternalClusterInfoService {
 
@@ -76,7 +76,7 @@ public class MockInternalClusterInfoService extends InternalClusterInfoService {
                 new FsInfo(
                     oldFsInfo.getTimestamp(),
                     oldFsInfo.getIoStats(),
-                    StreamSupport.stream(oldFsInfo.spliterator(), false)
+                    Iterables.toStream(oldFsInfo)
                         .map(fsInfoPath -> diskUsageFunctionCopy.apply(discoveryNode, fsInfoPath))
                         .toArray(FsInfo.Path[]::new)
                 ),

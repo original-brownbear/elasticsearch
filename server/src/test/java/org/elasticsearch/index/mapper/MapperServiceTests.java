@@ -15,6 +15,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.index.mapper.MapperService.MergeReason;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.test.VersionUtils;
@@ -23,7 +24,6 @@ import org.elasticsearch.xcontent.XContentFactory;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.StreamSupport;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -313,9 +313,7 @@ public class MapperServiceTests extends MapperServiceTestCase {
             b.startObject("lazy2").field("type", "long").endObject();
         }));
 
-        List<String> eagerFieldNames = StreamSupport.stream(mapperService.getEagerGlobalOrdinalsFields().spliterator(), false)
-            .map(MappedFieldType::name)
-            .toList();
+        List<String> eagerFieldNames = Iterables.toStream(mapperService.getEagerGlobalOrdinalsFields()).map(MappedFieldType::name).toList();
         assertThat(eagerFieldNames, containsInAnyOrder("eager1", "eager2"));
     }
 

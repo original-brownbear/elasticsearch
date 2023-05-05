@@ -93,6 +93,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.AbstractRunnable;
 import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.common.util.concurrent.ReleasableLock;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.CheckedRunnable;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.TimeValue;
@@ -6604,7 +6605,7 @@ public class InternalEngineTests extends EngineTestCase {
     public void testRecoverFromHardDeletesIndex() throws Exception {
         IndexWriterFactory hardDeletesWriter = (directory, iwc) -> new IndexWriter(directory, iwc) {
             boolean isTombstone(Iterable<? extends IndexableField> doc) {
-                return StreamSupport.stream(doc.spliterator(), false).anyMatch(d -> d.name().equals(Lucene.SOFT_DELETES_FIELD));
+                return Iterables.toStream(doc).anyMatch(d -> d.name().equals(Lucene.SOFT_DELETES_FIELD));
             }
 
             @Override
@@ -6617,7 +6618,7 @@ public class InternalEngineTests extends EngineTestCase {
 
             @Override
             public long addDocuments(Iterable<? extends Iterable<? extends IndexableField>> docs) throws IOException {
-                if (StreamSupport.stream(docs.spliterator(), false).anyMatch(this::isTombstone)) {
+                if (Iterables.toStream(docs).anyMatch(this::isTombstone)) {
                     return 0;
                 }
                 return super.addDocuments(docs);
@@ -6635,7 +6636,7 @@ public class InternalEngineTests extends EngineTestCase {
             @Override
             public long softUpdateDocuments(Term term, Iterable<? extends Iterable<? extends IndexableField>> docs, Field... softDeletes)
                 throws IOException {
-                if (StreamSupport.stream(docs.spliterator(), false).anyMatch(this::isTombstone)) {
+                if (Iterables.toStream(docs).anyMatch(this::isTombstone)) {
                     return super.deleteDocuments(term);
                 } else {
                     return super.updateDocuments(term, docs);

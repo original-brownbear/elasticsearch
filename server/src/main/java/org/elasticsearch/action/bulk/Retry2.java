@@ -14,6 +14,7 @@ import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.rest.RestStatus;
 
@@ -24,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-import java.util.stream.StreamSupport;
 
 /**
  * Encapsulates asynchronous retry logic. This class will attempt to load a BulkRequest up to numberOfRetries times. If that number of
@@ -262,7 +262,7 @@ class Retry2 {
         }
 
         private void addResponses(BulkResponse response, Predicate<BulkItemResponse> filter) {
-            List<BulkItemResponse> bulkItemResponses = StreamSupport.stream(response.spliterator(), false).filter(filter).toList();
+            List<BulkItemResponse> bulkItemResponses = Iterables.toStream(response).filter(filter).toList();
             responsesAccumulator.addAll(bulkItemResponses);
         }
 

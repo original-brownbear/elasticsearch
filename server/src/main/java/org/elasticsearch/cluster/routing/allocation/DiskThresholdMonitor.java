@@ -31,6 +31,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.Releasable;
 import org.elasticsearch.gateway.GatewayService;
@@ -366,8 +367,7 @@ public class DiskThresholdMonitor {
             }
 
             // Generate a map of node name to ID so we can use it to look up node replacement targets
-            final Map<String, String> nodeNameToId = state.getRoutingNodes()
-                .stream()
+            final Map<String, String> nodeNameToId = Iterables.toStream(state.getRoutingNodes())
                 .collect(Collectors.toMap(rn -> rn.node().getName(), RoutingNode::nodeId, (s1, s2) -> s2));
 
             // Calculate both the source node id and the target node id of a "replace" type shutdown

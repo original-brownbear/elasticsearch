@@ -32,6 +32,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.AllocationDeciders;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.shutdown.PluginShutdownService;
 import org.elasticsearch.snapshots.SnapshotsInfoService;
@@ -202,9 +203,7 @@ public class TransportGetShutdownStatusAction extends TransportMasterNodeAction<
         Set<String> shuttingDownNodes = currentState.metadata().nodeShutdowns().keySet();
 
         // Check if we have any unassigned primary shards that have this nodeId as their lastAllocatedNodeId
-        var unassignedShards = currentState.getRoutingNodes()
-            .unassigned()
-            .stream()
+        var unassignedShards = Iterables.toStream(currentState.getRoutingNodes().unassigned())
             .filter(s -> Objects.equals(s.unassignedInfo().getLastAllocatedNodeId(), nodeId))
             .filter(s -> s.primary() || hasShardCopyOnAnotherNode(currentState, s, shuttingDownNodes) == false)
             .toList();

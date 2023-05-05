@@ -11,6 +11,7 @@ package org.elasticsearch.common.io;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.Constants;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.SuppressForbidden;
 
@@ -20,7 +21,6 @@ import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.StreamSupport;
 
 /**
  * Elasticsearch utils to work with {@link java.nio.file.Path}
@@ -162,7 +162,7 @@ public final class FileSystemUtils {
     }
 
     private static Path[] toArray(DirectoryStream<Path> stream) {
-        return StreamSupport.stream(stream.spliterator(), false).toArray(length -> new Path[length]);
+        return Iterables.toStream(stream).toArray(Path[]::new);
     }
 
 }

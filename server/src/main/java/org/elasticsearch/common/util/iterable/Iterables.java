@@ -9,10 +9,12 @@
 package org.elasticsearch.common.util.iterable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class Iterables {
@@ -37,7 +39,7 @@ public class Iterables {
 
         @Override
         public Iterator<T> iterator() {
-            return StreamSupport.stream(inputs.spliterator(), false).flatMap(s -> StreamSupport.stream(s.spliterator(), false)).iterator();
+            return Iterables.toStream(inputs).flatMap(Iterables::toStream).iterator();
         }
     }
 
@@ -79,5 +81,12 @@ public class Iterables {
 
     public static long size(Iterable<?> iterable) {
         return StreamSupport.stream(iterable.spliterator(), true).count();
+    }
+
+    public static <T> Stream<T> toStream(Iterable<T> iterable) {
+        if (iterable instanceof Collection<T> collection) {
+            return collection.stream();
+        }
+        return StreamSupport.stream(iterable.spliterator(), false);
     }
 }

@@ -9,12 +9,12 @@
 package org.elasticsearch.cluster.routing;
 
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.common.util.iterable.Iterables;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.common.util.CollectionUtils.iterableAsArrayList;
 
@@ -34,7 +34,7 @@ public final class RoutingNodesHelper {
     public static List<ShardRouting> shardsWithState(RoutingNodes routingNodes, ShardRoutingState state) {
         return state == ShardRoutingState.UNASSIGNED
             ? iterableAsArrayList(routingNodes.unassigned())
-            : routingNodes.stream().flatMap(routingNode -> routingNode.shardsWithState(state)).toList();
+            : Iterables.toStream(routingNodes).flatMap(routingNode -> routingNode.shardsWithState(state)).toList();
     }
 
     public static List<ShardRouting> shardsWithState(RoutingNodes routingNodes, String index, ShardRoutingState states) {
@@ -44,11 +44,7 @@ public final class RoutingNodesHelper {
     }
 
     public static Stream<ShardRouting> assignedShardsIn(RoutingNodes routingNodes) {
-        return routingNodes.stream().flatMap(RoutingNodesHelper::assignedShardsIn);
-    }
-
-    public static Stream<ShardRouting> assignedShardsIn(RoutingNode routingNode) {
-        return StreamSupport.stream(routingNode.spliterator(), false);
+        return Iterables.toStream(routingNodes).flatMap(Iterables::toStream);
     }
 
     /**

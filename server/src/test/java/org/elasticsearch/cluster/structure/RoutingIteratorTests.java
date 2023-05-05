@@ -30,12 +30,12 @@ import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.cluster.routing.allocation.decider.ClusterRebalanceAllocationDecider;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.index.shard.ShardId;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.StreamSupport;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.Matchers.anyOf;
@@ -325,7 +325,7 @@ public class RoutingIteratorTests extends ESAllocationTestCase {
     }
 
     private static List<String> getShardNodeIds(ShardsIterator iterator) {
-        return StreamSupport.stream(iterator.spliterator(), false).map(ShardRouting::currentNodeId).toList();
+        return Iterables.toStream(iterator).map(ShardRouting::currentNodeId).toList();
     }
 
     public void testShardsAndPreferNodeRouting() {

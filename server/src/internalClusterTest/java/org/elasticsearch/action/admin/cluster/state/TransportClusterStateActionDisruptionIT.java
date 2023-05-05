@@ -14,6 +14,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.discovery.MasterNotDiscoveredException;
 import org.elasticsearch.plugins.Plugin;
@@ -26,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.cluster.routing.allocation.decider.EnableAllocationDecider.CLUSTER_ROUTING_REBALANCE_ENABLE_SETTING;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
@@ -185,10 +185,9 @@ public class TransportClusterStateActionDisruptionIT extends ESIntegTestCase {
             }
         }, "updating thread");
 
-        final List<MockTransportService> mockTransportServices = StreamSupport.stream(
-            internalCluster().getInstances(TransportService.class).spliterator(),
-            false
-        ).map(ts -> (MockTransportService) ts).toList();
+        final List<MockTransportService> mockTransportServices = Iterables.toStream(internalCluster().getInstances(TransportService.class))
+            .map(ts -> (MockTransportService) ts)
+            .toList();
 
         assertingThread.start();
         updatingThread.start();

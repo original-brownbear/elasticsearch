@@ -41,6 +41,7 @@ import org.elasticsearch.common.UUIDs;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.snapshots.SnapshotShardSizeInfo;
@@ -183,9 +184,7 @@ public class ReactiveStorageDeciderDecisionTests extends AutoscalingTestCase {
             );
             verify(ReactiveStorageDeciderService.AllocationState::storagePreventsAllocation, 0, emptySortedSet(), Map::isEmpty);
             // verify empty tier (no cold nodes) are always assumed a storage reason.
-            SortedSet<ShardId> unassignedShardIds = state.getRoutingNodes()
-                .unassigned()
-                .stream()
+            SortedSet<ShardId> unassignedShardIds = Iterables.toStream(state.getRoutingNodes().unassigned())
                 .map(ShardRouting::shardId)
                 .collect(Collectors.toCollection(TreeSet::new));
             verify(
@@ -619,9 +618,7 @@ public class ReactiveStorageDeciderDecisionTests extends AutoscalingTestCase {
         RoutingAllocation allocation = createRoutingAllocation(state, deciders);
         // There could be duplicated of shard ids, and numOfShards is calculated based on them,
         // so we can't just collect to the shard ids to `TreeSet`
-        List<ShardRouting> allocatableShards = state.getRoutingNodes()
-            .unassigned()
-            .stream()
+        List<ShardRouting> allocatableShards = Iterables.toStream(state.getRoutingNodes().unassigned())
             .filter(shard -> subjectShards.contains(shard.shardId()))
             .filter(
                 shard -> allocation.routingNodes().stream().anyMatch(node -> deciders.canAllocate(shard, node, allocation) != Decision.NO)

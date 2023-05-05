@@ -34,6 +34,7 @@ import org.apache.logging.log4j.util.Unbox;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.common.logging.internal.LoggerFactoryImpl;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.logging.internal.spi.LoggerFactory;
@@ -59,7 +60,6 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.StreamSupport;
 
 public class LogConfigurator {
 
@@ -166,7 +166,7 @@ public class LogConfigurator {
     }
 
     private static boolean errorListenerIsRegistered() {
-        return StreamSupport.stream(StatusLogger.getLogger().getListeners().spliterator(), false).anyMatch(l -> l == ERROR_LISTENER);
+        return Iterables.toStream(StatusLogger.getLogger().getListeners()).anyMatch(l -> l == ERROR_LISTENER);
     }
 
     private static void configure(final Settings settings, final Path configsPath, final Path logsPath, boolean useConsole)

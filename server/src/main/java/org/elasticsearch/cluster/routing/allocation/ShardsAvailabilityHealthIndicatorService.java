@@ -33,6 +33,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.ShardsLimitAllocatio
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.health.Diagnosis;
 import org.elasticsearch.health.HealthIndicatorDetails;
@@ -665,8 +666,7 @@ public class ShardsAvailabilityHealthIndicatorService implements HealthIndicator
         if (dataTierAllocationResults.stream().allMatch(hasDeciderResult(ShardsLimitAllocationDecider.NAME, Decision.Type.NO))) {
             List<Diagnosis.Definition> diagnosisDefs = new ArrayList<>();
             // We need the routing nodes for the tiers this index is allowed on to determine the offending shard limits
-            List<RoutingNode> dataTierRoutingNodes = clusterState.getRoutingNodes()
-                .stream()
+            List<RoutingNode> dataTierRoutingNodes = Iterables.toStream(clusterState.getRoutingNodes())
                 .filter(routingNode -> dataTierNodes.contains(routingNode.node()))
                 .toList();
 

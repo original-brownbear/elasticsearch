@@ -8,6 +8,7 @@
 
 package org.elasticsearch.aggregations.pipeline;
 
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.AggregationReduceContext;
@@ -25,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.search.aggregations.pipeline.BucketHelpers.resolveBucketValue;
 
@@ -119,7 +119,7 @@ public class MovFnPipelineAggregator extends PipelineAggregator {
                     values.subList(fromIndex, toIndex).stream().mapToDouble(Double::doubleValue).toArray()
                 );
 
-                List<InternalAggregation> aggs = StreamSupport.stream(bucket.getAggregations().spliterator(), false)
+                List<InternalAggregation> aggs = Iterables.toStream(bucket.getAggregations())
                     .map(InternalAggregation.class::cast)
                     .collect(Collectors.toCollection(ArrayList::new));
                 aggs.add(new InternalSimpleValue(name(), result, formatter, metadata()));

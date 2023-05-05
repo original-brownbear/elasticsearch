@@ -17,6 +17,7 @@ import org.apache.lucene.index.SegmentCommitInfo;
 import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.store.Directory;
 import org.elasticsearch.common.UUIDs;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.index.mapper.ParsedDocument;
 
 import java.io.IOException;
@@ -24,8 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasToString;
@@ -118,8 +117,7 @@ public class EvilInternalEngineTests extends EngineTestCase {
                 final ParsedDocument doc1 = testParsedDocument("1", null, testDocumentWithTextField(), B_1, null);
                 e.index(indexForDoc(doc1));
                 e.flush();
-                final List<SegmentCommitInfo> segments = StreamSupport.stream(e.getLastCommittedSegmentInfos().spliterator(), false)
-                    .collect(Collectors.toList());
+                final List<SegmentCommitInfo> segments = Iterables.toStream(e.getLastCommittedSegmentInfos()).toList();
                 segmentsReference.set(segments);
                 // trigger a background merge that will be managed by the concurrent merge scheduler
                 e.forceMerge(randomBoolean(), 0, false, UUIDs.randomBase64UUID());

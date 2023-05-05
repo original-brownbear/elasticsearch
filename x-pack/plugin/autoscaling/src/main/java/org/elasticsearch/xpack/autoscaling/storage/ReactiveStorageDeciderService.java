@@ -45,6 +45,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.shard.ShardId;
@@ -312,9 +313,7 @@ public class ReactiveStorageDeciderService implements AutoscalingDeciderService 
 
         public ShardsAllocationResults storagePreventsAllocation() {
             RoutingAllocation allocation = new RoutingAllocation(allocationDeciders, state, info, shardSizeInfo, System.nanoTime());
-            List<ShardNodeAllocationDecision> unassignedShards = state.getRoutingNodes()
-                .unassigned()
-                .stream()
+            List<ShardNodeAllocationDecision> unassignedShards = Iterables.toStream(state.getRoutingNodes().unassigned())
                 .filter(shard -> canAllocate(shard, allocation) == false)
                 .flatMap(shard -> cannotAllocateDueToStorage(shard, allocation).stream())
                 .toList();

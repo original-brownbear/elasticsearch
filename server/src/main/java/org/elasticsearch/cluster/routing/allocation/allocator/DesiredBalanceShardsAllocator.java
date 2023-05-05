@@ -31,6 +31,7 @@ import org.elasticsearch.common.metrics.CounterMetric;
 import org.elasticsearch.common.metrics.MeanMetric;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.util.concurrent.EsRejectedExecutionException;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import java.util.ArrayList;
@@ -348,6 +349,6 @@ public class DesiredBalanceShardsAllocator implements ShardsAllocator {
     }
 
     private static Set<String> getNodeIds(RoutingNodes nodes) {
-        return nodes.stream().map(RoutingNode::nodeId).collect(toSet());
+        return Iterables.toStream(nodes).map(RoutingNode::nodeId).collect(toSet());
     }
 }

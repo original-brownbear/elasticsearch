@@ -19,6 +19,7 @@ import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.allocation.AllocationService;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -36,7 +37,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Fork(3)
 @Warmup(iterations = 10)
@@ -167,9 +167,8 @@ public class AllocationBenchmark {
         while (clusterState.getRoutingNodes().hasUnassignedShards()) {
             clusterState = strategy.applyStartedShards(
                 clusterState,
-                clusterState.getRoutingNodes()
-                    .stream()
-                    .flatMap(shardRoutings -> StreamSupport.stream(shardRoutings.spliterator(), false))
+                Iterables.toStream(clusterState.getRoutingNodes())
+                    .flatMap(Iterables::toStream)
                     .filter(ShardRouting::initializing)
                     .collect(Collectors.toList())
             );

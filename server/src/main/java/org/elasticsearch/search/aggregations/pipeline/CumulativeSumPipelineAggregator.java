@@ -8,6 +8,7 @@
 
 package org.elasticsearch.search.aggregations.pipeline;
 
+import org.elasticsearch.common.util.iterable.Iterables;
 import org.elasticsearch.search.DocValueFormat;
 import org.elasticsearch.search.aggregations.AggregationReduceContext;
 import org.elasticsearch.search.aggregations.InternalAggregation;
@@ -21,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static org.elasticsearch.search.aggregations.pipeline.BucketHelpers.resolveBucketValue;
 
@@ -53,7 +53,7 @@ public class CumulativeSumPipelineAggregator extends PipelineAggregator {
                 sum += thisBucketValue;
             }
 
-            List<InternalAggregation> aggs = StreamSupport.stream(bucket.getAggregations().spliterator(), false)
+            List<InternalAggregation> aggs = Iterables.toStream(bucket.getAggregations())
                 .map((p) -> (InternalAggregation) p)
                 .collect(Collectors.toCollection(ArrayList::new));
             aggs.add(new InternalSimpleValue(name(), sum, formatter, metadata()));
