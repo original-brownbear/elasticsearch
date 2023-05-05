@@ -468,7 +468,12 @@ public class DiscoveryNode implements Writeable, ToXContentFragment {
      * Should this node hold data (shards) or not.
      */
     public boolean canContainData() {
-        return roles.stream().anyMatch(DiscoveryNodeRole::canContainData);
+        for (DiscoveryNodeRole role : roles) {
+            if (role.canContainData()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -26,12 +26,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -72,7 +74,8 @@ public class DiscoveryNodes extends AbstractCollection<DiscoveryNode> implements
         @Nullable String localNodeId,
         Version minNonClientNodeVersion,
         Version maxNodeVersion,
-        Version minNodeVersion
+        Version minNodeVersion,
+        Set<String> availableRoles
     ) {
         this.nodes = nodes;
         this.dataNodes = dataNodes;
@@ -87,11 +90,7 @@ public class DiscoveryNodes extends AbstractCollection<DiscoveryNode> implements
         this.minNodeVersion = minNodeVersion;
         this.maxNodeVersion = maxNodeVersion;
         assert (localNodeId == null) == (localNode == null);
-        this.availableRoles = dataNodes.values()
-            .stream()
-            .flatMap(n -> n.getRoles().stream())
-            .map(DiscoveryNodeRole::roleName)
-            .collect(Collectors.toUnmodifiableSet());
+        this.availableRoles = availableRoles;
     }
 
     @Override
@@ -722,10 +721,23 @@ public class DiscoveryNodes extends AbstractCollection<DiscoveryNode> implements
             Version maxNodeVersion = null;
             Version minNonClientNodeVersion = null;
             Version maxNonClientNodeVersion = null;
+            final Map<String, DiscoveryNode> dataNodes = new HashMap<>();
+            final Map<String, DiscoveryNode> masterNodes = new HashMap<>();
+            final Map<String, DiscoveryNode> ingestNodes = new HashMap<>();
+            final Set<String> availableDataRoles = new HashSet<>();
             for (Map.Entry<String, DiscoveryNode> nodeEntry : nodes.entrySet()) {
                 DiscoveryNode discoNode = nodeEntry.getValue();
                 final Version version = discoNode.getVersion();
-                if (discoNode.canContainData() || discoNode.isMasterNode()) {
+                boolean canContainData = discoNode.canContainData();
+                boolean isMaster = discoNode.isMasterNode();
+                if (canContainData || isMaster) {
+                    if (canContainData) {
+                        dataNodes.put(discoNode.getId(), discoNode);
+                        discoNode.getRoles().forEach(role -> availableDataRoles.add(role.roleName()));
+                    }
+                    if (isMaster) {
+                        masterNodes.put(discoNode.getId(), discoNode);
+                    }
                     if (minNonClientNodeVersion == null) {
                         minNonClientNodeVersion = version;
                         maxNonClientNodeVersion = version;
@@ -734,20 +746,24 @@ public class DiscoveryNodes extends AbstractCollection<DiscoveryNode> implements
                         maxNonClientNodeVersion = Version.max(maxNonClientNodeVersion, version);
                     }
                 }
+                if (discoNode.isIngestNode()) {
+                    ingestNodes.put(discoNode.getId(), discoNode);
+                }
                 minNodeVersion = minNodeVersion == null ? version : Version.min(minNodeVersion, version);
                 maxNodeVersion = maxNodeVersion == null ? version : Version.max(maxNodeVersion, version);
             }
 
             return new DiscoveryNodes(
                 Map.copyOf(nodes),
-                filteredNodes(nodes, DiscoveryNode::canContainData),
-                filteredNodes(nodes, DiscoveryNode::isMasterNode),
-                filteredNodes(nodes, DiscoveryNode::isIngestNode),
+                Map.copyOf(dataNodes),
+                Map.copyOf(masterNodes),
+                Map.copyOf(ingestNodes),
                 masterNodeId,
                 localNodeId,
                 minNonClientNodeVersion == null ? Version.CURRENT : minNonClientNodeVersion,
                 maxNodeVersion == null ? Version.CURRENT : maxNodeVersion,
-                minNodeVersion == null ? Version.CURRENT.minimumCompatibilityVersion() : minNodeVersion
+                minNodeVersion == null ? Version.CURRENT.minimumCompatibilityVersion() : minNodeVersion,
+                Set.copyOf(availableDataRoles)
             );
         }
 
@@ -757,10 +773,7 @@ public class DiscoveryNodes extends AbstractCollection<DiscoveryNode> implements
     }
 
     private static Map<String, DiscoveryNode> filteredNodes(Map<String, DiscoveryNode> nodes, Predicate<DiscoveryNode> predicate) {
-        return nodes.entrySet()
-            .stream()
-            .filter(e -> predicate.test(e.getValue()))
-            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        return nodes.values().stream().filter(predicate).collect(Collectors.toUnmodifiableMap(DiscoveryNode::getId, Function.identity()));
     }
 
     public static void addCommaSeparatedNodesWithoutAttributes(Iterator<DiscoveryNode> iterator, StringBuilder stringBuilder) {
