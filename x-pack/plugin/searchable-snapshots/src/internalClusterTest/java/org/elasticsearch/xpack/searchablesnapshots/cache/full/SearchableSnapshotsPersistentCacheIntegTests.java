@@ -94,9 +94,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
         assertExecutorIsIdle(SearchableSnapshots.CACHE_FETCH_ASYNC_THREAD_POOL_NAME);
         assertExecutorIsIdle(SearchableSnapshots.CACHE_PREWARMING_THREAD_POOL_NAME);
 
-        final Index restoredIndex = client().admin()
-            .cluster()
-            .prepareState()
+        final Index restoredIndex = clusterAdmin().prepareState()
             .clear()
             .setMetadata(true)
             .get()
@@ -210,13 +208,7 @@ public class SearchableSnapshotsPersistentCacheIntegTests extends BaseSearchable
                 .allMatch(recoveryState -> recoveryState.getStage() == RecoveryState.Stage.DONE)
         );
 
-        final ClusterStateResponse state = client().admin()
-            .cluster()
-            .prepareState()
-            .clear()
-            .setMetadata(true)
-            .setIndices(mountedIndexName)
-            .get();
+        final ClusterStateResponse state = clusterAdmin().prepareState().clear().setMetadata(true).setIndices(mountedIndexName).get();
         final Index mountedIndex = state.getState().metadata().index(mountedIndexName).getIndex();
 
         final Set<DiscoveryNode> dataNodes = new HashSet<>();

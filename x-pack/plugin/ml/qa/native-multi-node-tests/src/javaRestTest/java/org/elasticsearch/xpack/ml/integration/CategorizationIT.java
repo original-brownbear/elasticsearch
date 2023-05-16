@@ -62,7 +62,7 @@ public class CategorizationIT extends MlNativeAutodetectIntegTestCase {
 
     @Before
     public void setUpData() {
-        client().admin().indices().prepareCreate(DATA_INDEX).setMapping("time", "type=date,format=epoch_millis", "msg", "type=text").get();
+        indicesAdmin().prepareCreate(DATA_INDEX).setMapping("time", "type=date,format=epoch_millis", "msg", "type=text").get();
 
         nowMillis = System.currentTimeMillis();
 
@@ -431,7 +431,7 @@ public class CategorizationIT extends MlNativeAutodetectIntegTestCase {
 
     public void testNumMatchesAndCategoryPreference() throws Exception {
         String index = "hadoop_logs";
-        client().admin().indices().prepareCreate(index).setMapping("time", "type=date,format=epoch_millis", "msg", "type=text").get();
+        indicesAdmin().prepareCreate(index).setMapping("time", "type=date,format=epoch_millis", "msg", "type=text").get();
 
         nowMillis = System.currentTimeMillis();
 
@@ -529,7 +529,7 @@ public class CategorizationIT extends MlNativeAutodetectIntegTestCase {
         assertThat(category1.getNumMatches(), equalTo(2L));
         long[] expectedPreferenceTo = new long[] { 2L, 3L, 4L, 5L, 6L, 7L };
         assertThat(category1.getPreferredToCategories(), equalTo(expectedPreferenceTo));
-        client().admin().indices().prepareDelete(index).get();
+        indicesAdmin().prepareDelete(index).get();
     }
 
     private static Job.Builder newJobBuilder(String id, List<String> categorizationFilters, boolean isPerPartition) {

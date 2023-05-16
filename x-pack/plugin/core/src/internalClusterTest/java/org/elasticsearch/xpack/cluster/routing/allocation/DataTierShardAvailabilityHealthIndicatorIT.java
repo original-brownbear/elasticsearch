@@ -109,9 +109,7 @@ public class DataTierShardAvailabilityHealthIndicatorIT extends ESIntegTestCase 
             GetHealthAction.INSTANCE,
             new GetHealthAction.Request(ShardsAvailabilityHealthIndicatorService.NAME, true, 1000)
         ).get();
-        ClusterAllocationExplanation explain = client().admin()
-            .cluster()
-            .prepareAllocationExplain()
+        ClusterAllocationExplanation explain = clusterAdmin().prepareAllocationExplain()
             .setIndex("test")
             .setShard(0)
             .setPrimary(false)

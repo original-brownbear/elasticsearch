@@ -225,9 +225,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testQuery() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text", "alias", "type=alias,path=field1")
         );
         client().prepareIndex("test")
@@ -730,9 +728,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testRealtimeGetApi() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
                 .setSettings(Settings.builder().put("refresh_interval", "-1").build())
         );
@@ -901,18 +897,8 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
     }
 
     public void testMSearchApi() throws Exception {
-        assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test1")
-                .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
-        );
-        assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test2")
-                .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
-        );
+        assertAcked(indicesAdmin().prepareCreate("test1").setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text"));
+        assertAcked(indicesAdmin().prepareCreate("test2").setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text"));
 
         client().prepareIndex("test1").setId("1").setSource("field1", "value1", "field2", "value2", "field3", "value3").get();
         client().prepareIndex("test2").setId("1").setSource("field1", "value1", "field2", "value2", "field3", "value3").get();
@@ -1049,9 +1035,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testScroll() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndexModule.INDEX_QUERY_CACHE_EVERYTHING_SETTING.getKey(), true))
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
         );
@@ -1110,9 +1094,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testPointInTimeId() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndexModule.INDEX_QUERY_CACHE_EVERYTHING_SETTING.getKey(), true))
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
         );
@@ -1152,9 +1134,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testQueryCache() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndexModule.INDEX_QUERY_CACHE_EVERYTHING_SETTING.getKey(), true))
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
         );
@@ -1191,9 +1171,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testScrollWithQueryCache() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndexModule.INDEX_QUERY_CACHE_EVERYTHING_SETTING.getKey(), true))
                 .setMapping("field1", "type=text", "field2", "type=text")
         );
@@ -1297,9 +1275,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testRequestCache() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING.getKey(), true))
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
         );
@@ -1332,9 +1308,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testFields() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping(
                     "field1",
                     "type=text,store=true",
@@ -1528,10 +1502,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testSort() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
-                .setMapping("field1", "type=long", "field2", "type=long", "alias", "type=alias,path=field1")
+            indicesAdmin().prepareCreate("test").setMapping("field1", "type=long", "field2", "type=long", "alias", "type=alias,path=field1")
         );
         client().prepareIndex("test").setId("1").setSource("field1", 1d, "field2", 2d).setRefreshPolicy(IMMEDIATE).get();
 
@@ -1579,9 +1550,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testHighlighting() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text", "alias", "type=alias,path=field1")
         );
         client().prepareIndex("test")
@@ -1631,9 +1600,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testAggs() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping("field1", "type=text,fielddata=true", "field2", "type=text,fielddata=true", "alias", "type=alias,path=field1")
         );
         client().prepareIndex("test").setId("1").setSource("field1", "value1", "field2", "value2").setRefreshPolicy(IMMEDIATE).get();
@@ -1682,9 +1649,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testTVApi() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping(
                     "field1",
                     "type=text,term_vector=with_positions_offsets_payloads",
@@ -1774,9 +1739,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testMTVApi() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping(
                     "field1",
                     "type=text,term_vector=with_positions_offsets_payloads",
@@ -2008,9 +1971,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testExistQuery() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text", "alias", "type=alias,path=field1")
         );
 
@@ -2084,10 +2045,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testLookupRuntimeFields() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("hosts")
-                .setMapping("field1", "type=keyword", "field2", "type=text", "field3", "type=text")
+            indicesAdmin().prepareCreate("hosts").setMapping("field1", "type=keyword", "field2", "type=text", "field3", "type=text")
         );
         client().prepareIndex("hosts")
             .setId("1")
@@ -2101,9 +2059,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
             .get();
 
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("logs")
+            indicesAdmin().prepareCreate("logs")
                 .setMapping("field1", "type=keyword", "field2", "type=text", "field3", "type=date,format=yyyy-MM-dd")
         );
 

@@ -443,9 +443,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
 
             assertDocumentsAreEqual(indexName, numDocs);
 
-            NodesStatsResponse statsResponse = client().admin()
-                .cluster()
-                .prepareNodesStats()
+            NodesStatsResponse statsResponse = clusterAdmin().prepareNodesStats()
                 .clear()
                 .setIndices(new CommonStatsFlags(CommonStatsFlags.Flag.Recovery))
                 .get();
@@ -646,7 +644,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
                     )
                 );
 
-                assertAcked(client().admin().indices().prepareDelete(indexName).get());
+                assertAcked(indicesAdmin().prepareDelete(indexName).get());
 
                 assertBusy(mockLogAppender::assertAllExpectationsMatched);
             } finally {
@@ -678,12 +676,10 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
         createRepo(repoName, TestRepositoryPlugin.INSTRUMENTED_TYPE);
         createSnapshot(repoName, "snap", Collections.singletonList(indexName));
 
-        assertAcked(client().admin().indices().prepareDelete(indexName).get());
+        assertAcked(indicesAdmin().prepareDelete(indexName).get());
 
         List<String> restoredIndexDataNodes = internalCluster().startDataOnlyNodes(2);
-        RestoreSnapshotResponse restoreSnapshotResponse = client().admin()
-            .cluster()
-            .prepareRestoreSnapshot(repoName, "snap")
+        RestoreSnapshotResponse restoreSnapshotResponse = clusterAdmin().prepareRestoreSnapshot(repoName, "snap")
             .setIndices(indexName)
             .setIndexSettings(
                 Settings.builder()
@@ -968,7 +964,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
 
                 boolean cancelRecovery = randomBoolean();
                 if (cancelRecovery) {
-                    assertAcked(client().admin().indices().prepareDelete(indexRecoveredFromSnapshot1).get());
+                    assertAcked(indicesAdmin().prepareDelete(indexRecoveredFromSnapshot1).get());
 
                     respondToRecoverSnapshotFile.run();
 
@@ -1433,9 +1429,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
 
         // Ensure that the safe commit == latest commit
         assertBusy(() -> {
-            ShardStats stats = client().admin()
-                .indices()
-                .prepareStats(indexName)
+            ShardStats stats = indicesAdmin().prepareStats(indexName)
                 .clear()
                 .get()
                 .asMap()
@@ -1519,7 +1513,7 @@ public class SnapshotBasedIndexRecoveryIT extends AbstractSnapshotIntegTestCase 
     }
 
     private RecoveryState getLatestPeerRecoveryStateForShard(String indexName, int shardId) {
-        RecoveryResponse recoveryResponse = client().admin().indices().prepareRecoveries(indexName).get();
+        RecoveryResponse recoveryResponse = indicesAdmin().prepareRecoveries(indexName).get();
         assertThat(recoveryResponse.hasRecoveries(), equalTo(true));
         List<RecoveryState> indexRecoveries = recoveryResponse.shardRecoveryStates().get(indexName);
         assertThat(indexRecoveries, notNullValue());

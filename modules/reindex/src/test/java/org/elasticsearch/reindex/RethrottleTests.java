@@ -100,9 +100,7 @@ public class RethrottleTests extends ReindexTestCase {
             assertThat(taskGroupToRethrottle.childTasks(), hasSize(allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(numSlices))));
             // Wait for all of the sub tasks to start (or finish, some might finish early, all that matters is that not all do)
             assertBusy(() -> {
-                BulkByScrollTask.Status parent = (BulkByScrollTask.Status) client().admin()
-                    .cluster()
-                    .prepareGetTask(taskToRethrottle)
+                BulkByScrollTask.Status parent = (BulkByScrollTask.Status) clusterAdmin().prepareGetTask(taskToRethrottle)
                     .get()
                     .getTask()
                     .getTask()

@@ -118,11 +118,7 @@ public class IndexAliasesTests extends SecurityIntegTestCase {
     public void createBogusIndex() {
         // randomly create an index with two aliases from user admin, to make sure it doesn't affect any of the test results
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("bogus_index_1")
-                .addAlias(new Alias("bogus_alias_1"))
-                .addAlias(new Alias("bogus_alias_2"))
+            indicesAdmin().prepareCreate("bogus_index_1").addAlias(new Alias("bogus_alias_1")).addAlias(new Alias("bogus_alias_2"))
         );
     }
 

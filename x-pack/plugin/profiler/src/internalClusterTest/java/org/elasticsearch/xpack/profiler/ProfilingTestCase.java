@@ -53,7 +53,7 @@ public abstract class ProfilingTestCase extends ESIntegTestCase {
     }
 
     private void createIndex(String name, String bodyFileName) throws Exception {
-        client().admin().indices().prepareCreate(name).setSource(read(bodyFileName), XContentType.JSON).execute().get();
+        indicesAdmin().prepareCreate(name).setSource(read(bodyFileName), XContentType.JSON).execute().get();
     }
 
     private void indexDoc(String index, String id, Map<String, Object> source) {

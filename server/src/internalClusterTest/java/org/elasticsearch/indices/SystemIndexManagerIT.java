@@ -117,7 +117,7 @@ public class SystemIndexManagerIT extends ESIntegTestCase {
      */
     private void triggerClusterStateUpdates() {
         final String name = randomAlphaOfLength(5).toLowerCase(Locale.ROOT);
-        client().admin().indices().putTemplate(new PutIndexTemplateRequest(name).patterns(List.of(name))).actionGet();
+        indicesAdmin().putTemplate(new PutIndexTemplateRequest(name).patterns(List.of(name))).actionGet();
     }
 
     /**

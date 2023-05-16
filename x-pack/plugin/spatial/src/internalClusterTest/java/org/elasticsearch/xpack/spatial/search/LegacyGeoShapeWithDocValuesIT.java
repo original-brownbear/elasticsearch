@@ -54,9 +54,7 @@ public class LegacyGeoShapeWithDocValuesIT extends GeoShapeIntegTestCase {
     public void testMappingUpdate() {
         // create index
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(settings(randomSupportedVersion()).build())
                 .setMapping("shape", "type=geo_shape,strategy=recursive")
                 .get()

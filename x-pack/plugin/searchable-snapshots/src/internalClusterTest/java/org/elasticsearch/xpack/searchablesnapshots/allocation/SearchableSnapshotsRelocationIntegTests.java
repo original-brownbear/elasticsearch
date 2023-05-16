@@ -115,9 +115,7 @@ public class SearchableSnapshotsRelocationIntegTests extends BaseSearchableSnaps
     }
 
     private static Stream<RecoveryState> getRelocationsStream(String restoredIndex) {
-        return client().admin()
-            .indices()
-            .prepareRecoveries(restoredIndex)
+        return indicesAdmin().prepareRecoveries(restoredIndex)
             .setDetailed(true)
             .setActiveOnly(true)
             .get()

@@ -251,9 +251,7 @@ public class SearchableSnapshotsBlobStoreCacheMaintenanceIntegTests extends Base
         );
         try {
             // restores the .snapshot-blob-cache index with - now obsolete - documents
-            final RestoreSnapshotResponse restoreResponse = client().admin()
-                .cluster()
-                .prepareRestoreSnapshot("backup", "backup")
+            final RestoreSnapshotResponse restoreResponse = clusterAdmin().prepareRestoreSnapshot("backup", "backup")
                 // We only want to restore the blob cache index. Since we can't do that by name, specify an index that doesn't exist and
                 // allow no indices - this way, only the indices resolved from the feature state will be resolved.
                 .setIndices("this-index-doesnt-exist-i-know-because-#-is-illegal-in-index-names")

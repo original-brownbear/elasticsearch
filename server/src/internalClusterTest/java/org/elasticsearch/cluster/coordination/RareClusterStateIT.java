@@ -182,7 +182,7 @@ public class RareClusterStateIT extends ESIntegTestCase {
     public void testDeleteCreateInOneBulk() throws Exception {
         internalCluster().startMasterOnlyNode();
         String dataNode = internalCluster().startDataOnlyNode();
-        assertFalse(client().admin().cluster().prepareHealth().setWaitForNodes("2").get().isTimedOut());
+        assertFalse(clusterAdmin().prepareHealth().setWaitForNodes("2").get().isTimedOut());
         prepareCreate("test").setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)).get();
         ensureGreen("test");
 
@@ -226,7 +226,7 @@ public class RareClusterStateIT extends ESIntegTestCase {
         // operation yet
 
         final List<String> nodeNames = internalCluster().startNodes(2);
-        assertFalse(client().admin().cluster().prepareHealth().setWaitForNodes("2").get().isTimedOut());
+        assertFalse(clusterAdmin().prepareHealth().setWaitForNodes("2").get().isTimedOut());
 
         final String master = internalCluster().getMasterName();
         assertThat(nodeNames, hasItem(master));
@@ -244,7 +244,7 @@ public class RareClusterStateIT extends ESIntegTestCase {
         ensureGreen();
 
         // Check routing tables
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = clusterAdmin().prepareState().get().getState();
         assertEquals(master, state.nodes().getMasterNode().getName());
         List<ShardRouting> shards = state.routingTable().allShards("index");
         assertThat(shards, hasSize(1));
@@ -308,7 +308,7 @@ public class RareClusterStateIT extends ESIntegTestCase {
         // are needed for a document are not available on the replica at the
         // time of indexing it
         final List<String> nodeNames = internalCluster().startNodes(2);
-        assertFalse(client().admin().cluster().prepareHealth().setWaitForNodes("2").get().isTimedOut());
+        assertFalse(clusterAdmin().prepareHealth().setWaitForNodes("2").get().isTimedOut());
 
         final String master = internalCluster().getMasterName();
         assertThat(nodeNames, hasItem(master));
@@ -328,7 +328,7 @@ public class RareClusterStateIT extends ESIntegTestCase {
         ensureGreen();
 
         // Check routing tables
-        ClusterState state = client().admin().cluster().prepareState().get().getState();
+        ClusterState state = clusterAdmin().prepareState().get().getState();
         assertEquals(master, state.nodes().getMasterNode().getName());
         List<ShardRouting> shards = state.routingTable().allShards("index");
         assertThat(shards, hasSize(2));

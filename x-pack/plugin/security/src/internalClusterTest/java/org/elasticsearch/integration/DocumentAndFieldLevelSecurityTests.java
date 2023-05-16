@@ -146,9 +146,7 @@ public class DocumentAndFieldLevelSecurityTests extends SecurityIntegTestCase {
     public void testUpdatesAreRejected() {
         for (String indexName : List.of("<test-{2015.05.05||+1d}>", "test")) {
             assertAcked(
-                client().admin()
-                    .indices()
-                    .prepareCreate(indexName)
+                indicesAdmin().prepareCreate(indexName)
                     .setMapping("id", "type=keyword", "field1", "type=text", "field2", "type=text")
                     .setSettings(indexSettings(1, 0))
             );
@@ -202,9 +200,7 @@ public class DocumentAndFieldLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testQueryCache() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndexModule.INDEX_QUERY_CACHE_EVERYTHING_SETTING.getKey(), true))
                 .setMapping("id", "type=keyword", "field1", "type=text", "field2", "type=text")
         );

@@ -34,7 +34,7 @@ public class SearchShardsIT extends ESIntegTestCase {
             for (int j = 0; j < numDocs; j++) {
                 client().prepareIndex(index).setSource("value", i).setId(Integer.toString(i)).get();
             }
-            client().admin().indices().prepareRefresh(index).get();
+            indicesAdmin().prepareRefresh(index).get();
         }
         int indicesWithoutData = between(1, 10);
         for (int i = 0; i < indicesWithoutData; i++) {
@@ -105,7 +105,7 @@ public class SearchShardsIT extends ESIntegTestCase {
             for (int j = 0; j < numDocs; j++) {
                 client().prepareIndex(index).setSource("value", i).setId(Integer.toString(i)).get();
             }
-            client().admin().indices().prepareRefresh(index).get();
+            indicesAdmin().prepareRefresh(index).get();
         }
         int iterations = iterations(2, 10);
         for (int i = 0; i < iterations; i++) {

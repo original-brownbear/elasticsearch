@@ -157,9 +157,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         ensureYellow("other");
 
         // Explain the replica for the "other" index
-        ClusterAllocationExplainResponse explainResponse = client().admin()
-            .cluster()
-            .prepareAllocationExplain()
+        ClusterAllocationExplainResponse explainResponse = clusterAdmin().prepareAllocationExplain()
             .setIndex("other")
             .setShard(0)
             .setPrimary(false)
@@ -220,9 +218,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         ensureYellow("other");
 
         // Explain the replica for the "other" index
-        ClusterAllocationExplainResponse explainResponse = client().admin()
-            .cluster()
-            .prepareAllocationExplain()
+        ClusterAllocationExplainResponse explainResponse = clusterAdmin().prepareAllocationExplain()
             .setIndex("other")
             .setShard(0)
             .setPrimary(false)
@@ -349,17 +345,15 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         );
 
         final String nodeB = internalCluster().startNode();
-        assertBusy(() -> {
-            assertThat(
-                client().admin()
-                    .indices()
-                    .prepareGetSettings("myindex")
+        assertBusy(
+            () -> assertThat(
+                indicesAdmin().prepareGetSettings("myindex")
                     .setNames("index.number_of_replicas")
                     .get()
                     .getSetting("myindex", "index.number_of_replicas"),
                 equalTo("1")
-            );
-        });
+            )
+        );
         ensureGreen("myindex");
 
         putNodeShutdown(primaryNodeId, SingleNodeShutdownMetadata.Type.RESTART, null);
@@ -368,17 +362,15 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
         // that auto-expansion has run.
         updateIndexSettings(Settings.builder().put("index.routing.allocation.exclude.name", "non-existent"), "myindex");
 
-        assertBusy(() -> {
-            assertThat(
-                client().admin()
-                    .indices()
-                    .prepareGetSettings("myindex")
+        assertBusy(
+            () -> assertThat(
+                indicesAdmin().prepareGetSettings("myindex")
                     .setNames("index.number_of_replicas")
                     .get()
                     .getSetting("myindex", "index.number_of_replicas"),
                 equalTo("1")
-            );
-        });
+            )
+        );
 
         indexRandomData("myindex");
 
@@ -504,7 +496,7 @@ public class NodeShutdownShardsIT extends ESIntegTestCase {
     }
 
     private void assertIndexSetting(String index, String setting, String expectedValue) {
-        var response = client().admin().indices().getSettings(new GetSettingsRequest().indices(index)).actionGet();
+        var response = indicesAdmin().getSettings(new GetSettingsRequest().indices(index)).actionGet();
         assertThat(response.getSetting(index, setting), equalTo(expectedValue));
     }
 }

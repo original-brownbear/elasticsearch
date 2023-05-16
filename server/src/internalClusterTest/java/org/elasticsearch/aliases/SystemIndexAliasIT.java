@@ -51,6 +51,6 @@ public class SystemIndexAliasIT extends ESIntegTestCase {
         );
         getAliasesResponse.getAliases().get(PRIMARY_INDEX_NAME).forEach(alias -> assertThat(alias.isHidden(), is(true)));
 
-        assertAcked(client().admin().indices().prepareDeleteTemplate("*").get());
+        assertAcked(indicesAdmin().prepareDeleteTemplate("*").get());
     }
 }

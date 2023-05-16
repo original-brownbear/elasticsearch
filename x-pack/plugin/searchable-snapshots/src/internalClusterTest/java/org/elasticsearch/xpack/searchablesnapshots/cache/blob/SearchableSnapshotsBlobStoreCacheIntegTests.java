@@ -138,11 +138,7 @@ public class SearchableSnapshotsBlobStoreCacheIntegTests extends BaseFrozenSearc
 
         if (randomBoolean()) {
             logger.info("--> force-merging index before snapshotting");
-            final ForceMergeResponse forceMergeResponse = client().admin()
-                .indices()
-                .prepareForceMerge(indexName)
-                .setMaxNumSegments(1)
-                .get();
+            final ForceMergeResponse forceMergeResponse = indicesAdmin().prepareForceMerge(indexName).setMaxNumSegments(1).get();
             assertThat(forceMergeResponse.getSuccessfulShards(), equalTo(numberOfShards.totalNumShards));
             assertThat(forceMergeResponse.getFailedShards(), equalTo(0));
         }

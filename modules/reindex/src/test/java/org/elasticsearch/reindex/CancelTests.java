@@ -152,9 +152,7 @@ public class CancelTests extends ReindexTestCase {
 
         if (builder.request().getSlices() > 1) {
             boolean foundCancelled = false;
-            ListTasksResponse sliceList = client().admin()
-                .cluster()
-                .prepareListTasks()
+            ListTasksResponse sliceList = clusterAdmin().prepareListTasks()
                 .setTargetParentTaskId(mainTask.taskId())
                 .setDetailed(true)
                 .get();
@@ -190,13 +188,7 @@ public class CancelTests extends ReindexTestCase {
             if (ExceptionsHelper.unwrapCausesAndSuppressed(e, t -> t instanceof TaskCancelledException).isPresent()) {
                 return; // the scroll request was cancelled
             }
-            String tasks = client().admin()
-                .cluster()
-                .prepareListTasks()
-                .setTargetParentTaskId(mainTask.taskId())
-                .setDetailed(true)
-                .get()
-                .toString();
+            String tasks = clusterAdmin().prepareListTasks().setTargetParentTaskId(mainTask.taskId()).setDetailed(true).get().toString();
             throw new RuntimeException("Exception while waiting for the response. Running tasks: " + tasks, e);
         } finally {
             if (builder.request().getSlices() >= 1) {

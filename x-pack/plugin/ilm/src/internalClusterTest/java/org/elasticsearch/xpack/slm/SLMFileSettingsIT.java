@@ -198,10 +198,9 @@ public class SLMFileSettingsIT extends AbstractSnapshotIntegTestCase {
         boolean awaitSuccessful = savedClusterState.await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
-        final ClusterStateResponse clusterStateResponse = client().admin()
-            .cluster()
-            .state(new ClusterStateRequest().waitForMetadataVersion(metadataVersion.get()))
-            .get();
+        final ClusterStateResponse clusterStateResponse = clusterAdmin().state(
+            new ClusterStateRequest().waitForMetadataVersion(metadataVersion.get())
+        ).get();
 
         var reservedState = clusterStateResponse.getState().metadata().reservedStateMetadata().get(FileSettingsService.NAMESPACE);
 
@@ -313,10 +312,9 @@ public class SLMFileSettingsIT extends AbstractSnapshotIntegTestCase {
         boolean awaitSuccessful = savedClusterState.await(20, TimeUnit.SECONDS);
         assertTrue(awaitSuccessful);
 
-        final ClusterStateResponse clusterStateResponse = client().admin()
-            .cluster()
-            .state(new ClusterStateRequest().waitForMetadataVersion(metadataVersion.get()))
-            .actionGet();
+        final ClusterStateResponse clusterStateResponse = clusterAdmin().state(
+            new ClusterStateRequest().waitForMetadataVersion(metadataVersion.get())
+        ).actionGet();
 
         assertThat(clusterStateResponse.getState().metadata().persistentSettings().get("search.allow_expensive_queries"), nullValue());
 

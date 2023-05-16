@@ -495,9 +495,7 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
         ensureGreen(SECURITY_MAIN_ALIAS);
         logger.info("-->  creating repository");
         assertAcked(
-            client().admin()
-                .cluster()
-                .preparePutRepository("test-repo")
+            clusterAdmin().preparePutRepository("test-repo")
                 .setType("fs")
                 .setSettings(
                     Settings.builder()
@@ -534,9 +532,7 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
         GetRolesResponse getRolesResponse = new GetRolesRequestBuilder(client()).names("test_role").get();
         assertThat(getRolesResponse.roles().length, is(0));
         // restore
-        RestoreSnapshotResponse response = client().admin()
-            .cluster()
-            .prepareRestoreSnapshot("test-repo", "test-snap-1")
+        RestoreSnapshotResponse response = clusterAdmin().prepareRestoreSnapshot("test-repo", "test-snap-1")
             .setWaitForCompletion(true)
             .setIncludeAliases(randomBoolean()) // Aliases are always restored for system indices
             .setFeatureStates(SECURITY_FEATURE_NAME)
@@ -699,7 +695,7 @@ public class NativeRealmIntegTests extends NativeRealmIntegTestCase {
                 .get();
         }
 
-        IndicesStatsResponse response = client().admin().indices().prepareStats("foo", SECURITY_MAIN_ALIAS).get();
+        IndicesStatsResponse response = indicesAdmin().prepareStats("foo", SECURITY_MAIN_ALIAS).get();
         assertThat(response.getFailedShards(), is(0));
         assertThat(response.getIndices().size(), is(2));
         assertThat(response.getIndices().get(TestRestrictedIndices.INTERNAL_SECURITY_MAIN_INDEX_7), notNullValue());

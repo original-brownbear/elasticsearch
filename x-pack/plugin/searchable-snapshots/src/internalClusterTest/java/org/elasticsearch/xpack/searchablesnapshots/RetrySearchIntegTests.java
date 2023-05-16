@@ -41,9 +41,7 @@ public class RetrySearchIntegTests extends BaseSearchableSnapshotsIntegTestCase 
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         final int numberOfShards = between(1, 5);
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate(indexName)
+            indicesAdmin().prepareCreate(indexName)
                 .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, numberOfShards).build())
                 .setMapping("""
                     {"properties":{"created_date":{"type": "date", "format": "yyyy-MM-dd"}}}""")
@@ -110,9 +108,7 @@ public class RetrySearchIntegTests extends BaseSearchableSnapshotsIntegTestCase 
     public void testRetryPointInTime() throws Exception {
         final String indexName = randomAlphaOfLength(10).toLowerCase(Locale.ROOT);
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate(indexName)
+            indicesAdmin().prepareCreate(indexName)
                 .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 5)).build())
                 .setMapping("""
                     {"properties":{"created_date":{"type": "date", "format": "yyyy-MM-dd"}}}""")

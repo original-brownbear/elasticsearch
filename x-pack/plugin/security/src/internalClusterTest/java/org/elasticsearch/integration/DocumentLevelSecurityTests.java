@@ -300,9 +300,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testRealtimeGetApi() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
                 .setSettings(Settings.builder().put("refresh_interval", "-1").build())
         );
@@ -444,15 +442,11 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testMSearch() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test1")
+            indicesAdmin().prepareCreate("test1")
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text", "id", "type=integer")
         );
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test2")
+            indicesAdmin().prepareCreate("test2")
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text", "id", "type=integer")
         );
 
@@ -534,9 +528,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testPercolateQueryWithIndexedDocWithDLS() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("query_index")
+            indicesAdmin().prepareCreate("query_index")
                 .setMapping("message", "type=text", "query", "type=percolator", "field1", "type=text", "field2", "type=text")
         );
         assertAcked(client().admin().indices().prepareCreate("doc_index").setMapping("message", "type=text", "field1", "type=text"));
@@ -577,15 +569,11 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testGeoQueryWithIndexedShapeWithDLS() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("search_index")
+            indicesAdmin().prepareCreate("search_index")
                 .setMapping("search_field", "type=shape", "field1", "type=text", "field2", "type=text")
         );
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("shape_index")
+            indicesAdmin().prepareCreate("shape_index")
                 .setMapping("shape_field", "type=shape", "field1", "type=text", "field2", "type=text")
         );
         client().prepareIndex("search_index")
@@ -647,15 +635,11 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testTermsLookupOnIndexWithDLS() {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("search_index")
+            indicesAdmin().prepareCreate("search_index")
                 .setMapping("search_field", "type=keyword", "field1", "type=text", "field2", "type=text")
         );
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("lookup_index")
+            indicesAdmin().prepareCreate("lookup_index")
                 .setMapping("lookup_field", "type=keyword", "field1", "type=text", "field2", "type=text")
         );
         client().prepareIndex("search_index")
@@ -738,9 +722,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testTVApi() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping(
                     "field1",
                     "type=text,term_vector=with_positions_offsets_payloads",
@@ -803,9 +785,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testMTVApi() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping(
                     "field1",
                     "type=text,term_vector=with_positions_offsets_payloads",
@@ -934,9 +914,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testGlobalAggregation() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setMapping("field1", "type=text", "field2", "type=text,fielddata=true", "field3", "type=text")
         );
         client().prepareIndex("test").setId("1").setSource("field1", "value1").setRefreshPolicy(IMMEDIATE).get();
@@ -1100,9 +1078,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testScroll() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING.getKey(), true))
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
         );
@@ -1153,9 +1129,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testReaderId() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING.getKey(), true))
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
         );
@@ -1197,9 +1171,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testRequestCache() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(Settings.builder().put(IndicesRequestCache.INDEX_CACHE_REQUEST_ENABLED_SETTING.getKey(), true))
                 .setMapping("field1", "type=text", "field2", "type=text", "field3", "type=text")
         );
@@ -1336,9 +1308,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testSuggesters() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(indexSettings(1, 0))
                 .setMapping("field1", "type=text", "suggest_field1", "type=text", "suggest_field2", "type=completion")
         );
@@ -1363,9 +1333,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
         refresh("test");
 
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("fls-index")
+            indicesAdmin().prepareCreate("fls-index")
                 .setSettings(indexSettings(1, 0))
                 .setMapping(
                     "field1",
@@ -1451,9 +1419,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
 
     public void testProfile() throws Exception {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("test")
+            indicesAdmin().prepareCreate("test")
                 .setSettings(indexSettings(1, 0))
                 .setMapping("field1", "type=text", "other_field", "type=text")
         );
@@ -1470,9 +1436,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
         refresh("test");
 
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate("fls-index")
+            indicesAdmin().prepareCreate("fls-index")
                 .setSettings(indexSettings(1, 0))
                 .setMapping("field1", "type=text", "other_field", "type=text", "yet_another", "type=text")
         );

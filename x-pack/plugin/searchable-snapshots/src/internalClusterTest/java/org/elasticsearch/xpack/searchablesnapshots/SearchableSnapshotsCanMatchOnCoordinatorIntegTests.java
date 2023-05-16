@@ -440,9 +440,7 @@ public class SearchableSnapshotsCanMatchOnCoordinatorIntegTests extends BaseFroz
 
     private void createIndexWithTimestamp(String indexName, int numShards, Settings extraSettings) throws IOException {
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareCreate(indexName)
+            indicesAdmin().prepareCreate(indexName)
                 .setMapping(
                     XContentFactory.jsonBuilder()
                         .startObject()
@@ -488,16 +486,7 @@ public class SearchableSnapshotsCanMatchOnCoordinatorIntegTests extends BaseFroz
     }
 
     private IndexMetadata getIndexMetadata(String indexName) {
-        return client().admin()
-            .cluster()
-            .prepareState()
-            .clear()
-            .setMetadata(true)
-            .setIndices(indexName)
-            .get()
-            .getState()
-            .metadata()
-            .index(indexName);
+        return clusterAdmin().prepareState().clear().setMetadata(true).setIndices(indexName).get().getState().metadata().index(indexName);
     }
 
     private void waitUntilRecoveryIsDone(String index) throws Exception {

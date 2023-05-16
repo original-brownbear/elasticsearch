@@ -76,7 +76,7 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         // just check it does not throw when not refreshed.
         capacity();
 
-        IndicesStatsResponse stats = client().admin().indices().prepareStats(indexName).clear().setStore(true).get();
+        IndicesStatsResponse stats = indicesAdmin().prepareStats(indexName).clear().setStore(true).get();
         long used = stats.getTotal().getStore().getSizeInBytes();
         long minShardSize = Arrays.stream(stats.getShards()).mapToLong(s -> s.getStats().getStore().sizeInBytes()).min().orElseThrow();
         long maxShardSize = Arrays.stream(stats.getShards()).mapToLong(s -> s.getStats().getStore().sizeInBytes()).max().orElseThrow();
@@ -272,7 +272,7 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         forceMerge();
         refresh();
 
-        IndicesStatsResponse stats = client().admin().indices().prepareStats(indexName).clear().setStore(true).get();
+        IndicesStatsResponse stats = indicesAdmin().prepareStats(indexName).clear().setStore(true).get();
         long used = stats.getTotal().getStore().getSizeInBytes();
         long maxShardSize = Arrays.stream(stats.getShards()).mapToLong(s -> s.getStats().getStore().sizeInBytes()).max().orElseThrow();
 
@@ -342,15 +342,8 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
 
         String shrinkName = "shrink-" + indexName;
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareResizeIndex(indexName, shrinkName)
-                .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, 1)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
-                )
+            indicesAdmin().prepareResizeIndex(indexName, shrinkName)
+                .setSettings(indexSettings(1, 0).build())
                 .setWaitForActiveShards(ActiveShardCount.NONE)
                 .get()
         );
@@ -388,7 +381,7 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         assertAcked(client().admin().cluster().prepareReroute());
         ensureGreen();
 
-        client().admin().indices().prepareDelete(indexName).get();
+        indicesAdmin().prepareDelete(indexName).get();
         response = capacity();
         assertThat(
             response.results().get(policyName).requiredCapacity().total().storage(),
@@ -422,7 +415,7 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         forceMerge();
         refresh();
 
-        IndicesStatsResponse stats = client().admin().indices().prepareStats(indexName).clear().setStore(true).get();
+        IndicesStatsResponse stats = indicesAdmin().prepareStats(indexName).clear().setStore(true).get();
         long used = stats.getTotal().getStore().getSizeInBytes();
 
         long enoughSpace = used + HIGH_WATERMARK_BYTES + 1;
@@ -454,15 +447,8 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         String cloneName = "clone-" + indexName;
         int resizedShardCount = resizeType == ResizeType.CLONE ? 1 : between(2, 10);
         assertAcked(
-            client().admin()
-                .indices()
-                .prepareResizeIndex(indexName, cloneName)
-                .setSettings(
-                    Settings.builder()
-                        .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, resizedShardCount)
-                        .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
-                        .build()
-                )
+            indicesAdmin().prepareResizeIndex(indexName, cloneName)
+                .setSettings(indexSettings(resizedShardCount, 0).build())
                 .setWaitForActiveShards(ActiveShardCount.NONE)
                 .setResizeType(resizeType)
                 .get()
@@ -495,7 +481,7 @@ public class ReactiveStorageIT extends AutoscalingStorageIntegTestCase {
         assertAcked(client().admin().cluster().prepareReroute());
         ensureGreen();
 
-        client().admin().indices().prepareDelete(indexName).get();
+        indicesAdmin().prepareDelete(indexName).get();
         response = capacity();
         assertThat(
             response.results().get(policyName).requiredCapacity().total().storage().getBytes(),

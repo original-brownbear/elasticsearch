@@ -155,9 +155,7 @@ public class S3BlobStoreRepositoryTests extends ESMockAPIBasedRepositoryIntegTes
             true
         );
 
-        final SnapshotId fakeOldSnapshot = client().admin()
-            .cluster()
-            .prepareCreateSnapshot(repoName, "snapshot-old")
+        final SnapshotId fakeOldSnapshot = clusterAdmin().prepareCreateSnapshot(repoName, "snapshot-old")
             .setWaitForCompletion(true)
             .setIndices()
             .get()
