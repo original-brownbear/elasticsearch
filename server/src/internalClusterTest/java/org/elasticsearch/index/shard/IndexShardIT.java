@@ -160,7 +160,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
             Translog.Location lastWriteLocation = tlog.getLastWriteLocation();
             try {
                 // the lastWriteLocaltion has a Integer.MAX_VALUE size so we have to create a new one
-                return tlog.ensureSynced(new Translog.Location(lastWriteLocation.generation, lastWriteLocation.translogLocation, 0));
+                return tlog.ensureSynced(new Translog.Location(lastWriteLocation.generation(), lastWriteLocation.translogLocation(), 0));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -442,7 +442,7 @@ public class IndexShardIT extends ESSingleNodeTestCase {
             );
             final Translog.Location location = result.getTranslogLocation();
             shard.afterWriteOperation();
-            if (location.translogLocation + location.size > generationThreshold) {
+            if (location.translogLocation() + location.size() > generationThreshold) {
                 // wait until the roll completes
                 assertBusy(() -> assertFalse(shard.shouldRollTranslogGeneration()));
                 rolls++;

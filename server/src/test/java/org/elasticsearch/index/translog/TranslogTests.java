@@ -1242,7 +1242,7 @@ public class TranslogTests extends ESTestCase {
             max = max(max, location);
         }
 
-        assertEquals(max.generation, translog.currentFileGeneration());
+        assertEquals(max.generation(), translog.currentFileGeneration());
         try (Translog.Snapshot snap = new SortedSnapshot(translog.newSnapshot())) {
             Translog.Operation next;
             Translog.Operation maxOp = null;
@@ -1646,16 +1646,16 @@ public class TranslogTests extends ESTestCase {
             Location location1 = translog.add(indexOp(randomAlphaOfLength(10), 0, primaryTerm.get()));
             Location location2 = translog.add(TranslogOperationsUtils.indexOp(randomAlphaOfLength(10), 1, primaryTerm.get()));
             long firstGeneration = translog.getGeneration().translogFileGeneration;
-            assertThat(location1.generation, equalTo(firstGeneration));
-            assertThat(location2.generation, equalTo(firstGeneration));
+            assertThat(location1.generation(), equalTo(firstGeneration));
+            assertThat(location2.generation(), equalTo(firstGeneration));
 
             translog.rollGeneration();
 
             Location location3 = translog.add(TranslogOperationsUtils.indexOp(randomAlphaOfLength(10), 3, primaryTerm.get()));
             Location location4 = translog.add(TranslogOperationsUtils.indexOp(randomAlphaOfLength(10), 2, primaryTerm.get()));
             long secondGeneration = translog.getGeneration().translogFileGeneration;
-            assertThat(location3.generation, equalTo(secondGeneration));
-            assertThat(location4.generation, equalTo(secondGeneration));
+            assertThat(location3.generation(), equalTo(secondGeneration));
+            assertThat(location4.generation(), equalTo(secondGeneration));
 
             assertThat(seqNos, equalTo(List.of(0L, 1L, 3L, 2L)));
             assertThat(locations, equalTo(List.of(location1, location2, location3, location4)));
@@ -1748,7 +1748,7 @@ public class TranslogTests extends ESTestCase {
                     assertEquals(
                         "expected operation" + i + " to be in the previous translog but wasn't",
                         translog.currentFileGeneration() - 1,
-                        locations.get(i).generation
+                        locations.get(i).generation()
                     );
                     Translog.Operation next = snapshot.next();
                     assertNotNull("operation " + i + " must be non-null", next);
@@ -2508,7 +2508,7 @@ public class TranslogTests extends ESTestCase {
                     assertEquals(
                         "expected operation" + i + " to be in the previous translog but wasn't",
                         tlog.currentFileGeneration() - 1,
-                        locations.get(i).generation
+                        locations.get(i).generation()
                     );
                     Translog.Operation next = snapshot.next();
                     assertNotNull("operation " + i + " must be non-null", next);
@@ -2530,7 +2530,7 @@ public class TranslogTests extends ESTestCase {
                     assertEquals(
                         "expected operation" + i + " to be in the current translog but wasn't",
                         translog.currentFileGeneration(),
-                        locations.get(i).generation
+                        locations.get(i).generation()
                     );
                     Translog.Operation next = snapshot.next();
                     assertNotNull("operation " + i + " must be non-null", next);
@@ -2626,11 +2626,11 @@ public class TranslogTests extends ESTestCase {
                     // boom now we failed
                 }
             }
-            Collections.sort(writtenOperations, (a, b) -> a.location.compareTo(b.location));
+            writtenOperations.sort(Comparator.comparing(a -> a.location));
             assertFalse(translog.isOpen());
             final Checkpoint checkpoint = Checkpoint.read(config.getTranslogPath().resolve(Translog.CHECKPOINT_FILE_NAME));
             // drop all that haven't been synced
-            writtenOperations.removeIf(next -> checkpoint.offset < (next.location.translogLocation + next.location.size));
+            writtenOperations.removeIf(next -> checkpoint.offset < (next.location.translogLocation() + next.location.size()));
             try (
                 Translog tlog = new Translog(
                     config,
@@ -2654,7 +2654,7 @@ public class TranslogTests extends ESTestCase {
                     assertEquals(
                         "expected operation" + i + " to be in the previous translog but wasn't",
                         tlog.currentFileGeneration() - 1,
-                        writtenOperations.get(i).location.generation
+                        writtenOperations.get(i).location.generation()
                     );
                     Translog.Operation next = snapshot.next();
                     assertNotNull("operation " + i + " must be non-null", next);
@@ -3897,7 +3897,7 @@ public class TranslogTests extends ESTestCase {
                                 assertThat("seq# " + op.seqNo() + " was not marked as persisted", persistedSeqNos, hasItem(op.seqNo()));
                             }
                             Checkpoint checkpoint = translog.getLastSyncedCheckpoint();
-                            assertThat(checkpoint.offset, greaterThanOrEqualTo(location.translogLocation));
+                            assertThat(checkpoint.offset, greaterThanOrEqualTo(location.translogLocation()));
                             for (Translog.Operation op : ops) {
                                 assertThat(checkpoint.minSeqNo, lessThanOrEqualTo(op.seqNo()));
                                 assertThat(checkpoint.maxSeqNo, greaterThanOrEqualTo(op.seqNo()));

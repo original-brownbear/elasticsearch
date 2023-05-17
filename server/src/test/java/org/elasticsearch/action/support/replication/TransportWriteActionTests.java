@@ -100,7 +100,7 @@ public class TransportWriteActionTests extends ESTestCase {
     @Before
     public void initCommonMocks() {
         indexShard = mock(IndexShard.class);
-        location = mock(Translog.Location.class);
+        location = new Translog.Location(0, 0, 0);
         clusterService = createClusterService(threadPool);
         when(indexShard.refresh(any())).thenReturn(new Engine.RefreshResult(true, 1));
         ReplicationGroup replicationGroup = mock(ReplicationGroup.class);
