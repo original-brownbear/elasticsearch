@@ -70,6 +70,7 @@ import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.NodeMetadata;
+import org.elasticsearch.index.store.NoFsyncDirectory;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -284,7 +285,7 @@ public class PersistedClusterStateService {
     protected Directory createDirectory(Path path) throws IOException {
         // it is possible to disable the use of MMapDirectory for indices, and it may be surprising to users that have done so if we still
         // use a MMapDirectory here, which might happen with FSDirectory.open(path), so we force an NIOFSDirectory to be on the safe side.
-        return new NIOFSDirectory(path);
+        return new NoFsyncDirectory(new NIOFSDirectory(path));
     }
 
     public Path[] getDataPaths() {

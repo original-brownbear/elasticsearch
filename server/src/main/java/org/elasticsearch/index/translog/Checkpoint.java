@@ -190,7 +190,7 @@ final class Checkpoint {
         try (FileChannel channel = factory.open(checkpointFile, options)) {
             Channels.writeToChannel(bytes, channel);
             // fsync with metadata as we use this method when creating the file
-            channel.force(true);
+            //channel.force(true);
         }
     }
 
@@ -199,7 +199,7 @@ final class Checkpoint {
         Channels.writeToChannel(bytes, fileChannel, 0);
         // no need to force metadata, file size stays the same and we did the full fsync
         // when we first created the file, so the directory entry doesn't change as well
-        fileChannel.force(false);
+        //fileChannel.force(false);
     }
 
     private static byte[] createCheckpointBytes(Path checkpointFile, Checkpoint checkpoint) throws IOException {

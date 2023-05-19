@@ -498,7 +498,7 @@ public class TranslogWriter extends BaseTranslogReader implements Closeable {
                     try {
                         assert lastSyncedCheckpoint.offset != checkpointToSync.offset || toWrite.length() == 0;
                         if (lastSyncedCheckpoint.offset != checkpointToSync.offset) {
-                            channel.force(false);
+                            //channel.force(false);
                         }
                         writeCheckpoint(checkpointChannel, checkpointPath, checkpointToSync);
                     } catch (final Exception ex) {

@@ -24,6 +24,7 @@ import org.elasticsearch.common.lucene.store.InputStreamIndexInput;
 import org.elasticsearch.common.xcontent.LoggingDeprecationHandler;
 import org.elasticsearch.core.IOUtils;
 import org.elasticsearch.core.Tuple;
+import org.elasticsearch.index.store.NoFsyncDirectory;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
@@ -336,7 +337,7 @@ public abstract class MetadataStateFormat<T> {
     }
 
     protected Directory newDirectory(Path dir) throws IOException {
-        return new NIOFSDirectory(dir);
+        return new NoFsyncDirectory(new NIOFSDirectory(dir));
     }
 
     /**

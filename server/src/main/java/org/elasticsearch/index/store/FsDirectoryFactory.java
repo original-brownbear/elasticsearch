@@ -48,7 +48,8 @@ public class FsDirectoryFactory implements IndexStorePlugin.DirectoryFactory {
         final Path location = path.resolveIndex();
         final LockFactory lockFactory = indexSettings.getValue(INDEX_LOCK_FACTOR_SETTING);
         Files.createDirectories(location);
-        return newFSDirectory(location, lockFactory, indexSettings);
+        final var dir = newFSDirectory(location, lockFactory, indexSettings);
+        return new NoFsyncDirectory(dir);
     }
 
     protected Directory newFSDirectory(Path location, LockFactory lockFactory, IndexSettings indexSettings) throws IOException {
@@ -207,4 +208,5 @@ public class FsDirectoryFactory implements IndexStorePlugin.DirectoryFactory {
             return delegate;
         }
     }
+
 }

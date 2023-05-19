@@ -286,6 +286,9 @@ public final class IOUtils {
      * @param metaData   if {@code true} both the file's content and metadata will be sync, otherwise only the file's content will be sync
      */
     public static void fsync(final Path fileToSync, final boolean isDir, final boolean metaData) throws IOException {
+        if (LINUX) {
+            return;
+        }
         if (isDir && WINDOWS) {
             // opening a directory on Windows fails, directories can not be fsynced there
             if (Files.exists(fileToSync) == false) {

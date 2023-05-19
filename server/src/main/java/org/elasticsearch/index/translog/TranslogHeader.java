@@ -183,7 +183,7 @@ final class TranslogHeader {
         // Checksum header
         ByteUtils.writeIntBE((int) crc32.getValue(), buffer, offset);
         Channels.writeToChannel(buffer, channel);
-        channel.force(true);
+        //channel.force(true);
         assert channel.position() == headerSizeInBytes
             : "Header is not fully written; header size [" + headerSizeInBytes + "], channel position [" + channel.position() + "]";
     }
