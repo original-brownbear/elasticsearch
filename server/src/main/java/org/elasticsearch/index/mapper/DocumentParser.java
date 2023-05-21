@@ -231,20 +231,19 @@ public final class DocumentParser {
     }
 
     static void parseObjectOrNested(DocumentParserContext context) throws IOException {
+        XContentParser parser = context.parser();
         if (context.parent().isEnabled() == false) {
-            context.parser().skipChildren();
+            parser.skipChildren();
             return;
         }
-        XContentParser parser = context.parser();
         XContentParser.Token token = parser.currentToken();
         if (token == XContentParser.Token.VALUE_NULL) {
             // the object is null ("obj1" : null), simply bail
             return;
         }
 
-        String currentFieldName = parser.currentName();
         if (token.isValue()) {
-            throwOnConcreteValue(context.parent(), currentFieldName, context);
+            throwOnConcreteValue(context);
         }
 
         if (context.parent().isNested()) {
@@ -267,19 +266,18 @@ public final class DocumentParser {
         }
     }
 
-    private static void throwOnConcreteValue(ObjectMapper mapper, String currentFieldName, DocumentParserContext context) {
+    private static void throwOnConcreteValue(DocumentParserContext context) throws IOException {
         throw new DocumentParsingException(
             context.parser().getTokenLocation(),
             "object mapping for ["
-                + mapper.name()
+                + context.parent().name()
                 + "] tried to parse field ["
-                + currentFieldName
+                + context.parser().currentName()
                 + "] as object, but found a concrete value"
         );
     }
 
     private static void innerParseObject(DocumentParserContext context) throws IOException {
-
         final XContentParser parser = context.parser();
         XContentParser.Token token = parser.currentToken();
         String currentFieldName = null;
@@ -287,49 +285,43 @@ public final class DocumentParser {
 
         while (token != XContentParser.Token.END_OBJECT) {
             if (token == null) {
-                throwEOF(context.parent(), context);
+                throwEOF(context);
             }
             switch (token) {
-                case FIELD_NAME:
+                case FIELD_NAME -> {
                     currentFieldName = parser.currentName();
-                    if (currentFieldName.isEmpty()) {
-                        throw new IllegalArgumentException("Field name cannot be an empty string");
-                    }
                     if (currentFieldName.isBlank()) {
                         throwFieldNameBlank(context, currentFieldName);
                     }
-                    break;
-                case START_OBJECT:
-                    parseObject(context, currentFieldName);
-                    break;
-                case START_ARRAY:
-                    parseArray(context, currentFieldName);
-                    break;
-                case VALUE_NULL:
-                    parseNullValue(context, currentFieldName);
-                    break;
-                default:
+                }
+                case START_OBJECT -> parseObject(context, currentFieldName);
+                case START_ARRAY -> parseArray(context, currentFieldName);
+                case VALUE_NULL -> parseNullValue(context, currentFieldName);
+                default -> {
                     if (token.isValue()) {
                         parseValue(context, currentFieldName);
                     }
-                    break;
+                }
             }
             token = parser.nextToken();
         }
     }
 
     private static void throwFieldNameBlank(DocumentParserContext context, String currentFieldName) {
+        if (currentFieldName.isEmpty()) {
+            throw new IllegalArgumentException("Field name cannot be an empty string");
+        }
         throw new DocumentParsingException(
             context.parser().getTokenLocation(),
             "Field name cannot contain only whitespace: [" + context.path().pathAsText(currentFieldName) + "]"
         );
     }
 
-    private static void throwEOF(ObjectMapper mapper, DocumentParserContext context) throws IOException {
+    private static void throwEOF(DocumentParserContext context) throws IOException {
         throw new DocumentParsingException(
             context.parser().getTokenLocation(),
             "object mapping for ["
-                + mapper.name()
+                + context.parent().name()
                 + "] tried to parse field ["
                 + context.parser().currentName()
                 + "] as object, but got EOF, has a concrete value been provided to it?"
@@ -370,38 +362,59 @@ public final class DocumentParser {
 
     static void parseObjectOrField(DocumentParserContext context, Mapper mapper) throws IOException {
         if (mapper instanceof ObjectMapper objectMapper) {
-            context = context.createChildContext(objectMapper);
-            parseObjectOrNested(context);
-        } else if (mapper instanceof FieldMapper fieldMapper) {
-            fieldMapper.parse(context);
-            if (context.isWithinCopyTo() == false) {
-                List<String> copyToFields = fieldMapper.copyTo().copyToFields();
-                if (copyToFields.isEmpty() == false) {
-                    XContentParser.Token currentToken = context.parser().currentToken();
-                    if (currentToken.isValue() == false && currentToken != XContentParser.Token.VALUE_NULL) {
-                        // sanity check, we currently support copy-to only for value-type field, not objects
-                        throwOnCopyToOnObject(mapper, copyToFields, context);
-                    }
-                    parseCopyFields(context, copyToFields);
-                }
-            }
-        } else if (mapper instanceof FieldAliasMapper) {
-            throwOnCopyToOnFieldAlias(context, mapper);
+            parseObjectOrNested(context.createChildContext(objectMapper));
         } else {
-            throwOnUnrecognizedMapperType(mapper);
+            parseField(context, mapper);
         }
     }
 
-    private static void throwOnUnrecognizedMapperType(Mapper mapper) {
-        throw new IllegalStateException(
-            "The provided mapper [" + mapper.name() + "] has an unrecognized type [" + mapper.getClass().getSimpleName() + "]."
-        );
+    private static void parseField(DocumentParserContext context, Mapper mapper) throws IOException {
+        if (mapper instanceof FieldMapper fieldMapper) {
+            doParseField(context, fieldMapper);
+        } else {
+            throwOnUnrecognizedMapperType(context, mapper);
+        }
     }
 
-    private static void throwOnCopyToOnFieldAlias(DocumentParserContext context, Mapper mapper) {
-        throw new DocumentParsingException(
-            context.parser().getTokenLocation(),
-            "Cannot " + (context.isWithinCopyTo() ? "copy" : "write") + " to a field alias [" + mapper.name() + "]."
+    private static void doParseField(DocumentParserContext context, FieldMapper fieldMapper) throws IOException {
+        fieldMapper.parse(context);
+        if (context.isWithinCopyTo() == false && fieldMapper.copyTo().copyToFields().isEmpty() == false) {
+            handleInsideCopyTo(context, fieldMapper);
+        }
+    }
+
+    private static void handleInsideCopyTo(DocumentParserContext context, FieldMapper mapper) throws IOException {
+        XContentParser.Token currentToken = context.parser().currentToken();
+        var copyToFields = mapper.copyTo().copyToFields();
+        if (currentToken.isValue() == false && currentToken != XContentParser.Token.VALUE_NULL) {
+            // sanity check, we currently support copy-to only for value-type field, not objects
+            throwOnCopyToOnObject(mapper, copyToFields, context);
+        }
+        for (String field : copyToFields) {
+            // In case of a hierarchy of nested documents, we need to figure out
+            // which document the field should go to
+            LuceneDocument targetDoc = null;
+            for (LuceneDocument doc = context.doc(); doc != null; doc = doc.getParent()) {
+                if (field.startsWith(doc.getPrefix())) {
+                    targetDoc = doc;
+                    break;
+                }
+            }
+            assert targetDoc != null;
+            final DocumentParserContext copyToContext = context.createCopyToContext(field, targetDoc);
+            innerParseObject(copyToContext);
+        }
+    }
+
+    private static void throwOnUnrecognizedMapperType(DocumentParserContext context, Mapper mapper) {
+        if (mapper instanceof FieldAliasMapper) {
+            throw new DocumentParsingException(
+                context.parser().getTokenLocation(),
+                "Cannot " + (context.isWithinCopyTo() ? "copy" : "write") + " to a field alias [" + mapper.name() + "]."
+            );
+        }
+        throw new IllegalStateException(
+            "The provided mapper [" + mapper.name() + "] has an unrecognized type [" + mapper.getClass().getSimpleName() + "]."
         );
     }
 
@@ -420,18 +433,25 @@ public final class DocumentParser {
         assert currentFieldName != null;
         Mapper objectMapper = context.getMapper(currentFieldName);
         if (objectMapper != null) {
-            context.path().add(currentFieldName);
-            if (objectMapper instanceof ObjectMapper objMapper) {
-                if (objMapper.subobjects() == false) {
-                    context.path().setWithinLeafObject(true);
-                }
-            }
-            parseObjectOrField(context, objectMapper);
-            context.path().setWithinLeafObject(false);
-            context.path().remove();
+            doParseObject(context, currentFieldName, objectMapper);
         } else {
             parseObjectDynamic(context, currentFieldName);
         }
+    }
+
+    private static void doParseObject(DocumentParserContext context, String currentFieldName, Mapper objectMapper) throws IOException {
+        final ContentPath path = context.path();
+        path.add(currentFieldName);
+        if (objectMapper instanceof ObjectMapper objMapper) {
+            if (objMapper.subobjects() == false) {
+                path.setWithinLeafObject(true);
+            }
+            parseObjectOrNested(context.createChildContext(objMapper));
+            path.setWithinLeafObject(false);
+        } else {
+            parseField(context, objectMapper);
+        }
+        path.remove();
     }
 
     private static void parseObjectDynamic(DocumentParserContext context, String currentFieldName) throws IOException {
@@ -476,15 +496,7 @@ public final class DocumentParser {
             if (dynamicObjectMapper instanceof NestedObjectMapper && context.isWithinCopyTo()) {
                 throwOnCreateDynamicNestedViaCopyTo(dynamicObjectMapper, context);
             }
-            context.path().add(currentFieldName);
-            if (dynamicObjectMapper instanceof ObjectMapper objectMapper) {
-                if (objectMapper.subobjects() == false) {
-                    context.path().setWithinLeafObject(true);
-                }
-            }
-            parseObjectOrField(context, dynamicObjectMapper);
-            context.path().setWithinLeafObject(false);
-            context.path().remove();
+            doParseObject(context, currentFieldName, dynamicObjectMapper);
         }
     }
 
@@ -501,8 +513,8 @@ public final class DocumentParser {
             // There is a concrete mapper for this field already. Need to check if the mapper
             // expects an array, if so we pass the context straight to the mapper and if not
             // we serialize the array components
-            if (parsesArrayValue(mapper)) {
-                parseObjectOrField(context, mapper);
+            if (mapper instanceof FieldMapper fieldMapper && fieldMapper.parsesArrayValue()) {
+                doParseField(context, fieldMapper);
             } else {
                 parseNonDynamicArray(context, lastFieldName, lastFieldName);
             }
@@ -516,10 +528,10 @@ public final class DocumentParser {
                 if (objectMapperFromTemplate == null) {
                     parseNonDynamicArray(context, lastFieldName, lastFieldName);
                 } else {
-                    if (parsesArrayValue(objectMapperFromTemplate)) {
-                        context.addDynamicMapper(objectMapperFromTemplate);
+                    if (objectMapperFromTemplate instanceof FieldMapper fieldMapper && fieldMapper.parsesArrayValue()) {
+                        context.addDynamicMapper(fieldMapper);
                         context.path().add(lastFieldName);
-                        parseObjectOrField(context, objectMapperFromTemplate);
+                        doParseField(context, fieldMapper);
                         context.path().remove();
                     } else {
                         parseNonDynamicArray(context, lastFieldName, lastFieldName);
@@ -527,10 +539,6 @@ public final class DocumentParser {
                 }
             }
         }
-    }
-
-    private static boolean parsesArrayValue(Mapper mapper) {
-        return mapper instanceof FieldMapper && ((FieldMapper) mapper).parsesArrayValue();
     }
 
     private static void parseNonDynamicArray(DocumentParserContext context, final String lastFieldName, String arrayFieldName)
@@ -623,26 +631,6 @@ public final class DocumentParser {
         }
     }
 
-    /**
-     * Creates instances of the fields that the current field should be copied to
-     */
-    private static void parseCopyFields(DocumentParserContext context, List<String> copyToFields) throws IOException {
-        for (String field : copyToFields) {
-            // In case of a hierarchy of nested documents, we need to figure out
-            // which document the field should go to
-            LuceneDocument targetDoc = null;
-            for (LuceneDocument doc = context.doc(); doc != null; doc = doc.getParent()) {
-                if (field.startsWith(doc.getPrefix())) {
-                    targetDoc = doc;
-                    break;
-                }
-            }
-            assert targetDoc != null;
-            final DocumentParserContext copyToContext = context.createCopyToContext(field, targetDoc);
-            innerParseObject(copyToContext);
-        }
-    }
-
     // looks up a child mapper
     // if no mapper is found, checks to see if a runtime field with the specified
     // field name exists and if so returns a no-op mapper to prevent indexing
@@ -651,6 +639,10 @@ public final class DocumentParser {
         if (mapper != null) {
             return mapper;
         }
+        return fallbackLeafMapper(context, fieldName);
+    }
+
+    private static FieldMapper fallbackLeafMapper(DocumentParserContext context, String fieldName) {
         // concrete fields take precedence over runtime fields when parsing documents
         // if a leaf field is not mapped, and is defined as a runtime field, then we
         // don't create a dynamic mapping for it and don't index it.
