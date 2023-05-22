@@ -126,7 +126,9 @@ public final class DocumentParser {
                 parseObjectOrNested(context);
             }
 
-            executeIndexTimeScripts(context);
+            if (context.mappingLookup().indexTimeScriptMappers().isEmpty() == false) {
+                doExecuteIndexTimeScripts(context);
+            }
 
             for (MetadataFieldMapper metadataMapper : metadataFieldsMappers) {
                 metadataMapper.postParse(context);
@@ -136,11 +138,7 @@ public final class DocumentParser {
         }
     }
 
-    private static void executeIndexTimeScripts(DocumentParserContext context) {
-        List<FieldMapper> indexTimeScriptMappers = context.mappingLookup().indexTimeScriptMappers();
-        if (indexTimeScriptMappers.isEmpty()) {
-            return;
-        }
+    private static void doExecuteIndexTimeScripts(DocumentParserContext context) {
         SearchLookup searchLookup = new SearchLookup(
             context.mappingLookup().indexTimeLookup()::get,
             (ft, lookup, fto) -> ft.fielddataBuilder(
@@ -152,7 +150,7 @@ public final class DocumentParser {
         // the document reader, so to ensure that we don't run them multiple times we
         // guard them with an 'executed' boolean
         Map<String, Consumer<LeafReaderContext>> fieldScripts = new HashMap<>();
-        indexTimeScriptMappers.forEach(mapper -> fieldScripts.put(mapper.name(), new Consumer<>() {
+        context.mappingLookup().indexTimeScriptMappers().forEach(mapper -> fieldScripts.put(mapper.name(), new Consumer<>() {
             boolean executed = false;
 
             @Override
