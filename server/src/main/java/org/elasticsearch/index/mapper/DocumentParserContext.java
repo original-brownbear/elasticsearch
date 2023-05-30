@@ -535,10 +535,10 @@ public abstract class DocumentParserContext {
         }
 
         @Override
-        public Token nextToken() throws IOException {
+        public Token nextToken() {
             if (state == State.FIELD) {
                 state = State.VALUE;
-                return delegate().currentToken();
+                return delegate.currentToken();
             }
             return Token.END_OBJECT;
         }
@@ -548,11 +548,11 @@ public abstract class DocumentParserContext {
             if (state == State.FIELD) {
                 return Token.FIELD_NAME;
             }
-            return delegate().currentToken();
+            return delegate.currentToken();
         }
 
         @Override
-        public String currentName() throws IOException {
+        public String currentName() {
             return field;
         }
     }
