@@ -89,6 +89,6 @@ public class TransportMultiSearchTemplateAction extends HandledTransportAction<M
                 }
             }
             listener.onResponse(new MultiSearchTemplateResponse(items, r.getTook().millis()));
-        }, listener::onFailure));
+        }, listener));
     }
 }

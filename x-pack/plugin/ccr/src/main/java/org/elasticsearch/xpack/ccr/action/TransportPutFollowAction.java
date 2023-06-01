@@ -297,7 +297,7 @@ public final class TransportPutFollowAction extends TransportMasterNodeAction<Pu
                     request.timeout(),
                     listener.map(result -> new PutFollowAction.Response(true, result, r.isAcknowledged()))
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

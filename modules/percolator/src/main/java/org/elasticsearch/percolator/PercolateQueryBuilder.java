@@ -444,24 +444,18 @@ public class PercolateQueryBuilder extends AbstractQueryBuilder<PercolateQueryBu
             getRequest.version(indexedDocumentVersion);
         }
         SetOnce<BytesReference> docSupplier = new SetOnce<>();
-        queryRewriteContext.registerAsyncAction((client, listener) -> {
-            client.get(getRequest, ActionListener.wrap(getResponse -> {
-                if (getResponse.isExists() == false) {
-                    throw new ResourceNotFoundException(
-                        "indexed document [{}/{}] couldn't be found",
-                        indexedDocumentIndex,
-                        indexedDocumentId
-                    );
-                }
-                if (getResponse.isSourceEmpty()) {
-                    throw new IllegalArgumentException(
-                        "indexed document [" + indexedDocumentIndex + "/" + indexedDocumentId + "] source disabled"
-                    );
-                }
-                docSupplier.set(getResponse.getSourceAsBytesRef());
-                listener.onResponse(null);
-            }, listener::onFailure));
-        });
+        queryRewriteContext.registerAsyncAction((client, listener) -> client.get(getRequest, ActionListener.wrap(getResponse -> {
+            if (getResponse.isExists() == false) {
+                throw new ResourceNotFoundException("indexed document [{}/{}] couldn't be found", indexedDocumentIndex, indexedDocumentId);
+            }
+            if (getResponse.isSourceEmpty()) {
+                throw new IllegalArgumentException(
+                    "indexed document [" + indexedDocumentIndex + "/" + indexedDocumentId + "] source disabled"
+                );
+            }
+            docSupplier.set(getResponse.getSourceAsBytesRef());
+            listener.onResponse(null);
+        }, listener)));
 
         PercolateQueryBuilder rewritten = new PercolateQueryBuilder(field, docSupplier::get);
         if (name != null) {

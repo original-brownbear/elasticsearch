@@ -442,7 +442,7 @@ public class CacheFile {
             assert read == rangeToRead.length()
                 : "partial read [" + read + "] does not match the range to read [" + rangeToRead.end() + '-' + rangeToRead.start() + ']';
             future.onResponse(read);
-        }, future::onFailure), releasable::close);
+        }, future), releasable::close);
     }
 
     /**

@@ -96,7 +96,7 @@ public abstract class AbstractTransportSetResetModeAction extends AcknowledgedTr
                 return;
             }
             wrappedListener.onResponse(acknowledgedResponse);
-        }, wrappedListener::onFailure);
+        }, wrappedListener);
 
         submitUnbatchedTask(featureName() + "-set-reset-mode", new AckedClusterStateUpdateTask(request, clusterStateUpdateListener) {
 

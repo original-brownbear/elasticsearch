@@ -211,7 +211,7 @@ public class SamlServiceProviderIndex implements Closeable {
         client.admin().indices().putTemplate(request, ActionListener.wrap(response -> {
             logger.info("Installed template [{}]", TEMPLATE_NAME);
             listener.onResponse(true);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private boolean isTemplateUpToDate(ClusterState state) {
@@ -226,7 +226,7 @@ public class SamlServiceProviderIndex implements Closeable {
         client.delete(request, ActionListener.wrap(response -> {
             logger.debug("Deleted service provider document [{}] ({})", version.id, response.getResult());
             listener.onResponse(response);
-        }, listener::onFailure));
+        }, listener));
     }
 
     public void writeDocument(
@@ -244,9 +244,7 @@ public class SamlServiceProviderIndex implements Closeable {
         if (templateInstalled) {
             _writeDocument(document, opType, refreshPolicy, listener);
         } else {
-            installIndexTemplate(
-                ActionListener.wrap(installed -> _writeDocument(document, opType, refreshPolicy, listener), listener::onFailure)
-            );
+            installIndexTemplate(ActionListener.wrap(installed -> _writeDocument(document, opType, refreshPolicy, listener), listener));
         }
     }
 
@@ -277,7 +275,7 @@ public class SamlServiceProviderIndex implements Closeable {
                     response.getResult()
                 );
                 listener.onResponse(response);
-            }, listener::onFailure));
+            }, listener));
         } catch (IOException e) {
             listener.onFailure(e);
         }

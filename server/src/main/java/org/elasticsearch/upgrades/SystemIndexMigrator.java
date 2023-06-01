@@ -456,7 +456,7 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
                                 false,
                                 ActionListener.wrap(
                                     setAliasAndRemoveOldIndex(migrationInfo, bulkByScrollResponse, innerListener),
-                                    innerListener::onFailure
+                                    innerListener
                                 )
                             );
                         }
@@ -471,9 +471,9 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
                             e
                         );
                         removeReadOnlyBlockOnReindexFailure(oldIndex, innerListener, e);
-                    })), innerListener::onFailure)
+                    })), innerListener)
                 );
-            }, innerListener::onFailure));
+            }, innerListener));
         } catch (Exception ex) {
             logger.error(
                 () -> format(
@@ -535,7 +535,7 @@ public class SystemIndexMigrator extends AllocatedPersistentTask {
         // Technically this callback might have a different cluster state, but it shouldn't matter - these indices shouldn't be changing
         // while we're trying to migrate them.
         return unsetReadOnlyResponse -> aliasesRequest.execute(
-            ActionListener.wrap(deleteIndexResponse -> listener.onResponse(bulkByScrollResponse), listener::onFailure)
+            ActionListener.wrap(deleteIndexResponse -> listener.onResponse(bulkByScrollResponse), listener)
         );
     }
 

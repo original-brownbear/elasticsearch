@@ -60,7 +60,7 @@ public class AnalyticsUsageTransportAction extends XPackUsageFeatureTransportAct
             statsRequest,
             ActionListener.wrap(
                 r -> listener.onResponse(new XPackUsageFeatureResponse(new AnalyticsFeatureSetUsage(true, true, r))),
-                listener::onFailure
+                listener
             )
         );
     }

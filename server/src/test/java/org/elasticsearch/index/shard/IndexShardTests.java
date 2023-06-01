@@ -2865,7 +2865,7 @@ public class IndexShardTests extends IndexShardTestCase {
                     ActionListener.wrap(r -> {
                         assertFalse(replica.isSyncNeeded());
                         listener.onResponse(r);
-                    }, listener::onFailure)
+                    }, listener)
                 );
             }
         }, true, true);
@@ -2990,7 +2990,7 @@ public class IndexShardTests extends IndexShardTestCase {
                         listener.onResponse(checkpoint);
                         // Shard should now be active since we did recover:
                         assertTrue(replica.isActive());
-                    }, listener::onFailure)
+                    }, listener)
                 );
             }
         }, false, true);
@@ -3028,7 +3028,7 @@ public class IndexShardTests extends IndexShardTestCase {
                 super.prepareForTranslogOperations(totalTranslogOps, ActionListener.wrap(r -> {
                     assertListenerCalled.accept(replica);
                     listener.onResponse(r);
-                }, listener::onFailure));
+                }, listener));
             }
 
             @Override
@@ -3051,7 +3051,7 @@ public class IndexShardTests extends IndexShardTestCase {
                     ActionListener.wrap(r -> {
                         assertListenerCalled.accept(replica);
                         listener.onResponse(r);
-                    }, listener::onFailure)
+                    }, listener)
                 );
             }
 
@@ -3060,7 +3060,7 @@ public class IndexShardTests extends IndexShardTestCase {
                 super.finalizeRecovery(globalCheckpoint, trimAboveSeqNo, ActionListener.wrap(r -> {
                     assertListenerCalled.accept(replica);
                     listener.onResponse(r);
-                }, listener::onFailure));
+                }, listener));
             }
         }, false, true);
 

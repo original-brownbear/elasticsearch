@@ -191,7 +191,7 @@ public class ElasticsearchMappings {
                                     )
                                 );
                             }
-                        }, listener::onFailure)
+                        }, listener)
                     );
                 } else {
                     logger.trace("Mappings are up to date.");

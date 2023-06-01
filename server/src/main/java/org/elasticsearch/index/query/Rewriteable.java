@@ -103,7 +103,7 @@ public interface Rewriteable<T> {
                     context.executeAsyncActions(
                         ActionListener.wrap(
                             n -> rewriteAndFetch(finalBuilder, context, rewriteResponse, currentIterationNumber),
-                            rewriteResponse::onFailure
+                            rewriteResponse
                         )
                     );
                     return;

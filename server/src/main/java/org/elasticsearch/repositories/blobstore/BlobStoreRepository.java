@@ -1147,7 +1147,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                 deleteResult = deleteResult.add(result);
             }
             listener.onResponse(deleteResult);
-        }, listener::onFailure));
+        }, listener));
 
         final Executor executor = threadPool.executor(ThreadPool.Names.SNAPSHOT);
         final List<String> staleRootBlobs = staleRootBlobs(newRepoData, rootBlobs.keySet());
@@ -1213,7 +1213,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                             repositoryData,
                             listener.map(RepositoryCleanupResult::new)
                         ),
-                        listener::onFailure
+                        listener
                     )
                 );
             }
@@ -1976,7 +1976,7 @@ public abstract class BlobStoreRepository extends AbstractLifecycleComponent imp
                     markRepoCorrupted(
                         genToLoad,
                         e,
-                        ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e, finalLastInfo)), listener::onFailure)
+                        ActionListener.wrap(v -> listener.onFailure(corruptedStateException(e, finalLastInfo)), listener)
                     );
                 } else {
                     listener.onFailure(e);

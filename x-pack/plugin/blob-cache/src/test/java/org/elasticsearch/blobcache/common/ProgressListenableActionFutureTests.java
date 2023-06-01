@@ -93,7 +93,7 @@ public class ProgressListenableActionFutureTests extends ESTestCase {
                     while (future.isDone() == false) {
                         final long expectedProgress = randomLongBetween(future.start, future.end);
                         final PlainActionFuture<Long> listener = new PlainActionFuture<>();
-                        future.addListener(ActionListener.wrap(listener::onResponse, listener::onFailure), expectedProgress);
+                        future.addListener(ActionListener.wrap(listener::onResponse, listener), expectedProgress);
                         assertThat(listener.get(), greaterThanOrEqualTo(expectedProgress));
                     }
                 } catch (Throwable t) {
@@ -147,7 +147,7 @@ public class ProgressListenableActionFutureTests extends ESTestCase {
         final Set<PlainActionFuture<Long>> completedListeners = new HashSet<>();
         for (long i = 0L; i < between(1, 10); i++) {
             final PlainActionFuture<Long> listener = new PlainActionFuture<>();
-            future.addListener(ActionListener.wrap(listener::onResponse, listener::onFailure), randomLongBetween(future.start, limit));
+            future.addListener(ActionListener.wrap(listener::onResponse, listener), randomLongBetween(future.start, limit));
             completedListeners.add(listener);
         }
 
@@ -155,10 +155,7 @@ public class ProgressListenableActionFutureTests extends ESTestCase {
         if (limit < future.end) {
             for (long i = 0L; i < between(1, 10); i++) {
                 final PlainActionFuture<Long> listener = new PlainActionFuture<>();
-                future.addListener(
-                    ActionListener.wrap(listener::onResponse, listener::onFailure),
-                    randomLongBetween(limit + 1L, future.end)
-                );
+                future.addListener(ActionListener.wrap(listener::onResponse, listener), randomLongBetween(limit + 1L, future.end));
                 failedListeners.add(listener);
             }
         }

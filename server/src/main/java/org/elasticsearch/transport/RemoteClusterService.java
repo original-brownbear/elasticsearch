@@ -263,7 +263,7 @@ public final class RemoteClusterService extends RemoteClusterAware implements Cl
                 }
                 throw e;
             }
-        }), listener::onFailure);
+        }), listener);
         if (ensureConnected) {
             ensureConnected(clusterAlias, ensureConnectedListener);
         } else {

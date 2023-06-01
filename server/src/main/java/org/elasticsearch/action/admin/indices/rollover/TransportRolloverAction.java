@@ -182,7 +182,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                     // conditions not met
                     listener.onResponse(trialRolloverResponse);
                 }
-            }, listener::onFailure)
+            }, listener)
         );
     }
 

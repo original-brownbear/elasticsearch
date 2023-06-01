@@ -103,7 +103,7 @@ public class RemoteConnectionManager implements ConnectionManager {
                         profile != null ? profile.getTransportProfile() : getConnectionProfile().getTransportProfile()
                     )
                 ),
-                listener::onFailure
+                listener
             )
         );
     }

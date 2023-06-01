@@ -157,7 +157,7 @@ public class TransportGetTaskAction extends HandledTransportAction<GetTaskReques
                             runningTask.taskInfo(clusterService.localNode().getId(), true),
                             listener
                         ),
-                        listener::onFailure
+                        listener
                     ),
                     () -> taskManager.unregisterRemovedTaskListener(removedTaskListener)
                 );

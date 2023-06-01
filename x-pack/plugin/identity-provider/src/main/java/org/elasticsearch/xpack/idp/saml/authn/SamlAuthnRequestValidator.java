@@ -287,7 +287,7 @@ public class SamlAuthnRequestValidator {
                 );
             }
             listener.onResponse(serviceProvider);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void checkDestination(AuthnRequest request) {

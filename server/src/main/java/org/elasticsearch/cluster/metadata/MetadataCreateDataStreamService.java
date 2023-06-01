@@ -80,7 +80,7 @@ public class MetadataCreateDataStreamService {
             } else {
                 finalListener.onResponse(AcknowledgedResponse.FALSE);
             }
-        }, finalListener::onFailure);
+        }, finalListener);
         var delegate = new AllocationActionListener<>(listener, threadPool.getThreadContext());
         submitUnbatchedTask(
             "create-data-stream [" + request.name + "]",

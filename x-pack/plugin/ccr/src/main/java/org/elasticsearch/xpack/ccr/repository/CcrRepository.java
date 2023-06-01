@@ -422,7 +422,7 @@ public class CcrRepository extends AbstractLifecycleComponent implements Reposit
                 logger.trace("[{}] completed CCR restore", shardId);
                 updateMappings(remoteClient, leaderIndex, restoreSession.mappingVersion, client, shardId.getIndex());
                 restoreListener.onResponse(null);
-            }, restoreListener::onFailure));
+            }, restoreListener));
         } catch (Exception e) {
             restoreListener.onFailure(e);
         }

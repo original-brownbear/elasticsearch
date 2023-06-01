@@ -186,7 +186,7 @@ public class TumblingWindow implements Executable {
         log.trace("{}", matcher);
         log.trace("Querying base stage [{}] {}", stage, base.queryRequest());
 
-        client.query(base.queryRequest(), wrap(p -> baseCriterion(stage, p, listener), listener::onFailure));
+        client.query(base.queryRequest(), wrap(p -> baseCriterion(stage, p, listener), listener));
     }
 
     /**
@@ -370,7 +370,7 @@ public class TumblingWindow implements Executable {
                 next.run();
             }
 
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void secondaryCriterion(WindowInfo window, int currentStage, ActionListener<Payload> listener) {
@@ -445,7 +445,7 @@ public class TumblingWindow implements Executable {
                     tumbleWindow(window.baseStage, listener);
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     /**

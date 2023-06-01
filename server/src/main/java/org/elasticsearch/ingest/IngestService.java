@@ -428,7 +428,7 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
                 new PutPipelineClusterStateUpdateTask(listener, request),
                 request.masterNodeTimeout()
             );
-        }, listener::onFailure));
+        }, listener));
     }
 
     public void validatePipelineRequest(PutPipelineRequest request, NodesInfoResponse nodeInfos) throws Exception {

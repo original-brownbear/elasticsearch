@@ -141,7 +141,7 @@ public class SwapAliasesAndDeleteSourceIndexStep extends AsyncActionStep {
                 logger.warn("aliases swap from [{}] to [{}] response was not acknowledged", sourceIndexName, targetIndex);
             }
             listener.onResponse(null);
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

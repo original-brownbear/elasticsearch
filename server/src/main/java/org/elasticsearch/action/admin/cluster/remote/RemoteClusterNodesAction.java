@@ -111,7 +111,7 @@ public class RemoteClusterNodesAction extends ActionType<RemoteClusterNodesActio
                             return nodeInfo.getNode().withTransportAddress(remoteClusterServerInfo.getAddress().publishAddress());
                         }).filter(Objects::nonNull).toList();
                         listener.onResponse(new Response(remoteClusterNodes));
-                    }, listener::onFailure), NodesInfoResponse::new)
+                    }, listener), NodesInfoResponse::new)
                 );
             }
         }

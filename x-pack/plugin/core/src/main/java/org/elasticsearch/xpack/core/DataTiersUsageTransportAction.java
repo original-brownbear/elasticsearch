@@ -94,7 +94,7 @@ public class DataTiersUsageTransportAction extends XPackUsageFeatureTransportAct
                 );
 
                 listener.onResponse(new XPackUsageFeatureResponse(new DataTiersFeatureSetUsage(tierSpecificStats)));
-            }, listener::onFailure));
+            }, listener));
     }
 
     // Visible for testing

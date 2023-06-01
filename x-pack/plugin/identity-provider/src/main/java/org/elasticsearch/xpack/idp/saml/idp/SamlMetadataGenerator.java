@@ -61,7 +61,7 @@ public class SamlMetadataGenerator {
                 logger.debug("Error generating IDP metadata to share with [" + spEntityId + "]", e);
                 listener.onFailure(e);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     EntityDescriptor buildEntityDescriptor(SamlServiceProvider sp) throws Exception {

@@ -158,7 +158,7 @@ public class TransportVerifyShardBeforeCloseActionTests extends ESTestCase {
         action.shardOperationOnPrimary(request, indexShard, ActionListener.wrap(r -> {
             assertNotNull(r);
             res.onResponse(null);
-        }, res::onFailure));
+        }, res));
         try {
             res.get();
         } catch (InterruptedException e) {

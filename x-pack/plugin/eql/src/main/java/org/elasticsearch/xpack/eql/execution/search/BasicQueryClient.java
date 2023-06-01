@@ -177,7 +177,7 @@ public class BasicQueryClient implements QueryClient {
                 }
             }
             listener.onResponse(seq);
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

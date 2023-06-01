@@ -96,7 +96,7 @@ public class MetadataMigrateToDataStreamService {
             } else {
                 finalListener.onResponse(AcknowledgedResponse.FALSE);
             }
-        }, finalListener::onFailure);
+        }, finalListener);
         var delegate = new AllocationActionListener<>(listener, threadContext);
         submitUnbatchedTask(
             "migrate-to-data-stream [" + request.aliasName + "]",

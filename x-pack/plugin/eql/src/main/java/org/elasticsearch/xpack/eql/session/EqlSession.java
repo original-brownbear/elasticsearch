@@ -83,7 +83,7 @@ public class EqlSession {
     }
 
     public void eql(String eql, ParserParams params, ActionListener<Results> listener) {
-        eqlExecutable(eql, params, wrap(e -> e.execute(this, map(listener, Results::fromPayload)), listener::onFailure));
+        eqlExecutable(eql, params, wrap(e -> e.execute(this, map(listener, Results::fromPayload)), listener));
     }
 
     public void eqlExecutable(String eql, ParserParams params, ActionListener<PhysicalPlan> listener) {

@@ -277,6 +277,6 @@ public class TransportMountSearchableSnapshotAction extends TransportMasterNodeA
                         .quiet(true),
                     listener
                 );
-        }, listener::onFailure), threadPool.executor(ThreadPool.Names.SNAPSHOT_META), null);
+        }, listener), threadPool.executor(ThreadPool.Names.SNAPSHOT_META), null);
     }
 }

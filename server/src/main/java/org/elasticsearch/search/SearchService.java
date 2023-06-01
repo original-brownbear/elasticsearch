@@ -1632,7 +1632,7 @@ public class SearchService extends AbstractLifecycleComponent implements IndexEv
                 // now we need to check if there is a pending refresh and register
                 shard.awaitShardSearchActive(b -> listener.onResponse(request));
             }
-        }, listener::onFailure);
+        }, listener);
         // we also do rewrite on the coordinating node (TransportSearchService) but we also need to do it here for BWC as well as
         // AliasFilters that might need to be rewritten. These are edge-cases but we are every efficient doing the rewrite here so it's not
         // adding a lot of overhead

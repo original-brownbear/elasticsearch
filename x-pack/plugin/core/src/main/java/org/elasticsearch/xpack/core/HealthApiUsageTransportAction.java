@@ -69,7 +69,7 @@ public class HealthApiUsageTransportAction extends XPackUsageFeatureTransportAct
             client.execute(HealthApiStatsAction.INSTANCE, statsRequest, ActionListener.wrap(r -> {
                 HealthApiFeatureSetUsage usage = new HealthApiFeatureSetUsage(true, true, r.getStats());
                 preservingListener.onResponse(new XPackUsageFeatureResponse(usage));
-            }, preservingListener::onFailure));
+            }, preservingListener));
         } else {
             HealthApiFeatureSetUsage usage = new HealthApiFeatureSetUsage(false, true, null);
             preservingListener.onResponse(new XPackUsageFeatureResponse(usage));

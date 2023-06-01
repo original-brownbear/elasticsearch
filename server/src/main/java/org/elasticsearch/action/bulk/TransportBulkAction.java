@@ -185,7 +185,7 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
             } else {
                 listener.onFailure(bulkItemResponse.getFailure().getCause());
             }
-        }, listener::onFailure);
+        }, listener);
     }
 
     @Override

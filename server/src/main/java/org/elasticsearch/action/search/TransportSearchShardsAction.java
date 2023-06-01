@@ -137,7 +137,7 @@ public class TransportSearchShardsAction extends HandledTransportAction<SearchSh
                     );
                     canMatchPhase.start();
                 }
-            }, listener::onFailure)
+            }, listener)
         );
     }
 

@@ -154,7 +154,7 @@ public class TransportSnapshotsStatusAction extends TransportMasterNodeAction<Sn
                             cancellableTask,
                             listener
                         ),
-                        listener::onFailure
+                        listener
                     )
                 )
             );

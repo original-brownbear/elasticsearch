@@ -174,6 +174,25 @@ public interface ActionListener<Response> {
     }
 
     /**
+     * Creates a listener that executes the appropriate consumer when the response (or failure) is received. This listener is "wrapped" in
+     * the sense that an exception from the {@code onResponse} consumer is passed into the {@link ActionListener#onFailure(Exception)}
+     * handler of the {@code failureHandler}.
+     *
+     * @param onResponse the checked consumer of the response, executed when the listener is completed successfully. If it throws an
+     *                   exception, the exception is passed to the {@code onFailure} consumer.
+     * @param failureHandler listener of the failure, executed when the listener is completed with an exception (or it is completed
+     *                   successfully but the {@code onResponse} consumer threw an exception).
+     * @param <Response> the type of the response
+     * @return a listener that executes the appropriate consumer when the response (or failure) is received.
+     */
+    static <Response> ActionListener<Response> wrap(
+        CheckedConsumer<Response, ? extends Exception> onResponse,
+        ActionListener<?> failureHandler
+    ) {
+        return wrap(onResponse, failureHandler::onFailure);
+    }
+
+    /**
      * Adds a wrapper around a listener which catches exceptions thrown by its {@link #onResponse} method and feeds them to its
      * {@link #onFailure} method.
      */

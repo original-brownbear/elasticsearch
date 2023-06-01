@@ -948,7 +948,7 @@ public class SystemIndices {
                         errors.forEach(e -> logger.warn(() -> "error while resetting feature [" + name + "]", e.getException()));
                         listener.onResponse(ResetFeatureStateStatus.failure(name, new Exception(exceptions.toString())));
                     }
-                }, listener::onFailure)
+                }, listener)
             );
 
             // Send cleanup for the associated indices, they don't need special origin since they are not protected

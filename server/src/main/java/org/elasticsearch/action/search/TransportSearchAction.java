@@ -394,11 +394,11 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                                 searchContext,
                                 searchPhaseProvider.apply(listener)
                             );
-                        }, listener::onFailure)
+                        }, listener)
                     );
                 }
             }
-        }, listener::onFailure);
+        }, listener);
         Rewriteable.rewriteAndFetch(original, searchService.getRewriteContext(timeProvider::absoluteStartMillis), rewriteListener);
     }
 
@@ -675,7 +675,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                             )
                         );
                     }
-                }, singleListener::onFailure)
+                }, singleListener)
             );
         }
     }
@@ -1103,7 +1103,7 @@ public class TransportSearchAction extends HandledTransportAction<SearchRequest,
                             clusters
                         );
                         action.start();
-                    }, listener::onFailure)
+                    }, listener)
                 );
             } else {
                 final QueryPhaseResultConsumer queryResultConsumer = searchPhaseController.newSearchPhaseResults(

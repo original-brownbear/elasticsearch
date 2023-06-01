@@ -166,7 +166,7 @@ public class SampleIterator implements Executable {
                     payload(listener);
                 }
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     protected void pushToStack(Page nextPage) {
@@ -245,7 +245,7 @@ public class SampleIterator implements Executable {
             var next = page.size == fetchSize ? page : stack.pop();
             log.trace("Final step... getting next page of the " + (next == page ? "current" : "previous") + " page");
             nextPage(listener, next);
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void updateMemoryUsage() {

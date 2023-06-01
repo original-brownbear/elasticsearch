@@ -134,7 +134,7 @@ public class PITAwareQueryClient extends BasicQueryClient {
         client.execute(OpenPointInTimeAction.INSTANCE, request, wrap(r -> {
             pitId = r.getPointInTimeId();
             runnable.run();
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

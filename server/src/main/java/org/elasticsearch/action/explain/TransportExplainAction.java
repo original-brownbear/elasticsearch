@@ -77,7 +77,7 @@ public class TransportExplainAction extends TransportSingleShardAction<ExplainRe
         ActionListener<QueryBuilder> rewriteListener = ActionListener.wrap(rewrittenQuery -> {
             request.query(rewrittenQuery);
             super.doExecute(task, request, listener);
-        }, listener::onFailure);
+        }, listener);
 
         assert request.query() != null;
         LongSupplier timeProvider = () -> request.nowInMillis;

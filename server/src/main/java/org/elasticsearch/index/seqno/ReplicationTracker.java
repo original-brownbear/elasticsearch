@@ -1490,7 +1490,7 @@ public class ReplicationTracker extends AbstractIndexShardComponent implements L
                 ActionListener.wrap(vs -> {
                     setHasAllPeerRecoveryRetentionLeases();
                     listener.onResponse(null);
-                }, listener::onFailure)
+                }, listener)
             );
             for (ShardRouting shardRouting : shardRoutings) {
                 if (retentionLeases.contains(getPeerRecoveryRetentionLeaseId(shardRouting))) {

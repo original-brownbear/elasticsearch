@@ -77,9 +77,9 @@ public class AnnotationIndex {
                 ML_ORIGIN,
                 ClusterHealthAction.INSTANCE,
                 request,
-                ActionListener.wrap(r -> finalListener.onResponse(r.isTimedOut() == false), finalListener::onFailure)
+                ActionListener.wrap(r -> finalListener.onResponse(r.isTimedOut() == false), finalListener)
             );
-        }, finalListener::onFailure);
+        }, finalListener);
 
         createAnnotationsIndexIfNecessary(client, state, masterNodeTimeout, annotationsIndexCreatedListener);
     }
@@ -104,7 +104,7 @@ public class AnnotationIndex {
                 masterNodeTimeout,
                 finalListener
             ),
-            finalListener::onFailure
+            finalListener
         );
 
         final ActionListener<String> createAliasListener = ActionListener.wrap(currentIndexName -> {
@@ -128,13 +128,10 @@ public class AnnotationIndex {
                 client.threadPool().getThreadContext(),
                 ML_ORIGIN,
                 requestBuilder.request(),
-                ActionListener.<AcknowledgedResponse>wrap(
-                    r -> checkMappingsListener.onResponse(r.isAcknowledged()),
-                    finalListener::onFailure
-                ),
+                ActionListener.<AcknowledgedResponse>wrap(r -> checkMappingsListener.onResponse(r.isAcknowledged()), finalListener),
                 client.admin().indices()::aliases
             );
-        }, finalListener::onFailure);
+        }, finalListener);
 
         // Only create the index or aliases if some other ML index exists - saves clutter if ML is never used.
         // Also, don't do this if there's a reset in progress or if ML upgrade mode is enabled.

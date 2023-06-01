@@ -823,7 +823,7 @@ public class SharedBlobCacheService<KeyType> implements Releasable {
                         + ']';
                 readCount.increment();
                 listener.onResponse(read);
-            }, listener::onFailure);
+            }, listener);
         }
 
         private static void releaseAndFail(ActionListener<Integer> listener, Releasable decrementRef, Exception e) {

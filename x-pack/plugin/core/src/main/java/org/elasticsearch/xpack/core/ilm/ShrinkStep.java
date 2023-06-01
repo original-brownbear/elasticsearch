@@ -100,7 +100,7 @@ public class ShrinkStep extends AsyncActionStep {
             // eventual retry will not be able to succeed anymore (shrunk index was created already)
             // The next step in the ShrinkAction will wait for the shrunk index to be created and for the shards to be allocated.
             listener.onResponse(null);
-        }, listener::onFailure));
+        }, listener));
 
     }
 

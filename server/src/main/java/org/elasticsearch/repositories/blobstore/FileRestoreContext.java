@@ -167,7 +167,7 @@ public abstract class FileRestoreContext {
                     } finally {
                         store.decRef();
                     }
-                }, listener::onFailure));
+                }, listener));
             } catch (IOException ex) {
                 throw new IndexShardRestoreFailedException(shardId, "Failed to recover index", ex);
             }

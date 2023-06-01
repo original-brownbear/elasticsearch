@@ -68,7 +68,7 @@ final class RemoteClusterAwareClient extends AbstractClient {
                 TransportRequestOptions.EMPTY,
                 new ActionListenerResponseHandler<>(listener, action.getResponseReader())
             );
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void maybeEnsureConnected(ActionListener<Void> ensureConnectedListener) {

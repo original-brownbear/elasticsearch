@@ -479,7 +479,7 @@ public abstract class AbstractGeometryQueryBuilder<QB extends AbstractGeometryQu
                 fetch(client, getRequest, indexedShapePath, ActionListener.wrap(builder -> {
                     supplier.set(builder);
                     listener.onResponse(null);
-                }, listener::onFailure));
+                }, listener));
             });
             return newShapeQueryBuilder(this.fieldName, supplier::get, this.indexedShapeId).relation(relation);
         }

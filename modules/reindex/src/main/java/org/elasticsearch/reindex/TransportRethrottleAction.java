@@ -104,7 +104,7 @@ public class TransportRethrottleAction extends TransportTasksAction<BulkByScroll
             client.execute(RethrottleAction.INSTANCE, subRequest, ActionListener.wrap(r -> {
                 r.rethrowFailures("Rethrottle");
                 listener.onResponse(task.taskInfoGivenSubtaskInfo(localNodeId, r.getTasks()));
-            }, listener::onFailure));
+            }, listener));
         } else {
             logger.debug("children of task [{}] are already finished, nothing to rethrottle", task.getId());
             listener.onResponse(task.taskInfo(localNodeId, true));

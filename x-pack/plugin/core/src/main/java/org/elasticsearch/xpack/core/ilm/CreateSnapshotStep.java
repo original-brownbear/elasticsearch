@@ -133,7 +133,7 @@ public class CreateSnapshotStep extends AsyncRetryDuringSnapshotActionStep {
                 logger.warn(message);
                 listener.onResponse(false);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

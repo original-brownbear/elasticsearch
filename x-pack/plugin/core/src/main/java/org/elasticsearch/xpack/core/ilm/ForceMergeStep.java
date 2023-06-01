@@ -79,7 +79,7 @@ public class ForceMergeStep extends AsyncActionStep {
                 // let's report it as a failure and retry
                 listener.onFailure(new ElasticsearchException(errorMessage));
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     @Override

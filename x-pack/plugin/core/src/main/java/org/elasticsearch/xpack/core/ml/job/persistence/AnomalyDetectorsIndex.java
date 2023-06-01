@@ -110,9 +110,9 @@ public final class AnomalyDetectorsIndex {
                 ML_ORIGIN,
                 ClusterHealthAction.INSTANCE,
                 request,
-                ActionListener.wrap(r -> finalListener.onResponse(r.isTimedOut() == false), finalListener::onFailure)
+                ActionListener.wrap(r -> finalListener.onResponse(r.isTimedOut() == false), finalListener)
             );
-        }, finalListener::onFailure);
+        }, finalListener);
 
         MlIndexAndAlias.createIndexAndAliasIfNecessary(
             client,

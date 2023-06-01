@@ -142,6 +142,6 @@ public class ApplicationActionsResolver extends AbstractLifecycleComponent {
                 .collect(Collectors.toUnmodifiableSet());
             cache.put(applicationName, fixedActions);
             listener.onResponse(fixedActions);
-        }, listener::onFailure));
+        }, listener));
     }
 }

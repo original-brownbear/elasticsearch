@@ -283,7 +283,7 @@ public class MetadataCreateIndexService {
                 logger.trace("index creation not acknowledged for [{}]", request);
                 listener.onResponse(ShardsAcknowledgedResponse.NOT_ACKNOWLEDGED);
             }
-        }, listener::onFailure));
+        }, listener));
     }
 
     private void onlyCreateIndex(final CreateIndexClusterStateUpdateRequest request, final ActionListener<AcknowledgedResponse> listener) {

@@ -181,7 +181,7 @@ public class TransportSamlInitiateSingleSignOnAction extends HandledTransportAct
                         )
                     );
                 }
-            }, listener::onFailure);
+            }, listener);
             privilegeResolver.resolve(serviceProvider.getPrivileges(), wrapped);
             return null;
         });

@@ -66,7 +66,7 @@ public final class RuntimeUtils {
                 logSearchResponse(response, log);
             }
             listener.onResponse(response);
-        }, listener::onFailure);
+        }, listener);
     }
 
     public static ActionListener<MultiSearchResponse> multiSearchLogListener(ActionListener<MultiSearchResponse> listener, Logger log) {
@@ -90,7 +90,7 @@ public final class RuntimeUtils {
                 }
             }
             listener.onResponse(items);
-        }, listener::onFailure);
+        }, listener);
     }
 
     private static void logSearchResponse(SearchResponse response, Logger logger) {

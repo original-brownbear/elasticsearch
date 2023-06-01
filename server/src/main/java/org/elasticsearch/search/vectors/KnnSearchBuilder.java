@@ -280,7 +280,7 @@ public class KnnSearchBuilder implements Writeable, ToXContentFragment, Rewritea
                     return;
                 }
                 l.onResponse(null);
-            }, l::onFailure)));
+            }, l)));
             return new KnnSearchBuilder(field, toSet::get, k, numCands, filterQueries, similarity).boost(boost);
         }
         boolean changed = false;
