@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.eql.execution.search;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.search.ClosePointInTimeAction;
 import org.elasticsearch.action.search.ClosePointInTimeRequest;
-import org.elasticsearch.action.search.ClosePointInTimeResponse;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.OpenPointInTimeAction;
@@ -32,7 +31,6 @@ import java.util.function.Function;
 import static org.elasticsearch.action.ActionListener.wrap;
 import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 import static org.elasticsearch.index.query.QueryBuilders.termsQuery;
-import static org.elasticsearch.xpack.ql.util.ActionListeners.map;
 
 /**
  * Extension of basic query, adding Point-in-Time awareness.
@@ -122,7 +120,7 @@ public class PITAwareQueryClient extends BasicQueryClient {
                 listener.onFailure(e);
                 if (pitId != null && cfg.isCancelled() == false) {
                     // ignore any success/failure to avoid obfuscating the response
-                    close(wrap(b -> {}, ex -> {}));
+                    close(ActionListener.noop());
                 }
             }
         );
@@ -131,10 +129,10 @@ public class PITAwareQueryClient extends BasicQueryClient {
     private <Response> void openPIT(ActionListener<Response> listener, Runnable runnable) {
         OpenPointInTimeRequest request = new OpenPointInTimeRequest(indices).indicesOptions(IndexResolver.FIELD_CAPS_INDICES_OPTIONS)
             .keepAlive(keepAlive);
-        client.execute(OpenPointInTimeAction.INSTANCE, request, wrap(r -> {
+        client.execute(OpenPointInTimeAction.INSTANCE, request, listener.delegateFailureAndWrap((l, r) -> {
             pitId = r.getPointInTimeId();
             runnable.run();
-        }, listener::onFailure));
+        }));
     }
 
     @Override
@@ -144,7 +142,7 @@ public class PITAwareQueryClient extends BasicQueryClient {
             client.execute(
                 ClosePointInTimeAction.INSTANCE,
                 new ClosePointInTimeRequest(pitId),
-                map(listener, ClosePointInTimeResponse::isSucceeded)
+                listener.delegateFailureAndWrap((l, r) -> l.onResponse(r.isSucceeded()))
             );
             pitId = null;
         }

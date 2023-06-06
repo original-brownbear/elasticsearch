@@ -17,7 +17,6 @@ import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
-import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
@@ -95,17 +94,16 @@ public class TransportOpenIdConnectAuthenticateAction extends HandledTransportAc
                     originatingAuthentication,
                     tokenMetadata,
                     true,
-                    ActionListener.wrap(tokenResult -> {
-                        final TimeValue expiresIn = tokenService.getExpirationDelay();
-                        listener.onResponse(
+                    listener.delegateFailureAndWrap(
+                        (l, tokenResult) -> l.onResponse(
                             new OpenIdConnectAuthenticateResponse(
                                 authentication,
                                 tokenResult.getAccessToken(),
                                 tokenResult.getRefreshToken(),
-                                expiresIn
+                                tokenService.getExpirationDelay()
                             )
-                        );
-                    }, listener::onFailure)
+                        )
+                    )
                 );
             }, e -> {
                 logger.debug(() -> "OpenIDConnectToken [" + token + "] could not be authenticated", e);

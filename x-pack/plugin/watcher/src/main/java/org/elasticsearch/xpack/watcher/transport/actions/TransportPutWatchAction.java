@@ -131,9 +131,9 @@ public class TransportPutWatchAction extends WatcherTransportAction<PutWatchRequ
                         client.threadPool().getThreadContext(),
                         WATCHER_ORIGIN,
                         updateRequest,
-                        ActionListener.<UpdateResponse>wrap(response -> {
+                        listener.<UpdateResponse>delegateFailureAndWrap((l, response) -> {
                             boolean created = response.getResult() == DocWriteResponse.Result.CREATED;
-                            listener.onResponse(
+                            l.onResponse(
                                 new PutWatchResponse(
                                     response.getId(),
                                     response.getVersion(),
@@ -142,7 +142,7 @@ public class TransportPutWatchAction extends WatcherTransportAction<PutWatchRequ
                                     created
                                 )
                             );
-                        }, listener::onFailure),
+                        }),
                         client::update
                     );
                 } else {
@@ -153,9 +153,9 @@ public class TransportPutWatchAction extends WatcherTransportAction<PutWatchRequ
                         client.threadPool().getThreadContext(),
                         WATCHER_ORIGIN,
                         indexRequest,
-                        ActionListener.<IndexResponse>wrap(response -> {
+                        listener.<IndexResponse>delegateFailureAndWrap((l, response) -> {
                             boolean created = response.getResult() == DocWriteResponse.Result.CREATED;
-                            listener.onResponse(
+                            l.onResponse(
                                 new PutWatchResponse(
                                     response.getId(),
                                     response.getVersion(),
@@ -164,7 +164,7 @@ public class TransportPutWatchAction extends WatcherTransportAction<PutWatchRequ
                                     created
                                 )
                             );
-                        }, listener::onFailure),
+                        }),
                         client::index
                     );
                 }

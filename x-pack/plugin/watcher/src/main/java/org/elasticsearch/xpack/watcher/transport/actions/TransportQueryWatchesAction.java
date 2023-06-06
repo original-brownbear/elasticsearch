@@ -67,7 +67,7 @@ public class TransportQueryWatchesAction extends WatcherTransportAction<QueryWat
             client.threadPool().getThreadContext(),
             WATCHER_ORIGIN,
             searchRequest,
-            ActionListener.<SearchResponse>wrap(r -> transformResponse(r, listener), listener::onFailure),
+            listener.<SearchResponse>delegateFailureAndWrap((l, r) -> transformResponse(r, l)),
             client::search
         );
     }

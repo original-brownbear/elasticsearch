@@ -26,9 +26,6 @@ import org.elasticsearch.xpack.ql.expression.function.FunctionRegistry;
 import org.elasticsearch.xpack.ql.index.IndexResolver;
 import org.elasticsearch.xpack.ql.plan.logical.LogicalPlan;
 
-import static org.elasticsearch.action.ActionListener.wrap;
-import static org.elasticsearch.xpack.ql.util.ActionListeners.map;
-
 public class EqlSession {
 
     private final Client client;
@@ -83,7 +80,13 @@ public class EqlSession {
     }
 
     public void eql(String eql, ParserParams params, ActionListener<Results> listener) {
-        eqlExecutable(eql, params, wrap(e -> e.execute(this, map(listener, Results::fromPayload)), listener::onFailure));
+        eqlExecutable(
+            eql,
+            params,
+            listener.delegateFailureAndWrap(
+                (l, e) -> e.execute(this, l.delegateFailureAndWrap((ll, r) -> ll.onResponse(Results.fromPayload(r))))
+            )
+        );
     }
 
     public void eqlExecutable(String eql, ParserParams params, ActionListener<PhysicalPlan> listener) {
@@ -95,11 +98,11 @@ public class EqlSession {
     }
 
     public void physicalPlan(LogicalPlan optimized, ActionListener<PhysicalPlan> listener) {
-        optimizedPlan(optimized, map(listener, planner::plan));
+        optimizedPlan(optimized, listener.delegateFailureAndWrap((l, r) -> l.onResponse(planner.plan(r))));
     }
 
     public void optimizedPlan(LogicalPlan verified, ActionListener<LogicalPlan> listener) {
-        analyzedPlan(verified, map(listener, optimizer::optimize));
+        analyzedPlan(verified, listener.delegateFailureAndWrap((l, r) -> l.onResponse(optimizer.optimize(r))));
     }
 
     public void analyzedPlan(LogicalPlan parsed, ActionListener<LogicalPlan> listener) {
@@ -108,7 +111,7 @@ public class EqlSession {
             return;
         }
 
-        preAnalyze(parsed, map(listener, p -> postAnalyze(analyzer.analyze(p))));
+        preAnalyze(parsed, listener.delegateFailureAndWrap((l, p) -> l.onResponse(postAnalyze(analyzer.analyze(p)))));
     }
 
     private <T> void preAnalyze(LogicalPlan parsed, ActionListener<LogicalPlan> listener) {
@@ -121,7 +124,7 @@ public class EqlSession {
             indexWildcard,
             configuration.indicesOptions(),
             configuration.runtimeMappings(),
-            map(listener, r -> preAnalyzer.preAnalyze(parsed, r))
+            listener.delegateFailureAndWrap((l, r) -> l.onResponse(preAnalyzer.preAnalyze(parsed, r)))
         );
     }
 

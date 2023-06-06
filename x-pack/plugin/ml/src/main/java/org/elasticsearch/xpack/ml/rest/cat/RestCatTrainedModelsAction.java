@@ -93,7 +93,7 @@ public class RestCatTrainedModelsAction extends AbstractCatAction {
                 }
             });
 
-            client.execute(GetTrainedModelsAction.INSTANCE, modelsAction, ActionListener.wrap(trainedModels -> {
+            client.execute(GetTrainedModelsAction.INSTANCE, modelsAction, listener.delegateFailureAndWrap((delegate, trainedModels) -> {
                 final List<TrainedModelConfig> trainedModelConfigs = trainedModels.getResources().results();
 
                 Set<String> potentialAnalyticsIds = new HashSet<>();
@@ -109,24 +109,16 @@ public class RestCatTrainedModelsAction extends AbstractCatAction {
                     restRequest,
                     2,
                     trainedModels.getResources().results(),
-                    listener
+                    delegate
                 );
 
-                client.execute(
-                    GetTrainedModelsStatsAction.INSTANCE,
-                    statsRequest,
-                    ActionListener.wrap(groupedListener::onResponse, groupedListener::onFailure)
-                );
+                client.execute(GetTrainedModelsStatsAction.INSTANCE, statsRequest, ActionListener.wrap(groupedListener));
 
                 GetDataFrameAnalyticsAction.Request dataFrameAnalyticsRequest = new GetDataFrameAnalyticsAction.Request(requestIdPattern);
                 dataFrameAnalyticsRequest.setAllowNoResources(true);
                 dataFrameAnalyticsRequest.setPageParams(new PageParams(0, potentialAnalyticsIds.size()));
-                client.execute(
-                    GetDataFrameAnalyticsAction.INSTANCE,
-                    dataFrameAnalyticsRequest,
-                    ActionListener.wrap(groupedListener::onResponse, groupedListener::onFailure)
-                );
-            }, listener::onFailure));
+                client.execute(GetDataFrameAnalyticsAction.INSTANCE, dataFrameAnalyticsRequest, ActionListener.wrap(groupedListener));
+            }));
         };
     }
 

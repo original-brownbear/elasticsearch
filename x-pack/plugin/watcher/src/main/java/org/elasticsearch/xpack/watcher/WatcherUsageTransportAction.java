@@ -83,7 +83,7 @@ public class WatcherUsageTransportAction extends XPackUsageFeatureTransportActio
                 WatcherStatsRequest statsRequest = new WatcherStatsRequest();
                 statsRequest.includeStats(true);
                 statsRequest.setParentTask(clusterService.localNode().getId(), task.getId());
-                client.execute(WatcherStatsAction.INSTANCE, statsRequest, ActionListener.wrap(r -> {
+                client.execute(WatcherStatsAction.INSTANCE, statsRequest, preservingListener.delegateFailureAndWrap((delegate, r) -> {
                     List<Counters> countersPerNode = r.getNodes()
                         .stream()
                         .map(WatcherStatsResponse.Node::getStats)
@@ -95,8 +95,8 @@ public class WatcherUsageTransportAction extends XPackUsageFeatureTransportActio
                         true,
                         mergedCounters.toNestedMap()
                     );
-                    preservingListener.onResponse(new XPackUsageFeatureResponse(usage));
-                }, preservingListener::onFailure));
+                    delegate.onResponse(new XPackUsageFeatureResponse(usage));
+                }));
             }
         } else {
             WatcherFeatureSetUsage usage = new WatcherFeatureSetUsage(

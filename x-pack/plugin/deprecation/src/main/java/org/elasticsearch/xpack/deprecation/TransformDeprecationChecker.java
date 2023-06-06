@@ -33,9 +33,12 @@ public class TransformDeprecationChecker implements DeprecationChecker {
 
         PageParams startPage = new PageParams(0, PageParams.DEFAULT_SIZE);
         List<DeprecationIssue> issues = new ArrayList<>();
-        recursiveGetTransformsAndCollectDeprecations(components, issues, startPage, ActionListener.wrap(allIssues -> {
-            deprecationIssueListener.onResponse(new CheckResult(getName(), allIssues));
-        }, deprecationIssueListener::onFailure));
+        recursiveGetTransformsAndCollectDeprecations(
+            components,
+            issues,
+            startPage,
+            deprecationIssueListener.delegateFailureAndWrap((l, allIssues) -> l.onResponse(new CheckResult(getName(), allIssues)))
+        );
     }
 
     @Override
@@ -53,17 +56,16 @@ public class TransformDeprecationChecker implements DeprecationChecker {
         request.setPageParams(page);
         request.setAllowNoResources(true);
 
-        components.client().execute(GetTransformAction.INSTANCE, request, ActionListener.wrap(getTransformResponse -> {
+        components.client().execute(GetTransformAction.INSTANCE, request, listener.delegateFailureAndWrap((l, getTransformResponse) -> {
             for (TransformConfig config : getTransformResponse.getTransformConfigurations()) {
                 issues.addAll(config.checkForDeprecations(components.xContentRegistry()));
             }
             if (getTransformResponse.getTransformConfigurationCount() >= (page.getFrom() + page.getSize())) {
                 PageParams nextPage = new PageParams(page.getFrom() + page.getSize(), PageParams.DEFAULT_SIZE);
-                recursiveGetTransformsAndCollectDeprecations(components, issues, nextPage, listener);
+                recursiveGetTransformsAndCollectDeprecations(components, issues, nextPage, l);
             } else {
-                listener.onResponse(issues);
+                l.onResponse(issues);
             }
-
-        }, listener::onFailure));
+        }));
     }
 }

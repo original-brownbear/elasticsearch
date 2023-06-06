@@ -138,10 +138,7 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
             if (request.isForce()) {
                 forceStopDeployment(
                     request.getId(),
-                    ActionListener.wrap(
-                        stopDeploymentResponse -> deleteAliasesAndModel(request, modelAliases, listener),
-                        listener::onFailure
-                    )
+                    listener.delegateFailureAndWrap((l, stopDeploymentResponse) -> deleteAliasesAndModel(request, modelAliases, l))
                 );
             } else {
                 listener.onFailure(
@@ -210,13 +207,11 @@ public class TransportDeleteTrainedModelAction extends AcknowledgedTransportMast
     ) {
         logger.debug(() -> "[" + request.getId() + "] Deleting model");
 
-        ActionListener<AcknowledgedResponse> nameDeletionListener = ActionListener.wrap(
-            ack -> trainedModelProvider.deleteTrainedModel(request.getId(), ActionListener.wrap(r -> {
+        ActionListener<AcknowledgedResponse> nameDeletionListener = listener.delegateFailureAndWrap(
+            (l, ack) -> trainedModelProvider.deleteTrainedModel(request.getId(), l.delegateFailureAndWrap((ll, r) -> {
                 auditor.info(request.getId(), "trained model deleted");
-                listener.onResponse(AcknowledgedResponse.TRUE);
-            }, listener::onFailure)),
-
-            listener::onFailure
+                ll.onResponse(AcknowledgedResponse.TRUE);
+            }))
         );
 
         // No reason to update cluster state, simply delete the model

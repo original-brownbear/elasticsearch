@@ -62,14 +62,14 @@ public class TransportOpenIdConnectLogoutAction extends HandledTransportAction<O
 
     @Override
     protected void doExecute(Task task, OpenIdConnectLogoutRequest request, ActionListener<OpenIdConnectLogoutResponse> listener) {
-        invalidateRefreshToken(request.getRefreshToken(), ActionListener.wrap(ignore -> {
+        invalidateRefreshToken(request.getRefreshToken(), listener.delegateFailureAndWrap((delegate, ignore) -> {
             final String token = request.getToken();
-            tokenService.getAuthenticationAndMetadata(token, ActionListener.wrap(tuple -> {
+            tokenService.getAuthenticationAndMetadata(token, delegate.delegateFailureAndWrap((subDelegate, tuple) -> {
                 final Authentication authentication = tuple.v1();
                 assert false == authentication.isRunAs() : "oidc realm authentication cannot have run-as";
                 final Map<String, Object> tokenMetadata = tuple.v2();
                 validateAuthenticationAndMetadata(authentication, tokenMetadata);
-                tokenService.invalidateAccessToken(token, ActionListener.wrap(result -> {
+                tokenService.invalidateAccessToken(token, subDelegate.delegateFailureAndWrap((l, result) -> {
                     if (logger.isTraceEnabled()) {
                         logger.trace(
                             "OpenID Connect Logout for user [{}] and token [{}...{}]",
@@ -79,10 +79,10 @@ public class TransportOpenIdConnectLogoutAction extends HandledTransportAction<O
                         );
                     }
                     OpenIdConnectLogoutResponse response = buildResponse(authentication, tokenMetadata);
-                    listener.onResponse(response);
-                }, listener::onFailure));
-            }, listener::onFailure));
-        }, listener::onFailure));
+                    l.onResponse(response);
+                }));
+            }));
+        }));
     }
 
     private OpenIdConnectLogoutResponse buildResponse(Authentication authentication, Map<String, Object> tokenMetadata) {

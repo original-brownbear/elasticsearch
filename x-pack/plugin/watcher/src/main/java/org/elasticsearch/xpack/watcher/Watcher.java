@@ -818,12 +818,14 @@ public class Watcher extends Plugin implements SystemIndexPlugin, ScriptPlugin, 
         if (manuallyStopped == false) {
             WatcherServiceRequest serviceRequest = new WatcherServiceRequest();
             serviceRequest.stop();
-            originClient.execute(WatcherServiceAction.INSTANCE, serviceRequest, ActionListener.wrap((response) -> {
-                listener.onResponse(Collections.singletonMap("manually_stopped", manuallyStopped));
-            }, listener::onFailure));
+            originClient.execute(
+                WatcherServiceAction.INSTANCE,
+                serviceRequest,
+                listener.delegateFailureAndWrap((l, response) -> listener.onResponse(Collections.singletonMap("manually_stopped", false)))
+            );
         } else {
             // If Watcher is manually stopped, we don't want to stop it AGAIN, so just call the listener.
-            listener.onResponse(Collections.singletonMap("manually_stopped", manuallyStopped));
+            listener.onResponse(Collections.singletonMap("manually_stopped", true));
         }
     }
 
@@ -839,9 +841,11 @@ public class Watcher extends Plugin implements SystemIndexPlugin, ScriptPlugin, 
         if (manuallyStopped == false) {
             WatcherServiceRequest serviceRequest = new WatcherServiceRequest();
             serviceRequest.start();
-            originClient.execute(WatcherServiceAction.INSTANCE, serviceRequest, ActionListener.wrap((response) -> {
-                listener.onResponse(response.isAcknowledged());
-            }, listener::onFailure));
+            originClient.execute(
+                WatcherServiceAction.INSTANCE,
+                serviceRequest,
+                listener.delegateFailureAndWrap((l, response) -> l.onResponse(response.isAcknowledged()))
+            );
         } else {
             // Watcher was manually stopped before we got there, don't start it.
             listener.onResponse(true);

@@ -103,7 +103,7 @@ public class TransportExecuteWatchAction extends WatcherTransportAction<ExecuteW
                 client.threadPool().getThreadContext(),
                 WATCHER_ORIGIN,
                 getRequest,
-                ActionListener.<GetResponse>wrap(response -> {
+                listener.<GetResponse>delegateFailureAndWrap((delegate, response) -> {
                     if (response.isExists()) {
                         Watch watch = watchParser.parse(
                             request.getId(),
@@ -114,11 +114,11 @@ public class TransportExecuteWatchAction extends WatcherTransportAction<ExecuteW
                             response.getPrimaryTerm()
                         );
                         watch.status().version(response.getVersion());
-                        executeWatch(request, listener, watch, true);
+                        executeWatch(request, delegate, watch, true);
                     } else {
-                        listener.onFailure(new ResourceNotFoundException("Watch with id [{}] does not exist", request.getId()));
+                        delegate.onFailure(new ResourceNotFoundException("Watch with id [{}] does not exist", request.getId()));
                     }
-                }, listener::onFailure),
+                }),
                 client::get
             );
         } else if (request.getWatchSource() != null) {
