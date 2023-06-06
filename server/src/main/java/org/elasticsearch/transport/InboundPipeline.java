@@ -75,7 +75,7 @@ public class InboundPipeline implements Releasable {
     @Override
     public void close() {
         isClosed = true;
-        Releasables.closeExpectNoException(decoder, aggregator, () -> Releasables.close(pending), pending::clear);
+        Releasables.closeExpectNoException(decoder, aggregator, Releasables.wrap(pending), pending::clear);
     }
 
     public void handleBytes(TcpChannel channel, ReleasableBytesReference reference) throws IOException {

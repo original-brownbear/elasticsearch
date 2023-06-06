@@ -730,7 +730,7 @@ public abstract class Engine implements Closeable {
                 searcher.getSimilarity(),
                 searcher.getQueryCache(),
                 searcher.getQueryCachingPolicy(),
-                () -> Releasables.close(searcher, reader)
+                Releasables.wrap(searcher, reader)
             );
         } finally {
             Releasables.close(releasable);

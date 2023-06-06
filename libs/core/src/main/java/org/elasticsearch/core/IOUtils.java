@@ -127,7 +127,7 @@ public final class IOUtils {
         }
     }
 
-    private static Exception addOrSuppress(Exception firstException, Exception e) {
+    public static Exception addOrSuppress(Exception firstException, Exception e) {
         if (firstException == null) {
             firstException = e;
         } else {

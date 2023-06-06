@@ -29,16 +29,35 @@ public enum Releasables {
 
     /** Release the provided {@link Releasable}. */
     public static void close(@Nullable Releasable releasable) {
+        if (releasable != null) {
+            releasable.close();
+        }
+    }
+
+    public static void close(Releasable first, Releasable second) {
+        RuntimeException ex = null;
         try {
-            IOUtils.close(releasable);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            close(first);
+        } catch (RuntimeException e) {
+            ex = e;
+        }
+        try {
+            close(second);
+        } catch (RuntimeException e) {
+            ex = (RuntimeException) IOUtils.addOrSuppress(ex, e);
+        }
+        if (ex != null) {
+            throw ex;
         }
     }
 
     /** Release the provided {@link Releasable}s. */
     public static void close(Releasable... releasables) {
-        close(true, releasables);
+        try {
+            IOUtils.close(releasables);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /** Release the provided {@link Releasable}s expecting no exception to by thrown by any of them. */
@@ -63,19 +82,7 @@ public enum Releasables {
 
     /** Release the provided {@link Releasable}s, ignoring exceptions. */
     public static void closeWhileHandlingException(Releasable... releasables) {
-        close(false, releasables);
-    }
-
-    /** Release the provided {@link Releasable}s, ignoring exceptions if <code>success</code> is {@code false}. */
-    private static void close(boolean success, Releasable... releasables) {
-        try {
-            // this does the right thing with respect to add suppressed and not wrapping errors etc.
-            IOUtils.close(releasables);
-        } catch (IOException e) {
-            if (success) {
-                throw new UncheckedIOException(e);
-            }
-        }
+        IOUtils.closeWhileHandlingException(releasables);
     }
 
     /** Wrap several releasables into a single one. This is typically useful for use with try-with-resources: for example let's assume
@@ -89,7 +96,7 @@ public enum Releasables {
      *  // the resources will be released when reaching here
      *  </pre>
      */
-    public static Releasable wrap(final Iterable<Releasable> releasables) {
+    public static Releasable wrap(final Iterable<? extends Releasable> releasables) {
         return new Releasable() {
             @Override
             public void close() {
@@ -114,6 +121,21 @@ public enum Releasables {
             @Override
             public String toString() {
                 return "wrapped" + Arrays.toString(releasables);
+            }
+        };
+    }
+
+    /** @see #wrap(Iterable) */
+    public static Releasable wrap(final Releasable first, Releasable second) {
+        return new Releasable() {
+            @Override
+            public void close() {
+                Releasables.close(first, second);
+            }
+
+            @Override
+            public String toString() {
+                return "wrapped [" + first + "][" + second + "]";
             }
         };
     }

@@ -102,7 +102,7 @@ public class InboundAggregator implements Releasable {
         } else {
             final ReleasableBytesReference[] references = contentAggregation.toArray(new ReleasableBytesReference[0]);
             final BytesReference content = CompositeBytesReference.of(references);
-            releasableContent = new ReleasableBytesReference(content, () -> Releasables.close(references));
+            releasableContent = new ReleasableBytesReference(content, Releasables.wrap(references));
         }
 
         final BreakerControl breakerControl = new BreakerControl(circuitBreaker);
