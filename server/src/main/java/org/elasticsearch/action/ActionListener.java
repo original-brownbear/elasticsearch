@@ -17,6 +17,7 @@ import org.elasticsearch.core.CheckedConsumer;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.CheckedRunnable;
 import org.elasticsearch.core.Releasable;
+import org.elasticsearch.core.Releasables;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +103,22 @@ public interface ActionListener<Response> {
      * Creates a listener which releases the given resource on completion (whether success or failure)
      */
     static <Response> ActionListener<Response> releasing(Releasable releasable) {
-        return assertOnce(running(runnableFromReleasable(releasable)));
+        return assertOnce(new ActionListener<>() {
+            @Override
+            public void onResponse(Response response) {
+                Releasables.closeExpectNoException(releasable);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                safeAcceptException(ignored -> Releasables.closeExpectNoException(releasable), e);
+            }
+
+            @Override
+            public String toString() {
+                return "release[" + releasable + "]";
+            }
+        });
     }
 
     /**

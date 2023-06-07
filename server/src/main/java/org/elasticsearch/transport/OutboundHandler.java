@@ -193,7 +193,7 @@ final class OutboundHandler {
             }
         }
         responseStatsConsumer.addResponseStats(message.length());
-        internalSend(channel, message, networkMessage, ActionListener.running(release::close));
+        internalSend(channel, message, networkMessage, ActionListener.releasing(release));
     }
 
     private void internalSend(
