@@ -9,6 +9,7 @@ package org.elasticsearch.rest;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.io.stream.BytesStream;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
@@ -193,8 +194,7 @@ public abstract class AbstractRestChannel implements RestChannel {
                 bytesOut.close();
             } catch (IOException e) {
                 // should never throw
-                assert false : e;
-                throw new UncheckedIOException(e);
+                ExceptionsHelper.unexpected(new UncheckedIOException(e));
             }
             bytesOut = null;
         }

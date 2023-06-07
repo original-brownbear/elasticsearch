@@ -10,6 +10,7 @@ package org.elasticsearch.upgrades;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.client.internal.OriginSettingClient;
@@ -278,8 +279,7 @@ class SystemIndexMigrationInfo implements Comparable<SystemIndexMigrationInfo> {
                 taskState.getCurrentFeature()
             );
             logger.warn(errorMsg);
-            assert false : errorMsg;
-            throw new IllegalStateException(errorMsg);
+            ExceptionsHelper.unexpected(new IllegalStateException(errorMsg));
         }
 
         if (imd == null) {
@@ -290,8 +290,7 @@ class SystemIndexMigrationInfo implements Comparable<SystemIndexMigrationInfo> {
                 descriptor.getIndexPattern()
             );
             logger.warn(errorMsg);
-            assert false : errorMsg;
-            throw new IllegalStateException(errorMsg);
+            ExceptionsHelper.unexpected(new IllegalStateException(errorMsg));
         }
 
         return build(imd, descriptor, feature, indexScopedSettings);

@@ -8,6 +8,7 @@
 
 package org.elasticsearch.action;
 
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.CheckedBiConsumer;
 import org.elasticsearch.core.CheckedFunction;
 import org.elasticsearch.core.CheckedRunnable;
@@ -63,8 +64,7 @@ class ActionListenerImplementations {
             if (e != null && ex != e) {
                 ex.addSuppressed(e);
             }
-            assert false : new AssertionError("listener.onFailure failed", ex);
-            throw ex;
+            ExceptionsHelper.unexpected(ex);
         }
     }
 
@@ -93,8 +93,7 @@ class ActionListenerImplementations {
             try {
                 delegate.onResponse(mapped);
             } catch (RuntimeException e) {
-                assert false : new AssertionError("map: listener.onResponse failed", e);
-                throw e;
+                ExceptionsHelper.unexpected(e);
             }
         }
 

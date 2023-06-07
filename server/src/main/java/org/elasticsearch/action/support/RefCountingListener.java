@@ -9,6 +9,7 @@
 package org.elasticsearch.action.support;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.core.Releasable;
 
@@ -126,9 +127,8 @@ public final class RefCountingListener implements Releasable {
                 }
                 delegate.onFailure(exception);
             }
-        } catch (Exception e) {
-            assert false : e;
-            throw e;
+        } catch (RuntimeException e) {
+            ExceptionsHelper.unexpected(e);
         }
     }
 

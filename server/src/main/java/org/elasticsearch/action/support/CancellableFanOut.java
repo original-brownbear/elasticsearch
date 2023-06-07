@@ -10,6 +10,7 @@ package org.elasticsearch.action.support;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.util.concurrent.RunOnce;
 import org.elasticsearch.core.Nullable;
@@ -116,12 +117,11 @@ public abstract class CancellableFanOut<Item, ItemResponse, FinalResponse> {
                 // Process the item, capturing a ref to make sure the outer listener is completed after this item is processed.
                 sendItemRequest(item, ActionListener.releaseAfter(itemResponseListener, refs.acquire()));
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // NB the listener may have been completed already (by exiting this try block) so this exception may not be sent to the caller,
             // but we cannot do anything else with it; an exception here is a bug anyway.
             logger.error("unexpected failure in [" + this + "]", e);
-            assert false : e;
-            throw e;
+            ExceptionsHelper.unexpected(e);
         }
     }
 

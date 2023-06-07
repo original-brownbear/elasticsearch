@@ -9,6 +9,7 @@
 package org.elasticsearch.repositories;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -699,14 +700,10 @@ public final class RepositoryData {
             }
         } else {
             if (uuid.equals(MISSING_UUID) == false) {
-                final IllegalStateException e = new IllegalStateException("lost uuid + [" + uuid + "]");
-                assert false : e;
-                throw e;
+                ExceptionsHelper.unexpected(new IllegalStateException("lost uuid + [" + uuid + "]"));
             }
             if (clusterUUID.equals(MISSING_UUID) == false) {
-                final IllegalStateException e = new IllegalStateException("lost clusterUUID + [" + uuid + "]");
-                assert false : e;
-                throw e;
+                ExceptionsHelper.unexpected(new IllegalStateException("lost clusterUUID + [" + uuid + "]"));
             }
         }
 

@@ -8,6 +8,7 @@
 
 package org.elasticsearch.cluster.routing;
 
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.Nullable;
@@ -130,19 +131,19 @@ public class RoutingNode implements Iterable<ShardRouting> {
     private void addInternal(ShardRouting shard, boolean validate) {
         final ShardRouting existing = shards.putIfAbsent(shard.shardId(), shard);
         if (existing != null) {
-            final IllegalStateException e = new IllegalStateException(
-                "Trying to add a shard "
-                    + shard.shardId()
-                    + " to a node ["
-                    + nodeId
-                    + "] where it already exists. current ["
-                    + shards.get(shard.shardId())
-                    + "]. new ["
-                    + shard
-                    + "]"
+            ExceptionsHelper.unexpected(
+                new IllegalStateException(
+                    "Trying to add a shard "
+                        + shard.shardId()
+                        + " to a node ["
+                        + nodeId
+                        + "] where it already exists. current ["
+                        + shards.get(shard.shardId())
+                        + "]. new ["
+                        + shard
+                        + "]"
+                )
             );
-            assert false : e;
-            throw e;
         }
 
         if (shard.initializing()) {

@@ -119,8 +119,7 @@ public interface ActionListener<Response> {
                 try {
                     runnable.run();
                 } catch (RuntimeException e) {
-                    assert false : e;
-                    throw e;
+                    ExceptionsHelper.unexpected(e);
                 }
             }
 
@@ -318,8 +317,7 @@ public interface ActionListener<Response> {
         try {
             listener.onResponse(response);
         } catch (RuntimeException ex) {
-            assert false : ex;
-            throw ex;
+            ExceptionsHelper.unexpected(ex);
         }
     }
 

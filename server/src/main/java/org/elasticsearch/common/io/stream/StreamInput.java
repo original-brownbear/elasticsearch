@@ -12,6 +12,7 @@ import org.apache.lucene.util.ArrayUtil;
 import org.apache.lucene.util.BitUtil;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesArray;
@@ -1014,9 +1015,7 @@ public abstract class StreamInput extends InputStream {
     }
 
     protected static void throwOnNullRead(Writeable.Reader<?> reader) throws IOException {
-        final IOException e = new IOException("Writeable.Reader [" + reader + "] returned null which is not allowed.");
-        assert false : e;
-        throw e;
+        ExceptionsHelper.unexpected(new IOException("Writeable.Reader [" + reader + "] returned null which is not allowed."));
     }
 
     @Nullable

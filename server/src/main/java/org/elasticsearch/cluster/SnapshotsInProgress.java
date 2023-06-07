@@ -8,6 +8,7 @@
 
 package org.elasticsearch.cluster;
 
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState.Custom;
@@ -1448,9 +1449,7 @@ public class SnapshotsInProgress extends AbstractNamedDiffable<Custom> implement
             try {
                 verifyDiffable(before, after);
             } catch (Exception e) {
-                final IllegalArgumentException ex = new IllegalArgumentException("Cannot diff [" + before + "] and [" + after + "]");
-                assert false : ex;
-                throw ex;
+                ExceptionsHelper.unexpected(new IllegalArgumentException("Cannot diff [" + before + "] and [" + after + "]"));
             }
             this.indexByIndexNameDiff = DiffableUtils.diff(
                 before.indices,

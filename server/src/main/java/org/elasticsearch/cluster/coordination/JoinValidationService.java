@@ -11,6 +11,7 @@ package org.elasticsearch.cluster.coordination;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.TransportVersion;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
@@ -238,11 +239,8 @@ public class JoinValidationService {
                 if (remaining > 0) {
                     runProcessor();
                 }
-            } catch (Exception e) {
-                assert false : e;
-                /* we only catch so we can assert false, so throwing is ok */
-                // noinspection ThrowFromFinallyBlock
-                throw e;
+            } catch (RuntimeException e) {
+                ExceptionsHelper.unexpected(e);
             }
         }
     }
@@ -261,9 +259,8 @@ public class JoinValidationService {
                     nextItem.onFailure(new NodeClosedException(transportService.getLocalNode()));
                 }
             } while (queueSize.decrementAndGet() > 0);
-        } catch (Exception e) {
-            assert false : e;
-            throw e;
+        } catch (RuntimeException e) {
+            ExceptionsHelper.unexpected(e);
         }
     }
 

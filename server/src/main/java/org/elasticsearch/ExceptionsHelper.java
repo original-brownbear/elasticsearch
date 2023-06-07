@@ -236,6 +236,11 @@ public final class ExceptionsHelper {
         return unwrapCausesAndSuppressed(cause, t -> t instanceof Error);
     }
 
+    public static <E extends Exception> void unexpected(E e) throws E {
+        assert false : e;
+        throw e;
+    }
+    
     /**
      * If the specified cause is an unrecoverable error, this method will rethrow the cause on a separate thread so that it can not be
      * caught and bubbles up to the uncaught exception handler. Note that the cause tree is examined for any {@link Error}. See

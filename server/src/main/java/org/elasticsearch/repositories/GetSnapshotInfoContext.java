@@ -9,6 +9,7 @@ package org.elasticsearch.repositories;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.common.util.concurrent.CountDown;
 import org.elasticsearch.snapshots.SnapshotId;
@@ -140,9 +141,8 @@ public final class GetSnapshotInfoContext implements ActionListener<SnapshotInfo
     private void failDoneListener(Exception failure) {
         try {
             doneListener.onFailure(failure);
-        } catch (Exception ex) {
-            assert false : ex;
-            throw ex;
+        } catch (RuntimeException ex) {
+            ExceptionsHelper.unexpected(ex);
         }
     }
 }

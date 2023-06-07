@@ -9,6 +9,7 @@
 package org.elasticsearch.transport;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.bytes.ReleasableBytesReference;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.core.AbstractRefCounted;
@@ -101,8 +102,7 @@ public class InboundMessage extends AbstractRefCounted {
         try {
             IOUtils.close(streamInput, content, breakerRelease);
         } catch (Exception e) {
-            assert false : e;
-            throw new ElasticsearchException(e);
+            ExceptionsHelper.unexpected(new ElasticsearchException(e));
         }
     }
 }

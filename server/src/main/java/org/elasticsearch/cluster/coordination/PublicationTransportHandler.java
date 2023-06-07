@@ -135,7 +135,7 @@ public class PublicationTransportHandler {
                 try (StreamInput input = in) {
                     incomingState = ClusterState.readFrom(input, transportService.getLocalNode());
                     assert input.read() == -1;
-                } catch (Exception e) {
+                } catch (IOException | RuntimeException e) {
                     logger.warn("unexpected error while deserializing an incoming cluster state", e);
                     assert false : e;
                     throw e;

@@ -539,8 +539,7 @@ public class IndicesClusterStateService extends AbstractLifecycleComponent imple
                     try {
                         indexService.updateMetadata(currentIndexMetadata, newIndexMetadata);
                     } catch (Exception e) {
-                        assert false : e;
-                        throw e;
+                        ExceptionsHelper.unexpected(e);
                     }
 
                     reason = "mapping update failed";
