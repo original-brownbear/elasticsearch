@@ -228,186 +228,217 @@ public class TransportDownsampleAction extends AcknowledgedTransportMasterNodeAc
         final TaskId parentTask = new TaskId(clusterService.localNode().getId(), task.getId());
         final GetMappingsRequest getMappingsRequest = new GetMappingsRequest().indices(sourceIndexName);
         getMappingsRequest.setParentTask(parentTask);
-        client.admin().indices().getMappings(getMappingsRequest, ActionListener.wrap(getMappingsResponse -> {
-            final Map<String, Object> sourceIndexMappings = getMappingsResponse.mappings()
-                .entrySet()
-                .stream()
-                .filter(entry -> sourceIndexName.equals(entry.getKey()))
-                .findFirst()
-                .map(mappingMetadata -> mappingMetadata.getValue().sourceAsMap())
-                .orElseThrow(() -> new IllegalArgumentException("No mapping found for rollup source index [" + sourceIndexName + "]"));
+        client.admin()
+            .indices()
+            .getMappings(getMappingsRequest, listener.delegateFailureAndWrap((getMappingsListener, getMappingsResponse) -> {
+                final Map<String, Object> sourceIndexMappings = getMappingsResponse.mappings()
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> sourceIndexName.equals(entry.getKey()))
+                    .findFirst()
+                    .map(mappingMetadata -> mappingMetadata.getValue().sourceAsMap())
+                    .orElseThrow(() -> new IllegalArgumentException("No mapping found for rollup source index [" + sourceIndexName + "]"));
 
-            // 2. Extract rollup config from index mappings
-            final MapperService mapperService = indicesService.createIndexMapperServiceForValidation(sourceIndexMetadata);
-            final CompressedXContent sourceIndexCompressedXContent = new CompressedXContent(sourceIndexMappings);
-            mapperService.merge(MapperService.SINGLE_MAPPING_NAME, sourceIndexCompressedXContent, MapperService.MergeReason.INDEX_TEMPLATE);
+                // 2. Extract rollup config from index mappings
+                final MapperService mapperService = indicesService.createIndexMapperServiceForValidation(sourceIndexMetadata);
+                final CompressedXContent sourceIndexCompressedXContent = new CompressedXContent(sourceIndexMappings);
+                mapperService.merge(
+                    MapperService.SINGLE_MAPPING_NAME,
+                    sourceIndexCompressedXContent,
+                    MapperService.MergeReason.INDEX_TEMPLATE
+                );
 
-            // Validate downsampling interval
-            validateDownsamplingInterval(mapperService, request.getDownsampleConfig());
+                // Validate downsampling interval
+                validateDownsamplingInterval(mapperService, request.getDownsampleConfig());
 
-            final List<String> dimensionFields = new ArrayList<>();
-            final List<String> metricFields = new ArrayList<>();
-            final List<String> labelFields = new ArrayList<>();
-            final TimeseriesFieldTypeHelper helper = new TimeseriesFieldTypeHelper.Builder(mapperService).build(
-                request.getDownsampleConfig().getTimestampField()
-            );
-            MappingVisitor.visitMapping(sourceIndexMappings, (field, mapping) -> {
-                if (helper.isTimeSeriesDimension(field, mapping)) {
-                    dimensionFields.add(field);
-                } else if (helper.isTimeSeriesMetric(field, mapping)) {
-                    metricFields.add(field);
-                } else if (helper.isTimeSeriesLabel(field, mapping)) {
-                    labelFields.add(field);
+                final List<String> dimensionFields = new ArrayList<>();
+                final List<String> metricFields = new ArrayList<>();
+                final List<String> labelFields = new ArrayList<>();
+                final TimeseriesFieldTypeHelper helper = new TimeseriesFieldTypeHelper.Builder(mapperService).build(
+                    request.getDownsampleConfig().getTimestampField()
+                );
+                MappingVisitor.visitMapping(sourceIndexMappings, (field, mapping) -> {
+                    if (helper.isTimeSeriesDimension(field, mapping)) {
+                        dimensionFields.add(field);
+                    } else if (helper.isTimeSeriesMetric(field, mapping)) {
+                        metricFields.add(field);
+                    } else if (helper.isTimeSeriesLabel(field, mapping)) {
+                        labelFields.add(field);
+                    }
+                });
+
+                ActionRequestValidationException validationException = new ActionRequestValidationException();
+                if (dimensionFields.isEmpty()) {
+                    validationException.addValidationError("Index [" + sourceIndexName + "] does not contain any dimension fields");
                 }
-            });
 
-            ActionRequestValidationException validationException = new ActionRequestValidationException();
-            if (dimensionFields.isEmpty()) {
-                validationException.addValidationError("Index [" + sourceIndexName + "] does not contain any dimension fields");
-            }
+                if (validationException.validationErrors().isEmpty() == false) {
+                    getMappingsListener.onFailure(validationException);
+                    return;
+                }
 
-            if (validationException.validationErrors().isEmpty() == false) {
-                listener.onFailure(validationException);
-                return;
-            }
-
-            final String mapping;
-            try {
-                mapping = createRollupIndexMapping(helper, request.getDownsampleConfig(), mapperService, sourceIndexMappings);
-            } catch (IOException e) {
-                listener.onFailure(e);
-                return;
-            }
-            // 3. Create rollup index
-            createRollupIndex(rollupIndexName, sourceIndexMetadata, mapping, request, ActionListener.wrap(createIndexResp -> {
-                if (createIndexResp.isAcknowledged()) {
-                    // 3. Rollup index created. Run rollup indexer
-                    DownsampleIndexerAction.Request rollupIndexerRequest = new DownsampleIndexerAction.Request(
-                        request,
-                        dimensionFields.toArray(new String[0]),
-                        metricFields.toArray(new String[0]),
-                        labelFields.toArray(new String[0])
-                    );
-                    rollupIndexerRequest.setParentTask(parentTask);
-                    client.execute(DownsampleIndexerAction.INSTANCE, rollupIndexerRequest, ActionListener.wrap(indexerResp -> {
-                        if (indexerResp.isCreated()) {
-                            // 4. Make rollup index read-only and set the correct number of replicas
-                            final Settings.Builder settings = Settings.builder().put(IndexMetadata.SETTING_BLOCKS_WRITE, true);
-                            // Number of replicas had been previously set to 0 to speed up index population
-                            if (sourceIndexMetadata.getNumberOfReplicas() > 0) {
-                                settings.put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, sourceIndexMetadata.getNumberOfReplicas());
-                            }
-                            // Setting index.hidden has been initially set to true. We revert this to the value of the source index
-                            if (sourceIndexMetadata.isHidden() == false) {
-                                if (sourceIndexMetadata.getSettings().keySet().contains(IndexMetadata.SETTING_INDEX_HIDDEN)) {
-                                    settings.put(IndexMetadata.SETTING_INDEX_HIDDEN, false);
-                                } else {
-                                    settings.putNull(IndexMetadata.SETTING_INDEX_HIDDEN);
-                                }
-                            }
-                            UpdateSettingsRequest updateSettingsReq = new UpdateSettingsRequest(settings.build(), rollupIndexName);
-                            updateSettingsReq.setParentTask(parentTask);
-                            client.admin().indices().updateSettings(updateSettingsReq, ActionListener.wrap(updateSettingsResponse -> {
-                                if (updateSettingsResponse.isAcknowledged()) {
-                                    // 5. Refresh rollup index
-                                    refreshIndex(rollupIndexName, parentTask, ActionListener.wrap(refreshIndexResponse -> {
-                                        if (refreshIndexResponse.getFailedShards() == 0) {
-                                            // 6. Mark rollup index as "completed successfully"
-                                            updateRollupMetadata(rollupIndexName, request, ActionListener.wrap(resp -> {
-                                                if (resp.isAcknowledged()) {
-                                                    // 7. Force-merge the rollup index to a single segment
-                                                    forceMergeIndex(
-                                                        rollupIndexName,
-                                                        parentTask,
-                                                        ActionListener.wrap(
-                                                            mergeIndexResp -> listener.onResponse(AcknowledgedResponse.TRUE),
-                                                            e -> {
-                                                                /*
-                                                                 * At this point rollup has been created successfully even if
-                                                                 * force-merge fails. So, we should not fail the rollup operation.
-                                                                 */
-                                                                logger.error(
-                                                                    "Failed to force-merge rollup index [" + rollupIndexName + "]",
-                                                                    e
+                final String mapping;
+                try {
+                    mapping = createRollupIndexMapping(helper, request.getDownsampleConfig(), mapperService, sourceIndexMappings);
+                } catch (IOException e) {
+                    getMappingsListener.onFailure(e);
+                    return;
+                }
+                // 3. Create rollup index
+                createRollupIndex(
+                    rollupIndexName,
+                    sourceIndexMetadata,
+                    mapping,
+                    request,
+                    getMappingsListener.delegateFailureAndWrap((createIndexListener, createIndexResp) -> {
+                        if (createIndexResp.isAcknowledged()) {
+                            // 3. Rollup index created. Run rollup indexer
+                            DownsampleIndexerAction.Request rollupIndexerRequest = new DownsampleIndexerAction.Request(
+                                request,
+                                dimensionFields.toArray(new String[0]),
+                                metricFields.toArray(new String[0]),
+                                labelFields.toArray(new String[0])
+                            );
+                            rollupIndexerRequest.setParentTask(parentTask);
+                            client.execute(DownsampleIndexerAction.INSTANCE, rollupIndexerRequest, ActionListener.wrap(indexerResp -> {
+                                if (indexerResp.isCreated()) {
+                                    // 4. Make rollup index read-only and set the correct number of replicas
+                                    final Settings.Builder settings = Settings.builder().put(IndexMetadata.SETTING_BLOCKS_WRITE, true);
+                                    // Number of replicas had been previously set to 0 to speed up index population
+                                    if (sourceIndexMetadata.getNumberOfReplicas() > 0) {
+                                        settings.put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, sourceIndexMetadata.getNumberOfReplicas());
+                                    }
+                                    // Setting index.hidden has been initially set to true. We revert this to the value of the source index
+                                    if (sourceIndexMetadata.isHidden() == false) {
+                                        if (sourceIndexMetadata.getSettings().keySet().contains(IndexMetadata.SETTING_INDEX_HIDDEN)) {
+                                            settings.put(IndexMetadata.SETTING_INDEX_HIDDEN, false);
+                                        } else {
+                                            settings.putNull(IndexMetadata.SETTING_INDEX_HIDDEN);
+                                        }
+                                    }
+                                    UpdateSettingsRequest updateSettingsReq = new UpdateSettingsRequest(settings.build(), rollupIndexName);
+                                    updateSettingsReq.setParentTask(parentTask);
+                                    client.admin()
+                                        .indices()
+                                        .updateSettings(updateSettingsReq, ActionListener.wrap(updateSettingsResponse -> {
+                                            if (updateSettingsResponse.isAcknowledged()) {
+                                                // 5. Refresh rollup index
+                                                refreshIndex(rollupIndexName, parentTask, ActionListener.wrap(refreshIndexResponse -> {
+                                                    if (refreshIndexResponse.getFailedShards() == 0) {
+                                                        // 6. Mark rollup index as "completed successfully"
+                                                        updateRollupMetadata(rollupIndexName, request, ActionListener.wrap(resp -> {
+                                                            if (resp.isAcknowledged()) {
+                                                                // 7. Force-merge the rollup index to a single segment
+                                                                forceMergeIndex(
+                                                                    rollupIndexName,
+                                                                    parentTask,
+                                                                    ActionListener.wrap(
+                                                                        mergeIndexResp -> createIndexListener.onResponse(
+                                                                            AcknowledgedResponse.TRUE
+                                                                        ),
+                                                                        e -> {
+                                                                            /*
+                                                                             * At this point rollup has been created successfully even if
+                                                                             * force-merge fails. So, we should not fail the rollup
+                                                                             * operation.
+                                                                             */
+                                                                            logger.error(
+                                                                                "Failed to force-merge rollup index ["
+                                                                                    + rollupIndexName
+                                                                                    + "]",
+                                                                                e
+                                                                            );
+                                                                            createIndexListener.onResponse(AcknowledgedResponse.TRUE);
+                                                                        }
+                                                                    )
                                                                 );
-                                                                listener.onResponse(AcknowledgedResponse.TRUE);
+                                                            } else {
+                                                                deleteRollupIndex(
+                                                                    sourceIndexName,
+                                                                    rollupIndexName,
+                                                                    parentTask,
+                                                                    createIndexListener,
+                                                                    new ElasticsearchException(
+                                                                        "Failed to publish new cluster state with rollup metadata"
+                                                                    )
+                                                                );
                                                             }
-                                                        )
-                                                    );
-                                                } else {
-                                                    deleteRollupIndex(
+                                                        },
+                                                            e -> deleteRollupIndex(
+                                                                sourceIndexName,
+                                                                rollupIndexName,
+                                                                parentTask,
+                                                                createIndexListener,
+                                                                new ElasticsearchException(
+                                                                    "Failed to publish new cluster state with rollup metadata",
+                                                                    e
+                                                                )
+                                                            )
+                                                        ));
+                                                    } else {
+                                                        deleteRollupIndex(
+                                                            sourceIndexName,
+                                                            rollupIndexName,
+                                                            parentTask,
+                                                            createIndexListener,
+                                                            new ElasticsearchException(
+                                                                "Failed to refresh rollup index [" + rollupIndexName + "]"
+                                                            )
+                                                        );
+                                                    }
+                                                },
+                                                    e -> deleteRollupIndex(
                                                         sourceIndexName,
                                                         rollupIndexName,
                                                         parentTask,
-                                                        listener,
+                                                        createIndexListener,
                                                         new ElasticsearchException(
-                                                            "Failed to publish new cluster state with rollup metadata"
+                                                            "Failed to refresh rollup index [" + rollupIndexName + "]",
+                                                            e
                                                         )
-                                                    );
-                                                }
-                                            },
-                                                e -> deleteRollupIndex(
+                                                    )
+                                                ));
+                                            } else {
+                                                deleteRollupIndex(
                                                     sourceIndexName,
                                                     rollupIndexName,
                                                     parentTask,
-                                                    listener,
+                                                    createIndexListener,
                                                     new ElasticsearchException(
-                                                        "Failed to publish new cluster state with rollup metadata",
-                                                        e
+                                                        "Unable to update settings of rollup index [" + rollupIndexName + "]"
                                                     )
-                                                )
-                                            ));
-                                        } else {
-                                            deleteRollupIndex(
+                                                );
+                                            }
+                                        },
+                                            e -> deleteRollupIndex(
                                                 sourceIndexName,
                                                 rollupIndexName,
                                                 parentTask,
-                                                listener,
-                                                new ElasticsearchException("Failed to refresh rollup index [" + rollupIndexName + "]")
-                                            );
-                                        }
-                                    },
-                                        e -> deleteRollupIndex(
-                                            sourceIndexName,
-                                            rollupIndexName,
-                                            parentTask,
-                                            listener,
-                                            new ElasticsearchException("Failed to refresh rollup index [" + rollupIndexName + "]", e)
-                                        )
-                                    ));
+                                                createIndexListener,
+                                                new ElasticsearchException(
+                                                    "Unable to update settings of rollup index [" + rollupIndexName + "]",
+                                                    e
+                                                )
+                                            )
+                                        ));
                                 } else {
                                     deleteRollupIndex(
                                         sourceIndexName,
                                         rollupIndexName,
                                         parentTask,
-                                        listener,
-                                        new ElasticsearchException("Unable to update settings of rollup index [" + rollupIndexName + "]")
+                                        createIndexListener,
+                                        new ElasticsearchException("Unable to index into rollup index [" + rollupIndexName + "]")
                                     );
                                 }
-                            },
-                                e -> deleteRollupIndex(
-                                    sourceIndexName,
-                                    rollupIndexName,
-                                    parentTask,
-                                    listener,
-                                    new ElasticsearchException("Unable to update settings of rollup index [" + rollupIndexName + "]", e)
-                                )
-                            ));
+                            }, e -> deleteRollupIndex(sourceIndexName, rollupIndexName, parentTask, createIndexListener, e)));
                         } else {
-                            deleteRollupIndex(
-                                sourceIndexName,
-                                rollupIndexName,
-                                parentTask,
-                                listener,
-                                new ElasticsearchException("Unable to index into rollup index [" + rollupIndexName + "]")
+                            createIndexListener.onFailure(
+                                new ElasticsearchException("Failed to create rollup index [" + rollupIndexName + "]")
                             );
                         }
-                    }, e -> deleteRollupIndex(sourceIndexName, rollupIndexName, parentTask, listener, e)));
-                } else {
-                    listener.onFailure(new ElasticsearchException("Failed to create rollup index [" + rollupIndexName + "]"));
-                }
-            }, listener::onFailure));
-        }, listener::onFailure));
+                    })
+                );
+            }));
     }
 
     @Override

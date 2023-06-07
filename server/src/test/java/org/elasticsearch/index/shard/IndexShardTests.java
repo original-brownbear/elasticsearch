@@ -2862,10 +2862,10 @@ public class IndexShardTests extends IndexShardTestCase {
                     maxSeqNoOfUpdatesOrDeletes,
                     retentionLeases,
                     mappingVersion,
-                    ActionListener.wrap(r -> {
+                    listener.delegateFailureAndWrap((l, r) -> {
                         assertFalse(replica.isSyncNeeded());
-                        listener.onResponse(r);
-                    }, listener::onFailure)
+                        l.onResponse(r);
+                    })
                 );
             }
         }, true, true);
@@ -2986,11 +2986,11 @@ public class IndexShardTests extends IndexShardTestCase {
                     maxSeqNoOfUpdatesOrDeletes,
                     retentionLeases,
                     mappingVersion,
-                    ActionListener.wrap(checkpoint -> {
-                        listener.onResponse(checkpoint);
+                    listener.delegateFailureAndWrap((l, checkpoint) -> {
+                        l.onResponse(checkpoint);
                         // Shard should now be active since we did recover:
                         assertTrue(replica.isActive());
-                    }, listener::onFailure)
+                    })
                 );
             }
         }, false, true);
@@ -3025,10 +3025,10 @@ public class IndexShardTests extends IndexShardTestCase {
             // we're only checking that listeners are called when the engine is open, before there is no point
             @Override
             public void prepareForTranslogOperations(int totalTranslogOps, ActionListener<Void> listener) {
-                super.prepareForTranslogOperations(totalTranslogOps, ActionListener.wrap(r -> {
+                super.prepareForTranslogOperations(totalTranslogOps, listener.delegateFailureAndWrap((l, r) -> {
                     assertListenerCalled.accept(replica);
-                    listener.onResponse(r);
-                }, listener::onFailure));
+                    l.onResponse(r);
+                }));
             }
 
             @Override
@@ -3048,19 +3048,19 @@ public class IndexShardTests extends IndexShardTestCase {
                     maxSeqNoOfUpdatesOrDeletes,
                     retentionLeases,
                     mappingVersion,
-                    ActionListener.wrap(r -> {
+                    listener.delegateFailureAndWrap((l, r) -> {
                         assertListenerCalled.accept(replica);
-                        listener.onResponse(r);
-                    }, listener::onFailure)
+                        l.onResponse(r);
+                    })
                 );
             }
 
             @Override
             public void finalizeRecovery(long globalCheckpoint, long trimAboveSeqNo, ActionListener<Void> listener) {
-                super.finalizeRecovery(globalCheckpoint, trimAboveSeqNo, ActionListener.wrap(r -> {
+                super.finalizeRecovery(globalCheckpoint, trimAboveSeqNo, listener.delegateFailureAndWrap((l, r) -> {
                     assertListenerCalled.accept(replica);
-                    listener.onResponse(r);
-                }, listener::onFailure));
+                    l.onResponse(r);
+                }));
             }
         }, false, true);
 

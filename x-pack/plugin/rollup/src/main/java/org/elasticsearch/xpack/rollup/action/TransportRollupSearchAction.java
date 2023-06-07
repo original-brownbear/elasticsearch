@@ -120,7 +120,7 @@ public class TransportRollupSearchAction extends TransportAction<SearchRequest, 
 
         MultiSearchRequest msearch = createMSearchRequest(request, registry, rollupSearchContext);
 
-        client.multiSearch(msearch, ActionListener.wrap(msearchResponse -> {
+        client.multiSearch(msearch, listener.delegateFailureAndWrap((delegate, msearchResponse) -> {
             AggregationReduceContext.Builder reduceContextBuilder = new AggregationReduceContext.Builder() {
                 @Override
                 public AggregationReduceContext forPartialReduction() {
@@ -143,8 +143,8 @@ public class TransportRollupSearchAction extends TransportAction<SearchRequest, 
                     );
                 }
             };
-            listener.onResponse(processResponses(rollupSearchContext, msearchResponse, reduceContextBuilder));
-        }, listener::onFailure));
+            delegate.onResponse(processResponses(rollupSearchContext, msearchResponse, reduceContextBuilder));
+        }));
     }
 
     static SearchResponse processResponses(

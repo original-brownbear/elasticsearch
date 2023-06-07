@@ -75,13 +75,13 @@ public class TransportEvaluateDataFrameAction extends HandledTransportAction<
         ActionListener<EvaluateDataFrameAction.Response> listener
     ) {
         TaskId parentTaskId = new TaskId(clusterService.localNode().getId(), task.getId());
-        ActionListener<List<Void>> resultsListener = ActionListener.wrap(unused -> {
+        ActionListener<List<Void>> resultsListener = listener.delegateFailureAndWrap((l, unused) -> {
             EvaluateDataFrameAction.Response response = new EvaluateDataFrameAction.Response(
                 request.getEvaluation().getName(),
                 request.getEvaluation().getResults()
             );
-            listener.onResponse(response);
-        }, listener::onFailure);
+            l.onResponse(response);
+        });
 
         // Create an immutable collection of parameters to be used by evaluation metrics.
         EvaluationParameters parameters = new EvaluationParameters(maxBuckets.get());
@@ -139,13 +139,13 @@ public class TransportEvaluateDataFrameAction extends HandledTransportAction<
                 SearchRequest searchRequest = new SearchRequest(request.getIndices()).source(searchSourceBuilder);
                 useSecondaryAuthIfAvailable(
                     securityContext,
-                    () -> client.execute(SearchAction.INSTANCE, searchRequest, ActionListener.wrap(searchResponse -> {
+                    () -> client.execute(SearchAction.INSTANCE, searchRequest, listener.delegateFailureAndWrap((l, searchResponse) -> {
                         evaluation.process(searchResponse);
                         if (evaluation.hasAllResults() == false) {
                             add(nextTask());
                         }
-                        listener.onResponse(null);
-                    }, listener::onFailure))
+                        l.onResponse(null);
+                    }))
                 );
             };
         }
