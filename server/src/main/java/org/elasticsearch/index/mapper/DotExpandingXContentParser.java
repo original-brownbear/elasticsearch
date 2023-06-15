@@ -246,7 +246,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             assert expandedTokens < subPaths.length * 2;
             if (expandedTokens == subPaths.length * 2 - 1) {
                 state = State.PARSING_ORIGINAL_CONTENT;
-                Token token = delegate().currentToken();
+                Token token = delegate.currentToken();
                 if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
                     innerLevel++;
                 }
@@ -278,7 +278,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             return Token.START_OBJECT;
         }
         if (state == State.PARSING_ORIGINAL_CONTENT) {
-            Token token = delegate().nextToken();
+            Token token = delegate.nextToken();
             if (token == Token.START_OBJECT || token == Token.START_ARRAY) {
                 innerLevel++;
             }
@@ -309,7 +309,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         return switch (state) {
             case EXPANDING_START_OBJECT -> expandedTokens % 2 == 1 ? Token.START_OBJECT : Token.FIELD_NAME;
             case ENDING_EXPANDED_OBJECT -> Token.END_OBJECT;
-            case PARSING_ORIGINAL_CONTENT -> delegate().currentToken();
+            case PARSING_ORIGINAL_CONTENT -> delegate.currentToken();
         };
     }
 
@@ -320,14 +320,14 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
             // whenever we are parsing some inner object/array we can easily delegate to the inner parser
             // e.g. field.with.dots: { obj:{ parsing here } }
             if (innerLevel > 0) {
-                return delegate().currentName();
+                return delegate.currentName();
             }
             Token token = currentToken();
             // if we are parsing the outer object/array, only at the start object/array we need to return
             // e.g. dots instead of field.with.dots otherwise we can simply delegate to the inner parser
             // which will do the right thing
             if (innerLevel == 0 && token != Token.START_OBJECT && token != Token.START_ARRAY) {
-                return delegate().currentName();
+                return delegate.currentName();
             }
             // note that innerLevel can be -1 if there are no inner object/array e.g. field.with.dots: value
             // as well as while there is and we are parsing their END_OBJECT or END_ARRAY
@@ -338,28 +338,36 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
     @Override
     public void skipChildren() throws IOException {
         if (state == State.EXPANDING_START_OBJECT) {
-            delegate().skipChildren();
+            delegate.skipChildren();
             state = State.ENDING_EXPANDED_OBJECT;
         }
         if (state == State.PARSING_ORIGINAL_CONTENT) {
-            delegate().skipChildren();
+            delegate.skipChildren();
         }
     }
 
     @Override
     public String textOrNull() throws IOException {
         if (state == State.EXPANDING_START_OBJECT) {
-            throw new IllegalStateException("Can't get text on a " + currentToken() + " at " + getTokenLocation());
+            throwOnTexOrNullOnExpanding();
         }
-        return super.textOrNull();
+        return delegate.textOrNull();
+    }
+
+    private void throwOnTexOrNullOnExpanding() {
+        throw new IllegalStateException("Can't get text on a " + currentToken() + " at " + getTokenLocation());
     }
 
     @Override
     public Number numberValue() throws IOException {
         if (state == State.EXPANDING_START_OBJECT) {
-            throw new IllegalStateException("Can't get numeric value on a " + currentToken() + " at " + getTokenLocation());
+            throwOnNumberOnExpanding();
         }
         return super.numberValue();
+    }
+
+    private void throwOnNumberOnExpanding() {
+        throw new IllegalStateException("Can't get numeric value on a " + currentToken() + " at " + getTokenLocation());
     }
 
     @Override
@@ -377,7 +385,7 @@ class DotExpandingXContentParser extends FilterXContentParserWrapper {
         }
 
         @Override
-        public Token nextToken() throws IOException {
+        public Token nextToken() {
             return null;
         }
     }
