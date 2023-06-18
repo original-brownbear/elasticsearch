@@ -17,10 +17,9 @@ import org.elasticsearch.xcontent.ToXContentFragment;
 import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.invoke.MethodHandle;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Wrapper around everything that defines a mapping, without references to
@@ -39,6 +38,11 @@ public final class Mapping implements ToXContentFragment {
     private final RootObjectMapper root;
     private final Map<String, Object> meta;
     private final MetadataFieldMapper[] metadataMappers;
+
+    private final MethodHandle preParse;
+
+    private final MethodHandle postParse;
+
     private final Map<Class<? extends MetadataFieldMapper>, MetadataFieldMapper> metadataMappersMap;
     private final Map<String, MetadataFieldMapper> metadataMappersByName;
 
@@ -59,6 +63,12 @@ public final class Mapping implements ToXContentFragment {
         this.metadataMappersMap = Map.ofEntries(metadataMappersMap);
         this.metadataMappersByName = Map.ofEntries(metadataMappersByName);
         this.meta = meta;
+
+        final List<Class<?>> metaMapperClasses = Arrays.stream(metadataMappers)
+            .map(MetadataFieldMapper::getClass)
+            .collect(Collectors.toList());
+        preParse = Mh.loopConsumers(metaMapperClasses, "preParse", DocumentParserContext.class);
+        postParse = Mh.loopConsumers(metaMapperClasses, "postParse", DocumentParserContext.class);
     }
 
     /**
@@ -89,6 +99,14 @@ public final class Mapping implements ToXContentFragment {
 
     MetadataFieldMapper[] getSortedMetadataMappers() {
         return metadataMappers;
+    }
+
+    MethodHandle preParse() {
+        return preParse;
+    }
+
+    MethodHandle postParse() {
+        return postParse;
     }
 
     Map<Class<? extends MetadataFieldMapper>, MetadataFieldMapper> getMetadataMappersMap() {

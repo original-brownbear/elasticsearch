@@ -68,8 +68,7 @@ public final class DocumentParser {
         try (XContentParser parser = XContentHelper.createParser(parserConfiguration, source.source(), xContentType)) {
             context = new RootDocumentParserContext(mappingLookup, mappingParserContext, source, parser);
             validateStart(context.parser());
-            MetadataFieldMapper[] metadataFieldsMappers = mappingLookup.getMapping().getSortedMetadataMappers();
-            internalParseDocument(metadataFieldsMappers, context);
+            internalParseDocument(mappingLookup.getMapping(), context);
             validateEnd(context.parser());
         } catch (XContentParseException e) {
             throw new DocumentParsingException(e.getLocation(), e.getMessage(), e);
@@ -97,14 +96,12 @@ public final class DocumentParser {
         };
     }
 
-    private static void internalParseDocument(MetadataFieldMapper[] metadataFieldsMappers, DocumentParserContext context) {
+    private static void internalParseDocument(Mapping mapping, DocumentParserContext context) {
 
         try {
             final boolean emptyDoc = isEmptyDoc(context.root(), context.parser());
-
-            for (MetadataFieldMapper metadataMapper : metadataFieldsMappers) {
-                metadataMapper.preParse(context);
-            }
+            final var metadataFieldMappers = mapping.getSortedMetadataMappers();
+            mapping.preParse().invoke(context, metadataFieldMappers);
 
             if (context.root().isEnabled() == false) {
                 // entire type is disabled
@@ -115,11 +112,11 @@ public final class DocumentParser {
 
             executeIndexTimeScripts(context);
 
-            for (MetadataFieldMapper metadataMapper : metadataFieldsMappers) {
-                metadataMapper.postParse(context);
-            }
+            mapping.postParse().invoke(context, metadataFieldMappers);
         } catch (Exception e) {
             throw wrapInDocumentParsingException(context, e);
+        } catch (Throwable t) {
+            throw new AssertionError(t);
         }
     }
 
