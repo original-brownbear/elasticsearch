@@ -90,13 +90,13 @@ public abstract class AbstractTransportSetResetModeAction extends AcknowledgedTr
             listener.onFailure(e);
         });
 
-        ActionListener<AcknowledgedResponse> clusterStateUpdateListener = ActionListener.wrap(acknowledgedResponse -> {
-            if (acknowledgedResponse.isAcknowledged() == false) {
-                wrappedListener.onFailure(new ElasticsearchTimeoutException("Unknown error occurred while updating cluster state"));
+        ActionListener<AcknowledgedResponse> clusterStateUpdateListener = wrappedListener.delegateFailureAndWrap((l, resp) -> {
+            if (resp.isAcknowledged() == false) {
+                l.onFailure(new ElasticsearchTimeoutException("Unknown error occurred while updating cluster state"));
                 return;
             }
-            wrappedListener.onResponse(acknowledgedResponse);
-        }, wrappedListener::onFailure);
+            l.onResponse(resp);
+        });
 
         submitUnbatchedTask(featureName() + "-set-reset-mode", new AckedClusterStateUpdateTask(request, clusterStateUpdateListener) {
 

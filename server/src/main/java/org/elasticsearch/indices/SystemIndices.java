@@ -934,21 +934,21 @@ public class SystemIndices {
 
             GroupedActionListener<ResetFeatureStateStatus> groupedListener = new GroupedActionListener<>(
                 taskCount,
-                ActionListener.wrap(listenerResults -> {
+                listener.delegateFailureAndWrap((delegate, listenerResults) -> {
                     List<ResetFeatureStateStatus> errors = listenerResults.stream()
                         .filter(status -> status.getStatus() == ResetFeatureStateResponse.ResetFeatureStateStatus.Status.FAILURE)
                         .collect(Collectors.toList());
 
                     if (errors.isEmpty()) {
-                        listener.onResponse(ResetFeatureStateStatus.success(name));
+                        delegate.onResponse(ResetFeatureStateStatus.success(name));
                     } else {
                         StringBuilder exceptions = new StringBuilder("[");
                         exceptions.append(errors.stream().map(e -> e.getException().getMessage()).collect(Collectors.joining(", ")));
                         exceptions.append(']');
                         errors.forEach(e -> logger.warn(() -> "error while resetting feature [" + name + "]", e.getException()));
-                        listener.onResponse(ResetFeatureStateStatus.failure(name, new Exception(exceptions.toString())));
+                        delegate.onResponse(ResetFeatureStateStatus.failure(name, new Exception(exceptions.toString())));
                     }
-                }, listener::onFailure)
+                })
             );
 
             // Send cleanup for the associated indices, they don't need special origin since they are not protected

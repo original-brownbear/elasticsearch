@@ -223,7 +223,7 @@ public class CircuitBreakerTests extends ESTestCase {
                 eqlCircuitBreaker
             );
             TumblingWindow window = new TumblingWindow(eqlClient, criteria, null, matcher, Collections.emptyList());
-            window.execute(wrap(p -> {}, ex -> {}));
+            window.execute(ActionListener.noop());
 
             assertTrue(esClient.searchRequestsRemainingCount() == 0); // ensure all the search requests have been asked for
             assertEquals(0, eqlCircuitBreaker.getTrippedCount()); // the circuit breaker shouldn't trip
