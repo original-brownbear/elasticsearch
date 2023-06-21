@@ -14,7 +14,6 @@ import org.elasticsearch.action.IndicesRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeAction;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.template.put.PutComposableIndexTemplateAction;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -545,7 +544,7 @@ public class DataLifecycleServiceIT extends ESIntegTestCase {
         }
     }
 
-    static void indexDocs(String dataStream, int numDocs) {
+    private void indexDocs(String dataStream, int numDocs) {
         BulkRequest bulkRequest = new BulkRequest();
         for (int i = 0; i < numDocs; i++) {
             String value = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.formatMillis(System.currentTimeMillis());
@@ -562,7 +561,7 @@ public class DataLifecycleServiceIT extends ESIntegTestCase {
             assertThat(itemResponse.status(), equalTo(RestStatus.CREATED));
             assertThat(itemResponse.getIndex(), startsWith(backingIndexPrefix));
         }
-        indicesAdmin().refresh(new RefreshRequest(dataStream)).actionGet();
+        refresh(dataStream);
     }
 
     static void putComposableIndexTemplate(

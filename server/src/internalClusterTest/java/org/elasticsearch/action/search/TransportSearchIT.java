@@ -259,7 +259,7 @@ public class TransportSearchIT extends ESIntegTestCase {
             IndexResponse indexResponse = client().index(indexRequest).actionGet();
             assertEquals(RestStatus.CREATED, indexResponse.status());
         }
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         SearchRequest originalRequest = new SearchRequest();
         SearchSourceBuilder source = new SearchSourceBuilder();
@@ -554,7 +554,7 @@ public class TransportSearchIT extends ESIntegTestCase {
             IndexResponse indexResponse = client().prepareIndex(indexName).setSource("number", randomInt()).get();
             assertEquals(RestStatus.CREATED, indexResponse.status());
         }
-        indicesAdmin().prepareRefresh(indexName).get();
+        refresh(indexName);
     }
 
     private long requestBreakerUsed() {

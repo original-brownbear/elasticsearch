@@ -60,7 +60,7 @@ public class FieldUsageStatsIT extends ESIntegTestCase {
                 .setSource("field", "value", "field2", "value2", "date_field", formatter.format(date.plusDays(i)))
                 .get();
         }
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         ensureGreen("test");
 

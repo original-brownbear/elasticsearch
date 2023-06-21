@@ -89,7 +89,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         BytesReference source = BytesReference.bytes(jsonBuilder().startObject().endObject());
         logger.info("percolating empty doc");
@@ -179,7 +179,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
         client().prepareIndex("test")
             .setId("4")
             .setSource(jsonBuilder().startObject().field("query", rangeQuery("field2").from(10).to(12)).endObject())
@@ -196,7 +196,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
         client().prepareIndex("test")
             .setId("7")
             .setSource(jsonBuilder().startObject().field("query", rangeQuery("field3").from("192.168.1.0").to("192.168.1.5")).endObject())
@@ -229,7 +229,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         // Test long range:
         BytesReference source = BytesReference.bytes(jsonBuilder().startObject().field("field1", 12).endObject());
@@ -357,7 +357,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
         client().prepareIndex("test").setId("4").setSource("{\"id\": \"4\"}", XContentType.JSON).get();
         client().prepareIndex("test").setId("5").setSource(XContentType.JSON, "id", "5", "field1", "value").get();
         client().prepareIndex("test").setId("6").setSource(XContentType.JSON, "id", "6", "field1", "value", "field2", "value").get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         logger.info("percolating empty doc");
         SearchResponse response = client().prepareSearch()
@@ -395,7 +395,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
         client().prepareIndex("test").setId("1").setSource(jsonBuilder().startObject().field("query", matchAllQuery()).endObject()).get();
 
         client().prepareIndex("test").setId("2").setSource("{}", XContentType.JSON).get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         logger.info("percolating empty doc with source disabled");
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> {
@@ -433,7 +433,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         client().prepareIndex("test")
             .setId("3")
@@ -475,7 +475,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         BytesReference source = BytesReference.bytes(
             jsonBuilder().startObject()
@@ -532,7 +532,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().field("id", "5").field("query", termQuery("field1", "fox")).endObject())
             .execute()
             .actionGet();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         BytesReference document = BytesReference.bytes(
             jsonBuilder().startObject().field("field1", "The quick brown fox jumps over the lazy dog").endObject()
@@ -757,7 +757,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
             .setId("2")
             .setSource(jsonBuilder().startObject().field("query", new MatchPhraseQueryBuilder("field", "brown fox").slop(5)).endObject())
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse response = client().prepareSearch()
             .setQuery(new PercolateQueryBuilder("query", new BytesArray("{\"field\" : [\"brown\", \"fox\"]}"), XContentType.JSON))
@@ -838,7 +838,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         BytesReference source = BytesReference.bytes(jsonBuilder().startObject().field("field", "value").endObject());
         SearchResponse response = client().prepareSearch()
@@ -929,13 +929,13 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         client().prepareIndex("test")
             .setId("q3")
             .setSource(jsonBuilder().startObject().field("id", "q3").field("query", QueryBuilders.matchAllQuery()).endObject())
             .get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse response = client().prepareSearch()
             .setQuery(
@@ -1092,7 +1092,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().field("field1", "c").endObject())
             .execute()
             .actionGet();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         MultiSearchResponse response = client().prepareMultiSearch()
             .add(
@@ -1234,7 +1234,7 @@ public class PercolatorQuerySearchIT extends ESIntegTestCase {
             .execute()
             .actionGet();
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse response = client().prepareSearch("test")
             .setQuery(

@@ -12,7 +12,6 @@ import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheReque
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheResponse;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -118,7 +117,7 @@ public class DocumentActionsIT extends ESIntegTestCase {
         assertThat(deleteResponse.getIndex(), equalTo(getConcreteIndexName()));
         assertThat(deleteResponse.getId(), equalTo("1"));
         logger.info("Refreshing");
-        indicesAdmin().refresh(new RefreshRequest("test")).actionGet();
+        refresh("test");
 
         logger.info("Get [type1/1] (should be empty)");
         for (int i = 0; i < 5; i++) {
@@ -136,7 +135,7 @@ public class DocumentActionsIT extends ESIntegTestCase {
         assertThat(flushResult.getSuccessfulShards(), equalTo(numShards.totalNumShards));
         assertThat(flushResult.getFailedShards(), equalTo(0));
         logger.info("Refreshing");
-        indicesAdmin().refresh(new RefreshRequest("test")).actionGet();
+        refresh("test");
 
         logger.info("Get [type1/1] and [type1/2]");
         for (int i = 0; i < 5; i++) {
@@ -222,9 +221,7 @@ public class DocumentActionsIT extends ESIntegTestCase {
         assertThat(bulkResponse.getItems()[5].getIndex(), equalTo(getConcreteIndexName()));
 
         waitForRelocation(ClusterHealthStatus.GREEN);
-        RefreshResponse refreshResponse = indicesAdmin().prepareRefresh("test").execute().actionGet();
-        assertNoFailures(refreshResponse);
-        assertThat(refreshResponse.getSuccessfulShards(), equalTo(numShards.totalNumShards));
+        assertThat(refresh("test").getSuccessfulShards(), equalTo(numShards.totalNumShards));
 
         for (int i = 0; i < 5; i++) {
             GetResponse getResult = client().get(new GetRequest("test").id("1")).actionGet();

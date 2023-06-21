@@ -446,7 +446,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
         // update p1 and see what that we get updated values...
 
         createIndexRequest("test", "parent", "p1", null, "p_field", "p_value1_updated").get();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         searchResponse = client().prepareSearch("test")
             .setQuery(constantScoreQuery(hasChildQuery("child", termQuery("c_field", "yellow"), ScoreMode.None)))
@@ -924,7 +924,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
             createIndexRequest("test", "child", "d" + i, "p1", "c_field", "red").get();
             createIndexRequest("test", "parent", "p2", null, "p_field", "p_value2").get();
             createIndexRequest("test", "child", "c3", "p2", "c_field", "x").get();
-            indicesAdmin().prepareRefresh("test").get();
+            refresh("test");
         }
 
         searchResponse = client().prepareSearch("test")
@@ -1039,7 +1039,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
         createIndexRequest("test", "parent", "p10", null, "p_field", "p_value10").get();
         createIndexRequest("test", "child", "c1", "p1", "c_field", "blue").get();
         indicesAdmin().prepareFlush("test").get();
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         SearchResponse searchResponse = client().prepareSearch("test")
             .setQuery(constantScoreQuery(hasChildQuery("child", termQuery("c_field", "blue"), ScoreMode.None)))
@@ -1048,7 +1048,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
         assertThat(searchResponse.getHits().getTotalHits().value, equalTo(1L));
 
         createIndexRequest("test", "child", "c2", "p2", "c_field", "blue").get();
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         searchResponse = client().prepareSearch("test")
             .setQuery(constantScoreQuery(hasChildQuery("child", termQuery("c_field", "blue"), ScoreMode.None)))
@@ -1319,7 +1319,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
         createIndexRequest("test", "child", "c5", "p3", "c_field", "blue").get();
         createIndexRequest("test", "child", "c6", "p4", "c_field", "blue").get();
         indicesAdmin().prepareFlush("test").get();
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         for (int i = 0; i < 2; i++) {
             SearchResponse searchResponse = client().prepareSearch()
@@ -1334,7 +1334,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
         }
 
         createIndexRequest("test", "child", "c3", "p2", "c_field", "blue").get();
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         SearchResponse searchResponse = client().prepareSearch()
             .setQuery(

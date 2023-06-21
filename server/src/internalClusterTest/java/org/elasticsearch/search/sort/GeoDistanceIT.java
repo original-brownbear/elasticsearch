@@ -145,7 +145,7 @@ public class GeoDistanceIT extends ESIntegTestCase {
             )
             .get();
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         // Order: Asc
         SearchResponse searchResponse = client().prepareSearch("test")

@@ -80,7 +80,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
         ensureGreen("index");
 
         assertThat(indicesAdmin().prepareFlush("index").get().getSuccessfulShards(), equalTo(2));
-        assertThat(indicesAdmin().prepareRefresh("index").get().getSuccessfulShards(), equalTo(2));
+        assertThat(refresh("index").getSuccessfulShards(), equalTo(2));
 
         final String excludeSetting = INDEX_ROUTING_EXCLUDE_GROUP_SETTING.getConcreteSettingForNamespace("_name").getKey();
         updateIndexSettings(Settings.builder().put(excludeSetting, nodeNames.get(0)), "index");

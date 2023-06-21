@@ -112,7 +112,7 @@ public class GeoGridAggAndQueryConsistencyIT extends ESIntegTestCase {
         );
 
         assertFalse(builder.get().hasFailures());
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         GeoBoundingBox boundingBox = new GeoBoundingBox(new GeoPoint(-11.29550, 179.999992), new GeoPoint(-11.29552, -179.999992));
 
@@ -159,7 +159,7 @@ public class GeoGridAggAndQueryConsistencyIT extends ESIntegTestCase {
         builder.add(new IndexRequest("test").source("{\"geometry\" : \"" + mp + "\"}", XContentType.JSON));
 
         assertFalse(builder.get().hasFailures());
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         // BBOX (172.21916569181505, -173.17785081207947, 86.17678739494652, 83.01600086049713)
         GeoBoundingBox boundingBox = new GeoBoundingBox(
@@ -270,7 +270,7 @@ public class GeoGridAggAndQueryConsistencyIT extends ESIntegTestCase {
 
         }
         assertFalse(builder.get().hasFailures());
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         for (int i = minPrecision; i <= maxPrecision; i++) {
             GeoGridAggregationBuilder builderPoint = aggBuilder.apply("geometry").field("geometry").precision(i);
@@ -287,7 +287,7 @@ public class GeoGridAggAndQueryConsistencyIT extends ESIntegTestCase {
             builder.add(new IndexRequest("test").source(doc, XContentType.JSON));
         }
         assertFalse(builder.get().hasFailures());
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         int zoom = randomIntBetween(minPrecision, maxPrecision);
         Rectangle rectangle = toBoundingBox.apply(tiles[zoom]);

@@ -187,7 +187,7 @@ public class RetryTests extends ESIntegTestCase {
         Retry retry = new Retry(BackoffPolicy.exponentialBackoff(), client().threadPool());
         BulkResponse initialBulkResponse = retry.withBackoff(client()::bulk, bulk.request()).actionGet();
         assertFalse(initialBulkResponse.buildFailureMessage(), initialBulkResponse.hasFailures());
-        indicesAdmin().prepareRefresh("source").get();
+        refresh("source");
 
         AbstractBulkByScrollRequestBuilder<?, ?> builder = request.apply(internalCluster().masterClient());
         // Make sure we use more than one batch so we have to scroll

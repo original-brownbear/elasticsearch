@@ -80,7 +80,7 @@ public class SearchScrollIT extends ESIntegTestCase {
                 .get();
         }
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse searchResponse = client().prepareSearch()
             .setQuery(matchAllQuery())
@@ -133,7 +133,7 @@ public class SearchScrollIT extends ESIntegTestCase {
             client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", i).setRouting(routing).get();
         }
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse searchResponse = client().prepareSearch()
             .setSearchType(SearchType.QUERY_THEN_FETCH)
@@ -201,7 +201,7 @@ public class SearchScrollIT extends ESIntegTestCase {
                 .get();
         }
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         assertThat(client().prepareSearch().setSize(0).setQuery(matchAllQuery()).get().getHits().getTotalHits().value, equalTo(500L));
         assertThat(
@@ -237,7 +237,7 @@ public class SearchScrollIT extends ESIntegTestCase {
                 searchResponse = client().prepareSearchScroll(searchResponse.getScrollId()).setScroll(TimeValue.timeValueMinutes(2)).get();
             } while (searchResponse.getHits().getHits().length > 0);
 
-            indicesAdmin().prepareRefresh().get();
+            refresh();
             assertThat(client().prepareSearch().setSize(0).setQuery(matchAllQuery()).get().getHits().getTotalHits().value, equalTo(500L));
             assertThat(
                 client().prepareSearch().setSize(0).setQuery(termQuery("message", "test")).get().getHits().getTotalHits().value,
@@ -273,7 +273,7 @@ public class SearchScrollIT extends ESIntegTestCase {
                 .get();
         }
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse searchResponse1 = client().prepareSearch()
             .setQuery(matchAllQuery())
@@ -393,7 +393,7 @@ public class SearchScrollIT extends ESIntegTestCase {
                 .get();
         }
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse searchResponse1 = client().prepareSearch()
             .setQuery(matchAllQuery())
@@ -647,7 +647,7 @@ public class SearchScrollIT extends ESIntegTestCase {
         client().prepareIndex("test").setId("1").setSource("created_date", "2020-01-01").get();
         client().prepareIndex("test").setId("2").setSource("created_date", "2020-01-02").get();
         client().prepareIndex("test").setId("3").setSource("created_date", "2020-01-03").get();
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
         SearchResponse resp = null;
         try {
             int totalHits = 0;
@@ -680,7 +680,7 @@ public class SearchScrollIT extends ESIntegTestCase {
             index("demo", "demo-" + i, Map.of());
             index("prod", "prod-" + i, Map.of());
         }
-        indicesAdmin().prepareRefresh().get();
+        refresh();
         SearchResponse respFromDemoIndex = client().prepareSearch("demo")
             .setSize(randomIntBetween(1, 10))
             .setQuery(new MatchAllQueryBuilder())

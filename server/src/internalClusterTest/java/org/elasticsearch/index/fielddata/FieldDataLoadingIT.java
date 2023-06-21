@@ -36,7 +36,7 @@ public class FieldDataLoadingIT extends ESIntegTestCase {
         ensureGreen();
 
         client().prepareIndex("test").setId("1").setSource("name", "name").get();
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         ClusterStatsResponse response = clusterAdmin().prepareClusterStats().get();
         assertThat(response.getIndicesStats().getFieldData().getMemorySizeInBytes(), greaterThan(0L));

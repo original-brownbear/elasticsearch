@@ -137,7 +137,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         ensureGreen();
         client().prepareIndex("test").setId("1").setSource("field", "value1", "field2", "value1").execute().actionGet();
         client().prepareIndex("test").setId("2").setSource("field", "value2", "field2", "value2").execute().actionGet();
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
 
         NodesStatsResponse nodesStats = clusterAdmin().prepareNodesStats("data:true").setIndices(true).execute().actionGet();
         assertThat(
@@ -243,7 +243,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         clusterAdmin().prepareHealth().setWaitForGreenStatus().execute().actionGet();
         client().prepareIndex("test").setId("1").setSource("field", "value1").execute().actionGet();
         client().prepareIndex("test").setId("2").setSource("field", "value2").execute().actionGet();
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
 
         NodesStatsResponse nodesStats = clusterAdmin().prepareNodesStats("data:true").setIndices(true).execute().actionGet();
         assertThat(
@@ -754,7 +754,7 @@ public class IndexStatsIT extends ESIntegTestCase {
 
         indicesAdmin().prepareFlush().get();
         indicesAdmin().prepareForceMerge().setMaxNumSegments(1).execute().actionGet();
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         final boolean includeSegmentFileSizes = randomBoolean();
         stats = indicesAdmin().prepareStats().setSegments(true).setIncludeSegmentFileSizes(includeSegmentFileSizes).get();
@@ -784,7 +784,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         client().prepareIndex("test_index").setId(Integer.toString(2)).setSource("field", "value").execute().actionGet();
         client().prepareIndex("test_index_2").setId(Integer.toString(1)).setSource("field", "value").execute().actionGet();
 
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         IndicesStatsRequestBuilder builder = indicesAdmin().prepareStats();
         Flag[] values = CommonStatsFlags.SHARD_LEVEL.getFlags();
         for (Flag flag : values) {

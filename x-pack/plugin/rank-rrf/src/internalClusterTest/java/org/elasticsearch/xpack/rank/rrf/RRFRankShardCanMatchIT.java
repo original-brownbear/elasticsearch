@@ -146,7 +146,7 @@ public class RRFRankShardCanMatchIT extends ESIntegTestCase {
             shardB = b;
         }
 
-        indicesAdmin().prepareRefresh("value_index").get();
+        refresh("value_index");
 
         // match 2 separate shard with no overlap in queries
         SearchResponse response = client().prepareSearch("value_index")

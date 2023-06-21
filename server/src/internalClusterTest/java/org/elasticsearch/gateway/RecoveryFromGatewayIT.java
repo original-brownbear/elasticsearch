@@ -134,7 +134,7 @@ public class RecoveryFromGatewayIT extends ESIntegTestCase {
         ensureYellow();
         primaryTerms = assertAndCapturePrimaryTerms(primaryTerms);
 
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         assertHitCount(client().prepareSearch().setSize(0).setQuery(termQuery("appAccountIds", 179)).execute().actionGet(), 2);
 
         internalCluster().fullRestart();
@@ -143,7 +143,7 @@ public class RecoveryFromGatewayIT extends ESIntegTestCase {
         ensureYellow();
         primaryTerms = assertAndCapturePrimaryTerms(primaryTerms);
 
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         assertHitCount(client().prepareSearch().setSize(0).setQuery(termQuery("appAccountIds", 179)).execute().actionGet(), 2);
     }
 
@@ -389,7 +389,7 @@ public class RecoveryFromGatewayIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().field("field", "value2").endObject())
             .execute()
             .actionGet();
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
 
         logger.info("--> running cluster_health (wait for the shards to startup)");
         ensureGreen();
@@ -414,7 +414,7 @@ public class RecoveryFromGatewayIT extends ESIntegTestCase {
         // https://github.com/elastic/elasticsearch/issues/9997
         // clusterAdmin().prepareHealth("test").setWaitForYellowStatus().get();
         logger.info("--> refreshing all indices after indexing is complete");
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
 
         logger.info("--> checking if documents exist, there should be 3");
         for (int i = 0; i < 10; i++) {

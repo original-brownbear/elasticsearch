@@ -131,7 +131,7 @@ public class RelocationIT extends ESIntegTestCase {
         }
 
         logger.info("--> verifying count");
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         assertThat(client().prepareSearch("test").setSize(0).execute().actionGet().getHits().getTotalHits().value, equalTo(20L));
 
         logger.info("--> start another node");
@@ -155,7 +155,7 @@ public class RelocationIT extends ESIntegTestCase {
         assertThat(clusterHealthResponse.isTimedOut(), equalTo(false));
 
         logger.info("--> verifying count again...");
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         assertThat(client().prepareSearch("test").setSize(0).execute().actionGet().getHits().getTotalHits().value, equalTo(20L));
     }
 

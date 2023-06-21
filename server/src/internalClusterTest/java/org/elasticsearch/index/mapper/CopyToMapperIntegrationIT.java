@@ -32,8 +32,9 @@ public class CopyToMapperIntegrationIT extends ESIntegTestCase {
 
         for (int i = 0; i < recordCount * 2; i++) {
             client().prepareIndex("test-idx").setId(Integer.toString(i)).setSource("test_field", "test " + i, "even", i % 2 == 0).get();
+
+            refresh("test-idx");
         }
-        indicesAdmin().prepareRefresh("test-idx").execute().actionGet();
 
         SubAggCollectionMode aggCollectionMode = randomFrom(SubAggCollectionMode.values());
 
@@ -66,7 +67,7 @@ public class CopyToMapperIntegrationIT extends ESIntegTestCase {
         );
         assertAcked(indicesAdmin().prepareCreate("test-idx").setMapping(mapping));
         client().prepareIndex("test-idx").setId("1").setSource("foo", "bar").get();
-        indicesAdmin().prepareRefresh("test-idx").execute().actionGet();
+        refresh("test-idx");
         SearchResponse response = client().prepareSearch("test-idx").setQuery(QueryBuilders.termQuery("root.top.child", "bar")).get();
         assertThat(response.getHits().getTotalHits().value, equalTo(1L));
     }

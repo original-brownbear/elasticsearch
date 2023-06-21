@@ -8,7 +8,6 @@
 package org.elasticsearch.integration;
 
 import org.elasticsearch.action.DocWriteRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.template.put.PutComposableIndexTemplateAction;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -221,7 +220,7 @@ public class DataStreamLifecycleServiceRuntimeSecurityIT extends SecurityIntegTe
         client().execute(PutComposableIndexTemplateAction.INSTANCE, request).actionGet();
     }
 
-    private static void indexDoc(String dataStream) {
+    private void indexDoc(String dataStream) {
         BulkRequest bulkRequest = new BulkRequest();
         String value = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.formatMillis(System.currentTimeMillis());
         bulkRequest.add(
@@ -236,7 +235,7 @@ public class DataStreamLifecycleServiceRuntimeSecurityIT extends SecurityIntegTe
             assertThat(itemResponse.status(), equalTo(RestStatus.CREATED));
             assertThat(itemResponse.getIndex(), startsWith(backingIndexPrefix));
         }
-        indicesAdmin().refresh(new RefreshRequest(dataStream)).actionGet();
+        refresh(dataStream);
     }
 
     public static class SystemDataStreamTestPlugin extends Plugin implements SystemIndexPlugin {

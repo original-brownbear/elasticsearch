@@ -17,7 +17,6 @@ import org.elasticsearch.xcontent.XContentType;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertHitCount;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.containsString;
 
 public class MalformedDynamicTemplateIT extends ESIntegTestCase {
@@ -58,7 +57,7 @@ public class MalformedDynamicTemplateIT extends ESIntegTestCase {
             ).setMapping(mapping).get()
         );
         client().prepareIndex(indexName).setSource("{\"foo\" : \"bar\"}", XContentType.JSON).get();
-        assertNoFailures((indicesAdmin().prepareRefresh(indexName)).get());
+        refresh(indexName);
         assertHitCount(client().prepareSearch(indexName).get(), 1);
 
         MapperParsingException ex = expectThrows(

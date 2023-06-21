@@ -18,7 +18,6 @@ import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_BLOCKS_RE
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_BLOCKS_WRITE;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_READ_ONLY;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.SETTING_READ_ONLY_ALLOW_DELETE;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.hamcrest.Matchers.equalTo;
 
 @ClusterScope(scope = ESIntegTestCase.Scope.TEST)
@@ -39,9 +38,7 @@ public class RefreshBlocksIT extends ESIntegTestCase {
         )) {
             try {
                 enableIndexBlock("test", blockSetting);
-                RefreshResponse response = indicesAdmin().prepareRefresh("test").execute().actionGet();
-                assertNoFailures(response);
-                assertThat(response.getSuccessfulShards(), equalTo(numShards.totalNumShards));
+                assertThat(refresh("test").getSuccessfulShards(), equalTo(numShards.totalNumShards));
             } finally {
                 disableIndexBlock("test", blockSetting);
             }

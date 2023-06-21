@@ -49,7 +49,7 @@ public class SearchShardsIT extends ESIntegTestCase {
             for (int j = 0; j < numDocs; j++) {
                 client().prepareIndex(index).setSource("value", i).setId(Integer.toString(i)).get();
             }
-            indicesAdmin().prepareRefresh(index).get();
+            refresh(index);
         }
         int indicesWithoutData = between(1, 10);
         for (int i = 0; i < indicesWithoutData; i++) {
@@ -117,7 +117,7 @@ public class SearchShardsIT extends ESIntegTestCase {
             for (int j = 0; j < numDocs; j++) {
                 client().prepareIndex(index).setSource("value", i).setId(Integer.toString(i)).get();
             }
-            indicesAdmin().prepareRefresh(index).get();
+            refresh(index);
         }
         int iterations = iterations(2, 10);
         for (int i = 0; i < iterations; i++) {
@@ -171,7 +171,7 @@ public class SearchShardsIT extends ESIntegTestCase {
                 for (int j = 0; j < numDocs; j++) {
                     client().prepareIndex(index).setSource("value", i).setId(Integer.toString(i)).get();
                 }
-                indicesAdmin().prepareRefresh(index).get();
+                refresh(index);
             }
             SearchShardsRequest request = new SearchShardsRequest(
                 new String[] { "index-*" },

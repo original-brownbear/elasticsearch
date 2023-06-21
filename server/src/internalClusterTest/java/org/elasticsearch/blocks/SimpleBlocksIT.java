@@ -264,7 +264,7 @@ public class SimpleBlocksIT extends ESIntegTestCase {
             disableIndexBlock(indexName, block);
         }
 
-        indicesAdmin().prepareRefresh(indexName).get();
+        refresh(indexName);
         assertHitCount(client().prepareSearch(indexName).setSize(0).get(), nbDocs);
     }
 

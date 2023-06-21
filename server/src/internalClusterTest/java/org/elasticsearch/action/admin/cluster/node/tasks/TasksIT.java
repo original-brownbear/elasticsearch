@@ -81,7 +81,6 @@ import static org.elasticsearch.core.TimeValue.timeValueMillis;
 import static org.elasticsearch.core.TimeValue.timeValueSeconds;
 import static org.elasticsearch.http.HttpTransportSettings.SETTING_HTTP_MAX_HEADER_SIZE;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFutureThrows;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertSearchResponse;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
@@ -216,7 +215,7 @@ public class TasksIT extends ESIntegTestCase {
         registerTaskManagerListeners(RefreshAction.NAME + "[s][*]"); // primary and replica shard tasks
         createIndex("test");
         ensureGreen("test"); // Make sure all shards are allocated
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         // the refresh operation should produce one main task
         NumShards numberOfShards = getNumShards("test");
@@ -789,7 +788,7 @@ public class TasksIT extends ESIntegTestCase {
         Map<?, ?> result = taskResult.getResponseAsMap();
         assertEquals("0", result.get("failure_count").toString());
 
-        assertNoFailures(indicesAdmin().prepareRefresh(TaskResultsService.TASK_INDEX).get());
+        refresh(TaskResultsService.TASK_INDEX);
 
         SearchResponse searchResponse = client().prepareSearch(TaskResultsService.TASK_INDEX)
             .setSource(SearchSourceBuilder.searchSource().query(QueryBuilders.termQuery("task.action", taskInfo.action())))

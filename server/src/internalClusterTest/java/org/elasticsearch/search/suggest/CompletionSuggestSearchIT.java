@@ -1525,7 +1525,7 @@ public class CompletionSuggestSearchIT extends ESIntegTestCase {
             builder.field("collapse_field", "collapse me").endObject();  // all docs the same value for collapsing
             client().prepareIndex(index).setId("" + i).setSource(builder).get();
         }
-        indicesAdmin().prepareRefresh(index).get();
+        refresh(index);
         CompletionSuggestionBuilder prefix = SuggestBuilders.completionSuggestion(suggestField).prefix("sug").size(1);
 
         SearchResponse searchResponse = client().prepareSearch("test")

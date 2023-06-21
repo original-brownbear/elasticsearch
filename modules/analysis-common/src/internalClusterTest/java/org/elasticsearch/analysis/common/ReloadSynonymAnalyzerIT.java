@@ -74,7 +74,7 @@ public class ReloadSynonymAnalyzerIT extends ESIntegTestCase {
         );
 
         client().prepareIndex("test").setId("1").setSource("field", "foo").get();
-        assertNoFailures(indicesAdmin().prepareRefresh("test").execute().actionGet());
+        refresh("test");
 
         SearchResponse response = client().prepareSearch("test").setQuery(QueryBuilders.matchQuery("field", "baz")).get();
         assertHitCount(response, 1L);

@@ -107,7 +107,7 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
             () -> client().prepareDelete("test", "any-id").get()
         );
         assertThat(deleteError.getMessage(), containsString("Number of documents in the index can't exceed [" + maxDocs.get() + "]"));
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
         SearchResponse searchResponse = client().prepareSearch("test")
             .setQuery(new MatchAllQueryBuilder())
             .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
@@ -136,7 +136,7 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
         IndexingResult indexingResult = indexDocs(between(maxDocs.get() + 1, maxDocs.get() * 2), between(2, 8));
         assertThat(indexingResult.numFailures, greaterThan(0));
         assertThat(indexingResult.numSuccess, both(greaterThan(0)).and(lessThanOrEqualTo(maxDocs.get())));
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
         SearchResponse searchResponse = client().prepareSearch("test")
             .setQuery(new MatchAllQueryBuilder())
             .setTrackTotalHitsUpTo(Integer.MAX_VALUE)
@@ -154,7 +154,7 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
             indexingResult = indexDocs(between(1, 10), between(1, 8));
             assertThat(indexingResult.numSuccess, equalTo(0));
         }
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
         searchResponse = client().prepareSearch("test")
             .setQuery(new MatchAllQueryBuilder())
             .setTrackTotalHitsUpTo(Integer.MAX_VALUE)

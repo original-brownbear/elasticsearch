@@ -8,7 +8,6 @@
 package org.elasticsearch.dlm;
 
 import org.elasticsearch.action.DocWriteRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.rollover.Condition;
 import org.elasticsearch.action.admin.indices.rollover.RolloverConditions;
 import org.elasticsearch.action.admin.indices.rollover.RolloverConfiguration;
@@ -273,7 +272,7 @@ public class ExplainDataLifecycleIT extends ESIntegTestCase {
         });
     }
 
-    static void indexDocs(String dataStream, int numDocs) {
+    private void indexDocs(String dataStream, int numDocs) {
         BulkRequest bulkRequest = new BulkRequest();
         for (int i = 0; i < numDocs; i++) {
             String value = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.formatMillis(System.currentTimeMillis());
@@ -290,7 +289,7 @@ public class ExplainDataLifecycleIT extends ESIntegTestCase {
             assertThat(itemResponse.status(), equalTo(RestStatus.CREATED));
             assertThat(itemResponse.getIndex(), startsWith(backingIndexPrefix));
         }
-        indicesAdmin().refresh(new RefreshRequest(dataStream)).actionGet();
+        refresh(dataStream);
     }
 
     static void putComposableIndexTemplate(

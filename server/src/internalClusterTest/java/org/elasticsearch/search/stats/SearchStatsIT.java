@@ -182,7 +182,7 @@ public class SearchStatsIT extends ESIntegTestCase {
                     .get();
             }
         }
-        indicesAdmin().prepareRefresh(index).get();
+        refresh(index);
 
         IndicesStatsResponse indicesStats = indicesAdmin().prepareStats(index).get();
         assertThat(indicesStats.getTotal().getSearch().getOpenContexts(), equalTo(0L));

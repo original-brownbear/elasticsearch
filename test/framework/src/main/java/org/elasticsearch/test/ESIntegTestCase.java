@@ -1048,7 +1048,7 @@ public abstract class ESIntegTestCase extends ESTestCase {
 
                     if (count == lastKnownCount) {
                         // no progress - try to refresh for the next time
-                        indicesAdmin().prepareRefresh().get();
+                        refresh();
                     }
                     lastKnownCount = count;
                 } catch (Exception e) { // count now acts like search and barfs if all shards failed...

@@ -898,7 +898,7 @@ public class FieldLevelSecurityTests extends SecurityIntegTestCase {
 
         client().prepareIndex("test1").setId("1").setSource("field1", "value1", "field2", "value2", "field3", "value3").get();
         client().prepareIndex("test2").setId("1").setSource("field1", "value1", "field2", "value2", "field3", "value3").get();
-        indicesAdmin().prepareRefresh("test1", "test2").get();
+        refresh("test1", "test2");
 
         // user1 is granted access to field1 only
         MultiSearchResponse response = client().filterWithHeader(

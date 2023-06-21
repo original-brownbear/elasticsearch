@@ -10,7 +10,6 @@ package org.elasticsearch.recovery;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.admin.indices.stats.IndicesStatsResponse;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.action.get.GetResponse;
@@ -410,9 +409,6 @@ public class RecoveryWhileUnderLoadIT extends ESIntegTestCase {
     }
 
     private void refreshAndAssert() throws Exception {
-        assertBusy(() -> {
-            RefreshResponse actionGet = indicesAdmin().prepareRefresh().get();
-            assertAllSuccessful(actionGet);
-        }, 5, TimeUnit.MINUTES);
+        assertBusy(() -> assertAllSuccessful(refresh()), 5, TimeUnit.MINUTES);
     }
 }

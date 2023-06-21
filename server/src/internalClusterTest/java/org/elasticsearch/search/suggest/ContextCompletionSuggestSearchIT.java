@@ -40,7 +40,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
-import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertNoFailures;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.core.IsEqual.equalTo;
 
@@ -180,7 +179,7 @@ public class ContextCompletionSuggestSearchIT extends ESIntegTestCase {
             )
             .get();
         assertThat(indexResponse.status(), equalTo(RestStatus.CREATED));
-        assertNoFailures(indicesAdmin().prepareRefresh(INDEX).get());
+        refresh(INDEX);
         CompletionSuggestionBuilder contextSuggestQuery = SuggestBuilders.completionSuggestion(FIELD)
             .prefix("sugg")
             .contexts(

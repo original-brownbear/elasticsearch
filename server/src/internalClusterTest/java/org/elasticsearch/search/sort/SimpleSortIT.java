@@ -258,7 +258,7 @@ public class SimpleSortIT extends ESIntegTestCase {
         for (int i = 10; i < 20; i++) { // add some docs that don't have values in those fields
             client().prepareIndex("test").setId("" + i).setSource(jsonBuilder().startObject().field("ord", i).endObject()).get();
         }
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         // test the long values
         SearchResponse searchResponse = client().prepareSearch()

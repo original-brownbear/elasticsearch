@@ -895,7 +895,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
             fail("Unknown allocator used");
         }
 
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
         assertHitCount(client().prepareSearch().get(), numDocs);
     }
 
@@ -975,7 +975,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
             randomBoolean(),
             IntStream.range(0, numDocs).mapToObj(n -> client().prepareIndex(indexName).setSource("num", n)).collect(toList())
         );
-        indicesAdmin().prepareRefresh(indexName).get(); // avoid refresh when we are failing a shard
+        refresh(indexName); // avoid refresh when we are failing a shard
         String failingNode = randomFrom(nodes);
         PlainActionFuture<StartRecoveryRequest> startRecoveryRequestFuture = new PlainActionFuture<>();
         // Peer recovery fails if the primary does not see the recovering replica in the replication group (when the cluster state

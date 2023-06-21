@@ -84,7 +84,7 @@ public class UpdateMappingIntegrationIT extends ESIntegTestCase {
         indexRandom(true, false, indexRequests);
 
         logger.info("checking all the documents are there");
-        RefreshResponse refreshResponse = indicesAdmin().prepareRefresh().execute().actionGet();
+        RefreshResponse refreshResponse = refresh();
         assertThat(refreshResponse.getFailedShards(), equalTo(0));
         SearchResponse response = client().prepareSearch("test").setSize(0).execute().actionGet();
         assertThat(response.getHits().getTotalHits().value, equalTo((long) recCount));

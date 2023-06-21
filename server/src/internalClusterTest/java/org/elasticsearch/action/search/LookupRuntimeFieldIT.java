@@ -42,7 +42,7 @@ public class LookupRuntimeFieldIT extends ESIntegTestCase {
         for (Map<String, String> author : authors) {
             client().prepareIndex("authors").setSource(author).setRefreshPolicy(randomFrom(WriteRequest.RefreshPolicy.values())).get();
         }
-        indicesAdmin().prepareRefresh("authors").get();
+        refresh("authors");
 
         indicesAdmin().prepareCreate("publishers")
             .setSettings(Settings.builder().put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, between(1, 5)))
@@ -128,7 +128,7 @@ public class LookupRuntimeFieldIT extends ESIntegTestCase {
         for (Map<String, Object> book : books) {
             client().prepareIndex("books").setSource(book).setRefreshPolicy(randomFrom(WriteRequest.RefreshPolicy.values())).get();
         }
-        indicesAdmin().prepareRefresh("books").get();
+        refresh("books");
     }
 
     public void testBasic() {

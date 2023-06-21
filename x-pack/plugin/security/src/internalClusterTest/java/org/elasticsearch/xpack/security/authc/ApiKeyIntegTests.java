@@ -16,7 +16,6 @@ import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshAction;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequestBuilder;
-import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.get.GetAction;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.support.PlainActionFuture;
@@ -760,10 +759,7 @@ public class ApiKeyIntegTests extends SecurityIntegTestCase {
     }
 
     private void refreshSecurityIndex() throws Exception {
-        assertBusy(() -> {
-            final RefreshResponse refreshResponse = indicesAdmin().prepareRefresh(SECURITY_MAIN_ALIAS).get();
-            assertThat(refreshResponse.getFailedShards(), is(0));
-        });
+        assertBusy(() -> assertThat(refresh(SECURITY_MAIN_ALIAS).getFailedShards(), is(0)));
     }
 
     public void testActiveApiKeysWithNoExpirationNeverGetDeletedByRemover() throws Exception {

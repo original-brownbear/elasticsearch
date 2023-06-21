@@ -12,7 +12,6 @@ import joptsimple.internal.Strings;
 import org.elasticsearch.action.DocWriteRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.resolve.ResolveIndexAction;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -230,11 +229,11 @@ public class DataStreamMigrationIT extends ESIntegTestCase {
         return found;
     }
 
-    static void indexDocs(String index, int numDocs) {
+    private void indexDocs(String index, int numDocs) {
         indexDocs(index, numDocs, Strings.EMPTY);
     }
 
-    static void indexDocs(String index, int numDocs, String fieldPrefix) {
+    private void indexDocs(String index, int numDocs, String fieldPrefix) {
         BulkRequest bulkRequest = new BulkRequest();
         for (int i = 0; i < numDocs; i++) {
             String value = DateFieldMapper.DEFAULT_DATE_TIME_FORMATTER.formatMillis(System.currentTimeMillis());
@@ -249,7 +248,7 @@ public class DataStreamMigrationIT extends ESIntegTestCase {
             assertThat(itemResponse.getFailureMessage(), nullValue());
             assertThat(itemResponse.status(), equalTo(RestStatus.CREATED));
         }
-        indicesAdmin().refresh(new RefreshRequest(index)).actionGet();
+        refresh(index);
     }
 
 }

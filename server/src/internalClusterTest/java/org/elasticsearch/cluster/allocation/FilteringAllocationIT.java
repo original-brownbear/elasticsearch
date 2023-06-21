@@ -50,7 +50,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
         for (int i = 0; i < 100; i++) {
             client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "value" + i).execute().actionGet();
         }
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         assertThat(
             client().prepareSearch()
                 .setSize(0)
@@ -87,7 +87,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
             assertAcked(indicesAdmin().prepareOpen("test"));
         }
 
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         assertThat(
             client().prepareSearch()
                 .setSize(0)
@@ -149,7 +149,7 @@ public class FilteringAllocationIT extends ESIntegTestCase {
         for (int i = 0; i < 100; i++) {
             client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "value" + i).execute().actionGet();
         }
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         assertThat(
             client().prepareSearch()
                 .setSize(0)

@@ -88,7 +88,7 @@ public class GetGlobalCheckpointsActionIT extends ESIntegTestCase {
 
         assertEquals(totalDocuments, Arrays.stream(response2.globalCheckpoints()).map(s -> s + 1).sum());
 
-        indicesAdmin().prepareRefresh(indexName).get();
+        refresh(indexName);
 
         final IndicesStatsResponse statsResponse = indicesAdmin().prepareStats(indexName).get();
         long[] fromStats = Arrays.stream(statsResponse.getShards())

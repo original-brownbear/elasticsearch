@@ -10,7 +10,6 @@ package org.elasticsearch.action.bulk;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.DocWriteRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Tuple;
@@ -134,7 +133,7 @@ public class BulkProcessor2RetryIT extends ESIntegTestCase {
             }
         }
 
-        indicesAdmin().refresh(new RefreshRequest()).get();
+        refresh();
 
         SearchResponse results = client().prepareSearch(INDEX_NAME).setQuery(QueryBuilders.matchAllQuery()).setSize(0).get();
         assertThat(bulkProcessor.getTotalBytesInFlight(), equalTo(0L));

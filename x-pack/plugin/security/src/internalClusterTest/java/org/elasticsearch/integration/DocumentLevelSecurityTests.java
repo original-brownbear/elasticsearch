@@ -450,7 +450,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
         client().prepareIndex("test2").setId("1").setSource("field1", "value1", "id", 1).get();
         client().prepareIndex("test2").setId("2").setSource("field2", "value2", "id", 2).get();
         client().prepareIndex("test2").setId("3").setSource("field3", "value3", "id", 3).get();
-        indicesAdmin().prepareRefresh("test1", "test2").get();
+        refresh("test1", "test2");
 
         MultiSearchResponse response = client().filterWithHeader(
             Collections.singletonMap(BASIC_AUTH_HEADER, basicAuthHeaderValue("user1", USERS_PASSWD))
@@ -862,7 +862,7 @@ public class DocumentLevelSecurityTests extends SecurityIntegTestCase {
             client().prepareIndex("test").setSource("field2", "value2", "other", "valueB", "vector", new float[] { i, i, i }).get();
         }
 
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
 
         // Since there's no kNN search action at the transport layer, we just emulate
         // how the action works (it builds a kNN query under the hood)
