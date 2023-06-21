@@ -131,7 +131,7 @@ public class DocumentActionsIT extends ESIntegTestCase {
         client().index(new IndexRequest("test").id("2").source(source("2", "test2"))).actionGet();
 
         logger.info("Flushing");
-        FlushResponse flushResult = indicesAdmin().prepareFlush("test").execute().actionGet();
+        FlushResponse flushResult = flush("test");
         assertThat(flushResult.getSuccessfulShards(), equalTo(numShards.totalNumShards));
         assertThat(flushResult.getFailedShards(), equalTo(0));
         logger.info("Refreshing");

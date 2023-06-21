@@ -241,7 +241,7 @@ public class MachineLearningLicensingIT extends BaseMlIntegTestCase {
         }
         assertMLAllowed(false);
 
-        client().admin().indices().prepareRefresh(MlConfigIndex.indexName()).get();
+        refresh(MlConfigIndex.indexName());
 
         // now that the license is invalid, the job should be closed and datafeed stopped:
         assertBusy(() -> {

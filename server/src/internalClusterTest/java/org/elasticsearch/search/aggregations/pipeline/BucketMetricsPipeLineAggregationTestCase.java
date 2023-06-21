@@ -477,7 +477,7 @@ abstract class BucketMetricsPipeLineAggregationTestCase<T extends NumericMetrics
         // end::noformat
         client().prepareIndex("foo_2").setSource(docBuilder).setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE).get();
 
-        indicesAdmin().prepareRefresh();
+        refresh();
 
         TermsAggregationBuilder groupByLicenseAgg = terms("group_by_license_partnumber").field("license.partnumber.keyword");
 

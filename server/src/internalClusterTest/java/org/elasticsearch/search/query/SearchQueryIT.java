@@ -678,7 +678,7 @@ public class SearchQueryIT extends ESIntegTestCase {
         assertHitCount(searchResponse, 2L);
         assertSearchHits(searchResponse, "1", "2");
 
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
         builder = multiMatchQuery("value1", "field1", "field2").operator(Operator.AND); // Operator only applies on terms inside a field!
                                                                                         // Fields are always OR-ed together.
         searchResponse = client().prepareSearch().setQuery(builder).get();
@@ -693,7 +693,7 @@ public class SearchQueryIT extends ESIntegTestCase {
         assertHitCount(searchResponse, 2L);
         assertSearchHits(searchResponse, "3", "1");
 
-        indicesAdmin().prepareRefresh("test").get();
+        refresh("test");
         builder = multiMatchQuery("value1").field("field1").field("field3", 1.5f).operator(Operator.AND); // Operator only applies on terms
                                                                                                           // inside a field! Fields are
                                                                                                           // always OR-ed together.

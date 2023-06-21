@@ -125,7 +125,7 @@ public class RRFRankCoordinatorCanMatchIT extends ESIntegTestCase {
             client().prepareIndex("time_index").setSource("@timestamp", i).setRouting("b").get();
         }
 
-        client().admin().indices().prepareRefresh("time_index").get();
+        refresh("time_index");
         client().admin().indices().prepareClose("time_index").get();
         client().admin().indices().prepareOpen("time_index").get();
 

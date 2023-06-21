@@ -124,7 +124,7 @@ public class RelocationIT extends ESIntegTestCase {
             client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "value" + i).execute().actionGet();
         }
         logger.info("--> flush so we have an actual index");
-        indicesAdmin().prepareFlush().execute().actionGet();
+        flush();
         logger.info("--> index more docs so we have something in the translog");
         for (int i = 10; i < 20; i++) {
             client().prepareIndex("test").setId(Integer.toString(i)).setSource("field", "value" + i).execute().actionGet();
@@ -230,7 +230,7 @@ public class RelocationIT extends ESIntegTestCase {
             logger.info("--> indexing threads stopped");
 
             logger.info("--> refreshing the index");
-            indicesAdmin().prepareRefresh("test").execute().actionGet();
+            refresh("test");
             logger.info("--> searching the index");
             boolean ranOnce = false;
             for (int i = 0; i < 10; i++) {
@@ -581,7 +581,7 @@ public class RelocationIT extends ESIntegTestCase {
         assertThat(clusterHealthResponse.isTimedOut(), equalTo(false));
 
         logger.info("--> verifying count");
-        indicesAdmin().prepareRefresh().execute().actionGet();
+        refresh();
         assertThat(client().prepareSearch("test").setSize(0).execute().actionGet().getHits().getTotalHits().value, equalTo(20L));
     }
 
@@ -648,7 +648,7 @@ public class RelocationIT extends ESIntegTestCase {
 
         logger.info("--> verifying count");
         assertBusy(() -> {
-            indicesAdmin().prepareRefresh().execute().actionGet();
+            refresh();
             assertTrue(pendingIndexResponses.stream().allMatch(ActionFuture::isDone));
         }, 1, TimeUnit.MINUTES);
 

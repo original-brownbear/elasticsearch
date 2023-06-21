@@ -174,7 +174,7 @@ public class ReplicaShardAllocatorSyncIdIT extends ESIntegTestCase {
             IntStream.range(0, between(100, 500)).mapToObj(n -> client().prepareIndex(indexName).setSource("f", "v")).toList()
         );
         if (randomBoolean()) {
-            indicesAdmin().prepareFlush(indexName).get();
+            flush(indexName);
         }
         ensureGlobalCheckpointAdvancedAndSynced(indexName);
         syncFlush(indexName);
@@ -239,7 +239,7 @@ public class ReplicaShardAllocatorSyncIdIT extends ESIntegTestCase {
             IntStream.range(0, between(200, 500)).mapToObj(n -> client().prepareIndex(indexName).setSource("f", "v")).toList()
         );
         if (randomBoolean()) {
-            indicesAdmin().prepareFlush(indexName).get();
+            flush(indexName);
         }
         ensureGlobalCheckpointAdvancedAndSynced(indexName);
         syncFlush(indexName);
@@ -278,7 +278,7 @@ public class ReplicaShardAllocatorSyncIdIT extends ESIntegTestCase {
             );
         }
         if (randomBoolean()) {
-            indicesAdmin().prepareFlush(indexName).get();
+            flush(indexName);
         }
         if (randomBoolean()) {
             syncFlush(indexName);

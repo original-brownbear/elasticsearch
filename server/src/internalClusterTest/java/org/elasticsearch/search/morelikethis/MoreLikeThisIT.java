@@ -10,7 +10,6 @@ package org.elasticsearch.search.morelikethis;
 
 import org.elasticsearch.action.RoutingMissingException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
@@ -80,7 +79,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .actionGet();
         client().index(new IndexRequest("test").id("2").source(jsonBuilder().startObject().field("text", "lucene release").endObject()))
             .actionGet();
-        indicesAdmin().refresh(new RefreshRequest()).actionGet();
+        refresh();
 
         logger.info("Running moreLikeThis");
         SearchResponse response = client().prepareSearch()
@@ -113,7 +112,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .actionGet();
         client().index(new IndexRequest("test").id("2").source(jsonBuilder().startObject().field("text", "lucene release").endObject()))
             .actionGet();
-        indicesAdmin().refresh(new RefreshRequest()).actionGet();
+        refresh();
 
         logger.info("Running moreLikeThis");
         SearchResponse response = client().prepareSearch()
@@ -150,7 +149,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             new IndexRequest("test").id("2").source(jsonBuilder().startObject().field("myField", "and_foo").field("empty", "").endObject())
         ).actionGet();
 
-        indicesAdmin().refresh(new RefreshRequest()).actionGet();
+        refresh();
 
         SearchResponse searchResponse = client().prepareSearch()
             .setQuery(
@@ -175,7 +174,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         client().index(new IndexRequest("test").id("3").source(jsonBuilder().startObject().field("some_long", -666).endObject()))
             .actionGet();
 
-        indicesAdmin().refresh(new RefreshRequest()).actionGet();
+        refresh();
 
         logger.info("Running moreLikeThis");
         SearchResponse response = client().prepareSearch()
@@ -218,7 +217,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
         client().index(
             new IndexRequest("test").id("4").source(jsonBuilder().startObject().field("text", "elasticsearch release").endObject())
         ).actionGet();
-        indicesAdmin().refresh(new RefreshRequest()).actionGet();
+        refresh();
 
         logger.info("Running moreLikeThis on index");
         SearchResponse response = client().prepareSearch()
@@ -282,7 +281,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .setId("1")
             .setSource(jsonBuilder().startObject().startObject("foo").field("bar", "boz").endObject().endObject())
             .get();
-        indicesAdmin().prepareRefresh("foo").get();
+        refresh("foo");
         assertThat(ensureGreen(), equalTo(ClusterHealthStatus.GREEN));
 
         SearchResponse response = client().prepareSearch()
@@ -305,7 +304,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().startObject("foo").field("bar", "boz").endObject().endObject())
             .setRouting("2")
             .get();
-        indicesAdmin().prepareRefresh("foo").get();
+        refresh("foo");
 
         SearchResponse response = client().prepareSearch()
             .setQuery(new MoreLikeThisQueryBuilder(null, new Item[] { new Item("foo", "1").routing("2") }))
@@ -324,7 +323,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().startObject("foo").field("bar", "boz").endObject().endObject())
             .setRouting("4000")
             .get();
-        indicesAdmin().prepareRefresh("foo").get();
+        refresh("foo");
         SearchResponse response = client().prepareSearch()
             .setQuery(new MoreLikeThisQueryBuilder(null, new Item[] { new Item("foo", "1").routing("4000") }))
             .get();
@@ -510,7 +509,7 @@ public class MoreLikeThisIT extends ESIntegTestCase {
             new IndexRequest("test").id("2")
                 .source(jsonBuilder().startObject().field("text", "Lucene has been ported to other programming languages").endObject())
         ).actionGet();
-        indicesAdmin().refresh(new RefreshRequest()).actionGet();
+        refresh();
 
         logger.info("Running More Like This with include true");
         SearchResponse response = client().prepareSearch()

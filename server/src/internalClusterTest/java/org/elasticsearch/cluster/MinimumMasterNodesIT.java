@@ -262,7 +262,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
             equalTo(false)
         );
         // flush for simpler debugging
-        indicesAdmin().prepareFlush().execute().actionGet();
+        flush();
 
         refresh();
         logger.info("--> verify we get the data back");

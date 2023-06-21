@@ -87,7 +87,7 @@ public class RecoveryWhileUnderLoadIT extends ESIntegTestCase {
             indexer.continueIndexing(extraDocs);
             logger.info("--> flushing the index ....");
             // now flush, just to make sure we have some data in the index, not just translog
-            indicesAdmin().prepareFlush().execute().actionGet();
+            flush();
 
             logger.info("--> waiting for {} docs to be indexed ...", waitFor);
             waitForDocs(waitFor, indexer);
@@ -146,7 +146,7 @@ public class RecoveryWhileUnderLoadIT extends ESIntegTestCase {
             indexer.continueIndexing(extraDocs);
             logger.info("--> flushing the index ....");
             // now flush, just to make sure we have some data in the index, not just translog
-            indicesAdmin().prepareFlush().execute().actionGet();
+            flush();
 
             logger.info("--> waiting for {} docs to be indexed ...", waitFor);
             waitForDocs(waitFor, indexer);
@@ -202,7 +202,7 @@ public class RecoveryWhileUnderLoadIT extends ESIntegTestCase {
             indexer.continueIndexing(extraDocs);
             logger.info("--> flushing the index ....");
             // now flush, just to make sure we have some data in the index, not just translog
-            indicesAdmin().prepareFlush().execute().actionGet();
+            flush();
 
             logger.info("--> waiting for {} docs to be indexed ...", waitFor);
             waitForDocs(waitFor, indexer);

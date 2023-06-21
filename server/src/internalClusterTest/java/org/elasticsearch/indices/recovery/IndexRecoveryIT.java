@@ -1360,7 +1360,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
         ).getShardOrNull(shardId);
         final long maxSeqNoBeforeRecovery = primary.seqNoStats().getMaxSeqNo();
         assertBusy(() -> assertThat(primary.getLastSyncedGlobalCheckpoint(), equalTo(maxSeqNoBeforeRecovery)));
-        assertThat(indicesAdmin().prepareFlush(indexName).get().getFailedShards(), is(0)); // makes a safe commit
+        assertThat(flush(indexName).getFailedShards(), is(0)); // makes a safe commit
 
         indexRandom(
             randomBoolean(),
@@ -1428,7 +1428,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
                 .collect(toList())
         );
 
-        assertThat(indicesAdmin().prepareFlush(indexName).get().getFailedShards(), equalTo(0));
+        assertThat(flush(indexName).getFailedShards(), equalTo(0));
 
         assertBusy(() -> {
             final ShardStats[] shardsStats = indicesAdmin().prepareStats(indexName).get().getIndex(indexName).getShards();
@@ -1577,7 +1577,7 @@ public class IndexRecoveryIT extends AbstractIndexRecoveryIntegTestCase {
             .mapToObj(n -> client().prepareIndex(indexName).setSource("foo", "bar"))
             .toList();
         indexRandom(randomBoolean(), true, true, indexRequests);
-        assertThat(indicesAdmin().prepareFlush(indexName).get().getFailedShards(), equalTo(0));
+        assertThat(flush(indexName).getFailedShards(), equalTo(0));
 
         ClusterState clusterState = client().admin().cluster().prepareState().get().getState();
         DiscoveryNode nodeWithPrimary = clusterState.nodes()

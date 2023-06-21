@@ -367,7 +367,7 @@ public class OpenCloseIndexIT extends ESIntegTestCase {
             assertThat(indexResponse.status(), is(RestStatus.CREATED));
 
             if (rarely()) {
-                indicesAdmin().prepareFlush(indexName).get();
+                flush(indexName);
                 uncommittedOps = 0;
             } else {
                 uncommittedOps += 1;

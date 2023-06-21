@@ -116,7 +116,7 @@ public class MaxDocsLimitIT extends ESIntegTestCase {
         ElasticsearchAssertions.assertNoFailures(searchResponse);
         assertThat(searchResponse.getHits().getTotalHits().value, equalTo((long) maxDocs.get()));
         if (randomBoolean()) {
-            indicesAdmin().prepareFlush("test").get();
+            flush("test");
         }
         internalCluster().fullRestart();
         internalCluster().ensureAtLeastNumDataNodes(2);

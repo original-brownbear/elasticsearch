@@ -72,7 +72,7 @@ public class CategorizeTextDistributedIT extends BaseMlIntegTestCase {
             }
             bulkRequestBuilder.execute().actionGet();
         }
-        client().admin().indices().prepareRefresh(indexName).execute().actionGet();
+        refresh(indexName);
 
         // Confirm the theory that all 3 nodes will have a shard on
         IndicesStatsResponse indicesStatsResponse = client().admin().indices().prepareStats(indexName).execute().actionGet();

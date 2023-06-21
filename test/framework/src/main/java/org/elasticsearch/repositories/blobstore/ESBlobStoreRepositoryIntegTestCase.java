@@ -323,7 +323,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
                         int doc = randomIntBetween(0, docCount - 1);
                         client().prepareDelete(index, Integer.toString(doc)).get();
                     }
-                    client().admin().indices().prepareRefresh(index).get();
+                    refresh(index);
                 }
             }
 
@@ -381,7 +381,7 @@ public abstract class ESBlobStoreRepositoryIntegTestCase extends ESIntegTestCase
                         int doc = randomIntBetween(0, docCount - 1);
                         client().prepareDelete(indexName, Integer.toString(doc)).get();
                     }
-                    client().admin().indices().prepareRefresh(indexName).get();
+                    refresh(indexName);
                 }
             } else {
                 int docCount = randomIntBetween(10, 1000);

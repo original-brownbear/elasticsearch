@@ -56,8 +56,7 @@ public class ValueCountIT extends ESIntegTestCase {
                 )
                 .get();
         }
-        indicesAdmin().prepareFlush().get();
-        indicesAdmin().prepareRefresh().get();
+        flushAndRefresh();
         ensureSearchable();
     }
 

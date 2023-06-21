@@ -92,7 +92,7 @@ public class ReplicaShardAllocatorIT extends ESIntegTestCase {
             randomBoolean(),
             IntStream.range(0, between(100, 500)).mapToObj(n -> client().prepareIndex(indexName).setSource("f", "v")).toList()
         );
-        indicesAdmin().prepareFlush(indexName).get();
+        flush(indexName);
         if (randomBoolean()) {
             indexRandom(
                 randomBoolean(),
@@ -198,7 +198,7 @@ public class ReplicaShardAllocatorIT extends ESIntegTestCase {
             randomBoolean(),
             IntStream.range(0, between(50, 200)).mapToObj(n -> client().prepareIndex(indexName).setSource("f", "v")).toList()
         );
-        indicesAdmin().prepareFlush(indexName).get();
+        flush(indexName);
         assertBusy(() -> {
             for (ShardStats shardStats : indicesAdmin().prepareStats(indexName).get().getShards()) {
                 for (RetentionLease lease : shardStats.getRetentionLeaseStats().retentionLeases().leases()) {
@@ -249,7 +249,7 @@ public class ReplicaShardAllocatorIT extends ESIntegTestCase {
             randomBoolean(),
             IntStream.range(0, between(200, 500)).mapToObj(n -> client().prepareIndex(indexName).setSource("f", "v")).toList()
         );
-        indicesAdmin().prepareFlush(indexName).get();
+        flush(indexName);
         indexRandom(
             randomBoolean(),
             false,
@@ -295,7 +295,7 @@ public class ReplicaShardAllocatorIT extends ESIntegTestCase {
             randomBoolean(),
             IntStream.range(0, between(200, 500)).mapToObj(n -> client().prepareIndex(indexName).setSource("f", "v")).toList()
         );
-        indicesAdmin().prepareFlush(indexName).get();
+        flush(indexName);
         String nodeWithLowerMatching = randomFrom(internalCluster().nodesInclude(indexName));
         Settings nodeWithLowerMatchingSettings = internalCluster().dataPathSettings(nodeWithLowerMatching);
         internalCluster().stopNode(nodeWithLowerMatching);
@@ -352,7 +352,7 @@ public class ReplicaShardAllocatorIT extends ESIntegTestCase {
             randomBoolean(),
             IntStream.range(0, between(200, 500)).mapToObj(n -> client().prepareIndex(indexName).setSource("f", "v")).toList()
         );
-        indicesAdmin().prepareFlush(indexName).get();
+        flush(indexName);
         String brokenNode = internalCluster().startDataOnlyNode();
         MockTransportService transportService = (MockTransportService) internalCluster().getInstance(
             TransportService.class,

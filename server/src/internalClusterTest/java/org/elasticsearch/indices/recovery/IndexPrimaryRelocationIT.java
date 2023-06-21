@@ -106,7 +106,7 @@ public class IndexPrimaryRelocationIT extends ESIntegTestCase {
             }
             if (i > 0 && i % 5 == 0) {
                 logger.info("--> [iteration {}] flushing index", i);
-                indicesAdmin().prepareFlush("test").get();
+                flush("test");
             }
         }
         finished.set(true);

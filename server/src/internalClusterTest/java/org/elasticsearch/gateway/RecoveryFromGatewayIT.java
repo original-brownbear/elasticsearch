@@ -383,7 +383,7 @@ public class RecoveryFromGatewayIT extends ESIntegTestCase {
             .setSource(jsonBuilder().startObject().field("field", "value1").endObject())
             .execute()
             .actionGet();
-        indicesAdmin().prepareFlush().execute().actionGet();
+        flush();
         client().prepareIndex("test")
             .setId("2")
             .setSource(jsonBuilder().startObject().field("field", "value2").endObject())

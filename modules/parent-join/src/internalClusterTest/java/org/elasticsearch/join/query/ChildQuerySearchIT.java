@@ -312,17 +312,17 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
 
         // index simple data with flushes, so we have many segments
         createIndexRequest("test", "parent", "p1", null, "p_field", "p_value1").get();
-        indicesAdmin().prepareFlush().get();
+        flush();
         createIndexRequest("test", "child", "c1", "p1", "c_field", "red").get();
-        indicesAdmin().prepareFlush().get();
+        flush();
         createIndexRequest("test", "child", "c2", "p1", "c_field", "yellow").get();
-        indicesAdmin().prepareFlush().get();
+        flush();
         createIndexRequest("test", "parent", "p2", null, "p_field", "p_value2").get();
-        indicesAdmin().prepareFlush().get();
+        flush();
         createIndexRequest("test", "child", "c3", "p2", "c_field", "blue").get();
-        indicesAdmin().prepareFlush().get();
+        flush();
         createIndexRequest("test", "child", "c4", "p2", "c_field", "red").get();
-        indicesAdmin().prepareFlush().get();
+        flush();
         refresh();
 
         // HAS CHILD QUERY
@@ -748,7 +748,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
 
         createIndexRequest("test", "parent", "1", null, "p_field", 1).get();
         createIndexRequest("test", "child", "2", "1", "c_field", 1).get();
-        indicesAdmin().prepareFlush("test").get();
+        flush("test");
 
         client().prepareIndex("test").setId("3").setSource("p_field", 2).get();
 
@@ -1038,7 +1038,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
         createIndexRequest("test", "parent", "p9", null, "p_field", "p_value9").get();
         createIndexRequest("test", "parent", "p10", null, "p_field", "p_value10").get();
         createIndexRequest("test", "child", "c1", "p1", "c_field", "blue").get();
-        indicesAdmin().prepareFlush("test").get();
+        flush("test");
         refresh("test");
 
         SearchResponse searchResponse = client().prepareSearch("test")
@@ -1318,7 +1318,7 @@ public class ChildQuerySearchIT extends ParentChildTestCase {
         createIndexRequest("test", "child", "c4", "p3", "c_field", "green").get();
         createIndexRequest("test", "child", "c5", "p3", "c_field", "blue").get();
         createIndexRequest("test", "child", "c6", "p4", "c_field", "blue").get();
-        indicesAdmin().prepareFlush("test").get();
+        flush("test");
         refresh("test");
 
         for (int i = 0; i < 2; i++) {

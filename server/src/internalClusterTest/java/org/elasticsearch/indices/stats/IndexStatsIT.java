@@ -723,7 +723,7 @@ public class IndexStatsIT extends ESIntegTestCase {
 
         for (int i = 0; i < 20; i++) {
             client().prepareIndex("test_index").setId(Integer.toString(i)).setSource("field", "value").execute().actionGet();
-            indicesAdmin().prepareFlush().execute().actionGet();
+            flush();
         }
         indicesAdmin().prepareForceMerge().setMaxNumSegments(1).execute().actionGet();
         stats = indicesAdmin().prepareStats().setMerge(true).execute().actionGet();
@@ -752,7 +752,7 @@ public class IndexStatsIT extends ESIntegTestCase {
         assertThat(stats.getTotal().getSegments().getIndexWriterMemoryInBytes(), greaterThan(0L));
         assertThat(stats.getTotal().getSegments().getVersionMapMemoryInBytes(), greaterThan(0L));
 
-        indicesAdmin().prepareFlush().get();
+        flush();
         indicesAdmin().prepareForceMerge().setMaxNumSegments(1).execute().actionGet();
         refresh();
 

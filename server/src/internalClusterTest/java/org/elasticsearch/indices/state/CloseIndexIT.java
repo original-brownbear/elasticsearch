@@ -452,7 +452,7 @@ public class CloseIndexIT extends ESIntegTestCase {
                 .collect(toList())
         );
         ensureGreen(indexName);
-        indicesAdmin().prepareFlush(indexName).get();
+        flush(indexName);
 
         // index more documents while one shard copy is offline
         internalCluster().restartNode(dataNodes.get(1), new InternalTestCluster.RestartCallback() {

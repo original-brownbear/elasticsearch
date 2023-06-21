@@ -461,7 +461,7 @@ public class FieldCapabilitiesIT extends ESIntegTestCase {
         reqs.add(client().prepareIndex("log-index-2").setSource("timestamp", "2020-10-10"));
         indexRandom(true, reqs);
         ensureGreen("log-index-1", "log-index-2");
-        indicesAdmin().prepareRefresh("log-index-1", "log-index-2").get();
+        refresh("log-index-1", "log-index-2");
     }
 
     public void testTargetNodeFails() throws Exception {

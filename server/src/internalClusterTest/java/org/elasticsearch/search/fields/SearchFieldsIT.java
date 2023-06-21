@@ -8,7 +8,6 @@
 
 package org.elasticsearch.search.fields;
 
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -188,7 +187,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
             )
             .get();
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse searchResponse = client().prepareSearch().setQuery(matchAllQuery()).addStoredField("field1").get();
         assertThat(searchResponse.getHits().getTotalHits().value, equalTo(1L));
@@ -282,21 +281,21 @@ public class SearchFieldsIT extends ESIntegTestCase {
                 jsonBuilder().startObject().field("test", "value beck").field("num1", 1.0f).field("date", "1970-01-01T00:00:00").endObject()
             )
             .get();
-        indicesAdmin().prepareFlush().get();
+        flush();
         client().prepareIndex("test")
             .setId("2")
             .setSource(
                 jsonBuilder().startObject().field("test", "value beck").field("num1", 2.0f).field("date", "1970-01-01T00:00:25").endObject()
             )
             .get();
-        indicesAdmin().prepareFlush().get();
+        flush();
         client().prepareIndex("test")
             .setId("3")
             .setSource(
                 jsonBuilder().startObject().field("test", "value beck").field("num1", 3.0f).field("date", "1970-01-01T00:02:00").endObject()
             )
             .get();
-        indicesAdmin().refresh(new RefreshRequest()).actionGet();
+        refresh();
 
         logger.info("running doc['num1'].value");
         SearchResponse response = client().prepareSearch()
@@ -471,7 +470,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
                     .endObject()
             )
             .get();
-        indicesAdmin().refresh(new RefreshRequest()).actionGet();
+        refresh();
 
         SearchResponse response = client().prepareSearch()
             .setQuery(matchAllQuery())
@@ -555,7 +554,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
             )
             .get();
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
     }
 
     public void testStoredFieldsWithoutSource() throws Exception {
@@ -630,7 +629,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
             )
             .get();
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchResponse searchResponse = client().prepareSearch()
             .setQuery(matchAllQuery())
@@ -851,7 +850,7 @@ public class SearchFieldsIT extends ESIntegTestCase {
             )
             .get();
 
-        indicesAdmin().prepareRefresh().get();
+        refresh();
 
         SearchRequestBuilder builder = client().prepareSearch()
             .setQuery(matchAllQuery())

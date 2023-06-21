@@ -487,7 +487,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
         for (int i = 0; i < 30; i++) {
             client().prepareIndex("source").setSource("{\"foo\" : \"bar\", \"i\" : " + i + "}", XContentType.JSON).get();
         }
-        indicesAdmin().prepareFlush("source").get();
+        flush("source");
         Map<String, DiscoveryNode> dataNodes = clusterAdmin().prepareState().get().getState().nodes().getDataNodes();
         DiscoveryNode[] discoveryNodes = dataNodes.values().toArray(DiscoveryNode[]::new);
         // ensure all shards are allocated otherwise the ensure green below might not succeed since we require the merge node
@@ -565,7 +565,7 @@ public class ShrinkIndexIT extends ESIntegTestCase {
                 .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
                 .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, shardCount)
         ).get();
-        indicesAdmin().prepareFlush("original").get();
+        flush("original");
         ensureGreen();
         updateIndexSettings(
             Settings.builder()

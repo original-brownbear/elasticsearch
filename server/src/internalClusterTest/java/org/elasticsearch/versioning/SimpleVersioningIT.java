@@ -111,7 +111,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             VersionConflictEngineException.class
         );
 
-        client().admin().indices().prepareRefresh().execute().actionGet();
+        refresh();
         if (randomBoolean()) {
             refresh();
         }
@@ -317,7 +317,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             VersionConflictEngineException.class
         );
 
-        client().admin().indices().prepareRefresh().execute().actionGet();
+        refresh();
         for (int i = 0; i < 10; i++) {
             final GetResponse response = client().prepareGet("test", "1").get();
             assertThat(response.getSeqNo(), equalTo(1L));
@@ -393,7 +393,7 @@ public class SimpleVersioningIT extends ESIntegTestCase {
             assertThat(client().prepareGet("test", "1").execute().actionGet().getVersion(), equalTo(2L));
         }
 
-        client().admin().indices().prepareRefresh().execute().actionGet();
+        refresh();
 
         for (int i = 0; i < 10; i++) {
             SearchResponse searchResponse = client().prepareSearch()

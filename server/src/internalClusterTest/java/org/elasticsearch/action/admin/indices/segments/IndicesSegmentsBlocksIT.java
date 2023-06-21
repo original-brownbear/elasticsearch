@@ -31,7 +31,7 @@ public class IndicesSegmentsBlocksIT extends ESIntegTestCase {
         for (int i = 0; i < docs; i++) {
             client().prepareIndex("test-blocks").setId("" + i).setSource("test", "init").execute().actionGet();
         }
-        indicesAdmin().prepareFlush("test-blocks").get();
+        flush("test-blocks");
 
         // Request is not blocked
         for (String blockSetting : Arrays.asList(
