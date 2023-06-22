@@ -10,7 +10,6 @@ package org.elasticsearch.search.routing;
 
 import org.elasticsearch.action.admin.cluster.node.stats.NodeStats;
 import org.elasticsearch.action.admin.cluster.node.stats.NodesStatsResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.internal.Client;
 import org.elasticsearch.cluster.node.DiscoveryNode;
@@ -68,8 +67,7 @@ public class SearchReplicaSelectionIT extends ESIntegTestCase {
             client.prepareSearch().setQuery(matchAllQuery()).get();
         }
 
-        ClusterStateResponse clusterStateResponse = client.admin().cluster().prepareState().get();
-        Map<String, DiscoveryNode> coordinatingNodes = clusterStateResponse.getState().nodes().getCoordinatingOnlyNodes();
+        Map<String, DiscoveryNode> coordinatingNodes = clusterState().nodes().getCoordinatingOnlyNodes();
         assertEquals(1, coordinatingNodes.size());
 
         String coordinatingNodeId = coordinatingNodes.values().iterator().next().getId();

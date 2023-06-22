@@ -10,7 +10,6 @@ package org.elasticsearch.xpack.profiler;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsResponse;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.datastreams.DataStreamsPlugin;
@@ -87,18 +86,17 @@ public abstract class ProfilingTestCase extends ESIntegTestCase {
     protected abstract boolean useOnlyAllEvents();
 
     protected void waitForIndices() throws Exception {
-        assertBusy(() -> {
-            ClusterState state = clusterAdmin().prepareState().get().getState();
-            assertTrue(
+        assertBusy(
+            () -> assertTrue(
                 "Timed out waiting for the indices to be created",
-                state.metadata()
+                clusterState().metadata()
                     .indices()
                     .keySet()
                     .containsAll(
                         ProfilingIndexManager.PROFILING_INDICES.stream().map(ProfilingIndexManager.ProfilingIndex::toString).toList()
                     )
-            );
-        });
+            )
+        );
     }
 
     protected void updateProfilingTemplatesEnabled(boolean newValue) {

@@ -222,7 +222,7 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
 
         ensureGreen();
         assertDocCount("test-idx-1", 100);
-        ClusterState clusterState = clusterAdmin().prepareState().get().getState();
+        ClusterState clusterState = clusterState();
         assertThat(clusterState.getMetadata().hasIndex("test-idx-1"), equalTo(true));
         assertThat(clusterState.getMetadata().hasIndex("test-idx-2"), equalTo(false));
 
@@ -654,18 +654,18 @@ public class SharedClusterSnapshotRestoreIT extends AbstractSnapshotIntegTestCas
         assertThat(restoreResponse.getRestoreInfo().totalShards(), equalTo(numShards.numPrimaries));
         assertThat(restoreResponse.getRestoreInfo().successfulShards(), equalTo(0));
 
-        ClusterStateResponse clusterStateResponse = clusterAdmin().prepareState().setCustoms(true).setRoutingTable(true).get();
+        ClusterState clusterStateResponse = clusterState();
 
         // check that there is no restore in progress
-        RestoreInProgress restoreInProgress = clusterStateResponse.getState().custom(RestoreInProgress.TYPE);
+        RestoreInProgress restoreInProgress = clusterStateResponse.custom(RestoreInProgress.TYPE);
         assertNotNull("RestoreInProgress must be not null", restoreInProgress);
         assertTrue("RestoreInProgress must be empty but found entries in " + restoreInProgress, restoreInProgress.isEmpty());
 
         // check that the shards have been created but are not assigned
-        assertThat(clusterStateResponse.getState().getRoutingTable().allShards(indexName), hasSize(numShards.totalNumShards));
+        assertThat(clusterStateResponse.getRoutingTable().allShards(indexName), hasSize(numShards.totalNumShards));
 
         // check that every primary shard is unassigned
-        for (ShardRouting shard : clusterStateResponse.getState().getRoutingTable().allShards(indexName)) {
+        for (ShardRouting shard : clusterStateResponse.getRoutingTable().allShards(indexName)) {
             if (shard.primary()) {
                 assertThat(shard.state(), equalTo(ShardRoutingState.UNASSIGNED));
                 assertThat(shard.recoverySource().getType(), equalTo(RecoverySource.Type.SNAPSHOT));

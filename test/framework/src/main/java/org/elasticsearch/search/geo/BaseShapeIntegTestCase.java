@@ -460,7 +460,7 @@ public abstract class BaseShapeIntegTestCase<T extends AbstractGeometryQueryBuil
     protected abstract void doDistanceAndBoundingBoxTest(String key);
 
     private String findNodeName(String index) {
-        ClusterState state = clusterAdmin().prepareState().get().getState();
+        ClusterState state = clusterState();
         IndexShardRoutingTable shard = state.getRoutingTable().index(index).shard(0);
         String nodeId = shard.assignedShards().get(0).currentNodeId();
         return state.getNodes().get(nodeId).getName();

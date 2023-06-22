@@ -8,7 +8,6 @@
 package org.elasticsearch.indices;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.routing.RoutingNodesHelper;
 import org.elasticsearch.cluster.routing.ShardRouting;
@@ -99,8 +98,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
             fail("should have thrown an exception during creation");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("failing on purpose"));
-            ClusterStateResponse resp = clusterAdmin().prepareState().get();
-            assertFalse(resp.getState().routingTable().indicesRouting().keySet().contains("failed"));
+            assertFalse(clusterState().routingTable().indicesRouting().keySet().contains("failed"));
         }
     }
 
@@ -122,7 +120,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
             });
         clusterAdmin().prepareReroute().add(new MoveAllocationCommand("index1", 0, node1, node2)).get();
         ensureGreen("index1");
-        ClusterState state = clusterAdmin().prepareState().get().getState();
+        ClusterState state = clusterState();
         List<ShardRouting> shard = RoutingNodesHelper.shardsWithState(state.getRoutingNodes(), ShardRoutingState.STARTED);
         assertThat(shard, hasSize(1));
         assertThat(state.nodes().resolveNode(shard.get(0).currentNodeId()).getName(), Matchers.equalTo(node1));
@@ -160,8 +158,7 @@ public class IndicesLifecycleListenerIT extends ESIntegTestCase {
             fail("should have thrown an exception");
         } catch (ElasticsearchException e) {
             assertTrue(e.getMessage().contains("failing on purpose"));
-            ClusterStateResponse resp = clusterAdmin().prepareState().get();
-            assertFalse(resp.getState().routingTable().indicesRouting().keySet().contains("failed"));
+            assertFalse(clusterState().routingTable().indicesRouting().keySet().contains("failed"));
         }
 
         // create an index

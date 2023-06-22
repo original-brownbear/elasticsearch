@@ -99,7 +99,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
             indicesAdmin().prepareClose("test").setWaitForActiveShards(ActiveShardCount.NONE).get();
         }
 
-        ClusterState state = clusterAdmin().prepareState().execute().actionGet().getState();
+        ClusterState state = clusterState();
         assertThat(state.getRoutingNodes().unassigned().size(), equalTo(2));
 
         logger.info("--> explicitly allocate shard 1, *under dry_run*");
@@ -117,7 +117,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         );
 
         logger.info("--> get the state, verify nothing changed because of the dry run");
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.getRoutingNodes().unassigned().size(), equalTo(2));
 
         logger.info("--> explicitly allocate shard 1, actually allocating, no dry run");
@@ -142,7 +142,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
         logger.info("--> get the state, verify shard 1 primary allocated");
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.getRoutingNodes().unassigned().size(), equalTo(1));
         assertThat(
             state.getRoutingNodes().node(state.nodes().resolveNode(node_1).getId()).iterator().next().state(),
@@ -176,7 +176,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
         logger.info("--> get the state, verify shard 1 primary moved from node1 to node2");
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.getRoutingNodes().unassigned().size(), equalTo(1));
         assertThat(
             state.getRoutingNodes().node(state.nodes().resolveNode(node_2).getId()).iterator().next().state(),
@@ -256,7 +256,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
             indicesAdmin().prepareClose("test").setWaitForActiveShards(ActiveShardCount.NONE).get();
         }
 
-        ClusterState state = clusterAdmin().prepareState().execute().actionGet().getState();
+        ClusterState state = clusterState();
         assertThat(state.getRoutingNodes().unassigned().size(), equalTo(2));
 
         logger.info("--> explicitly allocate shard 1, actually allocating, no dry run");
@@ -281,7 +281,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         assertThat(healthResponse.isTimedOut(), equalTo(false));
 
         logger.info("--> get the state, verify shard 1 primary allocated");
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.getRoutingNodes().unassigned().size(), equalTo(1));
         assertThat(
             state.getRoutingNodes().node(state.nodes().resolveNode(node_1).getId()).iterator().next().state(),
@@ -328,7 +328,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         logger.info("--> get the state, verify shard 1 primary allocated");
         final String nodeToCheck = node_1;
         assertBusy(() -> {
-            ClusterState clusterState = clusterAdmin().prepareState().execute().actionGet().getState();
+            ClusterState clusterState = clusterState();
             String nodeId = clusterState.nodes().resolveNode(nodeToCheck).getId();
             assertThat(clusterState.getRoutingNodes().node(nodeId).iterator().next().state(), equalTo(ShardRoutingState.STARTED));
         });
@@ -475,7 +475,7 @@ public class ClusterRerouteIT extends ESIntegTestCase {
         ensureGreen("test-blocks");
 
         logger.info("--> check that the index has 1 shard");
-        ClusterState state = clusterAdmin().prepareState().execute().actionGet().getState();
+        ClusterState state = clusterState();
         List<ShardRouting> shards = state.routingTable().allShards("test-blocks");
         assertThat(shards, hasSize(1));
 

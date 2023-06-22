@@ -177,10 +177,8 @@ public class SnapshotsAndFileSettingsIT extends AbstractSnapshotIntegTestCase {
 
         ensureGreen();
 
-        final ClusterStateResponse clusterStateResponse = clusterAdmin().state(new ClusterStateRequest().metadata(true)).actionGet();
-
         // We expect no reserved metadata state for file based settings, the operator file was deleted.
-        assertNull(clusterStateResponse.getState().metadata().reservedStateMetadata().get(FileSettingsService.NAMESPACE));
+        assertNull(clusterState().metadata().reservedStateMetadata().get(FileSettingsService.NAMESPACE));
 
         final ClusterGetSettingsAction.Response getSettingsResponse = clusterAdmin().execute(
             ClusterGetSettingsAction.INSTANCE,

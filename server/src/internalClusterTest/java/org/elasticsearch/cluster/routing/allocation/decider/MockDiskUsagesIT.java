@@ -75,13 +75,7 @@ public class MockDiskUsagesIT extends ESIntegTestCase {
             internalCluster().startNode(Settings.builder().put(Environment.PATH_DATA_SETTING.getKey(), createTempDir()));
         }
 
-        final List<String> nodeIds = clusterAdmin().prepareState()
-            .get()
-            .getState()
-            .getRoutingNodes()
-            .stream()
-            .map(RoutingNode::nodeId)
-            .toList();
+        final List<String> nodeIds = clusterState().getRoutingNodes().stream().map(RoutingNode::nodeId).toList();
 
         final MockInternalClusterInfoService clusterInfoService = getMockInternalClusterInfoService();
         clusterInfoService.setUpdateFrequency(TimeValue.timeValueMillis(200));
@@ -153,13 +147,7 @@ public class MockDiskUsagesIT extends ESIntegTestCase {
             internalCluster().startNode(Settings.builder().put(Environment.PATH_DATA_SETTING.getKey(), createTempDir()));
         }
 
-        final List<String> nodeIds = clusterAdmin().prepareState()
-            .get()
-            .getState()
-            .getRoutingNodes()
-            .stream()
-            .map(RoutingNode::nodeId)
-            .toList();
+        final List<String> nodeIds = clusterState().getRoutingNodes().stream().map(RoutingNode::nodeId).toList();
 
         final MockInternalClusterInfoService clusterInfoService = getMockInternalClusterInfoService();
         clusterInfoService.setUpdateFrequency(TimeValue.timeValueMillis(200));
@@ -271,13 +259,7 @@ public class MockDiskUsagesIT extends ESIntegTestCase {
                 .put(CLUSTER_ROUTING_ALLOCATION_REROUTE_INTERVAL_SETTING.getKey(), "0ms")
         );
 
-        final List<String> nodeIds = clusterAdmin().prepareState()
-            .get()
-            .getState()
-            .getRoutingNodes()
-            .stream()
-            .map(RoutingNode::nodeId)
-            .toList();
+        final List<String> nodeIds = clusterState().getRoutingNodes().stream().map(RoutingNode::nodeId).toList();
 
         assertAcked(prepareCreate("test").setSettings(Settings.builder().put("number_of_shards", 6).put("number_of_replicas", 0)));
 
@@ -328,13 +310,7 @@ public class MockDiskUsagesIT extends ESIntegTestCase {
 
         final MockInternalClusterInfoService clusterInfoService = getMockInternalClusterInfoService();
 
-        final List<String> nodeIds = clusterAdmin().prepareState()
-            .get()
-            .getState()
-            .getRoutingNodes()
-            .stream()
-            .map(RoutingNode::nodeId)
-            .toList();
+        final List<String> nodeIds = clusterState().getRoutingNodes().stream().map(RoutingNode::nodeId).toList();
 
         internalCluster().getCurrentMasterNodeInstance(ClusterService.class).addListener(event -> {
             assertThat(event.state().getRoutingNodes().node(nodeIds.get(2)).size(), lessThanOrEqualTo(1));
@@ -424,13 +400,7 @@ public class MockDiskUsagesIT extends ESIntegTestCase {
                 .put(CLUSTER_ROUTING_ALLOCATION_REROUTE_INTERVAL_SETTING.getKey(), "0ms")
         );
 
-        final List<String> nodeIds = clusterAdmin().prepareState()
-            .get()
-            .getState()
-            .getRoutingNodes()
-            .stream()
-            .map(RoutingNode::nodeId)
-            .toList();
+        final List<String> nodeIds = clusterState().getRoutingNodes().stream().map(RoutingNode::nodeId).toList();
 
         assertAcked(prepareCreate("test").setSettings(Settings.builder().put("number_of_shards", 6).put("number_of_replicas", 0)));
 
@@ -493,7 +463,7 @@ public class MockDiskUsagesIT extends ESIntegTestCase {
 
     private Map<String, Integer> getShardCountByNodeId() {
         final Map<String, Integer> shardCountByNodeId = new HashMap<>();
-        final ClusterState clusterState = clusterAdmin().prepareState().get().getState();
+        final ClusterState clusterState = clusterState();
         for (final RoutingNode node : clusterState.getRoutingNodes()) {
             logger.info(
                 "----> node {} has {} shards",

@@ -255,11 +255,9 @@ public class FileSettingsServiceIT extends ESIntegTestCase {
         logger.info("--> restart master");
         internalCluster().restartNode(masterNode);
 
-        final ClusterStateResponse clusterStateResponse = clusterAdmin().state(new ClusterStateRequest()).actionGet();
         assertEquals(
             1,
-            clusterStateResponse.getState()
-                .metadata()
+            clusterState().metadata()
                 .reservedStateMetadata()
                 .get(FileSettingsService.NAMESPACE)
                 .handlers()

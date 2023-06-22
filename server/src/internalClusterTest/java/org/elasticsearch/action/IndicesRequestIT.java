@@ -385,8 +385,7 @@ public class IndicesRequestIT extends ESIntegTestCase {
         internalCluster().coordOnlyNodeClient().admin().indices().flush(flushRequest).actionGet();
 
         clearInterceptedActions();
-        String[] concreteIndexNames = TestIndexNameExpressionResolver.newInstance()
-            .concreteIndexNames(clusterAdmin().prepareState().get().getState(), flushRequest);
+        String[] concreteIndexNames = TestIndexNameExpressionResolver.newInstance().concreteIndexNames(clusterState(), flushRequest);
         assertIndicesSubset(Arrays.asList(concreteIndexNames), indexShardActions);
     }
 
@@ -412,8 +411,7 @@ public class IndicesRequestIT extends ESIntegTestCase {
         internalCluster().coordOnlyNodeClient().admin().indices().refresh(refreshRequest).actionGet();
 
         clearInterceptedActions();
-        String[] concreteIndexNames = TestIndexNameExpressionResolver.newInstance()
-            .concreteIndexNames(clusterAdmin().prepareState().get().getState(), refreshRequest);
+        String[] concreteIndexNames = TestIndexNameExpressionResolver.newInstance().concreteIndexNames(clusterState(), refreshRequest);
         assertIndicesSubset(Arrays.asList(concreteIndexNames), indexShardActions);
     }
 

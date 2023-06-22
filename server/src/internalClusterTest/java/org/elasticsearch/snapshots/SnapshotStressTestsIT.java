@@ -338,14 +338,14 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
 
             if (failedPermitAcquisitions.isEmpty() == false) {
                 logger.warn("--> failed to acquire all permits: {}", failedPermitAcquisitions);
-                logger.info("--> current cluster state:\n{}", Strings.toString(clusterAdmin().prepareState().get().getState(), true, true));
+                logger.info("--> current cluster state:\n{}", Strings.toString(clusterState(), true, true));
                 fail("failed to acquire all permits: " + failedPermitAcquisitions);
             }
             logger.info("--> acquired all permits");
 
             if (ThreadPool.terminate(threadPool, 30, TimeUnit.SECONDS) == false) {
                 logger.warn("--> threadpool termination timed out");
-                logger.info("--> current cluster state:\n{}", Strings.toString(clusterAdmin().prepareState().get().getState(), true, true));
+                logger.info("--> current cluster state:\n{}", Strings.toString(clusterState(), true, true));
             }
         }
 
@@ -363,10 +363,7 @@ public class SnapshotStressTestsIT extends AbstractSnapshotIntegTestCase {
                         logger.info("--> acquired permit [{}]", label);
                     } else {
                         logger.warn("--> failed to acquire permit [{}]", label);
-                        logger.info(
-                            "--> current cluster state:\n{}",
-                            Strings.toString(clusterAdmin().prepareState().get().getState(), true, true)
-                        );
+                        logger.info("--> current cluster state:\n{}", Strings.toString(clusterState(), true, true));
                         logger.info(
                             "--> hot threads:\n{}",
                             clusterAdmin().prepareNodesHotThreads()

@@ -183,7 +183,7 @@ public class SimpleIndexTemplateIT extends ESIntegTestCase {
     }
 
     public void testDeleteIndexTemplate() throws Exception {
-        final int existingTemplates = admin().cluster().prepareState().execute().actionGet().getState().metadata().templates().size();
+        final int existingTemplates = clusterState().metadata().templates().size();
         logger.info("--> put template_1 and template_2");
         indicesAdmin().preparePutTemplate("template_1")
             .setPatterns(Collections.singletonList("te*"))
@@ -230,7 +230,7 @@ public class SimpleIndexTemplateIT extends ESIntegTestCase {
         logger.info("--> explicitly delete template_1");
         indicesAdmin().prepareDeleteTemplate("template_1").execute().actionGet();
 
-        ClusterState state = admin().cluster().prepareState().execute().actionGet().getState();
+        ClusterState state = clusterState();
 
         assertThat(state.metadata().templates().size(), equalTo(1 + existingTemplates));
         assertThat(state.metadata().templates().containsKey("template_2"), equalTo(true));
@@ -262,14 +262,11 @@ public class SimpleIndexTemplateIT extends ESIntegTestCase {
 
         logger.info("--> delete template*");
         indicesAdmin().prepareDeleteTemplate("template*").execute().actionGet();
-        assertThat(
-            admin().cluster().prepareState().execute().actionGet().getState().metadata().templates().size(),
-            equalTo(existingTemplates)
-        );
+        assertThat(clusterState().metadata().templates().size(), equalTo(existingTemplates));
 
         logger.info("--> delete * with no templates, make sure we don't get a failure");
         indicesAdmin().prepareDeleteTemplate("*").execute().actionGet();
-        assertThat(admin().cluster().prepareState().execute().actionGet().getState().metadata().templates().size(), equalTo(0));
+        assertThat(clusterState().metadata().templates().size(), equalTo(0));
     }
 
     public void testThatGetIndexTemplatesWorks() throws Exception {

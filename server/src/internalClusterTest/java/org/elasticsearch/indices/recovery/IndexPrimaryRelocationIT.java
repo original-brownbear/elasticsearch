@@ -52,7 +52,7 @@ public class IndexPrimaryRelocationIT extends ESIntegTestCase {
         };
         indexingThread.start();
 
-        ClusterState initialState = clusterAdmin().prepareState().get().getState();
+        ClusterState initialState = clusterState();
         DiscoveryNode[] dataNodes = initialState.getNodes().getDataNodes().values().toArray(DiscoveryNode[]::new);
         DiscoveryNode relocationSource = initialState.getNodes()
             .getDataNodes()
@@ -81,7 +81,7 @@ public class IndexPrimaryRelocationIT extends ESIntegTestCase {
                     .stream()
                     .map(NodeHotThreads::getHotThreads)
                     .collect(Collectors.joining("\n"));
-                final ClusterState clusterState = clusterAdmin().prepareState().get().getState();
+                final ClusterState clusterState = clusterState();
                 logger.info(
                     "timed out for waiting for relocation iteration [{}] \ncluster state {} \nhot threads {}",
                     i,

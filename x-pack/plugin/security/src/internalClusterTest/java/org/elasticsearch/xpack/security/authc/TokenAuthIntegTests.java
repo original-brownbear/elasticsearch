@@ -8,7 +8,6 @@ package org.elasticsearch.xpack.security.authc;
 
 import org.apache.http.client.methods.HttpPost;
 import org.elasticsearch.TransportVersion;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.support.PlainActionFuture;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Request;
@@ -653,8 +652,7 @@ public class TokenAuthIntegTests extends SecurityIntegTestCase {
     }
 
     public void testMetadataIsNotSentToClient() {
-        ClusterStateResponse clusterStateResponse = clusterAdmin().prepareState().setCustoms(true).get();
-        assertFalse(clusterStateResponse.getState().customs().containsKey(TokenMetadata.TYPE));
+        assertFalse(clusterState().customs().containsKey(TokenMetadata.TYPE));
     }
 
     public void testCreatorRealmCaptureWillWorkWithClientRunAs() throws IOException {

@@ -11,7 +11,6 @@ package org.elasticsearch.indices.store;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
@@ -98,7 +97,7 @@ public class IndicesStoreIntegrationIT extends ESIntegTestCase {
             )
         );
         ensureGreen("test");
-        ClusterState state = clusterAdmin().prepareState().get().getState();
+        ClusterState state = clusterState();
         Index index = state.metadata().index("test").getIndex();
 
         logger.info("--> making sure that shard and its replica are allocated on node_1 and node_2");
@@ -198,7 +197,7 @@ public class IndicesStoreIntegrationIT extends ESIntegTestCase {
             )
         );
         ensureGreen("test");
-        ClusterState state = clusterAdmin().prepareState().get().getState();
+        ClusterState state = clusterState();
         Index index = state.metadata().index("test").getIndex();
         assertThat(Files.exists(shardDirectory(node_1, index, 0)), equalTo(true));
         assertThat(Files.exists(indexDirectory(node_1, index)), equalTo(true));
@@ -260,7 +259,7 @@ public class IndicesStoreIntegrationIT extends ESIntegTestCase {
         );
         ensureGreen("test");
 
-        ClusterState state = clusterAdmin().prepareState().get().getState();
+        ClusterState state = clusterState();
         Index index = state.metadata().index("test").getIndex();
         logger.info("--> making sure that shard and its replica are allocated on node_1 and node_2");
         assertThat(Files.exists(shardDirectory(node_1, index, 0)), equalTo(true));
@@ -397,9 +396,9 @@ public class IndicesStoreIntegrationIT extends ESIntegTestCase {
         ensureGreen("test");
 
         waitNoPendingTasksOnAll();
-        ClusterStateResponse stateResponse = clusterAdmin().prepareState().get();
-        final Index index = stateResponse.getState().metadata().index("test").getIndex();
-        RoutingNode routingNode = stateResponse.getState().getRoutingNodes().node(nonMasterId);
+        ClusterState stateResponse = clusterState();
+        final Index index = stateResponse.metadata().index("test").getIndex();
+        RoutingNode routingNode = stateResponse.getRoutingNodes().node(nonMasterId);
         final int[] node2Shards = new int[routingNode.numberOfOwningShards()];
         int i = 0;
         for (ShardRouting shardRouting : routingNode) {

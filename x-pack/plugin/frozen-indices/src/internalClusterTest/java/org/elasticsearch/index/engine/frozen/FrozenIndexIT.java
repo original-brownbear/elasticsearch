@@ -93,10 +93,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
             client().execute(FreezeIndexAction.INSTANCE, new FreezeRequest("index").waitForActiveShards(ActiveShardCount.ONE)).actionGet()
         );
 
-        assertThat(
-            clusterAdmin().prepareState().get().getState().metadata().index("index").getTimestampRange(),
-            sameInstance(IndexLongFieldRange.EMPTY)
-        );
+        assertThat(clusterState().metadata().index("index").getTimestampRange(), sameInstance(IndexLongFieldRange.EMPTY));
 
         internalCluster().stopNode(nodeNames.get(1));
         assertThat(clusterAdmin().prepareHealth("index").get().getUnassignedShards(), equalTo(2));
@@ -107,12 +104,7 @@ public class FrozenIndexIT extends ESIntegTestCase {
 
         ensureYellowAndNoInitializingShards("index");
 
-        final IndexLongFieldRange timestampFieldRange = clusterAdmin().prepareState()
-            .get()
-            .getState()
-            .metadata()
-            .index("index")
-            .getTimestampRange();
+        final IndexLongFieldRange timestampFieldRange = clusterState().metadata().index("index").getTimestampRange();
         assertThat(timestampFieldRange, not(sameInstance(IndexLongFieldRange.UNKNOWN)));
         assertThat(timestampFieldRange, not(sameInstance(IndexLongFieldRange.EMPTY)));
         assertTrue(timestampFieldRange.isComplete());

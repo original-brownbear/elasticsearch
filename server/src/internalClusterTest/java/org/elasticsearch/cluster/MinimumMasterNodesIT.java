@@ -86,7 +86,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
         state = clusterAdmin().prepareState().setLocal(true).execute().actionGet().getState();
         assertThat(state.blocks().hasGlobalBlockWithId(NoMasterBlockService.NO_MASTER_BLOCK_ID), equalTo(false));
 
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.nodes().getSize(), equalTo(2));
         assertThat(state.metadata().indices().containsKey("test"), equalTo(false));
 
@@ -153,7 +153,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
         state = clusterAdmin().prepareState().setLocal(true).execute().actionGet().getState();
         assertThat(state.blocks().hasGlobalBlockWithId(NoMasterBlockService.NO_MASTER_BLOCK_ID), equalTo(false));
 
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.nodes().getSize(), equalTo(2));
         assertThat(state.metadata().indices().containsKey("test"), equalTo(true));
 
@@ -199,7 +199,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
         state = clusterAdmin().prepareState().setLocal(true).execute().actionGet().getState();
         assertThat(state.blocks().hasGlobalBlockWithId(NoMasterBlockService.NO_MASTER_BLOCK_ID), equalTo(false));
 
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.nodes().getSize(), equalTo(2));
         assertThat(state.metadata().indices().containsKey("test"), equalTo(true));
 
@@ -240,7 +240,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
             .actionGet();
         assertThat(clusterHealthResponse.isTimedOut(), equalTo(false));
 
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.nodes().getSize(), equalTo(3));
 
         createIndex("test");
@@ -285,7 +285,7 @@ public class MinimumMasterNodesIT extends ESIntegTestCase {
         internalCluster().validateClusterFormed();
         ensureGreen();
 
-        state = clusterAdmin().prepareState().execute().actionGet().getState();
+        state = clusterState();
         assertThat(state.nodes().getSize(), equalTo(3));
 
         logger.info("--> verify we the data back");

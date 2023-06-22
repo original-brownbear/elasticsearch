@@ -7,8 +7,8 @@
  */
 package org.elasticsearch.indices.state;
 
-import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;
 import org.elasticsearch.action.admin.indices.close.TransportCloseIndexAction;
+import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.ESIntegTestCase;
@@ -47,9 +47,9 @@ public class CloseIndexDisableCloseAllIT extends ESIntegTestCase {
     }
 
     private void assertIndexIsClosed(String... indices) {
-        ClusterStateResponse clusterStateResponse = clusterAdmin().prepareState().execute().actionGet();
+        ClusterState state = clusterState();
         for (String index : indices) {
-            IndexMetadata indexMetadata = clusterStateResponse.getState().metadata().indices().get(index);
+            IndexMetadata indexMetadata = state.metadata().indices().get(index);
             assertNotNull(indexMetadata);
             assertEquals(IndexMetadata.State.CLOSE, indexMetadata.getState());
         }

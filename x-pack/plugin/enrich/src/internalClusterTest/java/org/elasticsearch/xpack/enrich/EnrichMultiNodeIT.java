@@ -11,7 +11,6 @@ import org.elasticsearch.ResourceNotFoundException;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.cluster.node.tasks.get.GetTaskRequest;
 import org.elasticsearch.action.admin.cluster.node.tasks.get.GetTaskResponse;
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -180,7 +179,7 @@ public class EnrichMultiNodeIT extends ESIntegTestCase {
         var getTaskRequest = new GetTaskRequest().setTaskId(executePolicyResponse.getTaskId()).setWaitForCompletion(true);
         clusterAdmin().getTask(getTaskRequest).actionGet();
 
-        var discoNodes = clusterAdmin().state(new ClusterStateRequest()).actionGet().getState().nodes();
+        var discoNodes = clusterState().nodes();
         assertThat(discoNodes.get(executePolicyResponse.getTaskId().getNodeId()).isMasterNode(), is(false));
     }
 
@@ -207,7 +206,7 @@ public class EnrichMultiNodeIT extends ESIntegTestCase {
         var getTaskRequest = new GetTaskRequest().setTaskId(executePolicyResponse.getTaskId()).setWaitForCompletion(true);
         clusterAdmin().getTask(getTaskRequest).actionGet();
 
-        var discoNodes = clusterAdmin().state(new ClusterStateRequest()).actionGet().getState().nodes();
+        var discoNodes = clusterState().nodes();
         assertThat(executePolicyResponse.getTaskId().getNodeId(), not(equalTo(discoNodes.getMasterNodeId())));
     }
 

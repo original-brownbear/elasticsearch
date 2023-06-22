@@ -313,7 +313,7 @@ public class RestoreSnapshotIT extends AbstractSnapshotIntegTestCase {
         assertThat(restoreSnapshotResponse.getRestoreInfo().totalShards(), greaterThan(0));
 
         logger.info("--> assert that old mapping is restored");
-        MappingMetadata mappings = clusterAdmin().prepareState().get().getState().getMetadata().getIndices().get("test-idx").mapping();
+        MappingMetadata mappings = clusterState().getMetadata().getIndices().get("test-idx").mapping();
         assertThat(mappings.sourceAsMap().toString(), containsString("baz"));
         assertThat(mappings.sourceAsMap().toString(), not(containsString("foo")));
 

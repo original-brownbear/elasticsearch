@@ -81,7 +81,7 @@ public class AwarenessAllocationIT extends ESIntegTestCase {
             assertThat("Cluster health request timed out", clusterHealth.isTimedOut(), equalTo(false));
 
             logger.info("--> checking current state");
-            ClusterState clusterState = clusterAdmin().prepareState().execute().actionGet().getState();
+            ClusterState clusterState = clusterState();
 
             // check that closed indices are effectively closed
             final List<String> notClosedIndices = indicesToClose.stream()
@@ -133,7 +133,7 @@ public class AwarenessAllocationIT extends ESIntegTestCase {
             .actionGet();
         assertThat(health.isTimedOut(), equalTo(false));
 
-        ClusterState clusterState = clusterAdmin().prepareState().execute().actionGet().getState();
+        ClusterState clusterState = clusterState();
         Map<String, Integer> counts = computeShardCounts(clusterState);
 
         assertThat(counts.get(A_1), anyOf(equalTo(2), equalTo(3)));
@@ -171,7 +171,7 @@ public class AwarenessAllocationIT extends ESIntegTestCase {
             .execute()
             .actionGet();
         assertThat(health.isTimedOut(), equalTo(false));
-        ClusterState clusterState = clusterAdmin().prepareState().execute().actionGet().getState();
+        ClusterState clusterState = clusterState();
         Map<String, Integer> counts = computeShardCounts(clusterState);
 
         assertThat(counts.get(A_0), equalTo(5));
@@ -199,7 +199,7 @@ public class AwarenessAllocationIT extends ESIntegTestCase {
             .actionGet();
 
         assertThat(health.isTimedOut(), equalTo(false));
-        clusterState = clusterAdmin().prepareState().execute().actionGet().getState();
+        clusterState = clusterState();
         counts = computeShardCounts(clusterState);
 
         assertThat(counts.get(A_0), equalTo(5));
@@ -227,7 +227,7 @@ public class AwarenessAllocationIT extends ESIntegTestCase {
             .actionGet();
 
         assertThat(health.isTimedOut(), equalTo(false));
-        clusterState = clusterAdmin().prepareState().execute().actionGet().getState();
+        clusterState = clusterState();
         counts = computeShardCounts(clusterState);
 
         assertThat(counts.get(A_0), equalTo(5));
@@ -246,7 +246,7 @@ public class AwarenessAllocationIT extends ESIntegTestCase {
             .actionGet();
 
         assertThat(health.isTimedOut(), equalTo(false));
-        clusterState = clusterAdmin().prepareState().execute().actionGet().getState();
+        clusterState = clusterState();
         counts = computeShardCounts(clusterState);
 
         assertThat(counts.get(A_0), equalTo(3));

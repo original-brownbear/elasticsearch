@@ -63,7 +63,7 @@ public class TooManyJobsIT extends BaseMlIntegTestCase {
             new GetJobsStatsAction.Request("close-failed-job-2")
         ).actionGet();
         assertEquals(statsResponse.getResponse().results().get(0).getState(), JobState.CLOSED);
-        ClusterState state = clusterAdmin().prepareState().get().getState();
+        ClusterState state = clusterState();
         List<PersistentTasksCustomMetadata.PersistentTask<?>> tasks = findTasks(state, MlTasks.JOB_TASK_NAME);
         assertEquals(1, tasks.size());
         // now just double check that the first job is still opened:

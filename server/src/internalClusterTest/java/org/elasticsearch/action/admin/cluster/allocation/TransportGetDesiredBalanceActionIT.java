@@ -49,11 +49,7 @@ public class TransportGetDesiredBalanceActionIT extends ESIntegTestCase {
         for (var entry : shardsMap.entrySet()) {
             Integer shardId = entry.getKey();
             DesiredBalanceResponse.DesiredShards desiredShards = entry.getValue();
-            IndexShardRoutingTable shardRoutingTable = clusterAdmin().prepareState()
-                .get()
-                .getState()
-                .routingTable()
-                .shardRoutingTable(index, shardId);
+            IndexShardRoutingTable shardRoutingTable = clusterState().routingTable().shardRoutingTable(index, shardId);
             for (int i = 0; i < shardRoutingTable.size(); i++) {
                 assertShard(shardRoutingTable.shard(i), desiredShards.current().get(i));
             }
@@ -84,11 +80,7 @@ public class TransportGetDesiredBalanceActionIT extends ESIntegTestCase {
         for (var entry : shardsMap.entrySet()) {
             Integer shardId = entry.getKey();
             DesiredBalanceResponse.DesiredShards desiredShards = entry.getValue();
-            IndexShardRoutingTable shardRoutingTable = clusterAdmin().prepareState()
-                .get()
-                .getState()
-                .routingTable()
-                .shardRoutingTable(index, shardId);
+            IndexShardRoutingTable shardRoutingTable = clusterState().routingTable().shardRoutingTable(index, shardId);
             for (int i = 0; i < shardRoutingTable.size(); i++) {
                 assertShard(shardRoutingTable.shard(i), desiredShards.current().get(i));
             }

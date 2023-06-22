@@ -7,7 +7,6 @@
 
 package org.elasticsearch.xpack.security;
 
-import org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import org.elasticsearch.cluster.ClusterChangedEvent;
 import org.elasticsearch.cluster.ClusterStateListener;
 import org.elasticsearch.cluster.metadata.ReservedStateHandlerMetadata;
@@ -130,10 +129,8 @@ public class FileSettingsRoleMappingsRestartIT extends SecurityIntegTestCase {
 
         ensureGreen();
 
-        var clusterStateResponse = clusterAdmin().state(new ClusterStateRequest()).actionGet();
         assertThat(
-            clusterStateResponse.getState()
-                .metadata()
+            clusterState().metadata()
                 .reservedStateMetadata()
                 .get(FileSettingsService.NAMESPACE)
                 .handlers()

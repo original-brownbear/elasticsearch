@@ -194,15 +194,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         internalCluster().stopNode(dataNodeWithShardCopy);
         ensureStableCluster(1);
         assertThat(
-            clusterAdmin().prepareState()
-                .get()
-                .getState()
-                .getRoutingTable()
-                .index("test")
-                .shard(0)
-                .primaryShard()
-                .unassignedInfo()
-                .getReason(),
+            clusterState().getRoutingTable().index("test").shard(0).primaryShard().unassignedInfo().getReason(),
             equalTo(UnassignedInfo.Reason.NODE_LEFT)
         );
 
@@ -216,20 +208,9 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         assertThat(iae.getMessage(), equalTo("No data for shard [0] of index [test] found on any node"));
 
         logger.info("--> wait until shard is failed and becomes unassigned again");
-        assertTrue(
-            clusterAdmin().prepareState().get().getState().toString(),
-            clusterAdmin().prepareState().get().getState().getRoutingTable().index("test").allPrimaryShardsUnassigned()
-        );
+        assertTrue(clusterState().toString(), clusterState().getRoutingTable().index("test").allPrimaryShardsUnassigned());
         assertThat(
-            clusterAdmin().prepareState()
-                .get()
-                .getState()
-                .getRoutingTable()
-                .index("test")
-                .shard(0)
-                .primaryShard()
-                .unassignedInfo()
-                .getReason(),
+            clusterState().getRoutingTable().index("test").shard(0).primaryShard().unassignedInfo().getReason(),
             equalTo(UnassignedInfo.Reason.NODE_LEFT)
         );
     }
@@ -295,9 +276,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             // its possible that the shard has not completed initialization, even though the cluster health is yellow, so the
             // search can throw an "all shards failed" exception. We will wait until the shard initialization has completed before
             // verifying the search hit count.
-            assertBusy(
-                () -> assertTrue(clusterAdmin().prepareState().get().getState().routingTable().index(idxName).allPrimaryShardsActive())
-            );
+            assertBusy(() -> assertTrue(clusterState().routingTable().index(idxName).allPrimaryShardsActive()));
         }
         ShardStats[] shardStats = indicesAdmin().prepareStats("test")
             .setIndicesOptions(IndicesOptions.LENIENT_EXPAND_OPEN_CLOSED)
@@ -307,7 +286,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             assertThat(shardStat.getCommitStats().getNumDocs(), equalTo(useStaleReplica ? 1 : 0));
         }
         // allocation id of old primary was cleaned from the in-sync set
-        final ClusterState state = clusterAdmin().prepareState().get().getState();
+        final ClusterState state = clusterState();
 
         assertEquals(
             Collections.singleton(state.routingTable().index(idxName).shard(0).primary.allocationId().getId()),
@@ -390,7 +369,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             .setSettings(indexSettings(1, 0).put("index.routing.allocation.exclude._name", node))
             .get();
 
-        assertThat(clusterAdmin().prepareState().get().getState().getRoutingTable().shardRoutingTable("test", 0).assignedShards(), empty());
+        assertThat(clusterState().getRoutingTable().shardRoutingTable("test", 0).assignedShards(), empty());
 
         clusterAdmin().prepareReroute().add(new AllocateEmptyPrimaryAllocationCommand("test", 0, node, true)).get();
         ensureGreen("test");
@@ -409,7 +388,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         final Settings inSyncDataPathSettings = internalCluster().dataPathSettings(replicaNode);
         internalCluster().stopNode(replicaNode);
         ensureYellow("test");
-        assertEquals(2, clusterAdmin().prepareState().get().getState().metadata().index("test").inSyncAllocationIds(0).size());
+        assertEquals(2, clusterState().metadata().index("test").inSyncAllocationIds(0).size());
         internalCluster().restartRandomDataNode(new InternalTestCluster.RestartCallback() {
             @Override
             public boolean clearData(String nodeName) {
@@ -417,10 +396,8 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             }
         });
         logger.info("--> wait until shard is failed and becomes unassigned again");
-        assertBusy(
-            () -> assertTrue(clusterAdmin().prepareState().get().getState().getRoutingTable().index("test").allPrimaryShardsUnassigned())
-        );
-        assertEquals(2, clusterAdmin().prepareState().get().getState().metadata().index("test").inSyncAllocationIds(0).size());
+        assertBusy(() -> assertTrue(clusterState().getRoutingTable().index("test").allPrimaryShardsUnassigned()));
+        assertEquals(2, clusterState().metadata().index("test").inSyncAllocationIds(0).size());
 
         logger.info("--> starting node that reuses data folder with the up-to-date shard");
         internalCluster().startDataOnlyNode(inSyncDataPathSettings);
@@ -440,10 +417,10 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         final Settings inSyncDataPathSettings = internalCluster().dataPathSettings(replicaNode);
         internalCluster().stopNode(replicaNode);
         ensureYellow("test");
-        assertEquals(2, clusterAdmin().prepareState().get().getState().metadata().index("test").inSyncAllocationIds(0).size());
+        assertEquals(2, clusterState().metadata().index("test").inSyncAllocationIds(0).size());
         logger.info("--> indexing...");
         client().prepareIndex("test").setSource(jsonBuilder().startObject().field("field", "value1").endObject()).get();
-        assertEquals(1, clusterAdmin().prepareState().get().getState().metadata().index("test").inSyncAllocationIds(0).size());
+        assertEquals(1, clusterState().metadata().index("test").inSyncAllocationIds(0).size());
         internalCluster().restartRandomDataNode(new InternalTestCluster.RestartCallback() {
             @Override
             public boolean clearData(String nodeName) {
@@ -451,16 +428,12 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
             }
         });
         logger.info("--> wait until shard is failed and becomes unassigned again");
-        assertBusy(
-            () -> assertTrue(clusterAdmin().prepareState().get().getState().getRoutingTable().index("test").allPrimaryShardsUnassigned())
-        );
-        assertEquals(1, clusterAdmin().prepareState().get().getState().metadata().index("test").inSyncAllocationIds(0).size());
+        assertBusy(() -> assertTrue(clusterState().getRoutingTable().index("test").allPrimaryShardsUnassigned()));
+        assertEquals(1, clusterState().metadata().index("test").inSyncAllocationIds(0).size());
 
         logger.info("--> starting node that reuses data folder with the up-to-date shard");
         internalCluster().startDataOnlyNode(inSyncDataPathSettings);
-        assertBusy(
-            () -> assertTrue(clusterAdmin().prepareState().get().getState().getRoutingTable().index("test").allPrimaryShardsUnassigned())
-        );
+        assertBusy(() -> assertTrue(clusterState().getRoutingTable().index("test").allPrimaryShardsUnassigned()));
     }
 
     public void testNotWaitForQuorumCopies() throws Exception {
@@ -496,10 +469,7 @@ public class PrimaryAllocationIT extends ESIntegTestCase {
         internalCluster().fullRestart();
         logger.info("--> checking that the primary shard is force allocated to the data node despite being blocked by the exclude filter");
         ensureGreen(indexName);
-        assertEquals(
-            1,
-            clusterAdmin().prepareState().get().getState().routingTable().index(indexName).shardsWithState(ShardRoutingState.STARTED).size()
-        );
+        assertEquals(1, clusterState().routingTable().index(indexName).shardsWithState(ShardRoutingState.STARTED).size());
     }
 
     /**

@@ -534,7 +534,7 @@ public class DataTierAllocationDeciderIT extends ESIntegTestCase {
     }
 
     private DiscoveryNode getPrimaryShardAssignedNode(int shard) {
-        final var state = clusterAdmin().prepareState().get().getState();
+        final var state = clusterState();
         final var routingTable = state.routingTable().index(index).shard(shard);
         final var primaryShard = routingTable.primaryShard();
         final var discoveryNode = state.nodes().get(primaryShard.currentNodeId());

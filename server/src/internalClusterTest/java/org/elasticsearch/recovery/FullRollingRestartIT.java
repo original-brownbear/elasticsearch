@@ -180,7 +180,7 @@ public class FullRollingRestartIT extends ESIntegTestCase {
                 .actionGet();
         }
         ensureGreen();
-        ClusterState state = clusterAdmin().prepareState().get().getState();
+        ClusterState state = clusterState();
         RecoveryResponse recoveryResponse = indicesAdmin().prepareRecoveries("test").get();
         for (RecoveryState recoveryState : recoveryResponse.shardRecoveryStates().get("test")) {
             assertNotEquals(

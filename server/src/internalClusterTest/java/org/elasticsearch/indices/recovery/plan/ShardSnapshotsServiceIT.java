@@ -11,7 +11,6 @@ package org.elasticsearch.indices.recovery.plan;
 import org.elasticsearch.Version;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.PlainActionFuture;
-import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.metadata.RepositoryMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -311,8 +310,7 @@ public class ShardSnapshotsServiceIT extends ESIntegTestCase {
     }
 
     private ShardId getShardIdForIndex(String indexName) {
-        ClusterState state = clusterAdmin().prepareState().get().getState();
-        return state.routingTable().index(indexName).shard(0).shardId();
+        return clusterState().routingTable().index(indexName).shard(0).shardId();
     }
 
     private void createRepository(String repositoryName, String type, Path location, boolean recoveryEnabledRepo) {
