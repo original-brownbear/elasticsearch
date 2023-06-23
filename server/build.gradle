@@ -25,7 +25,6 @@ archivesBaseName = 'elasticsearch'
 
 dependencies {
 
-  api project(':libs:elasticsearch-core')
   api project(':libs:elasticsearch-logging')
   api project(':libs:elasticsearch-secure-sm')
   api project(':libs:elasticsearch-x-content')
@@ -41,7 +40,6 @@ dependencies {
   runtimeOnly project(":libs:elasticsearch-preallocate")
 
   // lucene
-  api "org.apache.lucene:lucene-core:${versions.lucene}"
   api "org.apache.lucene:lucene-analysis-common:${versions.lucene}"
   api "org.apache.lucene:lucene-backward-codecs:${versions.lucene}"
   api "org.apache.lucene:lucene-grouping:${versions.lucene}"

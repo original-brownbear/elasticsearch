@@ -13,17 +13,13 @@ apply plugin: 'elasticsearch.publish'
 dependencies {
   api project(":client:rest")
   api project(':modules:transport-netty4')
-  api project(':libs:elasticsearch-ssl-config')
   api project(":server")
-  api project(":libs:elasticsearch-cli")
   api project(':libs:elasticsearch-preallocate')
   api "com.carrotsearch.randomizedtesting:randomizedtesting-runner:${versions.randomizedrunner}"
   api "junit:junit:${versions.junit}"
   api "org.hamcrest:hamcrest:${versions.hamcrest}"
   api "org.apache.lucene:lucene-test-framework:${versions.lucene}"
   api "org.apache.lucene:lucene-codecs:${versions.lucene}"
-  api "commons-logging:commons-logging:${versions.commonslogging}"
-  api "commons-codec:commons-codec:${versions.commonscodec}"
 
   // mockito
   api 'org.mockito:mockito-core:5.1.1'
@@ -51,16 +47,6 @@ tasks.named("dependencyLicenses").configure { enabled = false }
 tasks.named("dependenciesInfo").configure { enabled = false }
 tasks.named("thirdPartyAudit").configure {
   ignoreMissingClasses(
-          // classes are missing
-          'javax.servlet.ServletContextEvent',
-          'javax.servlet.ServletContextListener',
-          'org.apache.avalon.framework.logger.Logger',
-          'org.apache.log.Hierarchy',
-          'org.apache.log.Logger',
-          'org.apache.log4j.Level',
-          'org.apache.log4j.Logger',
-          'org.apache.log4j.Priority',
-
           // mockito
           'net.bytebuddy.agent.ByteBuddyAgent',
           'org.mockito.internal.creation.bytebuddy.inject.MockMethodDispatcher',

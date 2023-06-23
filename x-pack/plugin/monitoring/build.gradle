@@ -14,7 +14,6 @@ dependencies {
   compileOnly project(path: xpackModule('core'))
 
   // monitoring deps
-  api project(':client:rest')
   api project(':client:sniffer')
 
   // baz - this goes away after we separate out the actions #27759

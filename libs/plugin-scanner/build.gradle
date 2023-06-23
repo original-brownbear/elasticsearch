@@ -15,7 +15,6 @@ tasks.named("dependencyLicenses").configure {
 }
 
 dependencies {
-  api project(':libs:elasticsearch-core')
   api project(':libs:elasticsearch-plugin-api')
   api project(":libs:elasticsearch-x-content")
 
