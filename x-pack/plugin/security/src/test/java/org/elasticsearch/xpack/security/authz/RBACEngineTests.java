@@ -119,6 +119,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1902,7 +1903,7 @@ public class RBACEngineTests extends ESTestCase {
         final Map<String, IndexAbstraction> aliasOrIndexLookup = Stream.of(indices)
             .collect(
                 Collectors.toMap(
-                    i -> i,
+                    Function.identity(),
                     v -> new IndexAbstraction.ConcreteIndex(IndexMetadata.builder(v).settings(indexSettings(Version.CURRENT, 1, 0)).build())
                 )
             );

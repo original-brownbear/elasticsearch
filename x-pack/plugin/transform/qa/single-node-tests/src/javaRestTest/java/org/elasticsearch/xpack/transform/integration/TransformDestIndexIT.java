@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class TransformDestIndexIT extends TransformRestTestCase {
@@ -141,7 +142,7 @@ public class TransformDestIndexIT extends TransformRestTestCase {
     }
 
     private static void assertAliases(String index, String... aliases) throws IOException {
-        Map<String, Map<?, ?>> expectedAliases = Arrays.stream(aliases).collect(Collectors.toMap(a -> a, a -> Map.of()));
+        Map<String, Map<?, ?>> expectedAliases = Arrays.stream(aliases).collect(Collectors.toMap(Function.identity(), a -> Map.of()));
         Response aliasesResponse = client().performRequest(new Request("GET", index + "/_alias"));
         assertEquals(expectedAliases, XContentMapValues.extractValue(index + ".aliases", entityAsMap(aliasesResponse)));
     }

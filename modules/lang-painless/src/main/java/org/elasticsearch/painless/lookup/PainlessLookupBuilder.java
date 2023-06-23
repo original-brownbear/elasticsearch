@@ -748,7 +748,7 @@ public final class PainlessLookupBuilder {
         );
 
         if (existingPainlessMethod == null) {
-            newPainlessMethod = painlessMethodCache.computeIfAbsent(newPainlessMethod, key -> key);
+            newPainlessMethod = painlessMethodCache.computeIfAbsent(newPainlessMethod, Function.identity());
 
             if (isStatic) {
                 painlessClassBuilder.staticMethods.put(painlessMethodKey.intern(), newPainlessMethod);
@@ -981,7 +981,7 @@ public final class PainlessLookupBuilder {
             );
 
             if (existingPainlessField == null) {
-                newPainlessField = painlessFieldCache.computeIfAbsent(newPainlessField, key -> key);
+                newPainlessField = painlessFieldCache.computeIfAbsent(newPainlessField, Function.identity());
                 painlessClassBuilder.fields.put(painlessFieldKey.intern(), newPainlessField);
             } else if (newPainlessField.equals(existingPainlessField) == false) {
                 throw lookupException(
@@ -1182,7 +1182,7 @@ public final class PainlessLookupBuilder {
         );
 
         if (existingImportedPainlessMethod == null) {
-            newImportedPainlessMethod = painlessMethodCache.computeIfAbsent(newImportedPainlessMethod, key -> key);
+            newImportedPainlessMethod = painlessMethodCache.computeIfAbsent(newImportedPainlessMethod, Function.identity());
             painlessMethodKeysToImportedPainlessMethods.put(painlessMethodKey.intern(), newImportedPainlessMethod);
         } else if (newImportedPainlessMethod.equals(existingImportedPainlessMethod) == false) {
             throw lookupException(
@@ -1629,7 +1629,7 @@ public final class PainlessLookupBuilder {
         );
 
         if (existingPainlessInstanceBinding == null) {
-            newPainlessInstanceBinding = painlessInstanceBindingCache.computeIfAbsent(newPainlessInstanceBinding, key -> key);
+            newPainlessInstanceBinding = painlessInstanceBindingCache.computeIfAbsent(newPainlessInstanceBinding, Function.identity());
             painlessMethodKeysToPainlessInstanceBindings.put(painlessMethodKey.intern(), newPainlessInstanceBinding);
         } else if (newPainlessInstanceBinding.equals(existingPainlessInstanceBinding) == false) {
             throw lookupException(

@@ -14,6 +14,7 @@ import org.elasticsearch.plugins.IngestPlugin;
 import org.elasticsearch.plugins.Plugin;
 
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -33,7 +34,7 @@ public class MockIngestPlugin extends Plugin implements IngestPlugin {
         return processorFields.entrySet()
             .stream()
             .map(MockProcessorFactory::new)
-            .collect(Collectors.toMap(factory -> factory.type, factory -> factory));
+            .collect(Collectors.toMap(factory -> factory.type, Function.identity()));
     }
 
     static class MockProcessorFactory implements Processor.Factory {

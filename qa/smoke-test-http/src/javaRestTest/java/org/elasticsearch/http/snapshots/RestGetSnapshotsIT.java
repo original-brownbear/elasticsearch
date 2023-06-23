@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.snapshots.AbstractSnapshotIntegTestCase.assertSnapshotListSorted;
@@ -213,7 +214,7 @@ public class RestGetSnapshotsIT extends AbstractSnapshotRestTestCase {
                 .flatMap(s -> s.shards().entrySet().stream())
                 .filter(e -> e.getKey().getIndexName().equals("test-index-2"))
                 .map(e -> e.getValue().state())
-                .collect(Collectors.groupingBy(e -> e, Collectors.counting()))
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                 .equals(Map.of(SnapshotsInProgress.ShardState.INIT, 1L, SnapshotsInProgress.ShardState.QUEUED, (long) inProgressCount - 1));
             return firstIndexSuccessfullySnapshot && secondIndexIsBlocked;
         });

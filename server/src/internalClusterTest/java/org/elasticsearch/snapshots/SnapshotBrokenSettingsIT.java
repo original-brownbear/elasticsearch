@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.hamcrest.Matchers.equalTo;
 
@@ -92,7 +93,7 @@ public class SnapshotBrokenSettingsIT extends AbstractSnapshotIntegTestCase {
             BrokenSettingPlugin.breakSetting = true;
         }
 
-        static final Setting<String> BROKEN_SETTING = new Setting<>("setting.broken", "default", s -> s, s -> {
+        static final Setting<String> BROKEN_SETTING = new Setting<>("setting.broken", "default", Function.identity(), s -> {
             if ((s.equals("default") == false && breakSetting)) {
                 throw EXCEPTION;
             }

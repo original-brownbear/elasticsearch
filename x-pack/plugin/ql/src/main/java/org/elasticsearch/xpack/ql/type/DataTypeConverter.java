@@ -499,7 +499,7 @@ public final class DataTypeConverter {
         RATIONAL_TO_LONG(fromDouble(DataTypeConverter::safeDoubleToLong)),
         INTEGER_TO_LONG(fromNumber(DataTypeConverter::safeToLong)),
         STRING_TO_LONG(fromString(Long::valueOf, "long")),
-        DATETIME_TO_LONG(fromDateTime(value -> value)),
+        DATETIME_TO_LONG(fromDateTime(Function.identity())),
 
         RATIONAL_TO_INT(fromDouble(value -> safeToInt(safeDoubleToLong(value)))),
         INTEGER_TO_INT(fromNumber(value -> safeToInt(safeToLong(value)))),
@@ -584,7 +584,7 @@ public final class DataTypeConverter {
             return (Object l) -> converter.apply(((Boolean) l));
         }
 
-        private static Function<Object, Object> fromDateTime(Function<Long, Object> converter) {
+        private static Function<Object, Object> fromDateTime(Function<Long, ?> converter) {
             return l -> converter.apply(((ZonedDateTime) l).toInstant().toEpochMilli());
         }
 

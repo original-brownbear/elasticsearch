@@ -15,6 +15,7 @@ import org.elasticsearch.xpack.core.transform.transforms.TransformIndexerStatsTe
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -25,7 +26,7 @@ public class TransformFeatureSetUsageTests extends AbstractWireSerializingTestCa
         Map<String, Long> transformCountByState = randomSubsetOf(Arrays.asList(IndexerState.values())).stream()
             .collect(toMap(state -> state.value(), state -> randomLong()));
         Map<String, Long> transformCountByFeature = randomList(10, () -> randomAlphaOfLength(10)).stream()
-            .collect(toMap(f -> f, f -> randomLong()));
+            .collect(toMap(Function.identity(), f -> randomLong()));
         TransformIndexerStats accumulatedStats = TransformIndexerStatsTests.randomStats();
         return new TransformFeatureSetUsage(transformCountByState, transformCountByFeature, accumulatedStats);
     }

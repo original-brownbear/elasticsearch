@@ -310,7 +310,7 @@ public class ExecutableJiraActionTests extends ESTestCase {
     @SuppressWarnings("unchecked")
     public void testMerge() {
         Map<String, Object> writeableMap = new HashMap<>();
-        Map<String, Object> mergeNull = ExecutableJiraAction.merge(writeableMap, null, s -> s);
+        Map<String, Object> mergeNull = ExecutableJiraAction.merge(writeableMap, null, Function.identity());
         assertTrue(mergeNull.isEmpty());
         Map<String, Object> map = new HashMap<>();
         map.put("foo", "bar");

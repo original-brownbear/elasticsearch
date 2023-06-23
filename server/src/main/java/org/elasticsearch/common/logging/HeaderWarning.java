@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -75,7 +76,7 @@ public class HeaderWarning {
         // excluding 0x5c '\' which has to be escaped
         IntStream.rangeClosed(0x5D, 0x7E),// ascii ]-~
         IntStream.rangeClosed(0x80, 0xFF)// obs-text -bear in mind it contains 0x85 new line. Which requires DOT_ALL flag
-    ).flatMapToInt(i -> i).collect(BitSet::new, BitSet::set, BitSet::or);
+    ).flatMapToInt(Function.identity()).collect(BitSet::new, BitSet::set, BitSet::or);
     public static final Pattern WARNING_XCONTENT_LOCATION_PATTERN = Pattern.compile("^\\[.*?]\\[-?\\d+:-?\\d+] ");
 
     /*

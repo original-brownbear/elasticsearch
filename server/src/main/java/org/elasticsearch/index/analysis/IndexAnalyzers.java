@@ -15,6 +15,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.elasticsearch.index.analysis.AnalysisRegistry.DEFAULT_ANALYZER_NAME;
@@ -128,7 +129,7 @@ public interface IndexAnalyzers extends Closeable {
             public void close() throws IOException {
                 IOUtils.close(
                     Stream.of(analyzers.values().stream(), normalizers.values().stream(), whitespaceNormalizers.values().stream())
-                        .flatMap(s -> s)
+                        .flatMap(Function.identity())
                         .filter(a -> a.scope() == AnalyzerScope.INDEX)
                         .toList()
                 );

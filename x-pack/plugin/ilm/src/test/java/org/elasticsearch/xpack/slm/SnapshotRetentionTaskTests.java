@@ -588,7 +588,7 @@ public class SnapshotRetentionTaskTests extends ESTestCase {
                     .setVersion(randomNonNegativeLong())
                     .build()
             )
-            .collect(Collectors.toMap(pm -> pm.getPolicy().getId(), pm -> pm));
+            .collect(Collectors.toMap(pm -> pm.getPolicy().getId(), Function.identity()));
 
         Metadata metadata = Metadata.builder()
             .putCustom(SnapshotLifecycleMetadata.TYPE, new SnapshotLifecycleMetadata(policyMetadataMap, mode, new SnapshotLifecycleStats()))

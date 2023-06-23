@@ -15,6 +15,7 @@ import org.junit.Before;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static java.util.Collections.emptyMap;
@@ -48,7 +49,7 @@ public class SourceConfigTests extends AbstractSerializingTransformTestCase<Sour
     private static Map<String, Object> randomRuntimeMappings() {
         return randomList(0, 10, () -> randomAlphaOfLengthBetween(1, 10)).stream()
             .distinct()
-            .collect(toMap(f -> f, f -> singletonMap("type", randomFrom("boolean", "date", "double", "keyword", "long"))));
+            .collect(toMap(Function.identity(), f -> singletonMap("type", randomFrom("boolean", "date", "double", "keyword", "long"))));
     }
 
     @Before

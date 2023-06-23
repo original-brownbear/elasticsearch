@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.elasticsearch.search.aggregations.AggregationBuilders.avg;
@@ -431,7 +432,7 @@ public class AggregationProfilerIT extends ESIntegTestCase {
 
             Map<String, ProfileResult> histoAggResultSubAggregations = histoAggResult.getProfiledChildren()
                 .stream()
-                .collect(Collectors.toMap(ProfileResult::getLuceneDescription, s -> s));
+                .collect(Collectors.toMap(ProfileResult::getLuceneDescription, Function.identity()));
 
             ProfileResult tagsAggResult = histoAggResultSubAggregations.get("tags");
             assertThat(tagsAggResult, notNullValue());
@@ -451,7 +452,7 @@ public class AggregationProfilerIT extends ESIntegTestCase {
 
             Map<String, ProfileResult> tagsAggResultSubAggregations = tagsAggResult.getProfiledChildren()
                 .stream()
-                .collect(Collectors.toMap(ProfileResult::getLuceneDescription, s -> s));
+                .collect(Collectors.toMap(ProfileResult::getLuceneDescription, Function.identity()));
 
             ProfileResult avgAggResult = tagsAggResultSubAggregations.get("avg");
             assertThat(avgAggResult, notNullValue());
@@ -503,7 +504,7 @@ public class AggregationProfilerIT extends ESIntegTestCase {
 
             Map<String, ProfileResult> stringsAggResultSubAggregations = stringsAggResult.getProfiledChildren()
                 .stream()
-                .collect(Collectors.toMap(ProfileResult::getLuceneDescription, s -> s));
+                .collect(Collectors.toMap(ProfileResult::getLuceneDescription, Function.identity()));
 
             avgAggResult = stringsAggResultSubAggregations.get("avg");
             assertThat(avgAggResult, notNullValue());
@@ -556,7 +557,7 @@ public class AggregationProfilerIT extends ESIntegTestCase {
 
             tagsAggResultSubAggregations = tagsAggResult.getProfiledChildren()
                 .stream()
-                .collect(Collectors.toMap(ProfileResult::getLuceneDescription, s -> s));
+                .collect(Collectors.toMap(ProfileResult::getLuceneDescription, Function.identity()));
 
             avgAggResult = tagsAggResultSubAggregations.get("avg");
             assertThat(avgAggResult, notNullValue());

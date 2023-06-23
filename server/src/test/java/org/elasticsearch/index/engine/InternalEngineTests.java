@@ -1060,7 +1060,7 @@ public class InternalEngineTests extends EngineTestCase {
         assertThat(engine.lastRefreshedCheckpoint(), equalTo(0L));
 
         engine.index(indexForDoc(createParsedDoc("1", null)));
-        try (Engine.GetResult get = engine.get(new Engine.Get(true, true, "1"), mappingLookup, documentParser, searcher -> searcher)) {
+        try (Engine.GetResult get = engine.get(new Engine.Get(true, true, "1"), mappingLookup, documentParser, Function.identity())) {
             assertTrue(get.exists());
             assertEquals(++translogGetCountExpected, translogGetCount.getAsLong());
             assertEquals(translogInMemorySegmentCountExpected, translogInMemorySegmentCount.getAsLong());
@@ -6088,7 +6088,7 @@ public class InternalEngineTests extends EngineTestCase {
                             new Engine.Get(true, false, doc3.id()),
                             mappingLookup,
                             documentParser,
-                            searcher -> searcher
+                            Function.identity()
                         )
                     ) {
                         assertTrue(getResult.exists());

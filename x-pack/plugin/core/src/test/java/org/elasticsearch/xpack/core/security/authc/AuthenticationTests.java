@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
@@ -1177,7 +1178,7 @@ public class AuthenticationTests extends ESTestCase {
         } else {
             metadata = Arrays.stream(randomArray(1, 5, String[]::new, () -> randomAlphaOfLengthBetween(3, 8)))
                 .distinct()
-                .collect(Collectors.toMap(s -> s, s -> randomAlphaOfLengthBetween(3, 8)));
+                .collect(Collectors.toMap(Function.identity(), s -> randomAlphaOfLengthBetween(3, 8)));
         }
         return AuthenticationTestHelper.builder().user(user).realmRef(realmRef).transportVersion(version).metadata(metadata).build(isRunAs);
     }

@@ -176,7 +176,7 @@ public class SnapshotLifecycleService implements Closeable, ClusterStateListener
         final boolean existingJobsFoundAndCancelled = scheduledTasks.keySet()
             .stream()
             // Find all jobs matching the `jobid-\d+` pattern
-            .filter(jId -> existingJobPattern.matcher(jId).matches())
+            .filter(existingJobPattern.asMatchPredicate())
             // Filter out a job that has not been changed (matches the id exactly meaning the version is the same)
             .filter(jId -> jId.equals(jobId) == false)
             .map(existingJobId -> {
