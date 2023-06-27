@@ -117,7 +117,7 @@ public abstract class ForbiddenPatternsTask extends DefaultTask {
             List<Integer> invalidLines = IntStream.range(0, lines.size())
                 .filter(i -> allPatterns.matcher(lines.get(i)).find())
                 .boxed()
-                .collect(Collectors.toList());
+                .toList();
 
             URI baseUri = getRootDir().orElse(projectLayout.getProjectDirectory().getAsFile()).get().toURI();
             String path = baseUri.relativize(f.toURI()).toString();
@@ -130,7 +130,7 @@ public abstract class ForbiddenPatternsTask extends DefaultTask {
                             .filter(p -> Pattern.compile(p.getValue()).matcher(kv.getValue()).find())
                             .map(p -> "- " + p.getKey() + " on line " + kv.getKey() + " of " + path)
                     )
-                    .collect(Collectors.toList())
+                    .toList()
             );
         }
         if (failures.isEmpty() == false) {

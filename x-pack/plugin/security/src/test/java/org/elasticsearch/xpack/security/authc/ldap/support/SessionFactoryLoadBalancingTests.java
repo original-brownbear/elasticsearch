@@ -48,7 +48,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -413,7 +412,7 @@ public class SessionFactoryLoadBalancingTests extends LdapTestCase {
                         final List<InetAddress> inetAddressesToBind = Arrays.stream(allAddresses)
                             .filter(addr -> openedSockets.stream().noneMatch(s -> addr.equals(s.getLocalAddress())))
                             .filter(addr -> failedAddresses.contains(addr) == false)
-                            .collect(Collectors.toList());
+                            .toList();
                         for (InetAddress localAddress : inetAddressesToBind) {
                             try {
                                 final Socket socket = openMockSocket(serverAddress, serverPort, localAddress, portToBind);

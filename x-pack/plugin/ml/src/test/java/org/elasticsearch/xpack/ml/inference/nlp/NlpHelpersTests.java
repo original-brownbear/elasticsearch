@@ -12,7 +12,6 @@ import org.elasticsearch.test.ESTestCase;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.closeTo;
@@ -95,7 +94,7 @@ public class NlpHelpersTests extends ESTestCase {
         AtomicInteger index = new AtomicInteger(0);
         List<NlpHelpers.ScoreAndIndex> sortedByValue = Stream.generate(
             () -> new NlpHelpers.ScoreAndIndex(data[index.get()], index.getAndIncrement())
-        ).limit(size).sorted((o1, o2) -> Double.compare(o2.score, o1.score)).collect(Collectors.toList());
+        ).limit(size).sorted((o1, o2) -> Double.compare(o2.score, o1.score)).toList();
 
         NlpHelpers.ScoreAndIndex[] scoreAndIndices = NlpHelpers.topK(k, data);
         assertEquals(k, scoreAndIndices.length);

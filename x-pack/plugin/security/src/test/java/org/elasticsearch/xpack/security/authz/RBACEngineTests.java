@@ -1399,7 +1399,7 @@ public class RBACEngineTests extends ESTestCase {
         assertThat(authorizedIndices.check(dataStreamName), is(true));
         assertThat(
             authorizedIndices.all().get(),
-            hasItems(backingIndices.stream().map(im -> im.getIndex().getName()).collect(Collectors.toList()).toArray(Strings.EMPTY_ARRAY))
+            hasItems(backingIndices.stream().map(im -> im.getIndex().getName()).toList().toArray(Strings.EMPTY_ARRAY))
         );
         for (String index : backingIndices.stream().map(im -> im.getIndex().getName()).toList()) {
             assertThat(authorizedIndices.check(index), is(true));

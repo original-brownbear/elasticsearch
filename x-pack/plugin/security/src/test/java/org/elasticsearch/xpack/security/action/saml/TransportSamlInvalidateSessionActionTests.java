@@ -93,7 +93,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.elasticsearch.xpack.core.security.authc.RealmSettings.getFullSettingKey;
@@ -334,8 +333,7 @@ public class TransportSamlInvalidateSessionActionTests extends SamlTestCase {
         final SearchHit[] searchHits = indexRequests.stream()
             .filter(r -> r.id().startsWith("token"))
             .map(r -> tokenHit(counter.incrementAndGet(), r.source()))
-            .collect(Collectors.toList())
-            .toArray(new SearchHit[0]);
+            .toArray(SearchHit[]::new);
         assertThat(searchHits.length, equalTo(4));
         searchFunction = req1 -> {
             searchFunction = findTokenByRefreshToken(searchHits);

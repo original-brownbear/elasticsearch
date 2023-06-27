@@ -21,7 +21,6 @@ import org.elasticsearch.xpack.core.security.authz.privilege.ClusterPrivilegeRes
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -98,7 +97,7 @@ public class HasPrivilegesRequestTests extends ESTestCase {
                 ClusterPrivilegeResolver.MANAGE_PIPELINE,
                 ClusterPrivilegeResolver.ALL
             )
-        ).stream().map(p -> p.name()).collect(Collectors.toList());
+        ).stream().map(p -> p.name()).toList();
         request.clusterPrivileges(clusterPrivileges.toArray(Strings.EMPTY_ARRAY));
 
         IndicesPrivileges[] indicesPrivileges = new IndicesPrivileges[randomInt(5)];

@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -92,7 +93,7 @@ public class FlushListenerTests extends ESTestCase {
             }).start();
         }
         assertBusy(() -> assertEquals(numWaits, listener.awaitingFlushed.size()));
-        assertThat(flushAcknowledgementHolders.stream().map(f -> f.get()).filter(f -> f != null).findAny().isPresent(), is(false));
+        assertThat(flushAcknowledgementHolders.stream().map(AtomicReference::get).anyMatch(Objects::nonNull), is(false));
         assertFalse(listener.onClear.hasRun());
 
         listener.clear();

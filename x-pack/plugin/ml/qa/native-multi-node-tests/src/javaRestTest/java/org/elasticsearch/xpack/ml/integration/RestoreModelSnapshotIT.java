@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.empty;
@@ -64,7 +63,7 @@ public class RestoreModelSnapshotIT extends MlNativeAutodetectIntegTestCase {
         openJob(job.getId());
         // Forecast should fail when the model has seen no data, ie model state not initialized
         expectThrows(ElasticsearchStatusException.class, () -> forecast(job.getId(), TimeValue.timeValueHours(3), null));
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         closeJob(job.getId());
 
         // Reopen the job and check forecast works

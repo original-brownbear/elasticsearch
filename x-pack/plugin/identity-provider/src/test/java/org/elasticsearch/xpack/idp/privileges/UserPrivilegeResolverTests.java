@@ -32,7 +32,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -205,7 +204,7 @@ public class UserPrivilegeResolverTests extends ESTestCase {
         final Collection<ResourcePrivileges> privileges = resourcePrivilegeMap.entrySet()
             .stream()
             .map(e -> ResourcePrivileges.builder(e.getKey()).addPrivileges(e.getValue()).build())
-            .collect(Collectors.toList());
+            .toList();
         final Map<String, Collection<ResourcePrivileges>> appPrivs = Map.of(appName, privileges);
         final HasPrivilegesResponse response = new HasPrivilegesResponse(username, isCompleteMatch, Map.of(), Set.of(), appPrivs);
 

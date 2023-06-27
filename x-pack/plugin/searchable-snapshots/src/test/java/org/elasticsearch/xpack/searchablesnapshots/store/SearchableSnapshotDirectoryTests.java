@@ -123,7 +123,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.blobcache.BlobCacheUtils.toIntBytes;
 import static org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshots.SNAPSHOT_CACHE_ENABLED_SETTING;
@@ -923,7 +922,7 @@ public class SearchableSnapshotDirectoryTests extends AbstractSearchableSnapshot
                 .indexFiles()
                 .stream()
                 .filter(f -> f.metadata().hashEqualsContents())
-                .collect(Collectors.toList());
+                .toList();
 
             for (BlobStoreIndexShardSnapshot.FileInfo fileWithEqualContent : filesWithEqualContent) {
                 RecoveryState.FileDetail fileDetail = recoveryState.getIndex().getFileDetails(fileWithEqualContent.physicalName());

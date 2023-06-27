@@ -434,7 +434,7 @@ public class TransportGetUsersActionTests extends ESTestCase {
     }
 
     private void testGetStoreOnlyUsers(List<User> storeUsers) {
-        final String[] storeUsernames = storeUsers.stream().map(User::principal).collect(Collectors.toList()).toArray(Strings.EMPTY_ARRAY);
+        final String[] storeUsernames = storeUsers.stream().map(User::principal).toList().toArray(Strings.EMPTY_ARRAY);
         NativeUsersStore usersStore = mock(NativeUsersStore.class);
         AnonymousUser anonymousUser = new AnonymousUser(settings);
         ReservedRealm reservedRealm = new ReservedRealm(mock(Environment.class), settings, usersStore, anonymousUser, threadPool);
@@ -522,7 +522,7 @@ public class TransportGetUsersActionTests extends ESTestCase {
             Arrays.asList(new User("jane"), new User("fred")),
             randomUsers()
         );
-        final String[] storeUsernames = storeUsers.stream().map(User::principal).collect(Collectors.toList()).toArray(Strings.EMPTY_ARRAY);
+        final String[] storeUsernames = storeUsers.stream().map(User::principal).toList().toArray(Strings.EMPTY_ARRAY);
         NativeUsersStore usersStore = mock(NativeUsersStore.class);
         TransportService transportService = new TransportService(
             Settings.EMPTY,

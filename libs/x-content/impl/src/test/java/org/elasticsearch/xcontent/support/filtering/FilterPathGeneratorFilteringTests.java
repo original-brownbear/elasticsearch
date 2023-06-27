@@ -17,7 +17,7 @@ import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.provider.filtering.FilterPathBasedFilter;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.HashSet;
 
 import static org.hamcrest.Matchers.equalTo;
 
@@ -814,7 +814,7 @@ public class FilterPathGeneratorFilteringTests extends ESTestCase {
             try (
                 FilteringGeneratorDelegate generator = new FilteringGeneratorDelegate(
                     JSON_FACTORY.createGenerator(os),
-                    new FilterPathBasedFilter(Arrays.asList(filter.split(",")).stream().collect(Collectors.toSet()), inclusive),
+                    new FilterPathBasedFilter(new HashSet<>(Arrays.asList(filter.split(","))), inclusive),
                     true,
                     true
                 )

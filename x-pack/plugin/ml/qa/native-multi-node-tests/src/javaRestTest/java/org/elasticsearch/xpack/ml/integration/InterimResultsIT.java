@@ -144,7 +144,7 @@ public class InterimResultsIT extends MlNativeAutodetectIntegTestCase {
         // We expect there are no records. The bucket count is low but at the same time
         // it is too early into the bucket to consider it an anomaly. Let's verify that.
         List<AnomalyRecord> records = interimResults.get(0).getRecords();
-        List<String> recordsJson = records.stream().map(Strings::toString).collect(Collectors.toList());
+        List<String> recordsJson = records.stream().map(Strings::toString).toList();
         assertThat("Found interim records: " + recordsJson, records.isEmpty(), is(true));
 
         closeJob(jobId);

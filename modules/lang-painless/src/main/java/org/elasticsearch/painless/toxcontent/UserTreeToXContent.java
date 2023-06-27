@@ -670,10 +670,7 @@ public class UserTreeToXContent extends UserTreeBaseVisitor<ScriptScope> {
         if (decorations.isEmpty() == false) {
             builder.startArray(Fields.DECORATIONS);
 
-            List<Class<? extends Decoration>> dkeys = decorations.keySet()
-                .stream()
-                .sorted(Comparator.comparing(Class::getName))
-                .collect(Collectors.toList());
+            List<Class<? extends Decoration>> dkeys = decorations.keySet().stream().sorted(Comparator.comparing(Class::getName)).toList();
 
             for (Class<? extends Decoration> dkey : dkeys) {
                 DecorationToXContent.ToXContent(decorations.get(dkey), builder);

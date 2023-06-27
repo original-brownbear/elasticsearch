@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -233,7 +232,7 @@ public class MatchOnlyTextFieldMapperTests extends MapperTestCase {
         }
 
         private Tuple<String, String> generateValue() {
-            String v = randomList(1, 10, () -> randomAlphaOfLength(5)).stream().collect(Collectors.joining(" "));
+            String v = String.join(" ", randomList(1, 10, () -> randomAlphaOfLength(5)));
             return Tuple.tuple(v, v);
         }
 

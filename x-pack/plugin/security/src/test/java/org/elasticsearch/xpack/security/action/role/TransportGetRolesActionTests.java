@@ -107,8 +107,7 @@ public class TransportGetRolesActionTests extends ESTestCase {
 
         assertThat(throwableRef.get(), is(nullValue()));
         assertThat(responseRef.get(), is(notNullValue()));
-        List<String> retrievedRoleNames = Arrays.asList(responseRef.get().roles())
-            .stream()
+        List<String> retrievedRoleNames = Arrays.stream(responseRef.get().roles())
             .map(RoleDescriptor::getName)
             .collect(Collectors.toList());
         assertThat(retrievedRoleNames, containsInAnyOrder(expectedNames.toArray(Strings.EMPTY_ARRAY)));
@@ -152,7 +151,7 @@ public class TransportGetRolesActionTests extends ESTestCase {
         );
 
         GetRolesRequest request = new GetRolesRequest();
-        request.names(storeRoleDescriptors.stream().map(RoleDescriptor::getName).collect(Collectors.toList()).toArray(Strings.EMPTY_ARRAY));
+        request.names(storeRoleDescriptors.stream().map(RoleDescriptor::getName).toList().toArray(Strings.EMPTY_ARRAY));
 
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
@@ -179,8 +178,7 @@ public class TransportGetRolesActionTests extends ESTestCase {
 
         assertThat(throwableRef.get(), is(nullValue()));
         assertThat(responseRef.get(), is(notNullValue()));
-        List<String> retrievedRoleNames = Arrays.asList(responseRef.get().roles())
-            .stream()
+        List<String> retrievedRoleNames = Arrays.stream(responseRef.get().roles())
             .map(RoleDescriptor::getName)
             .collect(Collectors.toList());
         assertThat(retrievedRoleNames, containsInAnyOrder(request.names()));
@@ -263,8 +261,7 @@ public class TransportGetRolesActionTests extends ESTestCase {
 
         assertThat(throwableRef.get(), is(nullValue()));
         assertThat(responseRef.get(), is(notNullValue()));
-        List<String> retrievedRoleNames = Arrays.asList(responseRef.get().roles())
-            .stream()
+        List<String> retrievedRoleNames = Arrays.stream(responseRef.get().roles())
             .map(RoleDescriptor::getName)
             .collect(Collectors.toList());
         assertThat(retrievedRoleNames, containsInAnyOrder(expectedNames.toArray(Strings.EMPTY_ARRAY)));
@@ -297,7 +294,7 @@ public class TransportGetRolesActionTests extends ESTestCase {
         );
 
         GetRolesRequest request = new GetRolesRequest();
-        request.names(storeRoleDescriptors.stream().map(RoleDescriptor::getName).collect(Collectors.toList()).toArray(Strings.EMPTY_ARRAY));
+        request.names(storeRoleDescriptors.stream().map(RoleDescriptor::getName).toList().toArray(Strings.EMPTY_ARRAY));
 
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();

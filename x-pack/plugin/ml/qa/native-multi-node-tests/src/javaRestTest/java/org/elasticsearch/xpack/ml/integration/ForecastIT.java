@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.elasticsearch.xpack.core.ml.job.messages.Messages.JOB_FORECAST_NATIVE_PROCESS_KILLED;
@@ -71,7 +70,7 @@ public class ForecastIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), false);
 
         // Now we can start doing forecast requests
@@ -322,7 +321,7 @@ public class ForecastIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), false);
         String forecastIdDefaultDurationDefaultExpiry = forecast(job.getId(), null, null);
         String forecastIdDuration1HourNoExpiry = forecast(job.getId(), TimeValue.timeValueHours(1), TimeValue.ZERO);
@@ -394,7 +393,7 @@ public class ForecastIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), false);
 
         long noForecasts = 11;  // We want to make sure we set the search size instead of relying on the default
@@ -446,7 +445,7 @@ public class ForecastIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), false);
         String forecastIdDefaultDurationDefaultExpiry = forecast(job.getId(), null, null);
         String forecastIdDuration1HourNoExpiry = forecast(job.getId(), TimeValue.timeValueHours(1), TimeValue.ZERO);
@@ -551,7 +550,7 @@ public class ForecastIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), false);
 
         String forecastId = forecast(jobId, TimeValue.timeValueDays(1000), TimeValue.ZERO);
@@ -596,7 +595,7 @@ public class ForecastIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), false);
 
         // Now we can start doing forecast requests
@@ -633,7 +632,7 @@ public class ForecastIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), false);
     }
 

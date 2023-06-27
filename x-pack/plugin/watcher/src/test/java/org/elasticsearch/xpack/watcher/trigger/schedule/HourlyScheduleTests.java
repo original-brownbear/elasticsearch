@@ -141,7 +141,7 @@ public class HourlyScheduleTests extends ScheduleTestCase {
         HourlySchedule schedule = new HourlySchedule.Parser().parse(parser);
         assertThat(schedule, notNullValue());
         assertThat(schedule.minutes().length, is(minutes.length));
-        List<Integer> ints = Arrays.stream(schedule.minutes()).mapToObj(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> ints = Arrays.stream(schedule.minutes()).boxed().collect(Collectors.toList());
         for (int i = 0; i < minutes.length; i++) {
             assertThat(ints, hasItem(minutes[i]));
         }
@@ -173,7 +173,7 @@ public class HourlyScheduleTests extends ScheduleTestCase {
         assertThat(schedule, notNullValue());
         assertThat(schedule.minutes().length, is(minutes.length));
 
-        List<Integer> ints = Arrays.stream(schedule.minutes()).mapToObj(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> ints = Arrays.stream(schedule.minutes()).boxed().collect(Collectors.toList());
         for (int i = 0; i < minutes.length; i++) {
             assertThat(ints, hasItem(minutes[i]));
         }

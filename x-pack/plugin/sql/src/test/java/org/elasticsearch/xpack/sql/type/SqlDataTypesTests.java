@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
 import static org.elasticsearch.xpack.ql.type.DataTypes.DATETIME;
 import static org.elasticsearch.xpack.ql.type.DataTypes.FLOAT;
 import static org.elasticsearch.xpack.ql.type.DataTypes.KEYWORD;
@@ -209,7 +208,7 @@ public class SqlDataTypesTests extends ESTestCase {
             )
         );
 
-        types.addAll(SqlDataTypes.types().stream().filter(DataTypes::isPrimitive).map(DataType::typeName).collect(toList()));
+        types.addAll(SqlDataTypes.types().stream().filter(DataTypes::isPrimitive).map(DataType::typeName).toList());
         String type = randomFrom(types.toArray(new String[0]));
         DataType dataType = SqlDataTypes.fromSqlOrEsType(type);
         assertNotNull("cound not find " + type, dataType);

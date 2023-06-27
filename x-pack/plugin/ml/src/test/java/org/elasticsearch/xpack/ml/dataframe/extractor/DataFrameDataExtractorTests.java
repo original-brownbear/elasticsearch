@@ -48,6 +48,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -514,9 +515,7 @@ public class DataFrameDataExtractorTests extends ESTestCase {
                 new ProcessedField(
                     new OneHotEncoding(
                         "field_1",
-                        Arrays.asList("11", "12")
-                            .stream()
-                            .collect(Collectors.toMap(Function.identity(), s -> s.equals("11") ? "field_11" : "field_12")),
+                        Stream.of("11", "12").collect(Collectors.toMap(Function.identity(), s -> s.equals("11") ? "field_11" : "field_12")),
                         true
                     )
                 )

@@ -137,7 +137,7 @@ public class DeprecationInfoAction extends ActionType<DeprecationInfoAction.Resp
                 similarIssues.stream().map(Tuple::v1).collect(Collectors.toList())
             );
             issueToListOfNodesMap.computeIfAbsent(leastCommonDenominator, (key) -> new ArrayList<>())
-                .addAll(similarIssues.stream().map(Tuple::v2).collect(Collectors.toList()));
+                .addAll(similarIssues.stream().map(Tuple::v2).toList());
         }
         return issueToListOfNodesMap;
     }

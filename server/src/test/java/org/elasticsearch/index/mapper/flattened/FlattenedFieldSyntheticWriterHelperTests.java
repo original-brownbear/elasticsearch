@@ -19,7 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -54,10 +54,9 @@ public class FlattenedFieldSyntheticWriterHelperTests extends ESTestCase {
         final FlattenedFieldSyntheticWriterHelper writer = new FlattenedFieldSyntheticWriterHelper(dv);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final XContentBuilder builder = new XContentBuilder(XContentType.JSON.xContent(), baos);
-        final List<byte[]> bytes = List.of("a" + '\0' + "value_a", "b" + '\0' + "value_b", "c" + '\0' + "value_c", "d" + '\0' + "value_d")
-            .stream()
+        final List<byte[]> bytes = Stream.of("a" + '\0' + "value_a", "b" + '\0' + "value_b", "c" + '\0' + "value_c", "d" + '\0' + "value_d")
             .map(x -> x.getBytes(StandardCharsets.UTF_8))
-            .collect(Collectors.toList());
+            .toList();
         when(dv.getValueCount()).thenReturn(Long.valueOf(bytes.size()));
         when(dv.docValueCount()).thenReturn(bytes.size());
         when(dv.nextOrd()).thenReturn(0L, 1L, 2L, 3L);
@@ -81,12 +80,12 @@ public class FlattenedFieldSyntheticWriterHelperTests extends ESTestCase {
         final FlattenedFieldSyntheticWriterHelper writer = new FlattenedFieldSyntheticWriterHelper(dv);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final XContentBuilder builder = new XContentBuilder(XContentType.JSON.xContent(), baos);
-        final List<byte[]> bytes = List.of(
+        final List<byte[]> bytes = Stream.of(
             "a" + '\0' + "value_a",
             "a.b" + '\0' + "value_b",
             "a.b.c" + '\0' + "value_c",
             "a.d" + '\0' + "value_d"
-        ).stream().map(x -> x.getBytes(StandardCharsets.UTF_8)).collect(Collectors.toList());
+        ).map(x -> x.getBytes(StandardCharsets.UTF_8)).toList();
         when(dv.getValueCount()).thenReturn(Long.valueOf(bytes.size()));
         when(dv.docValueCount()).thenReturn(bytes.size());
         when(dv.nextOrd()).thenReturn(0L, 1L, 2L, 3L);
@@ -113,10 +112,9 @@ public class FlattenedFieldSyntheticWriterHelperTests extends ESTestCase {
         final FlattenedFieldSyntheticWriterHelper writer = new FlattenedFieldSyntheticWriterHelper(dv);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final XContentBuilder builder = new XContentBuilder(XContentType.JSON.xContent(), baos);
-        final List<byte[]> bytes = List.of("a.x" + '\0' + "10", "a.y" + '\0' + "20", "b.a" + '\0' + "30", "b.c" + '\0' + "40")
-            .stream()
+        final List<byte[]> bytes = Stream.of("a.x" + '\0' + "10", "a.y" + '\0' + "20", "b.a" + '\0' + "30", "b.c" + '\0' + "40")
             .map(x -> x.getBytes(StandardCharsets.UTF_8))
-            .collect(Collectors.toList());
+            .toList();
         when(dv.getValueCount()).thenReturn(Long.valueOf(bytes.size()));
         when(dv.docValueCount()).thenReturn(bytes.size());
         when(dv.nextOrd()).thenReturn(0L, 1L, 2L, 3L);
@@ -140,10 +138,9 @@ public class FlattenedFieldSyntheticWriterHelperTests extends ESTestCase {
         final FlattenedFieldSyntheticWriterHelper writer = new FlattenedFieldSyntheticWriterHelper(dv);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final XContentBuilder builder = new XContentBuilder(XContentType.JSON.xContent(), baos);
-        final List<byte[]> bytes = List.of("a.x" + '\0' + "10", "a.x" + '\0' + "20", "a.x" + '\0' + "30", "a.x" + '\0' + "40")
-            .stream()
+        final List<byte[]> bytes = Stream.of("a.x" + '\0' + "10", "a.x" + '\0' + "20", "a.x" + '\0' + "30", "a.x" + '\0' + "40")
             .map(x -> x.getBytes(StandardCharsets.UTF_8))
-            .collect(Collectors.toList());
+            .toList();
         when(dv.getValueCount()).thenReturn(Long.valueOf(bytes.size()));
         when(dv.docValueCount()).thenReturn(bytes.size());
         when(dv.nextOrd()).thenReturn(0L, 1L, 2L, 3L);
@@ -167,13 +164,13 @@ public class FlattenedFieldSyntheticWriterHelperTests extends ESTestCase {
         final FlattenedFieldSyntheticWriterHelper writer = new FlattenedFieldSyntheticWriterHelper(dv);
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final XContentBuilder builder = new XContentBuilder(XContentType.JSON.xContent(), baos);
-        final List<byte[]> bytes = List.of(
+        final List<byte[]> bytes = Stream.of(
             "a.x" + '\0' + "10",
             "a.x" + '\0' + "20",
             "b.y" + '\0' + "30",
             "b.y" + '\0' + "40",
             "b.y" + '\0' + "50"
-        ).stream().map(x -> x.getBytes(StandardCharsets.UTF_8)).collect(Collectors.toList());
+        ).map(x -> x.getBytes(StandardCharsets.UTF_8)).toList();
         when(dv.getValueCount()).thenReturn(Long.valueOf(bytes.size()));
         when(dv.docValueCount()).thenReturn(bytes.size());
         when(dv.nextOrd()).thenReturn(0L, 1L, 2L, 3L, 4L);

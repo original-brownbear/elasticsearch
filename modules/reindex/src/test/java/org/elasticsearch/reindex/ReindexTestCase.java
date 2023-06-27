@@ -22,7 +22,6 @@ import org.elasticsearch.test.ESIntegTestCase.ClusterScope;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
 import static org.elasticsearch.test.ESIntegTestCase.Scope.SUITE;
@@ -74,9 +73,7 @@ public abstract class ReindexTestCase extends ESIntegTestCase {
      */
     protected int expectedSlices(int requestSlices, Collection<String> indices) {
         if (requestSlices == AbstractBulkByScrollRequest.AUTO_SLICES) {
-            int leastNumShards = Collections.min(
-                indices.stream().map(sourceIndex -> getNumShards(sourceIndex).numPrimaries).collect(Collectors.toList())
-            );
+            int leastNumShards = Collections.min(indices.stream().map(sourceIndex -> getNumShards(sourceIndex).numPrimaries).toList());
             return Math.min(leastNumShards, BulkByScrollParallelizationHelper.AUTO_SLICE_CEILING);
         } else {
             return requestSlices;

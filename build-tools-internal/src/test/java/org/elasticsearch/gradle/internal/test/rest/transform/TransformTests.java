@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -70,7 +69,7 @@ public abstract class TransformTests {
             .filter(node -> node.get("setup") != null)
             .filter(node -> getSkipNode((ArrayNode) node.get("setup")) != null)
             .map(node -> getSkipNode((ArrayNode) node.get("setup")))
-            .collect(Collectors.toList());
+            .toList();
         assertThat(skipNodes.size(), CoreMatchers.equalTo(1));
         return skipNodes.get(0);
     }
@@ -80,7 +79,7 @@ public abstract class TransformTests {
             .filter(node -> node.get("setup") != null)
             .filter(node -> getSkipNode((ArrayNode) node.get("setup")) != null)
             .map(node -> getSkipNode((ArrayNode) node.get("setup")))
-            .collect(Collectors.toList());
+            .toList();
         assertThat(skipNodes.size(), CoreMatchers.equalTo(0));
     }
 

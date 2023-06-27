@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -173,7 +172,7 @@ public abstract class KerberosRealmTestCase extends ESTestCase {
 
     @SuppressWarnings("unchecked")
     protected NativeRoleMappingStore roleMappingStore(final List<String> userNames) {
-        final List<String> expectedUserNames = userNames.stream().map(this::maybeRemoveRealmName).collect(Collectors.toList());
+        final List<String> expectedUserNames = userNames.stream().map(this::maybeRemoveRealmName).toList();
         final Client mockClient = mock(Client.class);
         when(mockClient.threadPool()).thenReturn(threadPool);
         when(mockClient.settings()).thenReturn(settings);

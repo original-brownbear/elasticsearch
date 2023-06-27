@@ -508,7 +508,7 @@ public abstract class AbstractWatcherIntegrationTestCase extends ESIntegTestCase
                 .stream()
                 .map(response -> Tuple.tuple(response.getNode().getName(), response.getWatcherState()))
                 .collect(Collectors.toList());
-            List<WatcherState> states = currentStatesFromStatsRequest.stream().map(Tuple::v2).collect(Collectors.toList());
+            List<WatcherState> states = currentStatesFromStatsRequest.stream().map(Tuple::v2).toList();
 
             logger.info("waiting to start watcher, current states {}", currentStatesFromStatsRequest);
 
@@ -559,7 +559,7 @@ public abstract class AbstractWatcherIntegrationTestCase extends ESIntegTestCase
                     )
                 )
                 .collect(Collectors.toList());
-            List<WatcherState> states = currentStatesFromStatsRequest.stream().map(Tuple::v2).collect(Collectors.toList());
+            List<WatcherState> states = currentStatesFromStatsRequest.stream().map(Tuple::v2).toList();
 
             long currentWatches = watcherStatsResponse.getNodes().stream().mapToLong(n -> n.getSnapshots().size()).sum();
             logger.info("waiting to stop watcher, current states {}, current watches [{}]", currentStatesFromStatsRequest, currentWatches);

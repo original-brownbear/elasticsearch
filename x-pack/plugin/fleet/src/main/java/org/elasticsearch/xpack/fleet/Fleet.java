@@ -65,7 +65,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.xpack.core.ClientHelper.FLEET_ORIGIN;
 
@@ -304,10 +303,7 @@ public class Fleet extends Plugin implements SystemIndexPlugin {
         if (dataStreamDescriptors.isEmpty() == false) {
             try {
                 Request request = new Request(
-                    dataStreamDescriptors.stream()
-                        .map(SystemDataStreamDescriptor::getDataStreamName)
-                        .collect(Collectors.toList())
-                        .toArray(Strings.EMPTY_ARRAY)
+                    dataStreamDescriptors.stream().map(SystemDataStreamDescriptor::getDataStreamName).toList().toArray(Strings.EMPTY_ARRAY)
                 );
                 EnumSet<Option> options = request.indicesOptions().options();
                 options.add(Option.IGNORE_UNAVAILABLE);

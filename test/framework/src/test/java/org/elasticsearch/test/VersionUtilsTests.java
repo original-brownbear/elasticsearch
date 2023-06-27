@@ -304,7 +304,7 @@ public class VersionUtilsTests extends ESTestCase {
             /* Java lists all versions from the 5.x series onwards, but we only want to consider
              * ones that we're supposed to be compatible with. */
             .filter(v -> v.onOrAfter(Version.CURRENT.minimumIndexCompatibilityVersion()))
-            .collect(toList());
+            .toList();
 
         List<String> releasedIndexCompatible = released.stream()
             .filter(v -> Version.CURRENT.equals(v) == false)

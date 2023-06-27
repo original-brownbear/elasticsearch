@@ -11,14 +11,13 @@ import org.elasticsearch.test.AbstractXContentSerializingTestCase;
 import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class FieldSelectionTests extends AbstractXContentSerializingTestCase<FieldSelection> {
 
     public static FieldSelection createRandom() {
-        Set<String> mappingTypes = randomSubsetOf(randomIntBetween(1, 3), "int", "float", "double", "text", "keyword", "ip").stream()
-            .collect(Collectors.toSet());
+        Set<String> mappingTypes = new HashSet<>(randomSubsetOf(randomIntBetween(1, 3), "int", "float", "double", "text", "keyword", "ip"));
         FieldSelection.FeatureType featureType = randomBoolean() ? null : randomFrom(FieldSelection.FeatureType.values());
         String reason = randomBoolean() ? null : randomAlphaOfLength(20);
         return new FieldSelection(randomAlphaOfLength(10), mappingTypes, randomBoolean(), randomBoolean(), featureType, reason);

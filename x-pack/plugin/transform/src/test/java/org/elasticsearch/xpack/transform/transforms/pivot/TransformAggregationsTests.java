@@ -28,7 +28,6 @@ import org.elasticsearch.xpack.analytics.AnalyticsPlugin;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -148,7 +147,7 @@ public class TransformAggregationsTests extends ESTestCase {
         List<String> aggregationNames = namedWriteables.stream()
             .filter(namedWritable -> namedWritable.categoryClass.equals(AggregationBuilder.class))
             .map(namedWritable -> namedWritable.name)
-            .collect(Collectors.toList());
+            .toList();
 
         for (String aggregationName : aggregationNames) {
             String message = Strings.format("""

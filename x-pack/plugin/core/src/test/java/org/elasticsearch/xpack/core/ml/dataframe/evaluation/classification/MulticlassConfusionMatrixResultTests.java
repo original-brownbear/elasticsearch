@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -28,7 +27,7 @@ public class MulticlassConfusionMatrixResultTests extends AbstractXContentSerial
 
     public static Result createRandom() {
         int numClasses = randomIntBetween(2, 100);
-        List<String> classNames = Stream.generate(() -> randomAlphaOfLength(10)).limit(numClasses).collect(Collectors.toList());
+        List<String> classNames = Stream.generate(() -> randomAlphaOfLength(10)).limit(numClasses).toList();
         List<ActualClass> actualClasses = new ArrayList<>(numClasses);
         for (int i = 0; i < numClasses; i++) {
             List<PredictedClass> predictedClasses = new ArrayList<>(numClasses);

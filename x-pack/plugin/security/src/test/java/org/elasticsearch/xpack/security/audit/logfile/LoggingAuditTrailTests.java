@@ -2869,8 +2869,7 @@ public class LoggingAuditTrailTests extends ESTestCase {
                 );
             } else {
                 final String quotedValue = "["
-                    + Arrays.asList(checkArrayField.getValue())
-                        .stream()
+                    + Arrays.stream(checkArrayField.getValue())
                         .filter(s -> s != null)
                         .map(s -> "\"" + s.replaceAll("\"", "\\\\\"") + "\"")
                         .reduce((x, y) -> x + "," + y)

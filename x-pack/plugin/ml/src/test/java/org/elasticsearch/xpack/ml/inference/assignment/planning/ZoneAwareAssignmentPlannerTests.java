@@ -14,6 +14,7 @@ import org.elasticsearch.xpack.ml.inference.assignment.planning.AssignmentPlan.D
 import org.elasticsearch.xpack.ml.inference.assignment.planning.AssignmentPlan.Node;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -144,14 +145,14 @@ public class ZoneAwareAssignmentPlannerTests extends ESTestCase {
             assertThat(plan.assignments(deployment1).isPresent(), is(true));
             Map<Node, Integer> assignments = plan.assignments(deployment1).get();
             for (List<Node> zoneNodes : nodesByZone.values()) {
-                assertThat(Sets.haveNonEmptyIntersection(assignments.keySet(), zoneNodes.stream().collect(Collectors.toSet())), is(true));
+                assertThat(Sets.haveNonEmptyIntersection(assignments.keySet(), new HashSet<>(zoneNodes)), is(true));
             }
         }
         {
             assertThat(plan.assignments(deployment2).isPresent(), is(true));
             Map<Node, Integer> assignments = plan.assignments(deployment2).get();
             for (List<Node> zoneNodes : nodesByZone.values()) {
-                assertThat(Sets.haveNonEmptyIntersection(assignments.keySet(), zoneNodes.stream().collect(Collectors.toSet())), is(true));
+                assertThat(Sets.haveNonEmptyIntersection(assignments.keySet(), new HashSet<>(zoneNodes)), is(true));
             }
         }
         {
@@ -159,7 +160,7 @@ public class ZoneAwareAssignmentPlannerTests extends ESTestCase {
             Map<Node, Integer> assignments = plan.assignments(deployment3).get();
             int zonesWithAllocations = 0;
             for (List<Node> zoneNodes : nodesByZone.values()) {
-                if (Sets.haveNonEmptyIntersection(assignments.keySet(), zoneNodes.stream().collect(Collectors.toSet()))) {
+                if (Sets.haveNonEmptyIntersection(assignments.keySet(), new HashSet<>(zoneNodes))) {
                     zonesWithAllocations++;
                 }
             }

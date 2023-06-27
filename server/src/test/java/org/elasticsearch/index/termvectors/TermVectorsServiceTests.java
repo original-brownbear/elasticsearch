@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static java.lang.Math.abs;
-import static java.util.stream.Collectors.toList;
 import static org.elasticsearch.action.support.WriteRequest.RefreshPolicy.IMMEDIATE;
 import static org.elasticsearch.xcontent.XContentFactory.jsonBuilder;
 import static org.hamcrest.Matchers.equalTo;
@@ -55,7 +54,7 @@ public class TermVectorsServiceTests extends ESSingleNodeTestCase {
         IndexShard shard = test.getShardOrNull(0);
         assertThat(shard, notNullValue());
 
-        List<Long> longs = Stream.of(abs(randomLong()), abs(randomLong())).sorted().collect(toList());
+        List<Long> longs = Stream.of(abs(randomLong()), abs(randomLong())).sorted().toList();
 
         TermVectorsRequest request = new TermVectorsRequest("test", "0");
         TermVectorsResponse response = TermVectorsService.getTermVectors(shard, request, longs.iterator()::next);

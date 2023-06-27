@@ -20,7 +20,6 @@ import org.junit.After;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -43,8 +42,7 @@ public class ResetJobIT extends MlNativeAutodetectIntegTestCase {
         openJob(job.getId());
         postData(
             job.getId(),
-            generateData(startTime, bucketSpan, bucketCount + 1, bucketIndex -> randomIntBetween(100, 200)).stream()
-                .collect(Collectors.joining())
+            String.join("", generateData(startTime, bucketSpan, bucketCount + 1, bucketIndex -> randomIntBetween(100, 200)))
         );
         closeJob(job.getId());
 

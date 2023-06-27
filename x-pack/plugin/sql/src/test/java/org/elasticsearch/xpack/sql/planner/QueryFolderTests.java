@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
 import static org.elasticsearch.xpack.sql.analysis.analyzer.AnalyzerTestUtils.analyzer;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
@@ -574,7 +573,7 @@ public class QueryFolderTests extends ESTestCase {
             .stream()
             .filter(def -> AggregateFunction.class.isAssignableFrom(def.clazz()))
             .map(def -> aggFnsWithMultipleArguments.getOrDefault(def.name(), def.name() + "(int)"))
-            .collect(toList());
+            .toList();
         for (String aggregationStr : aggregations) {
             PhysicalPlan pivotPlan = plan(
                 "SELECT * FROM (SELECT some.dotted.field, bool, keyword, int FROM test) "

@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
@@ -72,7 +71,7 @@ public class AutodetectMemoryLimitIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         closeJob(job.getId());
 
         // Assert we haven't violated the limit too much
@@ -119,7 +118,7 @@ public class AutodetectMemoryLimitIT extends MlNativeAutodetectIntegTestCase {
             timestamp += bucketSpan.seconds();
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         closeJob(job.getId());
 
         // Assert we haven't violated the limit too much
@@ -166,7 +165,7 @@ public class AutodetectMemoryLimitIT extends MlNativeAutodetectIntegTestCase {
                         )
                     );
                 }
-                postData(job.getId(), data.stream().collect(Collectors.joining()));
+                postData(job.getId(), String.join("", data));
             }
             timestamp += bucketSpan.seconds();
         }
@@ -216,7 +215,7 @@ public class AutodetectMemoryLimitIT extends MlNativeAutodetectIntegTestCase {
                 record.put("value", 42.0);
                 data.add(createJsonRecord(record));
             }
-            postData(job.getId(), data.stream().collect(Collectors.joining()));
+            postData(job.getId(), String.join("", data));
             timestamp += bucketSpan.seconds();
         }
 

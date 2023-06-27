@@ -407,7 +407,7 @@ public class ApiKeyIntegTests extends SecurityIntegTestCase {
     public void testInvalidateApiKeyWillClearApiKeyCache() throws IOException, ExecutionException, InterruptedException {
         final List<ApiKeyService> services = Arrays.stream(internalCluster().getNodeNames())
             .map(n -> internalCluster().getInstance(ApiKeyService.class, n))
-            .collect(Collectors.toList());
+            .toList();
 
         // Create two API keys and authenticate with them
         Tuple<String, String> apiKey1 = createApiKeyAndAuthenticateWithIt();
@@ -467,7 +467,7 @@ public class ApiKeyIntegTests extends SecurityIntegTestCase {
         assertThat(invalidateResponse.getInvalidatedApiKeys().size(), equalTo(noOfApiKeys));
         assertThat(
             invalidateResponse.getInvalidatedApiKeys(),
-            containsInAnyOrder(responses.stream().map(r -> r.getId()).collect(Collectors.toList()).toArray(Strings.EMPTY_ARRAY))
+            containsInAnyOrder(responses.stream().map(r -> r.getId()).toList().toArray(Strings.EMPTY_ARRAY))
         );
         assertThat(invalidateResponse.getPreviouslyInvalidatedApiKeys().size(), equalTo(0));
         assertThat(invalidateResponse.getErrors().size(), equalTo(0));
@@ -1807,7 +1807,7 @@ public class ApiKeyIntegTests extends SecurityIntegTestCase {
     public void testCacheInvalidationViaApiCalls() throws Exception {
         final List<ApiKeyService> services = Arrays.stream(internalCluster().getNodeNames())
             .map(n -> internalCluster().getInstance(ApiKeyService.class, n))
-            .collect(Collectors.toList());
+            .toList();
 
         // Create two API keys and authenticate with them
         String docId1 = createApiKeyAndAuthenticateWithIt().v1();
@@ -1874,7 +1874,7 @@ public class ApiKeyIntegTests extends SecurityIntegTestCase {
     public void testSecurityIndexStateChangeWillInvalidateApiKeyCaches() throws Exception {
         final List<ApiKeyService> services = Arrays.stream(internalCluster().getNodeNames())
             .map(n -> internalCluster().getInstance(ApiKeyService.class, n))
-            .collect(Collectors.toList());
+            .toList();
 
         String docId = createApiKeyAndAuthenticateWithIt().v1();
 
@@ -2944,19 +2944,13 @@ public class ApiKeyIntegTests extends SecurityIntegTestCase {
         List<String> invalidatedApiKeyIds
     ) {
         assertThat(apiKeyInfos.length, equalTo(expectedNumberOfApiKeys));
-        List<String> expectedIds = responses.stream()
-            .filter(o -> validApiKeyIds.contains(o.getId()))
-            .map(o -> o.getId())
-            .collect(Collectors.toList());
+        List<String> expectedIds = responses.stream().map(o -> o.getId()).filter(validApiKeyIds::contains).toList();
         List<String> actualIds = Arrays.stream(apiKeyInfos)
             .filter(o -> o.isInvalidated() == false)
             .map(o -> o.getId())
             .collect(Collectors.toList());
         assertThat(actualIds, containsInAnyOrder(expectedIds.toArray(Strings.EMPTY_ARRAY)));
-        List<String> expectedNames = responses.stream()
-            .filter(o -> validApiKeyIds.contains(o.getId()))
-            .map(o -> o.getName())
-            .collect(Collectors.toList());
+        List<String> expectedNames = responses.stream().filter(o -> validApiKeyIds.contains(o.getId())).map(o -> o.getName()).toList();
         List<String> actualNames = Arrays.stream(apiKeyInfos)
             .filter(o -> o.isInvalidated() == false)
             .map(o -> o.getName())
@@ -2972,7 +2966,7 @@ public class ApiKeyIntegTests extends SecurityIntegTestCase {
             List<String> actualInvalidatedApiKeyIds = Arrays.stream(apiKeyInfos)
                 .filter(o -> o.isInvalidated())
                 .map(o -> o.getId())
-                .collect(Collectors.toList());
+                .toList();
             assertThat(invalidatedApiKeyIds, containsInAnyOrder(actualInvalidatedApiKeyIds.toArray(Strings.EMPTY_ARRAY)));
         }
         if (metadatas != null) {

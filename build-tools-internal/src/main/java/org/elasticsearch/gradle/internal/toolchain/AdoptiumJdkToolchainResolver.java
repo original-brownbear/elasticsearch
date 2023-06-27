@@ -76,8 +76,7 @@ public abstract class AdoptiumJdkToolchainResolver extends AbstractCustomJavaToo
                 Lists.newArrayList(versionsNode.iterator())
                     .stream()
                     .map(node -> toVersionInfo(node))
-                    .sorted(Comparator.comparing(AdoptiumVersionInfo::semver).reversed())
-                    .findFirst()
+                    .max(Comparator.comparing(AdoptiumVersionInfo::semver))
                     .get()
             );
         } catch (FileNotFoundException e) {

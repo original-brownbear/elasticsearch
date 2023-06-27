@@ -25,8 +25,7 @@ public interface TestClustersAware extends Task {
             throw new TestClustersException("Task " + getPath() + " can't use test cluster from" + " another project " + cluster);
         }
 
-        cluster.getNodes()
-            .all(node -> node.getDistributions().stream().forEach(distro -> dependsOn(getProject().provider(() -> distro.maybeFreeze()))));
+        cluster.getNodes().all(node -> node.getDistributions().forEach(distro -> dependsOn(getProject().provider(distro::maybeFreeze))));
         cluster.getNodes().all(node -> dependsOn((Callable<Collection<Configuration>>) node::getPluginAndModuleConfigurations));
         getClusters().add(cluster);
     }

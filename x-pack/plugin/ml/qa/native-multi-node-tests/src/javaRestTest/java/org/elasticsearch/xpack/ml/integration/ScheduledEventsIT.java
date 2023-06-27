@@ -31,7 +31,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -192,8 +191,7 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         // write data up to and including the event
         postData(
             job.getId(),
-            generateData(startTime, bucketSpan, bucketCount + 1, bucketIndex -> randomIntBetween(100, 200)).stream()
-                .collect(Collectors.joining())
+            String.join("", generateData(startTime, bucketSpan, bucketCount + 1, bucketIndex -> randomIntBetween(100, 200)))
         );
 
         // flush the job and get the interim result during the event
@@ -223,11 +221,7 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         openJob(job.getId());
 
         // write some buckets of data
-        postData(
-            job.getId(),
-            generateData(startTime, bucketSpan, bucketCount, bucketIndex -> randomIntBetween(100, 200)).stream()
-                .collect(Collectors.joining())
-        );
+        postData(job.getId(), String.join("", generateData(startTime, bucketSpan, bucketCount, bucketIndex -> randomIntBetween(100, 200))));
 
         // Now create a calendar and events for the job while it is open
         String calendarId = "test-calendar-online-update";
@@ -265,8 +259,10 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         // write some more buckets of data that cover the scheduled event period
         postData(
             job.getId(),
-            generateData(startTime + bucketCount * bucketSpan.millis(), bucketSpan, 5, bucketIndex -> randomIntBetween(100, 200)).stream()
-                .collect(Collectors.joining())
+            String.join(
+                "",
+                generateData(startTime + bucketCount * bucketSpan.millis(), bucketSpan, 5, bucketIndex -> randomIntBetween(100, 200))
+            )
         );
         // and close
         closeJob(job.getId());
@@ -301,11 +297,7 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         openJob(job.getId());
 
         // write some buckets of data
-        postData(
-            job.getId(),
-            generateData(startTime, bucketSpan, bucketCount, bucketIndex -> randomIntBetween(100, 200)).stream()
-                .collect(Collectors.joining())
-        );
+        postData(job.getId(), String.join("", generateData(startTime, bucketSpan, bucketCount, bucketIndex -> randomIntBetween(100, 200))));
 
         String calendarId = "test-calendar-open-job-update";
 
@@ -352,8 +344,10 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         // write some more buckets of data that cover the scheduled event period
         postData(
             job.getId(),
-            generateData(startTime + bucketCount * bucketSpan.millis(), bucketSpan, 5, bucketIndex -> randomIntBetween(100, 200)).stream()
-                .collect(Collectors.joining())
+            String.join(
+                "",
+                generateData(startTime + bucketCount * bucketSpan.millis(), bucketSpan, 5, bucketIndex -> randomIntBetween(100, 200))
+            )
         );
         // and close
         closeJob(job.getId());
@@ -439,8 +433,7 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
         // write some buckets of data
         postData(
             job.getId(),
-            generateData(startTime, bucketSpan, bucketCount + 1, bucketIndex -> randomIntBetween(100, 200)).stream()
-                .collect(Collectors.joining())
+            String.join("", generateData(startTime, bucketSpan, bucketCount + 1, bucketIndex -> randomIntBetween(100, 200)))
         );
 
         // and close
@@ -474,11 +467,7 @@ public class ScheduledEventsIT extends MlNativeAutodetectIntegTestCase {
 
     private void runJob(Job.Builder job, long startTime, TimeValue bucketSpan, int bucketCount) throws IOException {
         openJob(job.getId());
-        postData(
-            job.getId(),
-            generateData(startTime, bucketSpan, bucketCount, bucketIndex -> randomIntBetween(100, 200)).stream()
-                .collect(Collectors.joining())
-        );
+        postData(job.getId(), String.join("", generateData(startTime, bucketSpan, bucketCount, bucketIndex -> randomIntBetween(100, 200))));
         closeJob(job.getId());
     }
 }

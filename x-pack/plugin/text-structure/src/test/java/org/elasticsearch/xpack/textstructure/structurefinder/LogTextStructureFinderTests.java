@@ -13,7 +13,6 @@ import org.elasticsearch.xpack.core.textstructure.structurefinder.TextStructure;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -94,7 +93,7 @@ public class LogTextStructureFinderTests extends TextStructureTestCase {
         assertEquals(Collections.singletonList("ISO8601"), structure.getJodaTimestampFormats());
         FieldStats messageFieldStats = structure.getFieldStats().get("message");
         assertNotNull(messageFieldStats);
-        for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).collect(Collectors.toList())) {
+        for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).toList()) {
             assertThat(structureFinder.getSampleMessages(), hasItem(statMessage));
         }
         assertEquals(Collections.singleton("properties"), structure.getMappings().keySet());
@@ -163,10 +162,7 @@ public class LogTextStructureFinderTests extends TextStructureTestCase {
             assertNull(structure.getJodaTimestampFormats());
             FieldStats messageFieldStats = structure.getFieldStats().get("message");
             assertNotNull(messageFieldStats);
-            for (String statMessage : messageFieldStats.getTopHits()
-                .stream()
-                .map(m -> (String) m.get("value"))
-                .collect(Collectors.toList())) {
+            for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).toList()) {
                 assertThat(structureFinder.getSampleMessages(), hasItem(statMessage));
             }
             assertEquals(Collections.singleton("properties"), structure.getMappings().keySet());
@@ -212,10 +208,7 @@ public class LogTextStructureFinderTests extends TextStructureTestCase {
             assertNull(structure.getJodaTimestampFormats());
             FieldStats messageFieldStats = structure.getFieldStats().get("message");
             assertNotNull(messageFieldStats);
-            for (String statMessage : messageFieldStats.getTopHits()
-                .stream()
-                .map(m -> (String) m.get("value"))
-                .collect(Collectors.toList())) {
+            for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).toList()) {
                 assertThat(structureFinder.getSampleMessages(), hasItem(statMessage));
             }
             assertEquals(Collections.singleton("properties"), structure.getMappings().keySet());
@@ -274,7 +267,7 @@ public class LogTextStructureFinderTests extends TextStructureTestCase {
         assertEquals(Collections.singletonList("M/d/YYYY h:mma"), structure.getJodaTimestampFormats());
         FieldStats messageFieldStats = structure.getFieldStats().get("message");
         assertNotNull(messageFieldStats);
-        for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).collect(Collectors.toList())) {
+        for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).toList()) {
             assertThat(structureFinder.getSampleMessages(), hasItem(statMessage));
         }
         assertEquals(Collections.singleton("properties"), structure.getMappings().keySet());
@@ -318,7 +311,7 @@ public class LogTextStructureFinderTests extends TextStructureTestCase {
         assertEquals(Collections.singletonList("ISO8601"), structure.getJodaTimestampFormats());
         FieldStats messageFieldStats = structure.getFieldStats().get("message");
         assertNotNull(messageFieldStats);
-        for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).collect(Collectors.toList())) {
+        for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).toList()) {
             assertThat(structureFinder.getSampleMessages(), hasItem(statMessage));
         }
         assertEquals(Collections.singleton("properties"), structure.getMappings().keySet());
@@ -377,7 +370,7 @@ public class LogTextStructureFinderTests extends TextStructureTestCase {
         assertEquals(Collections.singletonList("ISO8601"), structure.getJodaTimestampFormats());
         FieldStats messageFieldStats = structure.getFieldStats().get("message");
         assertNotNull(messageFieldStats);
-        for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).collect(Collectors.toList())) {
+        for (String statMessage : messageFieldStats.getTopHits().stream().map(m -> (String) m.get("value")).toList()) {
             // In this case the "message" field was output by the Grok pattern, so "message"
             // at the end of the processing will _not_ contain a complete sample message
             assertThat(structureFinder.getSampleMessages(), not(hasItem(statMessage)));

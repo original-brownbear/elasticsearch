@@ -384,7 +384,7 @@ public class ExportersTests extends ESTestCase {
      * All dynamic monitoring settings should have dependency on type.
      */
     public void testSettingsDependency() {
-        List<Setting.AffixSetting<?>> settings = Exporters.getSettings().stream().filter(Setting::isDynamic).collect(Collectors.toList());
+        List<Setting.AffixSetting<?>> settings = Exporters.getSettings().stream().filter(Setting::isDynamic).toList();
         settings.stream()
             .filter(s -> s.getKey().equals("xpack.monitoring.exporters.*.type") == false)
             .forEach(
@@ -407,7 +407,7 @@ public class ExportersTests extends ESTestCase {
      */
     public void testRemoveType() {
         // run the update for all dynamic settings and ensure that they correctly throw an exception
-        List<Setting.AffixSetting<?>> settings = Exporters.getSettings().stream().filter(Setting::isDynamic).collect(Collectors.toList());
+        List<Setting.AffixSetting<?>> settings = Exporters.getSettings().stream().filter(Setting::isDynamic).toList();
         settings.stream().filter(s -> s.getKey().equals("xpack.monitoring.exporters.*.type") == false).forEach(setting -> {
             String fullSettingName = setting.getKey().replace("*", "foobar");
             Settings nodeSettings = Settings.builder()

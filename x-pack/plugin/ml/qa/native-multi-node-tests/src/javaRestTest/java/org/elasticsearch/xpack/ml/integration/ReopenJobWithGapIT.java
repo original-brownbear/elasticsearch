@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 
@@ -59,7 +58,7 @@ public class ReopenJobWithGapIT extends MlNativeAutodetectIntegTestCase {
             timestamp += BUCKET_SPAN_SECONDS;
         }
 
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), true);
         closeJob(job.getId());
 
@@ -76,7 +75,7 @@ public class ReopenJobWithGapIT extends MlNativeAutodetectIntegTestCase {
         }
 
         openJob(job.getId());
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), true);
         closeJob(job.getId());
 

@@ -131,7 +131,7 @@ public final class AggregationResultUtils {
             });
 
             List<String> aggNames = aggregationBuilders.stream().map(AggregationBuilder::getName).collect(Collectors.toList());
-            aggNames.addAll(pipelineAggs.stream().map(PipelineAggregationBuilder::getName).collect(Collectors.toList()));
+            aggNames.addAll(pipelineAggs.stream().map(PipelineAggregationBuilder::getName).toList());
 
             for (String aggName : aggNames) {
                 Aggregation aggResult = bucket.getAggregations().get(aggName);

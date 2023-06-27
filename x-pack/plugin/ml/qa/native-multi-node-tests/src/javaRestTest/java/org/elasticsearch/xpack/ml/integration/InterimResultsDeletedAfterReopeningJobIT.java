@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -66,7 +65,7 @@ public class InterimResultsDeletedAfterReopeningJobIT extends MlNativeAutodetect
 
         data.add(createJsonRecord(createRecord(timestamp, "foo", 1)));
         data.add(createJsonRecord(createRecord(timestamp, "bar", 1)));
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         flushJob(job.getId(), true);
         closeJob(job.getId());
 
@@ -87,7 +86,7 @@ public class InterimResultsDeletedAfterReopeningJobIT extends MlNativeAutodetect
         data.add(createJsonRecord(createRecord(timestamp, "bar", normalValue)));
 
         openJob(job.getId());
-        postData(job.getId(), data.stream().collect(Collectors.joining()));
+        postData(job.getId(), String.join("", data));
         closeJob(job.getId());
 
         records = getRecords(job.getId());

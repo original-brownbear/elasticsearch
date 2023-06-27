@@ -35,12 +35,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.action.admin.indices.template.reservedstate.ReservedComposableIndexTemplateAction.reservedComposableIndexName;
 import static org.elasticsearch.test.NodeRoles.dataOnlyNode;
@@ -408,10 +408,7 @@ public class ComponentTemplatesFileSettingsIT extends ESIntegTestCase {
 
         Map<String, ComposableIndexTemplate> allTemplates = clusterStateResponse.getState().metadata().templatesV2();
 
-        assertThat(
-            allTemplates.keySet().stream().collect(Collectors.toSet()),
-            containsInAnyOrder("template_1", "template_2", "template_other")
-        );
+        assertThat(new HashSet<>(allTemplates.keySet()), containsInAnyOrder("template_1", "template_2", "template_other"));
 
         assertTrue(
             expectThrows(
@@ -465,7 +462,7 @@ public class ComponentTemplatesFileSettingsIT extends ESIntegTestCase {
             new GetComposableIndexTemplateAction.Request("template*")
         ).get();
 
-        assertThat(response.indexTemplates().keySet().stream().collect(Collectors.toSet()), containsInAnyOrder("template_1", "template_2"));
+        assertThat(new HashSet<>(response.indexTemplates().keySet()), containsInAnyOrder("template_1", "template_2"));
 
         final var componentResponse = client().execute(
             GetComponentTemplateAction.INSTANCE,

@@ -47,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.xpack.core.ml.annotations.AnnotationTests.randomAnnotation;
 import static org.hamcrest.Matchers.equalTo;
@@ -84,13 +83,10 @@ public class RevertModelSnapshotIT extends MlNativeAutodetectIntegTestCase {
         TimeValue bucketSpan = TimeValue.timeValueHours(1);
         long startTime = 1491004800000L;
 
-        String data = generateData(
-            startTime,
-            bucketSpan,
-            20,
-            Arrays.asList("foo"),
-            (bucketIndex, series) -> bucketIndex == 19 ? 100.0 : 10.0
-        ).stream().collect(Collectors.joining());
+        String data = String.join(
+            "",
+            generateData(startTime, bucketSpan, 20, Arrays.asList("foo"), (bucketIndex, series) -> bucketIndex == 19 ? 100.0 : 10.0)
+        );
 
         Job.Builder job = buildAndRegisterJob(jobId, bucketSpan);
         openJob(job.getId());
@@ -132,8 +128,10 @@ public class RevertModelSnapshotIT extends MlNativeAutodetectIntegTestCase {
         openJob(job.getId());
         postData(
             job.getId(),
-            generateData(startTime, bucketSpan, 10, Arrays.asList("foo"), (bucketIndex, series) -> bucketIndex == 5 ? 100.0 : 10.0).stream()
-                .collect(Collectors.joining())
+            String.join(
+                "",
+                generateData(startTime, bucketSpan, 10, Arrays.asList("foo"), (bucketIndex, series) -> bucketIndex == 5 ? 100.0 : 10.0)
+            )
         );
         flushJob(job.getId(), true);
         String forecastId = forecast(job.getId(), TimeValue.timeValueHours(10), TimeValue.timeValueDays(100));
@@ -155,13 +153,16 @@ public class RevertModelSnapshotIT extends MlNativeAutodetectIntegTestCase {
         openJob(job.getId());
         postData(
             job.getId(),
-            generateData(
-                startTime + 10 * bucketSpan.getMillis(),
-                bucketSpan,
-                10,
-                Arrays.asList("foo", "bar"),
-                (bucketIndex, series) -> 10.0
-            ).stream().collect(Collectors.joining())
+            String.join(
+                "",
+                generateData(
+                    startTime + 10 * bucketSpan.getMillis(),
+                    bucketSpan,
+                    10,
+                    Arrays.asList("foo", "bar"),
+                    (bucketIndex, series) -> 10.0
+                )
+            )
         );
         closeJob(job.getId());
 
@@ -231,13 +232,16 @@ public class RevertModelSnapshotIT extends MlNativeAutodetectIntegTestCase {
         openJob(job.getId());
         postData(
             job.getId(),
-            generateData(
-                startTime + 10 * bucketSpan.getMillis(),
-                bucketSpan,
-                10,
-                Arrays.asList("foo", "bar"),
-                (bucketIndex, series) -> 10.0
-            ).stream().collect(Collectors.joining())
+            String.join(
+                "",
+                generateData(
+                    startTime + 10 * bucketSpan.getMillis(),
+                    bucketSpan,
+                    10,
+                    Arrays.asList("foo", "bar"),
+                    (bucketIndex, series) -> 10.0
+                )
+            )
         );
         closeJob(job.getId());
 

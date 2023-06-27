@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class TestLifecycleType implements LifecycleType {
     public static final TestLifecycleType INSTANCE = new TestLifecycleType();
@@ -42,7 +41,7 @@ public class TestLifecycleType implements LifecycleType {
 
     @Override
     public String getNextPhaseName(String currentPhaseName, Map<String, Phase> phases) {
-        List<String> orderedPhaseNames = getOrderedPhases(phases).stream().map(Phase::getName).collect(Collectors.toList());
+        List<String> orderedPhaseNames = getOrderedPhases(phases).stream().map(Phase::getName).toList();
         int index = orderedPhaseNames.indexOf(currentPhaseName);
         if (index < 0) {
             throw new IllegalArgumentException("[" + currentPhaseName + "] is not a valid phase for lifecycle type [" + TYPE + "]");
@@ -55,7 +54,7 @@ public class TestLifecycleType implements LifecycleType {
 
     @Override
     public String getPreviousPhaseName(String currentPhaseName, Map<String, Phase> phases) {
-        List<String> orderedPhaseNames = getOrderedPhases(phases).stream().map(Phase::getName).collect(Collectors.toList());
+        List<String> orderedPhaseNames = getOrderedPhases(phases).stream().map(Phase::getName).toList();
         int index = orderedPhaseNames.indexOf(currentPhaseName);
         if (index < 0) {
             throw new IllegalArgumentException("[" + currentPhaseName + "] is not a valid phase for lifecycle type [" + TYPE + "]");
@@ -73,9 +72,7 @@ public class TestLifecycleType implements LifecycleType {
 
     @Override
     public String getNextActionName(String currentActionName, Phase phase) {
-        List<String> orderedActionNames = getOrderedActions(phase).stream()
-            .map(LifecycleAction::getWriteableName)
-            .collect(Collectors.toList());
+        List<String> orderedActionNames = getOrderedActions(phase).stream().map(LifecycleAction::getWriteableName).toList();
         int index = orderedActionNames.indexOf(currentActionName);
         if (index < 0) {
             throw new IllegalArgumentException(

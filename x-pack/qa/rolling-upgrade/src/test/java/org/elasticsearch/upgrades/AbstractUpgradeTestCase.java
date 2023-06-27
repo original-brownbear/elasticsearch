@@ -21,7 +21,6 @@ import org.junit.Before;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public abstract class AbstractUpgradeTestCase extends ESRestTestCase {
 
@@ -126,9 +125,7 @@ public abstract class AbstractUpgradeTestCase extends ESRestTestCase {
 
             final List<String> templates = Streams.readAllLines(catResponse.getEntity().getContent());
 
-            final List<String> missingTemplates = expectedTemplates.stream()
-                .filter(each -> templates.contains(each) == false)
-                .collect(Collectors.toList());
+            final List<String> missingTemplates = expectedTemplates.stream().filter(each -> templates.contains(each) == false).toList();
 
             // While it's possible to use a Hamcrest matcher for this, the failure is much less legible.
             if (missingTemplates.isEmpty() == false) {

@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.xpack.monitoring.MonitoringTemplateRegistry.TEMPLATE_NAMES;
 import static org.elasticsearch.xpack.monitoring.exporter.http.AsyncHttpResourceHelper.whenPerformRequestAsyncWith;
@@ -86,8 +85,8 @@ public class HttpExporterResourceTests extends AbstractPublishableHttpResourceTe
 
     @Before
     public void setupResources() {
-        templateNames.addAll(Arrays.stream(TEMPLATE_NAMES).collect(Collectors.toList()));
-        watchNames.addAll(Arrays.stream(ClusterAlertsUtil.WATCH_IDS).map(id -> "my_cluster_uuid_" + id).collect(Collectors.toList()));
+        templateNames.addAll(Arrays.stream(TEMPLATE_NAMES).toList());
+        watchNames.addAll(Arrays.stream(ClusterAlertsUtil.WATCH_IDS).map(id -> "my_cluster_uuid_" + id).toList());
 
         assertThat("Not all templates are supplied", templateNames, hasSize(EXPECTED_TEMPLATES));
         assertThat("Not all watches are supplied", watchNames, hasSize(EXPECTED_WATCHES));

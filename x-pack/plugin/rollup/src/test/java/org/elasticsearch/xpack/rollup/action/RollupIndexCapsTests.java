@@ -15,7 +15,6 @@ import org.elasticsearch.xpack.core.rollup.job.RollupJobConfig;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 
@@ -36,10 +35,7 @@ public class RollupIndexCapsTests extends ESTestCase {
         RollupIndexCaps caps = new RollupIndexCaps(ESTestCase.randomAlphaOfLength(10), jobs);
         assertTrue(caps.hasCaps());
 
-        List<String> jobCaps = caps.getJobCapsByIndexPattern(Metadata.ALL)
-            .stream()
-            .map(RollupJobCaps::getJobID)
-            .collect(Collectors.toList());
+        List<String> jobCaps = caps.getJobCapsByIndexPattern(Metadata.ALL).stream().map(RollupJobCaps::getJobID).toList();
         assertThat(jobCaps.size(), equalTo(2));
         assertTrue(jobCaps.contains("foo"));
         assertTrue(jobCaps.contains("bar"));
@@ -52,10 +48,7 @@ public class RollupIndexCapsTests extends ESTestCase {
         RollupIndexCaps caps = new RollupIndexCaps(ESTestCase.randomAlphaOfLength(10), jobs);
         assertTrue(caps.hasCaps());
 
-        List<String> jobCaps = caps.getJobCapsByIndexPattern("foo_index_pattern")
-            .stream()
-            .map(RollupJobCaps::getJobID)
-            .collect(Collectors.toList());
+        List<String> jobCaps = caps.getJobCapsByIndexPattern("foo_index_pattern").stream().map(RollupJobCaps::getJobID).toList();
         assertThat(jobCaps.size(), equalTo(1));
         assertTrue(jobCaps.contains("foo"));
         assertFalse(jobCaps.contains("bar"));

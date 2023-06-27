@@ -22,7 +22,6 @@ import org.junit.After;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -223,6 +222,6 @@ public class PersistJobIT extends MlNativeAutodetectIntegTestCase {
     private void runJob(String jobId) throws Exception {
         createAndOpenJob(jobId);
         List<String> data = generateData(System.currentTimeMillis(), BUCKET_SPAN, 10, bucketIndex -> randomIntBetween(10, 20));
-        postData(jobId, data.stream().collect(Collectors.joining()));
+        postData(jobId, String.join("", data));
     }
 }

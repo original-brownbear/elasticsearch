@@ -1203,7 +1203,7 @@ public class TimeseriesLifecycleTypeTests extends ESTestCase {
     }
 
     private ConcurrentMap<String, LifecycleAction> convertActionNamesToActions(String... availableActionNames) {
-        return Arrays.asList(availableActionNames).stream().map(n -> {
+        return Arrays.stream(availableActionNames).map(n -> {
             return switch (n) {
                 case AllocateAction.NAME -> new AllocateAction(
                     null,
@@ -1240,8 +1240,7 @@ public class TimeseriesLifecycleTypeTests extends ESTestCase {
     }
 
     private void assertNextPhaseName(String currentPhase, String expectedNextPhase, String... availablePhaseNames) {
-        Map<String, Phase> availablePhases = Arrays.asList(availablePhaseNames)
-            .stream()
+        Map<String, Phase> availablePhases = Arrays.stream(availablePhaseNames)
             .map(n -> new Phase(n, TimeValue.ZERO, Collections.emptyMap()))
             .collect(Collectors.toMap(Phase::getName, Function.identity()));
         String nextPhase = TimeseriesLifecycleType.INSTANCE.getNextPhaseName(currentPhase, availablePhases);
@@ -1249,8 +1248,7 @@ public class TimeseriesLifecycleTypeTests extends ESTestCase {
     }
 
     private void assertPreviousPhaseName(String currentPhase, String expectedNextPhase, String... availablePhaseNames) {
-        Map<String, Phase> availablePhases = Arrays.asList(availablePhaseNames)
-            .stream()
+        Map<String, Phase> availablePhases = Arrays.stream(availablePhaseNames)
             .map(n -> new Phase(n, TimeValue.ZERO, Collections.emptyMap()))
             .collect(Collectors.toMap(Phase::getName, Function.identity()));
         String nextPhase = TimeseriesLifecycleType.INSTANCE.getPreviousPhaseName(currentPhase, availablePhases);

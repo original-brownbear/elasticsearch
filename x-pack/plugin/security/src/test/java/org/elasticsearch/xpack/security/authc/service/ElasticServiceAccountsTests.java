@@ -121,6 +121,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.elasticsearch.xpack.core.security.test.TestRestrictedIndices.RESTRICTED_INDICES;
 import static org.hamcrest.Matchers.containsString;
@@ -187,13 +188,13 @@ public class ElasticServiceAccountsTests extends ESTestCase {
             is(false)
         );
 
-        List.of(
+        Stream.of(
             "logs-" + randomAlphaOfLengthBetween(1, 20),
             "metrics-" + randomAlphaOfLengthBetween(1, 20),
             "traces-" + randomAlphaOfLengthBetween(1, 20),
             ".logs-endpoint.diagnostic.collection-" + randomAlphaOfLengthBetween(1, 20),
             ".logs-endpoint.action.responses-" + randomAlphaOfLengthBetween(1, 20)
-        ).stream().map(this::mockIndexAbstraction).forEach(index -> {
+        ).map(this::mockIndexAbstraction).forEach(index -> {
             assertThat(role.indices().allowedIndicesMatcher(AutoPutMappingAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(AutoCreateAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(DeleteAction.NAME).test(index), is(true));
@@ -222,7 +223,7 @@ public class ElasticServiceAccountsTests extends ESTestCase {
         assertThat(role.indices().allowedIndicesMatcher(MultiSearchAction.NAME).test(profilingIndex), is(true));
         assertThat(role.indices().allowedIndicesMatcher(UpdateSettingsAction.NAME).test(profilingIndex), is(false));
 
-        List.of("synthetics-" + randomAlphaOfLengthBetween(1, 20)).stream().map(this::mockIndexAbstraction).forEach(index -> {
+        Stream.of("synthetics-" + randomAlphaOfLengthBetween(1, 20)).map(this::mockIndexAbstraction).forEach(index -> {
             assertThat(role.indices().allowedIndicesMatcher(AutoPutMappingAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(AutoCreateAction.NAME).test(index), is(true));
             assertThat(role.indices().allowedIndicesMatcher(DeleteAction.NAME).test(index), is(true));

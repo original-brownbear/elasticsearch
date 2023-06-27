@@ -249,7 +249,7 @@ public final class ShardPath {
                     // Filter out paths that have enough space
                     .filter((path) -> pathsToSpace.get(path).subtract(estShardSizeInBytes).compareTo(BigInteger.ZERO) > 0)
                     // Sort by the number of shards for this index
-                    .sorted((p1, p2) -> {
+                    .min((p1, p2) -> {
                         int cmp = Long.compare(pathToShardCount.getOrDefault(p1, 0L), pathToShardCount.getOrDefault(p2, 0L));
                         if (cmp == 0) {
                             // if the number of shards is equal, tie-break with the number of total shards
@@ -264,9 +264,7 @@ public final class ShardPath {
                         }
                         return cmp;
                     })
-                    // Return the first result
-                    .findFirst()
-                    // Or the existing best path if there aren't any that fit the criteria
+                    // Return the min result or the existing best path if there aren't any that fit the criteria
                     .orElse(bestPath);
             }
 

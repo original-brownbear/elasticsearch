@@ -13,7 +13,6 @@ import org.elasticsearch.xpack.ml.aggs.MlAggsHelper;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.allOf;
@@ -111,7 +110,7 @@ public class BucketCountKSTestAggregatorTests extends ESTestCase {
 
         // its difficult to make sure things are super close in the sparser case as the sparser data is more "uniform"
         // Having error of 0.25 allows for this. But, the two values should be similar as the distributions are "close"
-        for (String alternative : Arrays.stream(Alternative.values()).map(Alternative::toString).collect(Collectors.toList())) {
+        for (String alternative : Arrays.stream(Alternative.values()).map(Alternative::toString).toList()) {
             assertThat(alternative, lessValsLowerSampled.get(alternative), closeTo(lessValsLowerSampledSparsed.get(alternative), 0.25));
             assertThat(alternative, lessValsUpperSampled.get(alternative), closeTo(lessValsUpperSampledSparsed.get(alternative), 0.25));
             assertThat(alternative, lessValsUniformSampled.get(alternative), closeTo(lessValsUniformSampledSparsed.get(alternative), 0.25));
@@ -150,7 +149,7 @@ public class BucketCountKSTestAggregatorTests extends ESTestCase {
 
         // its difficult to make sure things are super close in the sparser case as the sparser data is more "uniform"
         // Having error of 0.25 allows for this. But, the two values should be similar as the distributions are "close"
-        for (String alternative : Arrays.stream(Alternative.values()).map(Alternative::toString).collect(Collectors.toList())) {
+        for (String alternative : Arrays.stream(Alternative.values()).map(Alternative::toString).toList()) {
             assertThat(
                 alternative,
                 greaterValsLowerSampled.get(alternative),

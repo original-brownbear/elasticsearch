@@ -241,8 +241,6 @@ public class SqlSearchIT extends ESRestTestCase {
             String fieldsList = columns.stream()
                 .map(m -> (String) m.get("name"))
                 .filter(str -> str.startsWith("interval") == false)
-                .collect(Collectors.toList())
-                .stream()
                 .collect(Collectors.joining(", "));
             String query = "SELECT " + intervalYearMonth + intervalDayTime + fieldsList + " FROM " + index + " ORDER BY id";
 

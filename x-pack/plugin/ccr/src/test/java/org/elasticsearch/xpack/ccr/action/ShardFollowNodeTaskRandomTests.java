@@ -41,7 +41,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.LongConsumer;
 import java.util.function.LongSupplier;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -268,7 +267,7 @@ public class ShardFollowNodeTaskRandomTests extends ESTestCase {
                     .filter(Objects::nonNull)
                     .flatMap(response -> Arrays.stream(response.getOperations()))
                     .sorted(Comparator.comparingLong(Translog.Operation::seqNo))
-                    .collect(Collectors.toList());
+                    .toList();
                 assertThat(receivedOperations.size(), equalTo(expectedOperations.size()));
                 receivedOperations.sort(Comparator.comparingLong(Translog.Operation::seqNo));
                 for (int i = 0; i < receivedOperations.size(); i++) {

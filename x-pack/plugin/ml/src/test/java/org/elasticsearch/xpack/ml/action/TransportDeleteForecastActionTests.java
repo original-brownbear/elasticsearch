@@ -30,7 +30,7 @@ public class TransportDeleteForecastActionTests extends ESTestCase {
                 () -> createForecastStatsHit(
                     randomFrom(ForecastRequestStats.ForecastRequestStatus.FAILED, ForecastRequestStats.ForecastRequestStatus.FINISHED)
                 )
-            ).limit(randomInt(10)).collect(Collectors.toList());
+            ).limit(randomInt(10)).toList();
 
             // This should not throw.
             TransportDeleteForecastAction.extractForecastIds(

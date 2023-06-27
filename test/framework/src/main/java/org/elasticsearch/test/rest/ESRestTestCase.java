@@ -835,13 +835,13 @@ public abstract class ESRestTestCase extends ESTestCase {
         if (hasIlm && false == preserveILMPoliciesUponCompletion()) {
             Set<String> unexpectedIlmPlicies = getAllUnexpectedIlmPolicies(preserveILMPolicyIds());
             assertTrue(
-                "Expected no ILM policies after deletions, but found " + unexpectedIlmPlicies.stream().collect(Collectors.joining(", ")),
+                "Expected no ILM policies after deletions, but found " + String.join(", ", unexpectedIlmPlicies),
                 unexpectedIlmPlicies.isEmpty()
             );
         }
         Set<String> unexpectedTemplates = getAllUnexpectedTemplates();
         assertTrue(
-            "Expected no templates after deletions, but found " + unexpectedTemplates.stream().collect(Collectors.joining(", ")),
+            "Expected no templates after deletions, but found " + String.join(", ", unexpectedTemplates),
             unexpectedTemplates.isEmpty()
         );
     }
@@ -893,7 +893,7 @@ public abstract class ESRestTestCase extends ESTestCase {
                         ((List<?>) cTemplates.get("component_templates")).stream()
                             .map(ct -> (String) ((Map<?, ?>) ct).get("name"))
                             .filter(name -> isXPackTemplate(name) == false)
-                            .collect(Collectors.toList())
+                            .toList()
                     );
                 }
                 // Always check for legacy templates:

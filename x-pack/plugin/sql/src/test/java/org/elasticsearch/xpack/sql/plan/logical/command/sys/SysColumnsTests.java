@@ -37,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -168,7 +167,7 @@ public class SysColumnsTests extends ESTestCase {
                     null,
                     mode
                 );
-                List<String> types = rows.stream().map(row -> name(row).toString()).collect(Collectors.toList());
+                List<String> types = rows.stream().map(row -> name(row).toString()).toList();
                 assertEquals(
                     isTypeSupportedInVersion(UNSIGNED_LONG, Version.fromId(version.id)),
                     types.contains(UNSIGNED_LONG.toString().toLowerCase(Locale.ROOT))
@@ -192,7 +191,7 @@ public class SysColumnsTests extends ESTestCase {
                     null,
                     mode
                 );
-                List<String> types = rows.stream().map(row -> name(row).toString()).collect(Collectors.toList());
+                List<String> types = rows.stream().map(row -> name(row).toString()).toList();
                 assertEquals(
                     isTypeSupportedInVersion(VERSION, Version.fromId(version.id)),
                     types.contains(VERSION.toString().toLowerCase(Locale.ROOT))

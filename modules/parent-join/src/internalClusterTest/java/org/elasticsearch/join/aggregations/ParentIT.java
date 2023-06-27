@@ -58,7 +58,7 @@ public class ParentIT extends AbstractParentChildTestCase {
                 + categoryTerms.getBuckets()
                     .stream()
                     .map((Function<Terms.Bucket, String>) MultiBucketsAggregation.Bucket::getKeyAsString)
-                    .collect(Collectors.toList())
+                    .toList()
                 + "\nCategories: "
                 + categoryToControl.keySet(),
             (long) categoryTerms.getBuckets().size(),
@@ -140,7 +140,7 @@ public class ParentIT extends AbstractParentChildTestCase {
                 .stream()
                 .filter(entry -> entry.getValue().commenterToCommentId.containsKey(commenterBucket.getKeyAsString()))
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                .toList();
 
             for (String category : categories) {
                 Terms.Bucket categoryBucket = categoryAgg.getBucketByKey(category);
@@ -237,7 +237,7 @@ public class ParentIT extends AbstractParentChildTestCase {
                 .stream()
                 .filter(entry -> entry.getValue().commenterToCommentId.containsKey(commenterBucket.getKeyAsString()))
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+                .toList();
 
             for (String category : categories) {
                 Terms.Bucket categoryBucket = categoryAgg.getBucketByKey(category);

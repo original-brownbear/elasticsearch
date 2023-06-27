@@ -52,9 +52,9 @@ public class SearchProfileResultsBuilderTests extends ESTestCase {
 
     public void testQueryAndFetch() {
         Map<SearchShardTarget, SearchProfileQueryPhaseResult> searchPhase = randomSearchPhaseResults(between(1, 2));
-        List<FetchSearchResult> fetchPhase = searchPhase.entrySet()
+        List<FetchSearchResult> fetchPhase = searchPhase.keySet()
             .stream()
-            .map(e -> fetchResult(e.getKey(), new ProfileResult("fetch", "", Map.of(), Map.of(), 1, List.of())))
+            .map(searchProfileQueryPhaseResult -> fetchResult(searchProfileQueryPhaseResult, new ProfileResult("fetch", "", Map.of(), Map.of(), 1, List.of())))
             .collect(toList());
         SearchProfileResults result = builder(searchPhase).build(fetchPhase);
         assertThat(

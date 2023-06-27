@@ -753,7 +753,7 @@ public class FrequentItemSetsAggregatorTests extends AggregatorTestCase {
                 }
                 return (int) (b.getDocCount() - a.getDocCount());
             })
-            .collect(Collectors.toList());
+            .toList();
 
         // after removing excluded items there might be duplicate entries, which need to be collapsed, we do this by very simple hashing
         List<FrequentItemSet> filteredExpected = new ArrayList<>();

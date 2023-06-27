@@ -113,6 +113,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static org.elasticsearch.cluster.metadata.IndexMetadata.INDEX_FORMAT_SETTING;
@@ -370,7 +371,7 @@ public class SecurityTests extends ESTestCase {
         final List<Setting<?>> realmSettings = security.getSettings()
             .stream()
             .filter(s -> s.getKey().startsWith("xpack.security.authc.realms"))
-            .collect(Collectors.toList());
+            .toList();
 
         Arrays.asList(
             "bind_dn",
@@ -432,8 +433,7 @@ public class SecurityTests extends ESTestCase {
             .build();
         Metadata.Builder builder = Metadata.builder();
         final String forbiddenLicenseType = randomFrom(
-            List.of(License.OperationMode.values())
-                .stream()
+            Stream.of(License.OperationMode.values())
                 .filter(l -> XPackLicenseState.isFipsAllowedForOperationMode(l) == false)
                 .collect(Collectors.toList())
         ).toString();

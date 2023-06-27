@@ -182,7 +182,6 @@ public class AllocationReducerTests extends ESTestCase {
             )
         );
         allocationsByNode.entrySet()
-            .stream()
             .forEach(
                 e -> builder.addRoutingEntry(
                     e.getKey(),

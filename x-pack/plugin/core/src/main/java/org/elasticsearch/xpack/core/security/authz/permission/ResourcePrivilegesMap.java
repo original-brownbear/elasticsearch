@@ -75,7 +75,6 @@ public final class ResourcePrivilegesMap {
         public Builder addResourcePrivilegesMap(ResourcePrivilegesMap resourcePrivilegesMap) {
             resourcePrivilegesMap.getResourceToResourcePrivileges()
                 .entrySet()
-                .stream()
                 .forEach(e -> this.addResourcePrivilege(e.getKey(), e.getValue().getPrivileges()));
             return this;
         }

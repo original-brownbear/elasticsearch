@@ -59,7 +59,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.support.XContentMapValues.extractValue;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertAcked;
@@ -146,7 +145,7 @@ public class MonitoringIT extends ESSingleNodeTestCase {
 
                 final List<Map<String, Object>> sources = Arrays.stream(response.getHits().getHits())
                     .map(SearchHit::getSourceAsMap)
-                    .collect(Collectors.toList());
+                    .toList();
 
                 // find distinct _source.timestamp fields
                 assertThat(sources.stream().map(source -> source.get("timestamp")).distinct().count(), is(1L));

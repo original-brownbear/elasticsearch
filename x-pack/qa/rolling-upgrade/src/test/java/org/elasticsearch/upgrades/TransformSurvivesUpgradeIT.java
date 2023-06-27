@@ -49,10 +49,7 @@ public class TransformSurvivesUpgradeIT extends AbstractUpgradeTestCase {
     private static final String CONTINUOUS_TRANSFORM_ID = "continuous-transform-upgrade-job";
     private static final String CONTINUOUS_TRANSFORM_SOURCE = "transform-upgrade-continuous-source";
     private static final List<String> ENTITIES = Stream.iterate(1, n -> n + 1).limit(5).map(v -> "user_" + v).collect(Collectors.toList());
-    private static final List<TimeValue> BUCKETS = Stream.iterate(1, n -> n + 1)
-        .limit(5)
-        .map(TimeValue::timeValueMinutes)
-        .collect(Collectors.toList());
+    private static final List<TimeValue> BUCKETS = Stream.iterate(1, n -> n + 1).limit(5).map(TimeValue::timeValueMinutes).toList();
 
     protected static void waitForPendingTransformTasks() throws Exception {
         waitForPendingTasks(adminClient(), taskName -> taskName.startsWith(TRANSFORM_TASK_NAME) == false);

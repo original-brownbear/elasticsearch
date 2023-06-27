@@ -558,7 +558,7 @@ public class ExtractedFieldsDetectorTests extends ESTestCase {
 
         assertThat(fieldExtraction.v1().getAllFields().isEmpty(), is(true));
         assertThat(fieldExtraction.v2().size(), equalTo(2));
-        assertThat(fieldExtraction.v2().stream().filter(FieldSelection::isIncluded).findAny().isPresent(), is(false));
+        assertThat(fieldExtraction.v2().stream().anyMatch(FieldSelection::isIncluded), is(false));
     }
 
     public void testDetect_GivenInclusionsAndExclusions() {

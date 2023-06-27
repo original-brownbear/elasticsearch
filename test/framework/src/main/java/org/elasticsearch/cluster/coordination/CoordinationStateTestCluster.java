@@ -200,7 +200,7 @@ public class CoordinationStateTestCluster {
     }
 
     void broadcast(DiscoveryNode sourceNode, Object payload) {
-        messages.addAll(clusterNodes.stream().map(cn -> new Message(sourceNode, cn.localNode, payload)).collect(Collectors.toList()));
+        messages.addAll(clusterNodes.stream().map(cn -> new Message(sourceNode, cn.localNode, payload)).toList());
     }
 
     Optional<ClusterNode> getNode(DiscoveryNode node) {

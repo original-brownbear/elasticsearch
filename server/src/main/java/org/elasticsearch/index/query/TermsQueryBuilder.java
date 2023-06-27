@@ -97,7 +97,7 @@ public class TermsQueryBuilder extends AbstractQueryBuilder<TermsQueryBuilder> {
      * @param values The terms
      */
     public TermsQueryBuilder(String fieldName, int... values) {
-        this(fieldName, values != null ? Arrays.stream(values).mapToObj(s -> s).toList() : (Iterable<?>) null);
+        this(fieldName, values != null ? Arrays.stream(values).boxed().toList() : (Iterable<?>) null);
     }
 
     /**
@@ -107,7 +107,7 @@ public class TermsQueryBuilder extends AbstractQueryBuilder<TermsQueryBuilder> {
      * @param values The terms
      */
     public TermsQueryBuilder(String fieldName, long... values) {
-        this(fieldName, values != null ? Arrays.stream(values).mapToObj(s -> s).toList() : (Iterable<?>) null);
+        this(fieldName, values != null ? Arrays.stream(values).boxed().toList() : (Iterable<?>) null);
     }
 
     /**
@@ -127,7 +127,7 @@ public class TermsQueryBuilder extends AbstractQueryBuilder<TermsQueryBuilder> {
      * @param values The terms
      */
     public TermsQueryBuilder(String fieldName, double... values) {
-        this(fieldName, values != null ? Arrays.stream(values).mapToObj(s -> s).toList() : (Iterable<?>) null);
+        this(fieldName, values != null ? Arrays.stream(values).boxed().toList() : (Iterable<?>) null);
     }
 
     /**

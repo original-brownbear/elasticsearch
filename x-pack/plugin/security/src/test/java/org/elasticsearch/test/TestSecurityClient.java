@@ -47,7 +47,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.common.xcontent.XContentParserUtils.ensureExpectedToken;
 import static org.elasticsearch.test.rest.ESRestTestCase.entityAsMap;
@@ -431,7 +430,7 @@ public class TestSecurityClient {
             } catch (CertificateEncodingException e) {
                 throw new RuntimeException("Failed to encode certificate", e);
             }
-        }).map(encoded -> Base64.getEncoder().encodeToString(encoded)).collect(Collectors.toList());
+        }).map(encoded -> Base64.getEncoder().encodeToString(encoded)).toList();
 
         final Map<String, Object> body = Map.of("x509_certificate_chain", certificateContent);
         request.setJsonEntity(toJson(body));

@@ -54,7 +54,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
 import static org.elasticsearch.xpack.core.rollup.ConfigTestHelpers.randomDateHistogramGroupConfig;
@@ -115,7 +114,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         directory.close();
 
         final GroupConfig groupConfig = randomGroupConfig(random());
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").toList();
 
         assertThat(docs.size(), equalTo(numDocs));
         for (IndexRequest doc : docs) {
@@ -176,7 +175,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         directory.close();
 
         final GroupConfig groupConfig = randomGroupConfig(random());
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").toList();
 
         assertThat(docs.size(), equalTo(numDocs));
         for (IndexRequest doc : docs) {
@@ -226,7 +225,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         directory.close();
 
         final GroupConfig groupConfig = randomGroupConfig(random());
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").toList();
 
         assertThat(docs.size(), equalTo(numDocs));
         for (IndexRequest doc : docs) {
@@ -286,7 +285,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         directory.close();
 
         final GroupConfig groupConfig = randomGroupConfig(random());
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").toList();
 
         assertThat(docs.size(), equalTo(numDocs));
         for (IndexRequest doc : docs) {
@@ -336,8 +335,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         });
 
         GroupConfig groupConfig = new GroupConfig(randomDateHistogramGroupConfig(random()), new HistogramGroupConfig(1L, "abc"), null);
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, "foo", new RollupIndexerJobStats(), groupConfig, "foo")
-            .collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, "foo", new RollupIndexerJobStats(), groupConfig, "foo").toList();
         assertThat(docs.size(), equalTo(1));
         assertThat(docs.get(0).id(), equalTo("foo$c9LcrFqeFW92uN_Z7sv1hA"));
     }
@@ -387,8 +385,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         });
 
         GroupConfig groupConfig = new GroupConfig(randomDateHistogramGroupConfig(random()), new HistogramGroupConfig(1, "abc"), null);
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, "foo", new RollupIndexerJobStats(), groupConfig, "foo")
-            .collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, "foo", new RollupIndexerJobStats(), groupConfig, "foo").toList();
         assertThat(docs.size(), equalTo(1));
         assertThat(docs.get(0).id(), equalTo("foo$VAFKZpyaEqYRPLyic57_qw"));
     }
@@ -415,8 +412,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         });
 
         GroupConfig groupConfig = new GroupConfig(randomDateHistogramGroupConfig(random()), randomHistogramGroupConfig(random()), null);
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, "foo", new RollupIndexerJobStats(), groupConfig, "foo")
-            .collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, "foo", new RollupIndexerJobStats(), groupConfig, "foo").toList();
         assertThat(docs.size(), equalTo(1));
         assertFalse(Strings.isNullOrEmpty(docs.get(0).id()));
     }
@@ -473,7 +469,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         directory.close();
 
         final GroupConfig groupConfig = randomGroupConfig(random());
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").toList();
 
         assertThat(docs.size(), equalTo(6));
         for (IndexRequest doc : docs) {
@@ -546,7 +542,7 @@ public class IndexerUtilsTests extends AggregatorTestCase {
         directory.close();
 
         final GroupConfig groupConfig = randomGroupConfig(random());
-        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").collect(Collectors.toList());
+        List<IndexRequest> docs = IndexerUtils.processBuckets(composite, indexName, stats, groupConfig, "foo").toList();
 
         assertThat(docs.size(), equalTo(2));
 

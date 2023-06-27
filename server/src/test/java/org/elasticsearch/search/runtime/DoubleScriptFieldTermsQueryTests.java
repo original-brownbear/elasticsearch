@@ -85,8 +85,7 @@ public class DoubleScriptFieldTermsQueryTests extends AbstractDoubleScriptFieldQ
         String toString = query.toString(query.fieldName());
         assertThat(toString, startsWith("["));
         assertThat(toString, endsWith("]"));
-        List<Double> list = Arrays.asList(toString.substring(1, toString.length() - 1).split(","))
-            .stream()
+        List<Double> list = Arrays.stream(toString.substring(1, toString.length() - 1).split(","))
             .map(Double::parseDouble)
             .collect(toList());
 

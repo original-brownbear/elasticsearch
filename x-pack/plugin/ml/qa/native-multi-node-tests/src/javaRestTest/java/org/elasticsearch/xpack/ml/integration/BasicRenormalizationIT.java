@@ -17,7 +17,6 @@ import org.junit.After;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -70,7 +69,7 @@ public class BasicRenormalizationIT extends MlNativeAutodetectIntegTestCase {
 
         Job.Builder job = buildAndRegisterJob(jobId, bucketSpan, renormalizationWindow);
         openJob(job.getId());
-        postData(job.getId(), generateData(startTime, bucketSpan, 50, bucketIndex -> {
+        postData(job.getId(), String.join("", generateData(startTime, bucketSpan, 50, bucketIndex -> {
             if (bucketIndex == 35) {
                 // First anomaly is 10 events
                 return 10;
@@ -80,7 +79,7 @@ public class BasicRenormalizationIT extends MlNativeAutodetectIntegTestCase {
             } else {
                 return 1;
             }
-        }).stream().collect(Collectors.joining()));
+        })));
         closeJob(job.getId());
     }
 

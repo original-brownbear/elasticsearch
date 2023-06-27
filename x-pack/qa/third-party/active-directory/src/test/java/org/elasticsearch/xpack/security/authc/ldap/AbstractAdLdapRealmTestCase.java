@@ -212,7 +212,7 @@ public abstract class AbstractAdLdapRealmTestCase extends SecurityIntegTestCase 
     }
 
     protected final void configureFileRoleMappings(Settings.Builder builder, String realmType, List<RoleMappingEntry> mappings) {
-        String content = getRoleMappingContent(RoleMappingEntry::fileContent, mappings).stream().collect(Collectors.joining("\n"));
+        String content = String.join("\n", getRoleMappingContent(RoleMappingEntry::fileContent, mappings));
         Path nodeFiles = createTempDir();
         String file = writeFile(nodeFiles, "role_mapping.yml", content);
         builder.put("xpack.security.authc.realms." + realmType + ".external.files.role_mapping", file);

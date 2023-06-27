@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasKey;
@@ -151,7 +150,7 @@ public class OldMappingsIT extends ESRestTestCase {
 
             Request createSnapshotRequest = new Request("PUT", "/_snapshot/" + repoName + "/" + snapshotName);
             createSnapshotRequest.addParameter("wait_for_completion", "true");
-            createSnapshotRequest.setJsonEntity("{\"indices\":\"" + indices.stream().collect(Collectors.joining(",")) + "\"}");
+            createSnapshotRequest.setJsonEntity("{\"indices\":\"" + String.join(",", indices) + "\"}");
             assertOK(oldEs.performRequest(createSnapshotRequest));
         }
 
@@ -164,7 +163,7 @@ public class OldMappingsIT extends ESRestTestCase {
 
         final Request createRestoreRequest = new Request("POST", "/_snapshot/" + repoName + "/" + snapshotName + "/_restore");
         createRestoreRequest.addParameter("wait_for_completion", "true");
-        createRestoreRequest.setJsonEntity("{\"indices\":\"" + indices.stream().collect(Collectors.joining(",")) + "\"}");
+        createRestoreRequest.setJsonEntity("{\"indices\":\"" + String.join(",", indices) + "\"}");
         createRestoreRequest.setOptions(RequestOptions.DEFAULT.toBuilder().setWarningsHandler(WarningsHandler.PERMISSIVE));
         assertOK(client().performRequest(createRestoreRequest));
     }

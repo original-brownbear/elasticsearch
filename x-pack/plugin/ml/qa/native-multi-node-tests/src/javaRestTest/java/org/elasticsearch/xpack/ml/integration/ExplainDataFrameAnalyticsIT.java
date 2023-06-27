@@ -272,7 +272,7 @@ public class ExplainDataFrameAnalyticsIT extends MlNativeDataFrameAnalyticsInteg
             fieldSelection.stream().map(FieldSelection::getName).collect(Collectors.toList()),
             contains("config_runtime_field", "mapped_field", "mapped_runtime_field")
         );
-        assertThat(fieldSelection.stream().map(FieldSelection::isIncluded).allMatch(isIncluded -> isIncluded), is(true));
+        assertThat(fieldSelection.stream().allMatch(FieldSelection::isIncluded), is(true));
     }
 
     @Override

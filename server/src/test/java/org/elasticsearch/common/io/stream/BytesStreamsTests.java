@@ -711,8 +711,8 @@ public class BytesStreamsTests extends ESTestCase {
         Map<String, Object> reverseMap = new TreeMap<>(Collections.reverseOrder());
         reverseMap.putAll(map);
 
-        List<String> mapKeys = map.entrySet().stream().map(Map.Entry::getKey).toList();
-        List<String> reverseMapKeys = reverseMap.entrySet().stream().map(Map.Entry::getKey).toList();
+        List<String> mapKeys = map.keySet().stream().toList();
+        List<String> reverseMapKeys = reverseMap.keySet().stream().toList();
 
         assertNotEquals(mapKeys, reverseMapKeys);
 

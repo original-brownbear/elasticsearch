@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.elasticsearch.discovery.DiscoveryModule.DISCOVERY_SEED_PROVIDERS_SETTING;
 import static org.elasticsearch.test.hamcrest.ElasticsearchAssertions.assertFileExists;
@@ -414,7 +413,7 @@ public class InternalTestClusterTests extends ESTestCase {
             Map<DiscoveryNodeRole, Set<String>> result = new HashMap<>();
             for (String name : cluster.getNodeNames()) {
                 DiscoveryNode node = cluster.getInstance(ClusterService.class, name).localNode();
-                List<String> paths = Arrays.stream(getDataPaths(cluster, name)).map(Path::toString).collect(Collectors.toList());
+                List<String> paths = Arrays.stream(getDataPaths(cluster, name)).map(Path::toString).toList();
                 if (node.isMasterNode()) {
                     result.computeIfAbsent(DiscoveryNodeRole.MASTER_ROLE, k -> new HashSet<>()).addAll(paths);
                 } else if (node.canContainData()) {

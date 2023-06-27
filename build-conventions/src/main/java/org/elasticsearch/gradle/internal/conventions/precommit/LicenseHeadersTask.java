@@ -50,14 +50,10 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import java.io.Serializable;
-
-import javax.inject.Inject;
 
 /**
  * Checks files for license headers..
@@ -76,7 +72,9 @@ public abstract class LicenseHeadersTask extends DefaultTask {
      * Allowed license families for this project.
      */
     @Input
-    private List<String> approvedLicenses = new ArrayList<String>(Arrays.asList("SSPL+Elastic License", "Generated", "Vendored", "Apache LZ4-Java"));
+    private List<String> approvedLicenses = new ArrayList<String>(
+        Arrays.asList("SSPL+Elastic License", "Generated", "Vendored", "Apache LZ4-Java")
+    );
     /**
      * Files that should be excluded from the license header check. Use with extreme care, only in situations where the license on the
      * source file is compatible with the codebase but we do not want to add the license to the list of approved headers (to avoid the
@@ -90,9 +88,7 @@ public abstract class LicenseHeadersTask extends DefaultTask {
     @Inject
     public LicenseHeadersTask(ObjectFactory objectFactory, ProjectLayout projectLayout) {
         additionalLicenses = objectFactory.listProperty(License.class).convention(conventionalLicenses);
-        reportFile = objectFactory.fileProperty().convention(
-            projectLayout.getBuildDirectory().file("reports/licenseHeaders/rat.xml")
-        );
+        reportFile = objectFactory.fileProperty().convention(projectLayout.getBuildDirectory().file("reports/licenseHeaders/rat.xml"));
         setDescription("Checks sources for missing, incorrect, or unacceptable license headers");
     }
 
@@ -140,6 +136,7 @@ public abstract class LicenseHeadersTask extends DefaultTask {
     public ListProperty<License> getAdditionalLicenses() {
         return additionalLicenses;
     }
+
     /**
      * Add a new license type.
      * <p>
@@ -176,9 +173,8 @@ public abstract class LicenseHeadersTask extends DefaultTask {
         // Vendored Code
         matchers.add(subStringMatcher("VEN  ", "Vendored", "@notice"));
 
-        additionalLicenses.get().forEach(l ->
-            matchers.add(subStringMatcher(l.licenseFamilyCategory, l.licenseFamilyName, l.substringPattern))
-        );
+        additionalLicenses.get()
+            .forEach(l -> matchers.add(subStringMatcher(l.licenseFamilyCategory, l.licenseFamilyName, l.substringPattern)));
 
         reportConfiguration.setHeaderMatcher(new HeaderMatcherMultiplexer(matchers.toArray(IHeaderMatcher[]::new)));
         reportConfiguration.setApprovedLicenseNames(approvedLicenses.stream().map(license -> {
@@ -193,9 +189,8 @@ public abstract class LicenseHeadersTask extends DefaultTask {
         boolean unApprovedLicenses = stats.getNumUnApproved() > 0;
         if (unknownLicenses || unApprovedLicenses) {
             getLogger().error("The following files contain unapproved license headers:");
-            unapprovedFiles(repFile).stream().forEachOrdered(unapprovedFile -> getLogger().error(unapprovedFile));
-            throw new GradleException("Check failed. License header problems were found. Full details: " +
-                    repFile.getAbsolutePath());
+            unapprovedFiles(repFile).forEach(unapprovedFile -> getLogger().error(unapprovedFile));
+            throw new GradleException("Check failed. License header problems were found. Full details: " + repFile.getAbsolutePath());
         }
     }
 

@@ -709,11 +709,7 @@ public class OptimizerTests extends ESTestCase {
             Project proj = (Project) sub;
             // ensure that only join keys are explicitly projected (ie. all the other fields are excluded)
             assertEquals(2, proj.projections().size());
-            List<String> projections = proj.projections()
-                .stream()
-                .map(FieldAttribute.class::cast)
-                .map(FieldAttribute::name)
-                .collect(toList());
+            List<String> projections = proj.projections().stream().map(FieldAttribute.class::cast).map(FieldAttribute::name).toList();
             assertTrue(projections.contains("user_name"));
             assertTrue(projections.contains("bool"));
         }

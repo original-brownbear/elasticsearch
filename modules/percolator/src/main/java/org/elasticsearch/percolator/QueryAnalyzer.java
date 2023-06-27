@@ -125,7 +125,7 @@ final class QueryAnalyzer {
                 partialResults.addAll(terms);
             }
             if (children.isEmpty() == false) {
-                List<Result> childResults = children.stream().map(ResultBuilder::getResult).collect(Collectors.toList());
+                List<Result> childResults = children.stream().map(ResultBuilder::getResult).toList();
                 partialResults.addAll(childResults);
             }
             if (partialResults.isEmpty()) {
@@ -243,7 +243,7 @@ final class QueryAnalyzer {
     }
 
     private static Result handleConjunction(List<Result> conjunctionsWithUnknowns) {
-        List<Result> conjunctions = conjunctionsWithUnknowns.stream().filter(r -> r.isUnknown() == false).collect(Collectors.toList());
+        List<Result> conjunctions = conjunctionsWithUnknowns.stream().filter(r -> r.isUnknown() == false).toList();
         if (conjunctions.isEmpty()) {
             if (conjunctionsWithUnknowns.isEmpty()) {
                 throw new IllegalArgumentException("Must have at least one conjunction sub result");
