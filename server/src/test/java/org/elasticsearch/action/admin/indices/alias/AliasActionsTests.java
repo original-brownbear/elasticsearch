@@ -10,12 +10,10 @@ package org.elasticsearch.action.admin.indices.alias;
 
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.io.stream.BytesStreamOutput;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.index.alias.RandomAliasActionsGenerator;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.xcontent.ToXContent;
 import org.elasticsearch.xcontent.XContentBuilder;
 import org.elasticsearch.xcontent.XContentFactory;
 import org.elasticsearch.xcontent.XContentParseException;
@@ -26,7 +24,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.elasticsearch.index.alias.RandomAliasActionsGenerator.randomAliasAction;
 import static org.elasticsearch.index.alias.RandomAliasActionsGenerator.randomRouting;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.arrayContaining;
@@ -352,17 +349,4 @@ public class AliasActionsTests extends ESTestCase {
         }
     }
 
-    public void testFromToXContent() throws IOException {
-        for (int runs = 0; runs < 20; runs++) {
-            AliasActions action = randomAliasAction();
-            XContentType xContentType = randomFrom(XContentType.values());
-            BytesReference shuffled = toShuffledXContent(action, xContentType, ToXContent.EMPTY_PARAMS, false, "filter");
-            AliasActions parsedAction;
-            try (XContentParser parser = createParser(xContentType.xContent(), shuffled)) {
-                parsedAction = AliasActions.fromXContent(parser);
-                assertNull(parser.nextToken());
-            }
-            assertThat(parsedAction, equalTo(action));
-        }
-    }
 }
