@@ -81,7 +81,7 @@ public class CleanerService extends AbstractLifecycleComponent {
         logger.debug("cleaning service closed");
     }
 
-    private String executorName() {
+    private static String executorName() {
         return ThreadPool.Names.GENERIC;
     }
 

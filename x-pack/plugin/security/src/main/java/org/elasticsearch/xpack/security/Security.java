@@ -288,7 +288,6 @@ import org.elasticsearch.xpack.security.authz.interceptor.SearchRequestCacheDisa
 import org.elasticsearch.xpack.security.authz.interceptor.SearchRequestInterceptor;
 import org.elasticsearch.xpack.security.authz.interceptor.ShardSearchRequestInterceptor;
 import org.elasticsearch.xpack.security.authz.interceptor.UpdateRequestInterceptor;
-import org.elasticsearch.xpack.security.authz.restriction.WorkflowService;
 import org.elasticsearch.xpack.security.authz.store.CompositeRolesStore;
 import org.elasticsearch.xpack.security.authz.store.DeprecationRoleDescriptorConsumer;
 import org.elasticsearch.xpack.security.authz.store.FileRolesStore;
@@ -550,8 +549,6 @@ public class Security extends Plugin
 
     private final SetOnce<ReservedRoleMappingAction> reservedRoleMappingAction = new SetOnce<>();
 
-    private final SetOnce<WorkflowService> workflowService = new SetOnce<>();
-
     public Security(Settings settings) {
         this(settings, Collections.emptyList());
     }
@@ -682,8 +679,6 @@ public class Security extends Plugin
         List<Object> components = new ArrayList<>();
         securityContext.set(new SecurityContext(settings, threadPool.getThreadContext()));
         components.add(securityContext.get());
-
-        workflowService.set(new WorkflowService());
 
         final RestrictedIndices restrictedIndices = new RestrictedIndices(expressionResolver);
 
@@ -857,12 +852,10 @@ public class Security extends Plugin
             threadPool.getThreadContext(),
             getLicenseState(),
             fieldPermissionsCache,
-            apiKeyService,
             serviceAccountService,
             dlsBitsetCache.get(),
             restrictedIndices,
-            new DeprecationRoleDescriptorConsumer(clusterService, threadPool),
-            workflowService.get()
+            new DeprecationRoleDescriptorConsumer(clusterService, threadPool)
         );
         systemIndices.getMainIndexManager().addStateListener(allRolesStore::onSecurityIndexStateChange);
 
@@ -1814,7 +1807,6 @@ public class Security extends Plugin
             threadContext,
             secondayAuthc.get(),
             auditTrailService.get(),
-            workflowService.get(),
             handler,
             operatorPrivilegesService.get()
         );
@@ -1900,8 +1892,8 @@ public class Security extends Plugin
         public void accept(DiscoveryNode node, ClusterState state) {
             if (inFipsMode) {
                 License license;
-                if (licenseService instanceof ClusterStateLicenseService clusterStateLicenseService) {
-                    license = clusterStateLicenseService.getLicense(state.metadata());
+                if (licenseService instanceof ClusterStateLicenseService) {
+                    license = ClusterStateLicenseService.getLicense(state.metadata());
                 } else {
                     license = licenseService.getLicense();
                 }

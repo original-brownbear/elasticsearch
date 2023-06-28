@@ -200,7 +200,7 @@ public class KerberosRealmTests extends KerberosRealmTestCase {
         mockKerberosTicketValidator = mock(KerberosTicketValidator.class);
         final IllegalArgumentException iae = expectThrows(
             IllegalArgumentException.class,
-            () -> new KerberosRealm(config, mockNativeRoleMappingStore, mockKerberosTicketValidator, threadPool, null)
+            () -> new KerberosRealm(config, mockNativeRoleMappingStore, threadPool, null)
         );
         assertThat(iae.getMessage(), is(equalTo(expectedErrorMessage)));
     }

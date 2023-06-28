@@ -70,7 +70,7 @@ public class HttpTracerTests extends ESTestCase {
 
             HttpTracer tracer = new HttpTracer().maybeLogRequest(request, null);
             assertNotNull(tracer);
-            assertFalse(tracer.isBodyTracerEnabled());
+            assertFalse(HttpTracer.isBodyTracerEnabled());
 
             tracer.logResponse(
                 new RestResponse(RestStatus.ACCEPTED, ""),
@@ -88,7 +88,7 @@ public class HttpTracerTests extends ESTestCase {
     @TestLogging(reason = "testing trace logging", value = HTTP_TRACER_LOGGER + ":TRACE," + HTTP_BODY_TRACER_LOGGER + ":TRACE")
     public void testBodyLogging() {
         HttpTracer tracer = new HttpTracer();
-        assertTrue(tracer.isBodyTracerEnabled());
+        assertTrue(HttpTracer.isBodyTracerEnabled());
 
         var responseBody = new BytesArray(randomUnicodeOfLengthBetween(1, 100).getBytes(StandardCharsets.UTF_8));
         RestRequest request = new FakeRestRequest.Builder(new NamedXContentRegistry(List.of())).withMethod(RestRequest.Method.GET)

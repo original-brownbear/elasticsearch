@@ -240,7 +240,6 @@ public class IndicesAndAliasesResolverTests extends ESTestCase {
                 mock(ServiceAccountService.class),
                 new DocumentSubsetBitsetCache(Settings.EMPTY, mock(ThreadPool.class)),
                 RESTRICTED_INDICES,
-                rds -> {},
                 new WorkflowService()
             )
         );

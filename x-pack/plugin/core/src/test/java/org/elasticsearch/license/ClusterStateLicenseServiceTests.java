@@ -97,7 +97,7 @@ public class ClusterStateLicenseServiceTests extends ESTestCase {
             mock(Clock.class),
             mock(XPackLicenseState.class)
         );
-        final String message = service.buildExpirationMessage(time, expired).toString();
+        final String message = ClusterStateLicenseService.buildExpirationMessage(time, expired).toString();
         if (expired) {
             assertThat(message, startsWith("LICENSE [EXPIRED] ON [THURSDAY, NOVEMBER 15, 2018].\n"));
         } else {

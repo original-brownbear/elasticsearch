@@ -181,9 +181,8 @@ public class AutoscalingCalculateCapacityServiceTests extends AutoscalingTestCas
         SortedSet<String> roleNames = randomRoles();
         boolean hasDataRole = roleNames.stream().anyMatch(r -> DiscoveryNodeRole.getRoleFromRoleName(r).canContainData());
 
-        AutoscalingCalculateCapacityService service = new AutoscalingCalculateCapacityService(Set.of(new FixedAutoscalingDeciderService()));
         SnapshotShardSizeInfo snapshotShardSizeInfo = new SnapshotShardSizeInfo(Map.of());
-        AutoscalingDeciderContext context = service.createContext(
+        AutoscalingDeciderContext context = AutoscalingCalculateCapacityService.createContext(
             roleNames,
             state,
             info,

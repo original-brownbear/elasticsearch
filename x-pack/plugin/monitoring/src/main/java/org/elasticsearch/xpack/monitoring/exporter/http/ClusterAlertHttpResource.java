@@ -107,7 +107,7 @@ public class ClusterAlertHttpResource extends PublishableHttpResource {
                 GET_EXISTS,
                 GET_DOES_NOT_EXIST,
                 watchChecker,
-                this::alwaysReplaceResource
+                PublishableHttpResource::alwaysReplaceResource
             );
         } else {
             // if we should be deleting, then just try to delete it (same level of effort as checking)
@@ -183,7 +183,8 @@ public class ClusterAlertHttpResource extends PublishableHttpResource {
      * @throws IOException if any issue occurs while parsing the {@code xContent} {@code response}.
      * @throws RuntimeException if the response format is changed.
      */
-    boolean shouldReplaceClusterAlert(final Response response, final XContent xContent, final int minimumVersion) throws IOException {
+    static boolean shouldReplaceClusterAlert(final Response response, final XContent xContent, final int minimumVersion)
+        throws IOException {
         // no named content used; so EMPTY is fine
         final Map<String, Object> resources = XContentHelper.convertToMap(xContent, response.getEntity().getContent(), false);
 

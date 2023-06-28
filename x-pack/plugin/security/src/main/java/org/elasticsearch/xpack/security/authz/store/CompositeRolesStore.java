@@ -49,7 +49,6 @@ import org.elasticsearch.xpack.core.security.user.AnonymousUser;
 import org.elasticsearch.xpack.core.security.user.InternalUser;
 import org.elasticsearch.xpack.core.security.user.InternalUsers;
 import org.elasticsearch.xpack.core.security.user.User;
-import org.elasticsearch.xpack.security.authc.ApiKeyService;
 import org.elasticsearch.xpack.security.authc.service.ServiceAccountService;
 import org.elasticsearch.xpack.security.authz.restriction.WorkflowService;
 import org.elasticsearch.xpack.security.support.SecurityIndexManager;
@@ -104,7 +103,6 @@ public class CompositeRolesStore {
     private final Role superuserRole;
     private final Map<String, Role> internalUserRoles;
     private final RestrictedIndices restrictedIndices;
-    private final WorkflowService workflowService;
     private final ThreadContext threadContext;
 
     public CompositeRolesStore(
@@ -114,12 +112,10 @@ public class CompositeRolesStore {
         ThreadContext threadContext,
         XPackLicenseState licenseState,
         FieldPermissionsCache fieldPermissionsCache,
-        ApiKeyService apiKeyService,
         ServiceAccountService serviceAccountService,
         DocumentSubsetBitsetCache dlsBitsetCache,
         RestrictedIndices restrictedIndices,
-        Consumer<Collection<RoleDescriptor>> effectiveRoleDescriptorsConsumer,
-        WorkflowService workflowService
+        Consumer<Collection<RoleDescriptor>> effectiveRoleDescriptorsConsumer
     ) {
         this.roleProviders = roleProviders;
         roleProviders.addChangeListener(new RoleProviders.ChangeListener() {
@@ -171,7 +167,6 @@ public class CompositeRolesStore {
             );
         this.roleReferenceResolver = new RoleDescriptorStore(
             roleProviders,
-            apiKeyService,
             serviceAccountService,
             negativeLookupCache,
             licenseState,
@@ -179,7 +174,6 @@ public class CompositeRolesStore {
             effectiveRoleDescriptorsConsumer
         );
         this.anonymousUser = new AnonymousUser(settings);
-        this.workflowService = workflowService;
         this.threadContext = threadContext;
     }
 
@@ -209,7 +203,7 @@ public class CompositeRolesStore {
         assert false == subject.getUser() instanceof InternalUser : "Internal user [" + subject.getUser() + "] should not pass here";
 
         final RoleReferenceIntersection roleReferenceIntersection = subject.getRoleReferenceIntersection(anonymousUser);
-        final String workflow = workflowService.readWorkflowFromThreadContext(threadContext);
+        final String workflow = WorkflowService.readWorkflowFromThreadContext(threadContext);
         roleReferenceIntersection.buildRole(
             this::buildRoleFromRoleReference,
             ActionListener.wrap(role -> roleActionListener.onResponse(role.forWorkflow(workflow)), roleActionListener::onFailure)

@@ -1028,8 +1028,8 @@ public class ApiKeyServiceTests extends ESTestCase {
         }).when(privilegesStore).getPrivileges(any(Collection.class), any(Collection.class), anyActionListener());
         ApiKeyService service = createApiKeyService(Settings.EMPTY);
 
-        assertThat(service.parseRoleDescriptors(apiKeyId, null, randomApiKeyRoleType()), nullValue());
-        assertThat(service.parseRoleDescriptors(apiKeyId, Collections.emptyMap(), randomApiKeyRoleType()), emptyIterable());
+        assertThat(ApiKeyService.parseRoleDescriptors(apiKeyId, null, randomApiKeyRoleType()), nullValue());
+        assertThat(ApiKeyService.parseRoleDescriptors(apiKeyId, Collections.emptyMap(), randomApiKeyRoleType()), emptyIterable());
 
         final RoleDescriptor roleARoleDescriptor = new RoleDescriptor(
             "a role",
@@ -1047,7 +1047,11 @@ public class ApiKeyServiceTests extends ESTestCase {
             );
         }
 
-        List<RoleDescriptor> roleDescriptors = service.parseRoleDescriptors(apiKeyId, Map.of("a role", roleARDMap), randomApiKeyRoleType());
+        List<RoleDescriptor> roleDescriptors = ApiKeyService.parseRoleDescriptors(
+            apiKeyId,
+            Map.of("a role", roleARDMap),
+            randomApiKeyRoleType()
+        );
         assertThat(roleDescriptors, hasSize(1));
         assertThat(roleDescriptors.get(0), equalTo(roleARoleDescriptor));
 
@@ -1059,7 +1063,7 @@ public class ApiKeyServiceTests extends ESTestCase {
                 false
             );
         }
-        roleDescriptors = service.parseRoleDescriptors(
+        roleDescriptors = ApiKeyService.parseRoleDescriptors(
             apiKeyId,
             Map.of(SUPERUSER_ROLE_DESCRIPTOR.getName(), superUserRdMap),
             randomApiKeyRoleType()
@@ -1076,7 +1080,7 @@ public class ApiKeyServiceTests extends ESTestCase {
             );
         }
         final RoleReference.ApiKeyRoleType apiKeyRoleType = randomApiKeyRoleType();
-        roleDescriptors = service.parseRoleDescriptors(
+        roleDescriptors = ApiKeyService.parseRoleDescriptors(
             apiKeyId,
             Map.of(LEGACY_SUPERUSER_ROLE_DESCRIPTOR.getName(), legacySuperUserRdMap),
             apiKeyRoleType

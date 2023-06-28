@@ -647,7 +647,7 @@ public class PersistedClusterStateService {
         );
     }
 
-    public OnDiskStateMetadata loadOnDiskStateMetadataFromUserData(Map<String, String> userData) {
+    public static OnDiskStateMetadata loadOnDiskStateMetadataFromUserData(Map<String, String> userData) {
         assert userData.get(CURRENT_TERM_KEY) != null;
         assert userData.get(LAST_ACCEPTED_VERSION_KEY) != null;
         assert userData.get(NODE_ID_KEY) != null;

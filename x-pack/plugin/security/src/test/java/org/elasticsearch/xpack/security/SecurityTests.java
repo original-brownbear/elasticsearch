@@ -401,7 +401,7 @@ public class SecurityTests extends ESTestCase {
         assertNull(joinValidator);
     }
 
-    public void testJoinValidatorForFIPSOnAllowedLicense() throws Exception {
+    public static void testJoinValidatorForFIPSOnAllowedLicense() throws Exception {
         DiscoveryNode node = DiscoveryNodeUtils.builder("foo")
             .version(VersionUtils.randomVersionBetween(random(), null, Version.CURRENT))
             .build();
@@ -426,7 +426,7 @@ public class SecurityTests extends ESTestCase {
         // no exception thrown
     }
 
-    public void testJoinValidatorForFIPSOnForbiddenLicense() throws Exception {
+    public static void testJoinValidatorForFIPSOnForbiddenLicense() throws Exception {
         DiscoveryNode node = DiscoveryNodeUtils.builder("foo")
             .version(VersionUtils.randomVersionBetween(random(), null, Version.CURRENT))
             .build();

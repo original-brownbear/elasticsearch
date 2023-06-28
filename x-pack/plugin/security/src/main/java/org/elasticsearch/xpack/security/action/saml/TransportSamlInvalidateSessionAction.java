@@ -93,7 +93,7 @@ public final class TransportSamlInvalidateSessionAction extends HandledTransport
         }
     }
 
-    private String buildLogoutResponseUrl(SamlRealm realm, SamlLogoutRequestHandler.Result result) {
+    private static String buildLogoutResponseUrl(SamlRealm realm, SamlLogoutRequestHandler.Result result) {
         final LogoutResponse response = realm.buildLogoutResponse(result.getRequestId());
         return new SamlRedirect(response, realm.getSigningConfiguration()).getRedirectUrl(result.getRelayState());
     }
@@ -140,7 +140,7 @@ public final class TransportSamlInvalidateSessionAction extends HandledTransport
         }));
     }
 
-    private Predicate<Map<String, Object>> containsMetadata(Map<String, Object> requiredMetadata) {
+    private static Predicate<Map<String, Object>> containsMetadata(Map<String, Object> requiredMetadata) {
         return source -> {
             @SuppressWarnings("unchecked")
             Map<String, Object> actualMetadata = (Map<String, Object>) source.get("metadata");

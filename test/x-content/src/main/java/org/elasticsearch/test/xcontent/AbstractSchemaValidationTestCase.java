@@ -89,14 +89,14 @@ public abstract class AbstractSchemaValidationTestCase<T extends ToXContent> ext
     /**
      * Root folder for all schema files.
      */
-    protected String getSchemaLocation() {
+    protected static String getSchemaLocation() {
         return "/rest-api-spec/schema/";
     }
 
     /**
      * Version of the Json Schema Spec to be used by the test.
      */
-    protected SpecVersion.VersionFlag getSchemaVersion() {
+    protected static SpecVersion.VersionFlag getSchemaVersion() {
         return SpecVersion.VersionFlag.V7;
     }
 
@@ -129,7 +129,7 @@ public abstract class AbstractSchemaValidationTestCase<T extends ToXContent> ext
      * Note: we might not catch all places, but at least it works for nested objects and
      * array items.
      */
-    private void assertSchemaStrictness(Collection<JsonValidator> validatorSet, String path) {
+    private static void assertSchemaStrictness(Collection<JsonValidator> validatorSet, String path) {
         boolean additionalPropertiesValidatorFound = false;
         boolean subSchemaFound = false;
 

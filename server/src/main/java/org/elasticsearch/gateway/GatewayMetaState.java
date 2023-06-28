@@ -507,8 +507,11 @@ public class GatewayMetaState implements Closeable {
             persistenceWriter.set(writer);
         }
 
-        protected void maybeWriteInitialState(long currentTerm, ClusterState lastAcceptedState, PersistedClusterStateService.Writer writer)
-            throws IOException {
+        protected static void maybeWriteInitialState(
+            long currentTerm,
+            ClusterState lastAcceptedState,
+            PersistedClusterStateService.Writer writer
+        ) throws IOException {
             try {
                 writer.writeFullStateAndCommit(currentTerm, lastAcceptedState);
             } catch (Exception e) {

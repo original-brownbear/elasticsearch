@@ -68,7 +68,7 @@ class TerminateAfterCollector implements Collector {
         return ScoreMode.TOP_DOCS;
     }
 
-    private void earlyTerminate() {
+    private static void earlyTerminate() {
         throw new EarlyTerminationException("early termination [CountBased]");
     }
 }

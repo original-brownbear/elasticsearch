@@ -79,13 +79,13 @@ public class LicensesManagerServiceTests extends ESSingleNodeTestCase {
         // put gold license
         TestUtils.registerAndAckSignedLicenses(licenseService, goldLicense, LicensesStatus.VALID);
         LicensesMetadata licensesMetadata = clusterService.state().metadata().custom(LicensesMetadata.TYPE);
-        assertThat(licenseService.getLicenseFromLicensesMetadata(licensesMetadata), equalTo(goldLicense));
+        assertThat(ClusterStateLicenseService.getLicenseFromLicensesMetadata(licensesMetadata), equalTo(goldLicense));
 
         License platinumLicense = TestUtils.generateSignedLicense("platinum", TimeValue.timeValueSeconds(3));
         // put platinum license
         TestUtils.registerAndAckSignedLicenses(licenseService, platinumLicense, LicensesStatus.VALID);
         licensesMetadata = clusterService.state().metadata().custom(LicensesMetadata.TYPE);
-        assertThat(licenseService.getLicenseFromLicensesMetadata(licensesMetadata), equalTo(platinumLicense));
+        assertThat(ClusterStateLicenseService.getLicenseFromLicensesMetadata(licensesMetadata), equalTo(platinumLicense));
     }
 
     public void testInvalidLicenseStorage() throws Exception {

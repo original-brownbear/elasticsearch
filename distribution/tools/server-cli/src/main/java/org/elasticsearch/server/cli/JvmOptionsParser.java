@@ -81,14 +81,12 @@ final class JvmOptionsParser {
     static List<String> determineJvmOptions(ServerArgs args, Path configDir, Path tmpDir, String envOptions) throws InterruptedException,
         IOException, UserException {
 
-        final JvmOptionsParser parser = new JvmOptionsParser();
-
         final Map<String, String> substitutions = new HashMap<>();
         substitutions.put("ES_TMPDIR", tmpDir.toString());
         substitutions.put("ES_PATH_CONF", configDir.toString());
 
         try {
-            return parser.jvmOptions(args, configDir, tmpDir, envOptions, substitutions);
+            return jvmOptions(args, configDir, tmpDir, envOptions, substitutions);
         } catch (final JvmOptionsFileParserException e) {
             final String errorMessage = String.format(
                 Locale.ROOT,
@@ -117,7 +115,7 @@ final class JvmOptionsParser {
         }
     }
 
-    private List<String> jvmOptions(
+    private static List<String> jvmOptions(
         ServerArgs args,
         final Path config,
         Path tmpDir,
@@ -152,7 +150,7 @@ final class JvmOptionsParser {
         return finalJvmOptions;
     }
 
-    List<String> readJvmOptionsFiles(final Path config) throws IOException, JvmOptionsFileParserException {
+    static List<String> readJvmOptionsFiles(final Path config) throws IOException, JvmOptionsFileParserException {
         final ArrayList<Path> jvmOptionsFiles = new ArrayList<>();
         jvmOptionsFiles.add(config.resolve("jvm.options"));
 

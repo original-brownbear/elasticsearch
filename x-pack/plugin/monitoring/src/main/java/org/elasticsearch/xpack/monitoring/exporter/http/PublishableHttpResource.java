@@ -211,7 +211,7 @@ public abstract class PublishableHttpResource extends HttpResource {
             GET_EXISTS,
             GET_DOES_NOT_EXIST,
             responseChecker,
-            this::alwaysReplaceResource
+            PublishableHttpResource::alwaysReplaceResource
         );
     }
 
@@ -496,7 +496,7 @@ public abstract class PublishableHttpResource extends HttpResource {
      * @throws IOException if any issue occurs while parsing the {@code xContent} {@code response}.
      * @throws RuntimeException if the response format is changed.
      */
-    protected boolean shouldReplaceResource(
+    protected static boolean shouldReplaceResource(
         final Response response,
         final XContent xContent,
         final String resourceName,
@@ -526,15 +526,15 @@ public abstract class PublishableHttpResource extends HttpResource {
      * @param response Unused.
      * @return Always {@code true}.
      */
-    protected boolean alwaysReplaceResource(final Response response) {
+    protected static boolean alwaysReplaceResource(final Response response) {
         return true;
     }
 
     private void addDefaultParameters(final Request request) {
-        this.addParameters(request, defaultParameters);
+        PublishableHttpResource.addParameters(request, defaultParameters);
     }
 
-    private void addParameters(final Request request, final Map<String, String> parameters) {
+    private static void addParameters(final Request request, final Map<String, String> parameters) {
         for (final Map.Entry<String, String> param : parameters.entrySet()) {
             request.addParameter(param.getKey(), param.getValue());
         }

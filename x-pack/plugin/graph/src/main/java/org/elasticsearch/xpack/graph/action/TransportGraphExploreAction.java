@@ -558,7 +558,7 @@ public class TransportGraphExploreAction extends HandledTransportAction<GraphExp
             }
         }
 
-        private void addBigOrClause(Map<String, Set<Vertex>> lastHopFindings, BoolQueryBuilder sourceTermsOrClause) {
+        private static void addBigOrClause(Map<String, Set<Vertex>> lastHopFindings, BoolQueryBuilder sourceTermsOrClause) {
             int numClauses = sourceTermsOrClause.should().size();
             for (Entry<String, Set<Vertex>> entry : lastHopFindings.entrySet()) {
                 numClauses += entry.getValue().size();
@@ -751,7 +751,7 @@ public class TransportGraphExploreAction extends HandledTransportAction<GraphExp
             }
         }
 
-        private void addNormalizedBoosts(BoolQueryBuilder includesContainer, VertexRequest vr) {
+        private static void addNormalizedBoosts(BoolQueryBuilder includesContainer, VertexRequest vr) {
             TermBoost[] termBoosts = vr.includeValues();
 
             if ((includesContainer.should().size() + termBoosts.length) > BooleanQuery.getMaxClauseCount()) {

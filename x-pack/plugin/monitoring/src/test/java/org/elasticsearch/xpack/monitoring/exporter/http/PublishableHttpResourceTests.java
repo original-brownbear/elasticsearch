@@ -306,7 +306,7 @@ public class PublishableHttpResourceTests extends AbstractPublishableHttpResourc
         when(response.getEntity()).thenReturn(entity);
         when(entity.getContent()).thenThrow(new IOException("TEST - expected"));
 
-        expectThrows(IOException.class, () -> resource.shouldReplaceResource(response, xContent, resourceName, randomInt()));
+        expectThrows(IOException.class, () -> PublishableHttpResource.shouldReplaceResource(response, xContent, resourceName, randomInt()));
     }
 
     public void testShouldReplaceResourceThrowsExceptionForMalformedResponse() {
@@ -316,7 +316,10 @@ public class PublishableHttpResourceTests extends AbstractPublishableHttpResourc
 
         when(response.getEntity()).thenReturn(entity);
 
-        expectThrows(RuntimeException.class, () -> resource.shouldReplaceResource(response, xContent, resourceName, randomInt()));
+        expectThrows(
+            RuntimeException.class,
+            () -> PublishableHttpResource.shouldReplaceResource(response, xContent, resourceName, randomInt())
+        );
     }
 
     public void testShouldReplaceResourceReturnsTrueVersionIsNotExpected() throws IOException {
@@ -327,7 +330,7 @@ public class PublishableHttpResourceTests extends AbstractPublishableHttpResourc
 
         when(response.getEntity()).thenReturn(entity);
 
-        assertThat(resource.shouldReplaceResource(response, xContent, resourceName, minimumVersion), is(true));
+        assertThat(PublishableHttpResource.shouldReplaceResource(response, xContent, resourceName, minimumVersion), is(true));
     }
 
     public void testShouldReplaceResourceChecksVersion() throws IOException {
@@ -345,7 +348,7 @@ public class PublishableHttpResourceTests extends AbstractPublishableHttpResourc
 
         when(response.getEntity()).thenReturn(entity);
 
-        assertThat(resource.shouldReplaceResource(response, xContent, resourceName, minimumVersion), is(shouldReplace));
+        assertThat(PublishableHttpResource.shouldReplaceResource(response, xContent, resourceName, minimumVersion), is(shouldReplace));
     }
 
     @SuppressLoggerChecks(reason = "mock logger used")

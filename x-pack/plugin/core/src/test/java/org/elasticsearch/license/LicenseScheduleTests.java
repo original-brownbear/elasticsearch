@@ -37,7 +37,7 @@ public class LicenseScheduleTests extends ESTestCase {
             mock(Clock.class),
             mock(XPackLicenseState.class)
         );
-        schedule = service.nextLicenseCheck(license);
+        schedule = ClusterStateLicenseService.nextLicenseCheck(license);
     }
 
     public void testExpiredLicenseSchedule() throws Exception {

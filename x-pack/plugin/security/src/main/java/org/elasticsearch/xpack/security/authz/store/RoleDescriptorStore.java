@@ -50,7 +50,6 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
     private final DeprecationLogger deprecationLogger = DeprecationLogger.getLogger(RoleDescriptorStore.class);
 
     private final RoleProviders roleProviders;
-    private final ApiKeyService apiKeyService;
     private final ServiceAccountService serviceAccountService;
     private final XPackLicenseState licenseState;
     private final ThreadContext threadContext;
@@ -59,7 +58,6 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
 
     public RoleDescriptorStore(
         RoleProviders roleProviders,
-        ApiKeyService apiKeyService,
         ServiceAccountService serviceAccountService,
         Cache<String, Boolean> negativeLookupCache,
         XPackLicenseState licenseState,
@@ -67,7 +65,6 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
         Consumer<Collection<RoleDescriptor>> effectiveRoleDescriptorsConsumer
     ) {
         this.roleProviders = roleProviders;
-        this.apiKeyService = Objects.requireNonNull(apiKeyService);
         this.serviceAccountService = Objects.requireNonNull(serviceAccountService);
         this.licenseState = Objects.requireNonNull(licenseState);
         this.threadContext = threadContext;
@@ -95,7 +92,7 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
         RoleReference.ApiKeyRoleReference apiKeyRoleReference,
         ActionListener<RolesRetrievalResult> listener
     ) {
-        final List<RoleDescriptor> roleDescriptors = apiKeyService.parseRoleDescriptorsBytes(
+        final List<RoleDescriptor> roleDescriptors = ApiKeyService.parseRoleDescriptorsBytes(
             apiKeyRoleReference.getApiKeyId(),
             apiKeyRoleReference.getRoleDescriptorsBytes(),
             apiKeyRoleReference.getRoleType()
@@ -115,7 +112,7 @@ public class RoleDescriptorStore implements RoleReferenceResolver {
         RoleReference.BwcApiKeyRoleReference bwcApiKeyRoleReference,
         ActionListener<RolesRetrievalResult> listener
     ) {
-        final List<RoleDescriptor> roleDescriptors = apiKeyService.parseRoleDescriptors(
+        final List<RoleDescriptor> roleDescriptors = ApiKeyService.parseRoleDescriptors(
             bwcApiKeyRoleReference.getApiKeyId(),
             bwcApiKeyRoleReference.getRoleDescriptorsMap(),
             bwcApiKeyRoleReference.getRoleType()

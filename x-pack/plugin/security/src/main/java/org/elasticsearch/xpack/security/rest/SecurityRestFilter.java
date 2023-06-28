@@ -37,7 +37,6 @@ public class SecurityRestFilter implements RestHandler {
     private final AuditTrailService auditTrailService;
     private final boolean enabled;
     private final ThreadContext threadContext;
-    private final WorkflowService workflowService;
     private final OperatorPrivileges.OperatorPrivilegesService operatorPrivilegesService;
 
     public SecurityRestFilter(
@@ -45,7 +44,6 @@ public class SecurityRestFilter implements RestHandler {
         ThreadContext threadContext,
         SecondaryAuthenticator secondaryAuthenticator,
         AuditTrailService auditTrailService,
-        WorkflowService workflowService,
         RestHandler restHandler,
         OperatorPrivileges.OperatorPrivilegesService operatorPrivilegesService
     ) {
@@ -53,7 +51,6 @@ public class SecurityRestFilter implements RestHandler {
         this.threadContext = threadContext;
         this.secondaryAuthenticator = secondaryAuthenticator;
         this.auditTrailService = auditTrailService;
-        this.workflowService = workflowService;
         this.restHandler = restHandler;
         // can be null if security is not enabled
         this.operatorPrivilegesService = operatorPrivilegesService == null
@@ -94,7 +91,7 @@ public class SecurityRestFilter implements RestHandler {
             if (secondaryAuthentication != null) {
                 logger.trace("Found secondary authentication {} in REST request [{}]", secondaryAuthentication, request.uri());
             }
-            workflowService.resolveWorkflowAndStoreInThreadContext(restHandler, threadContext);
+            WorkflowService.resolveWorkflowAndStoreInThreadContext(restHandler, threadContext);
             doHandleRequest(request, channel, client);
         }, e -> handleException(request, channel, e)));
     }

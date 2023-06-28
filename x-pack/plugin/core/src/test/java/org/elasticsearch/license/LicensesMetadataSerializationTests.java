@@ -146,8 +146,7 @@ public class LicensesMetadataSerializationTests extends ESTestCase {
     @Override
     protected NamedXContentRegistry xContentRegistry() {
         return new NamedXContentRegistry(
-            Stream.concat(new Licensing(Settings.EMPTY).getNamedXContent().stream(), ClusterModule.getNamedXWriteables().stream())
-                .collect(Collectors.toList())
+            Stream.concat(Licensing.getNamedXContent().stream(), ClusterModule.getNamedXWriteables().stream()).collect(Collectors.toList())
         );
     }
 }

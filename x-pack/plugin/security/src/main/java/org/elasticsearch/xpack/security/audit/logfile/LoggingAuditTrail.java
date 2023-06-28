@@ -1325,7 +1325,7 @@ public class LoggingAuditTrail implements AuditTrail, ClusterStateListener {
             }
         }
 
-        private void withRoleDescriptor(XContentBuilder builder, RoleDescriptor roleDescriptor) throws IOException {
+        private static void withRoleDescriptor(XContentBuilder builder, RoleDescriptor roleDescriptor) throws IOException {
             builder.startObject().array(RoleDescriptor.Fields.CLUSTER.getPreferredName(), roleDescriptor.getClusterPrivileges());
             if (roleDescriptor.getConditionalClusterPrivileges() != null && roleDescriptor.getConditionalClusterPrivileges().length > 0) {
                 // This fails if this list contains multiple instances of the {@code ManageApplicationPrivileges}

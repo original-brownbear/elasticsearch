@@ -880,9 +880,9 @@ public class InstallPluginAction implements Closeable {
     private void generateNameComponentFile(Path pluginRoot) throws IOException {
         Stream<ClassReader> classPath = ClassReaders.ofClassPath().stream(); // contains plugin-api
         List<ClassReader> classReaders = Stream.concat(ClassReaders.ofDirWithJars(pluginRoot).stream(), classPath).toList();
-        Map<String, Map<String, String>> namedComponentsMap = scanner.scanForNamedClasses(classReaders);
+        Map<String, Map<String, String>> namedComponentsMap = NamedComponentScanner.scanForNamedClasses(classReaders);
         Path outputFile = pluginRoot.resolve(PluginDescriptor.NAMED_COMPONENTS_FILENAME);
-        scanner.writeToFile(namedComponentsMap, outputFile);
+        NamedComponentScanner.writeToFile(namedComponentsMap, outputFile);
     }
 
     private boolean hasNamedComponentFile(Path pluginRoot) {

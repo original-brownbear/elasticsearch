@@ -120,8 +120,8 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
             final HttpResponse httpResponse;
             if (isHeadRequest == false && restResponse.isChunked()) {
                 ChunkedRestResponseBody chunkedContent = restResponse.chunkedContent();
-                if (httpLogger != null && httpLogger.isBodyTracerEnabled()) {
-                    final var loggerStream = httpLogger.openResponseBodyLoggingStream(request.getRequestId());
+                if (httpLogger != null && HttpTracer.isBodyTracerEnabled()) {
+                    final var loggerStream = HttpTracer.openResponseBodyLoggingStream(request.getRequestId());
                     toClose.add(() -> {
                         try {
                             loggerStream.close();
@@ -142,8 +142,8 @@ public class DefaultRestChannel extends AbstractRestChannel implements RestChann
 
                 BytesReference finalContent = isHeadRequest ? BytesArray.EMPTY : content;
 
-                if (httpLogger != null && httpLogger.isBodyTracerEnabled()) {
-                    try (var responseBodyLoggingStream = httpLogger.openResponseBodyLoggingStream(request.getRequestId())) {
+                if (httpLogger != null && HttpTracer.isBodyTracerEnabled()) {
+                    try (var responseBodyLoggingStream = HttpTracer.openResponseBodyLoggingStream(request.getRequestId())) {
                         finalContent.writeTo(responseBodyLoggingStream);
                     } catch (Exception e) {
                         assert false : e; // nothing much to go wrong here

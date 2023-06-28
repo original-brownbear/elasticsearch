@@ -125,11 +125,11 @@ public class ClusterStateLicenseService extends AbstractLifecycleComponent
         threadPool.scheduleWithFixedDelay(xPacklicenseState::cleanupUsageTracking, TimeValue.timeValueHours(1), ThreadPool.Names.GENERIC);
     }
 
-    private void logExpirationWarning(long expirationMillis, boolean expired) {
+    private static void logExpirationWarning(long expirationMillis, boolean expired) {
         logger.warn("{}", buildExpirationMessage(expirationMillis, expired));
     }
 
-    CharSequence buildExpirationMessage(long expirationMillis, boolean expired) {
+    static CharSequence buildExpirationMessage(long expirationMillis, boolean expired) {
         String expiredMsg = expired ? "expired" : "will expire";
         String general = LoggerMessageFormat.format(null, """
             License [{}] on [{}].
@@ -265,7 +265,7 @@ public class ClusterStateLicenseService extends AbstractLifecycleComponent
         clusterService.submitUnbatchedStateUpdateTask(source, task);
     }
 
-    private boolean licenseIsCompatible(License license, Version version) {
+    private static boolean licenseIsCompatible(License license, Version version) {
         final int maxVersion = LicenseUtils.getMaxLicenseVersion(version);
         return license.version() <= maxVersion;
     }
@@ -275,7 +275,7 @@ public class ClusterStateLicenseService extends AbstractLifecycleComponent
         return allowedLicenseTypes.contains(type);
     }
 
-    private TimeValue days(int days) {
+    private static TimeValue days(int days) {
         return TimeValue.timeValueHours(days * 24);
     }
 
@@ -520,7 +520,7 @@ public class ClusterStateLicenseService extends AbstractLifecycleComponent
     }
 
     // pkg private for tests
-    SchedulerEngine.Schedule nextLicenseCheck(License license) {
+    static SchedulerEngine.Schedule nextLicenseCheck(License license) {
         return (startTime, time) -> {
             if (time < license.issueDate()) {
                 // when we encounter a license with a future issue date
@@ -542,13 +542,13 @@ public class ClusterStateLicenseService extends AbstractLifecycleComponent
         };
     }
 
-    public License getLicense(final Metadata metadata) {
+    public static License getLicense(final Metadata metadata) {
         final LicensesMetadata licensesMetadata = metadata.custom(LicensesMetadata.TYPE);
         return getLicenseFromLicensesMetadata(licensesMetadata);
     }
 
     // visible for tests
-    License getLicenseFromLicensesMetadata(@Nullable final LicensesMetadata metadata) {
+    static License getLicenseFromLicensesMetadata(@Nullable final LicensesMetadata metadata) {
         if (metadata != null) {
             License license = metadata.getLicense();
             if (license == LicensesMetadata.LICENSE_TOMBSTONE) {

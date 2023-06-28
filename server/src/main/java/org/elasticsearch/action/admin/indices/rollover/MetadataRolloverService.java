@@ -312,7 +312,7 @@ public class MetadataRolloverService {
         return new RolloverResult(newWriteIndexName, originalWriteIndex.getName(), newState);
     }
 
-    public Metadata.Builder withShardSizeForecastForWriteIndex(String dataStreamName, Metadata.Builder metadata) {
+    public static Metadata.Builder withShardSizeForecastForWriteIndex(String dataStreamName, Metadata.Builder metadata) {
         final DataStream dataStream = metadata.dataStream(dataStreamName);
 
         if (dataStream == null) {

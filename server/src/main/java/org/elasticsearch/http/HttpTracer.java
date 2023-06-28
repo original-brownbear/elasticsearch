@@ -89,7 +89,7 @@ class HttpTracer {
         return null;
     }
 
-    boolean isBodyTracerEnabled() {
+    static boolean isBodyTracerEnabled() {
         return HttpBodyTracer.isEnabled();
     }
 
@@ -134,7 +134,7 @@ class HttpTracer {
         this.tracerLogExclude = tracerLogExclude.toArray(Strings.EMPTY_ARRAY);
     }
 
-    OutputStream openResponseBodyLoggingStream(long requestId) {
+    static OutputStream openResponseBodyLoggingStream(long requestId) {
         return HttpBodyTracer.getBodyOutputStream(requestId, HttpBodyTracer.Type.RESPONSE);
     }
 }

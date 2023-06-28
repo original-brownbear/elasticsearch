@@ -80,7 +80,7 @@ public class KerberosTicketValidator {
      *            service.
      * @param krbDebug if {@code true} enables jaas krb5 login module debug logs.
      */
-    public void validateTicket(
+    public static void validateTicket(
         final byte[] decodedToken,
         final Path keytabPath,
         final boolean krbDebug,
@@ -124,7 +124,7 @@ public class KerberosTicketValidator {
      * @return String containing base64 encoded characters. returns {@code null} if
      *         outToken is null or empty.
      */
-    private String encodeToString(final byte[] outToken) {
+    private static String encodeToString(final byte[] outToken) {
         if (outToken != null && outToken.length > 0) {
             return Base64.getEncoder().encodeToString(outToken);
         }

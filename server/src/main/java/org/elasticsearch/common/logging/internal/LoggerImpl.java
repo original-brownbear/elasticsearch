@@ -22,8 +22,8 @@ public final class LoggerImpl implements Logger {
         this.log4jLogger = log4jLogger;
     }
 
-    private org.apache.logging.log4j.util.Supplier<?> mapSupplier(Supplier<String> msgSupplier) {
-        return () -> msgSupplier.get();
+    private static org.apache.logging.log4j.util.Supplier<?> mapSupplier(Supplier<String> msgSupplier) {
+        return msgSupplier::get;
     }
 
     @Override

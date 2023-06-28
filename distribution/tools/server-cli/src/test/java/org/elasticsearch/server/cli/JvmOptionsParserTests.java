@@ -149,7 +149,7 @@ public class JvmOptionsParserTests extends ESTestCase {
         final Path config = createTempDir();
         try {
             final JvmOptionsParser parser = new JvmOptionsParser();
-            parser.readJvmOptionsFiles(config);
+            JvmOptionsParser.readJvmOptionsFiles(config);
             fail("expected no such file exception, the root jvm.options file does not exist");
         } catch (final NoSuchFileException expected) {
             // this is expected, the root JVM options file must exist
@@ -165,7 +165,7 @@ public class JvmOptionsParserTests extends ESTestCase {
             Files.createDirectory(config.resolve("jvm.options.d"));
         }
         final JvmOptionsParser parser = new JvmOptionsParser();
-        final List<String> jvmOptions = parser.readJvmOptionsFiles(config);
+        final List<String> jvmOptions = JvmOptionsParser.readJvmOptionsFiles(config);
         assertThat(jvmOptions, contains("-Xms256m", "-Xmx256m"));
     }
 
@@ -185,7 +185,7 @@ public class JvmOptionsParserTests extends ESTestCase {
             StandardOpenOption.APPEND
         );
         final JvmOptionsParser parser = new JvmOptionsParser();
-        final List<String> jvmOptions = parser.readJvmOptionsFiles(config);
+        final List<String> jvmOptions = JvmOptionsParser.readJvmOptionsFiles(config);
         assertThat(jvmOptions, contains("-Xms256m", "-Xmx256m", "-Xms384m", "-Xmx384m"));
     }
 
@@ -211,7 +211,7 @@ public class JvmOptionsParserTests extends ESTestCase {
             StandardOpenOption.APPEND
         );
         final JvmOptionsParser parser = new JvmOptionsParser();
-        final List<String> jvmOptions = parser.readJvmOptionsFiles(config);
+        final List<String> jvmOptions = JvmOptionsParser.readJvmOptionsFiles(config);
         assertThat(jvmOptions, contains("-Xms256m", "-Xmx256m", "-Xms384m", "-Xmx384m", "-Xms512m", "-Xmx512m"));
     }
 
@@ -227,7 +227,7 @@ public class JvmOptionsParserTests extends ESTestCase {
             StandardOpenOption.APPEND
         );
         final JvmOptionsParser parser = new JvmOptionsParser();
-        final List<String> jvmOptions = parser.readJvmOptionsFiles(config);
+        final List<String> jvmOptions = JvmOptionsParser.readJvmOptionsFiles(config);
         assertThat(jvmOptions, empty());
     }
 
@@ -237,7 +237,7 @@ public class JvmOptionsParserTests extends ESTestCase {
         Files.write(rootJvmOptions, List.of("XX:+UseG1GC"), StandardOpenOption.CREATE_NEW, StandardOpenOption.APPEND);
         try {
             final JvmOptionsParser parser = new JvmOptionsParser();
-            parser.readJvmOptionsFiles(config);
+            JvmOptionsParser.readJvmOptionsFiles(config);
             fail("expected JVM options file parser exception, XX:+UseG1GC is improperly formatted");
         } catch (final JvmOptionsParser.JvmOptionsFileParserException expected) {
             assertThat(expected.jvmOptionsFile(), equalTo(rootJvmOptions));

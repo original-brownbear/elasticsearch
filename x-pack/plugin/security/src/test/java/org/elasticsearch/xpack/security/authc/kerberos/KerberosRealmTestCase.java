@@ -150,13 +150,7 @@ public abstract class KerberosRealmTestCase extends ESTestCase {
         );
         mockNativeRoleMappingStore = roleMappingStore(Arrays.asList(userForRoleMapping));
         mockKerberosTicketValidator = mock(KerberosTicketValidator.class);
-        final KerberosRealm kerberosRealm = new KerberosRealm(
-            config,
-            mockNativeRoleMappingStore,
-            mockKerberosTicketValidator,
-            threadPool,
-            null
-        );
+        final KerberosRealm kerberosRealm = new KerberosRealm(config, mockNativeRoleMappingStore, threadPool, null);
         Collections.shuffle(delegatedRealms, random());
         kerberosRealm.initialize(delegatedRealms, licenseState);
         return kerberosRealm;

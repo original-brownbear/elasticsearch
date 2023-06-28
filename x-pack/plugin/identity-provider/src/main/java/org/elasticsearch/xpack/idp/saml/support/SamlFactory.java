@@ -78,7 +78,7 @@ public class SamlFactory {
         return cast(type, elementName, obj);
     }
 
-    private <T extends XMLObject> T cast(Class<T> type, QName elementName, XMLObject obj) {
+    private static <T extends XMLObject> T cast(Class<T> type, QName elementName, XMLObject obj) {
         if (type.isInstance(obj)) {
             return type.cast(obj);
         } else {
@@ -167,11 +167,11 @@ public class SamlFactory {
         return localName.equals(element.getLocalName()) && namespace.equals(element.getNamespaceURI());
     }
 
-    public String text(Element dom, int length) {
+    public static String text(Element dom, int length) {
         return text(dom, length, 0);
     }
 
-    public String text(XMLObject xml, int prefixLength, int suffixLength) {
+    public static String text(XMLObject xml, int prefixLength, int suffixLength) {
         final Element dom = xml.getDOM();
         if (dom == null) {
             return null;
@@ -179,7 +179,7 @@ public class SamlFactory {
         return text(dom, prefixLength, suffixLength);
     }
 
-    public String text(XMLObject xml, int length) {
+    public static String text(XMLObject xml, int length) {
         return text(xml, length, 0);
     }
 

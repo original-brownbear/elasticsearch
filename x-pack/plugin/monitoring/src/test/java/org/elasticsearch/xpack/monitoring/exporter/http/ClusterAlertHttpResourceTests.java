@@ -146,7 +146,7 @@ public class ClusterAlertHttpResourceTests extends AbstractPublishableHttpResour
         when(response.getEntity()).thenReturn(entity);
         when(entity.getContent()).thenThrow(new IOException("TEST - expected"));
 
-        expectThrows(IOException.class, () -> resource.shouldReplaceClusterAlert(response, xContent, randomInt()));
+        expectThrows(IOException.class, () -> ClusterAlertHttpResource.shouldReplaceClusterAlert(response, xContent, randomInt()));
     }
 
     public void testShouldReplaceClusterAlertThrowsExceptionForMalformedResponse() {
@@ -156,7 +156,7 @@ public class ClusterAlertHttpResourceTests extends AbstractPublishableHttpResour
 
         when(response.getEntity()).thenReturn(entity);
 
-        expectThrows(RuntimeException.class, () -> resource.shouldReplaceClusterAlert(response, xContent, randomInt()));
+        expectThrows(RuntimeException.class, () -> ClusterAlertHttpResource.shouldReplaceClusterAlert(response, xContent, randomInt()));
     }
 
     public void testShouldReplaceClusterAlertReturnsTrueVersionIsNotExpected() throws IOException {
@@ -167,7 +167,7 @@ public class ClusterAlertHttpResourceTests extends AbstractPublishableHttpResour
 
         when(response.getEntity()).thenReturn(entity);
 
-        assertThat(resource.shouldReplaceClusterAlert(response, xContent, randomMinimumVersion), is(true));
+        assertThat(ClusterAlertHttpResource.shouldReplaceClusterAlert(response, xContent, randomMinimumVersion), is(true));
     }
 
     public void testShouldReplaceCheckAlertChecksVersion() throws IOException {
@@ -181,7 +181,7 @@ public class ClusterAlertHttpResourceTests extends AbstractPublishableHttpResour
 
         when(response.getEntity()).thenReturn(entity);
 
-        assertThat(resource.shouldReplaceClusterAlert(response, xContent, randomMinimumVersion), is(shouldReplace));
+        assertThat(ClusterAlertHttpResource.shouldReplaceClusterAlert(response, xContent, randomMinimumVersion), is(shouldReplace));
     }
 
     public void testParameters() {

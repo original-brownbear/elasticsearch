@@ -792,7 +792,7 @@ public class ApiKeyService {
         return builder.endObject();
     }
 
-    private boolean isNoop(
+    private static boolean isNoop(
         final String apiKeyId,
         final ApiKeyDoc apiKeyDoc,
         final Version targetDocVersion,
@@ -950,7 +950,7 @@ public class ApiKeyService {
         }), client::get);
     }
 
-    public List<RoleDescriptor> parseRoleDescriptors(
+    public static List<RoleDescriptor> parseRoleDescriptors(
         final String apiKeyId,
         final Map<String, Object> roleDescriptorsMap,
         RoleReference.ApiKeyRoleType roleType
@@ -984,7 +984,7 @@ public class ApiKeyService {
             : roleDescriptors;
     }
 
-    public List<RoleDescriptor> parseRoleDescriptorsBytes(
+    public static List<RoleDescriptor> parseRoleDescriptorsBytes(
         final String apiKeyId,
         BytesReference bytesReference,
         RoleReference.ApiKeyRoleType roleType
@@ -992,7 +992,7 @@ public class ApiKeyService {
         return parseRoleDescriptorsBytes(apiKeyId, bytesReference, roleType == RoleReference.ApiKeyRoleType.LIMITED_BY);
     }
 
-    private List<RoleDescriptor> parseRoleDescriptorsBytes(
+    private static List<RoleDescriptor> parseRoleDescriptorsBytes(
         final String apiKeyId,
         BytesReference bytesReference,
         final boolean replaceLegacySuperuserRoleDescriptor
@@ -1483,7 +1483,7 @@ public class ApiKeyService {
                 .request();
     }
 
-    private void addErrorsForNotFoundApiKeys(
+    private static void addErrorsForNotFoundApiKeys(
         final BulkUpdateApiKeyResponse.Builder responseBuilder,
         final Collection<VersionedApiKeyDoc> foundDocs,
         final List<String> requestedIds
@@ -1963,7 +1963,7 @@ public class ApiKeyService {
         return convertSearchHitToApiKeyInfo(hit, false);
     }
 
-    private ApiKey convertSearchHitToApiKeyInfo(SearchHit hit, boolean withLimitedBy) {
+    private static ApiKey convertSearchHitToApiKeyInfo(SearchHit hit, boolean withLimitedBy) {
         final ApiKeyDoc apiKeyDoc = convertSearchHitToVersionedApiKeyDoc(hit).doc;
         final String apiKeyId = hit.getId();
         final Map<String, Object> metadata = apiKeyDoc.metadataFlattened != null

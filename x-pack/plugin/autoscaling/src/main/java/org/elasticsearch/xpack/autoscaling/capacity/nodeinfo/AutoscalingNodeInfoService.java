@@ -198,13 +198,13 @@ public class AutoscalingNodeInfoService {
                 .stream()
                 .map(AutoscalingPolicyMetadata::policy)
                 .map(AutoscalingPolicy::roles)
-                .map(this::toRoles)
+                .map(AutoscalingNodeInfoService::toRoles)
                 .collect(Collectors.toSet());
         }
         return Set.of();
     }
 
-    private Set<DiscoveryNodeRole> toRoles(SortedSet<String> roleNames) {
+    private static Set<DiscoveryNodeRole> toRoles(SortedSet<String> roleNames) {
         return roleNames.stream().map(DiscoveryNodeRole::getRoleFromRoleName).collect(Collectors.toSet());
     }
 

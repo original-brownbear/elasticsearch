@@ -31,8 +31,8 @@ public class SecurityImplicitBehaviorBootstrapCheck implements BootstrapCheck {
         if (nodeMetadata == null) {
             return BootstrapCheckResult.success();
         }
-        if (licenseService instanceof ClusterStateLicenseService clusterStateLicenseService) {
-            final License license = clusterStateLicenseService.getLicense(context.metadata());
+        if (licenseService instanceof ClusterStateLicenseService) {
+            final License license = ClusterStateLicenseService.getLicense(context.metadata());
             final Version lastKnownVersion = nodeMetadata.previousNodeVersion();
             // pre v7.2.0 nodes have Version.EMPTY and its id is 0, so Version#before handles this successfully
             if (lastKnownVersion.before(Version.V_8_0_0)

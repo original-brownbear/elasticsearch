@@ -58,7 +58,7 @@ public class S3BlobStoreContainerTests extends ESTestCase {
 
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> blobContainer.executeSingleUpload(blobStore, randomAlphaOfLengthBetween(1, 10), null, blobSize)
+            () -> S3BlobContainer.executeSingleUpload(blobStore, randomAlphaOfLengthBetween(1, 10), null, blobSize)
         );
         assertEquals("Upload request size [" + blobSize + "] can't be larger than 5gb", e.getMessage());
     }
@@ -72,7 +72,12 @@ public class S3BlobStoreContainerTests extends ESTestCase {
 
         final IllegalArgumentException e = expectThrows(
             IllegalArgumentException.class,
-            () -> blobContainer.executeSingleUpload(blobStore, blobName, new ByteArrayInputStream(new byte[0]), ByteSizeUnit.MB.toBytes(2))
+            () -> S3BlobContainer.executeSingleUpload(
+                blobStore,
+                blobName,
+                new ByteArrayInputStream(new byte[0]),
+                ByteSizeUnit.MB.toBytes(2)
+            )
         );
         assertEquals("Upload request size [2097152] can't be larger than buffer size", e.getMessage());
     }
@@ -114,7 +119,7 @@ public class S3BlobStoreContainerTests extends ESTestCase {
         when(client.putObject(argumentCaptor.capture())).thenReturn(new PutObjectResult());
 
         final ByteArrayInputStream inputStream = new ByteArrayInputStream(new byte[blobSize]);
-        blobContainer.executeSingleUpload(blobStore, blobName, inputStream, blobSize);
+        S3BlobContainer.executeSingleUpload(blobStore, blobName, inputStream, blobSize);
 
         final PutObjectRequest request = argumentCaptor.getValue();
         assertEquals(bucketName, request.getBucketName());

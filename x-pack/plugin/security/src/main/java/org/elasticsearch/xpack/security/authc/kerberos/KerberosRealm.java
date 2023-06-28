@@ -65,7 +65,6 @@ public final class KerberosRealm extends Realm implements CachingRealm {
 
     private final Cache<String, User> userPrincipalNameToUserCache;
     private final NativeRoleMappingStore userRoleMapper;
-    private final KerberosTicketValidator kerberosTicketValidator;
     private final ThreadPool threadPool;
     private final Path keytabPath;
     private final boolean enableKerberosDebug;
@@ -73,14 +72,13 @@ public final class KerberosRealm extends Realm implements CachingRealm {
     private DelegatedAuthorizationSupport delegatedRealms;
 
     public KerberosRealm(final RealmConfig config, final NativeRoleMappingStore nativeRoleMappingStore, final ThreadPool threadPool) {
-        this(config, nativeRoleMappingStore, new KerberosTicketValidator(), threadPool, null);
+        this(config, nativeRoleMappingStore, threadPool, null);
     }
 
     // pkg scoped for testing
     KerberosRealm(
         final RealmConfig config,
         final NativeRoleMappingStore nativeRoleMappingStore,
-        final KerberosTicketValidator kerberosTicketValidator,
         final ThreadPool threadPool,
         final Cache<String, User> userPrincipalNameToUserCache
     ) {
@@ -98,7 +96,6 @@ public final class KerberosRealm extends Realm implements CachingRealm {
         } else {
             this.userPrincipalNameToUserCache = null;
         }
-        this.kerberosTicketValidator = kerberosTicketValidator;
         this.threadPool = threadPool;
         this.keytabPath = config.env().configFile().resolve(config.getSetting(KerberosRealmSettings.HTTP_SERVICE_KEYTAB_PATH));
 
@@ -159,7 +156,7 @@ public final class KerberosRealm extends Realm implements CachingRealm {
         assert delegatedRealms != null : "Realm has not been initialized correctly";
         assert token instanceof KerberosAuthenticationToken;
         final KerberosAuthenticationToken kerbAuthnToken = (KerberosAuthenticationToken) token;
-        kerberosTicketValidator.validateTicket(
+        KerberosTicketValidator.validateTicket(
             (byte[]) kerbAuthnToken.credentials(),
             keytabPath,
             enableKerberosDebug,
@@ -185,7 +182,7 @@ public final class KerberosRealm extends Realm implements CachingRealm {
         );
     }
 
-    private String[] splitUserPrincipalName(final String userPrincipalName) {
+    private static String[] splitUserPrincipalName(final String userPrincipalName) {
         return userPrincipalName.split("@");
     }
 

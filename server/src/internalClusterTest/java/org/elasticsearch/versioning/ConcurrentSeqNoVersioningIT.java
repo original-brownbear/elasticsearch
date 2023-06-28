@@ -441,7 +441,8 @@ public class ConcurrentSeqNoVersioningIT extends AbstractDisruptionTestCase {
                 if (history.size() > 300) {
                     scheduler.schedule(() -> abort.set(true), 10, TimeUnit.SECONDS);
                 }
-                linearizable = new LinearizabilityChecker().isLinearizable(spec, history, missingResponseGenerator(), abort::get);
+                new LinearizabilityChecker();
+                linearizable = LinearizabilityChecker.isLinearizable(spec, history, missingResponseGenerator(), abort::get);
                 ThreadPool.terminate(scheduler, 1, TimeUnit.SECONDS);
                 if (abort.get() && linearizable == false) {
                     linearizable = true; // let the test pass
@@ -690,11 +691,7 @@ public class ConcurrentSeqNoVersioningIT extends AbstractDisruptionTestCase {
         LinearizabilityChecker.History history = readHistory(is);
 
         Version initialVersion = new Version(primaryTerm, seqNo);
-        boolean result = new LinearizabilityChecker().isLinearizable(
-            new CASSequentialSpec(initialVersion),
-            history,
-            missingResponseGenerator()
-        );
+        boolean result = LinearizabilityChecker.isLinearizable(new CASSequentialSpec(initialVersion), history, missingResponseGenerator());
 
         System.out.println(LinearizabilityChecker.visualize(new CASSequentialSpec(initialVersion), history, missingResponseGenerator()));
 
